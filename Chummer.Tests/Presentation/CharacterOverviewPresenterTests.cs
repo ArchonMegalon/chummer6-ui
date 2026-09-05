@@ -3533,6 +3533,61 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task Character_settings_field_callback_updates_only_the_explicit_draft_field_and_save_keeps_one_profile()
+    {
+        var presenter = CreateTrustedPresenter(new FakeChummerClient());
+        await presenter.InitializeAsync(CancellationToken.None);
+        await presenter.ExecuteCommandAsync("character_settings", CancellationToken.None);
+        string buildMethodFieldId = Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod");
+        string startingKarmaFieldId = Chummer5CharacterSettingsProfiles.FieldId("nudStartingKarma");
+        string initialDraft = DesktopDialogFieldValueParser.GetValue(
+            presenter.State.ActiveDialog!,
+            Chummer5CharacterSettingsProfiles.DraftXmlFieldId)!;
+        string initialStartingKarma = DesktopDialogFieldValueParser.GetValue(
+            presenter.State.ActiveDialog!,
+            startingKarmaFieldId)!;
+
+        await presenter.UpdateDialogFieldAsync(
+            Chummer5CharacterSettingsProfiles.DraftXmlFieldId,
+            "<settings />",
+            CancellationToken.None);
+
+        Assert.AreEqual("Character settings field is not editable.", presenter.State.Error);
+        Assert.AreEqual(
+            initialDraft,
+            DesktopDialogFieldValueParser.GetValue(
+                presenter.State.ActiveDialog!,
+                Chummer5CharacterSettingsProfiles.DraftXmlFieldId));
+
+        await presenter.UpdateDialogFieldAsync(buildMethodFieldId, "Karma", CancellationToken.None);
+
+        DesktopDialogState updatedDialog = presenter.State.ActiveDialog!;
+        string updatedDraft = DesktopDialogFieldValueParser.GetValue(
+            updatedDialog,
+            Chummer5CharacterSettingsProfiles.DraftXmlFieldId)!;
+        Assert.AreEqual("Karma", Chummer5CharacterSettingsProfiles.ReadBuildMethod(updatedDraft, "Priority"));
+        Assert.AreEqual(
+            initialStartingKarma,
+            DesktopDialogFieldValueParser.GetValue(updatedDialog, startingKarmaFieldId));
+        Assert.AreEqual(
+            string.Empty,
+            DesktopDialogFieldValueParser.GetValue(
+                updatedDialog,
+                Chummer5CharacterSettingsProfiles.EditedFieldIdsFieldId));
+
+        await presenter.ExecuteDialogActionAsync("save", CancellationToken.None);
+
+        Chummer5CharacterSettingsCatalog saved = Chummer5CharacterSettingsProfiles.ParseCatalog(
+            presenter.State.Preferences.CharacterSettingsCatalogJson);
+        Assert.IsNull(presenter.State.WorkspaceId);
+        Assert.HasCount(0, presenter.State.OpenWorkspaces);
+        Assert.AreEqual(1, saved.Profiles.Count);
+        Assert.AreEqual("Karma", Chummer5CharacterSettingsProfiles.ReadBuildMethod(
+            Chummer5CharacterSettingsProfiles.ActiveProfile(saved).Xml,
+            "Priority"));
+    }
+
+    [TestMethod]
     public async Task ExecuteCommandAsync_runtime_inspector_uses_runtime_projection_dialog()
     {
         var client = new FakeChummerClient();

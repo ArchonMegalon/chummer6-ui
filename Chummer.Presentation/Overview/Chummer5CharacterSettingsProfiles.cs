@@ -34,6 +34,7 @@ internal static class Chummer5CharacterSettingsProfiles
     internal const string SectionFieldId = "characterSettingsSection";
     internal const string LoadedProfileFieldId = "characterSettingsLoadedProfile";
     internal const string DraftXmlFieldId = "characterSettingsDraftXml";
+    internal const string EditedFieldIdsFieldId = "characterSettingsEditedFieldIds";
     internal const string FieldPrefix = "characterSettingsControl";
     internal const string SaveActionId = "save";
     internal const string SaveAndCloseActionId = "save_and_close";
@@ -91,22 +92,67 @@ internal static class Chummer5CharacterSettingsProfiles
         out string updatedXml,
         out string? error)
     {
-        XElement settings = ParseSettingsXml(draftXml, ActiveProfile(ParseCatalog(null)));
-        foreach (Chummer5CharacterSettingsFieldDefinition definition in Chummer5CharacterSettingsRuntimeContractGenerated.Fields)
+        updatedXml = draftXml;
+        if (!TryParseSettingsXmlForMutation(
+            draftXml,
+            out XDocument document,
+            out XElement settings,
+            out error))
+            return false;
+
+        if (!TryReadEditedFieldIds(dialog, out IReadOnlyList<string> editedFieldIds, out error))
+            return false;
+
+        foreach (string fieldId in editedFieldIds)
         {
-            string? value = DesktopDialogFieldValueParser.GetValue(dialog, FieldId(definition.LegacyControl));
-            if (value is null)
-                continue;
-            if (!TryApplyField(settings, definition, value, out error))
+            Chummer5CharacterSettingsFieldDefinition? definition = Chummer5CharacterSettingsRuntimeContractGenerated.Fields
+                .SingleOrDefault(candidate => string.Equals(FieldId(candidate.LegacyControl), fieldId, StringComparison.Ordinal));
+            if (definition is null)
             {
-                updatedXml = draftXml;
+                error = $"Character settings field '{fieldId}' is not supported.";
                 return false;
             }
+
+            DesktopDialogField[] submittedFields = dialog.Fields
+                .Where(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                .ToArray();
+            if (submittedFields.Length != 1)
+            {
+                error = $"Character settings field '{fieldId}' must be submitted exactly once.";
+                return false;
+            }
+
+            string value = submittedFields[0].Value;
+            if (!TryApplyField(settings, definition, value, out error))
+                return false;
         }
 
-        updatedXml = settings.ToString(SaveOptions.DisableFormatting);
+        if (editedFieldIds.Count == 0)
+        {
+            error = null;
+            return true;
+        }
+
+        string documentXml = document.ToString(SaveOptions.DisableFormatting);
+        updatedXml = document.Declaration is null
+            ? documentXml
+            : $"{document.Declaration}{documentXml}";
         error = null;
         return true;
+    }
+
+    internal static bool IsValueFieldId(string fieldId)
+        => fieldId.StartsWith($"{FieldPrefix}-", StringComparison.Ordinal)
+            && Chummer5CharacterSettingsRuntimeContractGenerated.Fields.Any(
+                definition => string.Equals(FieldId(definition.LegacyControl), fieldId, StringComparison.Ordinal));
+
+    internal static string RecordEditedFieldId(string? currentValue, string fieldId)
+    {
+        HashSet<string> edited = new(
+            SplitEditedFieldIds(currentValue),
+            StringComparer.Ordinal);
+        edited.Add(fieldId);
+        return string.Join('\n', edited.OrderBy(value => value, StringComparer.Ordinal));
     }
 
     internal static string ReadFieldValue(
@@ -219,10 +265,10 @@ internal static class Chummer5CharacterSettingsProfiles
     internal static string RestoreDefaults(string profileId, string profileName)
     {
         Chummer5CharacterSettingsProfile standard = CreateStandardProfile();
-        return NormalizeProfile(new Chummer5CharacterSettingsProfile(
-            profileId,
-            NormalizeName(profileName, standard.Name),
-            standard.Xml)).Xml;
+        XElement settings = XElement.Parse(standard.Xml, LoadOptions.PreserveWhitespace);
+        SetSingle(settings, "settings/id", profileId);
+        SetSingle(settings, "settings/name", NormalizeName(profileName, standard.Name));
+        return settings.ToString(SaveOptions.DisableFormatting);
     }
 
     internal static string BuildPlaceholder(Chummer5CharacterSettingsFieldDefinition definition)
@@ -265,12 +311,7 @@ internal static class Chummer5CharacterSettingsProfiles
             ? Guid.NewGuid().ToString("D", CultureInfo.InvariantCulture)
             : profile.Id.Trim();
         string name = NormalizeName(profile.Name, "Custom settings");
-        XElement settings = ParseSettingsXml(profile.Xml, new Chummer5CharacterSettingsProfile(id, name, string.Empty));
-        SetSingle(settings, "settings/id", id);
-        SetSingle(settings, "settings/name", name);
-        if (string.IsNullOrWhiteSpace(ReadSingle(settings, "settings/gameplayoptionname", string.Empty)))
-            SetSingle(settings, "settings/gameplayoptionname", name);
-        return new Chummer5CharacterSettingsProfile(id, name, settings.ToString(SaveOptions.DisableFormatting));
+        return new Chummer5CharacterSettingsProfile(id, name, profile.Xml ?? string.Empty);
     }
 
     private static Chummer5CharacterSettingsProfile CreateStandardProfile()
@@ -301,26 +342,17 @@ internal static class Chummer5CharacterSettingsProfiles
         if (string.Equals(control, "treSourcebook", StringComparison.Ordinal)
             || string.Equals(control, "chkGrade", StringComparison.Ordinal))
         {
-            SetPathValues(settings, definition.PersistencePaths[0], SplitCollection(value));
-            error = null;
-            return true;
+            return TrySetPathValues(settings, definition.PersistencePaths[0], SplitCollection(value), out error);
         }
         if (string.Equals(control, "treCustomDataDirectories", StringComparison.Ordinal))
-        {
-            WriteCustomDataDirectories(settings, value);
-            error = null;
-            return true;
-        }
+            return TryWriteCustomDataDirectories(settings, value, out error);
         if (control.StartsWith("chkRedlinerLimbs", StringComparison.Ordinal))
-        {
-            SetMembership(
+            return TrySetMembership(
                 settings,
                 "settings/redlinerexclusion/limb",
                 RedlinerLimb(control),
-                ParseBool(value));
-            error = null;
-            return true;
-        }
+                ParseBool(value),
+                out error);
         if (string.Equals(control, "cboLimbCount", StringComparison.Ordinal))
         {
             string[] parts = value.Split('<', 2, StringSplitOptions.TrimEntries);
@@ -329,19 +361,25 @@ internal static class Chummer5CharacterSettingsProfiles
                 error = "Cyberlimb configuration must start with a positive limb count.";
                 return false;
             }
-            SetSingle(settings, "settings/limbcount", count.ToString(CultureInfo.InvariantCulture));
-            SetSingle(settings, "settings/excludelimbslot", parts.Length > 1 ? parts[1] : string.Empty);
-            error = null;
-            return true;
+            return TrySetSingle(
+                    settings,
+                    "settings/limbcount",
+                    count.ToString(CultureInfo.InvariantCulture),
+                    out error)
+                && TrySetSingle(
+                    settings,
+                    "settings/excludelimbslot",
+                    parts.Length > 1 ? parts[1] : string.Empty,
+                    out error);
         }
         if (control is "nudNuyenDecimalsMinimum" or "nudNuyenDecimalsMaximum" or "nudEssenceDecimals" or "nudWeightDecimals")
             return TryApplyDecimalFormat(settings, control, value, out error);
         if (string.Equals(definition.InputType, "checkbox", StringComparison.Ordinal))
-        {
-            SetSingle(settings, definition.PersistencePaths[0], ParseBool(value) ? "True" : "False");
-            error = null;
-            return true;
-        }
+            return TrySetSingle(
+                settings,
+                definition.PersistencePaths[0],
+                ParseBool(value) ? "True" : "False",
+                out error);
         if (string.Equals(definition.InputType, "number", StringComparison.Ordinal))
         {
             if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal number))
@@ -349,9 +387,11 @@ internal static class Chummer5CharacterSettingsProfiles
                 error = $"{definition.Label} must be a number.";
                 return false;
             }
-            SetSingle(settings, definition.PersistencePaths[0], number.ToString(CultureInfo.InvariantCulture));
-            error = null;
-            return true;
+            return TrySetSingle(
+                settings,
+                definition.PersistencePaths[0],
+                number.ToString(CultureInfo.InvariantCulture),
+                out error);
         }
         if (definition.Options.Count > 0
             && !definition.Options.Contains(value, StringComparer.Ordinal))
@@ -359,9 +399,7 @@ internal static class Chummer5CharacterSettingsProfiles
             error = $"{definition.Label} has an unsupported value.";
             return false;
         }
-        SetSingle(settings, definition.PersistencePaths[0], value.Trim());
-        error = null;
-        return true;
+        return TrySetSingle(settings, definition.PersistencePaths[0], value.Trim(), out error);
     }
 
     private static bool TryApplyDecimalFormat(XElement settings, string control, string value, out string? error)
@@ -383,17 +421,12 @@ internal static class Chummer5CharacterSettingsProfiles
                 maximum = decimals;
             maximum = Math.Max(maximum, minimum);
             minimum = Math.Min(minimum, maximum);
-            SetSingle(settings, "settings/nuyenformat", DecimalFormat(minimum, maximum));
+            return TrySetSingle(settings, "settings/nuyenformat", DecimalFormat(minimum, maximum), out error);
         }
-        else
-        {
-            string path = string.Equals(control, "nudEssenceDecimals", StringComparison.Ordinal)
-                ? "settings/essenceformat"
-                : "settings/weightformat";
-            SetSingle(settings, path, DecimalFormat(decimals, decimals));
-        }
-        error = null;
-        return true;
+        string path = string.Equals(control, "nudEssenceDecimals", StringComparison.Ordinal)
+            ? "settings/essenceformat"
+            : "settings/weightformat";
+        return TrySetSingle(settings, path, DecimalFormat(decimals, decimals), out error);
     }
 
     private static string ReadCustomDataDirectories(XElement settings)
@@ -406,10 +439,20 @@ internal static class Chummer5CharacterSettingsProfiles
             .Select(element => $"[{(ParseBool(element.Element("enabled")?.Value) ? 'x' : ' ')}] {element.Element("directoryname")?.Value ?? string.Empty}"));
     }
 
-    private static void WriteCustomDataDirectories(XElement settings, string value)
+    private static bool TryWriteCustomDataDirectories(XElement settings, string value, out string? error)
     {
-        XElement parent = EnsurePath(settings, "settings/customdatadirectorynames");
-        parent.RemoveNodes();
+        if (!TryResolveElement(settings, "settings/customdatadirectorynames", out XElement parent, out error))
+            return false;
+        XElement[] entries = parent.Elements()
+            .Where(element => string.Equals(element.Name.LocalName, "customdatadirectoryname", StringComparison.Ordinal))
+            .ToArray();
+        if (entries.Any(element => element.Name.Namespace != XNamespace.None))
+        {
+            error = "Character settings path 'settings/customdatadirectorynames/customdatadirectoryname' has a namespace mismatch.";
+            return false;
+        }
+        foreach (XElement entry in entries)
+            entry.Remove();
         int order = 0;
         foreach (string rawLine in value.Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n'))
         {
@@ -433,7 +476,90 @@ internal static class Chummer5CharacterSettingsProfiles
                 new XElement("order", order.ToString(CultureInfo.InvariantCulture)),
                 new XElement("enabled", enabled ? "True" : "False")));
         }
+        error = null;
+        return true;
     }
+
+    private static bool TryParseSettingsXmlForMutation(
+        string xml,
+        out XDocument document,
+        out XElement settings,
+        out string? error)
+    {
+        document = null!;
+        settings = null!;
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            error = "Character settings XML is required.";
+            return false;
+        }
+
+        try
+        {
+            document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        }
+        catch (System.Xml.XmlException exception)
+        {
+            error = $"Character settings XML is malformed: {exception.Message}";
+            return false;
+        }
+
+        if (document.Root is not XElement root)
+        {
+            error = "Character settings XML must have an unnamespaced <settings> root.";
+            document = null!;
+            return false;
+        }
+        settings = root;
+
+        if (settings.Name != XName.Get("settings"))
+        {
+            error = settings.Name.LocalName == "settings"
+                ? "Character settings root has a namespace mismatch."
+                : "Character settings XML must have an unnamespaced <settings> root.";
+            settings = null!;
+            document = null!;
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
+
+    private static bool TryReadEditedFieldIds(
+        DesktopDialogState dialog,
+        out IReadOnlyList<string> editedFieldIds,
+        out string? error)
+    {
+        DesktopDialogField[] trackers = dialog.Fields
+            .Where(field => string.Equals(field.Id, EditedFieldIdsFieldId, StringComparison.Ordinal))
+            .ToArray();
+        if (trackers.Length > 1)
+        {
+            editedFieldIds = [];
+            error = "Character settings edited-field tracking is ambiguous.";
+            return false;
+        }
+
+        string[] parsed = SplitEditedFieldIds(trackers.SingleOrDefault()?.Value);
+        string? unsupported = parsed.FirstOrDefault(fieldId => !IsValueFieldId(fieldId));
+        if (unsupported is not null)
+        {
+            editedFieldIds = [];
+            error = $"Character settings field '{unsupported}' is not supported.";
+            return false;
+        }
+
+        editedFieldIds = parsed.Distinct(StringComparer.Ordinal).ToArray();
+        error = null;
+        return true;
+    }
+
+    private static string[] SplitEditedFieldIds(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? []
+            : value.Replace("\r", string.Empty, StringComparison.Ordinal)
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     private static XElement ParseSettingsXml(string? xml, Chummer5CharacterSettingsProfile fallback)
     {
@@ -506,6 +632,182 @@ internal static class Chummer5CharacterSettingsProfiles
     private static string ReadSingle(XElement settings, string path, string fallback)
         => ElementsAtPath(settings, path).FirstOrDefault()?.Value ?? fallback;
 
+    private static bool TrySetSingle(
+        XElement settings,
+        string path,
+        string value,
+        out string? error)
+    {
+        if (!TryResolveParent(settings, path, out XElement parent, out string leaf, out error))
+            return false;
+
+        XElement[] matching = parent.Elements()
+            .Where(element => string.Equals(element.Name.LocalName, leaf, StringComparison.Ordinal))
+            .ToArray();
+        if (matching.Any(element => element.Name.Namespace != XNamespace.None))
+        {
+            error = $"Character settings path '{path}' has a namespace mismatch.";
+            return false;
+        }
+        if (matching.Length > 1)
+        {
+            error = $"Character settings path '{path}' is ambiguous because it has duplicate targets.";
+            return false;
+        }
+
+        XElement target;
+        if (matching.Length == 0)
+        {
+            target = new XElement(leaf);
+            parent.Add(target);
+        }
+        else
+        {
+            target = matching[0];
+        }
+
+        XNode[] content = target.Nodes().ToArray();
+        if (content.Any(node => node is not XText) || content.OfType<XText>().Count() > 1)
+        {
+            error = $"Character settings path '{path}' has complex content that cannot be replaced safely.";
+            return false;
+        }
+
+        XText? text = content.OfType<XText>().SingleOrDefault();
+        if (text is null)
+            target.Add(new XText(value));
+        else
+            text.Value = value;
+        error = null;
+        return true;
+    }
+
+    private static bool TrySetPathValues(
+        XElement settings,
+        string path,
+        IEnumerable<string> values,
+        out string? error)
+    {
+        if (!TryResolveParent(settings, path, out XElement parent, out string leaf, out error))
+            return false;
+
+        XElement[] matching = parent.Elements()
+            .Where(element => string.Equals(element.Name.LocalName, leaf, StringComparison.Ordinal))
+            .ToArray();
+        if (matching.Any(element => element.Name.Namespace != XNamespace.None))
+        {
+            error = $"Character settings path '{path}' has a namespace mismatch.";
+            return false;
+        }
+
+        foreach (XElement element in matching)
+            element.Remove();
+        foreach (string item in values.Where(item => !string.IsNullOrWhiteSpace(item)).Distinct(StringComparer.Ordinal))
+            parent.Add(new XElement(leaf, item.Trim()));
+        error = null;
+        return true;
+    }
+
+    private static bool TrySetMembership(
+        XElement settings,
+        string path,
+        string value,
+        bool enabled,
+        out string? error)
+    {
+        if (!TryResolveParent(settings, path, out XElement parent, out string leaf, out error))
+            return false;
+
+        XElement[] matching = parent.Elements()
+            .Where(element => string.Equals(element.Name.LocalName, leaf, StringComparison.Ordinal))
+            .ToArray();
+        if (matching.Any(element => element.Name.Namespace != XNamespace.None))
+        {
+            error = $"Character settings path '{path}' has a namespace mismatch.";
+            return false;
+        }
+
+        XElement[] selected = matching
+            .Where(element => string.Equals(element.Value, value, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (selected.Length > 1)
+        {
+            error = $"Character settings path '{path}' is ambiguous because value '{value}' has duplicate targets.";
+            return false;
+        }
+
+        if (!enabled)
+            selected.SingleOrDefault()?.Remove();
+        else if (selected.Length == 0)
+            parent.Add(new XElement(leaf, value));
+        error = null;
+        return true;
+    }
+
+    private static bool TryResolveElement(
+        XElement settings,
+        string path,
+        out XElement element,
+        out string? error)
+    {
+        string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        int index = segments.Length > 0 && string.Equals(segments[0], settings.Name.LocalName, StringComparison.Ordinal)
+            ? 1
+            : 0;
+        element = settings;
+        for (; index < segments.Length; index++)
+        {
+            string segment = segments[index];
+            XElement[] matching = element.Elements()
+                .Where(child => string.Equals(child.Name.LocalName, segment, StringComparison.Ordinal))
+                .ToArray();
+            if (matching.Any(child => child.Name.Namespace != XNamespace.None))
+            {
+                error = $"Character settings path '{path}' has a namespace mismatch.";
+                return false;
+            }
+            if (matching.Length > 1)
+            {
+                error = $"Character settings path '{path}' is ambiguous because segment '{segment}' is duplicated.";
+                return false;
+            }
+            if (matching.Length == 0)
+            {
+                XElement child = new(segment);
+                element.Add(child);
+                element = child;
+            }
+            else
+            {
+                element = matching[0];
+            }
+        }
+
+        error = null;
+        return true;
+    }
+
+    private static bool TryResolveParent(
+        XElement settings,
+        string path,
+        out XElement parent,
+        out string leaf,
+        out string? error)
+    {
+        string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+        {
+            parent = settings;
+            leaf = string.Empty;
+            error = "Character settings persistence path is empty.";
+            return false;
+        }
+
+        leaf = segments[^1];
+        string parentPath = string.Join('/', segments[..^1]);
+        return TryResolveElement(settings, parentPath, out parent, out error);
+    }
+
     private static void SetSingle(XElement settings, string path, string value)
     {
         string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -531,19 +833,6 @@ internal static class Chummer5CharacterSettingsProfiles
         parent.Elements(leaf).Remove();
         foreach (string value in values.Where(item => !string.IsNullOrWhiteSpace(item)).Distinct(StringComparer.Ordinal))
             parent.Add(new XElement(leaf, value.Trim()));
-    }
-
-    private static void SetMembership(XElement settings, string path, string value, bool enabled)
-    {
-        List<string> values = ElementsAtPath(settings, path)
-            .Select(element => element.Value)
-            .Where(item => !string.IsNullOrWhiteSpace(item))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        values.RemoveAll(item => string.Equals(item, value, StringComparison.OrdinalIgnoreCase));
-        if (enabled)
-            values.Add(value);
-        SetPathValues(settings, path, values);
     }
 
     private static IReadOnlyList<string> SplitCollection(string value)

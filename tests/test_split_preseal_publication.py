@@ -36,6 +36,15 @@ def test_android_import_responsiveness_inputs_are_explicit_preseal_recipe_paths(
     } <= preseal.ALLOWED_RECIPE_PATHS
 
 
+def test_native_character_settings_partial_save_inputs_are_explicit_preseal_recipe_paths() -> None:
+    assert {
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
+        "Chummer.Presentation/Overview/Chummer5CharacterSettingsProfiles.cs",
+        "Chummer.Presentation/Overview/DesktopDialogFactory.CharacterSettings.cs",
+        "Chummer.Tests/Presentation/Chummer5CharacterSettingsProfilesTests.cs",
+    } <= preseal.ALLOWED_RECIPE_PATHS
+
+
 def git(
     repository: Path, *arguments: str, input_text: str | None = None
 ) -> str:

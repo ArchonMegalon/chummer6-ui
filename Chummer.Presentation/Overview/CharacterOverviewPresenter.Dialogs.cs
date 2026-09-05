@@ -42,9 +42,40 @@ public sealed partial class CharacterOverviewPresenter
             return Task.CompletedTask;
         }
 
+        bool isCharacterSettingsDialog = string.Equals(
+            dialog.Id,
+            Chummer5CharacterSettingsProfiles.DialogId,
+            StringComparison.Ordinal);
+        if (isCharacterSettingsDialog)
+        {
+            DesktopDialogField[] requestedFields = dialog.Fields
+                .Where(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                .ToArray();
+            if (requestedFields.Length != 1 || requestedFields[0].IsReadOnly)
+            {
+                Publish(State with { Error = "Character settings field is not editable." });
+                return Task.CompletedTask;
+            }
+        }
+
+        bool trackCharacterSettingsField = isCharacterSettingsDialog
+            && Chummer5CharacterSettingsProfiles.IsValueFieldId(fieldId);
+        string editedCharacterSettingsFields = trackCharacterSettingsField
+            ? Chummer5CharacterSettingsProfiles.RecordEditedFieldId(
+                DesktopDialogFieldValueParser.GetValue(
+                    dialog,
+                    Chummer5CharacterSettingsProfiles.EditedFieldIdsFieldId),
+                fieldId)
+            : string.Empty;
         DesktopDialogField[] updatedFields = dialog.Fields
             .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
                 ? field with { Value = DesktopDialogFieldValueParser.Normalize(field, value) }
+                : trackCharacterSettingsField
+                    && string.Equals(
+                        field.Id,
+                        Chummer5CharacterSettingsProfiles.EditedFieldIdsFieldId,
+                        StringComparison.Ordinal)
+                ? field with { Value = editedCharacterSettingsFields }
                 : string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
                     && string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal)
                 ? field with

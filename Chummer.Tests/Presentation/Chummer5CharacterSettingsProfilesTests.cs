@@ -62,6 +62,14 @@ public sealed class Chummer5CharacterSettingsProfilesTests
                     string.Empty,
                     IsMultiline: definition.IsMultiline,
                     InputType: definition.InputType))
+                .Append(new DesktopDialogField(
+                    Chummer5CharacterSettingsProfiles.EditedFieldIdsFieldId,
+                    "Edited settings fields",
+                    string.Join('\n', Chummer5CharacterSettingsRuntimeContractGenerated.Fields.Select(
+                        definition => Chummer5CharacterSettingsProfiles.FieldId(definition.LegacyControl))),
+                    string.Empty,
+                    IsReadOnly: true,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden))
                 .ToArray(),
             []);
 
@@ -156,7 +164,14 @@ public sealed class Chummer5CharacterSettingsProfilesTests
                 number.Label,
                 "not-a-number",
                 string.Empty,
-                InputType: "number")],
+                InputType: "number"),
+             new DesktopDialogField(
+                 Chummer5CharacterSettingsProfiles.EditedFieldIdsFieldId,
+                 "Edited settings fields",
+                 Chummer5CharacterSettingsProfiles.FieldId(number.LegacyControl),
+                 string.Empty,
+                 IsReadOnly: true,
+                 LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)],
             []);
 
         Assert.IsFalse(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
@@ -167,6 +182,199 @@ public sealed class Chummer5CharacterSettingsProfilesTests
         Assert.AreEqual(standard.Xml, updatedXml);
         StringAssert.Contains(error ?? string.Empty, "must be a number");
     }
+
+    [TestMethod]
+    public void Empty_edited_field_set_is_an_exact_no_op_instead_of_replaying_projected_values()
+    {
+        string original = "<settings preserve=\"yes\"><buildmethod>Karma</buildmethod><buildpoints>hostile-hidden-value</buildpoints></settings>";
+        DesktopDialogState dialog = TrackedDialog(
+            Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod"),
+            "Priority",
+            editedFieldIds: string.Empty);
+
+        Assert.IsTrue(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            dialog,
+            original,
+            out string updatedXml,
+            out string? error), error);
+        Assert.AreEqual(original, updatedXml);
+    }
+
+    [TestMethod]
+    public void Explicit_partial_update_preserves_hidden_attributes_children_duplicates_namespaces_and_values()
+    {
+        const string extensionNamespace = "urn:chummer:test-extension";
+        string original = $"<?xml version=\"1.0\"?><?keep before?><settings preserve=\"yes\" xmlns:x=\"{extensionNamespace}\">"
+            + "<buildmethod marker=\"keep\">Karma</buildmethod>"
+            + "<buildpoints marker=\"hidden\"><payload>not-a-number</payload></buildpoints>"
+            + "<availability>hostile-a</availability><availability>hostile-b</availability>"
+            + "<x:availability x:flag=\"keep\">namespaced-hidden</x:availability>"
+            + "<unknown code=\"A\"><child flag=\"keep\">opaque</child></unknown>"
+            + "</settings><!--keep-after-->";
+        string fieldId = Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod");
+
+        Assert.IsTrue(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            TrackedDialog(fieldId, "Priority", fieldId),
+            original,
+            out string updatedXml,
+            out string? error), error);
+
+        XDocument document = XDocument.Parse(updatedXml, LoadOptions.PreserveWhitespace);
+        XElement settings = document.Root!;
+        Assert.IsNotNull(document.Declaration);
+        Assert.AreEqual("before", document.Nodes().OfType<XProcessingInstruction>().Single().Data);
+        Assert.AreEqual("keep-after", document.Nodes().OfType<XComment>().Single().Value);
+        Assert.AreEqual("yes", settings.Attribute("preserve")?.Value);
+        Assert.AreEqual("Priority", settings.Element("buildmethod")?.Value);
+        Assert.AreEqual("keep", settings.Element("buildmethod")?.Attribute("marker")?.Value);
+        Assert.AreEqual("not-a-number", settings.Element("buildpoints")?.Element("payload")?.Value);
+        Assert.AreEqual("hidden", settings.Element("buildpoints")?.Attribute("marker")?.Value);
+        CollectionAssert.AreEqual(
+            new[] { "hostile-a", "hostile-b" },
+            settings.Elements("availability").Select(element => element.Value).ToArray());
+        Assert.AreEqual(
+            "namespaced-hidden",
+            settings.Element(XName.Get("availability", extensionNamespace))?.Value);
+        Assert.AreEqual("opaque", settings.Element("unknown")?.Element("child")?.Value);
+        Assert.AreEqual("keep", settings.Element("unknown")?.Element("child")?.Attribute("flag")?.Value);
+    }
+
+    [TestMethod]
+    public void Duplicate_explicit_target_fails_closed_with_the_exact_original_draft()
+    {
+        string original = "<settings><buildmethod>Priority</buildmethod><buildmethod>Karma</buildmethod><hidden keep=\"yes\" /></settings>";
+        string fieldId = Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod");
+
+        Assert.IsFalse(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            TrackedDialog(fieldId, "LifeModule", fieldId),
+            original,
+            out string updatedXml,
+            out string? error));
+        Assert.AreEqual(original, updatedXml);
+        StringAssert.Contains(error ?? string.Empty, "duplicate targets");
+    }
+
+    [TestMethod]
+    public void Complex_explicit_target_fails_closed_instead_of_deleting_unknown_children()
+    {
+        string original = "<settings><buildmethod marker=\"keep\"><unknown>Priority</unknown></buildmethod></settings>";
+        string fieldId = Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod");
+
+        Assert.IsFalse(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            TrackedDialog(fieldId, "Karma", fieldId),
+            original,
+            out string updatedXml,
+            out string? error));
+        Assert.AreEqual(original, updatedXml);
+        StringAssert.Contains(error ?? string.Empty, "complex content");
+    }
+
+    [DataTestMethod]
+    [DataRow("<setting><buildmethod>Priority</buildmethod></setting>")]
+    [DataRow("<settings xmlns=\"urn:chummer:test\"><buildmethod>Priority</buildmethod></settings>")]
+    [DataRow("<settings><x:buildmethod xmlns:x=\"urn:chummer:test\">Priority</x:buildmethod></settings>")]
+    [DataRow("<settings><buildmethod>Priority</settings>")]
+    public void Malformed_root_or_namespace_mismatch_fails_closed_with_the_exact_original_draft(string original)
+    {
+        string fieldId = Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod");
+
+        Assert.IsFalse(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            TrackedDialog(fieldId, "Karma", fieldId),
+            original,
+            out string updatedXml,
+            out _));
+        Assert.AreEqual(original, updatedXml);
+    }
+
+    [TestMethod]
+    public void Catalog_restart_preserves_malformed_xml_for_fail_closed_recovery_instead_of_inventing_defaults()
+    {
+        const string malformed = "<settings><buildmethod>Priority</settings>";
+        var catalog = new Chummer5CharacterSettingsCatalog(
+            "profile-1",
+            [new Chummer5CharacterSettingsProfile("profile-1", "Broken profile", malformed)]);
+
+        Chummer5CharacterSettingsCatalog restarted = Chummer5CharacterSettingsProfiles.ParseCatalog(
+            Chummer5CharacterSettingsProfiles.SerializeCatalog(catalog));
+
+        Assert.AreEqual(1, restarted.Profiles.Count);
+        Assert.AreEqual(malformed, restarted.Profiles.Single().Xml);
+        Assert.IsFalse(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            TrackedDialog(
+                Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod"),
+                "Karma",
+                Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod")),
+            restarted.Profiles.Single().Xml,
+            out string updatedXml,
+            out _));
+        Assert.AreEqual(malformed, updatedXml);
+    }
+
+    [TestMethod]
+    public void Partial_save_and_restart_preserve_hostile_xml_without_duplicating_the_profile()
+    {
+        string original = "<settings preserve=\"yes\"><id>profile-1</id><name>Inner name</name>"
+            + "<buildmethod marker=\"keep\">Karma</buildmethod>"
+            + "<buildpoints><unknown>noncanonical-hidden</unknown></buildpoints>"
+            + "<availability>first</availability><availability>second</availability>"
+            + "</settings>";
+        var catalog = new Chummer5CharacterSettingsCatalog(
+            "profile-1",
+            [new Chummer5CharacterSettingsProfile("profile-1", "Outer name", original)]);
+        string fieldId = Chummer5CharacterSettingsProfiles.FieldId("cboBuildMethod");
+
+        Assert.IsTrue(Chummer5CharacterSettingsProfiles.TryApplyVisibleFields(
+            TrackedDialog(fieldId, "Priority", fieldId),
+            original,
+            out string updatedXml,
+            out string? error), error);
+        catalog = Chummer5CharacterSettingsProfiles.Save(
+            catalog,
+            "profile-1",
+            "Renamed outer profile",
+            updatedXml);
+        Chummer5CharacterSettingsCatalog restarted = Chummer5CharacterSettingsProfiles.ParseCatalog(
+            Chummer5CharacterSettingsProfiles.SerializeCatalog(catalog));
+
+        Assert.AreEqual(1, restarted.Profiles.Count);
+        Chummer5CharacterSettingsProfile profile = restarted.Profiles.Single();
+        Assert.AreEqual("profile-1", profile.Id);
+        Assert.AreEqual("Renamed outer profile", profile.Name);
+        XElement settings = XElement.Parse(profile.Xml, LoadOptions.PreserveWhitespace);
+        Assert.AreEqual("yes", settings.Attribute("preserve")?.Value);
+        Assert.AreEqual("Priority", settings.Element("buildmethod")?.Value);
+        Assert.AreEqual("keep", settings.Element("buildmethod")?.Attribute("marker")?.Value);
+        Assert.AreEqual("noncanonical-hidden", settings.Element("buildpoints")?.Element("unknown")?.Value);
+        CollectionAssert.AreEqual(
+            new[] { "first", "second" },
+            settings.Elements("availability").Select(element => element.Value).ToArray());
+
+        Chummer5CharacterSettingsCatalog savedAgain = Chummer5CharacterSettingsProfiles.Save(
+            restarted,
+            profile.Id,
+            profile.Name,
+            profile.Xml);
+        Assert.AreEqual(1, Chummer5CharacterSettingsProfiles.ParseCatalog(
+            Chummer5CharacterSettingsProfiles.SerializeCatalog(savedAgain)).Profiles.Count);
+    }
+
+    private static DesktopDialogState TrackedDialog(
+        string fieldId,
+        string value,
+        string? editedFieldIds)
+        => new(
+            Chummer5CharacterSettingsProfiles.DialogId,
+            "Character Settings",
+            null,
+            [new DesktopDialogField(fieldId, fieldId, value, string.Empty),
+             new DesktopDialogField(
+                 Chummer5CharacterSettingsProfiles.EditedFieldIdsFieldId,
+                 "Edited settings fields",
+                 editedFieldIds ?? string.Empty,
+                 string.Empty,
+                 IsReadOnly: true,
+                 LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)],
+            []);
 
     private static string TestValue(Chummer5CharacterSettingsFieldDefinition definition)
         => definition.LegacyControl switch
