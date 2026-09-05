@@ -62,6 +62,13 @@ public sealed partial class DesktopDialogFactory
                 string.Empty,
                 IsMultiline: true,
                 IsReadOnly: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                Chummer5CharacterSettingsProfiles.EditedFieldIdsFieldId,
+                "Edited settings fields",
+                string.Empty,
+                string.Empty,
+                IsReadOnly: true,
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
 
