@@ -115,7 +115,16 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        WorkspaceImportResult result = _workspaceService.Import(owner, document);
+        // The in-process workspace import performs synchronous XML parsing, ruleset
+        // activation, and initial section materialization. Starting that work on a UI
+        // synchronization context can leave the Android shell unable to draw or process
+        // input for tens of seconds. Capture the owner before leaving the caller context
+        // and isolate only this blocking Core boundary on the worker pool; the async
+        // roaming continuation remains ordered after the exact import result.
+        WorkspaceImportResult result = await Task.Run(
+                () => _workspaceService.Import(owner, document),
+                ct)
+            .ConfigureAwait(false);
         LastWorkspaceRoamingResult = await _workspaceRoamingSync
             .SynchronizeOutboundAsync(owner, result.Id, ct)
             .ConfigureAwait(false);

@@ -221,6 +221,48 @@ public sealed class InProcessChummerClientRulesetPluginTests
     }
 
     [TestMethod]
+    public async Task ImportAsync_does_not_run_blocking_workspace_import_on_the_caller_thread()
+    {
+        using ManualResetEventSlim importEntered = new();
+        using ManualResetEventSlim releaseImport = new();
+        int callerThreadId = Environment.CurrentManagedThreadId;
+        NoOpWorkspaceService workspaceService = new()
+        {
+            ImportEntered = importEntered,
+            ReleaseImport = releaseImport
+        };
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver());
+
+        Task<WorkspaceImportResult> pending = client.ImportAsync(
+            new WorkspaceImportDocument("<character />", "sr5", WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None);
+
+        try
+        {
+            Assert.IsTrue(
+                importEntered.Wait(TimeSpan.FromSeconds(5)),
+                "The blocking workspace import did not enter its worker.");
+            Assert.IsFalse(
+                pending.IsCompleted,
+                "ImportAsync waited synchronously for the blocking Core import.");
+            Assert.AreNotEqual(
+                callerThreadId,
+                workspaceService.LastImportThreadId,
+                "The blocking Core import ran on the caller/UI thread.");
+        }
+        finally
+        {
+            releaseImport.Set();
+        }
+
+        WorkspaceImportResult result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(workspaceService.ImportResult.Id, result.Id);
+    }
+
+    [TestMethod]
     public async Task ListWorkspaces_syncs_inbound_before_listing()
     {
         OwnerScope owner = new("alice@example.com");
@@ -860,6 +902,12 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public OwnerScope? LastImportOwner { get; private set; }
 
+        public int? LastImportThreadId { get; private set; }
+
+        public ManualResetEventSlim? ImportEntered { get; init; }
+
+        public ManualResetEventSlim? ReleaseImport { get; init; }
+
         public OwnerScope? LastListOwner { get; private set; }
 
         public int ListCallCount { get; private set; }
@@ -905,6 +953,9 @@ public sealed class InProcessChummerClientRulesetPluginTests
         public WorkspaceImportResult Import(OwnerScope owner, WorkspaceImportDocument document)
         {
             LastImportOwner = owner;
+            LastImportThreadId = Environment.CurrentManagedThreadId;
+            ImportEntered?.Set();
+            ReleaseImport?.Wait();
             return Import(document);
         }
 

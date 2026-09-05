@@ -26,6 +26,14 @@ def load_module() -> ModuleType:
 preseal = load_module()
 
 
+def test_android_import_responsiveness_inputs_are_explicit_preseal_recipe_paths() -> None:
+    assert {
+        "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
+        "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
+        "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
+    } <= preseal.ALLOWED_RECIPE_PATHS
+
+
 def git(
     repository: Path, *arguments: str, input_text: str | None = None
 ) -> str:

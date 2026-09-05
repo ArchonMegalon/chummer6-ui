@@ -26,6 +26,8 @@
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="..\Chummer.Tests\DesktopStartupSmokeRuntimeTests.cs" Link="DesktopStartupSmokeRuntimeTests.cs" />
     <Compile Include="..\Chummer.Tests\DesktopUpdateRuntimeTests.cs" Link="DesktopUpdateRuntimeTests.cs" />
+    <Compile Include="..\Chummer.Tests\InProcessChummerClientRulesetPluginTests.cs"
+             Link="InProcessChummerClientRulesetPluginTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MSTest" Version="4.0.2" />
