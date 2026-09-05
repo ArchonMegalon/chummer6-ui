@@ -1,6 +1,7 @@
 #nullable enable annotations
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -261,6 +262,80 @@ public sealed class InProcessChummerClientRulesetPluginTests
         WorkspaceImportResult result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.AreEqual(workspaceService.ImportResult.Id, result.Id);
+    }
+
+    [TestMethod]
+    public async Task Workspace_operations_run_off_the_captured_ui_synchronization_context()
+    {
+        SynchronizationContext uiContext = new();
+        NoOpWorkspaceService workspaceService = new();
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            workspaceRoamingSync: roamingSync);
+        SynchronizationContext? previousContext = SynchronizationContext.Current;
+        Task<IReadOnlyList<WorkspaceListItem>> pending;
+
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(uiContext);
+            pending = client.ListWorkspacesAsync(CancellationToken.None);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
+        }
+
+        _ = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreNotSame(uiContext, roamingSync.LastInboundSynchronizationContext);
+        Assert.AreNotSame(uiContext, workspaceService.LastListSynchronizationContext);
+    }
+
+    [TestMethod]
+    public async Task Workspace_operations_share_one_serial_executor_and_preserve_admission_order()
+    {
+        using ManualResetEventSlim importEntered = new();
+        using ManualResetEventSlim releaseImport = new();
+        using ManualResetEventSlim listEntered = new();
+        NoOpWorkspaceService workspaceService = new()
+        {
+            ImportEntered = importEntered,
+            ReleaseImport = releaseImport,
+            ListEntered = listEntered
+        };
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver());
+
+        Task<WorkspaceImportResult> import = client.ImportAsync(
+            new WorkspaceImportDocument("<character />", "sr5", WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None);
+        Task<IReadOnlyList<WorkspaceListItem>> list;
+
+        try
+        {
+            Assert.IsTrue(
+                importEntered.Wait(TimeSpan.FromSeconds(5)),
+                "The first workspace operation did not enter the executor.");
+            list = client.ListWorkspacesAsync(CancellationToken.None);
+            Assert.IsFalse(
+                listEntered.Wait(TimeSpan.FromMilliseconds(250)),
+                "A later workspace operation overlapped the blocked import.");
+        }
+        finally
+        {
+            releaseImport.Set();
+        }
+
+        _ = await import.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await list.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(1, workspaceService.MaxConcurrentWorkspaceOperations);
+        CollectionAssert.AreEqual(
+            new[] { "import", "list" },
+            workspaceService.WorkspaceOperationEntries.ToArray());
     }
 
     [TestMethod]
@@ -1058,6 +1133,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
     private sealed class NoOpWorkspaceService : IWorkspaceService
     {
         private int _importCallCount;
+        private int _activeWorkspaceOperations;
+        private int _maxConcurrentWorkspaceOperations;
 
         public WorkspaceImportResult ImportResult { get; init; } = new(
             Id: new CharacterWorkspaceId("ws-import"),
@@ -1087,7 +1164,15 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public ManualResetEventSlim? ReleaseImport { get; init; }
 
+        public ManualResetEventSlim? ListEntered { get; init; }
+
         public OwnerScope? LastListOwner { get; private set; }
+
+        public SynchronizationContext? LastListSynchronizationContext { get; private set; }
+
+        public ConcurrentQueue<string> WorkspaceOperationEntries { get; } = new();
+
+        public int MaxConcurrentWorkspaceOperations => Volatile.Read(ref _maxConcurrentWorkspaceOperations);
 
         public int ListCallCount { get; private set; }
 
@@ -1142,11 +1227,19 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public WorkspaceImportResult Import(OwnerScope owner, WorkspaceImportDocument document)
         {
-            LastImportOwner = owner;
-            LastImportThreadId = Environment.CurrentManagedThreadId;
-            ImportEntered?.Set();
-            ReleaseImport?.Wait();
-            return Import(document);
+            EnterWorkspaceOperation("import");
+            try
+            {
+                LastImportOwner = owner;
+                LastImportThreadId = Environment.CurrentManagedThreadId;
+                ImportEntered?.Set();
+                ReleaseImport?.Wait();
+                return Import(document);
+            }
+            finally
+            {
+                ExitWorkspaceOperation();
+            }
         }
 
         public IReadOnlyList<WorkspaceListItem> Workspaces { get; set; } = Array.Empty<WorkspaceListItem>();
@@ -1163,9 +1256,19 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public IReadOnlyList<WorkspaceListItem> List(OwnerScope owner, int? maxCount = null)
         {
-            ListCallCount++;
-            LastListOwner = owner;
-            return List(maxCount);
+            EnterWorkspaceOperation("list");
+            try
+            {
+                ListCallCount++;
+                LastListOwner = owner;
+                LastListSynchronizationContext = SynchronizationContext.Current;
+                ListEntered?.Set();
+                return List(maxCount);
+            }
+            finally
+            {
+                ExitWorkspaceOperation();
+            }
         }
 
         public bool Close(CharacterWorkspaceId id) => throw new NotSupportedException();
@@ -1315,6 +1418,29 @@ public sealed class InProcessChummerClientRulesetPluginTests
                 Workspaces = ConcurrentWinnerWorkspaces;
             }
         }
+
+        private void EnterWorkspaceOperation(string operation)
+        {
+            WorkspaceOperationEntries.Enqueue(operation);
+            int active = Interlocked.Increment(ref _activeWorkspaceOperations);
+            int observedMaximum = Volatile.Read(ref _maxConcurrentWorkspaceOperations);
+            while (active > observedMaximum)
+            {
+                int previous = Interlocked.CompareExchange(
+                    ref _maxConcurrentWorkspaceOperations,
+                    active,
+                    observedMaximum);
+                if (previous == observedMaximum)
+                {
+                    break;
+                }
+
+                observedMaximum = previous;
+            }
+        }
+
+        private void ExitWorkspaceOperation()
+            => Interlocked.Decrement(ref _activeWorkspaceOperations);
     }
 
     private sealed class StubOwnerContextAccessor : IOwnerContextAccessor
@@ -1338,6 +1464,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public OwnerScope? LastInboundOwner { get; private set; }
 
+        public SynchronizationContext? LastInboundSynchronizationContext { get; private set; }
+
         public OwnerScope? LastOutboundOwner { get; private set; }
 
         public List<CharacterWorkspaceId> OutboundWorkspaceIds { get; } = new();
@@ -1356,6 +1484,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
         {
             ct.ThrowIfCancellationRequested();
             LastInboundOwner = owner;
+            LastInboundSynchronizationContext = SynchronizationContext.Current;
             return Task.FromResult(DesktopWorkspaceRoamingResult.AlreadyCurrent());
         }
 
