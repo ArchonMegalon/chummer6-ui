@@ -28,6 +28,8 @@ preseal = load_module()
 
 def test_android_import_responsiveness_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert {
+        "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
+        "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
         "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
         "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",

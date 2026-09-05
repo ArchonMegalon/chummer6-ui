@@ -459,7 +459,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
     {
         HttpClient client = new()
         {
-            Timeout = TimeSpan.FromSeconds(10)
+            Timeout = DesktopWorkspaceRoamingPolicy.DefaultOperationTimeout
         };
 
         string? apiKey = Environment.GetEnvironmentVariable(ApiKeyEnvironmentVariable);
