@@ -430,6 +430,60 @@ public sealed class InProcessChummerClientRulesetPluginTests
     }
 
     [TestMethod]
+    public async Task ImportAsync_canceled_while_queued_retries_once_without_starting_a_canceled_commit()
+    {
+        using ManualResetEventSlim listEntered = new();
+        using ManualResetEventSlim releaseList = new();
+        using CancellationTokenSource cancellation = new();
+        NoOpWorkspaceService workspaceService = new()
+        {
+            ListEntered = listEntered,
+            ReleaseList = releaseList,
+            GenerateDistinctImportIds = true
+        };
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            workspaceRoamingSync: roamingSync);
+        WorkspaceImportDocument document = new(
+            "<character />",
+            RulesetDefaults.Sr5,
+            WorkspaceDocumentFormat.NativeXml);
+
+        Task<IReadOnlyList<WorkspaceListItem>> blockingList = client.ListWorkspacesAsync(CancellationToken.None);
+        Task<WorkspaceImportResult> pending;
+        try
+        {
+            Assert.IsTrue(
+                listEntered.Wait(TimeSpan.FromSeconds(5)),
+                "The queue-blocking workspace list did not enter its worker.");
+
+            pending = ImportWithSingleCancellationRetryAsync(
+                client,
+                document,
+                cancellation.Token);
+            cancellation.Cancel();
+        }
+        finally
+        {
+            releaseList.Set();
+        }
+
+        _ = await blockingList.WaitAsync(TimeSpan.FromSeconds(5));
+        WorkspaceImportResult result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual("ws-import-1", result.Id.Value);
+        Assert.AreEqual(1, workspaceService.ImportCallCount);
+        Assert.HasCount(1, workspaceService.PersistedImportIds);
+        Assert.AreEqual(result.Id, workspaceService.PersistedImportIds[0]);
+        Assert.HasCount(1, roamingSync.OutboundWorkspaceIds);
+        Assert.AreEqual(result.Id, roamingSync.OutboundWorkspaceIds[0]);
+        Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Applied, client.LastWorkspaceRoamingResult.Outcome);
+        Assert.AreEqual(result.Id, client.LastWorkspaceRoamingResult.WorkspaceId);
+    }
+
+    [TestMethod]
     public async Task ImportAsync_returns_local_result_when_post_commit_roaming_fails()
     {
         NoOpWorkspaceService workspaceService = new()
@@ -1166,6 +1220,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public ManualResetEventSlim? ListEntered { get; init; }
 
+        public ManualResetEventSlim? ReleaseList { get; init; }
+
         public OwnerScope? LastListOwner { get; private set; }
 
         public SynchronizationContext? LastListSynchronizationContext { get; private set; }
@@ -1263,6 +1319,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
                 LastListOwner = owner;
                 LastListSynchronizationContext = SynchronizationContext.Current;
                 ListEntered?.Set();
+                ReleaseList?.Wait();
                 return List(maxCount);
             }
             finally

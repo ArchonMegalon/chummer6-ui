@@ -129,37 +129,37 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return await _workspaceOperations.ExecuteAsync(async () =>
-        {
-            // Import has no transactional cancellation seam. The caller token is used
-            // only for queue admission; after this delegate starts, always return the
-            // exact durable result instead of provoking a duplicate retry.
-            WorkspaceImportResult result = _workspaceService.Import(owner, document);
+        return await _workspaceOperations.ExecuteCommitAsync(
+            () => _workspaceService.Import(owner, document),
+            result => SynchronizeImportedWorkspaceAsync(owner, result),
+            ct).ConfigureAwait(false);
+    }
 
-            // Roaming is a separate best-effort status after the local commit boundary.
-            // Give it an independent bounded budget so caller cancellation cannot hide
-            // the already-committed import result.
+    private async Task SynchronizeImportedWorkspaceAsync(
+        OwnerScope owner,
+        WorkspaceImportResult result)
+    {
+        // Roaming is a separate best-effort status after the local commit boundary.
+        // Give it an independent bounded budget so caller cancellation cannot hide
+        // the already-committed import result.
+        LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
+            DesktopWorkspaceRoamingOutcome.Unavailable,
+            result.Id);
+        using CancellationTokenSource roamingBudget = new(_postCommitRoamingTimeout);
+        try
+        {
+            Task<DesktopWorkspaceRoamingResult> roaming = _workspaceRoamingSync
+                .SynchronizeOutboundAsync(owner, result.Id, roamingBudget.Token);
+            LastWorkspaceRoamingResult = await roaming
+                .WaitAsync(roamingBudget.Token)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsRecoverableRoamingFailure(ex))
+        {
             LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
                 DesktopWorkspaceRoamingOutcome.Unavailable,
                 result.Id);
-            using CancellationTokenSource roamingBudget = new(_postCommitRoamingTimeout);
-            try
-            {
-                Task<DesktopWorkspaceRoamingResult> roaming = _workspaceRoamingSync
-                    .SynchronizeOutboundAsync(owner, result.Id, roamingBudget.Token);
-                LastWorkspaceRoamingResult = await roaming
-                    .WaitAsync(roamingBudget.Token)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex) when (IsRecoverableRoamingFailure(ex))
-            {
-                LastWorkspaceRoamingResult = new DesktopWorkspaceRoamingResult(
-                    DesktopWorkspaceRoamingOutcome.Unavailable,
-                    result.Id);
-            }
-
-            return result;
-        }, ct).ConfigureAwait(false);
+        }
     }
 
     private static bool IsRecoverableRoamingFailure(Exception exception)
@@ -850,6 +850,26 @@ public sealed class InProcessChummerClient : IChummerClient, IWorkspaceOverviewP
 
         public Task<TResult> ExecuteAsync<TResult>(Func<Task<TResult>> operation, CancellationToken ct)
             => EnqueueAsync(operation, ct);
+
+        public Task<TResult> ExecuteCommitAsync<TResult>(
+            Func<TResult> commit,
+            Func<TResult, Task> observePostCommit,
+            CancellationToken admissionToken)
+        {
+            ArgumentNullException.ThrowIfNull(commit);
+            ArgumentNullException.ThrowIfNull(observePostCommit);
+
+            // This overload is the explicit non-transactional commit contract. The
+            // caller token can cancel queued work, but is not available after the
+            // operation is admitted. Once commit starts, the exact local result and
+            // its separately-budgeted post-commit observation must reach the caller.
+            return EnqueueAsync(async () =>
+            {
+                TResult result = commit();
+                await observePostCommit(result).ConfigureAwait(false);
+                return result;
+            }, admissionToken);
+        }
 
         private Task<TResult> EnqueueAsync<TResult>(Func<Task<TResult>> operation, CancellationToken ct)
         {
