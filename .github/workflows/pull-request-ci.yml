@@ -150,6 +150,11 @@ jobs:
           && test "$(/usr/bin/git -C "$REGISTRY_ROOT" remote get-url origin)"
           = "https://github.com/ArchonMegalon/chummer6-hub-registry.git"
 
+      - name: Creation rule-data input guards
+        run: >-
+          "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q
+          tests/test_creation_projection_content.py
+
       - name: Release-control unit tests
         if: steps.package-plane-state.outputs.mode == 'sealed'
         env:

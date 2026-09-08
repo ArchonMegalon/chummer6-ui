@@ -31,6 +31,8 @@ public static class CharacterCreationWizardProjector
     public const string ContactCreateDeleteAuthorityUnavailable = "creation-wizard-contact-create-delete-authority-unavailable";
     public const string ContactPetsAuthorityUnavailable = "creation-wizard-contact-pets-authority-unavailable";
     public const string LifestylesAuthorityUnavailable = "creation-wizard-lifestyles-authority-unavailable";
+    public const string IdentityAuthorityUnavailable = "creation-wizard-identity-authority-unavailable";
+    public const string StoryAuthorityUnavailable = "creation-wizard-story-authority-unavailable";
     public const string BuildMethodUnavailable = "creation-wizard-build-method-unavailable";
     public const string BuildMethodMismatch = "creation-wizard-build-method-mismatch";
 
@@ -40,7 +42,9 @@ public static class CharacterCreationWizardProjector
         CharacterCreationFoundationState? foundation = null,
         CharacterCreationContactsState? contacts = null,
         CharacterCreationQualitiesState? qualities = null,
-        CharacterCreationMagicResonanceState? magicResonance = null)
+        CharacterCreationMagicResonanceState? magicResonance = null,
+        CharacterCreationLifestylesState? lifestyles = null,
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization = null)
     {
         ArgumentNullException.ThrowIfNull(loadedOverview);
         if (foundation is not null
@@ -63,6 +67,14 @@ public static class CharacterCreationWizardProjector
         {
             magicResonance = null;
         }
+        if (lifestyles is not null
+            && !MatchesLoadedOverview(workspaceId, loadedOverview, lifestyles))
+        {
+            lifestyles = null;
+        }
+
+        FinalizationProjectionAuthority finalizationAuthority =
+            EvaluateFinalizationAuthority(workspaceId, loadedOverview, finalization);
 
         string profileBuildMethod = CanonicalBuildMethod(loadedOverview.Profile.BuildMethod);
         string buildBuildMethod = CanonicalBuildMethod(loadedOverview.Build.BuildMethod);
@@ -89,17 +101,10 @@ public static class CharacterCreationWizardProjector
             StringComparison.Ordinal);
         string contentDigest = ComputeContentDigest(loadedOverview.Document);
         string rulesetId = loadedOverview.Document?.RulesetId ?? string.Empty;
-        bool hasSourceAuthority = HasSourceAuthority(foundation)
+        bool hasFoundationSourceAuthority = usesLifeModules && HasSourceAuthority(foundation);
+        bool hasSourceAuthority = hasFoundationSourceAuthority
                                   || HasSourceAuthority(qualities)
                                   || HasSourceAuthority(magicResonance);
-        bool magicResonanceRequired = string.Equals(
-                                          RulesetDefaults.NormalizeOptional(rulesetId),
-                                          CharacterCreationMagicResonancePresentationContract.RulesetId,
-                                          StringComparison.Ordinal)
-                                      && string.Equals(
-                                          buildMethod,
-                                          CharacterCreationMagicResonancePresentationContract.BuildMethod,
-                                          StringComparison.Ordinal);
         FoundationProjectionAuthority foundationAuthority = EvaluateFoundationAuthority(
             usesLifeModules,
             foundation);
@@ -107,74 +112,82 @@ public static class CharacterCreationWizardProjector
         QualitiesProjectionAuthority qualitiesAuthority = EvaluateQualitiesAuthority(qualities);
         MagicResonanceProjectionAuthority magicResonanceAuthority =
             EvaluateMagicResonanceAuthority(magicResonance);
-        List<string> completionBlockers =
-        [
-            RuntimeAuthorityUnavailable,
-            BuildGhostContextUnavailable,
-            LegalOptionsAuthorityUnavailable,
-            FinalizationAuthorityUnavailable
-        ];
-        if (!hasSourceAuthority)
-            completionBlockers.Add(SourceAuthorityUnavailable);
-        if (foundation is not null)
-            completionBlockers.AddRange(foundation.AuthorityBlockers);
-        completionBlockers.AddRange(methodBlockers);
-        if (string.IsNullOrWhiteSpace(contentDigest))
+        // Only the current, validated Core talent can make this step inapplicable.
+        // A profile label or missing/unsupported authority must not imply Mundane.
+        bool magicResonanceRequired = !magicResonanceAuthority.IsReady
+                                     || magicResonanceAuthority.Editor!.Talent.Kind
+                                     != CharacterCreationMagicResonanceKinds.Mundane;
+        OptionalDomainProjection contactProjection = EvaluateOptionalContacts(
+            contacts,
+            contactsAuthority);
+        OptionalDomainProjection lifestyleProjection = EvaluateOptionalLifestyles(lifestyles);
+        IdentityStoryProjection identityStoryProjection = EvaluateIdentityStory(
+            loadedOverview.Profile,
+            finalizationAuthority);
+        var completionBlockers = new List<string>();
+        if (finalizationAuthority.State is null)
         {
-            completionBlockers.Add(ContentAuthorityUnavailable);
+            completionBlockers.Add(FinalizationAuthorityUnavailable);
+            // Without the whole-build result, retain the specific known reasons
+            // that prevent review. Optional editing capabilities and Build Ghost
+            // are not prerequisites for a Core-authorized creation completion.
+            completionBlockers.AddRange(methodBlockers);
+            if (!hasSourceAuthority) completionBlockers.Add(SourceAuthorityUnavailable);
+            if (string.IsNullOrWhiteSpace(contentDigest)) completionBlockers.Add(ContentAuthorityUnavailable);
+            if (loadedOverview.ContentRevision <= 0) completionBlockers.Add(RevisionAuthorityUnavailable);
+            if (string.IsNullOrWhiteSpace(rulesetId)) completionBlockers.Add(RulesetAuthorityUnavailable);
+            if (usesLifeModules)
+            {
+                completionBlockers.Add(LifeModuleAuthorityUnavailable);
+                if (foundation is not null) completionBlockers.AddRange(foundation.AuthorityBlockers);
+            }
+            if (!qualitiesAuthority.IsReady) completionBlockers.Add(QualitiesAuthorityUnavailable);
+            completionBlockers.AddRange(qualitiesAuthority.Blockers);
+            if (magicResonanceRequired && !magicResonanceAuthority.IsReady)
+                completionBlockers.Add(MagicResonanceAuthorityUnavailable);
+            completionBlockers.AddRange(magicResonanceAuthority.Blockers);
         }
-
-        if (loadedOverview.ContentRevision <= 0)
-        {
-            completionBlockers.Add(RevisionAuthorityUnavailable);
-        }
-
-        if (string.IsNullOrWhiteSpace(rulesetId))
-        {
-            completionBlockers.Add(RulesetAuthorityUnavailable);
-        }
-
-        if (usesLifeModules)
-        {
-            completionBlockers.Add(LifeModuleAuthorityUnavailable);
-        }
-        if (!contactsAuthority.IsReady)
-        {
-            completionBlockers.Add(ContactsAuthorityUnavailable);
-        }
-        completionBlockers.AddRange(contactsAuthority.Blockers);
-        if (!qualitiesAuthority.IsReady)
-            completionBlockers.Add(QualitiesAuthorityUnavailable);
-        completionBlockers.AddRange(qualitiesAuthority.Blockers);
-        if (magicResonanceRequired && !magicResonanceAuthority.IsReady)
-            completionBlockers.Add(MagicResonanceAuthorityUnavailable);
-        completionBlockers.AddRange(magicResonanceAuthority.Blockers);
-        completionBlockers.Add(ContactCreateDeleteAuthorityUnavailable);
-        completionBlockers.Add(ContactPetsAuthorityUnavailable);
-        completionBlockers.Add(LifestylesAuthorityUnavailable);
+        else
+            completionBlockers.AddRange(finalizationAuthority.State.Blockers);
+        if (!contactProjection.IsSafeForFinalization)
+            completionBlockers.AddRange(contactProjection.Blockers);
+        if (!lifestyleProjection.IsSafeForFinalization)
+            completionBlockers.AddRange(lifestyleProjection.Blockers);
+        if (!identityStoryProjection.IsSafeForFinalization)
+            completionBlockers.AddRange(identityStoryProjection.Blockers);
 
         IReadOnlyList<CharacterCreationBudgetState> budgets = BuildBudgets(
             loadedOverview.Build,
             usesLifeModules,
-            hasSourceAuthority ? foundation : null,
+            hasFoundationSourceAuthority ? foundation : null,
             contacts,
             qualities,
             magicResonanceAuthority.Editor);
-        completionBlockers.AddRange(budgets.SelectMany(static budget => budget.Blockers));
-
+        if (finalizationAuthority.State is null)
+            completionBlockers.AddRange(budgets.SelectMany(static budget => budget.Blockers));
         IReadOnlyList<CharacterCreationWizardStageState> steps = BuildSteps(
             loadedOverview.Profile,
             buildMethod,
             methodAuthoritative,
             usesLifeModules,
             foundationAuthority,
-            contactsAuthority,
             qualitiesAuthority,
             magicResonanceRequired,
-            magicResonanceAuthority);
-        string activeStepId = !methodAuthoritative
+            magicResonanceAuthority,
+            finalizationAuthority,
+            contactProjection,
+            lifestyleProjection,
+            identityStoryProjection,
+            completionBlockers);
+        bool canFinalize = finalizationAuthority.State?.CanReview == true
+                           && contactProjection.IsSafeForFinalization
+                           && lifestyleProjection.IsSafeForFinalization
+                           && identityStoryProjection.IsSafeForFinalization;
+        string activeStepId = canFinalize
+            ? CharacterCreationWizardStepIds.Review
+            : ResolveFinalizationActiveStep(finalizationAuthority.State, steps) ?? (!methodAuthoritative
             ? CharacterCreationWizardStepIds.Method
-            : magicResonanceAuthority.HasPendingDraft
+            : magicResonanceRequired && magicResonanceAuthority.HasPendingDraft
                 ? CharacterCreationWizardStepIds.MagicResonance
                 : qualitiesAuthority.HasPendingDraft
                 ? CharacterCreationWizardStepIds.Qualities
@@ -182,7 +195,9 @@ public static class CharacterCreationWizardProjector
                     ? CharacterCreationWizardStepIds.Qualities
                     : foundationAuthority.HasPendingDraft
                 ? CharacterCreationWizardStepIds.LifeModules
-                : CharacterCreationWizardStepIds.Foundation;
+                : usesLifeModules
+                    ? CharacterCreationWizardStepIds.Foundation
+                    : CharacterCreationWizardStepIds.Method);
         Dictionary<string, IReadOnlyList<CharacterCreationLegalOption>> legalOptions =
             steps.ToDictionary(
                 static step => step.StepId,
@@ -199,7 +214,7 @@ public static class CharacterCreationWizardProjector
         {
             legalOptions[CharacterCreationWizardStepIds.Qualities] = qualitiesAuthority.Options;
         }
-        if (magicResonanceAuthority.IsReady)
+        if (magicResonanceRequired && magicResonanceAuthority.IsReady)
         {
             legalOptions[CharacterCreationWizardStepIds.MagicResonance] =
                 magicResonanceAuthority.Options;
@@ -214,7 +229,7 @@ public static class CharacterCreationWizardProjector
                 ? magicResonance!.Authority.SourceInputsDigest
                 : HasSourceAuthority(qualities)
                 ? qualities!.Authority.SourceDigest
-                : HasSourceAuthority(foundation)
+                : hasFoundationSourceAuthority
                     ? foundation!.Binding.SourceDigest
                     : string.Empty,
             RulesetId: rulesetId,
@@ -227,8 +242,10 @@ public static class CharacterCreationWizardProjector
             Budgets: budgets,
             LegalOptionsByStep: legalOptions,
             CompletionBlockers: completionBlockers.Distinct(StringComparer.Ordinal).ToArray(),
-            Warnings: BuildWarnings(hasSourceAuthority, foundationAuthority),
-            CanFinalize: false,
+            Warnings: usesLifeModules || !methodAuthoritative
+                ? BuildWarnings(hasSourceAuthority, foundationAuthority)
+                : [],
+            CanFinalize: canFinalize,
             SnapshotDigest: string.Empty);
 
         return snapshot with { SnapshotDigest = ComputeSnapshotDigest(snapshot) };
@@ -240,16 +257,23 @@ public static class CharacterCreationWizardProjector
         bool methodAuthoritative,
         bool usesLifeModules,
         FoundationProjectionAuthority foundationAuthority,
-        ContactsProjectionAuthority contactsAuthority,
         QualitiesProjectionAuthority qualitiesAuthority,
         bool magicResonanceRequired,
-        MagicResonanceProjectionAuthority magicResonanceAuthority)
+        MagicResonanceProjectionAuthority magicResonanceAuthority,
+        FinalizationProjectionAuthority finalizationAuthority,
+        OptionalDomainProjection contactProjection,
+        OptionalDomainProjection lifestyleProjection,
+        IdentityStoryProjection identityStoryProjection,
+        IReadOnlyList<string> completionBlockers)
     {
-        IReadOnlyList<string> methodNext = methodAuthoritative
+        // Foundation is the Life Modules draft, not a second Priority metatype
+        // choice. Unknown methods stay blocked until Core supplies authority.
+        bool foundationRequired = usesLifeModules || !methodAuthoritative;
+        IReadOnlyList<string> methodNext = methodAuthoritative && usesLifeModules
             ? [CharacterCreationWizardStepIds.Foundation]
             : [];
 
-        return
+        CharacterCreationWizardStageState[] stages =
         [
             Stage(
                 CharacterCreationWizardStepIds.Basics,
@@ -278,32 +302,29 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.Foundation,
                 "Metatype and foundation",
-                qualitiesAuthority.IsReady
-                    ? CharacterCreationWizardStepStatuses.Complete
+                !foundationRequired
+                    ? CharacterCreationWizardStepStatuses.NotStarted
                     : foundationAuthority.HasPendingDraft
-                    ? CharacterCreationWizardStepStatuses.Complete
-                    : foundationAuthority.IsReady
-                        ? CharacterCreationWizardStepStatuses.InProgress
-                        : CharacterCreationWizardStepStatuses.Blocked,
-                isRequired: true,
-                isAvailable: qualitiesAuthority.IsReady || foundationAuthority.IsReady,
-                isComplete: qualitiesAuthority.IsReady || foundationAuthority.HasPendingDraft,
+                        ? CharacterCreationWizardStepStatuses.Complete
+                        : foundationAuthority.IsReady
+                            ? CharacterCreationWizardStepStatuses.InProgress
+                            : CharacterCreationWizardStepStatuses.Blocked,
+                isRequired: foundationRequired,
+                isAvailable: foundationAuthority.IsReady,
+                isComplete: foundationAuthority.HasPendingDraft,
                 budgetIds: [],
-                blockers: qualitiesAuthority.IsReady || foundationAuthority.IsReady
+                blockers: !foundationRequired || foundationAuthority.IsReady
                     ? []
                     : CombineBlockers(
                         [LegalOptionsAuthorityUnavailable],
                         foundationAuthority.Blockers),
-                warnings: qualitiesAuthority.IsReady
-                          || foundationAuthority.IsReady
+                warnings: !foundationRequired || foundationAuthority.IsReady
                           || string.IsNullOrWhiteSpace(profile.Metatype)
                     ? []
                     : ["creation-wizard-existing-metatype-requires-authoritative-review"],
-                legalNextStepIds: qualitiesAuthority.IsReady
-                    ? [CharacterCreationWizardStepIds.Attributes]
-                    : foundationAuthority.IsReady
-                        ? [CharacterCreationWizardStepIds.LifeModules]
-                        : []),
+                legalNextStepIds: foundationAuthority.IsReady
+                    ? [CharacterCreationWizardStepIds.LifeModules]
+                    : []),
             Stage(
                 CharacterCreationWizardStepIds.LifeModules,
                 "Life modules",
@@ -375,36 +396,38 @@ public static class CharacterCreationWizardProjector
                     CharacterCreationBudgetIds.KnowledgeSkills
                 ],
                 blockers: [LegalOptionsAuthorityUnavailable],
-                legalNextStepIds: [CharacterCreationWizardStepIds.MagicResonance]),
+                legalNextStepIds: magicResonanceRequired
+                    ? [CharacterCreationWizardStepIds.MagicResonance]
+                    : []),
             Stage(
                 CharacterCreationWizardStepIds.MagicResonance,
                 "Magic, resonance, or emergent identity",
-                magicResonanceAuthority.HasPendingDraft
-                    ? CharacterCreationWizardStepStatuses.Complete
-                    : magicResonanceAuthority.IsReady
-                        ? CharacterCreationWizardStepStatuses.InProgress
-                        : magicResonanceRequired
-                            ? CharacterCreationWizardStepStatuses.Blocked
-                            : CharacterCreationWizardStepStatuses.NotStarted,
+                !magicResonanceRequired
+                    ? CharacterCreationWizardStepStatuses.NotStarted
+                    : magicResonanceAuthority.HasPendingDraft
+                        ? CharacterCreationWizardStepStatuses.Complete
+                        : magicResonanceAuthority.IsReady
+                            ? CharacterCreationWizardStepStatuses.InProgress
+                            : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: magicResonanceRequired,
-                isAvailable: magicResonanceAuthority.IsReady,
-                isComplete: magicResonanceAuthority.HasPendingDraft,
-                budgetIds:
+                isAvailable: magicResonanceRequired && magicResonanceAuthority.IsReady,
+                isComplete: magicResonanceRequired && magicResonanceAuthority.HasPendingDraft,
+                budgetIds: magicResonanceRequired ?
                 [
                     CharacterCreationMagicResonancePresentationBudgetIds.Tradition,
                     CharacterCreationMagicResonancePresentationBudgetIds.Stream,
                     CharacterCreationMagicResonancePresentationBudgetIds.AdeptPowerPoints,
                     CharacterCreationMagicResonancePresentationBudgetIds.Spells,
                     CharacterCreationMagicResonancePresentationBudgetIds.ComplexForms
-                ],
-                blockers: magicResonanceAuthority.IsReady
-                    ? magicResonanceAuthority.Blockers
-                    : magicResonanceRequired
-                        ? CombineBlockers(
+                ] : [],
+                blockers: !magicResonanceRequired
+                    ? []
+                    : magicResonanceAuthority.IsReady
+                        ? magicResonanceAuthority.Blockers
+                        : CombineBlockers(
                             [MagicResonanceAuthorityUnavailable],
-                            magicResonanceAuthority.Blockers)
-                        : [],
-                legalNextStepIds: magicResonanceAuthority.HasPendingDraft
+                            magicResonanceAuthority.Blockers),
+                legalNextStepIds: magicResonanceRequired && magicResonanceAuthority.HasPendingDraft
                     ? [CharacterCreationWizardStepIds.Resources]
                     : []),
             Stage(
@@ -420,56 +443,113 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.ContactsLifestyles,
                 "Contacts and lifestyles",
-                contactsAuthority.IsReady
-                    ? CharacterCreationWizardStepStatuses.InProgress
-                    : CharacterCreationWizardStepStatuses.Blocked,
-                isRequired: true,
-                isAvailable: contactsAuthority.IsReady,
-                isComplete: false,
+                contactProjection.IsSafeForFinalization
+                && lifestyleProjection.IsSafeForFinalization
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : contactProjection.CanEdit || lifestyleProjection.CanEdit
+                        ? CharacterCreationWizardStepStatuses.InProgress
+                        : CharacterCreationWizardStepStatuses.Blocked,
+                isRequired: false,
+                isAvailable: contactProjection.CanEdit || lifestyleProjection.CanEdit,
+                isComplete: contactProjection.IsSafeForFinalization
+                            && lifestyleProjection.IsSafeForFinalization,
                 budgetIds:
                 [
                     CharacterCreationBudgetIds.Contacts,
                     CharacterCreationContactBudgetIds.FriendsInHighPlaces,
                     CharacterCreationBudgetIds.Resources
                 ],
-                blockers: contactsAuthority.IsReady
-                    ? CombineBlockers(
-                        [
-                            ContactCreateDeleteAuthorityUnavailable,
-                            ContactPetsAuthorityUnavailable,
-                            LifestylesAuthorityUnavailable
-                        ],
-                        contactsAuthority.Blockers)
-                    : CombineBlockers(
-                        [
-                            ContactsAuthorityUnavailable,
-                            ContactCreateDeleteAuthorityUnavailable,
-                            ContactPetsAuthorityUnavailable,
-                            LifestylesAuthorityUnavailable
-                        ],
-                        contactsAuthority.Blockers),
-                legalNextStepIds: []),
+                blockers: contactProjection.IsSafeForFinalization
+                          && lifestyleProjection.IsSafeForFinalization
+                    ? []
+                    : contactProjection.Blockers.Concat(lifestyleProjection.Blockers)
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray(),
+                warnings: contactProjection.Warnings.Concat(lifestyleProjection.Warnings)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray(),
+                legalNextStepIds: contactProjection.IsSafeForFinalization && lifestyleProjection.IsSafeForFinalization
+                    ? [CharacterCreationWizardStepIds.IdentityStory]
+                    : []),
             Stage(
                 CharacterCreationWizardStepIds.IdentityStory,
                 "Identity and story",
-                CharacterCreationWizardStepStatuses.Blocked,
-                isRequired: true,
+                identityStoryProjection.IsSafeForFinalization
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : CharacterCreationWizardStepStatuses.Blocked,
+                isRequired: false,
                 isAvailable: false,
-                isComplete: false,
+                isComplete: identityStoryProjection.IsSafeForFinalization,
                 budgetIds: [],
-                blockers: [LegalOptionsAuthorityUnavailable],
+                blockers: identityStoryProjection.Blockers,
+                warnings: identityStoryProjection.Warnings,
                 legalNextStepIds: [CharacterCreationWizardStepIds.Review]),
             Stage(
                 CharacterCreationWizardStepIds.Review,
                 "Review and finalize",
-                CharacterCreationWizardStepStatuses.Blocked,
+                finalizationAuthority.State?.CanReview == true
+                    && completionBlockers.Count == 0
+                    ? CharacterCreationWizardStepStatuses.Available
+                    : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: false,
+                isAvailable: finalizationAuthority.State?.CanReview == true
+                             && completionBlockers.Count == 0,
                 isComplete: false,
                 budgetIds: [],
-                blockers: [FinalizationAuthorityUnavailable],
+                blockers: completionBlockers,
                 legalNextStepIds: [])
         ];
+
+        if (finalizationAuthority.State is null)
+            return stages;
+
+        IReadOnlyDictionary<string, CharacterCreationFinalizationStep> finalizationSteps =
+            finalizationAuthority.State.Steps.ToDictionary(
+                static step => step.StepId,
+                StringComparer.Ordinal);
+        for (int index = 0; index < stages.Length; index++)
+        {
+            CharacterCreationWizardStageState stage = stages[index];
+            if (stage.StepId is CharacterCreationWizardStepIds.Basics
+                or CharacterCreationWizardStepIds.Foundation
+                or CharacterCreationWizardStepIds.LifeModules
+                or CharacterCreationWizardStepIds.ContactsLifestyles
+                or CharacterCreationWizardStepIds.IdentityStory
+                or CharacterCreationWizardStepIds.Review
+                || !finalizationSteps.TryGetValue(
+                    stage.StepId,
+                    out CharacterCreationFinalizationStep? finalizationStep))
+            {
+                continue;
+            }
+
+            stages[index] = stage with
+            {
+                Status = finalizationStep.IsComplete
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : stage.IsAvailable
+                        ? CharacterCreationWizardStepStatuses.InProgress
+                        : CharacterCreationWizardStepStatuses.Blocked,
+                IsRequired = finalizationStep.IsRequired,
+                IsComplete = finalizationStep.IsComplete,
+                Blockers = finalizationStep.Blockers
+            };
+        }
+
+        CharacterCreationWizardStageState basics = stages.Single(static stage =>
+            stage.StepId == CharacterCreationWizardStepIds.Basics);
+        int basicsIndex = Array.IndexOf(stages, basics);
+        stages[basicsIndex] = basics with
+        {
+            Status = identityStoryProjection.HasAuthoritativeIdentity
+                ? CharacterCreationWizardStepStatuses.Complete
+                : CharacterCreationWizardStepStatuses.Blocked,
+            IsComplete = identityStoryProjection.HasAuthoritativeIdentity,
+            Blockers = identityStoryProjection.HasAuthoritativeIdentity
+                ? []
+                : [IdentityAuthorityUnavailable]
+        };
+        return stages;
     }
 
     private static CharacterCreationWizardStageState Stage(
@@ -730,6 +810,311 @@ public static class CharacterCreationWizardProjector
         };
     }
 
+    private static FinalizationProjectionAuthority EvaluateFinalizationAuthority(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? result)
+        => result is not null && MatchesLoadedOverview(workspaceId, loadedOverview, result)
+            ? new FinalizationProjectionAuthority(result.Value)
+            : new FinalizationProjectionAuthority(null);
+
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState> result)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(result);
+        if (loadedOverview.Document is null
+            || result.Value is not CharacterCreationFinalizationState state
+            || result.Blockers is null
+            || state.Steps is null
+            || state.Blockers is null
+            || state.Binding is null
+            || !string.Equals(
+                state.Schema,
+                CharacterCreationFinalizationSchemas.StateV1,
+                StringComparison.Ordinal)
+            || state.CharacterCreated != loadedOverview.Profile.Created
+            || state.CharacterCreated
+            || state.Binding.WorkspaceId != workspaceId
+            || state.Binding.ContentRevision != loadedOverview.ContentRevision
+            || state.Binding.SavedRevision != loadedOverview.SavedRevision
+            || !CharacterCreationFinalizationDigest.EqualsFixedTime(
+                state.Binding.RawCharacterXmlDigest,
+                ComputeContentDigest(loadedOverview.Document))
+            || !string.Equals(
+                state.Binding.AuxiliaryStateDigest,
+                loadedOverview.Document.AuxiliaryStateDigest,
+                StringComparison.Ordinal)
+            || !string.Equals(
+                state.Binding.BuildMethod,
+                CanonicalBuildMethod(loadedOverview.Profile.BuildMethod),
+                StringComparison.Ordinal)
+            || !string.Equals(
+                state.Binding.BuildMethod,
+                CanonicalBuildMethod(loadedOverview.Build.BuildMethod),
+                StringComparison.Ordinal)
+            || !CharacterCreationFinalizationDigest.IsCanonical(state.Binding.AuthorityDigest)
+            || !CharacterCreationFinalizationDigest.IsCanonical(state.SnapshotDigest)
+            || !CharacterCreationFinalizationDigest.EqualsFixedTime(
+                state.SnapshotDigest,
+                CharacterCreationFinalizationDigest.Compute(
+                    state with { SnapshotDigest = string.Empty }))
+            || !NormalizedStrings(result.Blockers)
+            || !NormalizedStrings(state.Blockers)
+            || !result.Blockers.SequenceEqual(state.Blockers, StringComparer.Ordinal))
+        {
+            return false;
+        }
+
+        string[] expectedSteps =
+        [
+            CharacterCreationWizardStepIds.Method,
+            CharacterCreationWizardStepIds.Attributes,
+            CharacterCreationWizardStepIds.Skills,
+            CharacterCreationWizardStepIds.Qualities,
+            CharacterCreationWizardStepIds.MagicResonance,
+            CharacterCreationWizardStepIds.Resources,
+            "gear"
+        ];
+        if (!state.Steps.Select(static step => step?.StepId)
+                .SequenceEqual(expectedSteps, StringComparer.Ordinal)
+            || state.Steps.Any(static step => step is null
+                || !NormalizedStrings(step.Blockers)
+                || step.SourceAnchorIds is null
+                || step.SourceAnchorIds.Any(string.IsNullOrWhiteSpace)
+                || step.SourceAnchorIds.Distinct(StringComparer.Ordinal).Count()
+                   != step.SourceAnchorIds.Count
+                || step.DraftDigest is not null
+                && !CharacterCreationFinalizationDigest.IsCanonical(step.DraftDigest)))
+        {
+            return false;
+        }
+
+        bool canReview = state.Blockers.Count == 0
+                         && state.Steps.Where(static step => step.IsRequired)
+                             .All(static step => step.IsComplete);
+        return state.CanReview == canReview
+               && (state.CanReview
+                   ? string.Equals(
+                       result.Outcome,
+                       CharacterCreationFinalizationOutcomes.Available,
+                       StringComparison.Ordinal)
+                   : string.Equals(
+                       result.Outcome,
+                       CharacterCreationFinalizationOutcomes.Blocked,
+                       StringComparison.Ordinal));
+    }
+
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationLifestylesState lifestyles)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(lifestyles);
+        if (loadedOverview.Document is null
+            || lifestyles.Lifestyles is null
+            || lifestyles.Blockers is null
+            || lifestyles.Budget is null
+            || lifestyles.Authority is null
+            || lifestyles.Binding is null)
+        {
+            return false;
+        }
+
+        CharacterCreationLifestyleBinding binding = lifestyles.Binding;
+        return string.Equals(
+                   lifestyles.Schema,
+                   CharacterCreationLifestylesSchemas.StateV1,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   lifestyles.StepId,
+                   CharacterCreationWizardStepIds.ContactsLifestyles,
+                   StringComparison.Ordinal)
+               && binding.WorkspaceId == workspaceId
+               && binding.WorkspaceRevision == loadedOverview.ContentRevision
+               && binding.ContentRevision == loadedOverview.ContentRevision
+               && binding.SavedRevision == loadedOverview.SavedRevision
+               && string.Equals(
+                   binding.ContentDigest,
+                   ComputeContentDigest(loadedOverview.Document),
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   binding.AuxiliaryStateDigest,
+                   loadedOverview.Document.AuxiliaryStateDigest,
+                   StringComparison.Ordinal)
+               && CharacterCreationLifestylesRules.IsCanonicalDigest(binding.SourceDigest)
+               && CharacterCreationLifestylesRules.IsCanonicalDigest(binding.RulesDigest)
+               && CharacterCreationLifestylesRules.IsCanonicalDigest(binding.RuntimeDigest)
+               && lifestyles.CharacterCreated == loadedOverview.Profile.Created
+               && CharacterCreationLifestylesRules.IsCanonicalDigest(lifestyles.SnapshotDigest)
+               && CharacterCreationLifestylesRules.DigestsEqual(
+                   lifestyles.SnapshotDigest,
+                   CharacterCreationLifestylesRules.ComputeStateDigest(lifestyles))
+               && NormalizedStrings(lifestyles.Blockers)
+               && lifestyles.Lifestyles.All(static lifestyle => lifestyle?.Configuration is not null)
+               && lifestyles.Lifestyles.Select(static lifestyle => lifestyle.Configuration.LifestyleId)
+                   .Distinct().Count() == lifestyles.Lifestyles.Count
+               && lifestyles.Lifestyles.All(static lifestyle =>
+                   CharacterCreationLifestylesRules.DigestsEqual(
+                       lifestyle.LifestyleDigest,
+                       CharacterCreationLifestylesRules.ComputeProjectionDigest(lifestyle)))
+               && lifestyles.Budget.Total >= 0m
+               && lifestyles.Budget.Used >= 0m
+               && lifestyles.Budget.Remaining >= 0m
+               && lifestyles.Budget.Overspend >= 0m
+               && NormalizedStrings(lifestyles.Budget.Blockers)
+               && lifestyles.CanEdit == (lifestyles.Blockers.Count == 0);
+    }
+
+    private static OptionalDomainProjection EvaluateOptionalContacts(
+        CharacterCreationContactsState? contacts,
+        ContactsProjectionAuthority authority)
+    {
+        IReadOnlyList<string> capabilityWarnings =
+        [
+            ContactCreateDeleteAuthorityUnavailable,
+            ContactPetsAuthorityUnavailable
+        ];
+        if (contacts is null)
+        {
+            return new OptionalDomainProjection(
+                IsSafeForFinalization: false,
+                CanEdit: false,
+                Blockers: [ContactsAuthorityUnavailable],
+                Warnings: capabilityWarnings);
+        }
+
+        bool provenAbsent = contacts.Contacts.Count == 0
+                            && authority.Blockers.All(static blocker => blocker is
+                                CharacterCreationContactsBlockers.AuthorityUnavailable
+                                or CharacterCreationContactsBlockers.BudgetAuthorityRequired
+                                or CharacterCreationContactsBlockers.FriendsInHighPlacesAuthorityRequired);
+        bool safe = provenAbsent || authority.IsReady;
+        IReadOnlyList<string> blockers = safe
+            ? []
+            : new[] { ContactsAuthorityUnavailable }
+                .Concat(authority.Blockers)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+                .ToArray();
+        IReadOnlyList<string> warnings = capabilityWarnings
+            .Concat(authority.IsReady ? [] : authority.Blockers)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+            .ToArray();
+        // Keep a repairable Core editor reachable even while its budget prevents
+        // finalization. Completion and editing are distinct capabilities.
+        return new OptionalDomainProjection(safe, contacts.CanEdit, blockers, warnings);
+    }
+
+    private static OptionalDomainProjection EvaluateOptionalLifestyles(
+        CharacterCreationLifestylesState? lifestyles)
+    {
+        if (lifestyles is null)
+        {
+            return new OptionalDomainProjection(
+                IsSafeForFinalization: false,
+                CanEdit: false,
+                Blockers: [LifestylesAuthorityUnavailable],
+                Warnings: [LifestylesAuthorityUnavailable]);
+        }
+
+        bool authorityIsValid = CharacterCreationLifestylesRules.IsValidAuthority(
+            lifestyles.Authority);
+        bool canEdit = lifestyles.CanEdit
+                       && lifestyles.Blockers.Count == 0
+                       && authorityIsValid;
+        bool provenAbsent = lifestyles.Lifestyles.Count == 0
+                            && authorityIsValid
+                            && lifestyles.Blockers.All(static blocker => string.Equals(
+                                blocker,
+                                CharacterCreationLifestylesBlockers.AuthorityUnavailable,
+                                StringComparison.Ordinal));
+        bool safe = provenAbsent || canEdit;
+        IReadOnlyList<string> blockers = safe
+            ? []
+            : new[] { LifestylesAuthorityUnavailable }
+                .Concat(lifestyles.Blockers)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+                .ToArray();
+        IReadOnlyList<string> warnings = canEdit
+            ? []
+            : new[] { LifestylesAuthorityUnavailable }
+                .Concat(lifestyles.Blockers)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+                .ToArray();
+        return new OptionalDomainProjection(safe, canEdit, blockers, warnings);
+    }
+
+    private static IdentityStoryProjection EvaluateIdentityStory(
+        CharacterProfileSection profile,
+        FinalizationProjectionAuthority finalization)
+    {
+        bool hasAuthoritativeIdentity = finalization.State is { } state
+                                        && !state.Blockers.Contains(
+                                            CharacterCreationFinalizationBlockers.BootstrapBindingRequired,
+                                            StringComparer.Ordinal)
+                                        && !string.IsNullOrWhiteSpace(profile.Name)
+                                        && !string.IsNullOrWhiteSpace(profile.Alias);
+        bool storyAbsent = new[]
+        {
+            profile.PlayerName,
+            profile.Sex,
+            profile.Age,
+            profile.Height,
+            profile.Weight,
+            profile.Hair,
+            profile.Eyes,
+            profile.Skin,
+            profile.Concept,
+            profile.Description,
+            profile.Background,
+            profile.CharacterNotes,
+            profile.GameNotes,
+            profile.GroupNotes
+        }.All(string.IsNullOrWhiteSpace);
+        var blockers = new List<string>();
+        if (!hasAuthoritativeIdentity)
+            blockers.Add(IdentityAuthorityUnavailable);
+        if (!storyAbsent)
+            blockers.Add(StoryAuthorityUnavailable);
+        bool safe = blockers.Count == 0;
+        return new IdentityStoryProjection(
+            safe,
+            hasAuthoritativeIdentity,
+            blockers,
+            safe ? [StoryAuthorityUnavailable] : []);
+    }
+
+    private static string? ResolveFinalizationActiveStep(
+        CharacterCreationFinalizationState? finalization,
+        IReadOnlyList<CharacterCreationWizardStageState> stages)
+    {
+        CharacterCreationFinalizationStep? incomplete = finalization?.Steps.FirstOrDefault(
+            static step => step.IsRequired && !step.IsComplete);
+        if (incomplete is null)
+            return null;
+        string stepId = string.Equals(incomplete.StepId, "gear", StringComparison.Ordinal)
+            ? CharacterCreationWizardStepIds.Resources
+            : incomplete.StepId;
+        return stages.Any(stage => string.Equals(stage.StepId, stepId, StringComparison.Ordinal))
+            ? stepId
+            : null;
+    }
+
+    private static bool NormalizedStrings(IReadOnlyList<string>? values)
+        => values is not null
+           && values.All(static value => !string.IsNullOrWhiteSpace(value))
+           && values.SequenceEqual(
+               values.Distinct(StringComparer.Ordinal)
+                   .OrderBy(static value => value, StringComparer.Ordinal),
+               StringComparer.Ordinal);
+
     internal static bool MatchesLoadedOverview(
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview,
@@ -792,6 +1177,7 @@ public static class CharacterCreationWizardProjector
         ArgumentNullException.ThrowIfNull(contacts);
         string rawDigest = ComputeContentDigest(loadedOverview.Document);
         return loadedOverview.Document is not null
+               && ContactAuthorityShapeIsValid(contacts)
                && string.Equals(
                    contacts.Binding.WorkspaceId.Value,
                    workspaceId.Value,
@@ -800,8 +1186,9 @@ public static class CharacterCreationWizardProjector
                && contacts.Binding.ContentRevision == loadedOverview.ContentRevision
                && contacts.Binding.SavedRevision == loadedOverview.SavedRevision
                && string.Equals(contacts.Binding.ContentDigest, rawDigest, StringComparison.Ordinal)
-               && contacts.CharacterCreated == loadedOverview.Profile.Created
-               && ContactAuthorityShapeIsValid(contacts);
+               && string.Equals(contacts.Binding.AuxiliaryStateDigest,
+                   loadedOverview.Document.AuxiliaryStateDigest, StringComparison.Ordinal)
+               && contacts.CharacterCreated == loadedOverview.Profile.Created;
     }
 
     internal static bool MatchesLoadedOverview(
@@ -917,15 +1304,20 @@ public static class CharacterCreationWizardProjector
         ArgumentNullException.ThrowIfNull(contacts);
         return !snapshot.CharacterCreated
                && !contacts.CharacterCreated
+               && ContactAuthorityShapeIsValid(contacts)
                && string.Equals(contacts.Binding.WorkspaceId.Value, snapshot.WorkspaceId, StringComparison.Ordinal)
                && contacts.Binding.WorkspaceRevision == snapshot.WorkspaceRevision
                && contacts.Binding.ContentRevision == snapshot.WorkspaceRevision
-               && string.Equals(contacts.Binding.ContentDigest, snapshot.ContentDigest, StringComparison.Ordinal)
-               && ContactAuthorityShapeIsValid(contacts);
+               && string.Equals(contacts.Binding.ContentDigest, snapshot.ContentDigest, StringComparison.Ordinal);
     }
 
     internal static bool ContactAuthorityShapeIsValid(CharacterCreationContactsState contacts)
-        => string.Equals(
+        => contacts is not null
+           && contacts.Binding is not null
+           && contacts.Contacts is not null
+           && contacts.ContactBudget is not null
+           && contacts.HighPlacesBudget is not null
+           && string.Equals(
                contacts.Schema,
                CharacterCreationContactsSchemas.StateV1,
                StringComparison.Ordinal)
@@ -943,6 +1335,13 @@ public static class CharacterCreationWizardProjector
            && IsLowerSha256(contacts.Binding.RulesDigest)
            && IsLowerSha256(contacts.Binding.RuntimeDigest)
            && IsLowerSha256(contacts.SnapshotDigest)
+           && string.Equals(
+               contacts.SnapshotDigest,
+               // Use the public Core canonical-JSON digest implementation. The
+               // Foundation ledger helper is internal to the Application owner.
+               CharacterCreationFinalizationDigest.Compute(
+                   contacts with { SnapshotDigest = string.Empty }),
+               StringComparison.Ordinal)
            && contacts.Contacts.All(ContactProjectionShapeIsValid)
            && contacts.Contacts.Select(static contact => contact.ContactId).Distinct().Count()
               == contacts.Contacts.Count
@@ -977,7 +1376,9 @@ public static class CharacterCreationWizardProjector
             blockers.Add(CharacterCreationContactsBlockers.AuthorityUnavailable);
 
         return new ContactsProjectionAuthority(
-            IsReady: contacts.CanEdit,
+            // Core permits editing an overspent budget so the user can repair it.
+            // That capability must never waive its completion blockers.
+            IsReady: contacts.CanEdit && blockers.Count == 0,
             Blockers: blockers.Distinct(StringComparer.Ordinal)
                 .OrderBy(static blocker => blocker, StringComparer.Ordinal)
                 .ToArray());
@@ -1196,13 +1597,16 @@ public static class CharacterCreationWizardProjector
 
     internal static bool ContactProjectionShapeIsValid(
         CharacterCreationContactProjection contact)
-        => contact.ContactId != Guid.Empty
+        => contact is not null
+           && contact.ContactId != Guid.Empty
            && contact.Identity is not null
            && IsLowerSha256(contact.ContactDigest)
            && contact.ContactPointCost >= 0
            && !(contact.CountsAgainstContactBudget && contact.CountsAgainstHighPlacesBudget)
            && StringAuthorityListIsValid(contact.SourceAnchorIds, requireExactSourceAnchors: true)
+           && contact.Fields is not null
            && contact.Fields.Count == CharacterCreationContactFieldIds.All.Count
+           && contact.Fields.All(static field => field is not null)
            && contact.Fields.Select(static field => field.FieldId)
                .SequenceEqual(CharacterCreationContactFieldIds.All, StringComparer.Ordinal)
            && contact.Fields.All(field => ContactFieldShapeIsValid(contact, field));
@@ -1211,7 +1615,9 @@ public static class CharacterCreationWizardProjector
         CharacterCreationContactProjection contact,
         CharacterCreationContactFieldAuthority field)
     {
-        if (string.IsNullOrWhiteSpace(field.Label)
+        if (field is null
+            || field.LegalOptions is null
+            || string.IsNullOrWhiteSpace(field.Label)
             || !StringAuthorityListIsValid(field.Blockers, requireExactSourceAnchors: false)
             || !StringAuthorityListIsValid(field.SourceAnchorIds, requireExactSourceAnchors: true)
             || !TryExpectedContactFieldValue(contact, field.FieldId, out string valueKind, out string serializedValue)
@@ -1277,7 +1683,8 @@ public static class CharacterCreationWizardProjector
         HashSet<string> serializedValues = new(StringComparer.OrdinalIgnoreCase);
         foreach (CharacterCreationContactOption option in field.LegalOptions)
         {
-            if (string.IsNullOrWhiteSpace(option.OptionId)
+            if (option is null
+                || string.IsNullOrWhiteSpace(option.OptionId)
                 || string.IsNullOrWhiteSpace(option.Label)
                 || string.IsNullOrWhiteSpace(option.SerializedValue)
                 || !optionIds.Add(option.OptionId)
@@ -1304,7 +1711,8 @@ public static class CharacterCreationWizardProjector
         HashSet<string> serializedValues = new(StringComparer.Ordinal);
         foreach (CharacterCreationContactOption option in field.LegalOptions)
         {
-            if (string.IsNullOrWhiteSpace(option.OptionId)
+            if (option is null
+                || string.IsNullOrWhiteSpace(option.OptionId)
                 || string.IsNullOrWhiteSpace(option.Label)
                 || string.IsNullOrWhiteSpace(option.SerializedValue)
                 || !optionIds.Add(option.OptionId)
@@ -1373,7 +1781,8 @@ public static class CharacterCreationWizardProjector
     }
 
     internal static bool ContactBudgetShapeIsValid(CharacterCreationContactBudget budget)
-        => !string.IsNullOrWhiteSpace(budget.BudgetId)
+        => budget is not null
+           && !string.IsNullOrWhiteSpace(budget.BudgetId)
            && budget.Total >= 0
            && budget.Used >= 0
            && budget.Remaining == Math.Max(0, budget.Total - budget.Used)
@@ -1384,7 +1793,8 @@ public static class CharacterCreationWizardProjector
     private static bool StringAuthorityListIsValid(
         IReadOnlyList<string> values,
         bool requireExactSourceAnchors)
-        => values.All(static value => !string.IsNullOrWhiteSpace(value))
+        => values is not null
+           && values.All(static value => !string.IsNullOrWhiteSpace(value))
            && values.Count == values.Distinct(StringComparer.Ordinal).Count()
            && (requireExactSourceAnchors
                ? values.SequenceEqual(CharacterCreationContactSourceAnchors.All, StringComparer.Ordinal)
@@ -1972,4 +2382,19 @@ public static class CharacterCreationWizardProjector
         IReadOnlyList<CharacterCreationLegalOption> Options,
         IReadOnlyList<string> Blockers,
         CharacterCreationMagicResonanceEditorState? Editor);
+
+    private sealed record FinalizationProjectionAuthority(
+        CharacterCreationFinalizationState? State);
+
+    private sealed record OptionalDomainProjection(
+        bool IsSafeForFinalization,
+        bool CanEdit,
+        IReadOnlyList<string> Blockers,
+        IReadOnlyList<string> Warnings);
+
+    private sealed record IdentityStoryProjection(
+        bool IsSafeForFinalization,
+        bool HasAuthoritativeIdentity,
+        IReadOnlyList<string> Blockers,
+        IReadOnlyList<string> Warnings);
 }

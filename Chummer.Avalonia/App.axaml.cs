@@ -105,7 +105,9 @@ public partial class App : global::Avalonia.Application
                 serviceProvider.GetService<ICharacterCreationFoundationService>(),
                 serviceProvider.GetRequiredService<ICharacterCreationContactsService>(),
                 serviceProvider.GetService<ICharacterCreationQualitiesService>(),
-                serviceProvider.GetService<ICharacterCreationMagicResonanceService>()));
+                serviceProvider.GetService<ICharacterCreationMagicResonanceService>(),
+                serviceProvider.GetService<ICharacterCreationLifestylesService>(),
+                serviceProvider.GetService<ICharacterCreationFinalizationService>()));
         services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
             CharacterCreationContactsInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();

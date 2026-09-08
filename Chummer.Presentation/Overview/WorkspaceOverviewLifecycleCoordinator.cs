@@ -330,18 +330,23 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         WorkspaceOperationExecution<CreationActivationProjection> execution =
             await _workspaceOperationCoordinator.RunActivationAsync(
                     workspaceId,
-                    token =>
+                    token => Task.Run(() =>
                     {
                         token.ThrowIfCancellationRequested();
-                        return Task.FromResult(
-                            activationService.TryValidateCurrent(activation, out _)
-                                ? new CreationActivationProjection(
-                                    IsCurrent: true,
-                                    Overview: CreateActivationOverview(activation))
-                                : new CreationActivationProjection(
-                                    IsCurrent: false,
-                                    Overview: null));
-                    },
+                        bool isCurrent = activationService.TryValidateCurrent(activation, out _);
+                        // Core validation is synchronous and cannot observe this
+                        // cancellation. Do not begin further domain reads after
+                        // the user cancels or another activation supersedes it.
+                        token.ThrowIfCancellationRequested();
+                        if (!isCurrent)
+                            return new CreationActivationProjection(false, null);
+                        WorkspaceOverviewLoadResult overview = CreateActivationOverview(activation);
+                        PreparedWorkspaceOverviewState? prepared =
+                            (_workspaceOverviewStateFactory as IWorkspaceOverviewPreparationFactory)
+                                ?.PrepareActivated(currentState, workspaceId, overview, activation.InitialCreation);
+                        token.ThrowIfCancellationRequested();
+                        return new CreationActivationProjection(true, overview, prepared);
+                    }, token),
                     ct)
                 .ConfigureAwait(false);
         if (!execution.CanPublish)
@@ -379,7 +384,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
 
         CurrentWorkspaceId = workspaceId;
         return new WorkspaceOverviewLifecycleResult(
-            _workspaceOverviewStateFactory.CreateActivatedState(
+            execution.Value.Prepared?.Create(session, restoredView)
+            ?? _workspaceOverviewStateFactory.CreateActivatedState(
                 currentState,
                 workspaceId,
                 session,
@@ -411,7 +417,12 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
 
     private sealed record CreationActivationProjection(
         bool IsCurrent,
-        WorkspaceOverviewLoadResult? Overview);
+        WorkspaceOverviewLoadResult? Overview,
+        PreparedWorkspaceOverviewState? Prepared = null);
+
+    private sealed record LoadedWorkspaceProjection(
+        WorkspaceOverviewLoadResult Overview,
+        PreparedWorkspaceOverviewState? Prepared);
 
     public Task<WorkspaceOverviewLifecycleResult> SwitchAsync(
         CharacterOverviewState currentState,
@@ -1405,12 +1416,30 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         string? rulesetId = null)
     {
         CaptureCurrentWorkspaceView(currentState);
-        WorkspaceOperationExecution<WorkspaceOverviewLoadResult> execution;
+        WorkspaceOperationExecution<LoadedWorkspaceProjection> execution;
         try
         {
             execution = await _workspaceOperationCoordinator.RunActivationAsync(
                 workspaceId,
-                token => LoadOverviewAsync(workspaceId, token),
+                async token =>
+                {
+                    WorkspaceOverviewLoadResult overview = await LoadOverviewAsync(workspaceId, token)
+                        .ConfigureAwait(false);
+                    PreparedWorkspaceOverviewState? prepared = null;
+                    if (_workspaceOverviewStateFactory is IWorkspaceOverviewPreparationFactory factory)
+                    {
+                        // Even an immediately completed overview read must not run
+                        // synchronous Core parsing/finalization on the UI thread.
+                        prepared = await Task.Run(() =>
+                        {
+                            token.ThrowIfCancellationRequested();
+                            PreparedWorkspaceOverviewState result = factory.PrepareLoaded(currentState, workspaceId, overview);
+                            token.ThrowIfCancellationRequested();
+                            return result;
+                        }, token).ConfigureAwait(false);
+                    }
+                    return new LoadedWorkspaceProjection(overview, prepared);
+                },
                 ct);
         }
         catch
@@ -1424,7 +1453,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
             return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false);
         }
 
-        WorkspaceOverviewLoadResult loadedOverview = execution.Value;
+        WorkspaceOverviewLoadResult loadedOverview = execution.Value.Overview;
 
         WorkspaceSessionState session = _workspaceSessionActivationService.Activate(
             _workspaceSessionPresenter,
@@ -1448,7 +1477,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         CurrentWorkspaceId = workspaceId;
 
         return new WorkspaceOverviewLifecycleResult(
-            _workspaceOverviewStateFactory.CreateLoadedState(
+            execution.Value.Prepared?.Create(session, restoredView)
+            ?? _workspaceOverviewStateFactory.CreateLoadedState(
                 currentState,
                 workspaceId,
                 session,

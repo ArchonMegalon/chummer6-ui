@@ -46,13 +46,13 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "c06f22c185c7b733637fdb76b3cf333f31716781"
+        "1d8cf694d0412b3bd9f4a241fb95244fad341160"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "60112dccb6a3faad330d32c3c98eef0aa81d97af"
+        "880e5df8ace981e9a60264d835329dd32f54a158"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "bc199cbe0982833ec2fc9ce625826e612759d67a"
+        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
     )
     assert package_plane.UI_OWNER_PRODUCER_LOCK_PATH not in (
         next_lock["consumer"]["sourceFiles"]
@@ -1697,6 +1697,37 @@ def test_checked_in_lock_and_consumer_source_digests_are_current() -> None:
     assert len(rows) == len(lock["consumer"]["sourceFiles"])
 
 
+def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
+    expected_names = {
+        "CharacterCreationContactsInteractionPresenterTests.cs",
+        "CharacterCreationFoundationInteractionPresenterTests.cs",
+        "CharacterCreationGearInteractionPresenterTests.cs",
+        "CharacterCreationMagicResonanceTestFixture.cs",
+        "CharacterCreationMagicResonanceWorkflowTests.cs",
+        "CharacterCreationWizardDesktopSessionTests.cs",
+        "CharacterCreationWizardPresentationTests.cs",
+        "WorkspaceOverviewPreparationTests.cs",
+    }
+    assert len(package_plane.CREATION_WIZARD_TEST_FILES) == len(expected_names)
+    assert set(package_plane.CREATION_WIZARD_TEST_FILES) == expected_names
+    package_plane.validate_test_compile_items(REPO_ROOT)
+    for name in expected_names:
+        source = f"Chummer.CreationWizard.Presentation.Tests/{name}"
+        assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
+        assert (REPO_ROOT / source).is_file()
+        assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 238
+    assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
+    assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
+        "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
+    ] == "CreationWizard/CoreCreationProjectionScenario.cs"
+    assert {
+        "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewState.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewPreparationFactory.cs",
+    }.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
+
+
 def test_forged_owner_pin_is_rejected() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     lock["owners"][0]["commit"] = "main"
@@ -1841,16 +1872,16 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "bc199cbe0982833ec2fc9ce625826e612759d67a"
+        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
     )
     assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
-        "bc199cbe0982833ec2fc9ce625826e612759d67a"
+        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
     )
     assert core["packageRecipeCommit"] == (
-        "c06f22c185c7b733637fdb76b3cf333f31716781"
+        "1d8cf694d0412b3bd9f4a241fb95244fad341160"
     )
     assert core["runtimeSourceCommit"] == (
-        "60112dccb6a3faad330d32c3c98eef0aa81d97af"
+        "880e5df8ace981e9a60264d835329dd32f54a158"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -2126,7 +2157,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 170' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 238' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]

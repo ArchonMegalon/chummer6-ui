@@ -464,12 +464,17 @@ def test_strict_package_plane_rejects_ambient_msbuild_import_authority(
     assert "rejects ambient MSBuild import/property authority" in result.stderr
 
 
-def test_strict_verify_uses_conventional_dotnet_test_path() -> None:
+def test_strict_verify_builds_then_runs_product_assembly_without_msbuild_forwarding() -> None:
     source = VERIFY.read_text(encoding="utf-8")
     assert (
-        "bash scripts/ai/with-package-plane.sh test \\\n"
+        "bash scripts/ai/with-package-plane.sh build \\\n"
         "    Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
     ) in source
+    runner = source.split('dotnet "$repo_root/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"', 1)[1].split(
+        'core_projection_after=', 1)[0]
+    assert "--minimum-expected-tests 238" in runner
+    assert '--test-parameter "ChummerCoreContentRoot=$core_projection_root"' in runner
+    assert "-m:1" not in runner and "--disable-build-servers" not in runner
 
 
 def test_explicit_slice_local_tree_is_machine_readable(tmp_path: Path) -> None:

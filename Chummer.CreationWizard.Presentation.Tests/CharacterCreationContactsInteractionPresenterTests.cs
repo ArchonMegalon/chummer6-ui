@@ -14,6 +14,35 @@ namespace Chummer.CreationWizard.Presentation.Tests;
 public sealed class CharacterCreationContactsInteractionPresenterTests
 {
     [TestMethod]
+    public void Rehashed_malformed_contact_children_are_rejected_without_crashing()
+    {
+        Fixture fixture = CreateFixture();
+        CharacterCreationContactProjection contact = fixture.BeforeState.Contacts[0];
+        CharacterCreationContactFieldAuthority field = contact.Fields[0];
+        CharacterCreationContactProjection[] malformedContacts =
+        [
+            contact with { Identity = null! },
+            contact with { SourceAnchorIds = null! },
+            contact with { Fields = null! },
+            contact with { Fields = contact.Fields.Select((value, index) => index == 0 ? null! : value).ToArray() },
+            contact with { Fields = [field with { LegalOptions = null! }, .. contact.Fields.Skip(1)] },
+            contact with { Fields = [field with { Blockers = null! }, .. contact.Fields.Skip(1)] },
+            contact with { Fields = [field with { SourceAnchorIds = null! }, .. contact.Fields.Skip(1)] }
+        ];
+        foreach (CharacterCreationContactProjection malformed in malformedContacts)
+        {
+            CharacterCreationContactsState state = WithSnapshotDigest(fixture.BeforeState with
+                { Contacts = [malformed, .. fixture.BeforeState.Contacts.Skip(1)] });
+            var service = new FakeContactsService(state);
+            CharacterOverviewState overview = CreateOverview(fixture with { BeforeState = state }, service);
+            Assert.IsNull(overview.CreationContacts);
+            Assert.IsFalse(overview.CreationWizard!.CanFinalize);
+            Assert.AreEqual(0, service.PreviewCalls);
+            Assert.AreEqual(0, service.ConfirmCalls);
+        }
+    }
+
+    [TestMethod]
     public void Workspace_factory_accepts_exact_core_load_with_read_only_fields_and_opaque_pet()
     {
         string stateDirectory = Path.Combine(
@@ -230,6 +259,7 @@ public sealed class CharacterCreationContactsInteractionPresenterTests
             Blockers = [CharacterCreationContactsBlockers.BudgetExceeded],
             SnapshotDigest = Digest('8')
         };
+        blockedState = WithSnapshotDigest(blockedState);
         service.CurrentState = blockedState;
         CharacterOverviewState blockedOverview = CreateOverview(
             fixture with { BeforeState = blockedState },
@@ -424,10 +454,10 @@ public sealed class CharacterCreationContactsInteractionPresenterTests
         Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, step.Status);
         Assert.IsEmpty(step.LegalNextStepIds);
         CollectionAssert.Contains(
-            step.Blockers.ToArray(),
+            step.Warnings.ToArray(),
             CharacterCreationWizardProjector.ContactCreateDeleteAuthorityUnavailable);
         CollectionAssert.Contains(
-            step.Blockers.ToArray(),
+            step.Warnings.ToArray(),
             CharacterCreationWizardProjector.ContactPetsAuthorityUnavailable);
         CollectionAssert.Contains(
             step.Blockers.ToArray(),
@@ -577,7 +607,7 @@ public sealed class CharacterCreationContactsInteractionPresenterTests
             ContentRevision: 7,
             SavedRevision: 0,
             ContentDigest: contentDigest,
-            AuxiliaryStateDigest: RawDigest('a'),
+            AuxiliaryStateDigest: new WorkspaceDocument(content, RulesetDefaults.Sr5).AuxiliaryStateDigest,
             SourceDigest: Digest('b'),
             RulesDigest: Digest('c'),
             RuntimeDigest: Digest('d'));
@@ -707,8 +737,14 @@ public sealed class CharacterCreationContactsInteractionPresenterTests
             ContactBudget = contactAfter,
             SnapshotDigest = Digest('a')
         };
-        return new Fixture(content, contactId, state, preview, receipt, afterState);
+        return new Fixture(content, contactId, WithSnapshotDigest(state), preview, receipt, WithSnapshotDigest(afterState));
     }
+
+    private static CharacterCreationContactsState WithSnapshotDigest(CharacterCreationContactsState state)
+        => state with
+        {
+            SnapshotDigest = CharacterCreationFinalizationDigest.Compute(state with { SnapshotDigest = string.Empty })
+        };
 
     private static CharacterCreationContactProjection Contact(
         Guid id,

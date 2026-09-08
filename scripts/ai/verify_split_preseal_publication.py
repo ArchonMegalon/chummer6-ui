@@ -28,7 +28,7 @@ import stat
 import subprocess
 import sys
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 
@@ -45,10 +45,31 @@ ALLOWED_RECIPE_PATHS = frozenset(
         ".github/workflows/current-main-package-plane.yml",
         ".github/workflows/pull-request-ci.yml",
         ".github/workflows/unsigned-macos-native-build.yml",
+        "Chummer.Avalonia/App.axaml.cs",
+        "Chummer.Blazor/Program.cs",
+        "Chummer.CreationWizard.CoreProjection.Tests/Chummer.CreationWizard.CoreProjection.Tests.csproj",
+        "Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs",
+        "Chummer.CreationWizard.CoreProjection.Tests/Program.cs",
+        "Chummer.CreationWizard.CoreProjection.Tests/README.md",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationContactsInteractionPresenterTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationGearInteractionPresenterTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceTestFixture.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceWorkflowTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardPresentationTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs",
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
         "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
+        "Chummer.Presentation/Chummer.Presentation.csproj",
+        "Chummer.Presentation/Overview/CharacterCreationMagicResonanceWorkflow.cs",
+        "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewState.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewPreparationFactory.cs",
+        "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs",
+        "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
+        "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
+        "Chummer.Product.UnitTests/CreationWizardCoreProjectionTests.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
         "Chummer.Presentation/Overview/Chummer5CharacterSettingsProfiles.cs",
@@ -63,10 +84,15 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Directory.Build.props",
         "README.md",
         "scripts/ai/verify_fresh_checkout_package_plane.py",
+        "scripts/ai/verify.sh",
+        "scripts/ai/verify_creation_projection_content.py",
         "scripts/ai/verify_split_preseal_publication.py",
         "scripts/ai/with-package-plane.sh",
         "scripts/build-unsigned-macos-native.sh",
         "tests/test_current_owner_contract_feed.py",
+        "tests/test_creation_projection_content.py",
+        "tests/test_presentation_explicit_core_root.py",
+        "tests/test_verify_mode_controls.py",
         "tests/test_desktop_downloads_local_release_policy.py",
         "tests/test_fresh_package_plane_controls.py",
         "tests/test_keylocker_fixture_intake.py",
@@ -387,10 +413,28 @@ def validate_oracle_at_recipe(
         or sha256_bytes(canonical_payload) != canonical["semanticCanonicalSha256"]
         or value.get("contractVersion") != 10
         or "uiOwnerFeed" in value
-        or len(value.get("consumer", {}).get("sourceFiles", {})) != 33
         or producer["path"] in value.get("consumer", {}).get("sourceFiles", {})
     ):
         raise PresealError("preseal recipe oracle fixture semantics differ")
+    # The exact fixture bytes bind membership to this historical recipe.
+    # Do not apply today's member count to an older, already sealed marker.
+    # Actual package consumption additionally enforces that recipe's exact
+    # EXPECTED_CONSUMER_SOURCE_FILES set; preseal grants no consumer authority.
+    source_files = value.get("consumer", {}).get("sourceFiles")
+    if not isinstance(source_files, dict) or not source_files:
+        raise PresealError("preseal recipe oracle source-file map is invalid")
+    for relative, digest in source_files.items():
+        if (
+            not isinstance(relative, str)
+            or not relative
+            or "\\" in relative
+            or "\x00" in relative
+            or PurePosixPath(relative).is_absolute()
+            or any(part in {"", ".", ".."} for part in relative.split("/"))
+            or not isinstance(digest, str)
+            or not SHA256_RE.fullmatch(digest)
+        ):
+            raise PresealError("preseal recipe oracle source-file map is invalid")
     return json.loads(json.dumps(oracle))
 
 

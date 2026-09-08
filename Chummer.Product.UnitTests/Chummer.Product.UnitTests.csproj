@@ -34,5 +34,15 @@
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs" Link="Presentation/CareerSkillSpecializationParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs" Link="Presentation/CareerWeaponFireParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs" Link="Presentation/WorkspaceOverviewLoaderTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationContactsInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationContactsInteractionPresenterTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationFoundationInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationFoundationInteractionPresenterTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationGearInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationGearInteractionPresenterTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceTestFixture.cs" Link="CreationWizard/CharacterCreationMagicResonanceTestFixture.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceWorkflowTests.cs" Link="CreationWizard/CharacterCreationMagicResonanceWorkflowTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardDesktopSessionTests.cs" Link="CreationWizard/CharacterCreationWizardDesktopSessionTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardPresentationTests.cs" Link="CreationWizard/CharacterCreationWizardPresentationTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs" Link="CreationWizard/WorkspaceOverviewPreparationTests.cs" />
+    <Compile Include="CreationWizardCoreProjectionTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs" Link="CreationWizard/CoreCreationProjectionScenario.cs" />
   </ItemGroup>
 </Project>
