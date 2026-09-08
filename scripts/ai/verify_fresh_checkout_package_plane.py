@@ -47,15 +47,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "e9a9a3d19c35384e481d0a70ed9160fc0557e369",
-        "commit": "c12811fda570cd56c70e52c44e38b1d32ff831a1",
+        "blob": "591a1489e0a6ac08fec5fc0f592e6da936f67cbe",
+        "commit": "8fed67529f42fd989fe696237655a118a4cb8e8b",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "64f06037031d5d29b7904f64fb46404524f2ea1d3477851bef8cf797dece834b",
-        "rawSizeBytes": 51528,
-        "semanticCanonicalSha256": "69360823bfad24a3935a9a72542c761d68a71846b7448d7cc98d40c2efd926c4",
-        "semanticCanonicalSizeBytes": 51528,
-        "tree": "faec09b431f3f6fd94736655e4e1850bbdf5d3f2",
+        "rawSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
+        "rawSizeBytes": 53579,
+        "semanticCanonicalSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
+        "semanticCanonicalSizeBytes": 53579,
+        "tree": "3200a43ce4addd785c9639bc5f5fe57c218dbaae",
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -81,7 +81,7 @@ UI_OWNER_CORE_PROPERTIES_RELATIONSHIP = (
 UI_OWNER_CANONICAL_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR = 0o100644 << 16
 HUB_NO_SIBLINGS_RECEIPT_SHA256 = (
-    "46fff52ed487df539384bd59f7973d087907b077a8e8bc16773343d0013fdd4f"
+    "e5cef29d9e047b65e3cccaa528e2ac7289f30fc41b400dbf7a24e9b3f6bdb63a"
 )
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -102,7 +102,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "c06f22c185c7b733637fdb76b3cf333f31716781",
+        "1d8cf694d0412b3bd9f4a241fb95244fad341160",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -115,12 +115,12 @@ EXPECTED_PACKAGES = {
 }
 EXPECTED_UI_OWNER_SOURCES = {
     "Chummer.Campaign.Contracts": {
-        "commit": "bc199cbe0982833ec2fc9ce625826e612759d67a",
+        "commit": "f06bb7e7e71e5afceb115d9078a473b1087ac7df",
         "ownerDirectory": "chummer.run-services",
         "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
-        "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
+        "projectSha256": "8e1f3434217daed71807dce0f5d29f1d1a984137cb10ffd704b460222993d22e",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-        "sourceTree": "3264d8a971c9844a58e06229defd57d38bbbf09a",
+        "sourceTree": "af9ce86b22edf0d2243bbdcf94bcceefed74f560",
     },
     "Chummer.Ui.Kit": {
         "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
@@ -134,16 +134,16 @@ EXPECTED_UI_OWNER_SOURCES = {
 EXPECTED_HUB_CANONICAL_FEED = {
     "inventoryContract": "chummer-hub.external-package-inventory/v4",
     "inventoryFileName": "chummer-hub-packages.inventory.json",
-    "inventorySha256": "9426f57fac723457f7104e8615a679b964e880f91bf3f078769f3f68e498ade3",
+    "inventorySha256": "18a9dc73d8a150d3d9d8fa900b3b819bf0a7269351e8fcc3274b9bb73f65b30d",
     "lockContract": "chummer-hub.package-plane-lock/v5",
     "lockPath": "eng/package-plane.lock.json",
-    "lockSha256": "653d4863ca8740ab72b59213ff09e24db82272814f32c12e2aeaf278c0802455",
+    "lockSha256": "89755aaf97d568558b3e362e54f4a0f2d3a6ce0c014b9605d4cd8a3bb127f37d",
     "packageVersion": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
-    "producerCommit": "bc199cbe0982833ec2fc9ce625826e612759d67a",
+    "producerCommit": "f06bb7e7e71e5afceb115d9078a473b1087ac7df",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-    "producerSha256": "38e2dd040c9006134dc87eff70857e733e2c01bdcfd70992db358b1f985ced67",
+    "producerSha256": "a954ba1bc60630feed71c2f406ae6e368b5fd03559f65d9c1fa1fab206458c4f",
     "receiptContract": "chummer-hub.no-siblings-package-plane/v2",
     "receiptFileName": "HUB_NO_SIBLINGS_PACKAGE_PLANE.generated.json",
     "receiptSha256": HUB_NO_SIBLINGS_RECEIPT_SHA256,
@@ -169,97 +169,97 @@ EXPECTED_HUB_CANONICAL_FEED = {
             "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
         },
         {
-            "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
+            "commit": "586aa84bd616779ccb84529a76b75dfcc39189ba",
             "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
             "packageId": "Chummer.Play.Contracts",
             "project": "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "25cd5115e72572d5eea45ac615125e11d077d26986423a903da52e9175a58d9c",
+            "sha256": "5203d7fb49d435c61ef81695d147e21472cf15e39595a78fa6db44f9fc876ba4",
             "sizeBytes": 322544,
             "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
         },
         {
-            "commit": "66c418a5004fae0cbc58ad9f2cf64e9a40954c3a",
+            "commit": "586aa84bd616779ccb84529a76b75dfcc39189ba",
             "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
             "packageId": "Chummer.Run.Contracts",
             "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "258d6dfbac12d65f15e32b1663cb6bdc267a5dc5916d047557274d2e06878ce8",
+            "sha256": "50b7307ea03ecc4f203e7fdd223cd3c699548baf3cc51d7bf1314e7d422b0813",
             "sizeBytes": 1838984,
             "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
         },
     ],
 }
-CORE_RUNTIME_SOURCE_COMMIT = "60112dccb6a3faad330d32c3c98eef0aa81d97af"
-CORE_RUNTIME_RECIPE_COMMIT = "c06f22c185c7b733637fdb76b3cf333f31716781"
-CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.sh60112dccb6a3f"
+CORE_RUNTIME_SOURCE_COMMIT = "880e5df8ace981e9a60264d835329dd32f54a158"
+CORE_RUNTIME_RECIPE_COMMIT = "1d8cf694d0412b3bd9f4a241fb95244fad341160"
+CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.sh880e5df8ace98"
 CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = (
-    "0ed7f7ed701e65d49b3632843f81463e4ed2a99662f85648da5662bcdc54832f"
+    "40b257a9f9ac0abcb6508914eafb370d17bc1a208cde783ce088cb338d41d21b"
 )
-CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 3090207
+CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 3228507
 EXPECTED_CORE_RUNTIME_FEED_METADATA = {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "9881de0f580d9801fb5f42ded6aa8fe1b86e9fb8a0745b6922f1a69267bc1be3",
+    "inventorySha256": "f72475e9b7f4d8c051e3c726063e35f962274557908fd6e1343ab87d0bcef405",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "f870a67049e7b8f16b90709d66b8eca82ce774240f32a21a0fbeef81ad07f97a",
+    "lockSha256": "d678813f6af9c6cdb073c598454c7e48a6c6d1cc071bb8e8ca353c68564dda26",
     "packageRecipeCommit": CORE_RUNTIME_RECIPE_COMMIT,
     "packageVersion": CORE_RUNTIME_PACKAGE_VERSION,
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "71533afbe8345a735e8d7e40c16de68e2d6de35bb2f7cec41e5b9fb93d20c918",
+    "receiptSha256": "1e029e3a6010425797681d54e2abf7b9d50d826dcc1bdd439ff475f8f7b80577",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
     "runtimeSourceCommit": CORE_RUNTIME_SOURCE_COMMIT,
 }
 EXPECTED_CORE_RUNTIME_PACKAGES = {
     "Chummer.Engine.Contracts": (
         "Chummer.Contracts/Chummer.Contracts.csproj",
-        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "cdb8ebc3cad83f3065d178deadf0da29f739a5e259de0a982114a0911663c92b",
-        1195069,
+        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "a717f257c246d8d17d43e3598a23eb0b32eabbcb4ca89846d96f9bbc583faea8",
+        1234838,
     ),
     "Chummer.Application": (
         "Chummer.Application/Chummer.Application.csproj",
-        "Chummer.Application.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "fc89dd68ad99e7c4194ca6ac26611f133d51725f6ae1e114086c8b697b22a052",
-        543120,
+        "Chummer.Application.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "10a1ee63a3350d2779c73e3d4cafe38b58881463a66946349ad9ebed33f0005e",
+        583365,
     ),
     "Chummer.Rulesets.Hosting": (
         "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj",
-        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "ffa0bdfa12d222a1174e3bbbb7aac3be7c62259aa00b707ba2d654b83f78c7cf",
-        14360,
+        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "a76c3ab7d5eff91ee073d97e653adf696d06b949fd8b8fa89eb3f38ec3750850",
+        14343,
     ),
     "Chummer.Rulesets.Sr5": (
         "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj",
-        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "112768951351143920ad6f93d5fa1d1c498fc7bdfa459c828e8d81bd84c7739c",
-        31630,
+        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "babd81b111f6c0b0793d71f347e49b0549a80d1dfac1b679dde4cf3ec1b72250",
+        31602,
     ),
     "Chummer.Rulesets.Sr6": (
         "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj",
-        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "b3ffc65af1c7001ac99e90a291faf2aa541f388b5f07418fc1d63406d4623c08",
-        41111,
+        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "7ef46981256014b9a836ab92af624d507cd863cb6f1f5557ad1e3ac159fba40a",
+        41079,
     ),
     "Chummer.Infrastructure": (
         "Chummer.Infrastructure/Chummer.Infrastructure.csproj",
-        "Chummer.Infrastructure.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "9de99ea2fabb88322884141bca1ca99c26ed1530a014b27ce9d06c8433795976",
-        284481,
+        "Chummer.Infrastructure.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "d321c53234eacf473e514efe36a3107c8c9896df242f9dea5e802eb57e91ebcc",
+        293614,
     ),
     "Chummer.Rulesets.Sr4": (
         "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj",
-        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "a60c6008accab132716bbf71f5a19828bb19547762a92948417b190d01b89085",
-        34040,
+        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "4887b7b47c4064dcfc72c86b1740e8943dad6ffdba0942c5bc390d3b1a104a69",
+        34006,
     ),
     "Chummer.Engine.GmCharacterEdits": (
         "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
-        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sh60112dccb6a3f.nupkg",
-        "c03fa2982da57bb9ec4c3ce72695b82f7777cef8b8fff9f5d17977b0f409e222",
-        910786,
+        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
+        "b21fdfe0a8c402d5ea2a1bb1b6d89c20caf73b119391a11ff9421055c6751aac",
+        960050,
     ),
 }
 EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
@@ -329,7 +329,7 @@ FOCUSED_OVERVIEW_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitT
 FOCUSED_OVERVIEW_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs"
 FOCUSED_OVERVIEW_TEST_FILTER = "FullyQualifiedName~WorkspaceOverviewLoaderTests"
 FOCUSED_OVERVIEW_MINIMUM_TESTS = 19
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 170
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 238
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
@@ -362,8 +362,20 @@ EXPECTED_BUILD_PROJECTS = (
 EXPECTED_TEST_PROJECTS = (
     "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
 )
+CREATION_WIZARD_TEST_FILES = (
+    "CharacterCreationContactsInteractionPresenterTests.cs",
+    "CharacterCreationFoundationInteractionPresenterTests.cs",
+    "CharacterCreationGearInteractionPresenterTests.cs",
+    "CharacterCreationMagicResonanceTestFixture.cs",
+    "CharacterCreationMagicResonanceWorkflowTests.cs",
+    "CharacterCreationWizardDesktopSessionTests.cs",
+    "CharacterCreationWizardPresentationTests.cs",
+    "WorkspaceOverviewPreparationTests.cs",
+)
 EXPECTED_TEST_COMPILE_ITEMS = {
     "DesktopUpdateArtifactTests.cs": None,
+    "CreationWizardCoreProjectionTests.cs": None,
+    "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs": "CreationWizard/CoreCreationProjectionScenario.cs",
     "../Chummer.Tests/DesktopCrashRuntimeTests.cs": "DesktopCrashRuntimeTests.cs",
     "../Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs": "DesktopInstallLinkingRuntimeTests.cs",
     "../Chummer.Tests/DesktopPreferenceRuntimeTests.cs": "DesktopPreferenceRuntimeTests.cs",
@@ -374,9 +386,16 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "Presentation/CareerSkillSpecializationParityTests.cs",
     "../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs": "Presentation/CareerWeaponFireParityTests.cs",
     "../Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs": "Presentation/WorkspaceOverviewLoaderTests.cs",
+    **{
+        f"../Chummer.CreationWizard.Presentation.Tests/{name}": f"CreationWizard/{name}"
+        for name in CREATION_WIZARD_TEST_FILES
+    },
 }
 EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
     {
+        "Chummer.Product.UnitTests/CreationWizardCoreProjectionTests.cs",
+        "Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs",
+        *(f"Chummer.CreationWizard.Presentation.Tests/{name}" for name in CREATION_WIZARD_TEST_FILES),
         "Chummer.Avalonia/Chummer.Avalonia.csproj",
         "Chummer.Blazor/Chummer.Blazor.csproj",
         "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj",
@@ -387,10 +406,13 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs",
+        "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewState.cs",
         "Chummer.Presentation/Overview/DialogCoordinator.cs",
         "Chummer.Presentation/Overview/IDialogCoordinator.cs",
         "Chummer.Presentation/Overview/IWorkspaceOverviewLifecycleCoordinator.cs",
         "Chummer.Presentation/Overview/IWorkspaceOverviewStateFactory.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewPreparationFactory.cs",
         "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs",
         "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
         "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
@@ -966,7 +988,8 @@ def fixed_next_authority_oracle_lock(repo_root: Path) -> dict[str, Any]:
         value.get("contractVersion") != LEGACY_UNSEALED_CONTRACT_VERSION
         or "uiOwnerFeed" in value
         or not producer_oracle["absentAtCommit"]
-        or len(value.get("consumer", {}).get("sourceFiles", {})) != 33
+        or frozenset(value.get("consumer", {}).get("sourceFiles", {}))
+        != EXPECTED_CONSUMER_SOURCE_FILES - {UI_OWNER_PRODUCER_LOCK_PATH}
         or producer_oracle["path"] in value.get("consumer", {}).get(
             "sourceFiles", {}
         )
@@ -3049,6 +3072,80 @@ def acquire_owner(owner: dict[str, str], owners_root: Path, environment: dict[st
     if status:
         raise VerificationError(f"owner checkout is dirty: {owner['directory']}")
     return target
+
+
+def core_projection_content_inventory(
+    root: Path, authority: dict[str, Any], environment: dict[str, str]
+) -> dict[str, Any]:
+    """Validate data-only Core input, not a source compilation or release proof."""
+    if not root.is_absolute() or root.resolve(strict=True) != root or not root.is_dir():
+        raise VerificationError("Core projection content root must be explicit, absolute and non-symlink")
+    source = authority["runtimeSourceCommit"]
+    recipe = authority["packageRecipeCommit"]
+    if any(re.fullmatch(r"[0-9a-f]{40}", commit) is None for commit in (source, recipe)):
+        raise VerificationError("Core projection content commits must be exact")
+
+    def git(*arguments: str) -> str:
+        return run([str(TRUSTED_GIT), "--no-replace-objects", *arguments], cwd=root,
+                   environment=environment, capture=True).stdout
+
+    if git("remote", "get-url", "origin").strip() != authority["repository"]:
+        raise VerificationError("Core projection content repository differs")
+    head = git("rev-parse", "HEAD").strip()
+    if head not in (source, recipe):
+        raise VerificationError("Core projection content checkout differs")
+    # The resolver can discover customdata beside data even when no amend path
+    # is configured. Bind it too, including untracked/ignored directory members.
+    roots = ("Chummer/data", "Chummer/lang", "Chummer/customdata")
+    expected: dict[str, str] = {}
+    expected_directories = {"Chummer", *roots}
+    for record in git("ls-tree", "-r", "-z", source, "--", *roots).split("\0"):
+        if not record:
+            continue
+        metadata, name = record.split("\t", 1)
+        mode, kind, blob = metadata.split()
+        path = Path(name)
+        if (mode not in ("100644", "100755") or kind != "blob"
+            or path.is_absolute() or ".." in path.parts
+            or name in expected or not any(name.startswith(item + "/") for item in roots)):
+            raise VerificationError("Core projection content tree contains an unsafe member")
+        expected[name] = blob
+        expected_directories.update(parent.as_posix() for parent in path.parents if parent != Path("."))
+    if "Chummer/data/settings.xml" not in expected:
+        raise VerificationError("Core projection settings are missing from the source authority")
+    if (root / "Chummer").is_symlink():
+        raise VerificationError("Core projection content parent is a symlink")
+    actual: set[str] = set()
+    directories = {"Chummer"}
+    for relative in roots:
+        base = root / relative
+        if base.is_symlink() or not base.is_dir():
+            raise VerificationError("Core projection content directory is missing or unsafe")
+        for directory, children, files in os.walk(base, followlinks=False):
+            directory_path = Path(directory)
+            directories.add(directory_path.relative_to(root).as_posix())
+            for name in children:
+                child = directory_path / name
+                if child.is_symlink() or not child.is_dir():
+                    raise VerificationError("Core projection content contains an unsafe directory")
+            actual.update((directory_path / name).relative_to(root).as_posix() for name in files)
+    if actual != expected.keys() or directories != expected_directories:
+        raise VerificationError("Core projection content membership differs from source authority")
+    members = []
+    for relative, expected_blob in sorted(expected.items()):
+        payload = secure_regular_file_bytes(root / relative, label="Core projection content")
+        blob = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
+        if blob != expected_blob:
+            raise VerificationError(f"Core projection content bytes differ: {relative}")
+        members.append({"path": relative, "sha256": hashlib.sha256(payload).hexdigest(),
+                        "sizeBytes": len(payload), "gitBlob": blob})
+    return {
+        "repository": authority["repository"], "checkoutCommit": head,
+        "runtimeSourceCommit": source, "packageRecipeCommit": recipe,
+        "sourceRoot": str(root), "usage": "read-only-rule-data-not-project-reference",
+        "contentDirectories": list(roots), "fileCount": len(members),
+        "contentInventorySha256": hashlib.sha256(encoded_json(members)).hexdigest(),
+    }
 
 
 def require_package_identity(
@@ -5710,6 +5807,12 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 environment=environment,
             )
         test_executions: list[dict[str, Any]] = []
+        core_content_root = owner_roots["chummer-core-engine"]
+        # The owner checkout is shallow at the recipe commit. Fetch the exact
+        # semantic tree only to verify its data; no source ProjectReference.
+        run([str(TRUSTED_GIT), "fetch", "--quiet", "--no-tags", "--depth=1", "origin",
+             lock["coreRuntimeFeed"]["runtimeSourceCommit"]],
+            cwd=core_content_root, environment=environment)
         for test_project in lock["consumer"]["testProjects"]:
             test_sdk_version = require_exact_sdk(
                 consumer,
@@ -5743,7 +5846,10 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 full_test_assembly_path,
                 label="full-suite product test assembly",
             )
+            core_content = core_projection_content_inventory(
+                core_content_root, lock["coreRuntimeFeed"], environment)
             full_test_execution = {
+                "coreProjectionContent": core_content,
                 "buildInParallel": False,
                 "compileRunner": "serialized-package-plane-build",
                 "disableBuildServers": True,
@@ -5761,6 +5867,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                     str(full_test_assembly_path),
                     "--minimum-expected-tests",
                     str(FULL_PRODUCT_TEST_MINIMUM_TESTS),
+                    "--test-parameter",
+                    f"ChummerCoreContentRoot={core_content_root}",
                     "--no-progress",
                 ],
                 cwd=full_test_assembly_path.parent,
@@ -5772,6 +5880,10 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 expected=full_test_assembly,
                 label="full-suite product test assembly",
             )
+            if core_projection_content_inventory(
+                core_content_root, lock["coreRuntimeFeed"], environment
+            ) != core_content:
+                raise VerificationError("Core projection content changed during product tests")
             test_executions.append(full_test_execution)
         focused_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY
         focused_test_assembly = exact_product_test_assembly_inventory(

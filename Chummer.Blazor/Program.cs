@@ -2,6 +2,7 @@ using Chummer.Blazor;
 using Chummer.Blazor.Components;
 using Chummer.Blazor.RunnerIntelligence;
 using Chummer.Blazor.Services;
+using Chummer.Application.Characters;
 using Chummer.Application.Owners;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
@@ -94,6 +95,14 @@ builder.Services.AddHttpClient<IWorkbenchCoachApiClient, WorkbenchCoachApiClient
 builder.Services.AddScoped<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
 builder.Services.AddScoped<IWorkspaceOverviewLoader>(services =>
     WorkspaceOverviewLoader.CreateCompositionBound(services.GetRequiredService<IChummerClient>()));
+builder.Services.AddScoped<IWorkspaceOverviewStateFactory>(serviceProvider =>
+    new WorkspaceOverviewStateFactory(
+        serviceProvider.GetService<ICharacterCreationFoundationService>(),
+        serviceProvider.GetService<ICharacterCreationContactsService>(),
+        serviceProvider.GetService<ICharacterCreationQualitiesService>(),
+        serviceProvider.GetService<ICharacterCreationMagicResonanceService>(),
+        serviceProvider.GetService<ICharacterCreationLifestylesService>(),
+        serviceProvider.GetService<ICharacterCreationFinalizationService>()));
 builder.Services.AddScoped<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
 builder.Services.AddScoped<IShellPresenter, ShellPresenter>();
 builder.Services.AddScoped<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
