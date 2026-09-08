@@ -59,6 +59,8 @@ public sealed class CharacterCreationWizardPresentationTests
             item.StepId == CharacterCreationWizardStepIds.Foundation);
         CharacterCreationWizardStageState lifeModulesStep = wizard.Steps.Single(item =>
             item.StepId == CharacterCreationWizardStepIds.LifeModules);
+        Assert.IsTrue(foundationStep.IsRequired);
+        Assert.IsFalse(foundationStep.IsComplete);
         Assert.IsFalse(foundationStep.IsAvailable);
         Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, foundationStep.Status);
         Assert.IsFalse(lifeModulesStep.IsAvailable);
@@ -109,6 +111,7 @@ public sealed class CharacterCreationWizardPresentationTests
             item.StepId == CharacterCreationWizardStepIds.Foundation);
         CharacterCreationWizardStageState lifeModulesStep = wizard.Steps.Single(item =>
             item.StepId == CharacterCreationWizardStepIds.LifeModules);
+        Assert.IsTrue(foundationStep.IsRequired);
         Assert.IsTrue(foundationStep.IsAvailable);
         Assert.IsFalse(foundationStep.IsComplete);
         Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, foundationStep.Status);
@@ -324,6 +327,7 @@ public sealed class CharacterCreationWizardPresentationTests
             item.StepId == CharacterCreationWizardStepIds.Foundation);
         CharacterCreationWizardStageState lifeModulesStep = wizard.Steps.Single(item =>
             item.StepId == CharacterCreationWizardStepIds.LifeModules);
+        Assert.IsTrue(foundationStep.IsRequired);
         Assert.IsTrue(foundationStep.IsAvailable);
         Assert.IsTrue(foundationStep.IsComplete);
         Assert.AreEqual(CharacterCreationWizardStepStatuses.Complete, foundationStep.Status);
@@ -501,14 +505,14 @@ public sealed class CharacterCreationWizardPresentationTests
         Assert.AreEqual(expectedDigest, wizard.ContentDigest);
         Assert.AreEqual(7L, wizard.WorkspaceRevision);
         Assert.AreEqual(RulesetDefaults.Sr5, wizard.RulesetId);
-        Assert.AreEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
+        Assert.AreEqual(CharacterCreationWizardStepIds.Method, wizard.ActiveStepId);
         Assert.AreEqual(string.Empty, wizard.SourceDigest);
         Assert.AreEqual(string.Empty, wizard.RuntimeFingerprint);
         Assert.IsFalse(wizard.CanFinalize);
         Assert.AreEqual(71, wizard.SnapshotDigest.Length);
         CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.SourceAuthorityUnavailable);
-        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.RuntimeAuthorityUnavailable);
-        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.BuildGhostContextUnavailable);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.FinalizationAuthorityUnavailable);
+        CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.BuildGhostContextUnavailable);
         Assert.IsTrue(wizard.LegalOptionsByStep.Values.All(static options => options.Count == 0));
 
         CharacterCreationBudgetState contacts = wizard.Budgets.Single(
@@ -520,6 +524,91 @@ public sealed class CharacterCreationWizardPresentationTests
         Assert.IsTrue(wizard.Budgets
             .Where(budget => !string.Equals(budget.BudgetId, CharacterCreationBudgetIds.Contacts, StringComparison.Ordinal))
             .All(static budget => !budget.IsExact && budget.Blockers.Count > 0));
+    }
+
+    [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Priority)]
+    [DataRow(CharacterCreationBuildMethods.SumToTen)]
+    [DataRow(CharacterCreationBuildMethods.Karma)]
+    public void Known_non_life_module_methods_do_not_require_or_recommend_foundation(string buildMethod)
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: buildMethod,
+            content: "<character><name>Nova</name></character>",
+            revision: 12);
+        CharacterCreationFoundationState blocked = CreateFoundationState(loaded) with
+        {
+            BuildMethod = buildMethod,
+            AuthorityBlockers =
+            [
+                CharacterCreationFoundationBlockers.LifeModuleBuildMethodRequired,
+                CharacterCreationFoundationBlockers.MetatypeCatalogAuthorityRequired,
+                CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired
+            ]
+        };
+        CharacterCreationFoundationState ready = CreateReadyFoundationState(loaded) with
+        {
+            BuildMethod = buildMethod
+        };
+        CharacterCreationFoundationState pending = ready with
+        {
+            PendingDraft = CreatePendingDraft(ready),
+            LifeModuleBudget = ready.LifeModuleBudget with { Used = 15m, Remaining = 735m }
+        };
+
+        foreach (CharacterCreationFoundationState? supplied in
+                 new CharacterCreationFoundationState?[] { null, blocked, ready, pending })
+        {
+            CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+                new CharacterWorkspaceId("ws-wizard"), loaded, foundation: supplied);
+
+            AssertInapplicableStep(wizard, CharacterCreationWizardStepIds.Foundation);
+            AssertInapplicableStep(wizard, CharacterCreationWizardStepIds.LifeModules);
+            Assert.AreNotEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
+            Assert.IsEmpty(wizard.Warnings);
+            foreach (CharacterCreationWizardStageState step in wizard.Steps)
+            {
+                CollectionAssert.DoesNotContain(
+                    step.LegalNextStepIds.ToArray(), CharacterCreationWizardStepIds.Foundation);
+            }
+            CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(),
+                CharacterCreationFoundationBlockers.MetatypeCatalogAuthorityRequired);
+            CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(),
+                CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired);
+            CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(),
+                CharacterCreationFoundationBlockers.LifeModuleBuildMethodRequired);
+            CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(),
+                CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable);
+            AssertUnrelatedAuthorityGapsRemain(wizard);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("unsupported-method")]
+    [DataRow("")]
+    public void Unknown_build_method_keeps_foundation_required_and_fail_closed(string buildMethod)
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: buildMethod,
+            content: "<character />",
+            revision: 12);
+        CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+            new CharacterWorkspaceId("ws-wizard"), loaded);
+
+        CharacterCreationWizardStageState foundation = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.Foundation);
+        Assert.IsTrue(foundation.IsRequired);
+        Assert.IsFalse(foundation.IsAvailable);
+        Assert.IsFalse(foundation.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, foundation.Status);
+        Assert.IsEmpty(foundation.LegalNextStepIds);
+        Assert.IsEmpty(wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.Foundation]);
+        Assert.AreEqual(CharacterCreationWizardStepIds.Method, wizard.ActiveStepId);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.BuildMethodUnavailable);
+        AssertUnrelatedAuthorityGapsRemain(wizard);
     }
 
     [TestMethod]
@@ -547,6 +636,8 @@ public sealed class CharacterCreationWizardPresentationTests
         Assert.AreEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
         CharacterCreationWizardStageState foundation = wizard.Steps.Single(
             step => string.Equals(step.StepId, CharacterCreationWizardStepIds.Foundation, StringComparison.Ordinal));
+        Assert.IsTrue(foundation.IsRequired);
+        Assert.IsFalse(foundation.IsComplete);
         Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, foundation.Status);
         Assert.IsFalse(foundation.IsAvailable);
         Assert.IsEmpty(foundation.LegalNextStepIds);
@@ -621,6 +712,7 @@ public sealed class CharacterCreationWizardPresentationTests
             qualities: qualities);
 
         Assert.AreEqual(CharacterCreationWizardStepIds.Qualities, wizard.ActiveStepId);
+        AssertInapplicableStep(wizard, CharacterCreationWizardStepIds.Foundation);
         CharacterCreationWizardStageState attributes = wizard.Steps.Single(step =>
             step.StepId == CharacterCreationWizardStepIds.Attributes);
         CharacterCreationWizardStageState qualityStep = wizard.Steps.Single(step =>
@@ -647,6 +739,169 @@ public sealed class CharacterCreationWizardPresentationTests
         CollectionAssert.DoesNotContain(
             wizard.CompletionBlockers.ToList(),
             CharacterCreationWizardProjector.QualitiesAuthorityUnavailable);
+        AssertUnrelatedAuthorityGapsRemain(wizard);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Exact_current_mundane_authority_makes_magic_inapplicable_without_claiming_completion(
+        bool hasPendingDraft)
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: "<character><name>Nova</name></character>",
+            revision: 12);
+        CharacterCreationMagicResonanceState magic = CreateMundaneState(loaded);
+        if (hasPendingDraft)
+        {
+            CharacterCreationMagicResonancePreview preview =
+                CharacterCreationMagicResonanceTestFixture.CreatePreview(
+                    magic, new CharacterCreationMagicResonanceSelections(null, null, [], [], []));
+            Assert.IsTrue(preview.CanConfirm);
+            (magic, _) = CharacterCreationMagicResonanceTestFixture.CreateConfirmed(
+                magic, preview, "mundane-applicability");
+            loaded = loaded with
+            {
+                ContentRevision = magic.Binding.ContentRevision,
+                SavedRevision = magic.Binding.SavedRevision
+            };
+        }
+        Assert.IsTrue(CharacterCreationMagicResonanceWorkflow.TryProject(magic, out var editor));
+        Assert.IsNotNull(editor);
+        Assert.IsTrue(editor.CanEdit);
+        Assert.AreEqual(CharacterCreationMagicResonanceKinds.Mundane, editor.Talent.Kind);
+        Assert.AreEqual(0, editor.Talent.Magic);
+        Assert.IsTrue(editor.Budgets.All(budget => budget.Total == 0m));
+        var service = new StubMagicResonanceService(magic);
+
+        CharacterOverviewState state = CreateState(loaded,
+            new WorkspaceOverviewStateFactory(creationMagicResonanceService: service));
+        CharacterCreationWizardSnapshot wizard = RequireWizard(state);
+
+        Assert.AreSame(magic, state.CreationMagicResonance);
+        AssertInapplicableStep(wizard, CharacterCreationWizardStepIds.MagicResonance);
+        Assert.AreNotEqual(CharacterCreationWizardStepIds.MagicResonance, wizard.ActiveStepId);
+        CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
+        foreach (CharacterCreationWizardStageState step in wizard.Steps)
+        {
+            CollectionAssert.DoesNotContain(step.LegalNextStepIds.ToArray(),
+                CharacterCreationWizardStepIds.MagicResonance);
+        }
+        AssertUnrelatedAuthorityGapsRemain(wizard);
+        Assert.AreEqual(1, service.LoadCalls);
+        Assert.AreEqual(0, service.PreviewCalls);
+        Assert.AreEqual(0, service.ConfirmCalls);
+    }
+
+    [TestMethod]
+    public void Unproven_mundane_authority_cannot_make_priority_magic_optional()
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: "<character><name>Nova</name></character>",
+            revision: 12);
+        CharacterCreationMagicResonanceState current = CreateMundaneState(loaded);
+        var defects = new Dictionary<string, CharacterCreationMagicResonanceState?>
+        {
+            ["missing"] = null,
+            ["content revision"] = RehashMagic(current with
+            {
+                Binding = current.Binding with { ContentRevision = 13 }
+            }),
+            ["saved revision"] = RehashMagic(current with
+            {
+                Binding = current.Binding with { SavedRevision = 11 }
+            }),
+            ["workspace"] = RehashMagic(current with
+            {
+                Binding = current.Binding with { WorkspaceId = new CharacterWorkspaceId("other-workspace") }
+            }),
+            ["raw character digest"] = RehashMagic(current with
+            {
+                Binding = current.Binding with
+                {
+                    RawCharacterXmlDigest = CharacterCreationMagicResonanceTestFixture.Digest('0')
+                }
+            }),
+            ["snapshot digest"] = current with
+            {
+                SnapshotDigest = CharacterCreationMagicResonanceTestFixture.Digest('0')
+            },
+            ["missing selected talent"] = RehashMagic(current with { SelectedTalent = null }),
+            ["prerequisite talent"] = RehashMagic(current with
+            {
+                PrerequisiteDraft = current.PrerequisiteDraft! with
+                {
+                    TalentSelection = current.PrerequisiteDraft.TalentSelection! with
+                    {
+                        Value = "Magician"
+                    }
+                }
+            }),
+            ["selected talent payload"] = RehashMagic(current with
+            {
+                SelectedTalent = current.SelectedTalent! with { Magic = 6 }
+            }),
+            ["blocked authority"] = RehashMagic(current with
+            {
+                Blockers = [CharacterCreationMagicResonanceBlockers.AuthorityUnavailable],
+                CanEdit = false
+            })
+        };
+        Assert.IsTrue(CharacterCreationMagicResonanceWorkflow.TryProject(current, out _));
+
+        foreach ((string defect, CharacterCreationMagicResonanceState? magic) in defects)
+        {
+            CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+                new CharacterWorkspaceId("ws-wizard"), loaded, magicResonance: magic);
+            CharacterCreationWizardStageState step = wizard.Steps.Single(candidate =>
+                candidate.StepId == CharacterCreationWizardStepIds.MagicResonance);
+
+            Assert.IsTrue(step.IsRequired, defect);
+            Assert.IsFalse(step.IsAvailable, defect);
+            Assert.IsFalse(step.IsComplete, defect);
+            Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, step.Status, defect);
+            Assert.IsEmpty(wizard.LegalOptionsByStep[CharacterCreationWizardStepIds.MagicResonance], defect);
+            CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(),
+                CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable, defect);
+            AssertUnrelatedAuthorityGapsRemain(wizard);
+        }
+    }
+
+    [TestMethod]
+    public void Blocked_but_structurally_valid_mundane_authority_retains_its_blocker()
+    {
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: "<character><name>Nova</name></character>",
+            revision: 12);
+        const string blocker = "exact-mundane-authority-not-ready";
+        CharacterCreationMagicResonanceState blocked = RehashMagic(CreateMundaneState(loaded) with
+        {
+            Blockers = [blocker],
+            CanEdit = false
+        });
+        Assert.IsTrue(CharacterCreationMagicResonanceWorkflow.TryProject(blocked, out var editor));
+        Assert.IsNotNull(editor);
+        Assert.IsFalse(editor.CanEdit);
+
+        CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+            new CharacterWorkspaceId("ws-wizard"), loaded, magicResonance: blocked);
+        CharacterCreationWizardStageState step = wizard.Steps.Single(candidate =>
+            candidate.StepId == CharacterCreationWizardStepIds.MagicResonance);
+
+        Assert.IsTrue(step.IsRequired);
+        Assert.IsFalse(step.IsAvailable);
+        Assert.IsFalse(step.IsComplete);
+        CollectionAssert.Contains(step.Blockers.ToArray(), blocker);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), blocker);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
     }
 
     [TestMethod]
@@ -733,6 +988,62 @@ public sealed class CharacterCreationWizardPresentationTests
             CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
     }
 
+    private static CharacterCreationMagicResonanceState CreateMundaneState(
+        WorkspaceOverviewLoadResult loaded)
+    {
+        string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(
+            Encoding.UTF8.GetBytes(loaded.Document!.Content))).ToLowerInvariant()}";
+        return CharacterCreationMagicResonanceTestFixture.CreateState(
+            rawDigest,
+            contentRevision: loaded.ContentRevision,
+            talentKind: CharacterCreationMagicResonanceKinds.Mundane);
+    }
+
+    private static CharacterCreationMagicResonanceState RehashMagic(
+        CharacterCreationMagicResonanceState state)
+        => CharacterCreationMagicResonanceTestFixture.WithSnapshotDigest(state);
+
+    private static void AssertInapplicableStep(CharacterCreationWizardSnapshot wizard, string stepId)
+    {
+        CharacterCreationWizardStageState step = wizard.Steps.Single(candidate =>
+            candidate.StepId == stepId);
+        Assert.IsFalse(step.IsRequired, stepId);
+        Assert.IsFalse(step.IsAvailable, stepId);
+        Assert.IsFalse(step.IsComplete, stepId);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.NotStarted, step.Status, stepId);
+        Assert.IsEmpty(step.BudgetIds, stepId);
+        Assert.IsEmpty(step.Blockers, stepId);
+        Assert.IsEmpty(step.Warnings, stepId);
+        Assert.IsEmpty(step.LegalNextStepIds, stepId);
+        Assert.IsEmpty(wizard.LegalOptionsByStep[stepId], stepId);
+    }
+
+    private static void AssertUnrelatedAuthorityGapsRemain(CharacterCreationWizardSnapshot wizard)
+    {
+        foreach (string blocker in new[]
+                 {
+                     CharacterCreationWizardProjector.FinalizationAuthorityUnavailable
+                 })
+        {
+            CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), blocker);
+        }
+        foreach (string stepId in new[]
+                 {
+                     CharacterCreationWizardStepIds.ContactsLifestyles,
+                     CharacterCreationWizardStepIds.IdentityStory,
+                     CharacterCreationWizardStepIds.Review
+                 })
+        {
+            CharacterCreationWizardStageState step = wizard.Steps.Single(candidate =>
+                candidate.StepId == stepId);
+            Assert.AreEqual(stepId == CharacterCreationWizardStepIds.Review, step.IsRequired, stepId);
+            Assert.IsFalse(step.IsAvailable, stepId);
+            Assert.IsFalse(step.IsComplete, stepId);
+            Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, step.Status, stepId);
+        }
+        Assert.IsFalse(wizard.CanFinalize);
+    }
+
     private static CharacterOverviewState CreateState(
         WorkspaceOverviewLoadResult loaded,
         WorkspaceOverviewStateFactory? factory = null)
@@ -764,6 +1075,9 @@ public sealed class CharacterCreationWizardPresentationTests
     private static CharacterCreationQualitiesState CreateQualitiesState(
         WorkspaceOverviewLoadResult loaded)
     {
+        const string sourceNodeXml = "<quality><id>4d8fd70f-cb89-40e8-b93f-c610467bbc11</id>"
+            + "<name>Focused Concentration</name><type>Positive</type><karma>10</karma>"
+            + "<source>SR5</source></quality>";
         var option = new CharacterCreationQualityCatalogOption(
             "quality-positive",
             Guid.Parse("4d8fd70f-cb89-40e8-b93f-c610467bbc11"),
@@ -783,6 +1097,8 @@ public sealed class CharacterCreationWizardPresentationTests
             FollowUpChoiceId: null,
             FollowUpChoiceLabel: null,
             SourceAnchorIds: ["qualities.xml#quality:quality-positive"],
+            SourceNodeXml: sourceNodeXml,
+            SourceNodeDigest: CharacterCreationQualitiesRules.ComputeSourceNodeDigest(sourceNodeXml),
             OptionDigest: string.Empty);
         option = option with
         {
@@ -817,7 +1133,7 @@ public sealed class CharacterCreationWizardPresentationTests
             loaded.ContentRevision,
             loaded.SavedRevision,
             rawDigest,
-            "sha256:" + new string('e', 64),
+            new string('e', 64),
             PrerequisiteDraftRevision: 2,
             PrerequisiteDraftDigest: "sha256:" + new string('f', 64),
             AttributesDraftRevision: 3,
@@ -833,6 +1149,7 @@ public sealed class CharacterCreationWizardPresentationTests
             binding,
             authority,
             []));
+        Assert.IsEmpty(preview.Blockers, "The fixture must carry exact current Core authority.");
         var state = new CharacterCreationQualitiesState(
             CharacterCreationQualitiesSchemas.StateV1,
             binding,
@@ -1130,7 +1447,7 @@ public sealed class CharacterCreationWizardPresentationTests
                 [CharacterCreationFoundationBlockers.WizardStatePersistenceAuthorityRequired]);
     }
 
-    private static WorkspaceOverviewLoadResult CreateOverview(
+    internal static WorkspaceOverviewLoadResult CreateOverview(
         bool created,
         string buildMethod,
         string content,

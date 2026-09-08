@@ -4,23 +4,31 @@ using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFactory
+public sealed class WorkspaceOverviewStateFactory :
+    IWorkspaceOverviewStateFactory,
+    IWorkspaceOverviewPreparationFactory
 {
     private readonly ICharacterCreationFoundationService? _creationFoundationService;
     private readonly ICharacterCreationContactsService? _creationContactsService;
     private readonly ICharacterCreationQualitiesService? _creationQualitiesService;
     private readonly ICharacterCreationMagicResonanceService? _creationMagicResonanceService;
+    private readonly ICharacterCreationLifestylesService? _creationLifestylesService;
+    private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
 
     public WorkspaceOverviewStateFactory(
         ICharacterCreationFoundationService? creationFoundationService = null,
         ICharacterCreationContactsService? creationContactsService = null,
         ICharacterCreationQualitiesService? creationQualitiesService = null,
-        ICharacterCreationMagicResonanceService? creationMagicResonanceService = null)
+        ICharacterCreationMagicResonanceService? creationMagicResonanceService = null,
+        ICharacterCreationLifestylesService? creationLifestylesService = null,
+        ICharacterCreationFinalizationService? creationFinalizationService = null)
     {
         _creationFoundationService = creationFoundationService;
         _creationContactsService = creationContactsService;
         _creationQualitiesService = creationQualitiesService;
         _creationMagicResonanceService = creationMagicResonanceService;
+        _creationLifestylesService = creationLifestylesService;
+        _creationFinalizationService = creationFinalizationService;
     }
 
     public CharacterOverviewState CreateLoadedState(
@@ -30,6 +38,18 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         WorkspaceOverviewLoadResult loadedOverview,
         WorkspaceViewState? restoredView,
         bool hasSavedWorkspace)
+        => PrepareLoaded(currentState, workspaceId, loadedOverview).Create(session, restoredView);
+
+    PreparedWorkspaceOverviewState IWorkspaceOverviewPreparationFactory.PrepareLoaded(
+        CharacterOverviewState currentState,
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult overview)
+        => PrepareLoaded(currentState, workspaceId, overview);
+
+    private PreparedWorkspaceOverviewState PrepareLoaded(
+        CharacterOverviewState currentState,
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
     {
         CharacterCreationFoundationState? foundation = loadedOverview.Profile.Created
             ? null
@@ -43,23 +63,30 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         CharacterCreationMagicResonanceState? magicResonance = loadedOverview.Profile.Created
             ? null
             : LoadMagicResonance(workspaceId, loadedOverview);
+        CharacterCreationLifestylesState? lifestyles = loadedOverview.Profile.Created
+            ? null
+            : LoadLifestyles(workspaceId, loadedOverview);
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization =
+            loadedOverview.Profile.Created
+                ? null
+                : LoadFinalization(workspaceId, loadedOverview);
         CharacterCreationMagicResonanceEditorState? magicResonanceEditor =
             CharacterCreationMagicResonanceWorkflow.TryProject(
                 magicResonance,
                 out CharacterCreationMagicResonanceEditorState? projectedMagicResonance)
                 ? projectedMagicResonance
                 : null;
-        return CreateState(
+        return PrepareState(
             currentState,
             workspaceId,
-            session,
             loadedOverview,
-            restoredView,
             foundation,
             contacts,
             qualities,
             magicResonance,
-            magicResonanceEditor);
+            magicResonanceEditor,
+            lifestyles,
+            finalization);
     }
 
     public CharacterOverviewState CreateActivatedState(
@@ -70,6 +97,20 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
         CharacterCreationInitialProjection initialCreation,
         WorkspaceViewState? restoredView,
         bool hasSavedWorkspace)
+        => PrepareActivated(currentState, workspaceId, loadedOverview, initialCreation).Create(session, restoredView);
+
+    PreparedWorkspaceOverviewState IWorkspaceOverviewPreparationFactory.PrepareActivated(
+        CharacterOverviewState currentState,
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult overview,
+        CharacterCreationInitialProjection initialCreation)
+        => PrepareActivated(currentState, workspaceId, overview, initialCreation);
+
+    private PreparedWorkspaceOverviewState PrepareActivated(
+        CharacterOverviewState currentState,
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationInitialProjection initialCreation)
     {
         ArgumentNullException.ThrowIfNull(initialCreation);
         CharacterCreationFoundationState foundation = RequireFoundation(
@@ -88,6 +129,9 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             workspaceId,
             loadedOverview,
             initialCreation.MagicResonance);
+        CharacterCreationLifestylesState? lifestyles = LoadLifestyles(workspaceId, loadedOverview);
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization =
+            LoadFinalization(workspaceId, loadedOverview);
         RequireSupportingInitialProjection(initialCreation);
         CharacterCreationMagicResonanceEditorState? magicResonanceEditor =
             CharacterCreationMagicResonanceWorkflow.TryProject(
@@ -95,32 +139,37 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
                 out CharacterCreationMagicResonanceEditorState? projectedMagicResonance)
                 ? projectedMagicResonance
                 : null;
-        return CreateState(
+        return PrepareState(
             currentState,
             workspaceId,
-            session,
             loadedOverview,
-            restoredView,
             foundation,
             contacts,
             qualities,
             magicResonance,
-            magicResonanceEditor);
+            magicResonanceEditor,
+            lifestyles,
+            finalization);
     }
 
-    private static CharacterOverviewState CreateState(
+    private static PreparedWorkspaceOverviewState PrepareState(
         CharacterOverviewState currentState,
         CharacterWorkspaceId workspaceId,
-        WorkspaceSessionState session,
         WorkspaceOverviewLoadResult loadedOverview,
-        WorkspaceViewState? restoredView,
         CharacterCreationFoundationState? foundation,
         CharacterCreationContactsState? contacts,
         CharacterCreationQualitiesState? qualities,
         CharacterCreationMagicResonanceState? magicResonance,
-        CharacterCreationMagicResonanceEditorState? magicResonanceEditor)
+        CharacterCreationMagicResonanceEditorState? magicResonanceEditor,
+        CharacterCreationLifestylesState? lifestyles,
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization)
     {
-        return new CharacterOverviewState(
+        CharacterCreationWizardSnapshot? wizard = loadedOverview.Profile.Created
+            ? null
+            : CharacterCreationWizardProjector.Project(
+                workspaceId, loadedOverview, foundation, contacts, qualities,
+                magicResonance, lifestyles, finalization);
+        return new PreparedWorkspaceOverviewState((session, restoredView) => new CharacterOverviewState(
             IsBusy: false,
             Error: null,
             Session: session,
@@ -152,21 +201,15 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
             Commands: currentState.Commands,
             NavigationTabs: currentState.NavigationTabs)
         {
-            CreationWizard = loadedOverview.Profile.Created
-                ? null
-                : CharacterCreationWizardProjector.Project(
-                    workspaceId,
-                    loadedOverview,
-                    foundation,
-                    contacts,
-                    qualities,
-                    magicResonance),
+            CreationWizard = wizard,
             CreationFoundation = foundation,
             CreationContacts = contacts,
             CreationQualities = qualities,
             CreationMagicResonance = magicResonance,
-            CreationMagicResonanceEditor = magicResonanceEditor
-        };
+            CreationMagicResonanceEditor = magicResonanceEditor,
+            CreationLifestyles = lifestyles,
+            CreationFinalization = finalization?.Value
+        });
     }
 
     private static CharacterCreationFoundationState RequireFoundation(
@@ -330,6 +373,43 @@ public sealed class WorkspaceOverviewStateFactory : IWorkspaceOverviewStateFacto
                    loadedOverview,
                    state)
             ? state
+            : null;
+    }
+
+    private CharacterCreationLifestylesState? LoadLifestyles(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_creationLifestylesService is null)
+            return null;
+
+        CharacterCreationLifestyleResult<CharacterCreationLifestylesState> result =
+            _creationLifestylesService.Load(new CharacterCreationLifestylesLoadRequest(workspaceId));
+        return result.Outcome == CharacterCreationLifestyleOutcomes.Available
+               && result.Value is CharacterCreationLifestylesState state
+               && BlockersMatch(result.Blockers, state.Blockers)
+               && CharacterCreationWizardProjector.MatchesLoadedOverview(
+                   workspaceId,
+                   loadedOverview,
+                   state)
+            ? state
+            : null;
+    }
+
+    private CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? LoadFinalization(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_creationFinalizationService is null)
+            return null;
+
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState> result =
+            _creationFinalizationService.Load(new CharacterCreationFinalizationLoadRequest(workspaceId));
+        return CharacterCreationWizardProjector.MatchesLoadedOverview(
+            workspaceId,
+            loadedOverview,
+            result)
+            ? result
             : null;
     }
 

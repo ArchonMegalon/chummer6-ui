@@ -84,6 +84,20 @@ public sealed record CharacterOverviewState(
     /// </summary>
     public CharacterCreationMagicResonanceEditorState? CreationMagicResonanceEditor { get; init; }
 
+    /// <summary>
+    /// Revision-, digest-, source- and runtime-matched Core read authority for optional
+    /// creation Lifestyles. Absence can be accepted only from this typed projection;
+    /// Presentation never inspects character XML to infer an empty optional selection.
+    /// </summary>
+    public CharacterCreationLifestylesState? CreationLifestyles { get; init; }
+
+    /// <summary>
+    /// Exact Core whole-build state for the opened revision. This is the sole positive
+    /// authority for creation completion; Presentation may further fail closed when an
+    /// optional typed domain or bootstrap identity cannot be proven current.
+    /// </summary>
+    public CharacterCreationFinalizationState? CreationFinalization { get; init; }
+
     public static CharacterOverviewState Empty { get; } = new(
         IsBusy: false,
         Error: null,
