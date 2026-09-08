@@ -8,6 +8,31 @@ namespace Chummer.CreationWizard.Presentation.Tests;
 public sealed class CharacterCreationMagicResonanceWorkflowTests
 {
     [TestMethod]
+    public void Rehashed_outer_snapshot_cannot_replace_confirmed_special_attribute_authority()
+    {
+        var state = CharacterCreationMagicResonanceTestFixture.CreateState(
+            CharacterCreationMagicResonanceTestFixture.Digest('0'));
+        Assert.IsTrue(CharacterCreationMagicResonanceWorkflow.TryProject(state, out _));
+        foreach (var attributes in new[]
+        {
+            state.AttributesDraft! with { Attributes = [] },
+            state.AttributesDraft! with { Allocations = [] },
+            state.AttributesDraft! with { Attributes = state.AttributesDraft!.Attributes.Select(item =>
+                item.AttributeId == "MAG" ? item with { Current = 5 } : item).ToArray() }
+        })
+        {
+            var forged = state with { AttributesDraft = attributes };
+            forged = CharacterCreationMagicResonanceTestFixture.WithSnapshotDigest(forged);
+            Assert.IsFalse(CharacterCreationMagicResonanceWorkflow.TryProject(forged, out _));
+            var rehashed = attributes with { DraftDigest = string.Empty };
+            rehashed = rehashed with { DraftDigest = CharacterCreationMagicResonanceDigest.Compute(rehashed) };
+            forged = forged with { AttributesDraft = rehashed, Binding = forged.Binding with { AttributesDraftDigest = rehashed.DraftDigest } };
+            Assert.IsFalse(CharacterCreationMagicResonanceWorkflow.TryProject(
+                CharacterCreationMagicResonanceTestFixture.WithSnapshotDigest(forged), out _));
+        }
+    }
+
+    [TestMethod]
     public void Source_contract_keeps_rules_and_mutation_authority_in_core()
     {
         Assert.AreEqual(

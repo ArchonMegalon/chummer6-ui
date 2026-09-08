@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Rulesets;
@@ -137,8 +138,7 @@ public sealed class CharacterCreationGearInteractionPresenterTests
     private static Fixture CreateFixture()
     {
         const string content = "<character><created>False</created><buildmethod>Priority</buildmethod></character>";
-        string rawDigest = CharacterCreationFoundationDraftLedgerIntegrity
-            .ComputeRawCharacterXmlDigest(content);
+        string rawDigest = CharacterCreationGearRules.ComputeUtf8(content);
         CharacterWorkspaceId workspaceId = new("creation-gear-presentation");
         CharacterCreationGearAuthority authority = Authority();
         var resourcesBudget = new CharacterCreationResourcesBudget(
@@ -326,10 +326,20 @@ public sealed class CharacterCreationGearInteractionPresenterTests
         IReadOnlyList<string> blockers,
         bool exact = true)
     {
+        string sourceNodeXml = new XElement("gear",
+            new XElement("id", id.ToString("D")),
+            new XElement("name", name),
+            new XElement("category", "Biotech"),
+            new XElement("cost", exact ? (object)cost : "UnsupportedFormula"),
+            new XElement("costfor", packageQuantity),
+            new XElement("avail", $"{availability}R"),
+            new XElement("source", "SR5"),
+            new XElement("page", "450")).ToString(SaveOptions.DisableFormatting);
         var candidate = new CharacterCreationGearCatalogOption(
             $"gear:{id:D}", id, name, "Biotech", cost, packageQuantity, availability,
             CharacterCreationGearLegality.Restricted, "SR5", "450", selectable, exact, exact,
-            blockers, [$"gear.xml#gear:{id:D}"], Digest('e'), string.Empty);
+            blockers, [$"gear.xml#gear:{id:D}"], sourceNodeXml,
+            CharacterCreationGearRules.ComputeSourceNodeDigest(sourceNodeXml), string.Empty);
         return candidate with
         {
             OptionDigest = CharacterCreationGearRules.ComputeOptionDigest(candidate)

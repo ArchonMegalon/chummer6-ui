@@ -108,7 +108,11 @@ public sealed record CharacterCreationMagicResonanceEditorState(
     IReadOnlyList<string> SourceAnchorIds,
     bool HasPendingDraft,
     bool CanEdit,
-    string CoreSnapshotDigest);
+    string CoreSnapshotDigest)
+{
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public CharacterCreationMysticAdeptPowerPointAllocation? MysticAdeptPowerPoints { get; init; }
+}
 
 /// <summary>
 /// Presentation draft. It intentionally contains no cost, budget, source, legality, grant,
@@ -156,6 +160,9 @@ public static class CharacterCreationMagicResonanceWorkflow
             return false;
 
         CharacterCreationMagicResonanceTalentOption talent = state!.SelectedTalent!;
+        if (!CharacterCreationMagicResonanceFinalizationRules.TryResolveEffectiveAttributes(
+                talent, state.AttributesDraft!, out CharacterCreationMagicResonanceEffectiveAttributes effective))
+            return false;
         CharacterCreationMagicResonanceSelections selections = state.PendingDraft?.Selections
             ?? new CharacterCreationMagicResonanceSelections(null, null, [], [], []);
         CharacterCreationMagicResonanceBudgetState[] budgets =
@@ -174,6 +181,7 @@ public static class CharacterCreationMagicResonanceWorkflow
             .OrderBy(static blocker => blocker, StringComparer.Ordinal)
             .ToArray();
         string[] sourceAnchors = talent.SourceAnchorIds
+            .Concat(state.MysticAdeptPowerPoints?.Policy.SourceAnchorIds ?? [])
             .Concat(state.PendingDraft?.SourceAnchorIds ?? [])
             .Distinct(StringComparer.Ordinal)
             .OrderBy(static anchor => anchor, StringComparer.Ordinal)
@@ -207,7 +215,7 @@ public static class CharacterCreationMagicResonanceWorkflow
                 talent.SourceNodeDigest),
             ProjectOptions(state.Authority.Traditions),
             ProjectOptions(state.Authority.Streams),
-            ProjectOptions(state.Authority.AdeptPowers),
+            ProjectOptions(state.Authority.AdeptPowers, effective.Magic),
             ProjectOptions(state.Authority.Spells),
             ProjectOptions(state.Authority.ComplexForms),
             NormalizeSelections(selections),
@@ -216,7 +224,10 @@ public static class CharacterCreationMagicResonanceWorkflow
             sourceAnchors,
             state.PendingDraft is not null,
             state.CanEdit && blockers.Length == 0,
-            state.SnapshotDigest);
+            state.SnapshotDigest)
+        {
+            MysticAdeptPowerPoints = state.MysticAdeptPowerPoints
+        };
         return true;
     }
 
@@ -226,7 +237,8 @@ public static class CharacterCreationMagicResonanceWorkflow
         CharacterCreationMagicResonanceOptionIdentity? stream,
         IReadOnlyList<CharacterCreationAdeptPowerAllocation>? adeptPowers,
         IReadOnlyList<CharacterCreationMagicResonanceOptionIdentity>? spells,
-        IReadOnlyList<CharacterCreationMagicResonanceOptionIdentity>? complexForms)
+        IReadOnlyList<CharacterCreationMagicResonanceOptionIdentity>? complexForms,
+        int mysticAdeptPowerPoints = 0)
     {
         ArgumentNullException.ThrowIfNull(state);
         if (!string.Equals(
@@ -243,7 +255,7 @@ public static class CharacterCreationMagicResonanceWorkflow
             stream,
             adeptPowers ?? [],
             spells ?? [],
-            complexForms ?? []));
+            complexForms ?? []) { MysticAdeptPowerPoints = mysticAdeptPowerPoints });
         ValidateSelectionIdentities(state, selections);
         return new CharacterCreationMagicResonanceDesktopDraft(
             state.Binding,
@@ -430,7 +442,8 @@ public static class CharacterCreationMagicResonanceWorkflow
                 StringComparison.Ordinal)
             || !PrerequisiteSelectsExactTalent(
                 state.PrerequisiteDraft,
-                state.SelectedTalent)
+                state.SelectedTalent,
+                state.Authority.MysticAdeptPowerPointPolicy)
             || !BudgetsAreValid(state)
             || !CharacterCreationMagicResonanceDigest.IsCanonical(state.SnapshotDigest)
             || !CharacterCreationMagicResonanceDigest.EqualsFixedTime(
@@ -466,7 +479,8 @@ public static class CharacterCreationMagicResonanceWorkflow
 
     private static bool PrerequisiteSelectsExactTalent(
         CharacterCreationPrerequisiteDraft prerequisite,
-        CharacterCreationMagicResonanceTalentOption talent)
+        CharacterCreationMagicResonanceTalentOption talent,
+        CharacterCreationMysticAdeptPowerPointPolicy? mysticPolicy)
     {
         CharacterCreationPriorityTalentSelection? selected = prerequisite.TalentSelection;
         CharacterCreationPriorityAssignment[] assignments = prerequisite.Assignments
@@ -498,8 +512,21 @@ public static class CharacterCreationMagicResonanceWorkflow
                && CharacterCreationMagicResonanceDigest.EqualsFixedTime(
                    selected.PriorityChildNodeDigest,
                    talent.SourceNodeDigest)
-               && selected.SourceAnchorIds.SequenceEqual(
-                   talent.SourceAnchorIds,
+               && (selected.GrantPlan is null || selected.GrantPlan.SourceAnchorIds is not null
+                   && CharacterCreationMagicResonanceDigest.EqualsFixedTime(selected.GrantPlan.PlanDigest,
+                       CharacterCreationMagicResonanceDigest.Compute(
+                           selected.GrantPlan with { PlanDigest = string.Empty })))
+               // The selected Priority adds chosen free-skill anchors; Magic
+               // adds resolved Heritage-quality and Mystic profile anchors. The
+               // policy was validated by Core's authority validator above; neither
+               // an omitted source nor an arbitrary extra anchor may be accepted.
+               && selected.SourceAnchorIds
+                   .Concat((talent.GrantedQualitySources ?? []).SelectMany(static quality => quality.SourceAnchorIds))
+                   .Concat(talent.Kind == CharacterCreationMagicResonanceKinds.MysticAdept
+                       ? mysticPolicy?.SourceAnchorIds ?? [] : [])
+                   .Distinct(StringComparer.Ordinal).OrderBy(static anchor => anchor, StringComparer.Ordinal).SequenceEqual(
+                   talent.SourceAnchorIds.Concat(selected.GrantPlan?.SourceAnchorIds ?? [])
+                       .Distinct(StringComparer.Ordinal).OrderBy(static anchor => anchor, StringComparer.Ordinal),
                    StringComparer.Ordinal);
     }
 
@@ -522,6 +549,16 @@ public static class CharacterCreationMagicResonanceWorkflow
 
     private static bool BudgetsAreValid(CharacterCreationMagicResonanceState state)
     {
+        if (!CharacterCreationMagicResonanceFinalizationRules.TryResolveEffectiveAttributes(
+                state.SelectedTalent!, state.AttributesDraft!, out CharacterCreationMagicResonanceEffectiveAttributes effective))
+            return false;
+        if (!CharacterCreationMysticAdeptPowerPointRules.TryEvaluate(state.Authority.MysticAdeptPowerPointPolicy,
+                state.SelectedTalent!.Kind, effective.Magic, state.SelectedTalent.SpellBudget,
+                state.PendingDraft?.Selections.MysticAdeptPowerPoints ?? 0, out var purchase)
+            || !CharacterCreationMagicResonanceDigest.EqualsFixedTime(
+                CharacterCreationMagicResonanceDigest.Compute(purchase),
+                CharacterCreationMagicResonanceDigest.Compute(state.MysticAdeptPowerPoints)))
+            return false;
         CharacterCreationMagicResonanceBudgetState[] budgets =
         [
             state.TraditionBudget,
@@ -540,8 +577,8 @@ public static class CharacterCreationMagicResonanceWorkflow
         ];
         return state.TraditionBudget.Total == (state.SelectedTalent!.RequiresTradition ? 1m : 0m)
                && state.StreamBudget.Total == (state.SelectedTalent.RequiresStream ? 1m : 0m)
-               && state.AdeptPowerPointBudget.Total == state.SelectedTalent.AdeptPowerPointBudget
-               && state.SpellBudget.Total == state.SelectedTalent.SpellBudget
+               && state.AdeptPowerPointBudget.Total == (purchase?.PowerPoints ?? effective.AdeptPowerPointBudget)
+               && state.SpellBudget.Total == (purchase?.SpellBudget ?? state.SelectedTalent.SpellBudget)
                && state.ComplexFormBudget.Total == state.SelectedTalent.ComplexFormBudget
                && budgets.Select(static budget => budget.Kind)
                    .SequenceEqual(expectedKinds, StringComparer.Ordinal)
@@ -554,13 +591,16 @@ public static class CharacterCreationMagicResonanceWorkflow
     }
 
     private static IReadOnlyList<CharacterCreationMagicResonanceOptionProjection> ProjectOptions(
-        IReadOnlyList<CharacterCreationMagicResonanceCatalogOption> options) => options
-        .Select(static option => new CharacterCreationMagicResonanceOptionProjection(
+        IReadOnlyList<CharacterCreationMagicResonanceCatalogOption> options,
+        int? effectiveMagic = null) => options
+        .Select(option => new CharacterCreationMagicResonanceOptionProjection(
             option.Identity,
             option.Name,
             option.Category,
             option.PointCost,
-            option.MaximumLevels,
+            effectiveMagic is int magic
+                ? CharacterCreationAdeptPowerSourceRules.EffectiveMaximumLevels(option, magic)
+                : option.MaximumLevels,
             option.SourceBook,
             option.Page,
             option.DrainExpression,
@@ -679,10 +719,22 @@ public static class CharacterCreationMagicResonanceWorkflow
                preview.PreviewDigest,
                CharacterCreationMagicResonanceDigest.Compute(preview with { PreviewDigest = string.Empty }));
 
+    public static bool IsValidPowerPointQuote(CharacterCreationMagicResonanceEditorState state,
+        CharacterCreationMagicResonancePreview preview) =>
+        CharacterCreationMysticAdeptPowerPointRules.TryEvaluate(state.MysticAdeptPowerPoints?.Policy,
+            state.Talent.Kind, state.MysticAdeptPowerPoints?.MaximumPowerPoints ?? state.Talent.Magic,
+            state.Talent.SpellBudget, preview.Selections.MysticAdeptPowerPoints, out var expected)
+        && CharacterCreationMagicResonanceDigest.EqualsFixedTime(
+            CharacterCreationMagicResonanceDigest.Compute(expected),
+            CharacterCreationMagicResonanceDigest.Compute(preview.MysticAdeptPowerPoints));
+
     private static bool PreviewShapeIsValid(
         CharacterCreationMagicResonanceEditorState state,
         CharacterCreationMagicResonancePreview preview)
     {
+        if (!IsValidPowerPointQuote(state, preview))
+            return false;
+        var purchase = preview.MysticAdeptPowerPoints;
         CharacterCreationMagicResonanceBudgetState[] budgets =
         [
             preview.TraditionBudget,
@@ -701,10 +753,13 @@ public static class CharacterCreationMagicResonanceWorkflow
         ];
         if (!budgets.Select(static budget => budget.Kind)
                 .SequenceEqual(expectedKinds, StringComparer.Ordinal)
+            || state.Budgets.Count != budgets.Length
+            || !state.Budgets.Select(static budget => budget.Kind).SequenceEqual(expectedKinds, StringComparer.Ordinal)
+            || preview.AdeptPowerPointBudget.Total != (purchase?.PowerPoints
+                ?? state.Budgets.Single(budget => budget.Kind == CharacterCreationMagicResonanceKinds.AdeptPower).Total)
             || preview.TraditionBudget.Total != (state.Talent.RequiresTradition ? 1m : 0m)
             || preview.StreamBudget.Total != (state.Talent.RequiresStream ? 1m : 0m)
-            || preview.AdeptPowerPointBudget.Total != state.Talent.AdeptPowerPointBudget
-            || preview.SpellBudget.Total != state.Talent.SpellBudget
+            || preview.SpellBudget.Total != (purchase?.SpellBudget ?? state.Talent.SpellBudget)
             || preview.ComplexFormBudget.Total != state.Talent.ComplexFormBudget
             || budgets.Any(static budget =>
                 budget.Total < 0m
@@ -718,6 +773,7 @@ public static class CharacterCreationMagicResonanceWorkflow
         }
 
         HashSet<string> allowedAnchors = state.Talent.SourceAnchorIds
+            .Concat(state.MysticAdeptPowerPoints?.Policy.SourceAnchorIds ?? [])
             .Concat(state.Traditions.SelectMany(static option => option.SourceAnchorIds))
             .Concat(state.Streams.SelectMany(static option => option.SourceAnchorIds))
             .Concat(state.AdeptPowers.SelectMany(static option => option.SourceAnchorIds))
@@ -811,5 +867,8 @@ public static class CharacterCreationMagicResonanceWorkflow
         (selections.ComplexForms ?? [])
             .OrderBy(static item => item.Kind, StringComparer.Ordinal)
             .ThenBy(static item => item.SourceId, StringComparer.Ordinal)
-            .ToArray());
+            .ToArray())
+        {
+            MysticAdeptPowerPoints = selections.MysticAdeptPowerPoints
+        };
 }

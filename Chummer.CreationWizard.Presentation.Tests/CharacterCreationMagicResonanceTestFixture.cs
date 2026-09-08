@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
@@ -54,10 +55,10 @@ internal static class CharacterCreationMagicResonanceTestFixture
             attributes,
             talent,
             PendingDraft: null,
-            Budget(CharacterCreationMagicResonanceKinds.Tradition, 1m, 0m),
+            Budget(CharacterCreationMagicResonanceKinds.Tradition, talent.RequiresTradition ? 1m : 0m, 0m),
             Budget(CharacterCreationMagicResonanceKinds.Stream, 0m, 0m),
             Budget(CharacterCreationMagicResonanceKinds.AdeptPower, 0m, 0m),
-            Budget(CharacterCreationMagicResonanceKinds.Spell, 2m, 0m),
+            Budget(CharacterCreationMagicResonanceKinds.Spell, talent.SpellBudget, 0m),
             Budget(CharacterCreationMagicResonanceKinds.ComplexForm, 0m, 0m),
             Blockers: [],
             CanEdit: true,
@@ -71,8 +72,10 @@ internal static class CharacterCreationMagicResonanceTestFixture
     {
         var blockers = new List<string>();
         decimal traditionUsed = selections.Tradition == TraditionId ? 1m : 0m;
-        if (traditionUsed == 0m)
+        if (state.SelectedTalent!.RequiresTradition && traditionUsed == 0m)
             blockers.Add(CharacterCreationMagicResonanceBlockers.TraditionRequired);
+        if (!state.SelectedTalent.RequiresTradition && selections.Tradition is not null)
+            blockers.Add(CharacterCreationMagicResonanceBlockers.TraditionInvalid);
         if (selections.Stream is not null
             || selections.AdeptPowers.Count != 0
             || selections.ComplexForms.Count != 0)
@@ -80,9 +83,9 @@ internal static class CharacterCreationMagicResonanceTestFixture
         if (selections.Spells.Distinct().Count() != selections.Spells.Count
             || selections.Spells.Any(identity => identity != SpellOneId && identity != SpellTwoId))
             blockers.Add(CharacterCreationMagicResonanceBlockers.OptionInvalid);
-        if (selections.Spells.Count < 2)
+        if (selections.Spells.Count < state.SelectedTalent.SpellBudget)
             blockers.Add(CharacterCreationMagicResonanceBlockers.SpellBudgetIncomplete);
-        if (selections.Spells.Count > 2)
+        if (selections.Spells.Count > state.SelectedTalent.SpellBudget)
             blockers.Add(CharacterCreationMagicResonanceBlockers.SpellBudgetExceeded);
 
         string[] normalizedBlockers = blockers.Distinct(StringComparer.Ordinal)
@@ -103,10 +106,12 @@ internal static class CharacterCreationMagicResonanceTestFixture
             state.Binding,
             state.SelectedTalent,
             selections,
-            Budget(CharacterCreationMagicResonanceKinds.Tradition, 1m, traditionUsed),
+            Budget(CharacterCreationMagicResonanceKinds.Tradition,
+                state.SelectedTalent.RequiresTradition ? 1m : 0m, traditionUsed),
             Budget(CharacterCreationMagicResonanceKinds.Stream, 0m, 0m),
             Budget(CharacterCreationMagicResonanceKinds.AdeptPower, 0m, 0m),
-            Budget(CharacterCreationMagicResonanceKinds.Spell, 2m, selections.Spells.Count),
+            Budget(CharacterCreationMagicResonanceKinds.Spell,
+                state.SelectedTalent.SpellBudget, selections.Spells.Count),
             Budget(CharacterCreationMagicResonanceKinds.ComplexForm, 0m, 0m),
             anchors,
             normalizedBlockers,
@@ -129,6 +134,23 @@ internal static class CharacterCreationMagicResonanceTestFixture
         long nextRevision = before.Binding.ContentRevision + 1;
         string keyDigest = CharacterCreationMagicResonanceDigest.ComputeUtf8(idempotencyKey);
         string commandDigest = Digest('c');
+        if (!CharacterCreationMagicResonanceFinalizationRules.TryCreate(
+                before.Binding.RawCharacterXmlDigest,
+                before.Binding.PrerequisiteDraftRevision,
+                before.Binding.PrerequisiteDraftDigest,
+                before.Binding.AttributesDraftRevision,
+                before.Binding.AttributesDraftDigest,
+                before.Authority,
+                before.SelectedTalent!,
+                preview.Selections,
+                before.AttributesDraft!,
+                out CharacterCreationMagicResonanceFinalizationContribution contribution,
+                out string[] contributionBlockers))
+        {
+            throw new InvalidOperationException(
+                "Magic fixture finalization contribution is invalid: "
+                + string.Join(", ", contributionBlockers));
+        }
         var draft = new CharacterCreationMagicResonanceDraft(
             CharacterCreationMagicResonanceSchemas.DraftV1,
             before.Binding.WorkspaceId,
@@ -161,7 +183,10 @@ internal static class CharacterCreationMagicResonanceTestFixture
             LastIdempotencyKeyDigest: keyDigest,
             LastPreviewDigest: preview.PreviewDigest,
             LastCommandDigest: commandDigest,
-            DraftDigest: string.Empty);
+            DraftDigest: string.Empty)
+        {
+            FinalizationContribution = contribution
+        };
         draft = draft with
         {
             DraftDigest = CharacterCreationMagicResonanceDraftIntegrity.ComputeDigest(draft)
@@ -217,28 +242,35 @@ internal static class CharacterCreationMagicResonanceTestFixture
 
     private static CharacterCreationMagicResonanceAuthority CreateAuthority(string talentKind)
     {
+        bool mundane = talentKind == CharacterCreationMagicResonanceKinds.Mundane;
+        bool artificialIntelligence = talentKind == CharacterCreationMagicResonanceKinds.ArtificialIntelligence;
+        string talentName = mundane ? "Mundane" : artificialIntelligence ? "A.I." : "Magician";
+        string talentXml = new XElement("talent",
+            new XElement("name", talentName),
+            new XElement("value", talentName),
+            new XElement("magic", mundane || artificialIntelligence ? 0 : 6),
+            new XElement("resonance", 0),
+            new XElement("depth", artificialIntelligence ? 6 : 0),
+            new XElement("spells", mundane || artificialIntelligence ? 0 : 2),
+            new XElement("cfp", 0)).ToString(SaveOptions.DisableFormatting);
         var talent = new CharacterCreationMagicResonanceTalentOption(
             new CharacterCreationMagicResonanceTalentIdentity(
                 "0487cf47-7ad1-4f4d-a38f-09a094e0e246",
                 "talent-0",
-                talentKind == CharacterCreationMagicResonanceKinds.ArtificialIntelligence
-                    ? "A.I."
-                    : "Magician"),
+                talentName),
             Rank: "A",
-            Name: talentKind == CharacterCreationMagicResonanceKinds.ArtificialIntelligence
-                ? "A.I."
-                : "Magician",
+            Name: talentName,
             Kind: talentKind,
-            Magic: talentKind == CharacterCreationMagicResonanceKinds.ArtificialIntelligence ? 0 : 6,
+            Magic: mundane || artificialIntelligence ? 0 : 6,
             Resonance: 0,
-            Depth: talentKind == CharacterCreationMagicResonanceKinds.ArtificialIntelligence ? 6 : 0,
-            SpellBudget: talentKind == CharacterCreationMagicResonanceKinds.ArtificialIntelligence ? 0 : 2,
+            Depth: artificialIntelligence ? 6 : 0,
+            SpellBudget: mundane || artificialIntelligence ? 0 : 2,
             ComplexFormBudget: 0,
             AdeptPowerPointBudget: 0m,
-            RequiresTradition: talentKind != CharacterCreationMagicResonanceKinds.ArtificialIntelligence,
+            RequiresTradition: !mundane && !artificialIntelligence,
             RequiresStream: false,
             AllowsAdeptPowers: false,
-            AllowsSpells: talentKind != CharacterCreationMagicResonanceKinds.ArtificialIntelligence,
+            AllowsSpells: !mundane && !artificialIntelligence,
             AllowsComplexForms: false,
             RequiredMetatypeNames: [],
             RequiredMetatypeCategories: [],
@@ -246,7 +278,14 @@ internal static class CharacterCreationMagicResonanceTestFixture
             SourceNodeDigest: Digest('1'),
             SourceAnchorIds: ["priorities.xml#priority:magic-a:talent:0"],
             Blockers: [],
-            IsEnabled: true);
+            IsEnabled: true)
+        {
+            CanonicalSourceXml = talentXml,
+            CanonicalSourceXmlDigest = CharacterCreationMagicResonanceDigest.ComputeUtf8(talentXml),
+            // This synthetic no-grant Talent has resolved an empty quality set;
+            // null now means unresolved historical source authority.
+            GrantedQualitySources = []
+        };
         CharacterCreationMagicResonanceCatalogOption tradition = Option(
             TraditionId,
             "Hermetic",
@@ -292,11 +331,14 @@ internal static class CharacterCreationMagicResonanceTestFixture
             [],
             IsAuthoritative: true,
             AuthorityDigest: string.Empty);
-        return authority with
+        authority = authority with
         {
             AuthorityDigest = CharacterCreationMagicResonanceDigest.Compute(
                 authority with { AuthorityDigest = string.Empty })
         };
+        if (!CharacterCreationMagicResonanceDraftIntegrity.IsValidAuthority(authority))
+            throw new InvalidOperationException("Magic fixture authority is not valid against the Core contract.");
+        return authority;
     }
 
     private static CharacterCreationMagicResonanceCatalogOption Option(
@@ -305,19 +347,40 @@ internal static class CharacterCreationMagicResonanceTestFixture
         string category,
         decimal cost,
         string anchor,
-        char digest) => new(
-        CharacterCreationMagicResonanceSchemas.CatalogOptionV1,
-        identity,
-        name,
-        category,
-        cost,
-        MaximumLevels: 1,
-        SourceBook: "SR5",
-        Page: "172",
-        SourceNodeDigest: Digest(digest),
-        SourceAnchorIds: [anchor],
-        Blockers: [],
-        IsEnabled: true);
+        char digest)
+    {
+        string root = identity.Kind switch
+        {
+            CharacterCreationMagicResonanceKinds.Tradition => "tradition",
+            CharacterCreationMagicResonanceKinds.Spell => "spell",
+            _ => throw new ArgumentOutOfRangeException(nameof(identity))
+        };
+        var source = new XElement(root,
+            new XElement("id", identity.SourceId),
+            new XElement("name", name),
+            new XElement("source", "SR5"),
+            new XElement("page", "172"));
+        if (identity.Kind == CharacterCreationMagicResonanceKinds.Spell)
+            source.Add(new XElement("category", category));
+        string sourceXml = source.ToString(SaveOptions.DisableFormatting);
+        return new CharacterCreationMagicResonanceCatalogOption(
+            CharacterCreationMagicResonanceSchemas.CatalogOptionV1,
+            identity,
+            name,
+            category,
+            cost,
+            MaximumLevels: 1,
+            SourceBook: "SR5",
+            Page: "172",
+            SourceNodeDigest: Digest(digest),
+            SourceAnchorIds: [anchor],
+            Blockers: [],
+            IsEnabled: true)
+        {
+            CanonicalSourceXml = sourceXml,
+            CanonicalSourceXmlDigest = CharacterCreationMagicResonanceDigest.ComputeUtf8(sourceXml)
+        };
+    }
 
     private static CharacterCreationPrerequisiteDraft CreatePrerequisite(
         CharacterCreationMagicResonanceAuthority authority,
@@ -370,7 +433,13 @@ internal static class CharacterCreationMagicResonanceTestFixture
 
     private static CharacterCreationAttributesDraft CreateAttributes(
         CharacterCreationPrerequisiteDraft prerequisite,
-        string rawDigest) => new(
+        string rawDigest)
+    {
+        var talent = prerequisite.TalentSelection!;
+        var special = new[] { (Id: "MAG", Value: talent.Magic.GetValueOrDefault()),
+            (Id: "RES", Value: talent.Resonance.GetValueOrDefault()),
+            (Id: "DEP", Value: talent.Depth.GetValueOrDefault()) };
+        var draft = new CharacterCreationAttributesDraft(
         CharacterCreationAttributesSchemas.DraftV1,
         WorkspaceId,
         DraftRevision: 3,
@@ -388,11 +457,15 @@ internal static class CharacterCreationMagicResonanceTestFixture
         SpecialPointUsed: 5,
         CreationKarmaTotal: 25,
         CreationKarmaUsed: 0,
-        Allocations: [],
-        Attributes: [],
+        Allocations: special.Select(item => new CharacterCreationAttributeAllocation(item.Id, 0, 0)).ToArray(),
+        Attributes: special.Select(item => new CharacterCreationAttributeProjection(item.Id,
+            CharacterCreationAttributeCategories.Special, item.Value, 6, 9, item.Value,
+            0, 0, 0, 0, item.Value > 0, [], ["metatypes.xml#metatype:human"])).ToArray(),
         SourceAnchorIds: ["metatypes.xml#metatype:human"],
         CharacterEffectsApplied: false,
-        DraftDigest: Digest('f'));
+        DraftDigest: string.Empty);
+        return draft with { DraftDigest = CharacterCreationMagicResonanceDigest.Compute(draft) };
+    }
 
     private static CharacterCreationMagicResonanceBudgetState Budget(
         string kind,
@@ -404,7 +477,7 @@ internal static class CharacterCreationMagicResonanceTestFixture
         Math.Max(0m, total - used),
         used <= total ? [] : [CharacterCreationMagicResonanceBlockers.OptionInvalid]);
 
-    private static CharacterCreationMagicResonanceState WithSnapshotDigest(
+    internal static CharacterCreationMagicResonanceState WithSnapshotDigest(
         CharacterCreationMagicResonanceState state) => state with
     {
         SnapshotDigest = CharacterCreationMagicResonanceDigest.Compute(
