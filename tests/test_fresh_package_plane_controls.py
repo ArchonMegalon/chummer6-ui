@@ -33,6 +33,111 @@ def load_module() -> ModuleType:
 package_plane = load_module()
 
 
+@pytest.mark.parametrize("payload", [b"", b"ab", b"abcd", b"xyz"])
+def test_public_core_bundle_rejects_non_exact_bytes_before_writing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, payload: bytes
+) -> None:
+    monkeypatch.setattr(package_plane, "CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES", 3)
+    monkeypatch.setattr(package_plane, "CORE_RUNTIME_PUBLIC_BUNDLE_SHA256", hashlib.sha256(b"abc").hexdigest())
+    monkeypatch.setattr(package_plane.urllib.request, "urlopen", lambda *a, **k: io.BytesIO(payload))
+    target = tmp_path / "core.zip"
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.acquire_public_core_runtime_bundle(target)
+    assert not target.exists()
+
+
+def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(package_plane, "CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES", 3)
+    monkeypatch.setattr(package_plane, "CORE_RUNTIME_PUBLIC_BUNDLE_SHA256", hashlib.sha256(b"abc").hexdigest())
+    calls = []
+
+    def respond(request: object, *, timeout: int) -> io.BytesIO:
+        calls.append((request.full_url, request.header_items(), timeout))
+        return io.BytesIO(b"abc")
+
+    monkeypatch.setattr(package_plane.urllib.request, "urlopen", respond)
+    target = tmp_path / "core.zip"
+    package_plane.acquire_public_core_runtime_bundle(target)
+    assert target.read_bytes() == b"abc"
+    assert calls == [(
+        "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
+        "core-runtime-package-plane-1d8cf694d0412b3bd9f4a241fb95244fad341160/"
+        "chummer-core-runtime-package-plane-1d8cf694d0412b3bd9f4a241fb95244fad341160.zip",
+        [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
+    )]
+
+
+@pytest.mark.parametrize("linked", [False, True])
+def test_public_core_bundle_preserves_existing_or_linked_target_without_request(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, linked: bool
+) -> None:
+    original = tmp_path / "original"
+    original.write_bytes(b"keep")
+    target = tmp_path / "core.zip"
+    if linked:
+        target.symlink_to(original)
+    else:
+        target.write_bytes(b"keep")
+    monkeypatch.setattr(package_plane.urllib.request, "urlopen", lambda *a, **k: pytest.fail("must not request"))
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.acquire_public_core_runtime_bundle(target)
+    assert target.read_bytes() == original.read_bytes() == b"keep"
+
+
+@pytest.mark.parametrize("preloaded", [False, True])
+def test_hub_cold_feed_materializes_verified_core_before_supported_producer_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, preloaded: bool
+) -> None:
+    producer = tmp_path / "producer.py"
+    producer.write_bytes(b"producer")
+    producer_lock = tmp_path / "lock.json"
+    producer_lock.write_bytes(b"lock")
+    core_feed = tmp_path / "core"
+    calls = []
+    if preloaded:
+        core_feed.mkdir()
+        (core_feed / "verified.nupkg").write_bytes(b"verified")
+
+    def acquire(target: Path) -> None:
+        calls.append("download")
+        target.write_bytes(b"bundle")
+
+    def materialize(lock: object, bundle: Path, feed: Path, authority: Path) -> dict:
+        assert bundle.read_bytes() == b"bundle"
+        assert feed == core_feed and feed.is_dir() and authority.is_dir()
+        calls.append("verify")
+        (feed / "verified.nupkg").write_bytes(b"verified")
+        return {}
+
+    class ProducerReached(Exception):
+        pass
+
+    def run(command: list, **kwargs: object) -> None:
+        assert "--download-core-runtime" not in command
+        assert "--core-runtime-bundle-input" not in command
+        assert (core_feed / "verified.nupkg").read_bytes() == b"verified"
+        assert command[command.index("--core-feed") + 1] == str(core_feed)
+        assert command[command.index("--dotnet") + 1] == str(tmp_path / "dotnet")
+        calls.append("producer")
+        raise ProducerReached
+
+    monkeypatch.setattr(package_plane, "acquire_public_core_runtime_bundle", acquire)
+    monkeypatch.setattr(package_plane, "materialize_cold_core_runtime_bundle", materialize)
+    monkeypatch.setattr(package_plane, "run", run)
+    lock = {"canonicalOwnerFeed": {
+        "producerPath": producer.name, "producerSha256": hashlib.sha256(b"producer").hexdigest(),
+        "lockPath": producer_lock.name, "lockSha256": hashlib.sha256(b"lock").hexdigest(),
+    }}
+    with pytest.raises(ProducerReached):
+        package_plane.import_hub_canonical_feed(
+            lock, tmp_path, tmp_path, core_feed, tmp_path / "hub", tmp_path / "destination",
+            {}, preloaded_core_runtime=preloaded,
+        )
+    assert calls == (["producer"] if preloaded else ["download", "verify", "producer"])
+
+
 def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation() -> None:
     previous = json.loads(LOCK.read_text(encoding="utf-8"))
     previous_bytes = package_plane.encoded_json(previous)

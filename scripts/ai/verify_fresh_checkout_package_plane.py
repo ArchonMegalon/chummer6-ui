@@ -4233,6 +4233,35 @@ def write_regular_bytes_exact(path: Path, content: bytes, label: str) -> None:
         raise VerificationError(f"{label} output differs from exact input bytes")
 
 
+def acquire_public_core_runtime_bundle(target: Path) -> None:
+    """Fetch only the pinned public bytes; never delegate discovery to Hub."""
+    if (
+        not target.is_absolute()
+        or target.exists()
+        or target.is_symlink()
+        or target.parent.resolve(strict=True) != target.parent
+    ):
+        raise VerificationError("public Core bundle target must be absent and physical")
+    recipe = CORE_RUNTIME_RECIPE_COMMIT
+    request = urllib.request.Request(
+        "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
+        f"core-runtime-package-plane-{recipe}/chummer-core-runtime-package-plane-{recipe}.zip",
+        headers={"User-Agent": "chummer6-ui-fresh-package-plane/2"},
+    )
+    content = bytearray()
+    with urllib.request.urlopen(request, timeout=30) as response:
+        while chunk := response.read(min(128 * 1024, CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES + 1 - len(content))):
+            content.extend(chunk)
+            if len(content) > CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES:
+                raise VerificationError("public Core bundle exceeds its exact size")
+    if (
+        len(content) != CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES
+        or hashlib.sha256(content).hexdigest() != CORE_RUNTIME_PUBLIC_BUNDLE_SHA256
+    ):
+        raise VerificationError("public Core bundle bytes differ from authority")
+    write_regular_bytes_exact(target, bytes(content), "public Core runtime bundle")
+
+
 def materialize_cold_core_runtime_bundle(
     lock: dict[str, Any],
     bundle: Path,
@@ -4410,6 +4439,19 @@ def import_hub_canonical_feed(
     elif core_feed.exists() or core_feed.is_symlink():
         raise VerificationError("Core runtime feed destination must start absent")
 
+    if not preloaded_core_runtime:
+        # Current Hub accepts an already verified Core feed, not the removed
+        # --download-core-runtime option. Use the same exact bundle/member
+        # verifier as cold owner-cache production before invoking its CLI.
+        with tempfile.TemporaryDirectory(prefix="core-public-input-", dir=core_feed.parent) as name:
+            temporary = Path(name)
+            bundle = temporary / "core-runtime.zip"
+            acquire_public_core_runtime_bundle(bundle)
+            authority_root = temporary / "authority"
+            authority_root.mkdir(mode=0o700)
+            core_feed.mkdir(mode=0o700)
+            materialize_cold_core_runtime_bundle(lock, bundle, core_feed, authority_root)
+
     command = [
         str(TRUSTED_PYTHON3),
         str(producer),
@@ -4424,8 +4466,6 @@ def import_hub_canonical_feed(
         "--dotnet",
         str(sdk_root / "dotnet"),
     ]
-    if not preloaded_core_runtime:
-        command.insert(-2, "--download-core-runtime")
     run(command, cwd=hub_root, environment=environment)
     run(
         [

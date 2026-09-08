@@ -140,6 +140,35 @@ def unsealed_recovery(repository: Path, first_marker: str) -> tuple[str, str]:
     return second_recipe, second_head
 
 
+def test_later_cycle_allows_one_recovery_only_after_an_exact_prior_seal(tmp_path: Path) -> None:
+    repository, _, _, first_marker = fixture(tmp_path)
+    write_seal_locks(repository, first_marker)
+    first_seal = commit(repository, "first exact seal")
+    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
+    recipe_path.write_text("# next cycle recipe\n", encoding="utf-8")
+    recipe = commit(repository, "next cycle recipe")
+    marker = preseal.expected_marker(repository, first_seal, recipe)
+    preseal.write_or_refresh_marker(
+        repository, recipe_commit=recipe, output=repository / preseal.MARKER_PATH,
+        payload=preseal.canonical_json_bytes(marker),
+    )
+    head = commit(repository, "next cycle marker")
+    recovered_recipe, recovered_head = unsealed_recovery(repository, head)
+    receipt = preseal.validate_preseal(repository, base=head, head=recovered_head)
+    assert receipt["recipeCommitObserved"] == recovered_recipe
+    assert receipt["authority"] is receipt["publicationAuthorized"] is receipt["packageConsumerClaim"] is False
+    for relative in preseal.CANONICAL_LOCK_PATHS:
+        assert preseal.commit_blob(repository, first_seal, relative) == preseal.commit_blob(repository, recovered_head, relative)
+    recipe_path.write_text("# forbidden repeated recovery\n", encoding="utf-8")
+    repeated = commit(repository, "forbidden repeated recovery")
+    with pytest.raises(preseal.PresealError):
+        preseal.expected_marker(repository, recovered_head, repeated)
+    checkout(repository, recovered_head)
+    write_seal_locks(repository, recovered_head, cycle=2)
+    sealed = commit(repository, "recovered exact two-lock seal")
+    assert preseal.validate_existing_sealed_marker(repository, sealed) == recovered_head
+
+
 def test_exact_direct_and_synthetic_preseal_emit_only_nonclaims(tmp_path: Path) -> None:
     repository, base, recipe, head = fixture(tmp_path)
     receipt = preseal.validate_preseal(repository, base=base, head=head)

@@ -519,7 +519,7 @@ def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
 
 
 def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> str:
-    """Validate one exact first-cycle Q that has not yet received its seal."""
+    """Validate one unsealed Q since an exact prior seal, never a recovery chain."""
 
     published = require_commit(marker_commit, "unsealed preseal base")
     if not commit_path_exists(repo_root, published, MARKER_PATH):
@@ -532,10 +532,19 @@ def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> st
     if len(recipe_parents) != 1:
         raise PresealError("unsealed preseal recipe has unexpected parents")
     original_base = recipe_parents[0]
-    if commit_path_exists(repo_root, original_base, MARKER_PATH):
-        raise PresealError("unsealed preseal marker cannot be superseded twice")
-    if commit_path_exists(repo_root, recipe, MARKER_PATH):
-        raise PresealError("unsealed preseal recipe unexpectedly contains a marker")
+    base_has_marker = commit_path_exists(repo_root, original_base, MARKER_PATH)
+    if base_has_marker:
+        try:
+            validate_existing_sealed_marker(repo_root, original_base)
+        except PresealError as exc:
+            raise PresealError("unsealed preseal marker cannot be superseded twice") from exc
+    recipe_has_marker = commit_path_exists(repo_root, recipe, MARKER_PATH)
+    if base_has_marker != recipe_has_marker or (
+        base_has_marker
+        and commit_blob(repo_root, original_base, MARKER_PATH)
+        != commit_blob(repo_root, recipe, MARKER_PATH)
+    ):
+        raise PresealError("unsealed preseal recipe changed the retained marker")
     marker_diff = str(
         git(
             repo_root,
@@ -547,7 +556,8 @@ def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> st
             published,
         )
     )
-    if marker_diff != f"A\t{MARKER_PATH}":
+    expected_marker_status = "M" if base_has_marker else "A"
+    if marker_diff != f"{expected_marker_status}\t{MARKER_PATH}":
         raise PresealError("unsealed preseal base is not an exact marker-only commit")
     marker = load_marker_bytes(commit_bytes(repo_root, published, MARKER_PATH))
     historical_oracle = validate_oracle_at_recipe(
