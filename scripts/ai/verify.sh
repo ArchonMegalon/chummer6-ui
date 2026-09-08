@@ -179,9 +179,21 @@ bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 echo "[verify] checking desktop runtime resilience regression guard..."
 desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
 if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
-  bash scripts/ai/with-package-plane.sh test \
+  core_projection_root="${CHUMMER_CORE_PROJECTION_CONTENT_ROOT:?explicit pinned Core content root required for Product.UnitTests}"
+  core_projection_before="$(python3 scripts/ai/verify_creation_projection_content.py --core-root "$core_projection_root")"
+  bash scripts/ai/with-package-plane.sh build \
     Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj \
-    -v minimal --nologo --disable-build-servers -m:1
+    -c Release -v minimal --nologo --disable-build-servers -m:1 \
+    -p:BuildInParallel=false -p:UseSharedCompilation=false
+  # Microsoft.Testing.Platform must not receive MSBuild switches such as -m:1.
+  dotnet "$repo_root/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll" \
+    --minimum-expected-tests 238 --no-progress \
+    --test-parameter "ChummerCoreContentRoot=$core_projection_root"
+  core_projection_after="$(python3 scripts/ai/verify_creation_projection_content.py --core-root "$core_projection_root")"
+  if [[ "$core_projection_before" != "$core_projection_after" ]]; then
+    echo "verify.sh: Core projection content changed during Product.UnitTests" >&2
+    exit 195
+  fi
 else
   bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
 fi

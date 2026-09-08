@@ -497,6 +497,9 @@ def test_retained_marker_remains_valid_when_next_oracle_rotates(
     oracle_value = json.loads(oracle_path.read_text(encoding="utf-8"))
     source_files = oracle_value["consumer"]["sourceFiles"]
     source_files[next(iter(sorted(source_files)))] = "0" * 64
+    # Different recipes may legitimately cover different exact source sets.
+    # The historical marker must retain its own fixture digest and membership.
+    source_files["Chummer.Presentation/Overview/NextReviewedWizard.cs"] = "1" * 64
     oracle_path.write_bytes(preseal.canonical_json_bytes(oracle_value))
     recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
     recipe_path.write_text("# rotated oracle recipe\n", encoding="utf-8")
@@ -520,6 +523,38 @@ def test_retained_marker_remains_valid_when_next_oracle_rotates(
     assert preseal.validate_existing_sealed_marker(repository, first_seal) == first_marker
     second_marker = preseal.expected_marker(repository, first_seal, second_recipe)
     assert second_marker["nextAuthorityOracle"] == rotated
+
+
+@pytest.mark.parametrize(
+    ("relative", "digest"),
+    [
+        ("../escape.cs", "a" * 64),
+        ("/absolute.cs", "a" * 64),
+        ("Chummer.Presentation//Duplicate.cs", "a" * 64),
+        ("Chummer.Presentation/./Dot.cs", "a" * 64),
+        ("Chummer.Presentation/Invalid.cs", "A" * 64),
+        ("Chummer.Presentation/Invalid.cs", ""),
+    ],
+)
+def test_recipe_oracle_rejects_unsafe_source_map_even_when_exact_bytes_are_bound(
+    tmp_path: Path, relative: str, digest: str
+) -> None:
+    repository, _, _, _ = fixture(tmp_path)
+    path = repository / preseal.ORACLE_FIXTURE_PATH
+    value = json.loads(path.read_text(encoding="utf-8"))
+    value["consumer"]["sourceFiles"][relative] = digest
+    payload = preseal.canonical_json_bytes(value)
+    path.write_bytes(payload)
+    recipe = commit(repository, "malformed source-map oracle")
+    metadata = json.loads(json.dumps(preseal.NEXT_AUTHORITY_ORACLE))
+    binding = metadata["canonicalLock"]
+    binding["blob"] = preseal.commit_blob(repository, recipe, preseal.ORACLE_FIXTURE_PATH)
+    for field in ("rawSha256", "semanticCanonicalSha256"):
+        binding[field] = preseal.sha256_bytes(payload)
+    for field in ("rawSizeBytes", "semanticCanonicalSizeBytes"):
+        binding[field] = len(payload)
+    with pytest.raises(preseal.PresealError, match="source-file map"):
+        preseal.validate_oracle_at_recipe(repository, recipe, metadata)
 
 
 def test_marker_refresh_rejects_dirty_prior_bytes_or_noncanonical_output(

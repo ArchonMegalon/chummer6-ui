@@ -46,37 +46,37 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "c06f22c185c7b733637fdb76b3cf333f31716781"
+        "1d8cf694d0412b3bd9f4a241fb95244fad341160"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "60112dccb6a3faad330d32c3c98eef0aa81d97af"
+        "880e5df8ace981e9a60264d835329dd32f54a158"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "bc199cbe0982833ec2fc9ce625826e612759d67a"
+        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
     )
     assert package_plane.UI_OWNER_PRODUCER_LOCK_PATH not in (
         next_lock["consumer"]["sourceFiles"]
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "e9a9a3d19c35384e481d0a70ed9160fc0557e369",
-            "commit": "c12811fda570cd56c70e52c44e38b1d32ff831a1",
+            "blob": "591a1489e0a6ac08fec5fc0f592e6da936f67cbe",
+            "commit": "8fed67529f42fd989fe696237655a118a4cb8e8b",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "64f06037031d5d29b7904f64fb46404524f2ea1d3477851bef8cf797dece834b",
-            "rawSizeBytes": 51528,
-            "semanticCanonicalSha256": "69360823bfad24a3935a9a72542c761d68a71846b7448d7cc98d40c2efd926c4",
-            "semanticCanonicalSizeBytes": 51528,
-            "tree": "faec09b431f3f6fd94736655e4e1850bbdf5d3f2",
+            "rawSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
+            "rawSizeBytes": 53579,
+            "semanticCanonicalSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
+            "semanticCanonicalSizeBytes": 53579,
+            "tree": "3200a43ce4addd785c9639bc5f5fe57c218dbaae",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 51528
+    assert len(package_plane.encoded_json(next_lock)) == 53579
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "69360823bfad24a3935a9a72542c761d68a71846b7448d7cc98d40c2efd926c4"
+        "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -112,6 +112,48 @@ def test_sealed_next_transition_rejects_oracle_payload_or_metadata_substitution(
     )
     with pytest.raises(package_plane.VerificationError, match="raw bytes differ"):
         package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+
+
+@pytest.mark.parametrize("change", ["missing", "extra", "same_count_substitution"])
+def test_sealed_next_transition_rejects_changed_source_membership_even_with_rehashed_oracle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
+) -> None:
+    candidate = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    sources = candidate["consumer"]["sourceFiles"]
+    original_count = len(sources)
+    if change != "extra":
+        sources.pop("Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs")
+    if change != "missing":
+        sources["Chummer.Presentation/UnexpectedWizard.cs"] = "a" * 64
+    if change == "same_count_substitution":
+        assert len(sources) == original_count
+    payload = package_plane.encoded_json(candidate)
+    fixture = tmp_path / package_plane.SEALED_NEXT_AUTHORITY_ORACLE_PATH
+    fixture.parent.mkdir(parents=True)
+    fixture.write_bytes(payload)
+    metadata = json.loads(json.dumps(package_plane.SEALED_NEXT_AUTHORITY_ORACLE))
+    for field in ("rawSha256", "semanticCanonicalSha256"):
+        metadata["canonicalLock"][field] = hashlib.sha256(payload).hexdigest()
+    for field in ("rawSizeBytes", "semanticCanonicalSizeBytes"):
+        metadata["canonicalLock"][field] = len(payload)
+    monkeypatch.setattr(package_plane, "SEALED_NEXT_AUTHORITY_ORACLE", metadata)
+    with pytest.raises(package_plane.VerificationError, match="exact producer-absent"):
+        package_plane.fixed_next_authority_oracle_lock(tmp_path)
+    with pytest.raises(package_plane.VerificationError, match="source-file set"):
+        package_plane.validate_lock(candidate, allow_unsealed_ui_owner=True)
+
+
+def test_sealed_next_transition_project_digest_is_git_portable_not_worktree_bytes(
+    tmp_path: Path,
+) -> None:
+    project = tmp_path / "Canonical.csproj"
+    tracked = b"<Project>\n  <PropertyGroup />\n</Project>\n"
+    project.write_bytes(tracked.replace(b"\n", b"\r\n"))
+    expected = hashlib.sha256(tracked).hexdigest()
+    assert hashlib.sha256(project.read_bytes()).hexdigest() != expected
+    assert package_plane.source_digest(project) == expected
+    project.write_bytes(tracked)
+    assert package_plane.source_digest(project) == expected
 
 
 def test_sealed_next_transition_rejects_substituted_previous_lock_semantics() -> None:
@@ -1697,6 +1739,37 @@ def test_checked_in_lock_and_consumer_source_digests_are_current() -> None:
     assert len(rows) == len(lock["consumer"]["sourceFiles"])
 
 
+def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
+    expected_names = {
+        "CharacterCreationContactsInteractionPresenterTests.cs",
+        "CharacterCreationFoundationInteractionPresenterTests.cs",
+        "CharacterCreationGearInteractionPresenterTests.cs",
+        "CharacterCreationMagicResonanceTestFixture.cs",
+        "CharacterCreationMagicResonanceWorkflowTests.cs",
+        "CharacterCreationWizardDesktopSessionTests.cs",
+        "CharacterCreationWizardPresentationTests.cs",
+        "WorkspaceOverviewPreparationTests.cs",
+    }
+    assert len(package_plane.CREATION_WIZARD_TEST_FILES) == len(expected_names)
+    assert set(package_plane.CREATION_WIZARD_TEST_FILES) == expected_names
+    package_plane.validate_test_compile_items(REPO_ROOT)
+    for name in expected_names:
+        source = f"Chummer.CreationWizard.Presentation.Tests/{name}"
+        assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
+        assert (REPO_ROOT / source).is_file()
+        assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 238
+    assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
+    assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
+        "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
+    ] == "CreationWizard/CoreCreationProjectionScenario.cs"
+    assert {
+        "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewState.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewPreparationFactory.cs",
+    }.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
+
+
 def test_forged_owner_pin_is_rejected() -> None:
     lock = json.loads(LOCK.read_text(encoding="utf-8"))
     lock["owners"][0]["commit"] = "main"
@@ -1841,16 +1914,16 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "bc199cbe0982833ec2fc9ce625826e612759d67a"
+        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
     )
     assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
-        "bc199cbe0982833ec2fc9ce625826e612759d67a"
+        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
     )
     assert core["packageRecipeCommit"] == (
-        "c06f22c185c7b733637fdb76b3cf333f31716781"
+        "1d8cf694d0412b3bd9f4a241fb95244fad341160"
     )
     assert core["runtimeSourceCommit"] == (
-        "60112dccb6a3faad330d32c3c98eef0aa81d97af"
+        "880e5df8ace981e9a60264d835329dd32f54a158"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -2126,7 +2199,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 170' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 238' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
