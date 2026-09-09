@@ -21,6 +21,175 @@ public sealed class WorkspaceXmlMutationCatalogTests
     private const string ResolverVehicleModId = "f89a112e-600a-4278-8731-9b14cf3737c9";
 
     [TestMethod]
+    [DataRow(WorkspaceCollectionKind.Contact)]
+    [DataRow(WorkspaceCollectionKind.Pet)]
+    public void Linked_character_preview_preserves_envelope_and_auxiliary_state_and_matches_canonical_payload(
+        WorkspaceCollectionKind kind)
+    {
+        const string xml = """
+            <character>
+              <!-- Preserve unrelated content and the original contact identity. -->
+              <contacts>
+                <contact><guid>shared</guid><name>Original contact</name><metatype>Human</metatype><gender>Female</gender><age>38</age><type>Contact</type></contact>
+                <contact><guid>shared</guid><name>Original pet</name><metatype>Dog</metatype><type>Pet</type></contact>
+              </contacts>
+              <notes>Unrelated &amp; exact</notes>
+            </character>
+            """;
+        WorkspaceDocumentAuxiliaryState auxiliary = new(CharacterAfterRunRewardReceipts: []);
+        WorkspaceDocumentState state = new("sr5", 7, "preview-preserved-payload-kind", xml)
+        {
+            AuxiliaryState = auxiliary
+        };
+        WorkspaceDocument baseline = new(state);
+        WorkspaceCollectionItemTarget target = new(kind, "shared");
+        CharacterLinkedDocument identity = new(
+            "  Neon Fox  ", "Aiko Tanaka", "Neon Fox", "Elf", "Dryad", string.Empty, string.Empty);
+        string firstFile = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "linked-characters", "preview-first.chum5"));
+        string secondFile = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "linked-characters", "preview-second.chum5lz"));
+        WorkspaceSetLinkedCharacterRequest attach = new(
+            target, firstFile, "linked-characters/preview-first.chum5", "  First.chum5  ", identity);
+        WorkspaceSetLinkedCharacterRequest replace = new(
+            target, secondFile, "linked-characters/preview-second.chum5lz", "Second.chum5lz",
+            identity with { CharacterName = "Second", Metatype = string.Empty, Metavariant = string.Empty });
+
+        WorkspaceDocument current = baseline;
+        foreach (WorkspaceCollectionMutationRequest request in new WorkspaceCollectionMutationRequest[]
+                 { attach, replace, new WorkspaceRemoveLinkedCharacterRequest(target) })
+        {
+            string previousPayload = current.Content;
+            WorkspaceDocumentState previousState = current.State;
+            WorkspaceDocument preview = WorkspaceLinkedCharacterMutationPreview.Create(current, request);
+
+            Assert.AreEqual(WorkspaceXmlMutationCatalog.ApplyCollectionMutation(previousPayload, request), preview.Content);
+            Assert.AreEqual(preview.Content, WorkspaceLinkedCharacterMutationPreview.Create(current, request).Content);
+            Assert.AreEqual(previousPayload, current.Content, "Preview must not change its input document.");
+            Assert.AreSame(previousState, current.State);
+            Assert.AreNotSame(current, preview);
+            Assert.AreNotSame(previousState, preview.State);
+            Assert.AreEqual(current.Format, preview.Format);
+            Assert.AreEqual(current.RulesetId, preview.RulesetId);
+            Assert.AreEqual(current.SchemaVersion, preview.SchemaVersion);
+            Assert.AreEqual(current.PayloadKind, preview.PayloadKind);
+            Assert.AreSame(auxiliary, preview.State.AuxiliaryState);
+            Assert.AreEqual(baseline.AuxiliaryStateDigest, preview.AuxiliaryStateDigest);
+
+            XElement[] contacts = XDocument.Parse(preview.Content).Root!.Element("contacts")!.Elements("contact").ToArray();
+            XElement selected = contacts.Single(item => item.Element("type")!.Value == kind.ToString());
+            XElement untouched = contacts.Single(item => item.Element("type")!.Value != kind.ToString());
+            Assert.IsNull(untouched.Element("file"));
+            Assert.AreEqual(kind == WorkspaceCollectionKind.Contact ? "Original contact" : "Original pet", selected.Element("name")!.Value);
+            if (request is WorkspaceSetLinkedCharacterRequest linked)
+            {
+                XElement storedIdentity = selected.Element("chummercomplete")!.Element("linkedcharacter")!;
+                Assert.AreEqual(linked.Identity.CharacterName.Trim(), storedIdentity.Element("name")!.Value);
+                Assert.AreEqual(linked.Identity.DisplayMetatype, storedIdentity.Element("metatype")!.Value);
+                Assert.AreEqual(string.Empty, storedIdentity.Element("gender")!.Value);
+                Assert.AreEqual(string.Empty, storedIdentity.Element("age")!.Value);
+                if (kind == WorkspaceCollectionKind.Contact)
+                {
+                    // The section projection falls back to these original values;
+                    // it cannot prove that the stored linked fields are empty.
+                    Assert.AreEqual("Female", selected.Element("gender")!.Value);
+                    Assert.AreEqual("38", selected.Element("age")!.Value);
+                }
+            }
+            else
+            {
+                Assert.IsNull(selected.Element("chummercomplete"));
+                Assert.AreEqual(string.Empty, selected.Element("file")!.Value);
+                Assert.AreEqual(string.Empty, selected.Element("relative")!.Value);
+            }
+
+            current = preview;
+        }
+
+        Assert.AreSame(state, baseline.State);
+        Assert.AreEqual(xml, baseline.Content);
+    }
+
+    [TestMethod]
+    public void Linked_character_preview_rejects_other_mutations_formats_and_incomplete_envelopes()
+    {
+        WorkspaceDocument baseline = new("<character><contacts><contact><guid>contact</guid><type>Contact</type></contact></contacts></character>", "sr5");
+        WorkspaceCollectionItemTarget target = new(WorkspaceCollectionKind.Contact, "contact");
+        WorkspaceRemoveLinkedCharacterRequest remove = new(target);
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceLinkedCharacterMutationPreview.Create(
+            baseline, new WorkspaceDeleteCollectionItemRequest(target)));
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceLinkedCharacterMutationPreview.Create(
+            baseline, new WorkspaceSetCollectionTextRequest(target, WorkspaceCollectionTextField.Name, "Not a link")));
+
+        WorkspaceDocument[] invalid =
+        [
+            baseline with { Format = WorkspaceDocumentFormat.Json },
+            baseline with { Format = (WorkspaceDocumentFormat)99 },
+            baseline with { State = null! },
+            baseline with { State = baseline.State with { RulesetId = string.Empty } },
+            baseline with { State = baseline.State with { SchemaVersion = 0 } },
+            baseline with { State = baseline.State with { PayloadKind = " " } }
+        ];
+        foreach (WorkspaceDocument document in invalid)
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceLinkedCharacterMutationPreview.Create(document, remove));
+        }
+
+        Assert.ThrowsExactly<ArgumentNullException>(() => WorkspaceLinkedCharacterMutationPreview.Create(null!, remove));
+        Assert.ThrowsExactly<ArgumentNullException>(() => WorkspaceLinkedCharacterMutationPreview.Create(baseline, null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => WorkspaceLinkedCharacterMutationPreview.Create(baseline, new WorkspaceRemoveLinkedCharacterRequest(null!)));
+    }
+
+    [TestMethod]
+    public void Linked_character_preview_preserves_canonical_target_path_and_identity_rejections_without_mutating_input()
+    {
+        WorkspaceDocument baseline = new("<character><contacts><contact><guid>contact</guid><type>Contact</type></contact></contacts></character>", "sr5");
+        string input = baseline.Content;
+        string path = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "linked-characters", "preview.chum5"));
+        WorkspaceSetLinkedCharacterRequest valid = new(
+            new(WorkspaceCollectionKind.Contact, "contact"), path, "linked-characters/preview.chum5", "Preview.chum5",
+            new("Runner", "Runner", string.Empty, string.Empty, string.Empty, string.Empty, string.Empty));
+        WorkspaceCollectionItemTarget[] invalidTargets =
+        [
+            new(WorkspaceCollectionKind.Spirit, "contact"),
+            new(WorkspaceCollectionKind.Pet, "contact"),
+            new(WorkspaceCollectionKind.Contact, "missing"),
+            new(WorkspaceCollectionKind.Contact, "contact", WorkspaceNestedCollectionKind.Gear, "nested"),
+            new(WorkspaceCollectionKind.Contact, "contact", NestedItemId: "nested")
+        ];
+        foreach (WorkspaceCollectionItemTarget target in invalidTargets)
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceLinkedCharacterMutationPreview.Create(baseline, valid with { Target = target }));
+            Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceLinkedCharacterMutationPreview.Create(baseline, new WorkspaceRemoveLinkedCharacterRequest(target)));
+        }
+
+        WorkspaceSetLinkedCharacterRequest[] invalidRequests =
+        [
+            valid with { FileName = "relative.chum5" },
+            valid with { RelativeFileName = "linked-characters/../preview.chum5" },
+            valid with { RelativeFileName = "linked-characters/different.chum5" },
+            valid with { FileName = Path.ChangeExtension(path, ".txt"), RelativeFileName = "linked-characters/preview.txt" },
+            valid with { DisplayName = " " },
+            valid with { Identity = valid.Identity with { CharacterName = " " } },
+            valid with { Identity = valid.Identity with { Gender = new string('x', 65537) } }
+        ];
+        foreach (WorkspaceSetLinkedCharacterRequest request in invalidRequests)
+        {
+            Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceLinkedCharacterMutationPreview.Create(baseline, request));
+            Assert.AreEqual(input, baseline.Content);
+        }
+        Assert.ThrowsExactly<ArgumentNullException>(() => WorkspaceLinkedCharacterMutationPreview.Create(baseline, valid with { Identity = null! }));
+
+        WorkspaceDocument duplicate = baseline with
+        {
+            State = baseline.State with
+            {
+                Payload = "<character><contacts><contact><guid>contact</guid><type>Contact</type></contact><contact><guid>contact</guid><type>Contact</type></contact></contacts></character>"
+            }
+        };
+        Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceLinkedCharacterMutationPreview.Create(duplicate, valid));
+        Assert.AreEqual(input, baseline.Content);
+    }
+
+    [TestMethod]
     public void ApplyConditionMonitorEdit_updates_only_the_selected_career_track()
     {
         const string xml = """
@@ -1096,8 +1265,11 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 0,
                 1,
                 CharacterArmorDamageAdjustment.Degrade))).Root!;
-        Assert.AreEqual("1", degraded.Descendants("armor").Single().Element("damage")!.Value);
-        Assert.AreEqual("Keep", degraded.Descendants("armor").Single().Element("notes")!.Value);
+        // The item's numeric <armor> value is not a second armor collection item.
+        XElement degradedArmor = degraded.Element("armors")!.Elements("armor").Single();
+        Assert.AreEqual(armorId.ToString("D"), degradedArmor.Element("guid")!.Value);
+        Assert.AreEqual("1", degradedArmor.Element("damage")!.Value);
+        Assert.AreEqual("Keep", degradedArmor.Element("notes")!.Value);
         Assert.AreEqual("Preserve", degraded.Element("alias")!.Value);
 
         XElement repaired = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
@@ -1109,7 +1281,9 @@ public sealed class WorkspaceXmlMutationCatalogTests
                 1,
                 1,
                 CharacterArmorDamageAdjustment.Repair))).Root!;
-        Assert.AreEqual("0", repaired.Descendants("armor").Single().Element("damage")!.Value);
+        XElement repairedArmor = repaired.Element("armors")!.Elements("armor").Single();
+        Assert.AreEqual(armorId.ToString("D"), repairedArmor.Element("guid")!.Value);
+        Assert.AreEqual("0", repairedArmor.Element("damage")!.Value);
 
         Assert.ThrowsExactly<InvalidOperationException>(() => WorkspaceXmlMutationCatalog.ApplyArmorDamageAdjustment(
             xml,

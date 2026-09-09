@@ -34,6 +34,8 @@
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs" Link="Presentation/CareerSkillSpecializationParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs" Link="Presentation/CareerWeaponFireParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs" Link="Presentation/WorkspaceOverviewLoaderTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs" Link="Presentation/WorkspaceXmlMutationCatalogTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs" Link="Presentation/CharacterOverviewPresenterTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationContactsInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationContactsInteractionPresenterTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationFoundationInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationFoundationInteractionPresenterTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationGearInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationGearInteractionPresenterTests.cs" />

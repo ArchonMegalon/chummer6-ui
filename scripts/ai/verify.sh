@@ -187,7 +187,7 @@ if [[ "$verify_mode" == "integration" || "$verify_mode" == "release" ]]; then
     -p:BuildInParallel=false -p:UseSharedCompilation=false
   # Microsoft.Testing.Platform must not receive MSBuild switches such as -m:1.
   dotnet "$repo_root/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll" \
-    --minimum-expected-tests 238 --no-progress \
+    --minimum-expected-tests 467 --no-progress \
     --test-parameter "ChummerCoreContentRoot=$core_projection_root"
   core_projection_after="$(python3 scripts/ai/verify_creation_projection_content.py --core-root "$core_projection_root")"
   if [[ "$core_projection_before" != "$core_projection_after" ]]; then
