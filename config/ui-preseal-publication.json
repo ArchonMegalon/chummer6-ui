@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "a6f682257fe87916fe7bba7d41688761b1c349ce",
-  "baseTree": "5f3068572a1616aaa373f43b5ede33974b33a8e3",
+  "baseCommit": "5b26b46d0c1326dfff2824e7aba6f03aec52b304",
+  "baseTree": "3c7bc481c55d8de6ef255e64d13ca6b9f2615e92",
   "canonicalSealedLocks": [
     {
-      "blob": "973619c8560a474c1896d83e708f0c39bd89eecd",
+      "blob": "ce1761de041536a4f4b824488a0c8935d2748c77",
       "path": "config/package-plane.lock.json",
-      "sha256": "b63ce17ce2105eedf1ed388f7eb59cf2232e9b8a65f66e940860965adced3ef5",
-      "sizeBytes": 54835
+      "sha256": "7bfc76002f4ab18fe382b74c2dbd496737d435e014ef7992a64503716dc1fa8b",
+      "sizeBytes": 56886
     },
     {
-      "blob": "b733d0597ca827bd44193c62b720402786276524",
+      "blob": "a1124e454770e3601d7ff129599df0373504c173",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "2c43d81e8d2901548a5a8c63e9fa5321db8efc0494d86a1798b853e6106bb273",
+      "sha256": "a0d5a6b6b071b4782e88b99170fde40b604713de99f812cdcbd033f19d8026a9",
       "sizeBytes": 2019
     }
   ],
@@ -25,15 +25,15 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "591a1489e0a6ac08fec5fc0f592e6da936f67cbe",
-      "commit": "8fed67529f42fd989fe696237655a118a4cb8e8b",
+      "blob": "d0f349501ed978596ce1ce2808f7abe7ebe2a054",
+      "commit": "d9124a9a962e7e3941152421a73c31c30583e293",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-      "rawSizeBytes": 53579,
-      "semanticCanonicalSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-      "semanticCanonicalSizeBytes": 53579,
-      "tree": "3200a43ce4addd785c9639bc5f5fe57c218dbaae"
+      "rawSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+      "rawSizeBytes": 54008,
+      "semanticCanonicalSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+      "semanticCanonicalSizeBytes": 54008,
+      "tree": "4e5adc4f3d804ca5a5f93012149ea5e67a735333"
     },
     "producerLock": {
       "absentAtCommit": true,
@@ -44,34 +44,83 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "0e81c563904f0821b8098557510423e54ac6fbd1",
+      "blob": "269a584ae20ee3856c393ac9ebd476911106cb88",
+      "path": "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
+      "sha256": "a843b2ca9be0ef9c9b89efa17c7a8139beb204cfe04cd1779d115bf2db716a8e",
+      "sizeBytes": 1745,
+      "status": "A"
+    },
+    {
+      "blob": "dbf06984eff4ef8ff07cc31504008a60f2cf48cf",
+      "path": "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
+      "sha256": "a60cc226692434c26e673a4510905267d9dc16d077b68cf0559902d579d99851",
+      "sizeBytes": 4515,
+      "status": "M"
+    },
+    {
+      "blob": "ffa8adc1fa18b04ff17ab2aedfc7b5701d1f7e05",
+      "path": "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "sha256": "a06a6a851b752213bccd57cb7c9634700a1c521db60edf122449f72507b28340",
+      "sizeBytes": 272094,
+      "status": "M"
+    },
+    {
+      "blob": "9bef0ffeb537e3d8f77820a11602dc4648d6f98e",
+      "path": "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
+      "sha256": "371bbaf147decfbd11e05371a25edf01cd83aded1a500da4838a293615079227",
+      "sizeBytes": 197642,
+      "status": "M"
+    },
+    {
+      "blob": "d0f349501ed978596ce1ce2808f7abe7ebe2a054",
+      "path": "config/ui-next-authority-oracle-v10.json",
+      "sha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+      "sizeBytes": 54008,
+      "status": "M"
+    },
+    {
+      "blob": "5b25acaf65c4256b68a303c34b1fca8458008162",
+      "path": "scripts/ai/verify.sh",
+      "sha256": "63be6c19a22d396ebf0cfc8a33440c3b7b9b319cb86dabd36dd8fea5f1f2bb04",
+      "sizeBytes": 70272,
+      "status": "M"
+    },
+    {
+      "blob": "4bc0a6ab5ff347292a54a55c0e625ed7aff93e5f",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "ef7d1bfb010cbbe9793a6366447131f732834771c7da98cec80bd7d7a32dc5ea",
-      "sizeBytes": 260455,
+      "sha256": "7e66679cd2ef7bbc8f3831339d7c86ad1b605399b6c707bf911dbbb0c4e7f906",
+      "sizeBytes": 260934,
       "status": "M"
     },
     {
-      "blob": "a3996b61432137d034d06b0a89efcaeb02d68841",
+      "blob": "35f8050ca9225e09a16b1c47858937ce8fab7de2",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "795fa482e93467ceb941e6cb17cc2740f676d09f69411388b3d68f7349e2154d",
-      "sizeBytes": 37243,
+      "sha256": "6e4995d81a3b7fe92aace12a5c596b408696bec02a0430d3c9aa7292b7d78caa",
+      "sizeBytes": 37401,
       "status": "M"
     },
     {
-      "blob": "c1df03b50d5e586102ca2c9f845ba8eceef62826",
+      "blob": "c44cc2f0b84d23296661c83db4fad04b5a778190",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "3598378a8a68a7989e1ce7d97af8a7a14f6543a2b27a5d310fab0a67a4d2a4b5",
-      "sizeBytes": 142069,
+      "sha256": "c0e9ec47de732a950b3e7c3a1015f483466093e83939943a064516e9ba01aa41",
+      "sizeBytes": 147220,
       "status": "M"
     },
     {
-      "blob": "7dd702b8ab40d12a791a9c68715c93514dae0faa",
+      "blob": "a7255e5cfdba444bd391909f28ddb529282ac5f7",
       "path": "tests/test_split_preseal_publication.py",
-      "sha256": "974a7a5faae18bd3a926c006f328bd1510a0eb975ac681e407155251652232bd",
-      "sizeBytes": 33764,
+      "sha256": "dd9c4b7606849a96844f625726f489f6397277677438e7d79fa4b4e1e40259ea",
+      "sizeBytes": 34305,
+      "status": "M"
+    },
+    {
+      "blob": "6ad7c7e7c25e7a3e6ecbe79cb47920ac97978f67",
+      "path": "tests/test_verify_mode_controls.py",
+      "sha256": "1fb7fab456792110fc7c6b19821d966975f46a637b4e8f73c941ae75d69ccb6f",
+      "sizeBytes": 16948,
       "status": "M"
     }
   ],
-  "recipeTree": "bb6c96b4ff7f6b5d1b5028f31b499e86caa5e78d",
+  "recipeTree": "f6649089f07526dacbcf598b7a5320cd726bce7d",
   "releaseClaim": false
 }
