@@ -47,15 +47,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "591a1489e0a6ac08fec5fc0f592e6da936f67cbe",
-        "commit": "8fed67529f42fd989fe696237655a118a4cb8e8b",
+        "blob": "d0f349501ed978596ce1ce2808f7abe7ebe2a054",
+        "commit": "d9124a9a962e7e3941152421a73c31c30583e293",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-        "rawSizeBytes": 53579,
-        "semanticCanonicalSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-        "semanticCanonicalSizeBytes": 53579,
-        "tree": "3200a43ce4addd785c9639bc5f5fe57c218dbaae",
+        "rawSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+        "rawSizeBytes": 54008,
+        "semanticCanonicalSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+        "semanticCanonicalSizeBytes": 54008,
+        "tree": "4e5adc4f3d804ca5a5f93012149ea5e67a735333",
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -330,7 +330,7 @@ FOCUSED_OVERVIEW_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitT
 FOCUSED_OVERVIEW_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs"
 FOCUSED_OVERVIEW_TEST_FILTER = "FullyQualifiedName~WorkspaceOverviewLoaderTests"
 FOCUSED_OVERVIEW_MINIMUM_TESTS = 19
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 238
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 467
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
@@ -386,7 +386,9 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs": "Presentation/CareerSkillGroupAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "Presentation/CareerSkillSpecializationParityTests.cs",
     "../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs": "Presentation/CareerWeaponFireParityTests.cs",
+    "../Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs": "Presentation/CharacterOverviewPresenterTests.cs",
     "../Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs": "Presentation/WorkspaceOverviewLoaderTests.cs",
+    "../Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs": "Presentation/WorkspaceXmlMutationCatalogTests.cs",
     **{
         f"../Chummer.CreationWizard.Presentation.Tests/{name}": f"CreationWizard/{name}"
         for name in CREATION_WIZARD_TEST_FILES
@@ -416,6 +418,7 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Presentation/Overview/IWorkspaceOverviewPreparationFactory.cs",
         "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs",
         "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
+        "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
         "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
         "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs",
         "Chummer.Tests/DesktopCrashRuntimeTests.cs",
@@ -427,7 +430,9 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs",
         "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs",
+        "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
         "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
         "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj",
         "Directory.Build.props",
         "Directory.Build.targets",

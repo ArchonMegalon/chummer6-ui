@@ -21,6 +21,7 @@ using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Run.Contracts.Billing;
 using Chummer.Presentation.Shell;
+using Chummer.Rulesets.Hosting.Presentation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -50,7 +51,7 @@ public class CharacterOverviewPresenterTests
         IShellBootstrapDataProvider? bootstrapDataProvider = null,
         IRulesetShellCatalogResolver? shellCatalogResolver = null,
         IShellPresenter? shellPresenter = null,
-        IEngineEvaluator? engineEvaluator = null,
+        IRulesetCapabilityHost? engineEvaluator = null,
         IWorkspaceOperationCoordinator? workspaceOperationCoordinator = null,
         IWorkspaceRecoveryPayloadStore? workspaceRecoveryPayloadStore = null,
         TimeSpan? deletionNotificationBudget = null)
@@ -79,6 +80,75 @@ public class CharacterOverviewPresenterTests
             deletionNotificationBudget);
 
     [TestMethod]
+    [DataRow(WorkspaceCollectionKind.Contact)]
+    [DataRow(WorkspaceCollectionKind.Pet)]
+    public async Task Linked_character_preview_matches_actual_presenter_replacement_without_dispatching(
+        WorkspaceCollectionKind kind)
+    {
+        const string xml = """
+            <character><name>Preview</name><alias>PREVIEW</alias><created>True</created>
+              <metatype>Human</metatype><buildmethod>Priority</buildmethod>
+              <createdversion>1.0</createdversion><appversion>1.0</appversion><karma>0</karma><nuyen>0</nuyen>
+              <contacts>
+                <contact><guid>shared</guid><name>Original contact</name><metatype>Human</metatype><gender>Female</gender><age>38</age><type>Contact</type></contact>
+                <contact><guid>shared</guid><name>Original pet</name><metatype>Dog</metatype><type>Pet</type></contact>
+              </contacts>
+              <notes>Preserve unrelated content</notes>
+            </character>
+            """;
+        const string workspace = "ws-linked-preview";
+        var client = new FakeChummerClient();
+        client.SeedWorkspace(workspace, "Preview", "PREVIEW", rulesetId: RulesetDefaults.Sr5, contentRevision: 5, savedRevision: 3);
+        WorkspaceDocument baseline = CanonicalizeRecoveryTestDocument(new WorkspaceDocument(xml, RulesetDefaults.Sr5));
+        client.SeedDocument(workspace, baseline);
+        var presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId(workspace), CancellationToken.None);
+        Assert.IsNull(presenter.State.Error);
+        Assert.AreEqual(workspace, presenter.State.WorkspaceId?.Value);
+        Assert.AreEqual(5L, presenter.State.ContentRevision);
+        WorkspaceCollectionItemTarget target = new(kind, "shared");
+        CharacterLinkedDocument identity = new(
+            "  Neon Fox  ", "Aiko", "Neon Fox", "Elf", "Dryad", string.Empty, string.Empty);
+        string firstFile = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "linked-characters", "preview-first.chum5"));
+        string secondFile = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "linked-characters", "preview-second.chum5lz"));
+        WorkspaceCollectionMutationRequest[] requests =
+        [
+            new WorkspaceSetLinkedCharacterRequest(target, firstFile, "linked-characters/preview-first.chum5", "First.chum5", identity),
+            new WorkspaceSetLinkedCharacterRequest(target, secondFile, "linked-characters/preview-second.chum5lz", "Second.chum5lz",
+                identity with { CharacterName = "Replacement", Metatype = string.Empty, Metavariant = string.Empty }),
+            new WorkspaceRemoveLinkedCharacterRequest(target)
+        ];
+
+        foreach (WorkspaceCollectionMutationRequest request in requests)
+        {
+            WorkspaceDocument before = client.GetDocument(workspace);
+            long revision = client.GetWorkspaceItem(workspace).ContentRevision;
+            int previousDispatchCount = client.ReplaceWorkspaceCalls;
+            WorkspaceDocument preview = WorkspaceLinkedCharacterMutationPreview.Create(before, request);
+            Assert.AreEqual(previousDispatchCount, client.ReplaceWorkspaceCalls, "Preview must not dispatch a mutation.");
+            Assert.AreSame(before, client.GetDocument(workspace));
+            Assert.AreEqual(revision, client.GetWorkspaceItem(workspace).ContentRevision);
+
+            await presenter.ApplyCollectionMutationAsync(request, CancellationToken.None);
+
+            Assert.AreEqual(previousDispatchCount + 1, client.ReplaceWorkspaceCalls, presenter.State.Error);
+            Assert.AreEqual(revision, client.LastReplaceExpectedContentRevision);
+            Assert.AreEqual(new CharacterWorkspaceId(workspace), client.LastReplaceWorkspaceId);
+            Assert.IsNotNull(client.LastReplacedDocument);
+            Assert.AreEqual(preview.Content, client.LastReplacedDocument.Content);
+            Assert.AreEqual(JsonSerializer.Serialize(preview), JsonSerializer.Serialize(client.LastReplacedDocument));
+            Assert.AreEqual(JsonSerializer.Serialize(preview), JsonSerializer.Serialize(client.GetDocument(workspace)));
+            Assert.AreEqual(revision + 1, client.GetWorkspaceItem(workspace).ContentRevision);
+            Assert.AreEqual(3L, client.GetWorkspaceItem(workspace).SavedRevision);
+            Assert.AreEqual(revision + 1, presenter.State.ContentRevision);
+            Assert.IsNull(presenter.State.Error);
+        }
+
+        Assert.AreEqual(5L + requests.Length, client.GetWorkspaceItem(workspace).ContentRevision);
+        Assert.AreEqual(baseline.Content, CanonicalizeRecoveryTestDocument(new WorkspaceDocument(xml, RulesetDefaults.Sr5)).Content);
+    }
+
+    [TestMethod]
     public async Task InitializeAsync_loads_command_catalog()
     {
         var client = new FakeChummerClient();
@@ -97,26 +167,45 @@ public class CharacterOverviewPresenterTests
     [TestMethod]
     public async Task Creation_bootstrap_work_does_not_hold_the_calling_thread()
     {
-        int callerThreadId = Environment.CurrentManagedThreadId;
-        int workerThreadId = callerThreadId;
+        int callerThreadId = 0;
+        int workerThreadId = 0;
         TaskCompletionSource workerEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         TaskCompletionSource releaseWorker = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        Task<string> work = CharacterOverviewPresenter.RunCreationBootstrapWorkAsync(
-            () =>
+        TaskCompletionSource<Task<string>> callerReturned = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        // A thread-pool test caller may legitimately be reused for Task.Run after
+        // the test awaits. A dedicated caller proves non-blocking dispatch without
+        // confusing that reuse with UI-thread execution on a single-CPU runner.
+        Thread caller = new(() =>
+        {
+            callerThreadId = Environment.CurrentManagedThreadId;
+            try
             {
-                workerThreadId = Environment.CurrentManagedThreadId;
-                workerEntered.TrySetResult();
-                releaseWorker.Task.GetAwaiter().GetResult();
-                return "created";
-            },
-            CancellationToken.None);
-
-        await workerEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.IsFalse(work.IsCompleted);
-        Assert.AreNotEqual(callerThreadId, workerThreadId);
-
-        releaseWorker.TrySetResult();
+                callerReturned.TrySetResult(CharacterOverviewPresenter.RunCreationBootstrapWorkAsync(
+                    () =>
+                    {
+                        workerThreadId = Environment.CurrentManagedThreadId;
+                        workerEntered.TrySetResult();
+                        releaseWorker.Task.GetAwaiter().GetResult();
+                        return "created";
+                    }, CancellationToken.None));
+            }
+            catch (Exception error) { callerReturned.TrySetException(error); }
+        }) { IsBackground = true };
+        caller.Start();
+        Task<string> work;
+        try
+        {
+            work = await callerReturned.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await workerEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsFalse(work.IsCompleted);
+            Assert.AreNotEqual(callerThreadId, workerThreadId);
+        }
+        finally
+        {
+            // A failed assertion must not strand a blocked worker in the suite.
+            releaseWorker.TrySetResult();
+            caller.Join(TimeSpan.FromSeconds(5));
+        }
         Assert.AreEqual("created", await work);
     }
 

@@ -164,24 +164,24 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "591a1489e0a6ac08fec5fc0f592e6da936f67cbe",
-            "commit": "8fed67529f42fd989fe696237655a118a4cb8e8b",
+            "blob": "d0f349501ed978596ce1ce2808f7abe7ebe2a054",
+            "commit": "d9124a9a962e7e3941152421a73c31c30583e293",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-            "rawSizeBytes": 53579,
-            "semanticCanonicalSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-            "semanticCanonicalSizeBytes": 53579,
-            "tree": "3200a43ce4addd785c9639bc5f5fe57c218dbaae",
+            "rawSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+            "rawSizeBytes": 54008,
+            "semanticCanonicalSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+            "semanticCanonicalSizeBytes": 54008,
+            "tree": "4e5adc4f3d804ca5a5f93012149ea5e67a735333",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 53579
+    assert len(package_plane.encoded_json(next_lock)) == 54008
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9"
+        "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -219,15 +219,21 @@ def test_sealed_next_transition_rejects_oracle_payload_or_metadata_substitution(
         package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
 
 
+@pytest.mark.parametrize("reviewed_source", [
+    "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
+    "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
+    "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+    "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
+])
 @pytest.mark.parametrize("change", ["missing", "extra", "same_count_substitution"])
 def test_sealed_next_transition_rejects_changed_source_membership_even_with_rehashed_oracle(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str, reviewed_source: str
 ) -> None:
     candidate = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
     sources = candidate["consumer"]["sourceFiles"]
     original_count = len(sources)
     if change != "extra":
-        sources.pop("Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs")
+        sources.pop(reviewed_source)
     if change != "missing":
         sources["Chummer.Presentation/UnexpectedWizard.cs"] = "a" * 64
     if change == "same_count_substitution":
@@ -1836,12 +1842,99 @@ def test_ui_owner_pack_uses_deterministic_build_and_archive_normalization() -> N
         assert property_value in source[pack:normalize]
 
 
-def test_checked_in_lock_and_consumer_source_digests_are_current() -> None:
-    lock = package_plane.load_json(LOCK)
-    package_plane.validate_lock(lock)
+def test_reviewed_next_oracle_and_consumer_source_digests_are_current() -> None:
+    # During a preseal recipe, checked-in package locks remain the historical
+    # sealed authority. Current source membership belongs to the exact reviewed
+    # producer-absent next oracle; this test must not relabel old package evidence.
+    lock = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    package_plane.validate_lock(lock, allow_unsealed_ui_owner=True)
     package_plane.validate_test_compile_items(REPO_ROOT)
     rows = package_plane.verify_source_files(REPO_ROOT, lock["consumer"]["sourceFiles"])
     assert len(rows) == len(lock["consumer"]["sourceFiles"])
+
+
+def test_checked_in_locks_are_exact_retained_bytes_or_current_sealed_authority() -> None:
+    # Keep the original current-lock test after a seal. Before sealing, only
+    # the unchanged historical pair is allowed; it grants no consumer claim.
+    marker_raw = subprocess.check_output(
+        ["/usr/bin/git", "--no-replace-objects", "show", "HEAD:config/ui-preseal-publication.json"],
+        cwd=REPO_ROOT,
+    )
+    marker = json.loads(marker_raw)
+    retained = {row["path"]: row for row in marker["canonicalSealedLocks"]}
+    raw = LOCK.read_bytes()
+    if hashlib.sha256(raw).hexdigest() == retained["config/package-plane.lock.json"]["sha256"]:
+        for relative, binding in retained.items():
+            historical = subprocess.check_output(
+                ["/usr/bin/git", "--no-replace-objects", "show", f'{marker["baseCommit"]}:{relative}'],
+                cwd=REPO_ROOT,
+            )
+            assert (REPO_ROOT / relative).read_bytes() == historical
+            assert len(historical) == binding["sizeBytes"]
+            assert hashlib.sha256(historical).hexdigest() == binding["sha256"]
+    else:
+        lock = json.loads(raw)
+        package_plane.validate_lock(lock)
+        package_plane.verify_source_files(REPO_ROOT, lock["consumer"]["sourceFiles"])
+
+
+def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -> None:
+    sources = {
+        "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
+        "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
+    }
+    assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
+    oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    assert len(oracle["consumer"]["sourceFiles"]) == 49
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 50
+    for source in sources:
+        assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
+    for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
+        assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../Chummer.Tests/Presentation/{name}"] == f"Presentation/{name}"
+    package_plane.validate_test_compile_items(REPO_ROOT)
+
+
+@pytest.mark.parametrize("reviewed_source", [
+    "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
+    "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+    "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
+])
+def test_linked_character_source_digest_substitution_cannot_enter_next_authority(
+    monkeypatch: pytest.MonkeyPatch, reviewed_source: str
+) -> None:
+    actual_digest = package_plane.source_digest
+    monkeypatch.setattr(package_plane, "source_digest", lambda path:
+        "a" * 64 if path == REPO_ROOT / reviewed_source else actual_digest(path))
+    previous = json.loads(LOCK.read_text(encoding="utf-8"))
+    with pytest.raises(package_plane.VerificationError, match="differs from the fixed authority oracle"):
+        package_plane.build_next_unsealed_authority_lock(REPO_ROOT, previous)
+
+
+@pytest.mark.parametrize("name", ["CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"])
+@pytest.mark.parametrize("change", ["missing", "duplicate", "same_count_substitution", "wrong_link", "conditional"])
+def test_linked_character_owner_test_compile_membership_is_closed(
+    tmp_path: Path, name: str, change: str
+) -> None:
+    project = ET.parse(REPO_ROOT / package_plane.EXPECTED_TEST_PROJECTS[0]).getroot()
+    include = f"../Chummer.Tests/Presentation/{name}"
+    group, item = next((group, item) for group in project.findall("ItemGroup")
+        for item in group.findall("Compile") if item.attrib.get("Include") == include)
+    if change == "missing":
+        group.remove(item)
+    elif change == "duplicate":
+        group.append(ET.fromstring(ET.tostring(item)))
+    elif change == "same_count_substitution":
+        item.set("Include", "../Chummer.Tests/Presentation/UnreviewedLinkedTests.cs")
+    elif change == "wrong_link":
+        item.set("Link", "Presentation/UnreviewedLinkedTests.cs")
+    else:
+        item.set("Condition", "'$(SkipLinkedProof)' != 'true'")
+    target = tmp_path / package_plane.EXPECTED_TEST_PROJECTS[0]
+    target.parent.mkdir(parents=True)
+    target.write_bytes(ET.tostring(project))
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.validate_test_compile_items(tmp_path)
 
 
 def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
@@ -1863,7 +1956,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
         assert (REPO_ROOT / source).is_file()
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 238
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -2304,7 +2397,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 238' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 467' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]

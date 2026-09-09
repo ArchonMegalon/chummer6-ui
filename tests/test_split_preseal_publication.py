@@ -26,6 +26,16 @@ def load_module() -> ModuleType:
 preseal = load_module()
 
 
+def test_linked_character_preview_inputs_are_explicit_preseal_recipe_paths() -> None:
+    assert {
+        "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
+        "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
+        "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+        "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
+    } <= preseal.ALLOWED_RECIPE_PATHS
+    assert "Chummer.Presentation/Overview/UnreviewedMutation.cs" not in preseal.ALLOWED_RECIPE_PATHS
+
+
 def test_android_import_responsiveness_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert {
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
