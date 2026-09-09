@@ -68,6 +68,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/Overview/IWorkspaceOverviewPreparationFactory.cs",
         "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs",
         "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
+        "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
         "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
         "Chummer.Product.UnitTests/CreationWizardCoreProjectionTests.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
@@ -77,6 +78,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/Overview/DesktopDialogFactory.CharacterSettings.cs",
         "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
         "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationResourcesInteractionPresenterTests.cs",
         "Chummer.Tests/Presentation/Chummer5CharacterSettingsProfilesTests.cs",
         "Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj",
@@ -107,15 +109,15 @@ SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 TRUSTED_GIT = Path("/usr/bin/git")
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "591a1489e0a6ac08fec5fc0f592e6da936f67cbe",
-        "commit": "8fed67529f42fd989fe696237655a118a4cb8e8b",
+        "blob": "d0f349501ed978596ce1ce2808f7abe7ebe2a054",
+        "commit": "d9124a9a962e7e3941152421a73c31c30583e293",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-        "rawSizeBytes": 53579,
-        "semanticCanonicalSha256": "054d6ef3f61a3465cdd06700fa26a85522ad11ba3b1bf0550876ac35211ab7d9",
-        "semanticCanonicalSizeBytes": 53579,
-        "tree": "3200a43ce4addd785c9639bc5f5fe57c218dbaae",
+        "rawSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+        "rawSizeBytes": 54008,
+        "semanticCanonicalSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
+        "semanticCanonicalSizeBytes": 54008,
+        "tree": "4e5adc4f3d804ca5a5f93012149ea5e67a735333",
     },
     "producerLock": {
         "absentAtCommit": True,
