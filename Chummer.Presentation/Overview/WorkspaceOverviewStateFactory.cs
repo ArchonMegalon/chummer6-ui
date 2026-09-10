@@ -15,6 +15,7 @@ public sealed class WorkspaceOverviewStateFactory :
     private readonly ICharacterCreationMagicResonanceService? _creationMagicResonanceService;
     private readonly ICharacterCreationLifestylesService? _creationLifestylesService;
     private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
+    private readonly IOwnerBoundCharacterCreationFinalizationService? _ownerBoundCreationFinalizationService;
 
     public WorkspaceOverviewStateFactory(
         ICharacterCreationFoundationService? creationFoundationService = null,
@@ -23,7 +24,8 @@ public sealed class WorkspaceOverviewStateFactory :
         ICharacterCreationMagicResonanceService? creationMagicResonanceService = null,
         ICharacterCreationLifestylesService? creationLifestylesService = null,
         ICharacterCreationFinalizationService? creationFinalizationService = null,
-        IOwnerBoundCharacterCreationContactsService? ownerBoundCreationContactsService = null)
+        IOwnerBoundCharacterCreationContactsService? ownerBoundCreationContactsService = null,
+        IOwnerBoundCharacterCreationFinalizationService? ownerBoundCreationFinalizationService = null)
     {
         _creationFoundationService = creationFoundationService;
         _creationContactsService = creationContactsService;
@@ -32,6 +34,7 @@ public sealed class WorkspaceOverviewStateFactory :
         _creationMagicResonanceService = creationMagicResonanceService;
         _creationLifestylesService = creationLifestylesService;
         _creationFinalizationService = creationFinalizationService;
+        _ownerBoundCreationFinalizationService = ownerBoundCreationFinalizationService;
     }
 
     public CharacterOverviewState CreateLoadedState(
@@ -412,11 +415,17 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview)
     {
-        if (_creationFinalizationService is null)
+        if (_creationFinalizationService is null && _ownerBoundCreationFinalizationService is null)
             return null;
 
-        CharacterCreationFinalizationResult<CharacterCreationFinalizationState> result =
-            _creationFinalizationService.Load(new CharacterCreationFinalizationLoadRequest(workspaceId));
+        var request = new CharacterCreationFinalizationLoadRequest(workspaceId);
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? result =
+            loadedOverview.DisplayOwnerContext is { IsValid: true } original
+                ? _ownerBoundCreationFinalizationService?.Load(original, request)
+                : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationFinalizationService is null
+                    ? _creationFinalizationService?.Load(request) : null;
+        if (result is null)
+            return null;
         return CharacterCreationWizardProjector.MatchesLoadedOverview(
             workspaceId,
             loadedOverview,
