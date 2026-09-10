@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Owners;
 
 namespace Chummer.Presentation.Overview;
 
@@ -16,6 +17,10 @@ public sealed record CareerReputationEditorState(
     bool WildReputationVisible,
     int WildReputation)
 {
+    // Transient provenance from the original read; never part of runner XML.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public OwnerContextStamp? OriginalOwner { get; init; }
+
     public int BurntStreetCred { get; init; }
 
     public int TotalStreetCred { get; init; }
@@ -32,11 +37,19 @@ public sealed record CareerReputationEditRequest(
     int Notoriety,
     int PublicAwareness,
     int? AstralReputation,
-    int? WildReputation);
+    int? WildReputation)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public OwnerContextStamp? OriginalOwner { get; init; }
+}
 
 public sealed record BurnStreetCredRequest(
     CharacterWorkspaceId WorkspaceId,
-    long ExpectedContentRevision);
+    long ExpectedContentRevision)
+{
+    [System.Text.Json.Serialization.JsonIgnore]
+    public OwnerContextStamp? OriginalOwner { get; init; }
+}
 
 internal static class CareerReputationEditorProjector
 {

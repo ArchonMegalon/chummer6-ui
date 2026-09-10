@@ -10,6 +10,7 @@ public sealed class WorkspaceOverviewStateFactory :
 {
     private readonly ICharacterCreationFoundationService? _creationFoundationService;
     private readonly ICharacterCreationContactsService? _creationContactsService;
+    private readonly IOwnerBoundCharacterCreationContactsService? _ownerBoundCreationContactsService;
     private readonly ICharacterCreationQualitiesService? _creationQualitiesService;
     private readonly ICharacterCreationMagicResonanceService? _creationMagicResonanceService;
     private readonly ICharacterCreationLifestylesService? _creationLifestylesService;
@@ -21,10 +22,12 @@ public sealed class WorkspaceOverviewStateFactory :
         ICharacterCreationQualitiesService? creationQualitiesService = null,
         ICharacterCreationMagicResonanceService? creationMagicResonanceService = null,
         ICharacterCreationLifestylesService? creationLifestylesService = null,
-        ICharacterCreationFinalizationService? creationFinalizationService = null)
+        ICharacterCreationFinalizationService? creationFinalizationService = null,
+        IOwnerBoundCharacterCreationContactsService? ownerBoundCreationContactsService = null)
     {
         _creationFoundationService = creationFoundationService;
         _creationContactsService = creationContactsService;
+        _ownerBoundCreationContactsService = ownerBoundCreationContactsService;
         _creationQualitiesService = creationQualitiesService;
         _creationMagicResonanceService = creationMagicResonanceService;
         _creationLifestylesService = creationLifestylesService;
@@ -184,12 +187,14 @@ public sealed class WorkspaceOverviewStateFactory :
             Awakening: loadedOverview.Awakening,
             ActiveTabId: restoredView?.ActiveTabId,
             ActiveActionId: restoredView?.ActiveActionId,
-            ActiveSectionId: restoredView?.ActiveSectionId,
-            ActiveSectionJson: restoredView?.ActiveSectionJson,
-            ActiveSectionRows: restoredView?.ActiveSectionRows ?? [],
-            ActiveBuildLab: restoredView?.ActiveBuildLab,
-            ActiveBrowseWorkspace: restoredView?.ActiveBrowseWorkspace,
-            ActiveNpcPersonaStudio: restoredView?.ActiveNpcPersonaStudio,
+            // Cached view payloads have no owner-read provenance. Preserve the
+            // navigation preference, but obtain section content from a fresh read.
+            ActiveSectionId: loadedOverview.DisplayOwnerContext is null ? restoredView?.ActiveSectionId : null,
+            ActiveSectionJson: loadedOverview.DisplayOwnerContext is null ? restoredView?.ActiveSectionJson : null,
+            ActiveSectionRows: loadedOverview.DisplayOwnerContext is null ? restoredView?.ActiveSectionRows ?? [] : [],
+            ActiveBuildLab: loadedOverview.DisplayOwnerContext is null ? restoredView?.ActiveBuildLab : null,
+            ActiveBrowseWorkspace: loadedOverview.DisplayOwnerContext is null ? restoredView?.ActiveBrowseWorkspace : null,
+            ActiveNpcPersonaStudio: loadedOverview.DisplayOwnerContext is null ? restoredView?.ActiveNpcPersonaStudio : null,
             LastCommandId: currentState.LastCommandId,
             LatestPortabilityActivity: currentState.WorkspaceId is { } currentWorkspaceId
                 && string.Equals(currentWorkspaceId.Value, workspaceId.Value, StringComparison.Ordinal)
@@ -201,6 +206,7 @@ public sealed class WorkspaceOverviewStateFactory :
             Commands: currentState.Commands,
             NavigationTabs: currentState.NavigationTabs)
         {
+            DisplayOwnerContext = loadedOverview.DisplayOwnerContext,
             CreationWizard = wizard,
             CreationFoundation = foundation,
             CreationContacts = contacts,
@@ -319,11 +325,17 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview)
     {
-        if (_creationContactsService is null)
+        if (_creationContactsService is null && _ownerBoundCreationContactsService is null)
             return null;
 
-        CharacterCreationContactResult<CharacterCreationContactsState> result =
-            _creationContactsService.Load(new CharacterCreationContactsLoadRequest(workspaceId));
+        var request = new CharacterCreationContactsLoadRequest(workspaceId);
+        CharacterCreationContactResult<CharacterCreationContactsState>? result =
+            loadedOverview.DisplayOwnerContext is { IsValid: true } original
+                ? _ownerBoundCreationContactsService?.Load(original, request)
+                : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationContactsService is null
+                    ? _creationContactsService?.Load(request) : null;
+        if (result is null)
+            return null;
         return result.Outcome == CharacterCreationContactOutcomes.Available
                && result.Value is CharacterCreationContactsState state
                && BlockersMatch(result.Blockers, state.Blockers)

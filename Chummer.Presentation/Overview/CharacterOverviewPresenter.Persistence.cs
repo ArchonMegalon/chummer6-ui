@@ -1,20 +1,34 @@
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Owners;
 
 namespace Chummer.Presentation.Overview;
 
 public sealed partial class CharacterOverviewPresenter
 {
-    public async Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct)
+    public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct)
+        => UpdateMetadataCoreAsync(State, command, ct);
+
+    private async Task UpdateMetadataCoreAsync(CharacterOverviewState originalState,
+        UpdateWorkspaceMetadata command, CancellationToken ct,
+        Action<CommandResult<WorkspaceMetadataResult>?>? observeCanonical = null)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
-        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        OwnerContextStamp? originalOwner = originalState.DisplayOwnerContext;
+        long displayGeneration = CaptureDisplayGeneration();
+        CharacterWorkspaceId? currentWorkspace = originalState.WorkspaceId;
         if (currentWorkspace is null)
         {
             Publish(State with
             {
                 Error = "No dossier loaded."
             });
+            return;
+        }
+
+        if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
             return;
         }
 
@@ -30,7 +44,7 @@ public sealed partial class CharacterOverviewPresenter
         IWorkspaceRecoveryCaptureIntent? postCommitCaptureIntent = null;
         try
         {
-            long expectedContentRevision = State.ContentRevision;
+            long expectedContentRevision = originalState.ContentRevision;
             if (expectedContentRevision <= 0)
             {
                 Publish(State with { IsBusy = false, Error = "Dossier revision is unavailable. Reload before editing." });
@@ -40,7 +54,7 @@ public sealed partial class CharacterOverviewPresenter
             if (HasAuthoritativeRecoveryLoader)
             {
                 long anticipatedContentRevision = checked(expectedContentRevision + 1);
-                _workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+                RecoveryPayloads(originalOwner).TryBeginCaptureIntent(
                     currentWorkspace.Value,
                     anticipatedContentRevision,
                     out postCommitCaptureIntent);
@@ -49,16 +63,32 @@ public sealed partial class CharacterOverviewPresenter
             WorkspaceOperationExecution<WorkspaceMetadataUpdateResult> execution = await _workspaceOperationCoordinator
                 .RunCurrentAsync(
                     currentWorkspace.Value,
-                    token => _workspacePersistenceService.UpdateMetadataAsync(
+                    async token =>
+                    {
+                        WorkspaceMetadataUpdateResult persisted = originalOwner is { } original
+                        ? await _workspacePersistenceService.UpdateMetadataAsync(
+                            _client, original, currentWorkspace.Value, expectedContentRevision,
+                            command, originalState.Preferences, token)
+                        : await _workspacePersistenceService.UpdateMetadataAsync(
                         _client,
                         currentWorkspace.Value,
                         expectedContentRevision,
                         command,
-                        State.Preferences,
-                        token),
+                        originalState.Preferences,
+                        token);
+                        observeCanonical?.Invoke(persisted.CanonicalResult);
+                        return persisted;
+                    },
                     ct)
                 .ConfigureAwait(false);
-            if (!execution.CanPublish)
+            if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+            {
+                postCommitCaptureIntent?.Dispose();
+                AbandonOriginalPersistenceView(displayGeneration, originalState,
+                    execution.HasValue && execution.Value.Success);
+                return;
+            }
+            if (!execution.CanPublish || !IsDisplayGenerationCurrent(displayGeneration))
             {
                 if (execution.HasValue
                     && execution.Value is { Success: true, Profile: not null } staleResult
@@ -72,10 +102,11 @@ public sealed partial class CharacterOverviewPresenter
                         currentWorkspace.Value,
                         staleContentRevision,
                         postCommitBudget.Token,
-                        postCommitCaptureIntent).ConfigureAwait(false);
+                        postCommitCaptureIntent, originalOwner: originalOwner).ConfigureAwait(false);
                     if (!staleRecoveryCaptured)
                     {
                         GateStalePostCommitRecovery(
+                            originalOwner,
                             currentWorkspace.Value,
                             staleContentRevision,
                             "stale postcommit metadata recovery",
@@ -95,7 +126,8 @@ public sealed partial class CharacterOverviewPresenter
                 postCommitCaptureIntent?.Dispose();
                 postCommitCaptureIntent = null;
                 WorkspaceSessionState failedSession = result.Outcome == WorkspaceOperationOutcome.Conflict
-                    ? _workspaceSessionPresenter.SetConflictState(
+                    ? SetOriginalSessionConflict(
+                        originalOwner,
                         currentWorkspace.Value,
                         new WorkspaceConflictState(
                             "metadata update",
@@ -105,7 +137,7 @@ public sealed partial class CharacterOverviewPresenter
                     : _workspaceSessionPresenter.State;
                 if (result.Outcome == WorkspaceOperationOutcome.Conflict)
                 {
-                    _workspaceRecoveryPayloadStore.SetProtected(
+                    RecoveryPayloads(originalOwner).SetProtected(
                         currentWorkspace.Value,
                         expectedContentRevision,
                         protectedFromEviction: true);
@@ -137,24 +169,31 @@ public sealed partial class CharacterOverviewPresenter
                     currentWorkspace.Value,
                     contentRevision,
                     postCommitBudget.Token,
-                    postCommitCaptureIntent).ConfigureAwait(false);
+                    postCommitCaptureIntent, originalOwner: originalOwner).ConfigureAwait(false);
                 postCommitCaptureIntent = null;
             }
-            WorkspaceSessionState session = _workspaceSessionPresenter.SetRevisions(
+            if (!IsOriginalPersistenceOwnerCurrent(originalOwner) || !IsDisplayGenerationCurrent(displayGeneration))
+            {
+                AbandonOriginalPersistenceView(displayGeneration, originalState, committed: true);
+                return;
+            }
+            WorkspaceSessionState session = SetOriginalSessionRevisions(
+                originalOwner,
                 currentWorkspace.Value,
                 contentRevision,
                 savedRevision);
             string? notice = State.Notice;
             if (!recoveryCaptured)
             {
-                session = _workspaceSessionPresenter.SetConflictState(
+                session = SetOriginalSessionConflict(
+                    originalOwner,
                     currentWorkspace.Value,
                     new WorkspaceConflictState(
                         "postcommit metadata recovery",
                         contentRevision,
                         contentRevision,
                         "The metadata committed, but exact postcommit recovery could not be secured within its bounded verification window."));
-                _workspaceRecoveryPayloadStore.SetProtected(
+                RecoveryPayloads(originalOwner).SetProtected(
                     currentWorkspace.Value,
                     contentRevision,
                     protectedFromEviction: true);
@@ -170,32 +209,44 @@ public sealed partial class CharacterOverviewPresenter
                 Profile = result.Profile,
                 Preferences = result.Preferences,
                 Notice = notice
-            });
+            }, displayGeneration);
             TryCapturePostCommitWorkspaceView(
                 "Metadata committed, but the local workspace view could not be retained; it will refresh on the next interaction.");
         }
         catch (Exception ex)
         {
             postCommitCaptureIntent?.Dispose();
-            Publish(State with
+            TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
                 Error = ex.Message
-            });
+            }, originalState);
         }
     }
 
-    public async Task SaveAsync(CancellationToken ct)
+    public Task SaveAsync(CancellationToken ct)
+        => SaveCoreAsync(State, ct);
+
+    private async Task SaveCoreAsync(CharacterOverviewState originalState, CancellationToken ct,
+        Action<CommandResult<WorkspaceSaveReceipt>?>? observeCanonical = null)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
-        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
+        OwnerContextStamp? originalOwner = originalState.DisplayOwnerContext;
+        long displayGeneration = CaptureDisplayGeneration();
+        CharacterWorkspaceId? currentWorkspace = originalState.WorkspaceId;
         if (currentWorkspace is null)
         {
             Publish(State with
             {
                 Error = "No dossier loaded."
             });
+            return;
+        }
+
+        if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
             return;
         }
 
@@ -211,7 +262,7 @@ public sealed partial class CharacterOverviewPresenter
         IWorkspaceRecoveryCaptureIntent? postCommitCaptureIntent = null;
         try
         {
-            long expectedContentRevision = State.ContentRevision;
+            long expectedContentRevision = originalState.ContentRevision;
             if (expectedContentRevision <= 0)
             {
                 Publish(State with { IsBusy = false, Error = "Dossier revision is unavailable. Reload before saving." });
@@ -220,7 +271,7 @@ public sealed partial class CharacterOverviewPresenter
 
             if (HasAuthoritativeRecoveryLoader)
             {
-                _workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+                RecoveryPayloads(originalOwner).TryBeginCaptureIntent(
                     currentWorkspace.Value,
                     expectedContentRevision,
                     out postCommitCaptureIntent);
@@ -229,14 +280,29 @@ public sealed partial class CharacterOverviewPresenter
             WorkspaceOperationExecution<WorkspaceSaveResult> execution = await _workspaceOperationCoordinator
                 .RunCurrentAsync(
                     currentWorkspace.Value,
-                    token => _workspacePersistenceService.SaveAsync(
+                    async token =>
+                    {
+                        WorkspaceSaveResult persisted = originalOwner is { } original
+                        ? await _workspacePersistenceService.SaveAsync(
+                            _client, original, currentWorkspace.Value, expectedContentRevision, token)
+                        : await _workspacePersistenceService.SaveAsync(
                         _client,
                         currentWorkspace.Value,
                         expectedContentRevision,
-                        token),
+                        token);
+                        observeCanonical?.Invoke(persisted.CanonicalResult);
+                        return persisted;
+                    },
                     ct)
                 .ConfigureAwait(false);
-            if (!execution.CanPublish)
+            if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+            {
+                postCommitCaptureIntent?.Dispose();
+                AbandonOriginalPersistenceView(displayGeneration, originalState,
+                    execution.HasValue && execution.Value.Success);
+                return;
+            }
+            if (!execution.CanPublish || !IsDisplayGenerationCurrent(displayGeneration))
             {
                 if (execution.HasValue
                     && execution.Value is { Success: true } staleResult
@@ -250,10 +316,11 @@ public sealed partial class CharacterOverviewPresenter
                         currentWorkspace.Value,
                         staleContentRevision,
                         postCommitBudget.Token,
-                        postCommitCaptureIntent).ConfigureAwait(false);
+                        postCommitCaptureIntent, originalOwner: originalOwner).ConfigureAwait(false);
                     if (!staleRecoveryCaptured)
                     {
                         GateStalePostCommitRecovery(
+                            originalOwner,
                             currentWorkspace.Value,
                             staleContentRevision,
                             "stale postcommit save recovery",
@@ -273,7 +340,8 @@ public sealed partial class CharacterOverviewPresenter
                 postCommitCaptureIntent?.Dispose();
                 postCommitCaptureIntent = null;
                 WorkspaceSessionState failedSession = result.Outcome == WorkspaceOperationOutcome.Conflict
-                    ? _workspaceSessionPresenter.SetConflictState(
+                    ? SetOriginalSessionConflict(
+                        originalOwner,
                         currentWorkspace.Value,
                         new WorkspaceConflictState(
                             "save",
@@ -283,7 +351,7 @@ public sealed partial class CharacterOverviewPresenter
                     : _workspaceSessionPresenter.State;
                 if (result.Outcome == WorkspaceOperationOutcome.Conflict)
                 {
-                    _workspaceRecoveryPayloadStore.SetProtected(
+                    RecoveryPayloads(originalOwner).SetProtected(
                         currentWorkspace.Value,
                         expectedContentRevision,
                         protectedFromEviction: true);
@@ -315,17 +383,23 @@ public sealed partial class CharacterOverviewPresenter
                     currentWorkspace.Value,
                     contentRevision,
                     postCommitBudget.Token,
-                    postCommitCaptureIntent).ConfigureAwait(false);
+                    postCommitCaptureIntent, originalOwner: originalOwner).ConfigureAwait(false);
                 postCommitCaptureIntent = null;
             }
-            WorkspaceSessionState session = _workspaceSessionPresenter.SetRevisions(
+            if (!IsOriginalPersistenceOwnerCurrent(originalOwner) || !IsDisplayGenerationCurrent(displayGeneration))
+            {
+                AbandonOriginalPersistenceView(displayGeneration, originalState, committed: true);
+                return;
+            }
+            WorkspaceSessionState session = SetOriginalSessionRevisions(
+                originalOwner,
                 currentWorkspace.Value,
                 contentRevision,
                 savedRevision);
             string notice;
             if (recoveryCaptured)
             {
-                _workspaceRecoveryPayloadStore.SetProtected(
+                RecoveryPayloads(originalOwner).SetProtected(
                     currentWorkspace.Value,
                     contentRevision,
                     protectedFromEviction: false);
@@ -333,14 +407,15 @@ public sealed partial class CharacterOverviewPresenter
             }
             else
             {
-                session = _workspaceSessionPresenter.SetConflictState(
+                session = SetOriginalSessionConflict(
+                    originalOwner,
                     currentWorkspace.Value,
                     new WorkspaceConflictState(
                         "postcommit save recovery",
                         contentRevision,
                         contentRevision,
                         "The save committed, but exact postcommit recovery could not be secured within its bounded verification window."));
-                _workspaceRecoveryPayloadStore.SetProtected(
+                RecoveryPayloads(originalOwner).SetProtected(
                     currentWorkspace.Value,
                     contentRevision,
                     protectedFromEviction: true);
@@ -357,36 +432,103 @@ public sealed partial class CharacterOverviewPresenter
                 PendingDownload = null,
                 PendingExport = null,
                 PendingPrint = null
-            });
+            }, displayGeneration);
             TryCapturePostCommitWorkspaceView(
                 "Save committed, but the local workspace view could not be retained; it will refresh on the next interaction.");
         }
         catch (Exception ex)
         {
             postCommitCaptureIntent?.Dispose();
-            Publish(State with
+            TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
                 Error = ex.Message
-            });
+            }, originalState);
         }
     }
 
+    public Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(OwnerContextStamp originalOwner,
+        CharacterWorkspaceId workspaceId, long expectedContentRevision, CancellationToken ct)
+        => RunOriginalPersistenceGestureAsync<WorkspaceSaveReceipt>(originalOwner, workspaceId,
+            expectedContentRevision, (state, observe) => SaveCoreAsync(state, ct, observe));
+
+    public Task<CommandResult<WorkspaceMetadataResult>> UpdateMetadataAsync(OwnerContextStamp originalOwner,
+        CharacterWorkspaceId workspaceId, long expectedContentRevision, UpdateWorkspaceMetadata command, CancellationToken ct)
+        => RunOriginalPersistenceGestureAsync<WorkspaceMetadataResult>(originalOwner, workspaceId,
+            expectedContentRevision, (state, observe) => UpdateMetadataCoreAsync(state, command, ct, observe));
+
+    private async Task<CommandResult<T>> RunOriginalPersistenceGestureAsync<T>(OwnerContextStamp originalOwner,
+        CharacterWorkspaceId workspaceId, long expectedContentRevision,
+        Func<CharacterOverviewState, Action<CommandResult<T>?>, Task> operation) where T : class
+    {
+        CharacterOverviewState originalState = State;
+        if (!originalOwner.IsValid || originalState.DisplayOwnerContext != originalOwner
+            || originalState.WorkspaceId != workspaceId || expectedContentRevision <= 0
+            || originalState.ContentRevision != expectedContentRevision
+            || !IsOriginalPersistenceOwnerCurrent(originalOwner))
+            return new(false, null, "The original account or runner changed. Reopen before saving.", WorkspaceOperationOutcome.Conflict);
+
+        CommandResult<T>? observed = null;
+        try { await operation(originalState, result => observed = result).ConfigureAwait(false); }
+        catch (Exception error) when (observed is not null && error is not OutOfMemoryException)
+        {
+            // A joined canonical result survives optional view/recovery follow-up failures.
+        }
+        return observed ?? new(false, null,
+            "No canonical persistence result is available. Reload to review the runner.", WorkspaceOperationOutcome.Unavailable);
+    }
+
+    private bool IsOriginalPersistenceOwnerCurrent(OwnerContextStamp? originalOwner)
+    {
+        if (_client is not IOwnerBoundWorkspaceMutationClient bound)
+            return originalOwner is null;
+        try
+        {
+            return originalOwner is { IsValid: true } original
+                && State.DisplayOwnerContext == original
+                && bound.CaptureOwnerContext() == original;
+        }
+        catch (Exception error) when (error is InvalidOperationException
+            or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private void AbandonOriginalPersistenceView(long generation, CharacterOverviewState originalState, bool committed)
+        => TryPublishDisplayTransition(generation, CharacterOverviewState.Empty with
+        {
+            Preferences = originalState.Preferences,
+            Commands = originalState.Commands,
+            NavigationTabs = originalState.NavigationTabs,
+            Notice = committed
+                ? "The change was committed for the original account. Reopen that account to review it."
+                : "The account or runner view changed. Reload before saving or editing."
+        }, originalState);
+
     public async Task DownloadAsync(CancellationToken ct)
     {
+        CancellationToken outputCancellation = ct;
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        CharacterOverviewState originalState = State;
+        long displayGeneration = BeginDisplayTransition();
+        if (!IsOriginalPersistenceOwnerCurrent(originalState.DisplayOwnerContext))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
+            return;
+        }
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
         {
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 Error = "No dossier loaded."
             });
             return;
         }
 
-        Publish(State with
+        PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
         {
             IsBusy = true,
             Error = null,
@@ -397,10 +539,12 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            WorkspaceDownloadResult result = await _workspacePersistenceService.DownloadAsync(_client, currentWorkspace.Value, ct);
+            WorkspaceDownloadResult result = originalState.DisplayOwnerContext is { } original
+                ? await _workspacePersistenceService.DownloadAsync(_client, original, currentWorkspace.Value, originalState.ContentRevision, ct)
+                : await _workspacePersistenceService.DownloadAsync(_client, currentWorkspace.Value, ct);
             if (!result.Success || result.Receipt is null)
             {
-                Publish(State with
+                PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
                 {
                     IsBusy = false,
                     Error = result.Error,
@@ -411,7 +555,7 @@ public sealed partial class CharacterOverviewPresenter
                 return;
             }
 
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 IsBusy = false,
                 Error = null,
@@ -424,7 +568,7 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch (Exception ex)
         {
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 IsBusy = false,
                 Error = ex.Message,
@@ -437,19 +581,27 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task ExportAsync(CancellationToken ct)
     {
+        CancellationToken outputCancellation = ct;
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        CharacterOverviewState originalState = State;
+        long displayGeneration = BeginDisplayTransition();
+        if (!IsOriginalPersistenceOwnerCurrent(originalState.DisplayOwnerContext))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
+            return;
+        }
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
         {
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 Error = "No dossier loaded."
             });
             return;
         }
 
-        Publish(State with
+        PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
         {
             IsBusy = true,
             Error = null,
@@ -460,10 +612,12 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            WorkspaceExportResult result = await _workspacePersistenceService.ExportAsync(_client, currentWorkspace.Value, ct);
+            WorkspaceExportResult result = originalState.DisplayOwnerContext is { } original
+                ? await _workspacePersistenceService.ExportAsync(_client, original, currentWorkspace.Value, originalState.ContentRevision, ct)
+                : await _workspacePersistenceService.ExportAsync(_client, currentWorkspace.Value, ct);
             if (!result.Success || result.Receipt is null)
             {
-                Publish(State with
+                PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
                 {
                     ActiveDialog = null,
                     IsBusy = false,
@@ -475,7 +629,7 @@ public sealed partial class CharacterOverviewPresenter
                 return;
             }
 
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 ActiveDialog = null,
                 IsBusy = false,
@@ -492,7 +646,7 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch (Exception ex)
         {
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 IsBusy = false,
                 Error = ex.Message,
@@ -515,19 +669,27 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task PrintAsync(CancellationToken ct)
     {
+        CancellationToken outputCancellation = ct;
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        CharacterOverviewState originalState = State;
+        long displayGeneration = BeginDisplayTransition();
+        if (!IsOriginalPersistenceOwnerCurrent(originalState.DisplayOwnerContext))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
+            return;
+        }
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
         {
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 Error = "No dossier loaded."
             });
             return;
         }
 
-        Publish(State with
+        PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
         {
             IsBusy = true,
             Error = null,
@@ -538,10 +700,12 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            WorkspacePrintResult result = await _workspacePersistenceService.PrintAsync(_client, currentWorkspace.Value, ct);
+            WorkspacePrintResult result = originalState.DisplayOwnerContext is { } original
+                ? await _workspacePersistenceService.PrintAsync(_client, original, currentWorkspace.Value, originalState.ContentRevision, ct)
+                : await _workspacePersistenceService.PrintAsync(_client, currentWorkspace.Value, ct);
             if (!result.Success || result.Receipt is null)
             {
-                Publish(State with
+                PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
                 {
                     ActiveDialog = null,
                     IsBusy = false,
@@ -553,7 +717,7 @@ public sealed partial class CharacterOverviewPresenter
                 return;
             }
 
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 ActiveDialog = null,
                 IsBusy = false,
@@ -567,7 +731,7 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch (Exception ex)
         {
-            Publish(State with
+            PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 IsBusy = false,
                 Error = ex.Message,
@@ -576,5 +740,36 @@ public sealed partial class CharacterOverviewPresenter
                 PendingPrint = null
             });
         }
+    }
+
+    private bool PublishOutputTransition(long generation, CharacterOverviewState original, CancellationToken outputCancellation, CharacterOverviewState next)
+    {
+        if (!IsDisplayGenerationCurrent(generation)) return false;
+        if (!IsOriginalPersistenceOwnerCurrent(original.DisplayOwnerContext))
+        {
+            AbandonOriginalPersistenceView(generation, original, committed: false);
+            return false;
+        }
+        object? receipt = (object?)next.PendingDownload ?? (object?)next.PendingExport ?? next.PendingPrint;
+        CharacterWorkspaceId? id = original.WorkspaceId ?? original.Session.ActiveWorkspaceId;
+        CharacterWorkspaceId? receiptId = receipt switch
+        {
+            WorkspaceDownloadReceipt download => download.Id,
+            WorkspaceExportReceipt export => export.Id,
+            WorkspacePrintReceipt print => print.Id,
+            _ => null
+        };
+        if (receipt is not null && (id is null || receiptId != id))
+            next = next with
+            {
+                IsBusy = false, Error = "The prepared output does not match the original runner.",
+                PendingDownload = null, PendingExport = null, PendingPrint = null, PendingOutputBinding = null
+            };
+        else next = next with
+        {
+            PendingOutputBinding = receipt is null || id is null ? null
+                : new WorkspaceOutputBinding(original.DisplayOwnerContext, id.Value, original.ContentRevision, receipt, outputCancellation)
+        };
+        return TryPublishDisplayTransition(generation, next, original);
     }
 }

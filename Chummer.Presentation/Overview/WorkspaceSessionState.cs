@@ -1,4 +1,5 @@
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Owners;
 
 namespace Chummer.Presentation.Overview;
 
@@ -7,6 +8,10 @@ public sealed record WorkspaceSessionState(
     IReadOnlyList<OpenWorkspaceState> OpenWorkspaces,
     IReadOnlyList<CharacterWorkspaceId> RecentWorkspaceIds)
 {
+    // Original roster/session read provenance, not a persisted epoch or live lease.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public OwnerContextStamp? OwnerContext { get; init; }
+
     public static WorkspaceSessionState Empty { get; } = new(
         ActiveWorkspaceId: null,
         OpenWorkspaces: [],

@@ -1,5 +1,7 @@
 using Chummer.Application.Characters;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Characters;
+using System.Text.Json.Serialization;
 
 namespace Chummer.Presentation.Overview;
 
@@ -46,6 +48,9 @@ public sealed record CharacterCreationContactEditInput(
     bool? Family = null,
     bool? Blackmail = null)
 {
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; init; }
+
     internal CharacterCreationContactEdit ToCoreEdit()
         => new(
             ContactId,
@@ -65,7 +70,11 @@ public sealed record CharacterCreationContactsInteractionState(
     CharacterCreationContactBudget HighPlacesBudget,
     IReadOnlyList<string> Blockers,
     bool CanEdit,
-    string SnapshotDigest);
+    string SnapshotDigest)
+{
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; init; }
+}
 
 public sealed record CharacterCreationContactPreparedPreview(
     string ContactsSnapshotDigest,
@@ -83,7 +92,11 @@ public sealed record CharacterCreationContactPreparedPreview(
     bool RequiresExplicitConfirmation,
     bool CanConfirm,
     string IdempotencyKey,
-    string PreviewDigest);
+    string PreviewDigest)
+{
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; init; }
+}
 
 public sealed record CharacterCreationContactConfirmation(
     CharacterCreationContactPreparedPreview PreparedPreview,
@@ -119,11 +132,14 @@ public sealed class CharacterCreationContactsInteractionPresenter
     : ICharacterCreationContactsInteractionPresenter
 {
     private readonly ICharacterCreationContactsService _service;
+    private readonly IOwnerBoundCharacterCreationContactsService? _ownerBoundService;
 
     public CharacterCreationContactsInteractionPresenter(
-        ICharacterCreationContactsService service)
+        ICharacterCreationContactsService service,
+        IOwnerBoundCharacterCreationContactsService? ownerBoundService = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
+        _ownerBoundService = ownerBoundService;
     }
 
     public CharacterCreationContactsInteractionLoadResult Load(CharacterOverviewState overview)
@@ -131,7 +147,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
         ExactLoad load = LoadExact(overview);
         return new CharacterCreationContactsInteractionLoadResult(
             load.Outcome,
-            load.State is null ? null : Project(load.State),
+            load.State is null ? null : Project(load.State, overview.DisplayOwnerContext),
             load.Blockers);
     }
 
@@ -140,6 +156,10 @@ public sealed class CharacterCreationContactsInteractionPresenter
         CharacterCreationContactEditInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(overview);
+        if (!OwnerContextMatches(input.DisplayOwnerContext, overview.DisplayOwnerContext))
+            return new(CharacterCreationContactOutcomes.Conflict, null, null,
+                [CharacterCreationContactsInteractionBlockers.OverviewAuthorityRequired]);
         ExactLoad load = LoadExact(overview);
         if (load.State is not CharacterCreationContactsState contacts)
         {
@@ -150,7 +170,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
                 load.Blockers);
         }
 
-        CharacterCreationContactsInteractionState state = Project(contacts);
+        CharacterCreationContactsInteractionState state = Project(contacts, overview.DisplayOwnerContext);
         if (!contacts.CanEdit || contacts.Blockers.Count != 0)
         {
             return new CharacterCreationContactsInteractionPrepareResult(
@@ -170,7 +190,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
 
         CharacterCreationContactEdit edit = input.ToCoreEdit();
         CharacterCreationContactResult<CharacterCreationContactPreview> result =
-            _service.Preview(new CharacterCreationContactPreviewRequest(contacts.Binding, edit));
+            PreviewCore(overview.DisplayOwnerContext, new CharacterCreationContactPreviewRequest(contacts.Binding, edit));
         if (result.Value is not CharacterCreationContactPreview preview)
         {
             return new CharacterCreationContactsInteractionPrepareResult(
@@ -189,7 +209,8 @@ public sealed class CharacterCreationContactsInteractionPresenter
                 [CharacterCreationContactsInteractionBlockers.PreparedPreviewMismatch]);
         }
 
-        CharacterCreationContactPreparedPreview prepared = Project(contacts, edit, preview);
+        CharacterCreationContactPreparedPreview prepared = Project(contacts, edit, preview)
+            with { DisplayOwnerContext = overview.DisplayOwnerContext };
         return new CharacterCreationContactsInteractionPrepareResult(
             result.Outcome,
             state,
@@ -203,7 +224,11 @@ public sealed class CharacterCreationContactsInteractionPresenter
     {
         ArgumentNullException.ThrowIfNull(confirmation);
         ArgumentNullException.ThrowIfNull(confirmation.PreparedPreview);
+        ArgumentNullException.ThrowIfNull(overview);
         CharacterCreationContactPreparedPreview prepared = confirmation.PreparedPreview;
+        if (!OwnerContextMatches(prepared.DisplayOwnerContext, overview.DisplayOwnerContext))
+            return Failure(CharacterCreationContactOutcomes.Conflict, prepared,
+                CharacterCreationContactsInteractionBlockers.OverviewAuthorityRequired);
         if (!confirmation.ExplicitlyConfirmed)
         {
             return Failure(
@@ -267,7 +292,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
         }
 
         CharacterCreationContactResult<CharacterCreationContactReceipt> result =
-            _service.Confirm(new CharacterCreationContactConfirmRequest(
+            ConfirmCore(prepared.DisplayOwnerContext, new CharacterCreationContactConfirmRequest(
                 prepared.Binding,
                 prepared.Edit,
                 prepared.PreviewDigest,
@@ -294,8 +319,16 @@ public sealed class CharacterCreationContactsInteractionPresenter
                 [CharacterCreationContactsInteractionBlockers.ReceiptMismatch]);
         }
 
-        CharacterCreationContactResult<CharacterCreationContactsState> refresh =
-            _service.Load(new CharacterCreationContactsLoadRequest(receipt.WorkspaceId));
+        CharacterCreationContactResult<CharacterCreationContactsState> refresh;
+        try
+        {
+            refresh = LoadCore(prepared.DisplayOwnerContext, new CharacterCreationContactsLoadRequest(receipt.WorkspaceId));
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            return new(CharacterCreationContactOutcomes.Conflict, prepared, receipt, null,
+                [CharacterCreationContactsInteractionBlockers.RefreshAuthorityRequired]);
+        }
         if (refresh.Outcome != CharacterCreationContactOutcomes.Available
             || refresh.Value is not CharacterCreationContactsState refreshed
             || !RefreshedStateMatches(receipt, prepared, refreshed))
@@ -313,7 +346,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
             result.Outcome,
             prepared,
             receipt,
-            Project(refreshed),
+            Project(refreshed, prepared.DisplayOwnerContext),
             NormalizeBlockers(result.Blockers.Concat(refresh.Blockers)));
     }
 
@@ -343,7 +376,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
         }
 
         CharacterCreationContactResult<CharacterCreationContactReceipt> lookup =
-            _service.LookupReceipt(new CharacterCreationContactReceiptLookupRequest(
+            LookupCore(overview.DisplayOwnerContext, new CharacterCreationContactReceiptLookupRequest(
                 workspaceId,
                 idempotencyKey));
         if (lookup.Value is not CharacterCreationContactReceipt receipt)
@@ -355,8 +388,16 @@ public sealed class CharacterCreationContactsInteractionPresenter
                 NormalizeBlockers(lookup.Blockers));
         }
 
-        CharacterCreationContactResult<CharacterCreationContactsState> current =
-            _service.Load(new CharacterCreationContactsLoadRequest(workspaceId));
+        CharacterCreationContactResult<CharacterCreationContactsState> current;
+        try
+        {
+            current = LoadCore(overview.DisplayOwnerContext, new CharacterCreationContactsLoadRequest(workspaceId));
+        }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            return new(CharacterCreationContactOutcomes.Conflict, receipt, null,
+                [CharacterCreationContactsInteractionBlockers.RefreshAuthorityRequired]);
+        }
         if (current.Outcome != CharacterCreationContactOutcomes.Available
             || current.Value is not CharacterCreationContactsState state
             || !ReceiptCanBelongToCurrentState(receipt, state))
@@ -372,7 +413,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
         return new CharacterCreationContactsInteractionReceiptLookupResult(
             lookup.Outcome,
             receipt,
-            Project(state),
+            Project(state, overview.DisplayOwnerContext),
             NormalizeBlockers(lookup.Blockers.Concat(current.Blockers)));
     }
 
@@ -400,7 +441,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
         }
 
         CharacterCreationContactResult<CharacterCreationContactsState> result =
-            _service.Load(new CharacterCreationContactsLoadRequest(workspaceId));
+            LoadCore(overview.DisplayOwnerContext, new CharacterCreationContactsLoadRequest(workspaceId));
         if (result.Outcome != CharacterCreationContactOutcomes.Available
             || result.Value is not CharacterCreationContactsState contacts)
         {
@@ -431,6 +472,42 @@ public sealed class CharacterCreationContactsInteractionPresenter
             NormalizeBlockers(result.Blockers.Concat(contacts.Blockers)));
     }
 
+    private bool OwnerContextMatches(OwnerContextStamp? original, OwnerContextStamp? display)
+        => original is { IsValid: true } && original == display
+           || original is null && display is null && _ownerBoundService is null;
+
+    private CharacterCreationContactResult<CharacterCreationContactsState> LoadCore(
+        OwnerContextStamp? owner, CharacterCreationContactsLoadRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.Load(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.Load(request) : OwnerUnavailable<CharacterCreationContactsState>();
+
+    private CharacterCreationContactResult<CharacterCreationContactPreview> PreviewCore(
+        OwnerContextStamp? owner, CharacterCreationContactPreviewRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.Preview(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.Preview(request) : OwnerUnavailable<CharacterCreationContactPreview>();
+
+    private CharacterCreationContactResult<CharacterCreationContactReceipt> ConfirmCore(
+        OwnerContextStamp? owner, CharacterCreationContactConfirmRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.Confirm(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.Confirm(request) : OwnerUnavailable<CharacterCreationContactReceipt>();
+
+    private CharacterCreationContactResult<CharacterCreationContactReceipt> LookupCore(
+        OwnerContextStamp? owner, CharacterCreationContactReceiptLookupRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.LookupReceipt(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.LookupReceipt(request) : OwnerUnavailable<CharacterCreationContactReceipt>();
+
+    private static CharacterCreationContactResult<T> OwnerUnavailable<T>() where T : class
+        => new(CharacterCreationContactOutcomes.Unavailable, null,
+            [CharacterCreationContactsInteractionBlockers.OverviewAuthorityRequired]);
+
     private static bool MatchesOverview(
         Chummer.Contracts.Workspaces.CharacterWorkspaceId workspaceId,
         long contentRevision,
@@ -457,7 +534,8 @@ public sealed class CharacterCreationContactsInteractionPresenter
            && BudgetEquals(projected.ContactBudget, loaded.ContactBudget)
            && BudgetEquals(projected.HighPlacesBudget, loaded.HighPlacesBudget);
 
-    private static CharacterCreationContactsInteractionState Project(CharacterCreationContactsState state)
+    private static CharacterCreationContactsInteractionState Project(
+        CharacterCreationContactsState state, OwnerContextStamp? owner)
         => new(
             state.Binding,
             state.Contacts,
@@ -465,7 +543,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
             state.HighPlacesBudget,
             state.Blockers,
             state.CanEdit,
-            state.SnapshotDigest);
+            state.SnapshotDigest) { DisplayOwnerContext = owner };
 
     private static CharacterCreationContactPreparedPreview Project(
         CharacterCreationContactsState state,

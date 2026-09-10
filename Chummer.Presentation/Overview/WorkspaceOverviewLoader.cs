@@ -3,6 +3,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Application.Characters;
 using Chummer.Application.Workspaces;
+using Chummer.Application.Owners;
 using Chummer.Infrastructure.Xml;
 using Chummer.Rulesets.Hosting;
 using Chummer.Rulesets.Sr4;
@@ -13,7 +14,8 @@ using System.Text;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthoritativeWorkspaceOverviewLoader
+public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthoritativeWorkspaceOverviewLoader,
+    IOwnerBoundWorkspaceOverviewLoader
 {
     private static readonly object CapabilityIssuer = new();
     private static readonly CanonicalDocumentAuthority CanonicalAuthority = new();
@@ -44,6 +46,13 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         CancellationToken ct)
         => LoadCoreAsync(client, workspaceId, ct, allowCompatibilityFallback: true);
 
+    Task<WorkspaceOverviewLoadResult> IOwnerBoundWorkspaceOverviewLoader.LoadAsync(
+        IChummerClient client, OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId, CancellationToken ct)
+        => expectedOwner.IsValid
+            ? LoadCoreAsync(client, workspaceId, ct, allowCompatibilityFallback: false, expectedOwner: expectedOwner)
+            : throw new InvalidOperationException("Original owner authority is required for workspace refresh.");
+
     Task<WorkspaceOverviewLoadResult> IAuthoritativeWorkspaceOverviewLoader.LoadAuthoritativeAsync(
         CharacterWorkspaceId workspaceId,
         CancellationToken ct)
@@ -62,9 +71,26 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         CancellationToken ct)
         => LoadRecoverySnapshotCoreAsync(workspaceId, ct);
 
-    private async Task<WorkspaceOverviewLoadResult> LoadAuthoritativeCoreAsync(
+    Task<WorkspaceRecoveryAuthoritySnapshot> IAuthoritativeWorkspaceOverviewLoader.LoadRecoverySnapshotAsync(
+        OwnerContextStamp originalOwner,
         CharacterWorkspaceId workspaceId,
         CancellationToken ct)
+        => originalOwner.IsValid
+            ? LoadRecoverySnapshotCoreAsync(workspaceId, ct, originalOwner)
+            : throw new InvalidOperationException("Original recovery owner authority is required.");
+
+    Task<WorkspaceOverviewLoadResult> IAuthoritativeWorkspaceOverviewLoader.LoadAuthoritativeAsync(
+        OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId,
+        CancellationToken ct)
+        => expectedOwner.IsValid
+            ? LoadAuthoritativeCoreAsync(workspaceId, ct, expectedOwner)
+            : throw new InvalidOperationException("Original owner authority is required for workspace refresh.");
+
+    private async Task<WorkspaceOverviewLoadResult> LoadAuthoritativeCoreAsync(
+        CharacterWorkspaceId workspaceId,
+        CancellationToken ct,
+        OwnerContextStamp? expectedOwner = null)
     {
         IChummerClient authoritativeClient = _authoritativeClient
             ?? throw new InvalidOperationException(
@@ -73,7 +99,8 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
                 authoritativeClient,
                 workspaceId,
                 ct,
-                allowCompatibilityFallback: false)
+                allowCompatibilityFallback: false,
+                expectedOwner: expectedOwner)
             .ConfigureAwait(false);
         WorkspaceDocument document = loaded.Document
             ?? throw new InvalidOperationException(
@@ -84,27 +111,34 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
             CanonicalValidation = ValidateCanonicalDocument(
                 workspaceId,
                 loaded.ContentRevision,
-                document)
+                document,
+                loaded.DisplayOwnerContext)
         };
     }
 
     private async Task<WorkspaceRecoveryAuthoritySnapshot> LoadRecoverySnapshotCoreAsync(
         CharacterWorkspaceId workspaceId,
-        CancellationToken ct)
+        CancellationToken ct,
+        OwnerContextStamp? originalOwner = null)
     {
         IChummerClient authoritativeClient = _authoritativeClient
             ?? throw new InvalidOperationException(
                 "Recovery authority is available only from the composition-bound workspace loader.");
+        RequireOriginalRecoveryOwner(authoritativeClient, originalOwner);
         WorkspaceDocumentSnapshot first = await ReadWorkspaceSnapshotAsync(
                 authoritativeClient,
                 workspaceId,
-                ct)
+                ct,
+                originalOwner)
             .ConfigureAwait(false);
+        RequireOriginalRecoveryOwner(authoritativeClient, originalOwner);
         WorkspaceDocumentSnapshot verified = await ReadWorkspaceSnapshotAsync(
                 authoritativeClient,
                 workspaceId,
-                ct)
+                ct,
+                originalOwner)
             .ConfigureAwait(false);
+        RequireOriginalRecoveryOwner(authoritativeClient, originalOwner);
         if (!SnapshotsMatch(first, verified))
         {
             throw new InvalidOperationException(
@@ -114,21 +148,36 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         CanonicalValidationCapability validation = ValidateCanonicalDocument(
             workspaceId,
             verified.ContentRevision,
-            verified.Document);
+            verified.Document,
+            originalOwner);
+        RequireOriginalRecoveryOwner(authoritativeClient, originalOwner);
         return new WorkspaceRecoveryAuthoritySnapshot(
             verified.Document,
             verified.ContentRevision,
-            validation);
+            validation,
+            originalOwner);
+    }
+
+    private static void RequireOriginalRecoveryOwner(IChummerClient client, OwnerContextStamp? originalOwner)
+    {
+        if (client is IOwnerBoundWorkspaceMutationClient bound)
+        {
+            if (originalOwner is not { IsValid: true } || bound.CaptureOwnerContext() != originalOwner)
+                throw new InvalidOperationException("Recovery requires the original live owner. Reload the original account.");
+        }
+        else if (originalOwner is not null)
+            throw new InvalidOperationException("Owner-bound recovery reads are unavailable.");
     }
 
     private static async Task<WorkspaceDocumentSnapshot> ReadWorkspaceSnapshotAsync(
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
-        CancellationToken ct)
+        CancellationToken ct,
+        OwnerContextStamp? expectedOwner = null)
     {
-        CommandResult<WorkspaceDocumentSnapshot> read = await client
-            .GetWorkspaceAsync(workspaceId, ct)
-            .ConfigureAwait(false);
+        CommandResult<WorkspaceDocumentSnapshot> read = await (expectedOwner is { } owner
+            ? ((IOwnerBoundWorkspaceMutationClient)client).GetWorkspaceAsync(owner, workspaceId, ct)
+            : client.GetWorkspaceAsync(workspaceId, ct)).ConfigureAwait(false);
         WorkspaceDocumentSnapshot snapshot = read.Success && read.Value is not null
             ? read.Value
             : throw new InvalidOperationException(read.Error ?? "Dossier could not be read for recovery validation.");
@@ -141,7 +190,7 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         return snapshot;
     }
 
-    private static bool SnapshotsMatch(
+    internal static bool SnapshotsMatch(
         WorkspaceDocumentSnapshot left,
         WorkspaceDocumentSnapshot right)
         => string.Equals(left.Id.Value, right.Id.Value, StringComparison.Ordinal)
@@ -160,14 +209,27 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
         CancellationToken ct,
-        bool allowCompatibilityFallback)
+        bool allowCompatibilityFallback,
+        OwnerContextStamp? expectedOwner = null)
     {
         ArgumentNullException.ThrowIfNull(client);
-        CommandResult<WorkspaceDocumentSnapshot> initialRead = await client
-            .GetWorkspaceAsync(workspaceId, ct)
-            .ConfigureAwait(false);
+        IOwnerBoundWorkspaceProjectionClient? boundClient = client as IOwnerBoundWorkspaceProjectionClient;
+        if (expectedOwner is not null && boundClient is null)
+            throw new InvalidOperationException("Owner-bound workspace projection is unavailable.");
+        // This is a fresh read, not a gesture over an existing display. Capture
+        // may touch the mutable owner's private state, so keep it off the UI.
+        // Nothing is read or projected until this original stamp is available.
+        OwnerContextStamp? originalOwner = expectedOwner ?? (boundClient is null
+            ? null
+            : await Task.Run(boundClient.CaptureOwnerContext, ct).ConfigureAwait(false));
+        if (originalOwner is { IsValid: false })
+            throw new InvalidOperationException("The local overview reader did not provide valid owner authority.");
+        CommandResult<WorkspaceDocumentSnapshot> initialRead = await (boundClient is null
+            ? client.GetWorkspaceAsync(workspaceId, ct)
+            : boundClient.GetWorkspaceAsync(originalOwner!.Value, workspaceId, ct)).ConfigureAwait(false);
         if ((!initialRead.Success || initialRead.Value is null)
             && allowCompatibilityFallback
+            && boundClient is null
             && initialRead.Outcome == WorkspaceOperationOutcome.Unavailable)
         {
             return await LoadCompatibilityCoreAsync(client, workspaceId, ct)
@@ -179,11 +241,11 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         CharacterOverviewProjection overview;
         CharacterValidationResult validation;
         WorkspaceDocumentSnapshot? projectedWorkspace = null;
-        if (client is IWorkspaceOverviewProjectionClient projectionClient)
+        if (boundClient is not null || client is IWorkspaceOverviewProjectionClient)
         {
-            CommandResult<WorkspaceOverviewProjection> projected = await projectionClient
-                .GetWorkspaceOverviewAsync(workspaceId, ct)
-                .ConfigureAwait(false);
+            CommandResult<WorkspaceOverviewProjection> projected = await (boundClient is not null
+                ? boundClient.GetWorkspaceOverviewAsync(originalOwner!.Value, workspaceId, ct)
+                : ((IWorkspaceOverviewProjectionClient)client).GetWorkspaceOverviewAsync(workspaceId, ct)).ConfigureAwait(false);
             WorkspaceOverviewProjection projection = projected.Success && projected.Value is not null
                 ? projected.Value
                 : throw new InvalidOperationException(
@@ -251,7 +313,8 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
         WorkspaceDocumentSnapshot verifiedWorkspace = await ReadWorkspaceSnapshotAsync(
                 client,
                 workspaceId,
-                ct)
+                ct,
+                originalOwner)
             .ConfigureAwait(false);
 
         if (!SnapshotsMatch(workspace, verifiedWorkspace)
@@ -278,7 +341,10 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
             Awakening: overview.Awakening,
             ContentRevision: verifiedWorkspace.ContentRevision,
             SavedRevision: verifiedWorkspace.SavedRevision,
-            Document: verifiedWorkspace.Document);
+            Document: verifiedWorkspace.Document)
+        {
+            DisplayOwnerContext = originalOwner
+        };
     }
 
     private static Task<T> StartProjectionAsync<T>(
@@ -369,14 +435,16 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
     private CanonicalValidationCapability ValidateCanonicalDocument(
         CharacterWorkspaceId workspaceId,
         long contentRevision,
-        WorkspaceDocument document)
+        WorkspaceDocument document,
+        OwnerContextStamp? originalOwner = null)
     {
         CanonicalAuthority.Validate(workspaceId, document);
         return new CanonicalValidationCapability(
             CapabilityIssuer,
             workspaceId,
             contentRevision,
-            document);
+            document,
+            originalOwner);
     }
 
     private sealed class CanonicalDocumentAuthority
@@ -439,6 +507,7 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
     /// </summary>
     internal sealed class CanonicalValidationCapability
     {
+        private readonly OwnerContextStamp? _originalOwner;
         private readonly CharacterWorkspaceId _workspaceId;
         private readonly long _contentRevision;
         private readonly byte[] _payloadDigest;
@@ -451,7 +520,8 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
             object issuer,
             CharacterWorkspaceId workspaceId,
             long contentRevision,
-            WorkspaceDocument document)
+            WorkspaceDocument document,
+            OwnerContextStamp? originalOwner = null)
         {
             if (!ReferenceEquals(issuer, CapabilityIssuer))
                 throw new InvalidOperationException("Canonical validation authority is loader-owned.");
@@ -460,6 +530,7 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
             try
             {
                 _workspaceId = workspaceId;
+                _originalOwner = originalOwner;
                 _contentRevision = contentRevision;
                 _payloadDigest = SHA256.HashData(bytes);
                 _format = document.Format;
@@ -477,8 +548,10 @@ public sealed class WorkspaceOverviewLoader : IWorkspaceOverviewLoader, IAuthori
             CharacterWorkspaceId workspaceId,
             long contentRevision,
             WorkspaceDocument document,
-            ReadOnlySpan<byte> digest)
-            => string.Equals(_workspaceId.Value, workspaceId.Value, StringComparison.Ordinal)
+            ReadOnlySpan<byte> digest,
+            OwnerContextStamp? originalOwner = null)
+            => _originalOwner == originalOwner
+                && string.Equals(_workspaceId.Value, workspaceId.Value, StringComparison.Ordinal)
                 && _contentRevision == contentRevision
                 && CryptographicOperations.FixedTimeEquals(_payloadDigest, digest)
                 && _format == document.Format

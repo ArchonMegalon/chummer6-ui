@@ -20,6 +20,8 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
+        CharacterOverviewState expectedDisplay = State;
+        long displayGeneration = BeginDisplayTransition();
         Publish(State with
         {
             IsBusy = true,
@@ -42,7 +44,10 @@ public sealed partial class CharacterOverviewPresenter
             WorkspaceOperationExecution<WorkspaceSectionRenderResult> execution = await _workspaceOperationCoordinator
                 .RunCurrentAsync(
                     currentWorkspace.Value,
-                    token => _workspaceSectionRenderer.RenderSectionAsync(
+                    token => _client is IOwnerBoundWorkspaceProjectionClient boundClient
+                        && _workspaceSectionRenderer is IOwnerBoundWorkspaceSectionRenderer boundRenderer
+                        ? boundRenderer.RenderSectionAsync(boundClient, expectedDisplay, sectionId, tabId, actionId, token)
+                        : _workspaceSectionRenderer.RenderSectionAsync(
                         _client,
                         currentWorkspace.Value,
                         sectionId,
@@ -59,7 +64,7 @@ public sealed partial class CharacterOverviewPresenter
             }
 
             WorkspaceSectionRenderResult section = execution.Value;
-            Publish(State with
+            if (!TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
                 Error = null,
@@ -73,17 +78,19 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveNpcPersonaStudio = section.ActiveNpcPersonaStudio,
                 ActiveCollectionEditor = section.ActiveCollectionEditor,
                 ActiveConditionMonitor = section.ActiveConditionMonitor,
-                ActiveLocationEditor = section.ActiveLocationEditor
-            });
+                ActiveLocationEditor = section.ActiveLocationEditor,
+                DisplayOwnerContext = section.DisplayOwnerContext
+            }, expectedDisplay)) return;
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }
         catch (Exception ex)
         {
-            Publish(State with
+            TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
-                Error = ex.Message
-            });
+                Error = ex.Message,
+                DisplayOwnerContext = null
+            }, expectedDisplay);
         }
     }
 
@@ -96,6 +103,8 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
+        CharacterOverviewState expectedDisplay = State;
+        long displayGeneration = BeginDisplayTransition();
         Publish(State with
         {
             IsBusy = true,
@@ -107,7 +116,10 @@ public sealed partial class CharacterOverviewPresenter
             WorkspaceOperationExecution<WorkspaceSectionRenderResult> execution = await _workspaceOperationCoordinator
                 .RunCurrentAsync(
                     currentWorkspace.Value,
-                    token => _workspaceSectionRenderer.RenderSummaryAsync(
+                    token => _client is IOwnerBoundWorkspaceProjectionClient boundClient
+                        && _workspaceSectionRenderer is IOwnerBoundWorkspaceSectionRenderer boundRenderer
+                        ? boundRenderer.RenderSummaryAsync(boundClient, expectedDisplay, action, token)
+                        : _workspaceSectionRenderer.RenderSummaryAsync(
                         _client,
                         currentWorkspace.Value,
                         action,
@@ -120,7 +132,7 @@ public sealed partial class CharacterOverviewPresenter
             }
 
             WorkspaceSectionRenderResult summary = execution.Value;
-            Publish(State with
+            if (!TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
                 Error = null,
@@ -134,17 +146,19 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveNpcPersonaStudio = summary.ActiveNpcPersonaStudio,
                 ActiveCollectionEditor = summary.ActiveCollectionEditor,
                 ActiveConditionMonitor = summary.ActiveConditionMonitor,
-                ActiveLocationEditor = summary.ActiveLocationEditor
-            });
+                ActiveLocationEditor = summary.ActiveLocationEditor,
+                DisplayOwnerContext = summary.DisplayOwnerContext
+            }, expectedDisplay)) return;
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }
         catch (Exception ex)
         {
-            Publish(State with
+            TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
-                Error = ex.Message
-            });
+                Error = ex.Message,
+                DisplayOwnerContext = null
+            }, expectedDisplay);
         }
     }
 
@@ -157,6 +171,8 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
+        CharacterOverviewState expectedDisplay = State;
+        long displayGeneration = BeginDisplayTransition();
         Publish(State with
         {
             IsBusy = true,
@@ -168,7 +184,10 @@ public sealed partial class CharacterOverviewPresenter
             WorkspaceOperationExecution<WorkspaceSectionRenderResult> execution = await _workspaceOperationCoordinator
                 .RunCurrentAsync(
                     currentWorkspace.Value,
-                    token => _workspaceSectionRenderer.RenderValidationAsync(
+                    token => _client is IOwnerBoundWorkspaceProjectionClient boundClient
+                        && _workspaceSectionRenderer is IOwnerBoundWorkspaceSectionRenderer boundRenderer
+                        ? boundRenderer.RenderValidationAsync(boundClient, expectedDisplay, action, token)
+                        : _workspaceSectionRenderer.RenderValidationAsync(
                         _client,
                         currentWorkspace.Value,
                         action,
@@ -181,7 +200,7 @@ public sealed partial class CharacterOverviewPresenter
             }
 
             WorkspaceSectionRenderResult validation = execution.Value;
-            Publish(State with
+            if (!TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
                 Error = null,
@@ -195,17 +214,19 @@ public sealed partial class CharacterOverviewPresenter
                 ActiveNpcPersonaStudio = validation.ActiveNpcPersonaStudio,
                 ActiveCollectionEditor = validation.ActiveCollectionEditor,
                 ActiveConditionMonitor = validation.ActiveConditionMonitor,
-                ActiveLocationEditor = validation.ActiveLocationEditor
-            });
+                ActiveLocationEditor = validation.ActiveLocationEditor,
+                DisplayOwnerContext = validation.DisplayOwnerContext
+            }, expectedDisplay)) return;
             _workspaceOverviewLifecycleCoordinator.CaptureCurrentWorkspaceView(State);
         }
         catch (Exception ex)
         {
-            Publish(State with
+            TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
-                Error = ex.Message
-            });
+                Error = ex.Message,
+                DisplayOwnerContext = null
+            }, expectedDisplay);
         }
     }
 }

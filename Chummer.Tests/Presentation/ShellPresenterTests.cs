@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Chummer.Application.Owners;
+using Chummer.Contracts.Owners;
 using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
@@ -17,6 +19,7 @@ using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Run.Contracts.Billing;
 using Chummer.Presentation.Shell;
+using Chummer.Rulesets.Hosting.Presentation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -837,6 +840,584 @@ public class ShellPresenterTests
         Assert.AreEqual("ws-1", presenter.State.ActiveWorkspaceId?.Value);
     }
 
+    [TestMethod]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    [DataRow("unchanged")]
+    public async Task Initialize_retains_original_bootstrap_owner_through_delayed_response(string transition)
+    {
+        BoundShellClient client = new() { HoldBootstrap = true };
+        ShellPresenter presenter = new(client);
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        Task pending = presenter.InitializeAsync(CancellationToken.None);
+        try
+        {
+            await client.BootstrapReady.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsFalse(pending.IsCompleted);
+            client.SwitchOwner(transition);
+            client.ReleaseBootstrap.TrySetResult();
+            await pending.WaitAsync(TimeSpan.FromSeconds(5));
+            if (transition == "unchanged")
+            {
+                Assert.IsNull(presenter.State.Error);
+                Assert.AreEqual(original, presenter.State.OwnerContext);
+                Assert.HasCount(1, presenter.State.OpenWorkspaces);
+                Assert.HasCount(1, client.SavedSessions);
+            }
+            else
+            {
+                Assert.IsNotNull(presenter.State.Error);
+                Assert.IsNull(presenter.State.OwnerContext);
+                Assert.IsEmpty(presenter.State.OpenWorkspaces);
+                Assert.IsEmpty(client.SavedSessions);
+            }
+        }
+        finally
+        {
+            client.ReleaseBootstrap.TrySetResult();
+            await ObserveOwnerTaskAsync(pending);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    [DataRow("unchanged")]
+    public async Task Initial_session_save_acquires_the_original_bootstrap_epoch_after_admission(string transition)
+    {
+        BoundShellClient client = new() { HoldSave = true };
+        ShellPresenter presenter = new(client);
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        Task pending = presenter.InitializeAsync(CancellationToken.None);
+        try
+        {
+            await client.SaveReady.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsFalse(pending.IsCompleted);
+            client.SwitchOwner(transition);
+            client.ReleaseSave.TrySetResult();
+            await pending.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.AreEqual(original, client.RequestedSaveOwner);
+            if (transition == "unchanged")
+            {
+                Assert.HasCount(1, client.SavedSessions);
+                Assert.AreEqual(original, presenter.State.OwnerContext);
+                Assert.IsNull(presenter.State.Error);
+            }
+            else
+            {
+                Assert.IsEmpty(client.SavedSessions, "No new owner may receive an earlier owner's derived session.");
+                Assert.IsNull(presenter.State.OwnerContext);
+                Assert.IsEmpty(presenter.State.OpenWorkspaces);
+                Assert.IsNotNull(presenter.State.Error);
+            }
+        }
+        finally
+        {
+            client.ReleaseSave.TrySetResult();
+            await ObserveOwnerTaskAsync(pending);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("tab", "owner-b")]
+    [DataRow("tab", "owner-aba")]
+    [DataRow("preferences", "owner-b")]
+    [DataRow("preferences", "owner-aba")]
+    [DataRow("workspace", "owner-b")]
+    [DataRow("workspace", "owner-aba")]
+    public async Task Display_derived_shell_actions_reject_changed_owner_and_clear_stale_state(string action, string transition)
+    {
+        BoundShellClient client = new();
+        ShellPresenter presenter = new(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+        Assert.IsNull(presenter.State.Error);
+        OwnerContextStamp originalOwner = client.CaptureOwnerContext();
+        int originalSaves = client.SavedSessions.Count;
+        client.SwitchOwner(transition);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => action switch
+        {
+            "tab" => presenter.SelectTabAsync("tab-rules", CancellationToken.None),
+            "preferences" => presenter.SetPreferredRulesetAsync("sr6", CancellationToken.None),
+            _ => presenter.SyncWorkspaceContextAsync(originalOwner, new CharacterWorkspaceId("shared-workspace"), CancellationToken.None)
+        });
+        Assert.AreEqual(originalSaves, client.SavedSessions.Count);
+        Assert.IsEmpty(client.SavedPreferences);
+        Assert.IsEmpty(presenter.State.OpenWorkspaces);
+        Assert.IsNull(presenter.State.OwnerContext);
+
+        await presenter.InitializeAsync(CancellationToken.None);
+        Assert.IsNull(presenter.State.Error, "Explicit reload must recover without preserving the old owner projection.");
+        Assert.AreEqual(client.CaptureOwnerContext(), presenter.State.OwnerContext);
+    }
+
+    [TestMethod]
+    [DataRow("tab", "owner-aba")]
+    [DataRow("preferences", "owner-aba")]
+    [DataRow("tab", "unchanged")]
+    [DataRow("preferences", "unchanged")]
+    public async Task Delayed_display_derived_save_does_not_recapture_the_new_owner(string action, string transition)
+    {
+        BoundShellClient client = new();
+        ShellPresenter presenter = new(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        int originalSaves = client.SavedSessions.Count;
+        client.HoldSave = true;
+        Task pending = action == "tab"
+            ? presenter.SelectTabAsync("tab-info", CancellationToken.None)
+            : presenter.SetPreferredRulesetAsync("sr6", CancellationToken.None);
+        try
+        {
+            await client.SaveReady.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsFalse(pending.IsCompleted);
+            client.SwitchOwner(transition);
+            client.ReleaseSave.TrySetResult();
+            if (transition == "unchanged")
+                await pending.WaitAsync(TimeSpan.FromSeconds(5));
+            else
+                await Assert.ThrowsAsync<InvalidOperationException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.AreEqual(original, client.RequestedSaveOwner);
+            if (transition != "unchanged")
+            {
+                Assert.AreEqual(originalSaves, client.SavedSessions.Count);
+                Assert.IsEmpty(client.SavedPreferences);
+                Assert.IsNull(presenter.State.OwnerContext);
+                Assert.IsEmpty(presenter.State.OpenWorkspaces);
+                Assert.IsNotNull(presenter.State.Error);
+            }
+            else if (action == "tab")
+                Assert.AreEqual(originalSaves + 1, client.SavedSessions.Count);
+            else
+                Assert.HasCount(1, client.SavedPreferences);
+        }
+        finally
+        {
+            client.ReleaseSave.TrySetResult();
+            await ObserveOwnerTaskAsync(pending);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    [DataRow("unchanged")]
+    [DataRow("missing-stamp")]
+    [DataRow("wrong-authority")]
+    public async Task Presenter_itself_rejects_stale_or_unproven_bootstrap_from_custom_provider(string transition)
+    {
+        BoundShellClient client = new();
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        ShellBootstrapSnapshot snapshot = await client.GetShellBootstrapAsync(original, null, CancellationToken.None);
+        ShellBootstrapData data = new(snapshot.RulesetId, snapshot.Commands, snapshot.NavigationTabs,
+            snapshot.Workspaces, snapshot.PreferredRulesetId, snapshot.ActiveRulesetId,
+            snapshot.ActiveWorkspaceId, snapshot.ActiveTabId, snapshot.ActiveTabsByWorkspace)
+        {
+            OwnerContext = transition == "missing-stamp" ? null
+                : transition == "wrong-authority" ? original with { AuthorityInstanceId = "another-install" }
+                : original
+        };
+        HeldBootstrapProvider provider = new(data);
+        ShellPresenter presenter = new(client, provider);
+        Task pending = presenter.InitializeAsync(CancellationToken.None);
+        try
+        {
+            await provider.Ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            if (transition is "owner-b" or "owner-aba") client.SwitchOwner(transition);
+            provider.Release.TrySetResult();
+            await pending.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsTrue(provider.ReturnedOriginalPayload, "The custom provider must actually return stale data; it has no owner check.");
+            if (transition == "unchanged")
+            {
+                Assert.IsNull(presenter.State.Error);
+                Assert.AreEqual(original, presenter.State.OwnerContext);
+                Assert.HasCount(1, client.SavedSessions);
+                await presenter.InitializeAsync(CancellationToken.None);
+                Assert.AreEqual(original, presenter.State.OwnerContext, "Same-owner explicit reload remains supported.");
+                Assert.IsNull(presenter.State.Error);
+            }
+            else
+            {
+                Assert.IsNotNull(presenter.State.Error);
+                Assert.IsNull(presenter.State.OwnerContext);
+                Assert.IsEmpty(presenter.State.OpenWorkspaces);
+                Assert.IsEmpty(client.SavedSessions);
+            }
+        }
+        finally
+        {
+            provider.Release.TrySetResult();
+            await ObserveOwnerTaskAsync(pending);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("tab", "owner-b", false)]
+    [DataRow("tab", "owner-aba", false)]
+    [DataRow("tab", "unchanged", false)]
+    [DataRow("tab", "owner-b", true)]
+    [DataRow("tab", "owner-aba", true)]
+    [DataRow("tab", "unchanged", true)]
+    [DataRow("preferences", "owner-b", false)]
+    [DataRow("preferences", "owner-aba", false)]
+    [DataRow("preferences", "unchanged", false)]
+    [DataRow("preferences", "owner-b", true)]
+    [DataRow("preferences", "owner-aba", true)]
+    [DataRow("preferences", "unchanged", true)]
+    public async Task Post_commit_owner_transition_clears_old_display_without_claiming_rollback(string action, string transition, bool throwAfterCommit)
+    {
+        BoundShellClient client = new();
+        ShellPresenter presenter = new(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        int priorSessions = client.SavedSessions.Count;
+        client.HoldAfterCommit = true;
+        client.ThrowAfterCommit = throwAfterCommit;
+        Task pending = action == "tab"
+            ? presenter.SelectTabAsync("tab-info", CancellationToken.None)
+            : presenter.SetPreferredRulesetAsync("sr6", CancellationToken.None);
+        try
+        {
+            await client.CommitCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsFalse(pending.IsCompleted, "The actual write is complete but the save continuation is held.");
+            Assert.AreEqual(original, client.CommittedOwner);
+            Assert.AreEqual(priorSessions + (action == "tab" ? 1 : 0), client.SavedSessions.Count);
+            Assert.AreEqual(action == "preferences" ? 1 : 0, client.SavedPreferences.Count);
+            client.SwitchOwner(transition);
+            client.ReleaseCommittedResponse.TrySetResult();
+            if (transition != "unchanged")
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+                Assert.IsNull(presenter.State.OwnerContext);
+                Assert.IsEmpty(presenter.State.OpenWorkspaces);
+                Assert.IsNotNull(presenter.State.Error);
+            }
+            else
+            {
+                if (throwAfterCommit)
+                    await Assert.ThrowsAsync<System.IO.IOException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+                else
+                    await pending.WaitAsync(TimeSpan.FromSeconds(5));
+                Assert.AreEqual(original, presenter.State.OwnerContext);
+                Assert.HasCount(1, presenter.State.OpenWorkspaces);
+            }
+            // Completed original-owner writes are not undone or reported as no effect.
+            Assert.AreEqual(priorSessions + (action == "tab" ? 1 : 0), client.SavedSessions.Count);
+            Assert.AreEqual(action == "preferences" ? 1 : 0, client.SavedPreferences.Count);
+        }
+        finally
+        {
+            client.ReleaseCommittedResponse.TrySetResult();
+            await ObserveOwnerTaskAsync(pending);
+        }
+    }
+
+    [TestMethod]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    [DataRow("unchanged")]
+    public async Task Workspace_navigation_requires_the_IDs_origin_epoch_even_after_new_owner_shell_reload(string transition)
+    {
+        BoundShellClient client = new();
+        ShellPresenter presenter = new(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+        OwnerContextStamp originatingOwner = client.CaptureOwnerContext();
+        CharacterWorkspaceId? originatingId = presenter.State.ActiveWorkspaceId;
+        client.SwitchOwner(transition);
+        await presenter.InitializeAsync(CancellationToken.None);
+        int savedBefore = client.SavedSessions.Count;
+        int listedBefore = client.BoundListCalls;
+        if (transition == "unchanged")
+        {
+            await presenter.SyncWorkspaceContextAsync(originatingOwner, activeWorkspaceId: null, CancellationToken.None);
+            Assert.IsNull(presenter.State.ActiveWorkspaceId, "Same-owner last-tab closure must still save and display the empty selection.");
+            Assert.AreEqual(savedBefore + 1, client.SavedSessions.Count);
+            await presenter.SyncWorkspaceContextAsync(originatingOwner, originatingId, CancellationToken.None);
+            Assert.AreEqual(originatingId, presenter.State.ActiveWorkspaceId);
+            Assert.AreEqual(savedBefore + 2, client.SavedSessions.Count);
+            Assert.AreEqual(listedBefore + 2, client.BoundListCalls);
+        }
+        else
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => presenter.SyncWorkspaceContextAsync(originatingOwner, originatingId, CancellationToken.None));
+            Assert.AreEqual(savedBefore, client.SavedSessions.Count);
+            Assert.AreEqual(listedBefore, client.BoundListCalls, "A matching workspace ID under the new owner must not authorize a stale navigation argument.");
+        }
+    }
+
+    [TestMethod]
+    public async Task Local_navigation_without_original_owner_does_not_infer_authority_from_shell_state()
+    {
+        BoundShellClient client = new();
+        ShellPresenter presenter = new(client);
+        await presenter.InitializeAsync(CancellationToken.None);
+        int savedBefore = client.SavedSessions.Count;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => presenter.SyncWorkspaceContextAsync(presenter.State.ActiveWorkspaceId, CancellationToken.None));
+        Assert.AreEqual(0, client.BoundListCalls);
+        Assert.AreEqual(savedBefore, client.SavedSessions.Count);
+    }
+
+    private sealed class HeldBootstrapProvider(ShellBootstrapData payload) : IShellBootstrapDataProvider
+    {
+        public TaskCompletionSource Ready { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool ReturnedOriginalPayload { get; private set; }
+        public async Task<ShellBootstrapData> GetAsync(CancellationToken ct)
+        {
+            Ready.TrySetResult();
+            await Release.Task.WaitAsync(ct).ConfigureAwait(false);
+            ReturnedOriginalPayload = true;
+            return payload;
+        }
+    }
+
+    [TestMethod]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    public async Task Late_old_initialization_cannot_clear_a_completed_new_owner_shell(string transition)
+    {
+        BoundShellClient client = new();
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        ShellBootstrapSnapshot first = await client.GetShellBootstrapAsync(original, null, default);
+        var held = new TaskCompletionSource<ShellBootstrapData>(TaskCreationOptions.RunContinuationsAsynchronously);
+        int calls = 0;
+        var provider = new CallbackBootstrapProvider(async () =>
+        {
+            if (Interlocked.Increment(ref calls) == 1) return await held.Task;
+            OwnerContextStamp owner = client.CaptureOwnerContext();
+            return ToBoundData(await client.GetShellBootstrapAsync(owner, null, default), owner);
+        });
+        var presenter = new ShellPresenter(client, provider);
+        Task old = presenter.InitializeAsync(default);
+        try
+        {
+            Assert.IsFalse(old.IsCompleted);
+            client.SwitchOwner(transition);
+            await presenter.InitializeAsync(default);
+            ShellState current = presenter.State;
+            Assert.AreEqual(client.CaptureOwnerContext(), current.OwnerContext);
+            Assert.IsNull(current.Error);
+            held.TrySetResult(ToBoundData(first, original));
+            await old.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.AreSame(current, presenter.State, "A stale failure must not erase the successful new-owner initialization.");
+        }
+        finally { held.TrySetResult(ToBoundData(first, original)); await ObserveOwnerTaskAsync(old); }
+    }
+
+    [TestMethod]
+    public async Task Unbound_overview_feedback_cannot_inherit_the_new_shell_owners_stamp()
+    {
+        BoundShellClient client = new();
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(default);
+        ShellState first = presenter.State;
+        client.SwitchOwner("owner-b");
+        await presenter.InitializeAsync(default);
+        ShellState current = presenter.State;
+        presenter.SyncOverviewFeedback(new ShellOverviewFeedback(first.OpenWorkspaces,
+            "Owner A private mutation", "Owner A failure", "owner-a-command"));
+        Assert.AreSame(current, presenter.State, "Unproven feedback was relabeled as the active owner.");
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task Unavailable_owner_feedback_retires_private_shell_without_throwing(bool throws)
+    {
+        BoundShellClient client = new();
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(default);
+        ShellState original = presenter.State;
+        Assert.IsNotEmpty(original.OpenWorkspaces);
+        client.OwnerUnavailable = true;
+        client.ThrowOnUnavailable = throws;
+        presenter.SyncOverviewFeedback(new ShellOverviewFeedback(original.OpenWorkspaces,
+            "Private old notice", "Private old failure", "private-command")
+        {
+            RosterOwnerContext = original.OwnerContext,
+            FeedbackOwnerContext = original.OwnerContext
+        });
+        Assert.IsEmpty(presenter.State.OpenWorkspaces);
+        Assert.IsNull(presenter.State.OwnerContext);
+        Assert.IsNull(presenter.State.ActiveWorkspaceId);
+        Assert.IsFalse(presenter.State.IsBusy);
+        Assert.AreNotEqual("Private old failure", presenter.State.Error);
+        client.OwnerUnavailable = false;
+        client.SwitchOwner("owner-aba");
+        await presenter.InitializeAsync(default);
+        Assert.AreEqual(client.CaptureOwnerContext(), presenter.State.OwnerContext);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    [DataRow(true, true)]
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    [DataRow(false, false)]
+    public async Task Overview_feedback_facets_keep_independent_original_owner_provenance(bool rosterCurrent, bool feedbackCurrent)
+    {
+        BoundShellClient client = new();
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(default);
+        OwnerContextStamp first = client.CaptureOwnerContext();
+        client.SwitchOwner("owner-b");
+        await presenter.InitializeAsync(default);
+        ShellState current = presenter.State;
+        OwnerContextStamp live = client.CaptureOwnerContext();
+        ShellWorkspaceState row = current.OpenWorkspaces.Single() with { Name = "A new bound roster projection" };
+        var feedback = new ShellOverviewFeedback([row], "A bound notice", "A bound error", "bound-command")
+        {
+            RosterOwnerContext = rosterCurrent ? live : first,
+            FeedbackOwnerContext = feedbackCurrent ? live : first
+        };
+        presenter.SyncOverviewFeedback(feedback);
+        Assert.AreEqual(rosterCurrent ? row : current.OpenWorkspaces.Single(), presenter.State.OpenWorkspaces.Single());
+        Assert.AreEqual(feedbackCurrent ? feedback.Notice : current.Notice, presenter.State.Notice);
+        Assert.AreEqual(feedbackCurrent ? feedback.Error : current.Error, presenter.State.Error);
+        Assert.AreEqual(feedbackCurrent ? feedback.LastCommandId : current.LastCommandId, presenter.State.LastCommandId);
+        Assert.AreEqual(live, presenter.State.OwnerContext);
+    }
+
+    [TestMethod]
+    public async Task Stale_navigation_rejection_preserves_the_fresh_new_owner_shell()
+    {
+        BoundShellClient client = new();
+        var presenter = new ShellPresenter(client);
+        await presenter.InitializeAsync(default);
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        var oldId = presenter.State.ActiveWorkspaceId;
+        client.SwitchOwner("owner-b");
+        await presenter.InitializeAsync(default);
+        ShellState current = presenter.State;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => presenter.SyncWorkspaceContextAsync(original, oldId, default));
+        Assert.AreSame(current, presenter.State, "Rejecting old navigation erased another owner's valid shell.");
+    }
+
+    private static ShellBootstrapData ToBoundData(ShellBootstrapSnapshot snapshot, OwnerContextStamp owner)
+        => new(snapshot.RulesetId, snapshot.Commands, snapshot.NavigationTabs, snapshot.Workspaces,
+            snapshot.PreferredRulesetId, snapshot.ActiveRulesetId, snapshot.ActiveWorkspaceId,
+            snapshot.ActiveTabId, snapshot.ActiveTabsByWorkspace, snapshot.WorkflowDefinitions,
+            snapshot.WorkflowSurfaces, snapshot.ActiveRuntime) { OwnerContext = owner };
+
+    private sealed class CallbackBootstrapProvider(Func<Task<ShellBootstrapData>> get) : IShellBootstrapDataProvider
+    {
+        public Task<ShellBootstrapData> GetAsync(CancellationToken ct) => get();
+    }
+
+    private static async Task ObserveOwnerTaskAsync(Task pending)
+    {
+        try { await pending.ConfigureAwait(false); }
+        catch { /* Always join the underlying work without hiding the original assertion. */ }
+    }
+
+    // This fixture owns every transition and synchronous read/write under one gate.
+    // Delays occur only outside that gate, before admission or after materialization.
+    private sealed class BoundShellClient : ShellClientStub, IOwnerBoundShellStateClient
+    {
+        private readonly object _gate = new();
+        private OwnerContextStamp _owner = new(new OwnerScope("owner-a"), "shell-test-install", 0);
+        public bool HoldBootstrap { get; set; }
+        public bool HoldSave { get; set; }
+        public bool HoldAfterCommit { get; set; }
+        public bool ThrowAfterCommit { get; set; }
+        public bool OwnerUnavailable { get; set; }
+        public bool ThrowOnUnavailable { get; set; }
+        public int BoundListCalls { get; private set; }
+        public OwnerContextStamp? CommittedOwner { get; private set; }
+        public TaskCompletionSource CommitCompleted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReleaseCommittedResponse { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public OwnerContextStamp? RequestedSaveOwner { get; private set; }
+        public TaskCompletionSource BootstrapReady { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReleaseBootstrap { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource SaveReady { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReleaseSave { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public BoundShellClient()
+        {
+            Workspaces = [CreateWorkspace("shared-workspace", "Owner A runner", "A", DateTimeOffset.UtcNow)];
+            Session = new ShellSessionState("shared-workspace", "unknown-tab");
+        }
+
+        public OwnerContextStamp CaptureOwnerContext()
+        {
+            lock (_gate)
+            {
+                if (OwnerUnavailable && ThrowOnUnavailable) throw new InvalidOperationException("Owner unavailable.");
+                return OwnerUnavailable ? default : _owner;
+            }
+        }
+
+        public void SwitchOwner(string transition)
+        {
+            lock (_gate)
+            {
+                if (transition == "unchanged") return;
+                _owner = new(new OwnerScope("owner-b"), _owner.AuthorityInstanceId, checked(_owner.TransitionRevision + 1));
+                if (transition == "owner-aba")
+                    _owner = new(new OwnerScope("owner-a"), _owner.AuthorityInstanceId, checked(_owner.TransitionRevision + 1));
+                Workspaces = [CreateWorkspace("shared-workspace", $"{_owner.Owner.Value}:{_owner.TransitionRevision}", "", DateTimeOffset.UtcNow)];
+            }
+        }
+
+        private void RequireOwner(OwnerContextStamp expected)
+        {
+            if (!expected.IsValid || expected != _owner)
+                throw new InvalidOperationException("Original live owner lease is no longer available.");
+        }
+
+        public async Task<ShellBootstrapSnapshot> GetShellBootstrapAsync(OwnerContextStamp ownerContext, string? rulesetId, CancellationToken ct)
+        {
+            ShellBootstrapSnapshot snapshot;
+            lock (_gate)
+            {
+                RequireOwner(ownerContext);
+                // Base fixture operations are all completed synchronous Tasks.
+                snapshot = base.GetShellBootstrapAsync(rulesetId, ct).GetAwaiter().GetResult();
+            }
+            if (HoldBootstrap)
+            {
+                BootstrapReady.TrySetResult();
+                await ReleaseBootstrap.Task.WaitAsync(ct).ConfigureAwait(false);
+            }
+            return snapshot;
+        }
+
+        public Task<IReadOnlyList<WorkspaceListItem>> ListWorkspacesAsync(OwnerContextStamp ownerContext, CancellationToken ct)
+        {
+            lock (_gate) { RequireOwner(ownerContext); BoundListCalls++; return Task.FromResult(Workspaces); }
+        }
+
+        public async Task SaveShellSessionAsync(OwnerContextStamp ownerContext, ShellSessionState session, CancellationToken ct)
+        {
+            await AwaitSaveAdmissionAsync(ownerContext, ct).ConfigureAwait(false);
+            lock (_gate) { RequireOwner(ownerContext); base.SaveShellSessionAsync(session, ct).GetAwaiter().GetResult(); }
+            await AwaitCommittedResponseAsync(ownerContext).ConfigureAwait(false);
+        }
+
+        public async Task SaveShellPreferencesAsync(OwnerContextStamp ownerContext, ShellPreferences preferences, CancellationToken ct)
+        {
+            await AwaitSaveAdmissionAsync(ownerContext, ct).ConfigureAwait(false);
+            lock (_gate) { RequireOwner(ownerContext); base.SaveShellPreferencesAsync(preferences, ct).GetAwaiter().GetResult(); }
+            await AwaitCommittedResponseAsync(ownerContext).ConfigureAwait(false);
+        }
+
+        private async Task AwaitCommittedResponseAsync(OwnerContextStamp ownerContext)
+        {
+            if (!HoldAfterCommit) return;
+            CommittedOwner = ownerContext;
+            CommitCompleted.TrySetResult();
+            await ReleaseCommittedResponse.Task.ConfigureAwait(false);
+            if (ThrowAfterCommit) throw new System.IO.IOException("Synthetic post-commit response failure; the write is already complete.");
+        }
+
+        private async Task AwaitSaveAdmissionAsync(OwnerContextStamp ownerContext, CancellationToken ct)
+        {
+            RequestedSaveOwner = ownerContext;
+            if (!HoldSave) return;
+            SaveReady.TrySetResult();
+            await ReleaseSave.Task.WaitAsync(ct).ConfigureAwait(false);
+        }
+    }
+
     private static WorkspaceListItem CreateWorkspace(
         string id,
         string name,
@@ -862,7 +1443,7 @@ public class ShellPresenterTests
             HasSavedWorkspace: hasSavedWorkspace);
     }
 
-    private sealed class ShellClientStub : IChummerClient
+    private class ShellClientStub : IChummerClient
     {
         public IReadOnlyList<AppCommandDefinition> Commands { get; set; } = AppCommandCatalog.All;
 

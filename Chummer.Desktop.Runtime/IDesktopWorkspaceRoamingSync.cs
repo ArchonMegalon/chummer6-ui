@@ -1,5 +1,6 @@
 using Chummer.Contracts.Owners;
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Owners;
 
 namespace Chummer.Desktop.Runtime;
 
@@ -40,8 +41,23 @@ public interface IDesktopWorkspaceRoamingSync
         CancellationToken ct);
 }
 
-public sealed class NoOpDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync
+public interface IOwnerBoundDesktopWorkspaceRoamingSync
 {
+    Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
+        OwnerContextStamp originalOwner, CharacterWorkspaceId workspaceId, CancellationToken ct);
+}
+
+public sealed class NoOpDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync, IOwnerBoundDesktopWorkspaceRoamingSync
+{
+    public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
+        OwnerContextStamp originalOwner, CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(originalOwner.IsValid
+            ? DesktopWorkspaceRoamingResult.AlreadyCurrent(workspaceId)
+            : new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable));
+    }
+
     public Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();

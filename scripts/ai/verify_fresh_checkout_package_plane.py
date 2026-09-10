@@ -47,15 +47,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "d0f349501ed978596ce1ce2808f7abe7ebe2a054",
-        "commit": "d9124a9a962e7e3941152421a73c31c30583e293",
+        "blob": "1bed0202552b7b79047832c33db9e83f9e9ccf58",
+        "commit": "c36b25133deca6cc509671a8650992483adb4c2a",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
-        "rawSizeBytes": 54008,
-        "semanticCanonicalSha256": "904c0402e206ac87ffdf245ec04c9e5799ae310d2c3af59539c0f23d60ba2eb4",
-        "semanticCanonicalSizeBytes": 54008,
-        "tree": "4e5adc4f3d804ca5a5f93012149ea5e67a735333",
+        "rawSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+        "rawSizeBytes": 63546,
+        "semanticCanonicalSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+        "semanticCanonicalSizeBytes": 63546,
+        "tree": "9b04a52f19bc8c4368af28cfa156bfd4a43eb2c7",
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -81,7 +81,7 @@ UI_OWNER_CORE_PROPERTIES_RELATIONSHIP = (
 UI_OWNER_CANONICAL_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 UI_OWNER_CANONICAL_ZIP_EXTERNAL_ATTR = 0o100644 << 16
 HUB_NO_SIBLINGS_RECEIPT_SHA256 = (
-    "e5cef29d9e047b65e3cccaa528e2ac7289f30fc41b400dbf7a24e9b3f6bdb63a"
+    "38542f7f26047da591bfae3a4943f29a5f33ee8bdad3d27f351bc1b820629fb7"
 )
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -102,7 +102,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "1d8cf694d0412b3bd9f4a241fb95244fad341160",
+        "2c7f566dfbedddaa4e4b15c975b1e17e6f14990a",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -115,13 +115,13 @@ EXPECTED_PACKAGES = {
 }
 EXPECTED_UI_OWNER_SOURCES = {
     "Chummer.Campaign.Contracts": {
-        "commit": "f06bb7e7e71e5afceb115d9078a473b1087ac7df",
+        "commit": "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6",
         "ownerDirectory": "chummer.run-services",
         "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
         # Git-portable LF source_digest, not a CRLF working-copy byte hash.
         "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
         "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-        "sourceTree": "af9ce86b22edf0d2243bbdcf94bcceefed74f560",
+        "sourceTree": "2d0b95446db74ee0acf46b930e8013d987122bd6",
     },
     "Chummer.Ui.Kit": {
         "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
@@ -135,12 +135,12 @@ EXPECTED_UI_OWNER_SOURCES = {
 EXPECTED_HUB_CANONICAL_FEED = {
     "inventoryContract": "chummer-hub.external-package-inventory/v4",
     "inventoryFileName": "chummer-hub-packages.inventory.json",
-    "inventorySha256": "18a9dc73d8a150d3d9d8fa900b3b819bf0a7269351e8fcc3274b9bb73f65b30d",
+    "inventorySha256": "4ea0741fdefdecec00646a6af3d030fb0e38bbffa66a5fbbe4df8c6e6082e1af",
     "lockContract": "chummer-hub.package-plane-lock/v5",
     "lockPath": "eng/package-plane.lock.json",
-    "lockSha256": "89755aaf97d568558b3e362e54f4a0f2d3a6ce0c014b9605d4cd8a3bb127f37d",
-    "packageVersion": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
-    "producerCommit": "f06bb7e7e71e5afceb115d9078a473b1087ac7df",
+    "lockSha256": "20da652ab895f35283c86b619c6946d380e6ce44442ef01c10f0ac89addec63e",
+    "packageVersion": "0.1.0-packageplane.candidate.shfe4b2706c44d",
+    "producerCommit": "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6",
     "producerDirectory": "chummer.run-services",
     "producerPath": "scripts/ai/bootstrap-hub-package-feed.py",
     "producerRepository": "https://github.com/ArchonMegalon/chummer6-hub.git",
@@ -151,116 +151,116 @@ EXPECTED_HUB_CANONICAL_FEED = {
     "packages": [
         {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-            "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
+            "fileName": "Chummer.Hub.Registry.Contracts.0.1.0-packageplane.candidate.shfe4b2706c44d.nupkg",
             "packageId": "Chummer.Hub.Registry.Contracts",
             "project": "Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-            "sha256": "89ca9f9f6069bdf1bbbb2aa9fc16a9c3b29e13f64a896be53027e42a682447d7",
+            "sha256": "d92b67f9095a0c979746bc36abe60e9aae1b7335f97b456292e77269df366446",
             "sizeBytes": 524842,
-            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
+            "version": "0.1.0-packageplane.candidate.shfe4b2706c44d",
         },
         {
             "commit": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
-            "fileName": "Chummer.Run.Registry.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
+            "fileName": "Chummer.Run.Registry.0.1.0-packageplane.candidate.shfe4b2706c44d.nupkg",
             "packageId": "Chummer.Run.Registry",
             "project": "Chummer.Run.Registry/Chummer.Run.Registry.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub-registry.git",
-            "sha256": "da046c289f33fb3910db0fa2d54d7dd28e21862f9e81bdbcc0feba5a3ee9381c",
+            "sha256": "903c8f40b82d0f3a2445c296b5245ed8b03b342eb3e695d480446b29bf91e5e7",
             "sizeBytes": 345296,
-            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
+            "version": "0.1.0-packageplane.candidate.shfe4b2706c44d",
         },
         {
-            "commit": "586aa84bd616779ccb84529a76b75dfcc39189ba",
-            "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
+            "commit": "104275ad751cbd0006cac993ac71f1c2b428c3d0",
+            "fileName": "Chummer.Play.Contracts.0.1.0-packageplane.candidate.shfe4b2706c44d.nupkg",
             "packageId": "Chummer.Play.Contracts",
             "project": "Chummer.Play.Contracts/Chummer.Play.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "5203d7fb49d435c61ef81695d147e21472cf15e39595a78fa6db44f9fc876ba4",
+            "sha256": "595a1a942e62160aa9d4f0cdc353e5488dcbdfeb1f715077a1359cf47e00f60f",
             "sizeBytes": 322544,
-            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
+            "version": "0.1.0-packageplane.candidate.shfe4b2706c44d",
         },
         {
-            "commit": "586aa84bd616779ccb84529a76b75dfcc39189ba",
-            "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.sh1852ea4eef6d.nupkg",
+            "commit": "104275ad751cbd0006cac993ac71f1c2b428c3d0",
+            "fileName": "Chummer.Run.Contracts.0.1.0-packageplane.candidate.shfe4b2706c44d.nupkg",
             "packageId": "Chummer.Run.Contracts",
             "project": "Chummer.Run.Contracts/Chummer.Run.Contracts.csproj",
             "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-            "sha256": "50b7307ea03ecc4f203e7fdd223cd3c699548baf3cc51d7bf1314e7d422b0813",
+            "sha256": "238a9a07b457fc436a4549f42470198cd5b85c3e5a5e8912208c0751defa0976",
             "sizeBytes": 1838984,
-            "version": "0.1.0-packageplane.candidate.sh1852ea4eef6d",
+            "version": "0.1.0-packageplane.candidate.shfe4b2706c44d",
         },
     ],
 }
-CORE_RUNTIME_SOURCE_COMMIT = "880e5df8ace981e9a60264d835329dd32f54a158"
-CORE_RUNTIME_RECIPE_COMMIT = "1d8cf694d0412b3bd9f4a241fb95244fad341160"
-CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.sh880e5df8ace98"
+CORE_RUNTIME_SOURCE_COMMIT = "f7500ef8c2f597bac67bc3f53620d50b7a17d00a"
+CORE_RUNTIME_RECIPE_COMMIT = "2c7f566dfbedddaa4e4b15c975b1e17e6f14990a"
+CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.shf7500ef8c2f59"
 CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = (
-    "40b257a9f9ac0abcb6508914eafb370d17bc1a208cde783ce088cb338d41d21b"
+    "07c001d96084038cc241584c57242eaa5db6c70105e05d237e7a2b0e79fb0ade"
 )
-CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 3228507
+CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 3313094
 EXPECTED_CORE_RUNTIME_FEED_METADATA = {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "f72475e9b7f4d8c051e3c726063e35f962274557908fd6e1343ab87d0bcef405",
+    "inventorySha256": "68da9f639c23784cb8f3795a35c6a50d07ab7c8231a713375208e9dd11d5a617",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "d678813f6af9c6cdb073c598454c7e48a6c6d1cc071bb8e8ca353c68564dda26",
+    "lockSha256": "570caae0fb9f376fa8afb420fb7357bbb01f4a13cbb29e8510a29cd65b49708e",
     "packageRecipeCommit": CORE_RUNTIME_RECIPE_COMMIT,
     "packageVersion": CORE_RUNTIME_PACKAGE_VERSION,
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "1e029e3a6010425797681d54e2abf7b9d50d826dcc1bdd439ff475f8f7b80577",
+    "receiptSha256": "ead69c3394d6fd43e567d4a0d6f5fe223f68646f9080e91bdae9010cf64689c4",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
     "runtimeSourceCommit": CORE_RUNTIME_SOURCE_COMMIT,
 }
 EXPECTED_CORE_RUNTIME_PACKAGES = {
     "Chummer.Engine.Contracts": (
         "Chummer.Contracts/Chummer.Contracts.csproj",
-        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "a717f257c246d8d17d43e3598a23eb0b32eabbcb4ca89846d96f9bbc583faea8",
-        1234838,
+        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "fb2c6f32ce1af2e5e054347941ffe7e4cc276c9caa298072c3e3cbb154528919",
+        1246776,
     ),
     "Chummer.Application": (
         "Chummer.Application/Chummer.Application.csproj",
-        "Chummer.Application.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "10a1ee63a3350d2779c73e3d4cafe38b58881463a66946349ad9ebed33f0005e",
-        583365,
+        "Chummer.Application.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "5a27dcdbd5fdbcb0ab7298ffa6cef5c05e54c9c44dd1984105527d7965c704cd",
+        612776,
     ),
     "Chummer.Rulesets.Hosting": (
         "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj",
-        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "a76c3ab7d5eff91ee073d97e653adf696d06b949fd8b8fa89eb3f38ec3750850",
-        14343,
+        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "2509089d7145149459fdbc6bc3599e3bb71a4bf95591fc9a6867828949bbd663",
+        14340,
     ),
     "Chummer.Rulesets.Sr5": (
         "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj",
-        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "babd81b111f6c0b0793d71f347e49b0549a80d1dfac1b679dde4cf3ec1b72250",
-        31602,
+        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "7e2d4d4f655448442ff6bb741e8945cfb552d28f34275bf4e444a5311aa8c6b9",
+        31604,
     ),
     "Chummer.Rulesets.Sr6": (
         "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj",
-        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "7ef46981256014b9a836ab92af624d507cd863cb6f1f5557ad1e3ac159fba40a",
-        41079,
+        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "d4ffdeec1ef41f27aa3bf8b1d7fee59645d9dc41382071a227c65ef31b9aafcb",
+        41072,
     ),
     "Chummer.Infrastructure": (
         "Chummer.Infrastructure/Chummer.Infrastructure.csproj",
-        "Chummer.Infrastructure.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "d321c53234eacf473e514efe36a3107c8c9896df242f9dea5e802eb57e91ebcc",
-        293614,
+        "Chummer.Infrastructure.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "f42413cf2b3593baf4ba24d65d253949e17fcc0f392cfc1b84fedb2a98b2027c",
+        300539,
     ),
     "Chummer.Rulesets.Sr4": (
         "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj",
-        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "4887b7b47c4064dcfc72c86b1740e8943dad6ffdba0942c5bc390d3b1a104a69",
+        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "dd71db8a01dd72460e6de3f3e2fc08c26244ba0faf093ea5e9a4dd1751b56a14",
         34006,
     ),
     "Chummer.Engine.GmCharacterEdits": (
         "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
-        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.sh880e5df8ace98.nupkg",
-        "b21fdfe0a8c402d5ea2a1bb1b6d89c20caf73b119391a11ff9421055c6751aac",
-        960050,
+        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.shf7500ef8c2f59.nupkg",
+        "d70019fe9afdbd566a04a2d59ceeee3c48192899148839d569027e93804e5e68",
+        996371,
     ),
 }
 EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
@@ -309,7 +309,7 @@ HUB_CANONICAL_PACKAGE_IDS = frozenset(
 CANONICAL_ENGINE_CONTRACTS_VERSION = (
     CORE_RUNTIME_PACKAGE_VERSION
 )
-CANONICAL_HUB_CONTRACTS_VERSION = "0.1.0-packageplane.candidate.sh1852ea4eef6d"
+CANONICAL_HUB_CONTRACTS_VERSION = "0.1.0-packageplane.candidate.shfe4b2706c44d"
 FOCUSED_CAREER_ADVANCE_TEST_PROJECT = (
     "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
 )
@@ -328,9 +328,32 @@ FOCUSED_CAREER_ADVANCE_TEST_FILTER = (
 FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 19
 FOCUSED_OVERVIEW_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
 FOCUSED_OVERVIEW_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs"
+FOCUSED_OVERVIEW_OWNER_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs"
 FOCUSED_OVERVIEW_TEST_FILTER = "FullyQualifiedName~WorkspaceOverviewLoaderTests"
-FOCUSED_OVERVIEW_MINIMUM_TESTS = 19
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 467
+FOCUSED_OVERVIEW_MINIMUM_TESTS = 39
+FOCUSED_CONTINUATION_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
+FOCUSED_CONTINUATION_TEST_FILE = "Chummer.Tests/InProcessWorkspaceContinuationTests.cs"
+FOCUSED_CONTINUATION_TEST_FILTER = "FullyQualifiedName~InProcessWorkspaceContinuationTests"
+FOCUSED_CONTINUATION_MINIMUM_TESTS = 19
+FOCUSED_OWNER_SHELL_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
+FOCUSED_OWNER_SHELL_TEST_FILE = "Chummer.Tests/InProcessShellOwnerContextTests.cs"
+FOCUSED_OWNER_SHELL_TEST_FILTER = "FullyQualifiedName~InProcessShellOwnerContextTests"
+FOCUSED_OWNER_SHELL_MINIMUM_TESTS = 26
+# Existing owner-regression classes require separate minimum gates: a missing class
+# must not be hidden by another class's data rows or the full-suite total.
+FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
+    ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 74),
+    ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 24),
+    ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
+    ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),
+    ("WorkspaceSessionPresenterTests", "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs", 23),
+    ("WorkspaceViewStateStoreTests", "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs", 6),
+    ("RestartSafeWorkspacePersistenceTests", "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs", 1),
+)
+# The sealed baseline already contains the 19 base overview cases. Newly linked
+# continuation (19), shell owner (26), recovery (20), and older regressions (213)
+# increase its 467-case floor without counting those base overview cases twice.
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 745
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
@@ -382,6 +405,16 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/DesktopPreferenceRuntimeTests.cs": "DesktopPreferenceRuntimeTests.cs",
     "../Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs": "DesktopStartupSmokeRuntimeTests.cs",
     "../Chummer.Tests/DesktopUpdateRuntimeTests.cs": "DesktopUpdateRuntimeTests.cs",
+    "../Chummer.Tests/InProcessWorkspaceContinuationTests.cs": "InProcessWorkspaceContinuationTests.cs",
+    "../Chummer.Tests/InProcessShellOwnerContextTests.cs": "InProcessShellOwnerContextTests.cs",
+    "../Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs": "Presentation/WorkspaceRecoveryOwnerTests.cs",
+    "../Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs": "InProcessChummerClientRulesetPluginTests.cs",
+    "../Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs": "Presentation/ShellBootstrapDataProviderTests.cs",
+    "../Chummer.Tests/Presentation/ShellPresenterTests.cs": "Presentation/ShellPresenterTests.cs",
+    "../Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs": "Presentation/WorkspaceSessionActivationServiceTests.cs",
+    "../Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs": "Presentation/WorkspaceSessionPresenterTests.cs",
+    "../Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs": "Presentation/WorkspaceViewStateStoreTests.cs",
+    "../Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs": "RestartSafeWorkspacePersistenceTests.cs",
     "../Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs": "Presentation/CareerActiveSkillAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs": "Presentation/CareerSkillGroupAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "Presentation/CareerSkillSpecializationParityTests.cs",
@@ -394,8 +427,81 @@ EXPECTED_TEST_COMPILE_ITEMS = {
         for name in CREATION_WIZARD_TEST_FILES
     },
 }
+# Exact reviewed owner-context integration inputs; no directory/glob authority.
+# Source membership authenticates bytes, not test execution or package publication.
+OWNER_CONTEXT_SOURCE_FILES = frozenset(
+    {
+        "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
+        "Chummer.Desktop.Runtime/DesktopInstallOwnerContextAccessor.cs",
+        "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
+        "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.OutputOwnerContext.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.PersistenceOwnerContext.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.ShellOwnerContext.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
+        "Chummer.Desktop.Runtime/InProcessSessionClient.cs",
+        "Chummer.Desktop.Runtime/ServiceCollectionDesktopRuntimeExtensions.cs",
+        "Chummer.Presentation/IOwnerBoundWorkspaceMutationClient.cs",
+        "Chummer.Presentation/IOwnerBoundWorkspaceOutputClient.cs",
+        "Chummer.Presentation/IOwnerBoundWorkspacePersistenceClient.cs",
+        "Chummer.Presentation/Overview/CareerReputationEditRequest.cs",
+        "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Commands.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Persistence.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.StoredDeletion.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Workspace.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceMutations.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceRendering.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs",
+        "Chummer.Presentation/Overview/DesktopDialogModels.cs",
+        "Chummer.Presentation/Overview/IOwnerBoundWorkspaceCleanupPresenter.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewLifecycleCoordinator.cs",
+        "Chummer.Presentation/Overview/IWorkspaceOverviewLoader.cs",
+        "Chummer.Presentation/Overview/IWorkspacePersistenceService.cs",
+        "Chummer.Presentation/Overview/IWorkspaceRemoteCloseService.cs",
+        "Chummer.Presentation/Overview/IWorkspaceSectionRenderer.cs",
+        "Chummer.Presentation/Overview/IWorkspaceSessionActivationService.cs",
+        "Chummer.Presentation/Overview/IWorkspaceSessionPresenter.cs",
+        "Chummer.Presentation/Overview/IWorkspaceViewStateStore.cs",
+        "Chummer.Presentation/Overview/OverviewFeedbackProvenance.cs",
+        "Chummer.Presentation/Overview/WorkspaceOutputBinding.cs",
+        "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.StoredDeletion.cs",
+        "Chummer.Presentation/Overview/WorkspaceOverviewLoader.cs",
+        "Chummer.Presentation/Overview/WorkspacePersistenceService.cs",
+        "Chummer.Presentation/Overview/WorkspaceRecoveryComposition.cs",
+        "Chummer.Presentation/Overview/WorkspaceRecoveryPayloadStore.OwnerContext.cs",
+        "Chummer.Presentation/Overview/WorkspaceRecoveryPayloadStore.cs",
+        "Chummer.Presentation/Overview/WorkspaceRemoteCloseService.cs",
+        "Chummer.Presentation/Overview/WorkspaceSectionRenderer.cs",
+        "Chummer.Presentation/Overview/WorkspaceSessionActivationService.cs",
+        "Chummer.Presentation/Overview/WorkspaceSessionPresenter.OwnerContext.cs",
+        "Chummer.Presentation/Overview/WorkspaceSessionPresenter.cs",
+        "Chummer.Presentation/Overview/WorkspaceSessionState.cs",
+        "Chummer.Presentation/Overview/WorkspaceViewStateStore.cs",
+        "Chummer.Presentation/Shell/IOwnerBoundShellStateClient.cs",
+        "Chummer.Presentation/Shell/IShellBootstrapDataProvider.cs",
+        "Chummer.Presentation/Shell/IShellPresenter.cs",
+        "Chummer.Presentation/Shell/ShellBootstrapDataProvider.cs",
+        "Chummer.Presentation/Shell/ShellOverviewFeedback.cs",
+        "Chummer.Presentation/Shell/ShellPresenter.cs",
+        "Chummer.Presentation/Shell/ShellState.cs",
+        "Chummer.Presentation/Shell/ShellWorkspaceContextSynchronization.cs",
+        "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
+        "Chummer.Tests/InProcessShellOwnerContextTests.cs",
+        "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs",
+        "Chummer.Tests/Presentation/ShellPresenterTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs",
+        "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs",
+        "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs",
+        "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs",
+    }
+)
 EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
     {
+        *OWNER_CONTEXT_SOURCE_FILES,
         "Chummer.Product.UnitTests/CreationWizardCoreProjectionTests.cs",
         "Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs",
         *(f"Chummer.CreationWizard.Presentation.Tests/{name}" for name in CREATION_WIZARD_TEST_FILES),
@@ -403,9 +509,13 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Blazor/Chummer.Blazor.csproj",
         "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj",
         "Chummer.Desktop.Runtime/DesktopUpdateManifest.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.Continuation.cs",
         "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
         "Chummer.Presentation/AssemblyInfo.cs",
         "Chummer.Presentation/Chummer.Presentation.csproj",
+        "Chummer.Presentation/IOwnerBoundWorkspaceContinuationClient.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs",
+        "Chummer.Presentation/Overview/IOwnerBoundWorkspaceContinuationPresenter.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs",
@@ -426,6 +536,7 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Tests/DesktopPreferenceRuntimeTests.cs",
         "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs",
         "Chummer.Tests/DesktopUpdateRuntimeTests.cs",
+        "Chummer.Tests/InProcessWorkspaceContinuationTests.cs",
         "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs",
@@ -438,6 +549,7 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Directory.Build.targets",
         "config/ui-owner-package-plane.lock.json",
         "global.json",
+        "scripts/ai/verify.sh",
         "scripts/ai/with-package-plane.sh",
     }
 )
@@ -5997,7 +6109,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 lock["sdkVersion"],
                 "focused overview and creation activation regression tests",
             ),
-            "sourceFiles": [FOCUSED_OVERVIEW_TEST_FILE],
+            "sourceFiles": [FOCUSED_OVERVIEW_TEST_FILE, FOCUSED_OVERVIEW_OWNER_TEST_FILE],
             "testAssembly": focused_test_assembly,
         }
         require_focused_test_inputs_unchanged("focused overview test assembly")
@@ -6015,6 +6127,125 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             environment=environment,
         )
         require_focused_test_inputs_unchanged("focused overview test assembly")
+        focused_continuation_content = core_projection_content_inventory(
+            core_content_root, lock["coreRuntimeFeed"], environment
+        )
+        focused_continuation_execution = {
+            "coreProjectionContent": focused_continuation_content,
+            "filter": FOCUSED_CONTINUATION_TEST_FILTER,
+            "minimumExpectedTests": FOCUSED_CONTINUATION_MINIMUM_TESTS,
+            "project": FOCUSED_CONTINUATION_TEST_PROJECT,
+            "reuseFullSuiteBuild": True,
+            "runner": "direct-exact-assembly",
+            "sdkVersion": require_exact_sdk(
+                consumer,
+                environment,
+                lock["sdkVersion"],
+                "focused owner-bound workspace continuation tests",
+            ),
+            "sourceFiles": [FOCUSED_CONTINUATION_TEST_FILE],
+            "testAssembly": focused_test_assembly,
+        }
+        require_focused_test_inputs_unchanged("focused continuation test assembly")
+        run(
+            [
+                str(sdk_root / "dotnet"),
+                str(focused_test_assembly_path),
+                "--filter",
+                FOCUSED_CONTINUATION_TEST_FILTER,
+                "--minimum-expected-tests",
+                str(FOCUSED_CONTINUATION_MINIMUM_TESTS),
+                "--test-parameter",
+                f"ChummerCoreContentRoot={core_content_root}",
+                "--no-progress",
+            ],
+            cwd=focused_test_assembly_path.parent,
+            environment=environment,
+        )
+        require_focused_test_inputs_unchanged("focused continuation test assembly")
+        if core_projection_content_inventory(
+            core_content_root, lock["coreRuntimeFeed"], environment
+        ) != focused_continuation_content:
+            raise VerificationError("Core content changed during continuation tests")
+        focused_owner_shell_content = core_projection_content_inventory(
+            core_content_root, lock["coreRuntimeFeed"], environment
+        )
+        focused_owner_shell_execution = {
+            "coreProjectionContent": focused_owner_shell_content,
+            "filter": FOCUSED_OWNER_SHELL_TEST_FILTER,
+            "minimumExpectedTests": FOCUSED_OWNER_SHELL_MINIMUM_TESTS,
+            "project": FOCUSED_OWNER_SHELL_TEST_PROJECT,
+            "reuseFullSuiteBuild": True,
+            "runner": "direct-exact-assembly",
+            "sdkVersion": require_exact_sdk(
+                consumer, environment, lock["sdkVersion"], "focused original-owner shell tests"
+            ),
+            "sourceFiles": [FOCUSED_OWNER_SHELL_TEST_FILE],
+            "testAssembly": focused_test_assembly,
+        }
+        require_focused_test_inputs_unchanged("focused owner shell test assembly")
+        run(
+            [
+                str(sdk_root / "dotnet"),
+                str(focused_test_assembly_path),
+                "--filter",
+                FOCUSED_OWNER_SHELL_TEST_FILTER,
+                "--minimum-expected-tests",
+                str(FOCUSED_OWNER_SHELL_MINIMUM_TESTS),
+                "--test-parameter",
+                f"ChummerCoreContentRoot={core_content_root}",
+                "--no-progress",
+            ],
+            cwd=focused_test_assembly_path.parent,
+            environment=environment,
+        )
+        require_focused_test_inputs_unchanged("focused owner shell test assembly")
+        if core_projection_content_inventory(
+            core_content_root, lock["coreRuntimeFeed"], environment
+        ) != focused_owner_shell_content:
+            raise VerificationError("Core content changed during owner shell tests")
+        focused_existing_owner_executions = []
+        for test_class, test_file, minimum_tests in FOCUSED_EXISTING_OWNER_REGRESSION_TESTS:
+            focused_existing_owner_content = core_projection_content_inventory(
+                core_content_root, lock["coreRuntimeFeed"], environment
+            )
+            test_filter = f"FullyQualifiedName~{test_class}"
+            execution = {
+                "coreProjectionContent": focused_existing_owner_content,
+                "filter": test_filter,
+                "minimumExpectedTests": minimum_tests,
+                "project": FOCUSED_OWNER_SHELL_TEST_PROJECT,
+                "reuseFullSuiteBuild": True,
+                "runner": "direct-exact-assembly",
+                "sdkVersion": require_exact_sdk(
+                    consumer, environment, lock["sdkVersion"],
+                    f"focused existing owner regression {test_class}",
+                ),
+                "sourceFiles": [test_file],
+                "testAssembly": focused_test_assembly,
+            }
+            require_focused_test_inputs_unchanged("focused existing owner test assembly")
+            run(
+                [
+                    str(sdk_root / "dotnet"),
+                    str(focused_test_assembly_path),
+                    "--filter",
+                    test_filter,
+                    "--minimum-expected-tests",
+                    str(minimum_tests),
+                    "--test-parameter",
+                    f"ChummerCoreContentRoot={core_content_root}",
+                    "--no-progress",
+                ],
+                cwd=focused_test_assembly_path.parent,
+                environment=environment,
+            )
+            require_focused_test_inputs_unchanged("focused existing owner test assembly")
+            if core_projection_content_inventory(
+                core_content_root, lock["coreRuntimeFeed"], environment
+            ) != focused_existing_owner_content:
+                raise VerificationError(f"Core content changed during {test_class}")
+            focused_existing_owner_executions.append(execution)
         after = package_inventory(feed, expected_names, locked_package_sha256)
         require_inventory_unchanged(before, after)
         require_clean_consumer_head(consumer, environment, head)
@@ -6049,6 +6280,9 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             },
             "focusedCareerAdvanceTestExecution": focused_career_advance_execution,
             "focusedOverviewTestExecution": focused_overview_execution,
+            "focusedContinuationTestExecution": focused_continuation_execution,
+            "focusedOwnerShellTestExecution": focused_owner_shell_execution,
+            "focusedExistingOwnerRegressionTestExecutions": focused_existing_owner_executions,
             "ownerSources": [
                 {
                     "commit": owner["commit"],

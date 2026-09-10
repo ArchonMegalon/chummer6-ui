@@ -2,6 +2,8 @@ using Chummer.Contracts.Characters;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Workspaces;
 using Chummer.Application.Workspaces;
+using Chummer.Application.Owners;
+using System.Text.Json.Serialization;
 
 namespace Chummer.Presentation.Overview;
 
@@ -15,6 +17,13 @@ public interface IWorkspaceOverviewLoader
         IChummerClient client,
         CharacterWorkspaceId workspaceId,
         CancellationToken ct);
+}
+
+/// <summary>Original-owner display refresh; deliberately does not issue recovery authority.</summary>
+public interface IOwnerBoundWorkspaceOverviewLoader
+{
+    Task<WorkspaceOverviewLoadResult> LoadAsync(IChummerClient client,
+        OwnerContextStamp expectedOwner, CharacterWorkspaceId workspaceId, CancellationToken ct);
 }
 
 /// <summary>
@@ -37,7 +46,17 @@ internal interface IAuthoritativeWorkspaceOverviewLoader
         CharacterWorkspaceId workspaceId,
         CancellationToken ct);
 
+    Task<WorkspaceOverviewLoadResult> LoadAuthoritativeAsync(
+        OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId,
+        CancellationToken ct);
+
     Task<WorkspaceRecoveryAuthoritySnapshot> LoadRecoverySnapshotAsync(
+        CharacterWorkspaceId workspaceId,
+        CancellationToken ct);
+
+    Task<WorkspaceRecoveryAuthoritySnapshot> LoadRecoverySnapshotAsync(
+        OwnerContextStamp originalOwner,
         CharacterWorkspaceId workspaceId,
         CancellationToken ct);
 }
@@ -45,7 +64,8 @@ internal interface IAuthoritativeWorkspaceOverviewLoader
 internal sealed record WorkspaceRecoveryAuthoritySnapshot(
     WorkspaceDocument Document,
     long ContentRevision,
-    WorkspaceOverviewLoader.CanonicalValidationCapability Validation);
+    WorkspaceOverviewLoader.CanonicalValidationCapability Validation,
+    OwnerContextStamp? OriginalOwner = null);
 
 public sealed record WorkspaceOverviewLoadResult(
     CharacterProfileSection Profile,
@@ -60,4 +80,7 @@ public sealed record WorkspaceOverviewLoadResult(
     WorkspaceDocument? Document = null)
 {
     internal WorkspaceOverviewLoader.CanonicalValidationCapability? CanonicalValidation { get; init; }
+
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; internal init; }
 }

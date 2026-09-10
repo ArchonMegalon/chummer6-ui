@@ -1,3 +1,4 @@
+using Chummer.Application.Owners;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Workspaces;
@@ -16,7 +17,12 @@ public sealed record ShellBootstrapData(
     IReadOnlyDictionary<string, string>? ActiveTabsByWorkspace = null,
     IReadOnlyList<WorkflowDefinition>? WorkflowDefinitions = null,
     IReadOnlyList<WorkflowSurfaceDefinition>? WorkflowSurfaces = null,
-    ActiveRuntimeStatusProjection? ActiveRuntime = null);
+    ActiveRuntimeStatusProjection? ActiveRuntime = null)
+{
+    // Local read provenance, never a serialized authorization receipt.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public OwnerContextStamp? OwnerContext { get; init; }
+}
 
 public interface IShellBootstrapDataProvider
 {

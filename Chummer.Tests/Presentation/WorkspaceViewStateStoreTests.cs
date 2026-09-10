@@ -1,7 +1,10 @@
 #nullable enable annotations
 
 using System.Collections.Generic;
+using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Owners;
+using Chummer.Contracts.Owners;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,6 +13,29 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public class WorkspaceViewStateStoreTests
 {
+    [TestMethod]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    [DataRow("same-owner")]
+    public void Cached_views_keep_original_account_epoch_and_positive_same_owner_updates(string scenario)
+    {
+        var first = new OwnerContextStamp(new OwnerScope("cached-a"), "cache-host", 0);
+        var next = scenario == "same-owner" ? first : first with
+        {
+            Owner = new OwnerScope(scenario == "owner-b" ? "cached-b" : "cached-a"),
+            TransitionRevision = scenario == "owner-b" ? 1 : 2
+        };
+        var id = new CharacterWorkspaceId("same-workspace-id");
+        var store = new WorkspaceViewStateStore();
+        var state = CharacterOverviewState.Empty with { WorkspaceId = id, DisplayOwnerContext = first,
+            ActiveSectionJson = "original private view", ActiveTabId = "tab-info" };
+        store.Capture(id, state);
+        store.Capture(id, state with { DisplayOwnerContext = next, ActiveSectionJson = "next private view", ActiveTabId = "tab-skills" });
+        Assert.AreEqual("next private view", store.Restore(next, id)?.ActiveSectionJson);
+        Assert.AreEqual(scenario == "same-owner" ? "next private view" : "original private view", store.Restore(first, id)?.ActiveSectionJson);
+        Assert.IsNull(store.Restore(id), "Unbound readers must not inherit a bound cached view.");
+    }
+
     [TestMethod]
     public void Capture_and_restore_round_trips_workspace_view_state()
     {

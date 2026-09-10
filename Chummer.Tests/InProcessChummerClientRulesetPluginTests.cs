@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -30,6 +31,355 @@ namespace Chummer.Tests;
 [TestClass]
 public sealed class InProcessChummerClientRulesetPluginTests
 {
+    [TestMethod]
+    [DataRow("overview")]
+    [DataRow("section")]
+    [DataRow("summary")]
+    [DataRow("validation")]
+    public async Task Bound_display_projection_rejects_queued_owner_ABA_before_service_read(string projection)
+    {
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        StubOwnerContextAccessor owner = new(new OwnerScope("owner-a"));
+        int reads = 0;
+        NoOpWorkspaceService service = new() { BeforeRead = () => reads++ };
+        RecordingDesktopWorkspaceRoamingSync roaming = new() { InboundEntered = entered, ReleaseInbound = release };
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(), ownerContextAccessor: owner,
+            workspaceRoamingSync: roaming);
+        OwnerContextStamp original = client.CaptureOwnerContext();
+        Task blocker = client.ListWorkspacesAsync(CancellationToken.None);
+        Task pending;
+        try
+        {
+            Assert.IsTrue(entered.Wait(TimeSpan.FromSeconds(5)));
+            pending = StartBoundProjection(client, original, projection);
+            owner.Transition(new OwnerScope("owner-b"));
+            owner.Transition(new OwnerScope("owner-a"));
+        }
+        finally { release.Set(); }
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => blocker.WaitAsync(TimeSpan.FromSeconds(5)));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.AreEqual(0, reads);
+        Assert.AreEqual(0, owner.ActiveLeases);
+    }
+
+    [TestMethod]
+    [DataRow("overview")]
+    [DataRow("section")]
+    [DataRow("summary")]
+    [DataRow("validation")]
+    public async Task Bound_display_projection_enters_service_under_exact_owner_lease(string projection)
+    {
+        StubOwnerContextAccessor owner = new(new OwnerScope("owner-a"));
+        int reads = 0;
+        NoOpWorkspaceService service = new()
+        {
+            BeforeRead = () => { Assert.AreEqual(1, owner.ActiveLeases); reads++; }
+        };
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(), ownerContextAccessor: owner);
+
+        await StartBoundProjection(client, client.CaptureOwnerContext(), projection).WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(1, reads);
+        Assert.AreEqual(0, owner.ActiveLeases);
+    }
+
+    private static Task StartBoundProjection(InProcessChummerClient client, OwnerContextStamp owner, string projection)
+    {
+        CharacterWorkspaceId id = new("owner-bound-workspace");
+        return projection switch
+        {
+            "overview" => client.GetWorkspaceOverviewAsync(owner, id, CancellationToken.None),
+            "section" => client.GetSectionAsync(owner, id, "contacts", CancellationToken.None),
+            "summary" => client.GetSummaryAsync(owner, id, CancellationToken.None),
+            "validation" => client.ValidateAsync(owner, id, CancellationToken.None),
+            _ => throw new ArgumentOutOfRangeException(nameof(projection))
+        };
+    }
+
+    [TestMethod]
+    [DataRow("import")]
+    [DataRow("close")]
+    [DataRow("close-compatibility")]
+    [DataRow("metadata")]
+    [DataRow("metadata-compatibility")]
+    [DataRow("replace")]
+    [DataRow("save")]
+    [DataRow("save-compatibility")]
+    [DataRow("preferences")]
+    [DataRow("session")]
+    public async Task Queued_mutation_rejects_owner_A_B_A_before_any_store_call(string mutation)
+    {
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        StubOwnerContextAccessor owner = new(new OwnerScope("owner-a"));
+        NoOpWorkspaceService service = new();
+        RecordingDesktopWorkspaceRoamingSync roaming = new() { InboundEntered = entered, ReleaseInbound = release };
+        InMemoryShellPreferencesStore preferences = new();
+        InMemoryShellSessionStore session = new();
+        InProcessChummerClient client = new(
+            service, CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: owner,
+            workspaceRoamingSync: roaming,
+            shellPreferencesService: new ShellPreferencesService(preferences),
+            shellSessionService: new ShellSessionService(session));
+        Task<IReadOnlyList<WorkspaceListItem>> blocker = client.ListWorkspacesAsync(CancellationToken.None);
+        Task pending;
+        try
+        {
+            Assert.IsTrue(entered.Wait(TimeSpan.FromSeconds(5)), "Queue barrier never entered.");
+            pending = StartOwnerMutation(client, mutation);
+            owner.Transition(new OwnerScope("owner-b"));
+            owner.Transition(new OwnerScope("owner-a"));
+        }
+        finally
+        {
+            release.Set();
+        }
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => blocker.WaitAsync(TimeSpan.FromSeconds(5)));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
+            () => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.AreEqual(0, service.ImportCallCount);
+        Assert.AreEqual(0, service.RevisionedCloseCallCount);
+        Assert.AreEqual(0, service.RevisionedUpdateMetadataCallCount);
+        Assert.AreEqual(0, service.RevisionedReplaceCallCount);
+        Assert.AreEqual(0, service.RevisionedSaveCallCount);
+        Assert.AreEqual(0, service.ListCallCount, "Neither the stale blocker nor a compatibility mutation may read the store.");
+        Assert.IsNull(preferences.LastSavedOwner);
+        Assert.IsNull(session.LastSavedOwner);
+        Assert.AreEqual(0, owner.ActiveLeases);
+    }
+
+    [TestMethod]
+    [DataRow("import")]
+    [DataRow("close")]
+    [DataRow("close-compatibility")]
+    [DataRow("metadata")]
+    [DataRow("metadata-compatibility")]
+    [DataRow("replace")]
+    [DataRow("save")]
+    [DataRow("save-compatibility")]
+    [DataRow("preferences")]
+    [DataRow("session")]
+    public async Task Mutation_without_owner_lease_capability_fails_closed(string mutation)
+    {
+        NoOpWorkspaceService service = new();
+        InMemoryShellPreferencesStore preferences = new();
+        InMemoryShellSessionStore session = new();
+        InProcessChummerClient client = new(
+            service, CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: new UnsupportedOwnerContextAccessor(),
+            shellPreferencesService: new ShellPreferencesService(preferences),
+            shellSessionService: new ShellSessionService(session));
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await StartOwnerMutation(client, mutation));
+        Assert.AreEqual(0, service.ImportCallCount);
+        Assert.AreEqual(0, service.RevisionedCloseCallCount);
+        Assert.AreEqual(0, service.RevisionedUpdateMetadataCallCount);
+        Assert.AreEqual(0, service.RevisionedReplaceCallCount);
+        Assert.AreEqual(0, service.RevisionedSaveCallCount);
+        Assert.AreEqual(0, service.ListCallCount);
+        Assert.IsNull(preferences.LastSavedOwner);
+        Assert.IsNull(session.LastSavedOwner);
+    }
+
+    [TestMethod]
+    public async Task Import_holds_owner_lease_only_through_synchronous_commit_not_roaming()
+    {
+        StubOwnerContextAccessor owner = new(new OwnerScope("owner-a"));
+        bool sawLeaseAtCommit = false;
+        NoOpWorkspaceService service = new()
+        {
+            BeforeImport = () => sawLeaseAtCommit = owner.ActiveLeases == 1
+        };
+        RecordingDesktopWorkspaceRoamingSync roaming = new()
+        {
+            BeforeOutbound = () =>
+            {
+                Assert.AreEqual(0, owner.ActiveLeases, "A mutation lease crossed the roaming boundary.");
+                owner.Transition(new OwnerScope("owner-b"));
+            }
+        };
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: owner, workspaceRoamingSync: roaming);
+
+        WorkspaceImportResult result = await client.ImportAsync(
+            new WorkspaceImportDocument("<character />", "sr5", WorkspaceDocumentFormat.NativeXml),
+            CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.IsTrue(sawLeaseAtCommit, "Core import ran without the owner writer lease.");
+        Assert.AreEqual(service.ImportResult, result);
+        Assert.AreEqual(1, service.ImportCallCount);
+        Assert.AreEqual(new OwnerScope("owner-a"), service.LastImportOwner);
+        Assert.AreEqual(new OwnerScope("owner-a"), roaming.LastOutboundOwner);
+        Assert.AreEqual(new OwnerScope("owner-b"), owner.Current);
+        Assert.AreEqual(0, owner.ActiveLeases);
+    }
+
+    private static Task StartOwnerMutation(InProcessChummerClient client, string mutation)
+    {
+        CharacterWorkspaceId id = new("owner-bound-workspace");
+#pragma warning disable CS0618 // Both compatibility and explicit-CAS dispatch must acquire a real lease.
+        return mutation switch
+        {
+            "import" => client.ImportAsync(new WorkspaceImportDocument("<character />", "sr5", WorkspaceDocumentFormat.NativeXml), CancellationToken.None),
+            "close" => client.CloseWorkspaceAsync(id, 1, CancellationToken.None),
+            "close-compatibility" => client.CloseWorkspaceAsync(id, CancellationToken.None),
+            "metadata" => client.UpdateMetadataAsync(id, 1, new UpdateWorkspaceMetadata("changed", null, null), CancellationToken.None),
+            "metadata-compatibility" => client.UpdateMetadataAsync(id, new UpdateWorkspaceMetadata("changed", null, null), CancellationToken.None),
+            "replace" => client.ReplaceWorkspaceDocumentAsync(id, 1, new WorkspaceDocument("<character />", "sr5"), CancellationToken.None),
+            "save" => client.SaveAsync(id, 1, CancellationToken.None),
+            "save-compatibility" => client.SaveAsync(id, CancellationToken.None),
+            "preferences" => client.SaveShellPreferencesAsync(new ShellPreferences("sr6"), CancellationToken.None),
+            "session" => client.SaveShellSessionAsync(new ShellSessionState(id.Value), CancellationToken.None),
+            _ => throw new ArgumentOutOfRangeException(nameof(mutation))
+        };
+#pragma warning restore CS0618
+    }
+
+    [TestMethod]
+    [DataRow("import")]
+    [DataRow("close")]
+    [DataRow("close-compatibility")]
+    [DataRow("metadata")]
+    [DataRow("metadata-compatibility")]
+    [DataRow("replace")]
+    [DataRow("save")]
+    [DataRow("save-compatibility")]
+    [DataRow("preferences")]
+    [DataRow("session")]
+    public async Task Steady_owner_mutation_enters_store_under_exact_live_lease(string mutation)
+    {
+        StubOwnerContextAccessor owner = new(new OwnerScope("owner-a"));
+        int calls = 0;
+        void ObserveMutation()
+        {
+            Assert.AreEqual(1, owner.ActiveLeases, "Synchronous store call is outside its owner lease.");
+            calls++;
+        }
+        NoOpWorkspaceService service = new()
+        {
+            BeforeMutation = ObserveMutation,
+            Workspaces = [CreateWorkspace("owner-bound-workspace", DateTimeOffset.UtcNow, "sr5")]
+        };
+        InMemoryShellPreferencesStore preferences = new() { BeforeSave = ObserveMutation };
+        InMemoryShellSessionStore session = new() { BeforeSave = ObserveMutation };
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: owner,
+            shellPreferencesService: new ShellPreferencesService(preferences),
+            shellSessionService: new ShellSessionService(session));
+
+        await StartOwnerMutation(client, mutation).WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(1, calls, "The valid authority must admit exactly one synchronous store operation.");
+        Assert.AreEqual(0, owner.ActiveLeases);
+    }
+
+    [TestMethod]
+    [DataRow("aba")]
+    [DataRow("foreign-authority")]
+    [DataRow("invalid")]
+    public async Task Bound_read_and_replacement_reject_stale_or_foreign_original_authority(string change)
+    {
+        StubOwnerContextAccessor owner = new(new OwnerScope("owner-a"));
+        NoOpWorkspaceService service = new();
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(), ownerContextAccessor: owner);
+        OwnerContextStamp stamp = client.CaptureOwnerContext();
+        switch (change)
+        {
+            case "aba":
+                owner.Transition(new OwnerScope("owner-b"));
+                owner.Transition(new OwnerScope("owner-a"));
+                break;
+            case "foreign-authority": stamp = stamp with { AuthorityInstanceId = Guid.NewGuid().ToString("N") }; break;
+            case "invalid": stamp = default; break;
+        }
+        CharacterWorkspaceId id = new("owner-bound-workspace");
+        bool dispatched = false;
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => client.GetWorkspaceAsync(stamp, id, CancellationToken.None));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => client.ReplaceWorkspaceDocumentAsync(
+            stamp, id, 1, new WorkspaceDocument("<character />", "sr5"), () => dispatched = true, CancellationToken.None));
+
+        Assert.AreEqual(0, service.GetWorkspaceCallCount);
+        Assert.AreEqual(0, service.RevisionedReplaceCallCount);
+        Assert.IsFalse(dispatched);
+        Assert.AreEqual(0, owner.ActiveLeases);
+    }
+
+    [TestMethod]
+    [DataRow("success")]
+    [DataRow("callback-failure")]
+    [DataRow("core-failure")]
+    [DataRow("roaming-failure")]
+    public async Task Bound_replacement_signal_remains_dispatched_after_entering_boundary(string outcome)
+    {
+        StubOwnerContextAccessor owner = new(new OwnerScope("owner-a"));
+        CharacterWorkspaceId id = new("owner-bound-workspace");
+        bool dispatched = false;
+        NoOpWorkspaceService service = new()
+        {
+            BeforeMutation = () =>
+            {
+                Assert.IsTrue(dispatched, "Core ran before the dispatch signal.");
+                Assert.AreEqual(1, owner.ActiveLeases);
+            },
+            ReplaceException = outcome == "core-failure" ? new InvalidOperationException("Core failed after dispatch.") : null,
+            ReplaceResult = new(true, new WorkspaceRevisionReceipt(id, 2, 1), null)
+        };
+        bool roamingEntered = false;
+        RecordingDesktopWorkspaceRoamingSync roaming = new()
+        {
+            BeforeOutbound = () =>
+            {
+                Assert.AreEqual(0, owner.ActiveLeases);
+                roamingEntered = true;
+            },
+            OutboundException = outcome == "roaming-failure" ? new InvalidOperationException("Roaming failed after dispatch.") : null
+        };
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: owner, workspaceRoamingSync: new BoundReplacementRoamingSync(owner, roaming));
+        Task<CommandResult<WorkspaceRevisionReceipt>> pending = client.ReplaceWorkspaceDocumentAsync(
+            client.CaptureOwnerContext(), id, 1, new WorkspaceDocument("<character />", "sr5"),
+            () =>
+            {
+                dispatched = true;
+                Assert.AreEqual(1, owner.ActiveLeases);
+                if (outcome == "callback-failure") throw new InvalidOperationException("Notification failed after recording entry.");
+            }, CancellationToken.None);
+
+        if (outcome is "success" or "roaming-failure")
+            Assert.AreSame(service.ReplaceResult, await pending.WaitAsync(TimeSpan.FromSeconds(5)),
+                "A postcommit roaming failure must retain the actual canonical result, not synthesize another receipt.");
+        else
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+
+        Assert.IsTrue(dispatched, "Entered dispatch cannot become safe-to-replay merely because a later stage threw.");
+        Assert.AreEqual(outcome == "callback-failure" ? 0 : 1, service.RevisionedReplaceCallCount);
+        Assert.AreEqual(outcome is "success" or "roaming-failure", roamingEntered);
+        Assert.AreEqual(0, owner.ActiveLeases);
+    }
+
+    private sealed class BoundReplacementRoamingSync(StubOwnerContextAccessor owners, RecordingDesktopWorkspaceRoamingSync inner)
+        : IDesktopWorkspaceRoamingSync, IOwnerBoundDesktopWorkspaceRoamingSync
+    {
+        private readonly OwnerContextStamp _original = owners.Capture();
+
+        public Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
+            => inner.SynchronizeInboundAsync(owner, ct);
+
+        public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(OwnerScope owner, CharacterWorkspaceId id, CancellationToken ct)
+            => throw new AssertFailedException("Bound replacement fell back to unbound roaming.");
+
+        public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(OwnerContextStamp original, CharacterWorkspaceId id, CancellationToken ct)
+        {
+            Assert.AreEqual(_original, original, "Postcommit roaming substituted the original account stamp.");
+            Assert.AreEqual(0, owners.ActiveLeases);
+            return inner.SynchronizeOutboundAsync(original.Owner, id, ct);
+        }
+    }
+
     [TestMethod]
     public async Task GetCommands_and_tabs_use_ruleset_plugin_definitions_when_registered()
     {
@@ -308,6 +658,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
         InProcessChummerClient client = new(
             workspaceService,
             CreateRuntimeShellCatalogResolver());
+        OwnerContextStamp original = client.CaptureOwnerContext();
 
         Task<WorkspaceImportResult> import = client.ImportAsync(
             new WorkspaceImportDocument("<character />", "sr5", WorkspaceDocumentFormat.NativeXml),
@@ -319,7 +670,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
             Assert.IsTrue(
                 importEntered.Wait(TimeSpan.FromSeconds(5)),
                 "The first workspace operation did not enter the executor.");
-            list = client.ListWorkspacesAsync(CancellationToken.None);
+            list = client.ListWorkspacesAsync(original, CancellationToken.None);
             Assert.IsFalse(
                 listEntered.Wait(TimeSpan.FromMilliseconds(250)),
                 "A later workspace operation overlapped the blocked import.");
@@ -437,11 +788,13 @@ public sealed class InProcessChummerClientRulesetPluginTests
         using CancellationTokenSource cancellation = new();
         NoOpWorkspaceService workspaceService = new()
         {
-            ListEntered = listEntered,
-            ReleaseList = releaseList,
             GenerateDistinctImportIds = true
         };
-        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new()
+        {
+            InboundEntered = listEntered,
+            ReleaseInbound = releaseList
+        };
         InProcessChummerClient client = new(
             workspaceService,
             CreateRuntimeShellCatalogResolver(),
@@ -1099,6 +1452,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public OwnerScope? LastSavedOwner { get; private set; }
 
+        public Action? BeforeSave { get; init; }
+
         public ShellPreferences Load()
         {
             return Load(OwnerScope.LocalSingleUser);
@@ -1119,6 +1474,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public void Save(OwnerScope owner, ShellPreferences preferences)
         {
+            BeforeSave?.Invoke();
             LastSavedOwner = owner;
             _preferencesByOwner[owner.NormalizedValue] = preferences;
         }
@@ -1134,6 +1490,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
         public OwnerScope? LastLoadedOwner { get; private set; }
 
         public OwnerScope? LastSavedOwner { get; private set; }
+
+        public Action? BeforeSave { get; init; }
 
         public ShellSessionState Load()
         {
@@ -1155,6 +1513,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public void Save(OwnerScope owner, ShellSessionState session)
         {
+            BeforeSave?.Invoke();
             LastSavedOwner = owner;
             _sessionsByOwner[owner.NormalizedValue] = new ShellSessionState(
                 ActiveWorkspaceId: session.ActiveWorkspaceId,
@@ -1218,6 +1577,12 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public ManualResetEventSlim? ReleaseImport { get; init; }
 
+        public Action? BeforeImport { get; init; }
+
+        public Action? BeforeMutation { get; init; }
+
+        public Action? BeforeRead { get; init; }
+
         public ManualResetEventSlim? ListEntered { get; init; }
 
         public ManualResetEventSlim? ReleaseList { get; init; }
@@ -1237,6 +1602,15 @@ public sealed class InProcessChummerClientRulesetPluginTests
         public int RevisionedUpdateMetadataCallCount { get; private set; }
 
         public int RevisionedSaveCallCount { get; private set; }
+
+        public int RevisionedReplaceCallCount { get; private set; }
+
+        public int GetWorkspaceCallCount { get; private set; }
+
+        public Exception? ReplaceException { get; init; }
+
+        public CommandResult<WorkspaceRevisionReceipt> ReplaceResult { get; init; }
+            = new(false, null, "Replacement not configured.", WorkspaceOperationOutcome.Unavailable);
 
         public long? LastCloseExpectedContentRevision { get; private set; }
 
@@ -1290,6 +1664,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
                 LastImportThreadId = Environment.CurrentManagedThreadId;
                 ImportEntered?.Set();
                 ReleaseImport?.Wait();
+                BeforeMutation?.Invoke();
+                BeforeImport?.Invoke();
                 return Import(document);
             }
             finally
@@ -1342,6 +1718,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
             CharacterWorkspaceId id,
             long expectedContentRevision)
         {
+            BeforeMutation?.Invoke();
             RevisionedCloseCallCount++;
             LastCloseExpectedContentRevision = expectedContentRevision;
             PublishConcurrentWinner();
@@ -1350,15 +1727,33 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public object? GetSection(CharacterWorkspaceId id, string sectionId) => throw new NotSupportedException();
 
-        public object? GetSection(OwnerScope owner, CharacterWorkspaceId id, string sectionId) => GetSection(id, sectionId);
+        public object? GetSection(OwnerScope owner, CharacterWorkspaceId id, string sectionId)
+        {
+            BeforeRead?.Invoke();
+            return new { sectionId };
+        }
 
         public CharacterFileSummary? GetSummary(CharacterWorkspaceId id) => throw new NotSupportedException();
 
-        public CharacterFileSummary? GetSummary(OwnerScope owner, CharacterWorkspaceId id) => GetSummary(id);
+        public CharacterFileSummary? GetSummary(OwnerScope owner, CharacterWorkspaceId id)
+        {
+            BeforeRead?.Invoke();
+            return CreateWorkspace(id.Value, DateTimeOffset.UtcNow, "sr5").Summary;
+        }
 
         public CharacterValidationResult? Validate(CharacterWorkspaceId id) => throw new NotSupportedException();
 
-        public CharacterValidationResult? Validate(OwnerScope owner, CharacterWorkspaceId id) => Validate(id);
+        public CharacterValidationResult? Validate(OwnerScope owner, CharacterWorkspaceId id)
+        {
+            BeforeRead?.Invoke();
+            return new(true, []);
+        }
+
+        public CommandResult<WorkspaceOverviewProjection> GetOverview(OwnerScope owner, CharacterWorkspaceId id)
+        {
+            BeforeRead?.Invoke();
+            return new(false, null, "This admission fixture does not synthesize a Core overview.", WorkspaceOperationOutcome.Unavailable);
+        }
 
         public CharacterProfileSection? GetProfile(CharacterWorkspaceId id) => throw new NotSupportedException();
 
@@ -1423,6 +1818,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
             long expectedContentRevision,
             UpdateWorkspaceMetadata command)
         {
+            BeforeMutation?.Invoke();
             RevisionedUpdateMetadataCallCount++;
             LastUpdateExpectedContentRevision = expectedContentRevision;
             PublishConcurrentWinner();
@@ -1430,6 +1826,21 @@ public sealed class InProcessChummerClientRulesetPluginTests
         }
 
         public CommandResult<WorkspaceSaveReceipt> Save(CharacterWorkspaceId id) => SaveResult;
+
+        public CommandResult<WorkspaceRevisionReceipt> ReplaceWorkspaceDocument(
+            OwnerScope owner, CharacterWorkspaceId id, long expectedContentRevision, WorkspaceDocument document)
+        {
+            BeforeMutation?.Invoke();
+            RevisionedReplaceCallCount++;
+            if (ReplaceException is not null) throw ReplaceException;
+            return ReplaceResult;
+        }
+
+        public CommandResult<WorkspaceDocumentSnapshot> GetWorkspace(OwnerScope owner, CharacterWorkspaceId id)
+        {
+            GetWorkspaceCallCount++;
+            return new(false, null, "Workspace read not configured.", WorkspaceOperationOutcome.Unavailable);
+        }
 
         public CommandResult<WorkspaceSaveReceipt> Save(OwnerScope owner, CharacterWorkspaceId id)
         {
@@ -1448,6 +1859,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
             CharacterWorkspaceId id,
             long expectedContentRevision)
         {
+            BeforeMutation?.Invoke();
             RevisionedSaveCallCount++;
             LastSaveExpectedContentRevision = expectedContentRevision;
             PublishConcurrentWinner();
@@ -1500,17 +1912,71 @@ public sealed class InProcessChummerClientRulesetPluginTests
             => Interlocked.Decrement(ref _activeWorkspaceOperations);
     }
 
-    private sealed class StubOwnerContextAccessor : IOwnerContextAccessor
+    private sealed class UnsupportedOwnerContextAccessor : IOwnerContextAccessor
     {
-        public StubOwnerContextAccessor(OwnerScope current)
-        {
-            Current = current;
-        }
-
-        public OwnerScope Current { get; }
+        public OwnerScope Current => OwnerScope.LocalSingleUser;
     }
 
-    private sealed class RecordingDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync
+    // This test-owned authority uses one lock for captures, transitions and live
+    // mutation leases. Returning to the same owner never resets its generation.
+    private sealed class StubOwnerContextAccessor : IOwnerContextLeaseAccessor
+    {
+        private readonly object _gate = new();
+        private OwnerContextStamp _stamp;
+        private int _activeLeases;
+
+        public StubOwnerContextAccessor(OwnerScope current)
+        {
+            _stamp = new OwnerContextStamp(current, Guid.NewGuid().ToString("N"), 0);
+        }
+
+        public OwnerScope Current => Capture().Owner;
+
+        public int ActiveLeases => Volatile.Read(ref _activeLeases);
+
+        public OwnerContextStamp Capture()
+        {
+            lock (_gate) return _stamp;
+        }
+
+        public void Transition(OwnerScope owner)
+        {
+            lock (_gate)
+                _stamp = new OwnerContextStamp(owner, _stamp.AuthorityInstanceId, checked(_stamp.TransitionRevision + 1));
+        }
+
+        public bool TryAcquire(OwnerContextStamp expected, [NotNullWhen(true)] out IOwnerContextLease? lease)
+        {
+            Monitor.Enter(_gate);
+            if (expected != _stamp)
+            {
+                Monitor.Exit(_gate);
+                lease = null;
+                return false;
+            }
+
+            Interlocked.Increment(ref _activeLeases);
+            lease = new TestLease(this, _stamp);
+            return true;
+        }
+
+        private sealed class TestLease(StubOwnerContextAccessor owner, OwnerContextStamp stamp) : IOwnerContextLease
+        {
+            private bool _disposed;
+
+            public OwnerContextStamp Stamp => !_disposed ? stamp : throw new ObjectDisposedException(nameof(TestLease));
+
+            public void Dispose()
+            {
+                if (_disposed) return;
+                _disposed = true;
+                Interlocked.Decrement(ref owner._activeLeases);
+                Monitor.Exit(owner._gate);
+            }
+        }
+    }
+
+    private sealed class RecordingDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync, IOwnerBoundDesktopWorkspaceRoamingSync
     {
         private readonly TaskCompletionSource<DesktopWorkspaceRoamingResult> _neverCompletingOutbound = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
@@ -1525,6 +1991,12 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public OwnerScope? LastOutboundOwner { get; private set; }
 
+        public OwnerContextStamp? LastBoundOutboundOwner { get; private set; }
+
+        public ManualResetEventSlim? InboundEntered { get; init; }
+
+        public ManualResetEventSlim? ReleaseInbound { get; init; }
+
         public List<CharacterWorkspaceId> OutboundWorkspaceIds { get; } = new();
 
         public CancellationToken LastOutboundCancellationToken { get; private set; }
@@ -1532,6 +2004,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
         public Exception? OutboundException { get; init; }
 
         public bool NeverCompleteOutbound { get; init; }
+
+        public Action? BeforeOutbound { get; init; }
 
         public Task OutboundCancellationObserved => _outboundCancellationObserved.Task;
 
@@ -1542,7 +2016,20 @@ public sealed class InProcessChummerClientRulesetPluginTests
             ct.ThrowIfCancellationRequested();
             LastInboundOwner = owner;
             LastInboundSynchronizationContext = SynchronizationContext.Current;
+            // Queue barriers belong outside the synchronous account lease. A
+            // store barrier would deadlock the very owner transition being tested.
+            InboundEntered?.Set();
+            if (ReleaseInbound is not null)
+                Assert.IsTrue(ReleaseInbound.Wait(TimeSpan.FromSeconds(10), ct), "Inbound queue barrier was not released.");
             return Task.FromResult(DesktopWorkspaceRoamingResult.AlreadyCurrent());
+        }
+
+        public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
+            OwnerContextStamp original, CharacterWorkspaceId workspaceId, CancellationToken ct)
+        {
+            Assert.IsTrue(original.IsValid);
+            LastBoundOutboundOwner = original;
+            return SynchronizeOutboundAsync(original.Owner, workspaceId, ct);
         }
 
         public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
@@ -1550,6 +2037,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
             CharacterWorkspaceId workspaceId,
             CancellationToken ct)
         {
+            BeforeOutbound?.Invoke();
             LastOutboundOwner = owner;
             OutboundWorkspaceIds.Add(workspaceId);
             LastOutboundCancellationToken = ct;

@@ -1,4 +1,5 @@
 using Chummer.Contracts.Presentation;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Shell;
@@ -16,6 +17,7 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        long displayGeneration = BeginDisplayTransition();
         Publish(State with
         {
             IsBusy = true,
@@ -31,15 +33,16 @@ public sealed partial class CharacterOverviewPresenter
                 return;
             }
 
+            if (!IsDisplayGenerationCurrent(displayGeneration)) return;
             CaptureRecoveryPayload(result);
-            Publish(result.State);
+            if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
             await SyncShellWorkspaceContextAsync(ct);
         }
         catch (Exception ex)
         {
-            Publish(State with
+            TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
                 Error = ex.Message
@@ -261,10 +264,25 @@ public sealed partial class CharacterOverviewPresenter
         => string.Equals(commandId, "new_character", StringComparison.Ordinal)
             || string.Equals(commandId, "new_critter", StringComparison.Ordinal);
 
-    public async Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct)
+    public Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct)
+        => LoadWorkspaceForOwnerAsync(id, null, ct);
+
+    Task IOwnerBoundWorkspaceRefreshPresenter.LoadAsync(
+        OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
+        => expectedOwner.IsValid
+            ? LoadWorkspaceForOwnerAsync(id, expectedOwner, ct)
+            : throw new InvalidOperationException("Original owner authority is required for workspace refresh.");
+
+    private async Task LoadWorkspaceForOwnerAsync(CharacterWorkspaceId id, OwnerContextStamp? expectedOwner, CancellationToken ct)
     {
+        if (expectedOwner is { } original
+            && (State.DisplayOwnerContext != original
+                || _client is not IOwnerBoundWorkspaceProjectionClient boundClient
+                || boundClient.CaptureOwnerContext() != original))
+            return;
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        long displayGeneration = BeginDisplayTransition();
         Publish(State with
         {
             IsBusy = true,
@@ -273,24 +291,34 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.LoadAsync(State, id, ct);
+            WorkspaceOverviewLifecycleResult result = expectedOwner is { } owner
+                ? _workspaceOverviewLifecycleCoordinator is IOwnerBoundWorkspaceOverviewLifecycleCoordinator bound
+                    ? await bound.LoadAsync(State, owner, id, ct)
+                    : throw new InvalidOperationException("Owner-bound workspace refresh is unavailable.")
+                : await _workspaceOverviewLifecycleCoordinator.LoadAsync(State, id, ct);
             if (!result.CanPublish)
             {
                 return;
             }
 
+            if (expectedOwner is { } retained
+                && (result.State.DisplayOwnerContext != retained
+                    || _client is not IOwnerBoundWorkspaceProjectionClient current
+                    || current.CaptureOwnerContext() != retained)) return;
+            if (!IsDisplayGenerationCurrent(displayGeneration)) return;
             CaptureRecoveryPayload(result);
-            Publish(result.State);
+            if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
             await SyncShellWorkspaceContextAsync(ct);
         }
         catch (Exception ex)
         {
-            Publish(State with
+            TryPublishDisplayTransition(displayGeneration, State with
             {
                 IsBusy = false,
-                Error = ex.Message
+                Error = ex.Message,
+                DisplayOwnerContext = null
             });
         }
     }
@@ -299,23 +327,46 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        long displayGeneration = BeginDisplayTransition();
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.SwitchAsync(State, id, ct);
         if (!result.CanPublish)
         {
             return;
         }
 
+        if (!IsDisplayGenerationCurrent(displayGeneration)) return;
         CaptureRecoveryPayload(result);
-        Publish(result.State);
+        if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
         await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
         await SyncShellWorkspaceContextAsync(ct);
     }
 
-    public async Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
+    public Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
+        => CloseWorkspaceCoreAsync(State, id, ct);
+
+    public Task CloseWorkspaceAsync(OwnerContextStamp originalOwner, CharacterWorkspaceId id,
+        long expectedContentRevision, CancellationToken ct)
+    {
+        CharacterOverviewState originalState = State;
+        if (originalState.DisplayOwnerContext != originalOwner
+            || !IsOriginalPersistenceOwnerCurrent(originalOwner)
+            || originalState.Session.FindWorkspace(id) is not { } closing
+            || closing.ContentRevision != expectedContentRevision)
+            return Task.CompletedTask;
+        return CloseWorkspaceCoreAsync(originalState, id, ct);
+    }
+
+    private async Task CloseWorkspaceCoreAsync(CharacterOverviewState originalState, CharacterWorkspaceId id, CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
-        WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.CloseAsync(State, id, ct);
+        long displayGeneration = BeginDisplayTransition();
+        if (!IsOriginalPersistenceOwnerCurrent(originalState.DisplayOwnerContext))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
+            return;
+        }
+        WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.CloseAsync(originalState, id, ct);
         if (!result.CanPublish)
         {
             return;
@@ -324,7 +375,7 @@ public sealed partial class CharacterOverviewPresenter
         if (result.PostCommit)
         {
             try { CaptureRecoveryPayload(result); } catch { }
-            PublishPostCommitState(result.State);
+            if (!PublishPostCommitState(result.State, displayGeneration)) return;
             using var postCommitBudget = new CancellationTokenSource(PostCommitShellSyncBudget);
             try
             {
@@ -337,30 +388,54 @@ public sealed partial class CharacterOverviewPresenter
         }
         else
         {
+            if (!IsDisplayGenerationCurrent(displayGeneration)) return;
             CaptureRecoveryPayload(result);
-            Publish(result.State);
+            if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
             await SyncShellWorkspaceContextAsync(ct);
         }
     }
 
     public async Task DeleteWorkspaceAsync(CharacterWorkspaceId id, bool confirmed, CancellationToken ct)
+        => _ = await DeleteWorkspaceCoreAsync(State, id, confirmed, ct);
+
+    public Task<CommandResult<WorkspaceRevisionReceipt>> DeleteWorkspaceAsync(
+        OwnerContextStamp originalOwner, CharacterWorkspaceId id, long expectedContentRevision,
+        bool confirmed, CancellationToken ct)
+    {
+        CharacterOverviewState original = State;
+        if (original.DisplayOwnerContext != originalOwner
+            || !IsOriginalPersistenceOwnerCurrent(originalOwner)
+            || original.Session.FindWorkspace(id) is not { } deleting
+            || deleting.ContentRevision != expectedContentRevision)
+            return Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
+                "The original deletion context changed. Reopen the runner before deleting it.",
+                WorkspaceOperationOutcome.Conflict));
+        return DeleteWorkspaceCoreAsync(original, id, confirmed, ct);
+    }
+
+    private async Task<CommandResult<WorkspaceRevisionReceipt>> DeleteWorkspaceCoreAsync(
+        CharacterOverviewState original, CharacterWorkspaceId id, bool confirmed, CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        long displayGeneration = BeginDisplayTransition();
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.DeleteAsync(
-            State,
+            original,
             id,
             confirmed,
             ct);
+        CommandResult<WorkspaceRevisionReceipt> canonical = result.DeletionResult
+            ?? new CommandResult<WorkspaceRevisionReceipt>(false, null,
+                result.State.Error ?? "No confirmed deletion receipt was returned.", WorkspaceOperationOutcome.Conflict);
         if (!result.CanPublish)
         {
-            return;
+            return canonical;
         }
 
         if (result.PostCommit)
         {
             try { CaptureRecoveryPayload(result); } catch { }
-            PublishPostCommitState(result.State);
+            if (!PublishPostCommitState(result.State, displayGeneration)) return canonical;
             using var postCommitBudget = new CancellationTokenSource(PostCommitShellSyncBudget);
             try
             {
@@ -373,23 +448,29 @@ public sealed partial class CharacterOverviewPresenter
         }
         else
         {
+            if (!IsDisplayGenerationCurrent(displayGeneration)) return canonical;
             CaptureRecoveryPayload(result);
-            Publish(result.State);
+            if (!TryPublishDisplayTransition(displayGeneration, result.State, original)) return canonical;
             await SyncShellWorkspaceContextAsync(ct);
         }
+        return canonical;
     }
 
-    private void PublishPostCommitState(CharacterOverviewState state)
+    private bool PublishPostCommitState(CharacterOverviewState state, long? displayGeneration = null)
     {
+        CharacterOverviewState committedState = state with { Error = null };
         try
         {
-            Publish(state with { Error = null });
+            if (displayGeneration is { } generation)
+                return TryPublishDisplayTransition(generation, committedState);
+            Publish(committedState);
+            return true;
         }
         catch
         {
-            // Publish assigns State before invoking shell/subscriber callbacks.
-            // Reassert committed success without letting observer failure escape.
-            State = state with { Error = null };
+            // Assignment precedes notifications. Do not reassert an old state:
+            // a notification may have started a newer view before throwing.
+            return ReferenceEquals(State, committedState);
         }
     }
 
@@ -407,7 +488,7 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch
         {
-            State = warningState;
+            // A failed observer cannot replace a newer display with this warning.
         }
     }
 
@@ -427,6 +508,7 @@ public sealed partial class CharacterOverviewPresenter
     }
 
     private void GateStalePostCommitRecovery(
+        OwnerContextStamp? originalOwner,
         CharacterWorkspaceId workspaceId,
         long committedRevision,
         string operation,
@@ -434,7 +516,8 @@ public sealed partial class CharacterOverviewPresenter
     {
         try
         {
-            _workspaceSessionPresenter.SetConflictState(
+            SetOriginalSessionConflict(
+                originalOwner,
                 workspaceId,
                 new WorkspaceConflictState(
                     operation,
@@ -451,7 +534,7 @@ public sealed partial class CharacterOverviewPresenter
 
         try
         {
-            _workspaceRecoveryPayloadStore.SetProtected(
+            RecoveryPayloads(originalOwner).SetProtected(
                 workspaceId,
                 committedRevision,
                 protectedFromEviction: true);
@@ -464,6 +547,7 @@ public sealed partial class CharacterOverviewPresenter
 
     private async Task CloseAllWorkspacesAsync(CancellationToken ct, string notice)
     {
+        long displayGeneration = BeginDisplayTransition();
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.CloseAllAsync(State, ct, notice);
         if (!result.CanPublish)
         {
@@ -473,7 +557,7 @@ public sealed partial class CharacterOverviewPresenter
         if (result.PostCommit)
         {
             try { CaptureRecoveryPayload(result); } catch { }
-            PublishPostCommitState(result.State);
+            if (!PublishPostCommitState(result.State, displayGeneration)) return;
             using var postCommitBudget = new CancellationTokenSource(PostCommitShellSyncBudget);
             try
             {
@@ -486,8 +570,9 @@ public sealed partial class CharacterOverviewPresenter
         }
         else
         {
+            if (!IsDisplayGenerationCurrent(displayGeneration)) return;
             CaptureRecoveryPayload(result);
-            Publish(result.State);
+            if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
             await SyncShellWorkspaceContextAsync(ct);
         }
     }
@@ -499,12 +584,12 @@ public sealed partial class CharacterOverviewPresenter
             return Task.CompletedTask;
         }
 
-        CharacterWorkspaceId? activeWorkspaceId = ResolveCurrentWorkspaceId();
-        return _shellPresenter.SyncWorkspaceContextAsync(activeWorkspaceId, ct);
+        return ShellWorkspaceContextSynchronization.SynchronizeAsync(_shellPresenter, _client, State, ct);
     }
 
     private CharacterOverviewState CreateWorkspaceResetState(string commandId, string notice)
     {
+        BeginDisplayTransition();
         return _workspaceOverviewLifecycleCoordinator.CreateResetState(State, commandId, notice).State;
     }
 
@@ -533,10 +618,11 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
+        OwnerContextStamp? originalOwner = result.State.DisplayOwnerContext;
         bool ownsIntent = advertisedIntent is null;
         IWorkspaceRecoveryCaptureIntent? captureIntent = advertisedIntent;
         if (captureIntent is null
-            && !_workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+            && !RecoveryPayloads(originalOwner).TryBeginCaptureIntent(
                 workspaceId,
                 result.State.ContentRevision,
                 out captureIntent))
@@ -561,6 +647,15 @@ public sealed partial class CharacterOverviewPresenter
         }
     }
 
+    private IWorkspaceRecoveryPayloadStore RecoveryPayloads(OwnerContextStamp? originalOwner)
+    {
+        if (originalOwner is { IsValid: true } original)
+            return _workspaceRecoveryPayloadStore.ForOwner(original);
+        if (originalOwner is not null || _client is IOwnerBoundWorkspaceMutationClient)
+            throw new InvalidOperationException("Original recovery owner authority is required.");
+        return _workspaceRecoveryPayloadStore;
+    }
+
     private bool HasAuthoritativeRecoveryLoader
         => _workspaceOverviewLoader is IAuthoritativeWorkspaceOverviewLoader
         {
@@ -572,11 +667,12 @@ public sealed partial class CharacterOverviewPresenter
         long expectedContentRevision,
         CancellationToken ct,
         IWorkspaceRecoveryCaptureIntent? advertisedIntent = null,
-        WorkspaceDocument? expectedDocument = null)
+        WorkspaceDocument? expectedDocument = null,
+        OwnerContextStamp? originalOwner = null)
     {
         IWorkspaceRecoveryCaptureIntent? captureIntent = advertisedIntent;
         if (captureIntent is null
-            && !_workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+            && !RecoveryPayloads(originalOwner).TryBeginCaptureIntent(
                 workspaceId,
                 expectedContentRevision,
                 out captureIntent))
@@ -596,10 +692,10 @@ public sealed partial class CharacterOverviewPresenter
                     return false;
                 }
 
-                WorkspaceRecoveryAuthoritySnapshot loaded = await authoritativeLoader
-                    .LoadRecoverySnapshotAsync(workspaceId, ct)
-                    .ConfigureAwait(false);
-                if (loaded.ContentRevision != expectedContentRevision)
+                WorkspaceRecoveryAuthoritySnapshot loaded = await (originalOwner is { } original
+                    ? authoritativeLoader.LoadRecoverySnapshotAsync(original, workspaceId, ct)
+                    : authoritativeLoader.LoadRecoverySnapshotAsync(workspaceId, ct)).ConfigureAwait(false);
+                if (loaded.OriginalOwner != originalOwner || loaded.ContentRevision != expectedContentRevision)
                 {
                     return false;
                 }
