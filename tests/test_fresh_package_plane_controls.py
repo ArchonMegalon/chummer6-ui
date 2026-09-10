@@ -257,15 +257,15 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "1bed0202552b7b79047832c33db9e83f9e9ccf58",
-            "commit": "c36b25133deca6cc509671a8650992483adb4c2a",
+            "blob": "2c684185a2b94796b9b3dee66dc1b0d8552a7c7c",
+            "commit": "8d1779aca9175ec9cf24788461b539366ef0fccf",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+            "rawSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
             "rawSizeBytes": 63546,
-            "semanticCanonicalSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+            "semanticCanonicalSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
             "semanticCanonicalSizeBytes": 63546,
-            "tree": "9b04a52f19bc8c4368af28cfa156bfd4a43eb2c7",
+            "tree": "ede91b92b51304de1f8d630952ec661ac5e97293",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -274,7 +274,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 63546
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e"
+        "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -1979,8 +1979,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 117
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 118
+    assert len(oracle["consumer"]["sourceFiles"]) == 118
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 119
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2049,7 +2049,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
         assert (REPO_ROOT / source).is_file()
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 745
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -2371,8 +2371,8 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
     assert source.count("-warnaserror:NU1603,NU1608") == 3
     assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
-    assert source.count('"--minimum-expected-tests"') == 5
-    assert source.count('"--no-progress"') == 5
+    assert source.count('"--minimum-expected-tests"') == 6
+    assert source.count('"--no-progress"') == 6
     for authority in (
         "-p:RestoreSources={feed}",
         "-p:RestoreAdditionalProjectSources=",
@@ -2459,11 +2459,11 @@ def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> Non
         "focused_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY", 1
     )[1].split("after = package_inventory", 1)[0]
     assert '"--disable-build-servers"' not in focused_execution
-    assert focused_execution.count('"reuseFullSuiteBuild": True') == 4
-    assert focused_execution.count('"runner": "direct-exact-assembly"') == 4
-    assert focused_execution.count('"testAssembly": focused_test_assembly') == 4
-    assert focused_execution.count('str(sdk_root / "dotnet")') == 4
-    assert focused_execution.count("str(focused_test_assembly_path)") == 4
+    assert focused_execution.count('"reuseFullSuiteBuild": True') == 5
+    assert focused_execution.count('"runner": "direct-exact-assembly"') == 5
+    assert focused_execution.count('"testAssembly": focused_test_assembly') == 5
+    assert focused_execution.count('str(sdk_root / "dotnet")') == 5
+    assert focused_execution.count("str(focused_test_assembly_path)") == 5
     assert '"--no-build"' not in focused_execution
     assert '"--no-restore"' not in focused_execution
     assert (
@@ -2490,7 +2490,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 745' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 747' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
@@ -2576,7 +2576,7 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 118
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 119
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -2651,7 +2651,7 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
     assert sum(minimum for _, _, minimum in expected) == 213
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 213
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 213 + 2
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
         ("Chummer.Tests/Presentation/ShellPresenterTests.cs", "Chummer.Rulesets.Hosting.Presentation"),

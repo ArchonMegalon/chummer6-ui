@@ -472,7 +472,7 @@ def test_strict_verify_builds_then_runs_product_assembly_without_msbuild_forward
     ) in source
     runner = source.split('dotnet "$repo_root/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"', 1)[1].split(
         'core_projection_after=', 1)[0]
-    assert "--minimum-expected-tests 745" in runner
+    assert "--minimum-expected-tests 747" in runner
     assert '--test-parameter "ChummerCoreContentRoot=$core_projection_root"' in runner
     assert "-m:1" not in runner and "--disable-build-servers" not in runner
 

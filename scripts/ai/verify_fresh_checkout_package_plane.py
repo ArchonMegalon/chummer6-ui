@@ -47,15 +47,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "1bed0202552b7b79047832c33db9e83f9e9ccf58",
-        "commit": "c36b25133deca6cc509671a8650992483adb4c2a",
+        "blob": "2c684185a2b94796b9b3dee66dc1b0d8552a7c7c",
+        "commit": "8d1779aca9175ec9cf24788461b539366ef0fccf",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+        "rawSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
         "rawSizeBytes": 63546,
-        "semanticCanonicalSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+        "semanticCanonicalSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
         "semanticCanonicalSizeBytes": 63546,
-        "tree": "9b04a52f19bc8c4368af28cfa156bfd4a43eb2c7",
+        "tree": "ede91b92b51304de1f8d630952ec661ac5e97293",
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -353,7 +353,9 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
 # The sealed baseline already contains the 19 base overview cases. Newly linked
 # continuation (19), shell owner (26), recovery (20), and older regressions (213)
 # increase its 467-case floor without counting those base overview cases twice.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 745
+# Two diagnostic-fencing regressions additionally reject foreign installations
+# and stale owner-transition revisions without overwriting persisted state.
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 747
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
