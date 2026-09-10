@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "399cc0b4e0b70f678ebeb6a2fcc9d0e0659bf61d",
-  "baseTree": "4effca11a4f7a4f0b48094c3c1df4fbd150114e6",
+  "baseCommit": "bc97ec9371b3031116ca27713b9e61d4e88c5593",
+  "baseTree": "10eed1cd63b28859e2aa3e69b727647d042c141c",
   "canonicalSealedLocks": [
     {
       "blob": "501c88b5a443c22e85b59593c5026b10aa35ef19",
@@ -25,15 +25,15 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "1bed0202552b7b79047832c33db9e83f9e9ccf58",
-      "commit": "c36b25133deca6cc509671a8650992483adb4c2a",
+      "blob": "2c684185a2b94796b9b3dee66dc1b0d8552a7c7c",
+      "commit": "8d1779aca9175ec9cf24788461b539366ef0fccf",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+      "rawSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
       "rawSizeBytes": 63546,
-      "semanticCanonicalSha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+      "semanticCanonicalSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
       "semanticCanonicalSizeBytes": 63546,
-      "tree": "9b04a52f19bc8c4368af28cfa156bfd4a43eb2c7"
+      "tree": "ede91b92b51304de1f8d630952ec661ac5e97293"
     },
     "producerLock": {
       "absentAtCommit": true,
@@ -44,622 +44,76 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "120d1c91ea9e642dc56ce08b102b94318ab8967b",
-      "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
-      "sha256": "11dc1d8721f7082cf3c8ee8b9e1dc325ba0e4c429c383d2d021d6cc8c59f84d3",
-      "sizeBytes": 143082,
+      "blob": "6d0d996c838e8ffbfd2afcc5e91fd049cbbbe216",
+      "path": ".github/workflows/unsigned-macos-native-build.yml",
+      "sha256": "c5525fc14c9aa367fe9528a6c8014272d548706fc6f4add906606f7210961687",
+      "sizeBytes": 5764,
       "status": "M"
     },
     {
-      "blob": "e829c0f8ba558e02dfa5c1b01f1184ce57d6f038",
-      "path": "Chummer.Desktop.Runtime/DesktopInstallOwnerContextAccessor.cs",
-      "sha256": "432000f74109257192aba4e1caa3d3aeb2848d56bb6bb809671219da7fe67bc3",
-      "sizeBytes": 3989,
+      "blob": "f5fdb42ecee0467cc033b22da4dda5a247520483",
+      "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
+      "sha256": "0a22682c214d423768d291f396e2dcc74d1012cb231b8734d2ca1e83036a9a20",
+      "sizeBytes": 76436,
       "status": "M"
     },
     {
-      "blob": "82ba4235ec92c2ef0836560d46922288105e210a",
-      "path": "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
-      "sha256": "062a0eaeaf2ffc4f91e3442262fa59918155960b44cf02b19c9316c3aefad669",
-      "sizeBytes": 25922,
-      "status": "M"
-    },
-    {
-      "blob": "aeafe498c7de648bbf749f5058afd29e73e6f0a2",
-      "path": "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
-      "sha256": "8157f7ac28e339baf67c998136e6d3fc8ccb54383df545e4dd3159561cab5f8c",
-      "sizeBytes": 2645,
-      "status": "M"
-    },
-    {
-      "blob": "35320cd775c403551b3108ce4e849d16ffceb974",
-      "path": "Chummer.Desktop.Runtime/InProcessChummerClient.Continuation.cs",
-      "sha256": "404dba221615793fc7ae60e62ba5b97736ec7465cdc44eaf4eda81897f0ea29d",
-      "sizeBytes": 5340,
-      "status": "A"
-    },
-    {
-      "blob": "16f9b237ade8596b4b2fe3351e7d725a4c801d06",
-      "path": "Chummer.Desktop.Runtime/InProcessChummerClient.OutputOwnerContext.cs",
-      "sha256": "9a2a15fca8edf6d4c82d3eabdb296f4e6b688bc2b3e0aec69c3cf0a09c96046e",
-      "sizeBytes": 3057,
-      "status": "A"
-    },
-    {
-      "blob": "92642ade22a6561d39c941207d29aa0f72ebdf7c",
-      "path": "Chummer.Desktop.Runtime/InProcessChummerClient.PersistenceOwnerContext.cs",
-      "sha256": "4422f9f07371b78fe85d4c1108412661305be8ad8a467b96fe471e84ec96d3e7",
-      "sizeBytes": 3723,
-      "status": "A"
-    },
-    {
-      "blob": "0a370dbe58d124c61a7de8b1e6e5bac935702fda",
-      "path": "Chummer.Desktop.Runtime/InProcessChummerClient.ShellOwnerContext.cs",
-      "sha256": "0c4ceec1f60d3057a94c01f9e843798d24783563d1d645f86a4b493db7b47ab9",
-      "sizeBytes": 5669,
-      "status": "A"
-    },
-    {
-      "blob": "4d058df6fd64b466b2dff67c873bb4a5dfa055f4",
-      "path": "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
-      "sha256": "7d1a0472380b05305d4190675a168b7af94dfba3f3a38a956bd63798676dd47d",
-      "sizeBytes": 45836,
-      "status": "M"
-    },
-    {
-      "blob": "9e5fd13ae532d0a403dbfe2f4380d3deb52d5c06",
-      "path": "Chummer.Desktop.Runtime/InProcessSessionClient.cs",
-      "sha256": "20372532b6b3c685d0753ee1804bce0b44588bcc8d02db7dca6a2cc3c787b45d",
-      "sizeBytes": 5935,
-      "status": "M"
-    },
-    {
-      "blob": "a4dd813074d9f47d17675f24fd986cec2d2ad2c8",
-      "path": "Chummer.Desktop.Runtime/ServiceCollectionDesktopRuntimeExtensions.cs",
-      "sha256": "b9ca4727a7caeb8a31cfee4ec60ffb40c74fe323f54e4318f45bd447dda72992",
-      "sizeBytes": 7096,
-      "status": "M"
-    },
-    {
-      "blob": "66b4f6a210b400c86f39c6f9f3d65f3f33910b04",
-      "path": "Chummer.Presentation/IOwnerBoundWorkspaceContinuationClient.cs",
-      "sha256": "7466444b47ae3ee52372af1f55b6b59e9acde7c64114c68b358c492e18490b28",
-      "sizeBytes": 1808,
-      "status": "A"
-    },
-    {
-      "blob": "2be95ce7a0bdd37dd7e5e0d07b00d9f28c0a9e0a",
-      "path": "Chummer.Presentation/IOwnerBoundWorkspaceMutationClient.cs",
-      "sha256": "3d4e9c92b607b31423e882ba06cffbd0b30b118153489168a6901d9f433c761f",
-      "sizeBytes": 4197,
-      "status": "A"
-    },
-    {
-      "blob": "bb4ec78034af350e56e4fbba934d3fbeb455b939",
-      "path": "Chummer.Presentation/IOwnerBoundWorkspaceOutputClient.cs",
-      "sha256": "347d05c58c8f72274ce7e5fffd962cf9d282063a4e1d367b89359e23970b1103",
-      "sizeBytes": 866,
-      "status": "A"
-    },
-    {
-      "blob": "d66a712a10004f18ce66c0cd307c227b602c5f7f",
-      "path": "Chummer.Presentation/IOwnerBoundWorkspacePersistenceClient.cs",
-      "sha256": "03a79157301b75781414fa51aecfa30628bdfb36d839e5b1982f3d8dd1625143",
-      "sizeBytes": 2694,
-      "status": "A"
-    },
-    {
-      "blob": "c495cb7ceee481416143e57398feac06856e3e70",
-      "path": "Chummer.Presentation/Overview/CareerReputationEditRequest.cs",
-      "sha256": "e8ea9445319890ccad09ef0d28eb5e4f0a558c94377d4d45e7263c930df326b2",
-      "sizeBytes": 11027,
-      "status": "M"
-    },
-    {
-      "blob": "10bb7b95f12df448576d84a0b50c68a450621143",
-      "path": "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs",
-      "sha256": "06b32c36951edc163775da9cfc112425066fad1f783714b04d9fa81e7bd16d52",
-      "sizeBytes": 49539,
-      "status": "M"
-    },
-    {
-      "blob": "e22531263456261e78f9e8916e6b0d202377c0b5",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Commands.cs",
-      "sha256": "bc4f6f47120adf62fd36a139e7f251e024e4bacbcc0e3f83d6acf9ef3cedfb26",
-      "sizeBytes": 8916,
-      "status": "M"
-    },
-    {
-      "blob": "d0dd57375c989f8ee7336f91e5a2b3a05ea668a7",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs",
-      "sha256": "ea9d7b6f04a3f897907d4ca112bca6e9602ab3adff73bc17c90cfe91714fa57a",
-      "sizeBytes": 8671,
-      "status": "A"
-    },
-    {
-      "blob": "b8d60773f1d57b1e1f680597e9577592317e85e8",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
-      "sha256": "827fcbd0e3fe619fa68df816d309d5a371c01bbaf11289e073b76eae91928aef",
-      "sizeBytes": 10161,
-      "status": "M"
-    },
-    {
-      "blob": "3fb9dcd0c396451572538c723b33d6c374661a39",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
-      "sha256": "5b8fe484f48c55cbdbeee468b70ab57068cbaf459c505c9ef791d0c97b595a24",
-      "sizeBytes": 10045,
-      "status": "M"
-    },
-    {
-      "blob": "cd9ab860eaa1504226f9071f16c297767f28d197",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Persistence.cs",
-      "sha256": "df3dc38c3534cab3ecb730b41f26895bac32f87eb36e4a40a1cba52f9f3b509b",
-      "sizeBytes": 34389,
-      "status": "M"
-    },
-    {
-      "blob": "2ced1a53655335b864636cd0fe40db4d315dabb9",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.StoredDeletion.cs",
-      "sha256": "2176eca3487d4818592789b3967bd9627209c2ec199b73254f6840b8d831cfe2",
-      "sizeBytes": 3016,
-      "status": "A"
-    },
-    {
-      "blob": "1a407b4e2e3c14fc3834be02f5dcdd837bc7724c",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.Workspace.cs",
-      "sha256": "0e9d931e2d9d8cf53babca4e9abeb985aca216a4fb176eff7a4b009227e0279d",
-      "sizeBytes": 30285,
-      "status": "M"
-    },
-    {
-      "blob": "8c38c6edc877bdba9e364481e61604194aec3fbf",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceMutations.cs",
-      "sha256": "094aea1aae97c842b2053722784891f2f7fa088bf69b789fc64f2e07f45d8076",
-      "sizeBytes": 198550,
-      "status": "M"
-    },
-    {
-      "blob": "87e9e942975edc909a29586827c7250917d41337",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceRendering.cs",
-      "sha256": "d0890a911c48f0ef27059a9cbab0582bf5930cc0cb91ea0d816822dd8477c0e9",
-      "sizeBytes": 9623,
-      "status": "M"
-    },
-    {
-      "blob": "9e4817af6850289805ab45aee3e97c1bda8f60c2",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs",
-      "sha256": "fa639bdd18720dcd44986a36b27c9ac672c7ab0621351b095b2d9e5b5dd6073d",
-      "sizeBytes": 50612,
-      "status": "M"
-    },
-    {
-      "blob": "3c9e5981781448f1afb270e3a506d9ffeec09fac",
-      "path": "Chummer.Presentation/Overview/CharacterOverviewState.cs",
-      "sha256": "258d9d210dfb74f95fbb25d3b23fe472673ee509439292d5cd2a6c3e903b508f",
-      "sizeBytes": 7486,
-      "status": "M"
-    },
-    {
-      "blob": "350149808c79dc189fffeabfcb7cdd1abde737d7",
-      "path": "Chummer.Presentation/Overview/DesktopDialogModels.cs",
-      "sha256": "18f4f428c396423d09adce918683305e90f14154843d53ca7c2666a1fdbd83ab",
-      "sizeBytes": 2982,
-      "status": "M"
-    },
-    {
-      "blob": "41bc26afa2f36e35dedf23a996bb3883742063e7",
-      "path": "Chummer.Presentation/Overview/IOwnerBoundWorkspaceCleanupPresenter.cs",
-      "sha256": "de88e4b98487e5eb9b175dea9d59e572e9b197c02ce7de222412c271a16b8b0d",
-      "sizeBytes": 1174,
-      "status": "A"
-    },
-    {
-      "blob": "7b6211d0ef4e1d476f5862053fd69cbca71607f4",
-      "path": "Chummer.Presentation/Overview/IOwnerBoundWorkspaceContinuationPresenter.cs",
-      "sha256": "23e736842926b8f371ac7756888c8ad2d933a8e34c2d5c3001ad6103a8e49ddd",
-      "sizeBytes": 762,
-      "status": "A"
-    },
-    {
-      "blob": "d1cb4a1eca0d1928dc57bd1b15dbec6e784a7035",
-      "path": "Chummer.Presentation/Overview/IWorkspaceOverviewLifecycleCoordinator.cs",
-      "sha256": "d60f412f59b53be30b0fd969dbde2ca2c2a5741d981ee9d04b6b007556e933cd",
-      "sizeBytes": 4231,
-      "status": "M"
-    },
-    {
-      "blob": "5b14a95806941f9c056a1d08ea10e2a98ebaa55a",
-      "path": "Chummer.Presentation/Overview/IWorkspaceOverviewLoader.cs",
-      "sha256": "604f3e796a294ddb6a65d0ab9a347b289cc8ceef684587301769c5812c181010",
-      "sizeBytes": 2999,
-      "status": "M"
-    },
-    {
-      "blob": "134efb66e89a9c663e2b7bc144aa275c85f93f20",
-      "path": "Chummer.Presentation/Overview/IWorkspacePersistenceService.cs",
-      "sha256": "b65c09a2555d5b4f22bdcce8d8437db24dbbfd07ffbe590397987158445cec99",
-      "sizeBytes": 4776,
-      "status": "M"
-    },
-    {
-      "blob": "59fba9cafae7b8946dd4332e00202394bc4c5dbd",
-      "path": "Chummer.Presentation/Overview/IWorkspaceRemoteCloseService.cs",
-      "sha256": "d39868dfd272eac1cb5320c436e04cfdcfee2653f6dbcb422157ffb8a93af4f1",
-      "sizeBytes": 1101,
-      "status": "M"
-    },
-    {
-      "blob": "591a80a2b0b94833982d2414eb42d3d947924ab3",
-      "path": "Chummer.Presentation/Overview/IWorkspaceSectionRenderer.cs",
-      "sha256": "6529744e4c4f1481619ff1348ac5e1b34d63fcd6ef420793ce3a281c772800e6",
-      "sizeBytes": 2468,
-      "status": "M"
-    },
-    {
-      "blob": "304e7e6bab8c46632ab498abc6673118251b6732",
-      "path": "Chummer.Presentation/Overview/IWorkspaceSessionActivationService.cs",
-      "sha256": "3234d8d57341d07eb4278c06f6a9268d5c5f00f8797476c50efe4db4cb082bc5",
-      "sizeBytes": 899,
-      "status": "M"
-    },
-    {
-      "blob": "5cdcb95faecb0eb6cb781e90a17fad54c7ed01b4",
-      "path": "Chummer.Presentation/Overview/IWorkspaceSessionPresenter.cs",
-      "sha256": "837d924ed29d4c4eb57756cc170b10043a082ebdbd937eb76eb3b6ad0e3c60de",
-      "sizeBytes": 3347,
-      "status": "M"
-    },
-    {
-      "blob": "004275ac9679a0101e769446a1ea8ac8b9dc4d30",
-      "path": "Chummer.Presentation/Overview/IWorkspaceViewStateStore.cs",
-      "sha256": "6f0c787b763de43f9695e03bcc009fc85e00d1d2c27a98f015a7efda597980ba",
-      "sizeBytes": 679,
-      "status": "M"
-    },
-    {
-      "blob": "f10f42e3b5d9b06a352f7a2529e43eb017d9614d",
-      "path": "Chummer.Presentation/Overview/OverviewFeedbackProvenance.cs",
-      "sha256": "b7405d65235b278b33e197bc80e44447ee1fdf619eac2c5ab3fd177ddfb9eb64",
-      "sizeBytes": 716,
-      "status": "A"
-    },
-    {
-      "blob": "7ce15cf9e72fef1592637f0e760752055a9e085a",
-      "path": "Chummer.Presentation/Overview/WorkspaceOutputBinding.cs",
-      "sha256": "087f8a883b33da8eb21ed8ee83fca545dce3b9ba9e7bca4021c109347ff9fe2e",
-      "sizeBytes": 1413,
-      "status": "A"
-    },
-    {
-      "blob": "a8f9741eaa38e78acd590493b214d8a82c544d40",
-      "path": "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.StoredDeletion.cs",
-      "sha256": "bf6ecfd922236cd000fa254bd9f44f0386453138388e2713decc64d0c73d806f",
-      "sizeBytes": 3320,
-      "status": "A"
-    },
-    {
-      "blob": "b2f40741f09c49165d5bb837432c2c31439adcaa",
-      "path": "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs",
-      "sha256": "67521d0690c733bb41210cf8094ba20b8da938ec7cf3d68e6aed9d5ad4b49da4",
-      "sizeBytes": 72631,
-      "status": "M"
-    },
-    {
-      "blob": "2435dcb226f6e140be0f4cfd13105cc765241a1e",
-      "path": "Chummer.Presentation/Overview/WorkspaceOverviewLoader.cs",
-      "sha256": "3a467e322cc7cbe25e10012f64e0bdd05215f8489c165aa58c1c28447a9f82ec",
-      "sizeBytes": 25306,
-      "status": "M"
-    },
-    {
-      "blob": "1034f89fb48a3a4e9381c3af1d01afb8dd5a74c0",
-      "path": "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
-      "sha256": "7e293e1f46557ebb2e6120d676880f896e191961825ced403a0ad157527ca4b7",
-      "sizeBytes": 20971,
-      "status": "M"
-    },
-    {
-      "blob": "cc578ec87773e9beec316c4f44721b9045186de7",
-      "path": "Chummer.Presentation/Overview/WorkspacePersistenceService.cs",
-      "sha256": "7c90dcb4d9b38fb9a9c3aa0e99a6b51989379430114739dcd11edacba99c9073",
-      "sizeBytes": 10048,
-      "status": "M"
-    },
-    {
-      "blob": "f62eca8af0a42b7300f5f0b9bba4c181bdaf83a1",
-      "path": "Chummer.Presentation/Overview/WorkspaceRecoveryComposition.cs",
-      "sha256": "be89199aa0db63dd87d444ffeefa30f4eaa651703f8da897a4e835eb552fd9e1",
-      "sizeBytes": 756,
-      "status": "A"
-    },
-    {
-      "blob": "78103dfb60df0ed0803e954c8fde8b797ba75113",
-      "path": "Chummer.Presentation/Overview/WorkspaceRecoveryPayloadStore.OwnerContext.cs",
-      "sha256": "7e7cec78be7e1edc0af1189b8426699ddfb582423c071efbf56973f202a0e2d2",
-      "sizeBytes": 6375,
-      "status": "A"
-    },
-    {
-      "blob": "85a32fcfe0bf4e17b364e4c55f4a5a5e294cb6ab",
-      "path": "Chummer.Presentation/Overview/WorkspaceRecoveryPayloadStore.cs",
-      "sha256": "ddff2e6884bd878cd467168d7aab35d1d31c8341a4ddf795137f1736b533f196",
-      "sizeBytes": 34773,
-      "status": "M"
-    },
-    {
-      "blob": "4e7b8a8474c8919c05fd7467373a4ec4ef530384",
-      "path": "Chummer.Presentation/Overview/WorkspaceRemoteCloseService.cs",
-      "sha256": "7fbf68a19082f2cbd39926d56fae624c420c1711f362dc7ca522de4319446b0d",
-      "sizeBytes": 2425,
-      "status": "M"
-    },
-    {
-      "blob": "fa2986adf3a86b6d9b6282a4b16e39d5a5c0ccd7",
-      "path": "Chummer.Presentation/Overview/WorkspaceSectionRenderer.cs",
-      "sha256": "192bf029cc3f7ea84f3bbb1fdb9671fa56e7388ba7fd3d85ad6e39d01e127437",
-      "sizeBytes": 9226,
-      "status": "M"
-    },
-    {
-      "blob": "0b51e572ff1726a9a928eeda2411aa51591f09b8",
-      "path": "Chummer.Presentation/Overview/WorkspaceSessionActivationService.cs",
-      "sha256": "3b5c3f8308c6f906749c4b7ded41b4e75e24529ccac871b1367bc953fc483cc4",
-      "sizeBytes": 2131,
-      "status": "M"
-    },
-    {
-      "blob": "34390cb7e3d161cfaa8bfb55c823601682fa6a4d",
-      "path": "Chummer.Presentation/Overview/WorkspaceSessionPresenter.OwnerContext.cs",
-      "sha256": "26f9af4507fce2cc901270cefc53849d64d031f7f6c2a4790848f0a301b581f3",
-      "sizeBytes": 5896,
-      "status": "A"
-    },
-    {
-      "blob": "dad4c650ca69517eec6fa8cdfdcc673a64d7b01c",
-      "path": "Chummer.Presentation/Overview/WorkspaceSessionPresenter.cs",
-      "sha256": "0962eb2ccdf372c7291259144e03611466a3cd9780f08c3cb194f84064316880",
-      "sizeBytes": 12623,
-      "status": "M"
-    },
-    {
-      "blob": "28845848190ebedd28e3cbc6ef702810cb7323b5",
-      "path": "Chummer.Presentation/Overview/WorkspaceSessionState.cs",
-      "sha256": "1c1b7973049ba53ba8af9686dbc35f1a8aedb670eccb00c79eb0d4b61ebad3f2",
-      "sizeBytes": 1630,
-      "status": "M"
-    },
-    {
-      "blob": "4850fe1117d64b999accfb04fb14b5c3387e833f",
-      "path": "Chummer.Presentation/Overview/WorkspaceViewStateStore.cs",
-      "sha256": "2450f039ef0ece1eb583fcfa0905b144f0740ff688cecd4454be41f3a373fb29",
-      "sizeBytes": 2525,
-      "status": "M"
-    },
-    {
-      "blob": "e6f589295275a30893308a64e748e277e1ccc522",
-      "path": "Chummer.Presentation/Shell/IOwnerBoundShellStateClient.cs",
-      "sha256": "a3ebfcb91470e0f469a88f4bb9581ceeebf9e408369897b8d2d94e7d80d13845",
-      "sizeBytes": 1041,
-      "status": "A"
-    },
-    {
-      "blob": "bbf606026a6f1d88ad78e7e9a11cab9996cfa36f",
-      "path": "Chummer.Presentation/Shell/IShellBootstrapDataProvider.cs",
-      "sha256": "e0947246f56bc47223ab037e11f2cf72a6beb55edff0370c6d7ba183ea0dc2be",
-      "sizeBytes": 1424,
-      "status": "M"
-    },
-    {
-      "blob": "58af01efc5754c92956c6ef31984a1fa3f4f36bd",
-      "path": "Chummer.Presentation/Shell/IShellPresenter.cs",
-      "sha256": "b8c2835e93f1392034a1e62a7b7c377d6ee3ab183fb4c14654420e506ec6a024",
-      "sizeBytes": 999,
-      "status": "M"
-    },
-    {
-      "blob": "9f339eaf8dbcaeb90455b9096860bc606534b025",
-      "path": "Chummer.Presentation/Shell/ShellBootstrapDataProvider.cs",
-      "sha256": "90370d57317c0abee16176263559bce99b6b0cffd4fc0b6c9a610299a270cda5",
-      "sizeBytes": 7026,
-      "status": "M"
-    },
-    {
-      "blob": "15cb2542ed2a6d722b8152112c88080255ca58f4",
-      "path": "Chummer.Presentation/Shell/ShellOverviewFeedback.cs",
-      "sha256": "a5ffcd4b6c65176179984008c5f8875e20f2d1826ee7738a1aa4f4b76db9e3dc",
-      "sizeBytes": 604,
-      "status": "M"
-    },
-    {
-      "blob": "467a76c5d264fa79f73e753a1c673c953dfd8a5c",
-      "path": "Chummer.Presentation/Shell/ShellPresenter.cs",
-      "sha256": "ea97f9ee39b6d9ccdf81631a596ce643b84ff7dd6b98dbbc8b5e4b4ccd55a4b8",
-      "sizeBytes": 40629,
-      "status": "M"
-    },
-    {
-      "blob": "b994c69f9822ddc55eed2f6cb242e3aec86a558b",
-      "path": "Chummer.Presentation/Shell/ShellState.cs",
-      "sha256": "bb96667558863383ab9c31959725a08c0c3e60ad12e5277b8d5ca034f393311a",
-      "sizeBytes": 1512,
-      "status": "M"
-    },
-    {
-      "blob": "62ba4f78c516422ea56691abb25e3bcb15b3c66e",
-      "path": "Chummer.Presentation/Shell/ShellWorkspaceContextSynchronization.cs",
-      "sha256": "ae77eab6a3ad122e2b4005fc722c1e69b71ae164e9d87b96856e5611502704d4",
-      "sizeBytes": 1794,
-      "status": "A"
-    },
-    {
-      "blob": "88ba344a74bed2c5a4f4a9dad445ad5ae1af6c81",
-      "path": "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
-      "sha256": "5a2080c9fa48736f4b06a20fb647f9b3739e30119a3366b6e6eca638a2ba6d9d",
-      "sizeBytes": 5881,
-      "status": "M"
-    },
-    {
-      "blob": "d4c9dac186ea862777a9b42d54ad2a39407e9757",
-      "path": "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
-      "sha256": "d25c921308d09f229d15762a770b6f44584e86f1cf56000f21d0cc96c2be377c",
-      "sizeBytes": 91124,
-      "status": "M"
-    },
-    {
-      "blob": "75e217fb807f9657d6d8fd0b8181c589c9e55b67",
-      "path": "Chummer.Tests/InProcessShellOwnerContextTests.cs",
-      "sha256": "1d77c3fec66d68af663b6db0443c6884468b34abb83ee275909e8603ef034bd0",
-      "sizeBytes": 14507,
-      "status": "A"
-    },
-    {
-      "blob": "136e805291991f92e85bd304fc1ec5a0729db1b6",
-      "path": "Chummer.Tests/InProcessWorkspaceContinuationTests.cs",
-      "sha256": "2989ade3bd0cf625c73f5110da1ff8e41270355750e60658c00b3af163ba1a43",
-      "sizeBytes": 35179,
-      "status": "A"
-    },
-    {
-      "blob": "fc02abae78e104f4d603411d218802a8576946ea",
-      "path": "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
-      "sha256": "38c1ec81bbfd83a9a27f3215ef9b42a9a844cf9d272310581afe08af3fa5b64c",
-      "sizeBytes": 301603,
-      "status": "M"
-    },
-    {
-      "blob": "20a293680245348eaef5c762f6063a40e4e38908",
-      "path": "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs",
-      "sha256": "680dc726b6a0d50880d50404a798f0e4e8ea4d5eabdd5111f1babf0a618ff1d7",
-      "sizeBytes": 35351,
-      "status": "M"
-    },
-    {
-      "blob": "4a553393859e173558c59c84f201c8ad0ec285b3",
-      "path": "Chummer.Tests/Presentation/ShellPresenterTests.cs",
-      "sha256": "a9b873cbe2bb8128c93d6e03cf4b38abe818880e4e71288d3b9066267952c4af",
-      "sizeBytes": 76594,
-      "status": "M"
-    },
-    {
-      "blob": "22946f42d85f982b7e100658fbe8d65b9330baaa",
-      "path": "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs",
-      "sha256": "3a00217631cdc9b71aea258c512efed7eb733f11f56c9b56939bc2c042921ca3",
-      "sizeBytes": 32741,
-      "status": "M"
-    },
-    {
-      "blob": "31eacc6a46eac49e5bece1e8120688cc0b26a191",
-      "path": "Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs",
-      "sha256": "2e1cce796f5166bbb37ae5dcb11148a85feaf44de924ef015b6ada235b313e1b",
-      "sizeBytes": 14336,
-      "status": "A"
-    },
-    {
-      "blob": "a28e3f8661182fe6454e1954143b09a43a24e160",
-      "path": "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs",
-      "sha256": "6baec51131ed5b497f05d153e7c62007181e3df80bcc251696759fdfe425ba78",
-      "sizeBytes": 5969,
-      "status": "M"
-    },
-    {
-      "blob": "a1e6bad2e87c31f1ffeeef087fa8801784cf5329",
-      "path": "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs",
-      "sha256": "c0daf4929eba16c0684eabd56871cadb41329cdd7338ddeadaa97c5c1cc078e9",
-      "sizeBytes": 17840,
-      "status": "M"
-    },
-    {
-      "blob": "d6c91c26156ad1e0df35053ffcd88383e5080332",
-      "path": "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs",
-      "sha256": "1bfb88e5a7b5524746bd494fa0e7f79b7aec4d882e1cab9a5f7aa9a70d8480ee",
-      "sizeBytes": 8855,
-      "status": "M"
-    },
-    {
-      "blob": "bc2af8d2d699fbf06a0763bf01d9bf6497b466c5",
-      "path": "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs",
-      "sha256": "53c9dc1cc272372cb4e15460efd8dcec6e7d001258cedb7c6f1d3729c86c62d0",
-      "sizeBytes": 14139,
-      "status": "M"
-    },
-    {
-      "blob": "3f7ae5ad3613178793260ad2d56cd73792bbbedc",
-      "path": "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs",
-      "sha256": "a65682a6bfc9f19acd31aa0f123e428363c71303bb836498dfe5a24098d416c7",
-      "sizeBytes": 40950,
-      "status": "M"
-    },
-    {
-      "blob": "84fa5a45a21c84087b59355f30621e0fd9194072",
-      "path": "Directory.Build.props",
-      "sha256": "8d8cf8809eb0bf871181fe17582ed5a58d3d0da82c57bcc1290139deb61695d8",
-      "sizeBytes": 3997,
-      "status": "M"
-    },
-    {
-      "blob": "1bed0202552b7b79047832c33db9e83f9e9ccf58",
+      "blob": "2c684185a2b94796b9b3dee66dc1b0d8552a7c7c",
       "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "4808a98a2603751773ce015d60062c9c7ff59dc774b516932e8cf139e87b0f9e",
+      "sha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
       "sizeBytes": 63546,
       "status": "M"
     },
     {
-      "blob": "5a9670912a11de6c0db49d9f517b4113d55224b0",
+      "blob": "4582e2b9ad717e35e8922f4918971a10389c7aad",
       "path": "scripts/ai/verify.sh",
-      "sha256": "c21bb26c7efcc91115352f4c43bfaff4b37f1468c54095b46dbf0d346bdb45bd",
+      "sha256": "35fcae5a303b8da51e9d07e3a27984556e27cb80e7ae6364b724e651a756b533",
       "sizeBytes": 70272,
       "status": "M"
     },
     {
-      "blob": "ef4e166d4be837195773b56f7a28047ba3ac8d25",
+      "blob": "4ea39a04020b6ebdc58c0da7a1774ec791d1ac1d",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "6966e9c70eacb5b0b6254836cbbb8db28e3e32ca9d62b1ca0efc3095df98c42d",
-      "sizeBytes": 275410,
+      "sha256": "d2b413c3eed268e4d5db819605ecd913bd64cab8c6430a0aa8e9118f7b3b5902",
+      "sizeBytes": 275565,
       "status": "M"
     },
     {
-      "blob": "e2ec024bc9fc269a1dfc6dc4686128d0b331e6d3",
+      "blob": "b1990f3f5dc6008d0bd5967ee26764700abfeaac",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "6d84c1d8ab0cfad895675e6b3c25513694de1d29efb559609e415d6ea9ccf3b7",
-      "sizeBytes": 42832,
+      "sha256": "b16962f25167c7d53e02b7e5b873508624220c1f11221f0689a6cf4eb35d224c",
+      "sizeBytes": 42894,
       "status": "M"
     },
     {
-      "blob": "944c385cfdcdaa718a777c02767b4bedcf22ee9d",
-      "path": "scripts/ai/with-package-plane.sh",
-      "sha256": "bfdc05855edd02c890399746476620be99dea622998c28ebe5c609401f3dcd72",
-      "sizeBytes": 20804,
+      "blob": "58c4a19f07d1f840ef85e9c5fdb8979293e50d72",
+      "path": "scripts/build-unsigned-macos-native.sh",
+      "sha256": "3b08c6311319a4d3c52de1c4dd0a587a02b68c349393c1af413766c5972a7c1c",
+      "sizeBytes": 9578,
       "status": "M"
     },
     {
-      "blob": "578867b5c38a950a0d4f5653db6be1467df9b1e7",
-      "path": "tests/test_current_owner_contract_feed.py",
-      "sha256": "58f0c7a07832cbf84faa7edcd61122171382032fb91cb908b0aa1bbdd573429f",
-      "sizeBytes": 4537,
-      "status": "M"
-    },
-    {
-      "blob": "1cde59500e78bd93887b475feba48e7cd5a6cc00",
+      "blob": "cbfdc0bcd5bb08bd1dee10a19273d2347d61d62d",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "9c1debe035d914a183524ed3121e71afc7a0bdf9772f8999eac7763d330170df",
-      "sizeBytes": 167319,
+      "sha256": "d4a3c57408e0dea4f099f2dea9bebec601144ad4cf5d2ddc37cdad4a5afbaf45",
+      "sizeBytes": 167323,
       "status": "M"
     },
     {
-      "blob": "03c81cb8ab0d8fb5886b298e32f7c846e44ad958",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "a97e1d745f848bff6567e9cd383df114c12e315023e511d44fd74eee14bd5473",
-      "sizeBytes": 36707,
+      "blob": "c2d365be511c05f39f2c2a76cb0f462b9e476e99",
+      "path": "tests/test_unsigned_macos_native_build.py",
+      "sha256": "8a6cb0ac9db08996a575f9ce46b2861c5fe51f98f12fd4e58e1282da3ad1fd9d",
+      "sizeBytes": 13126,
       "status": "M"
     },
     {
-      "blob": "a42e902bbd475716c74ef53b54072cd79d9736fa",
+      "blob": "67d31784829c12a4f2ef85ffcf88f2f598038cfa",
       "path": "tests/test_verify_mode_controls.py",
-      "sha256": "7965dbb905960cf16a8ae302b08a9664cbdad016f0a8aaebfd759ebb4f9d3598",
+      "sha256": "d5aa39e9f28f9b1af0861c1848b0479b9b5eff00c78d80357a7548ad13c25830",
       "sizeBytes": 16948,
       "status": "M"
     }
   ],
-  "recipeTree": "c616bd6038fe6ba6a7a46ecd56aab24ccccf0d8d",
+  "recipeTree": "bbaa4ae1547db522e8fe920b5aabe550b6b2618c",
   "releaseClaim": false
 }
