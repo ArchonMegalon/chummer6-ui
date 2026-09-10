@@ -1,12 +1,23 @@
 using Chummer.Application.Characters;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed class WorkspaceOverviewLifecycleCoordinator :
+internal interface IOwnerBoundWorkspaceOverviewLifecycleCoordinator
+{
+    Task<WorkspaceOverviewLifecycleResult> LoadAsync(
+        CharacterOverviewState currentState, OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId, CancellationToken ct);
+}
+
+public sealed partial class WorkspaceOverviewLifecycleCoordinator :
     IWorkspaceOverviewLifecycleCoordinator,
+    IWorkspaceStoredDeletionLifecycle,
+    IOwnerBoundWorkspaceOverviewLifecycleCoordinator,
     IWorkspaceOverviewCreationActivationCoordinator,
+    IWorkspaceOverviewContinuationActivationCoordinator,
     IWorkspaceDeletionCommitSource,
     IDisposable,
     IAsyncDisposable
@@ -309,14 +320,64 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         return LoadWorkspaceAsync(currentState, workspaceId, ct);
     }
 
-    public async Task<WorkspaceOverviewLifecycleResult> ActivateCreatedAsync(
+    Task<WorkspaceOverviewLifecycleResult> IOwnerBoundWorkspaceOverviewLifecycleCoordinator.LoadAsync(
+        CharacterOverviewState currentState, OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        if (!expectedOwner.IsValid || currentState.DisplayOwnerContext != expectedOwner)
+            return Task.FromResult(new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false));
+        return LoadWorkspaceAsync(currentState, workspaceId, ct, expectedOwner: expectedOwner);
+    }
+
+    public Task<WorkspaceOverviewLifecycleResult> LoadCreatedAsync(
+        CharacterOverviewState currentState, OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        if (!IsCreationOwnerCurrent(expectedOwner))
+            return Task.FromResult(new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false));
+        if (TryCreateTransitionGuard(currentState, "open another dossier", out var guarded))
+            return Task.FromResult(new WorkspaceOverviewLifecycleResult(guarded, CurrentWorkspaceId));
+        return LoadWorkspaceAsync(currentState, workspaceId, ct, expectedOwner: expectedOwner);
+    }
+
+    private bool IsCreationOwnerCurrent(OwnerContextStamp expectedOwner)
+        => expectedOwner.IsValid && _client is IOwnerBoundWorkspaceProjectionClient bound
+            && bound.CaptureOwnerContext() == expectedOwner;
+
+    Task<WorkspaceOverviewLifecycleResult> IWorkspaceOverviewContinuationActivationCoordinator.LoadContinuationAsync(
+        CharacterOverviewState currentState, OwnerContextStamp originalOwner,
+        WorkspaceDocumentSnapshot expected, CancellationToken ct)
+    {
+        if (!IsCreationOwnerCurrent(originalOwner)
+            || TryCreateTransitionGuard(currentState, "open the restored dossier", out _))
+            return Task.FromResult(new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false));
+        return LoadWorkspaceAsync(currentState, expected.Id, ct,
+            rulesetId: expected.Document.RulesetId, expectedOwner: originalOwner, expectedContinuation: expected);
+    }
+
+    public Task<WorkspaceOverviewLifecycleResult> ActivateCreatedAsync(
+        CharacterOverviewState currentState, OwnerContextStamp expectedOwner,
+        CharacterCreationBootstrapActivationBundle activation,
+        IOwnerBoundCharacterCreationBootstrapService activationService, CancellationToken ct)
+        => ActivateCreatedCoreAsync(currentState, activation,
+            () => activationService.TryValidateCurrent(expectedOwner, activation, out _), expectedOwner, ct);
+
+    public Task<WorkspaceOverviewLifecycleResult> ActivateCreatedAsync(
         CharacterOverviewState currentState,
         CharacterCreationBootstrapActivationBundle activation,
         ICharacterCreationBootstrapActivationService activationService,
         CancellationToken ct)
+        => ActivateCreatedCoreAsync(currentState, activation,
+            () => activationService.TryValidateCurrent(activation, out _), null, ct);
+
+    private async Task<WorkspaceOverviewLifecycleResult> ActivateCreatedCoreAsync(
+        CharacterOverviewState currentState,
+        CharacterCreationBootstrapActivationBundle activation,
+        Func<bool> validate, OwnerContextStamp? expectedOwner, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(activation);
-        ArgumentNullException.ThrowIfNull(activationService);
+        if (expectedOwner is { } original && !IsCreationOwnerCurrent(original))
+            return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false);
         CharacterWorkspaceId workspaceId = activation.Receipt.WorkspaceId;
         if (!WorkspaceIdsEqual(CurrentWorkspaceId, workspaceId)
             && TryCreateTransitionGuard(
@@ -333,14 +394,15 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                     token => Task.Run(() =>
                     {
                         token.ThrowIfCancellationRequested();
-                        bool isCurrent = activationService.TryValidateCurrent(activation, out _);
+                        bool isCurrent = validate();
                         // Core validation is synchronous and cannot observe this
                         // cancellation. Do not begin further domain reads after
                         // the user cancels or another activation supersedes it.
                         token.ThrowIfCancellationRequested();
                         if (!isCurrent)
                             return new CreationActivationProjection(false, null);
-                        WorkspaceOverviewLoadResult overview = CreateActivationOverview(activation);
+                        WorkspaceOverviewLoadResult overview = CreateActivationOverview(activation)
+                            with { DisplayOwnerContext = expectedOwner };
                         PreparedWorkspaceOverviewState? prepared =
                             (_workspaceOverviewStateFactory as IWorkspaceOverviewPreparationFactory)
                                 ?.PrepareActivated(currentState, workspaceId, overview, activation.InitialCreation);
@@ -349,7 +411,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                     }, token),
                     ct)
                 .ConfigureAwait(false);
-        if (!execution.CanPublish)
+        if (!execution.CanPublish || (expectedOwner is { } retained && !IsCreationOwnerCurrent(retained)))
         {
             return new WorkspaceOverviewLifecycleResult(
                 currentState,
@@ -359,27 +421,28 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
 
         if (!execution.Value.IsCurrent || execution.Value.Overview is not { } loadedOverview)
         {
-            return await LoadWorkspaceAsync(currentState, workspaceId, ct)
+            return await LoadWorkspaceAsync(currentState, workspaceId, ct, expectedOwner: expectedOwner)
                 .ConfigureAwait(false);
         }
 
         CaptureCurrentWorkspaceView(currentState);
-        WorkspaceSessionState session = _workspaceSessionActivationService.Activate(
+        WorkspaceSessionState session = ActivateLoadedSession(
+            loadedOverview.DisplayOwnerContext,
             _workspaceSessionPresenter,
             workspaceId,
             loadedOverview.Profile,
             sessionSeed: null,
             updateSession: true,
             rulesetId: activation.Receipt.Binding.RulesetId);
-        WorkspaceViewState? restoredView = _workspaceViewStateStore.Restore(workspaceId);
-        session = _workspaceSessionPresenter.SetRevisions(
+        WorkspaceViewState? restoredView = RestoreOwnedWorkspaceView(workspaceId, loadedOverview.DisplayOwnerContext);
+        session = SetLoadedSessionRevisions(loadedOverview.DisplayOwnerContext,
             workspaceId,
             loadedOverview.ContentRevision,
             loadedOverview.SavedRevision,
             clearConflict: restoredView?.ConflictState is null);
         if (restoredView?.ConflictState is { } restoredConflict)
         {
-            session = _workspaceSessionPresenter.SetConflictState(workspaceId, restoredConflict);
+            session = SetLoadedSessionConflict(loadedOverview.DisplayOwnerContext, workspaceId, restoredConflict);
         }
 
         CurrentWorkspaceId = workspaceId;
@@ -461,6 +524,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         CharacterWorkspaceId workspaceId,
         CancellationToken ct)
     {
+        OwnerContextStamp? originalOwner = currentState.DisplayOwnerContext ?? currentState.Session.OwnerContext;
+        if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+            return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false);
         if (string.IsNullOrWhiteSpace(workspaceId.Value))
         {
             return new WorkspaceOverviewLifecycleResult(
@@ -494,7 +560,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
             CaptureCurrentWorkspaceView(currentState);
         }
 
-        WorkspaceSessionState session = _workspaceSessionPresenter.Close(workspaceId);
+        WorkspaceSessionState session = originalOwner is { } original
+            ? _workspaceSessionPresenter.Close(original, workspaceId)
+            : _workspaceSessionPresenter.Close(workspaceId);
 
         if (session.OpenWorkspaces.Count == 0)
         {
@@ -519,7 +587,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                     nextWorkspace,
                     postCommitBudget.Token,
                     session,
-                    updateSession: false);
+                    updateSession: false,
+                    expectedOwner: originalOwner);
                 return switched with
                 {
                     State = switched.State with
@@ -532,6 +601,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
             }
             catch
             {
+                if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+                    return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false, PostCommit: true);
                 CurrentWorkspaceId = null;
                 try { _workspaceOperationCoordinator.SetActiveWorkspace(null); } catch { }
                 return new WorkspaceOverviewLifecycleResult(
@@ -565,6 +636,19 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         bool confirmed,
         CancellationToken ct)
     {
+        CommandResult<WorkspaceRevisionReceipt>? canonical = null;
+        WorkspaceOverviewLifecycleResult result = await DeleteCoreAsync(
+            currentState, workspaceId, confirmed, value => canonical = value, ct);
+        return result with { DeletionResult = canonical };
+    }
+
+    private async Task<WorkspaceOverviewLifecycleResult> DeleteCoreAsync(
+        CharacterOverviewState currentState, CharacterWorkspaceId workspaceId, bool confirmed,
+        Action<CommandResult<WorkspaceRevisionReceipt>> observeResult, CancellationToken ct)
+    {
+        OwnerContextStamp? originalOwner = currentState.DisplayOwnerContext;
+        if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+            return new(currentState, CurrentWorkspaceId, CanPublish: false);
         OpenWorkspaceState? workspace = currentState.Session.FindWorkspace(workspaceId);
         if (workspace is null)
         {
@@ -612,13 +696,20 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         WorkspaceOperationExecution<CommandResult<WorkspaceRevisionReceipt>> execution = await _workspaceOperationCoordinator
             .RunCurrentAsync(
                 workspaceId,
-                token => _workspaceRemoteCloseService.TryDeleteAsync(
+                token => originalOwner is { } original
+                    ? _workspaceRemoteCloseService.TryDeleteAsync(
+                        _client, original, workspaceId, workspace.ContentRevision, token)
+                    : _workspaceRemoteCloseService.TryDeleteAsync(
                     _client,
                     workspaceId,
                     workspace.ContentRevision,
                     token),
                 ct)
             .ConfigureAwait(false);
+        if (execution.HasValue) observeResult(execution.Value);
+        if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+            return new(currentState, CurrentWorkspaceId, CanPublish: false,
+                PostCommit: execution.HasValue && execution.Value is { Success: true, Value: not null });
         bool committedAfterSupersededActivation = !execution.CanPublish
             && execution.HasValue
             && execution.Value is { Success: true, Value: not null };
@@ -631,7 +722,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         if (!deleted.Success || deleted.Value is null)
         {
             WorkspaceSessionState failedSession = deleted.Outcome == WorkspaceOperationOutcome.Conflict
-                ? _workspaceSessionPresenter.SetConflictState(
+                ? SetLoadedSessionConflict(
+                    originalOwner,
                     workspaceId,
                     new WorkspaceConflictState(
                         "delete",
@@ -662,7 +754,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         string? postCommitWarning = null;
         try
         {
-            session = _workspaceSessionPresenter.Forget(workspaceId);
+            session = originalOwner is { } original
+                ? _workspaceSessionPresenter.Forget(original, workspaceId)
+                : _workspaceSessionPresenter.Forget(workspaceId);
         }
         catch
         {
@@ -671,7 +765,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         }
         finally
         {
-            try { _workspaceViewStateStore.Remove(workspaceId); } catch { }
+            try { RemoveOwnedWorkspaceView(originalOwner, workspaceId); } catch { }
             try { _workspaceOperationCoordinator.Invalidate(workspaceId); } catch { }
             if (execution.CanPublish)
             {
@@ -686,7 +780,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                 new WorkspaceDeletionCommit(workspaceId, committedRevision))
             .ConfigureAwait(false);
 
-        if (!execution.CanPublish)
+        if (!execution.CanPublish || !IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
         {
             // A newer activation owns the visible shell. The receipt-backed
             // delete still requires local cleanup and notification, but must
@@ -708,7 +802,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                     nextWorkspace,
                     postCommitBudget.Token,
                     session,
-                    updateSession: false);
+                    updateSession: false,
+                    expectedOwner: originalOwner);
                 return switched with
                 {
                     State = switched.State with
@@ -763,6 +858,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         Func<Action, bool>? commitBoundary,
         CancellationToken ct)
     {
+        OwnerContextStamp? originalOwner = currentState.DisplayOwnerContext;
+        if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+            return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false);
         if (string.IsNullOrWhiteSpace(workspaceId.Value))
         {
             return new WorkspaceOverviewLifecycleResult(
@@ -786,6 +884,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         int localCloseCommitStarted = 0;
         void CommitLocalClose()
         {
+            if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+                throw new InvalidOperationException("The original recovery owner changed before close.");
             // The callback is the one-shot local linearization point. A
             // boundary may report false or throw after invoking it, but it may
             // never make the already-applied close look uncommitted.
@@ -794,7 +894,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
 
             try
             {
-                session = _workspaceSessionPresenter.Forget(workspaceId);
+                session = originalOwner is { } original
+                    ? _workspaceSessionPresenter.Forget(original, workspaceId)
+                    : _workspaceSessionPresenter.Forget(workspaceId);
             }
             catch
             {
@@ -803,7 +905,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
             }
             finally
             {
-                try { _workspaceViewStateStore.Remove(workspaceId); } catch { }
+                try { RemoveOwnedWorkspaceView(originalOwner, workspaceId); } catch { }
                 try { _workspaceOperationCoordinator.Invalidate(workspaceId); } catch { }
                 CurrentWorkspaceId = null;
                 try { _workspaceOperationCoordinator.SetActiveWorkspace(null); } catch { }
@@ -849,6 +951,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
             return true;
         }
 
+        if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+            return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false, PostCommit: true);
+
         if (session.ActiveWorkspaceId is { } nextWorkspace)
         {
             using var postCommitBudget = new CancellationTokenSource(PostCommitFollowupBudget);
@@ -859,7 +964,8 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                     nextWorkspace,
                     postCommitBudget.Token,
                     session,
-                    updateSession: false);
+                    updateSession: false,
+                    expectedOwner: originalOwner);
                 return switched with
                 {
                     State = switched.State with
@@ -922,6 +1028,7 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                 LastCommandId = lastCommandId ?? currentState.LastCommandId,
                 Session = session,
                 WorkspaceId = null,
+                DisplayOwnerContext = null,
                 OpenWorkspaces = session.OpenWorkspaces,
                 Profile = null,
                 Progress = null,
@@ -1335,6 +1442,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         string notice)
     {
         ct.ThrowIfCancellationRequested();
+        OwnerContextStamp? originalOwner = currentState.DisplayOwnerContext ?? currentState.Session.OwnerContext;
+        if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+            return Task.FromResult(new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false));
         OpenWorkspaceState? guardedWorkspace = _workspaceSessionPresenter.State.OpenWorkspaces
             .FirstOrDefault(workspace => workspace.IsDirty || workspace.ConflictState is not null);
         if (guardedWorkspace is not null
@@ -1346,7 +1456,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         }
 
         CaptureCurrentWorkspaceView(currentState);
-        WorkspaceSessionState session = _workspaceSessionPresenter.CloseAll();
+        WorkspaceSessionState session = originalOwner is { } original
+            ? _workspaceSessionPresenter.CloseAll(original)
+            : _workspaceSessionPresenter.CloseAll();
         CurrentWorkspaceId = null;
         string effectiveNotice = notice;
         try
@@ -1370,13 +1482,18 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         string commandId,
         string notice)
     {
+        OwnerContextStamp? originalOwner = currentState.DisplayOwnerContext ?? currentState.Session.OwnerContext;
+        if (!IsOriginalDeletionOwnerCurrent(currentState, originalOwner))
+            return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false);
         if (TryCreateTransitionGuard(currentState, "reset the workspace view", out CharacterOverviewState guardedState))
         {
             return new WorkspaceOverviewLifecycleResult(guardedState, CurrentWorkspaceId);
         }
 
         CaptureCurrentWorkspaceView(currentState);
-        WorkspaceSessionState session = _workspaceSessionPresenter.ClearActive();
+        WorkspaceSessionState session = originalOwner is { } original
+            ? _workspaceSessionPresenter.ClearActive(original)
+            : _workspaceSessionPresenter.ClearActive();
         CurrentWorkspaceId = null;
         string effectiveNotice = notice;
         try
@@ -1399,6 +1516,46 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
             PostCommit: true);
     }
 
+    private WorkspaceSessionState ActivateLoadedSession(
+        OwnerContextStamp? originalOwner, IWorkspaceSessionPresenter presenter,
+        CharacterWorkspaceId workspaceId, CharacterProfileSection? profile,
+        WorkspaceSessionState? sessionSeed, bool updateSession, string? rulesetId)
+        => originalOwner is { } original
+            ? _workspaceSessionActivationService.Activate(original, presenter, workspaceId, profile, sessionSeed, updateSession, rulesetId)
+            : _workspaceSessionActivationService.Activate(presenter, workspaceId, profile, sessionSeed, updateSession, rulesetId);
+
+    private WorkspaceSessionState SetLoadedSessionRevisions(
+        OwnerContextStamp? originalOwner, CharacterWorkspaceId workspaceId,
+        long contentRevision, long savedRevision, bool clearConflict)
+        => originalOwner is { } original
+            ? _workspaceSessionPresenter.SetRevisions(original, workspaceId, contentRevision, savedRevision, clearConflict)
+            : _workspaceSessionPresenter.SetRevisions(workspaceId, contentRevision, savedRevision, clearConflict);
+
+    private WorkspaceSessionState SetLoadedSessionConflict(
+        OwnerContextStamp? originalOwner, CharacterWorkspaceId workspaceId, WorkspaceConflictState conflict)
+        => originalOwner is { } original
+            ? _workspaceSessionPresenter.SetConflictState(original, workspaceId, conflict)
+            : _workspaceSessionPresenter.SetConflictState(workspaceId, conflict);
+
+    private WorkspaceViewState? RestoreOwnedWorkspaceView(CharacterWorkspaceId workspaceId, OwnerContextStamp? originalOwner)
+        => originalOwner is { } original
+            ? _workspaceViewStateStore.Restore(original, workspaceId)
+            : _workspaceViewStateStore.Restore(workspaceId);
+
+    private void RemoveOwnedWorkspaceView(OwnerContextStamp? originalOwner, CharacterWorkspaceId workspaceId)
+    {
+        if (originalOwner is { } original) _workspaceViewStateStore.Remove(original, workspaceId);
+        else _workspaceViewStateStore.Remove(workspaceId);
+    }
+
+    private bool IsOriginalDeletionOwnerCurrent(CharacterOverviewState state, OwnerContextStamp? originalOwner)
+    {
+        if (_client is not IOwnerBoundWorkspaceMutationClient bound) return originalOwner is null;
+        return originalOwner is { IsValid: true } original
+            && state.Session.OwnerContext == original
+            && bound.CaptureOwnerContext() == original;
+    }
+
     public void CaptureCurrentWorkspaceView(CharacterOverviewState state)
     {
         if (CurrentWorkspaceId is null)
@@ -1413,7 +1570,9 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
         CancellationToken ct,
         WorkspaceSessionState? sessionSeed = null,
         bool updateSession = true,
-        string? rulesetId = null)
+        string? rulesetId = null,
+        OwnerContextStamp? expectedOwner = null,
+        WorkspaceDocumentSnapshot? expectedContinuation = null)
     {
         CaptureCurrentWorkspaceView(currentState);
         WorkspaceOperationExecution<LoadedWorkspaceProjection> execution;
@@ -1423,8 +1582,22 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
                 workspaceId,
                 async token =>
                 {
-                    WorkspaceOverviewLoadResult overview = await LoadOverviewAsync(workspaceId, token)
+                    WorkspaceOverviewLoadResult overview = await LoadOverviewAsync(workspaceId, token, expectedOwner)
                         .ConfigureAwait(false);
+                    if (expectedContinuation is not null)
+                    {
+                        bool matches = await Task.Run(() => overview.Document is { } document
+                            && overview.ContentRevision == expectedContinuation.ContentRevision
+                            && overview.SavedRevision == expectedContinuation.SavedRevision
+                            && document.Format == expectedContinuation.Document.Format
+                            && document.RulesetId == expectedContinuation.Document.RulesetId
+                            && document.SchemaVersion == expectedContinuation.Document.SchemaVersion
+                            && document.PayloadKind == expectedContinuation.Document.PayloadKind
+                            && document.Content == expectedContinuation.Document.Content
+                            && document.AuxiliaryStateDigest == expectedContinuation.Document.AuxiliaryStateDigest,
+                            token).ConfigureAwait(false);
+                        if (!matches) throw new InvalidOperationException("The restored workspace changed before activation.");
+                    }
                     PreparedWorkspaceOverviewState? prepared = null;
                     if (_workspaceOverviewStateFactory is IWorkspaceOverviewPreparationFactory factory)
                     {
@@ -1455,7 +1628,14 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
 
         WorkspaceOverviewLoadResult loadedOverview = execution.Value.Overview;
 
-        WorkspaceSessionState session = _workspaceSessionActivationService.Activate(
+        if (expectedOwner is { } original
+            && (loadedOverview.DisplayOwnerContext != original
+                || _client is not IOwnerBoundWorkspaceProjectionClient boundClient
+                || boundClient.CaptureOwnerContext() != original))
+            return new WorkspaceOverviewLifecycleResult(currentState, CurrentWorkspaceId, CanPublish: false);
+
+        WorkspaceSessionState session = ActivateLoadedSession(
+            loadedOverview.DisplayOwnerContext,
             _workspaceSessionPresenter,
             workspaceId,
             loadedOverview.Profile,
@@ -1463,15 +1643,15 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
             updateSession,
             rulesetId);
 
-        WorkspaceViewState? restoredView = _workspaceViewStateStore.Restore(workspaceId);
-        session = _workspaceSessionPresenter.SetRevisions(
+        WorkspaceViewState? restoredView = RestoreOwnedWorkspaceView(workspaceId, loadedOverview.DisplayOwnerContext);
+        session = SetLoadedSessionRevisions(loadedOverview.DisplayOwnerContext,
             workspaceId,
             loadedOverview.ContentRevision,
             loadedOverview.SavedRevision,
             clearConflict: restoredView?.ConflictState is null);
         if (restoredView?.ConflictState is { } restoredConflict)
         {
-            session = _workspaceSessionPresenter.SetConflictState(workspaceId, restoredConflict);
+            session = SetLoadedSessionConflict(loadedOverview.DisplayOwnerContext, workspaceId, restoredConflict);
         }
 
         CurrentWorkspaceId = workspaceId;
@@ -1494,13 +1674,20 @@ public sealed class WorkspaceOverviewLifecycleCoordinator :
 
     private Task<WorkspaceOverviewLoadResult> LoadOverviewAsync(
         CharacterWorkspaceId workspaceId,
-        CancellationToken ct)
+        CancellationToken ct,
+        OwnerContextStamp? expectedOwner = null)
         => _workspaceOverviewLoader is IAuthoritativeWorkspaceOverviewLoader
             {
                 IsCompositionBound: true
             } authoritative
-            ? authoritative.LoadAuthoritativeAsync(workspaceId, ct)
-            : _workspaceOverviewLoader.LoadAsync(_client, workspaceId, ct);
+            ? expectedOwner is { } original
+                ? authoritative.LoadAuthoritativeAsync(original, workspaceId, ct)
+                : authoritative.LoadAuthoritativeAsync(workspaceId, ct)
+            : expectedOwner is not null
+                ? _workspaceOverviewLoader is IOwnerBoundWorkspaceOverviewLoader bound
+                    ? bound.LoadAsync(_client, expectedOwner.Value, workspaceId, ct)
+                    : throw new InvalidOperationException("Owner-bound workspace refresh is unavailable.")
+                : _workspaceOverviewLoader.LoadAsync(_client, workspaceId, ct);
 
     private static bool TryCreateTransitionGuard(
         CharacterOverviewState state,

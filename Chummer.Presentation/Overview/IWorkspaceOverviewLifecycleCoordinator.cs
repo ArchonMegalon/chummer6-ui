@@ -1,4 +1,5 @@
 using Chummer.Application.Characters;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
@@ -67,6 +68,15 @@ public interface IWorkspaceOverviewLifecycleCoordinator
 
 internal interface IWorkspaceOverviewCreationActivationCoordinator
 {
+    Task<WorkspaceOverviewLifecycleResult> LoadCreatedAsync(
+        CharacterOverviewState currentState, OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId, CancellationToken ct);
+
+    Task<WorkspaceOverviewLifecycleResult> ActivateCreatedAsync(
+        CharacterOverviewState currentState, OwnerContextStamp expectedOwner,
+        CharacterCreationBootstrapActivationBundle activation,
+        IOwnerBoundCharacterCreationBootstrapService activationService, CancellationToken ct);
+
     Task<WorkspaceOverviewLifecycleResult> ActivateCreatedAsync(
         CharacterOverviewState currentState,
         CharacterCreationBootstrapActivationBundle activation,
@@ -82,6 +92,8 @@ public sealed record WorkspaceOverviewLifecycleResult(
     bool PostCommit = false)
 {
     internal WorkspaceOverviewLoader.CanonicalValidationCapability? RecoveryValidation { get; init; }
+    internal CommandResult<WorkspaceRevisionReceipt>? DeletionResult { get; init; }
+    internal bool DeletionProjectionRetired { get; init; }
 }
 
 public sealed record WorkspaceDeletionCommit(

@@ -55,6 +55,49 @@ def test_native_character_settings_partial_save_inputs_are_explicit_preseal_reci
     } <= preseal.ALLOWED_RECIPE_PATHS
 
 
+def test_continuation_recipe_membership_remains_explicit_and_seal_topology_unchanged() -> None:
+    assert {
+        "Chummer.Desktop.Runtime/InProcessChummerClient.Continuation.cs",
+        "Chummer.Presentation/IOwnerBoundWorkspaceContinuationClient.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs",
+        "Chummer.Presentation/Overview/IOwnerBoundWorkspaceContinuationPresenter.cs",
+        "Chummer.Tests/InProcessWorkspaceContinuationTests.cs",
+        "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
+        "scripts/ai/verify_fresh_checkout_package_plane.py",
+        "scripts/ai/verify.sh",
+        "tests/test_fresh_package_plane_controls.py",
+        "tests/test_verify_mode_controls.py",
+    } <= preseal.ALLOWED_RECIPE_PATHS
+    assert "Chummer.Tests/UnreviewedContinuationTests.cs" not in preseal.ALLOWED_RECIPE_PATHS
+    assert preseal.MARKER_PATH not in preseal.ALLOWED_RECIPE_PATHS
+    assert preseal.CANONICAL_LOCK_PATHS == (
+        "config/package-plane.lock.json", "config/ui-owner-package-plane.lock.json"
+    )
+    assert not set(preseal.CANONICAL_LOCK_PATHS) & preseal.ALLOWED_RECIPE_PATHS
+
+
+def test_owner_context_recipe_accepts_only_exact_reviewed_file_names(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    members = preseal.OWNER_CONTEXT_RECIPE_PATHS
+    assert len(members) == 66
+    assert members <= preseal.ALLOWED_RECIPE_PATHS
+    assert all(not any(token in name for token in ("*", "?", "..")) for name in members)
+    monkeypatch.setattr(preseal, "git", lambda *args, **kwargs:
+        "\n".join(f"M\t{name}" for name in sorted(members)))
+    monkeypatch.setattr(preseal, "commit_bytes", lambda *args: b"reviewed-owner-source")
+    monkeypatch.setattr(preseal, "commit_blob", lambda *args: "c" * 40)
+    rows = preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+    assert {row["path"] for row in rows} == members
+    for forbidden in (
+        "Chummer.Desktop.Runtime/UnreviewedOwner.cs",
+        "Chummer.Presentation/Shell/UnreviewedShell.cs",
+        "Chummer.Tests/UnreviewedOwnerTests.cs",
+        *preseal.CANONICAL_LOCK_PATHS, preseal.MARKER_PATH,
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, name=forbidden, **kwargs: f"M\t{name}")
+        with pytest.raises(preseal.PresealError, match="path is not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def git(
     repository: Path, *arguments: str, input_text: str | None = None
 ) -> str:

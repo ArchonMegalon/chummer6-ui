@@ -21,6 +21,7 @@ using Chummer.Desktop.Runtime;
 using Chummer.Infrastructure.Files;
 using Chummer.Infrastructure.Workspaces;
 using Chummer.Presentation.Shell;
+using Chummer.Rulesets.Hosting;
 using Chummer.Rulesets.Sr5;
 using Chummer.Rulesets.Sr6;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -175,9 +176,29 @@ public class RestartSafeWorkspacePersistenceTests
         InProcessChummerClient Client,
         ShellBootstrapDataProvider BootstrapProvider);
 
-    private sealed class FixedOwnerContextAccessor(OwnerScope owner) : IOwnerContextAccessor
+    // This fixture authority is immutable; there are no owner writers to exclude.
+    private sealed class FixedOwnerContextAccessor(OwnerScope owner) : IOwnerContextLeaseAccessor
     {
-        public OwnerScope Current => owner;
+        private readonly OwnerContextStamp _stamp = new(owner, Guid.NewGuid().ToString("N"), 0);
+
+        public OwnerScope Current => _stamp.Owner;
+
+        public OwnerContextStamp Capture() => _stamp;
+
+        public bool TryAcquire(OwnerContextStamp expected,
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out IOwnerContextLease? lease)
+        {
+            lease = expected.IsValid && expected == _stamp ? new FixedLease(_stamp) : null;
+            return lease is not null;
+        }
+
+        private sealed class FixedLease(OwnerContextStamp stamp) : IOwnerContextLease
+        {
+            private int _disposed;
+            public OwnerContextStamp Stamp => Volatile.Read(ref _disposed) == 0
+                ? stamp : throw new ObjectDisposedException(nameof(FixedLease));
+            public void Dispose() => Interlocked.Exchange(ref _disposed, 1);
+        }
     }
 
     private sealed class RestartSafeWorkspaceCodec : IRulesetWorkspaceCodec

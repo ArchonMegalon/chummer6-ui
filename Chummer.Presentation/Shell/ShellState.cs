@@ -1,3 +1,4 @@
+using Chummer.Application.Owners;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Content;
 using Chummer.Contracts.Rulesets;
@@ -23,6 +24,9 @@ public sealed record ShellState(
     IReadOnlyList<WorkflowSurfaceDefinition>? WorkflowSurfaces = null,
     ActiveRuntimeStatusProjection? ActiveRuntime = null)
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    public OwnerContextStamp? OwnerContext { get; init; }
+
     public static ShellState Empty { get; } = new(
         IsBusy: false,
         Error: null,

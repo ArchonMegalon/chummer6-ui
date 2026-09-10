@@ -18,6 +18,10 @@ public interface IShellPresenter
 
     Task SyncWorkspaceContextAsync(Chummer.Contracts.Workspaces.CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct);
 
+    Task SyncWorkspaceContextAsync(Chummer.Application.Owners.OwnerContextStamp originalOwner,
+        Chummer.Contracts.Workspaces.CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
+        => Task.FromException(new NotSupportedException("This shell does not support original-owner-bound workspace navigation."));
+
     void SyncOverviewFeedback(ShellOverviewFeedback feedback)
     {
     }

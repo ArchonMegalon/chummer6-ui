@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -31,6 +32,98 @@ def load_module() -> ModuleType:
 
 
 package_plane = load_module()
+
+
+def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
+    # Active recipe pins are checked independently of the retained previous seal.
+    # This does not claim that the pending next two-lock transaction is sealed.
+    recipe = "2c7f566dfbedddaa4e4b15c975b1e17e6f14990a"
+    runtime = "f7500ef8c2f597bac67bc3f53620d50b7a17d00a"
+    version = "0.0.0-packageplane.candidate.shf7500ef8c2f59"
+    assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
+    assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
+    assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
+    assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
+        "https://github.com/ArchonMegalon/chummer6-core.git", recipe
+    )
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 3313094
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
+        "07c001d96084038cc241584c57242eaa5db6c70105e05d237e7a2b0e79fb0ade"
+    )
+    metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
+    assert metadata["runtimeSourceCommit"] == runtime
+    assert metadata["packageRecipeCommit"] == recipe
+    assert metadata["packageVersion"] == version
+    assert metadata["inventorySha256"] == "68da9f639c23784cb8f3795a35c6a50d07ab7c8231a713375208e9dd11d5a617"
+    assert metadata["lockSha256"] == "570caae0fb9f376fa8afb420fb7357bbb01f4a13cbb29e8510a29cd65b49708e"
+    assert metadata["receiptSha256"] == "ead69c3394d6fd43e567d4a0d6f5fe223f68646f9080e91bdae9010cf64689c4"
+    assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
+    for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
+        assert file_name == f"{package_id}.{version}.nupkg"
+        assert re.fullmatch(r"[0-9a-f]{64}", digest)
+        assert size > 0
+    properties = ET.parse(REPO_ROOT / "Directory.Build.props").getroot()
+    for name in ("ChummerContractsPackageVersion", "ChummerCoreRuntimePackageVersion"):
+        assert properties.findtext(f"PropertyGroup/{name}") == version
+    helper = (REPO_ROOT / "scripts/ai/with-package-plane.sh").read_text(encoding="utf-8")
+    assert 'contracts_version="${configured_contracts_version:-' + version + '}"' in helper
+    assert 'core_runtime_version="${CHUMMER_CORE_RUNTIME_PACKAGE_VERSION:-' + version + '}"' in helper
+
+
+def test_current_hub_main_pins_bind_receipt_package_sources_and_consumer_defaults() -> None:
+    main = "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6"
+    version = "0.1.0-packageplane.candidate.shfe4b2706c44d"
+    authority = package_plane.EXPECTED_HUB_CANONICAL_FEED
+    assert authority["producerCommit"] == main
+    assert authority["packageVersion"] == package_plane.CANONICAL_HUB_CONTRACTS_VERSION == version
+    assert authority["lockSha256"] == "20da652ab895f35283c86b619c6946d380e6ce44442ef01c10f0ac89addec63e"
+    assert authority["inventorySha256"] == "4ea0741fdefdecec00646a6af3d030fb0e38bbffa66a5fbbe4df8c6e6082e1af"
+    assert authority["receiptSha256"] == package_plane.HUB_NO_SIBLINGS_RECEIPT_SHA256 == (
+        "38542f7f26047da591bfae3a4943f29a5f33ee8bdad3d27f351bc1b820629fb7"
+    )
+    assert [(row["packageId"], row["commit"]) for row in authority["packages"]] == [
+        ("Chummer.Hub.Registry.Contracts", "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"),
+        ("Chummer.Run.Registry", "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"),
+        ("Chummer.Play.Contracts", "104275ad751cbd0006cac993ac71f1c2b428c3d0"),
+        ("Chummer.Run.Contracts", "104275ad751cbd0006cac993ac71f1c2b428c3d0"),
+    ]
+    for row in authority["packages"]:
+        assert row["version"] == version
+        assert row["fileName"] == f"{row['packageId']}.{version}.nupkg"
+    campaign = package_plane.EXPECTED_UI_OWNER_SOURCES["Chummer.Campaign.Contracts"]
+    assert campaign["commit"] == main
+    assert campaign["sourceTree"] == "2d0b95446db74ee0acf46b930e8013d987122bd6"
+    assert campaign["projectSha256"] == "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0"
+    properties = ET.parse(REPO_ROOT / "Directory.Build.props").getroot()
+    for name in ("ChummerRunContractsPackageVersion", "ChummerHubRegistryContractsPackageVersion"):
+        assert properties.findtext(f"PropertyGroup/{name}") == version
+    helper = (REPO_ROOT / "scripts/ai/with-package-plane.sh").read_text(encoding="utf-8")
+    assert 'run_contracts_version="${configured_run_contracts_version:-' + version + '}"' in helper
+    assert 'hub_registry_contracts_version="${configured_hub_registry_contracts_version:-' + version + '}"' in helper
+
+
+@pytest.mark.parametrize("wrong_commit", [
+    "290035a44f20bbc2fb3dcaa8dd7d2d466b7cf9f6",  # Qualified local seal is not hosted main.
+    "104275ad751cbd0006cac993ac71f1c2b428c3d0",  # Package source is not receipt producer.
+    "f" * 40,
+])
+def test_current_hub_receipt_binding_rejects_non_main_producer_even_with_rehashed_header(
+    tmp_path: Path, wrong_commit: str
+) -> None:
+    authority = dict(package_plane.EXPECTED_HUB_CANONICAL_FEED)
+    header = {
+        "contract": authority["receiptContract"], "status": "pass", "hub_commit": wrong_commit,
+        "package_plane_lock_sha256": authority["lockSha256"],
+        "package_inventory_sha256": authority["inventorySha256"],
+        "package_version": authority["packageVersion"],
+    }
+    raw = json.dumps(header).encode("utf-8")
+    path = tmp_path / "wrong-producer.json"
+    path.write_bytes(raw)
+    # Reach the producer binding instead of failing on the outer digest first.
+    authority["receiptSha256"] = hashlib.sha256(raw).hexdigest()
+    with pytest.raises(package_plane.VerificationError, match="payload differs"):
+        package_plane.validate_cold_hub_receipt({"canonicalOwnerFeed": authority}, path)
 
 
 @pytest.mark.parametrize("payload", [b"", b"ab", b"abcd", b"xyz"])
@@ -63,8 +156,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-1d8cf694d0412b3bd9f4a241fb95244fad341160/"
-        "chummer-core-runtime-package-plane-1d8cf694d0412b3bd9f4a241fb95244fad341160.zip",
+        "core-runtime-package-plane-2c7f566dfbedddaa4e4b15c975b1e17e6f14990a/"
+        "chummer-core-runtime-package-plane-2c7f566dfbedddaa4e4b15c975b1e17e6f14990a.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -151,13 +244,13 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "1d8cf694d0412b3bd9f4a241fb95244fad341160"
+        "2c7f566dfbedddaa4e4b15c975b1e17e6f14990a"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "880e5df8ace981e9a60264d835329dd32f54a158"
+        "f7500ef8c2f597bac67bc3f53620d50b7a17d00a"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
+        "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6"
     )
     assert package_plane.UI_OWNER_PRODUCER_LOCK_PATH not in (
         next_lock["consumer"]["sourceFiles"]
@@ -1886,8 +1979,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 49
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 50
+    assert len(oracle["consumer"]["sourceFiles"]) == 117
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 118
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -1956,7 +2049,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
         assert (REPO_ROOT / source).is_file()
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 745
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -2112,16 +2205,16 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
+        "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6"
     )
     assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
-        "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
+        "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6"
     )
     assert core["packageRecipeCommit"] == (
-        "1d8cf694d0412b3bd9f4a241fb95244fad341160"
+        "2c7f566dfbedddaa4e4b15c975b1e17e6f14990a"
     )
     assert core["runtimeSourceCommit"] == (
-        "880e5df8ace981e9a60264d835329dd32f54a158"
+        "f7500ef8c2f597bac67bc3f53620d50b7a17d00a"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -2278,8 +2371,8 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "if package[\"packageId\"] in HUB_CANONICAL_PACKAGE_IDS:" not in source
     assert source.count("-warnaserror:NU1603,NU1608") == 3
     assert source.count("-p:WarningsAsErrors=NU1603%3BNU1608") == 1
-    assert source.count('"--minimum-expected-tests"') == 3
-    assert source.count('"--no-progress"') == 3
+    assert source.count('"--minimum-expected-tests"') == 5
+    assert source.count('"--no-progress"') == 5
     for authority in (
         "-p:RestoreSources={feed}",
         "-p:RestoreAdditionalProjectSources=",
@@ -2366,11 +2459,11 @@ def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> Non
         "focused_test_assembly_path = consumer / PRODUCT_TEST_ASSEMBLY", 1
     )[1].split("after = package_inventory", 1)[0]
     assert '"--disable-build-servers"' not in focused_execution
-    assert focused_execution.count('"reuseFullSuiteBuild": True') == 2
-    assert focused_execution.count('"runner": "direct-exact-assembly"') == 2
-    assert focused_execution.count('"testAssembly": focused_test_assembly') == 2
-    assert focused_execution.count('str(sdk_root / "dotnet")') == 2
-    assert focused_execution.count("str(focused_test_assembly_path)") == 2
+    assert focused_execution.count('"reuseFullSuiteBuild": True') == 4
+    assert focused_execution.count('"runner": "direct-exact-assembly"') == 4
+    assert focused_execution.count('"testAssembly": focused_test_assembly') == 4
+    assert focused_execution.count('str(sdk_root / "dotnet")') == 4
+    assert focused_execution.count("str(focused_test_assembly_path)") == 4
     assert '"--no-build"' not in focused_execution
     assert '"--no-restore"' not in focused_execution
     assert (
@@ -2397,7 +2490,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 467' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 745' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
@@ -2445,7 +2538,7 @@ def test_fresh_package_plane_executes_overview_activation_regression_without_fak
     assert package_plane.FOCUSED_OVERVIEW_TEST_FILTER == (
         "FullyQualifiedName~WorkspaceOverviewLoaderTests"
     )
-    assert package_plane.FOCUSED_OVERVIEW_MINIMUM_TESTS == 19
+    assert package_plane.FOCUSED_OVERVIEW_MINIMUM_TESTS == 39
     assert package_plane.CREATION_INITIAL_AUTHORITY_BUDGET_SECONDS == 90
     assert '"measurementClaimed": False' in source
     assert '"requiresHostedWallClockMeasurement": True' in source
@@ -2453,6 +2546,240 @@ def test_fresh_package_plane_executes_overview_activation_regression_without_fak
         "Initial_creation_activation_attempt_bypasses_workspace_and_domain_reload_path"
         in source
     )
+
+
+def test_continuation_tests_and_bridge_are_exact_consumer_members() -> None:
+    expected = {
+        "Chummer.Desktop.Runtime/InProcessChummerClient.Continuation.cs",
+        "Chummer.Presentation/IOwnerBoundWorkspaceContinuationClient.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs",
+        "Chummer.Presentation/Overview/IOwnerBoundWorkspaceContinuationPresenter.cs",
+        "Chummer.Tests/InProcessWorkspaceContinuationTests.cs",
+    }
+    assert expected <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
+    assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
+        "../Chummer.Tests/InProcessWorkspaceContinuationTests.cs"
+    ] == "InProcessWorkspaceContinuationTests.cs"
+    package_plane.validate_test_compile_items(REPO_ROOT)
+    assert package_plane.FOCUSED_CONTINUATION_TEST_PROJECT == package_plane.EXPECTED_TEST_PROJECTS[0]
+    assert package_plane.FOCUSED_CONTINUATION_TEST_FILE == "Chummer.Tests/InProcessWorkspaceContinuationTests.cs"
+    assert package_plane.FOCUSED_CONTINUATION_TEST_FILTER == "FullyQualifiedName~InProcessWorkspaceContinuationTests"
+    assert package_plane.FOCUSED_CONTINUATION_MINIMUM_TESTS == 19
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert '"focusedContinuationTestExecution": focused_continuation_execution' in source
+
+
+def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> None:
+    preseal = package_plane.load_split_preseal_verifier()
+    members = package_plane.OWNER_CONTEXT_SOURCE_FILES
+    assert len(members) == 66
+    assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
+    assert members <= preseal.ALLOWED_RECIPE_PATHS
+    assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 118
+    for relative in members:
+        assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
+        assert (REPO_ROOT / relative).is_file()
+    for forbidden in (
+        "Chummer.Desktop.Runtime/UnreviewedOwner.cs",
+        "Chummer.Presentation/Overview/UnreviewedMutation.cs",
+        "Chummer.Presentation/Shell/UnreviewedShell.cs",
+        "Chummer.Tests/UnreviewedOwnerTests.cs",
+        "config/package-plane.lock.json", "config/ui-owner-package-plane.lock.json",
+        "config/ui-preseal-publication.json",
+    ):
+        assert forbidden not in members
+
+
+@pytest.mark.parametrize("relative", sorted(package_plane.OWNER_CONTEXT_SOURCE_FILES))
+def test_each_owner_context_source_requires_its_exact_bytes(relative: str) -> None:
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.verify_source_files(REPO_ROOT, {relative: "0" * 64})
+
+
+def static_mstest_case_count(relative: str) -> int:
+    source = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert "[DynamicData" not in source
+    assert "[Ignore" not in source
+    return sum(max(1, block.split("public ", 1)[0].count("[DataRow("))
+               for block in re.split(r"\[(?:Data)?TestMethod\]", source)[1:])
+
+
+def test_new_owner_test_links_and_minimums_bind_actual_mstest_cases() -> None:
+    package_plane.validate_test_compile_items(REPO_ROOT)
+    expected = {
+        "../Chummer.Tests/InProcessShellOwnerContextTests.cs": "InProcessShellOwnerContextTests.cs",
+        "../Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs": "Presentation/WorkspaceRecoveryOwnerTests.cs",
+    }
+    for include, link in expected.items():
+        assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[include] == link
+    assert package_plane.FOCUSED_OWNER_SHELL_TEST_FILTER == "FullyQualifiedName~InProcessShellOwnerContextTests"
+    assert package_plane.FOCUSED_OWNER_SHELL_MINIMUM_TESTS == 26
+    assert package_plane.FOCUSED_OVERVIEW_MINIMUM_TESTS == 39
+    assert package_plane.FOCUSED_CONTINUATION_MINIMUM_TESTS == 19
+
+    assert static_mstest_case_count(package_plane.FOCUSED_OWNER_SHELL_TEST_FILE) == 26
+    assert static_mstest_case_count(package_plane.FOCUSED_OVERVIEW_TEST_FILE) == 19
+    assert static_mstest_case_count(package_plane.FOCUSED_OVERVIEW_OWNER_TEST_FILE) == 20
+    assert static_mstest_case_count(package_plane.FOCUSED_CONTINUATION_TEST_FILE) == 19
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert '"focusedOwnerShellTestExecution": focused_owner_shell_execution' in source
+    assert '"sourceFiles": [FOCUSED_OVERVIEW_TEST_FILE, FOCUSED_OVERVIEW_OWNER_TEST_FILE]' in source
+    block = source.split("        focused_owner_shell_content =", 1)[1].split("        focused_existing_owner_executions =", 1)[0]
+    assert block.count('require_focused_test_inputs_unchanged("focused owner shell test assembly")') == 2
+    assert block.count("core_projection_content_inventory(") == 2
+    assert 'f"ChummerCoreContentRoot={core_content_root}"' in block
+    assert '"--minimum-expected-tests"' in block
+    assert '"--no-build"' not in block and '"build"' not in block
+
+
+def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependencies() -> None:
+    expected = (
+        ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 74),
+        ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 24),
+        ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
+        ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),
+        ("WorkspaceSessionPresenterTests", "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs", 23),
+        ("WorkspaceViewStateStoreTests", "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs", 6),
+        ("RestartSafeWorkspacePersistenceTests", "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs", 1),
+    )
+    assert package_plane.FOCUSED_EXISTING_OWNER_REGRESSION_TESTS == expected
+    package_plane.validate_test_compile_items(REPO_ROOT)
+    for test_class, relative, minimum in expected:
+        assert f"class {test_class}" in (REPO_ROOT / relative).read_text(encoding="utf-8")
+        assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == relative.removeprefix("Chummer.Tests/")
+        assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
+        assert static_mstest_case_count(relative) == minimum
+    assert sum(minimum for _, _, minimum in expected) == 213
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 213
+    for relative, namespace in (
+        ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
+        ("Chummer.Tests/Presentation/ShellPresenterTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
+        ("Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs", "Chummer.Rulesets.Hosting"),
+    ):
+        assert f"using {namespace};" in (REPO_ROOT / relative).read_text(encoding="utf-8")
+    project = ET.parse(REPO_ROOT / package_plane.EXPECTED_TEST_PROJECTS[0]).getroot()
+    assert [node.attrib["Include"] for node in project.iter("ProjectReference")] == [
+        "../Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj"
+    ]
+    assert {node.attrib["Include"]: node.attrib["Version"] for node in project.iter("PackageReference")} == {
+        "Microsoft.NET.Test.Sdk": "18.0.1", "MSTest.TestAdapter": "4.0.2", "MSTest.TestFramework": "4.0.2",
+    }
+    assert "../Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs" not in package_plane.EXPECTED_TEST_COMPILE_ITEMS
+    assert "../Chummer.Tests/GlobalUsings.cs" not in package_plane.EXPECTED_TEST_COMPILE_ITEMS
+
+
+def test_existing_owner_regressions_execute_each_class_against_same_built_assembly() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    block = source.split("        focused_existing_owner_executions =", 1)[1].split("        after = package_inventory", 1)[0]
+    assert "for test_class, test_file, minimum_tests in FOCUSED_EXISTING_OWNER_REGRESSION_TESTS:" in block
+    assert 'test_filter = f"FullyQualifiedName~{test_class}"' in block
+    assert 'str(focused_test_assembly_path)' in block
+    assert 'str(minimum_tests)' in block
+    assert '"--minimum-expected-tests"' in block
+    assert '"reuseFullSuiteBuild": True' in block
+    assert '"sourceFiles": [test_file]' in block
+    assert block.count('require_focused_test_inputs_unchanged("focused existing owner test assembly")') == 2
+    assert block.count("core_projection_content_inventory(") == 2
+    assert 'f"ChummerCoreContentRoot={core_content_root}"' in block
+    assert '"--no-build"' not in block and '"build"' not in block
+    assert 'focused_existing_owner_executions.append(execution)' in block
+    assert '"focusedExistingOwnerRegressionTestExecutions": focused_existing_owner_executions' in source
+
+
+def test_manual_product_runner_uses_expanded_floor_and_exact_hashed_wrapper() -> None:
+    relative = "scripts/ai/verify.sh"
+    assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
+    source = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    runner = source.split('dotnet "$repo_root/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"', 1)[1].split(
+        'core_projection_after=', 1
+    )[0]
+    assert f"--minimum-expected-tests {package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS}" in runner
+    assert '--test-parameter "ChummerCoreContentRoot=$core_projection_root"' in runner
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.verify_source_files(REPO_ROOT, {relative: "0" * 64})
+
+
+@pytest.mark.parametrize("change", ["missing", "duplicate", "same_count_substitution", "wrong_link", "conditional"])
+def test_continuation_test_compile_membership_is_closed(tmp_path: Path, change: str) -> None:
+    project = ET.parse(REPO_ROOT / package_plane.EXPECTED_TEST_PROJECTS[0]).getroot()
+    group, item = next((group, item) for group in project.findall("ItemGroup")
+        for item in group.findall("Compile")
+        if item.attrib.get("Include") == "../Chummer.Tests/InProcessWorkspaceContinuationTests.cs")
+    if change == "missing":
+        group.remove(item)
+    elif change == "duplicate":
+        group.append(ET.fromstring(ET.tostring(item)))
+    elif change == "same_count_substitution":
+        item.set("Include", "../Chummer.Tests/UnreviewedContinuationTests.cs")
+    elif change == "wrong_link":
+        item.set("Link", "UnreviewedContinuationTests.cs")
+    else:
+        item.set("Condition", "'$(SkipContinuationProof)' != 'true'")
+    target = tmp_path / package_plane.EXPECTED_TEST_PROJECTS[0]
+    target.parent.mkdir(parents=True)
+    target.write_bytes(ET.tostring(project))
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.validate_test_compile_items(tmp_path)
+
+
+def test_continuation_fixture_requires_verified_core_parameter_without_discovery_or_skip() -> None:
+    source = (REPO_ROOT / package_plane.FOCUSED_CONTINUATION_TEST_FILE).read_text(encoding="utf-8")
+    assert 'public TestContext TestContext { get; set; }' in source
+    assert 'TestContext.Properties.TryGetValue("ChummerCoreContentRoot", out object? suppliedRoot)' in source
+    assert 'Assert.IsFalse(string.IsNullOrWhiteSpace(contentRoot)' in source
+    assert 'Path.IsPathFullyQualified(contentRoot!)' in source
+    assert 'new Fixture(contentRoot!)' in source
+    assert 'public Fixture(string root)' in source
+    for forbidden in ("new Fixture()", "TestContextLocator", "FindDataRoot", "GetEnvironmentVariable", "Assert.Inconclusive"):
+        assert forbidden not in source
+
+
+@pytest.mark.parametrize("failure", ["none", "runner", "content", "assembly"])
+def test_continuation_runner_reuses_exact_assembly_and_verified_content_fail_closed(failure: str) -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    start = source.index("        focused_continuation_content =")
+    end = source.index("        focused_owner_shell_content =", start)
+    block = textwrap.dedent(source[start:end])
+    calls = []
+    core = Path("/verified/core")
+    assembly = Path("/isolated/consumer/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll")
+
+    def content_inventory(root: Path, authority: dict, environment: dict) -> dict:
+        assert root == core and authority == {"authority": "exact"} and environment == {}
+        calls.append("content")
+        return {"digest": "changed" if failure == "content" and calls.count("content") == 2 else "verified"}
+
+    def unchanged(label: str) -> None:
+        assert label == "focused continuation test assembly"
+        calls.append("assembly")
+        if failure == "assembly":
+            raise package_plane.VerificationError("changed assembly")
+
+    def run(command: list[str], *, cwd: Path, environment: dict) -> None:
+        assert command == ["/verified/sdk/dotnet", str(assembly), "--filter",
+            package_plane.FOCUSED_CONTINUATION_TEST_FILTER, "--minimum-expected-tests", "19",
+            "--test-parameter", f"ChummerCoreContentRoot={core}", "--no-progress"]
+        assert cwd == assembly.parent and environment == {}
+        calls.append("run")
+        if failure == "runner":
+            raise package_plane.VerificationError("failed tests")
+
+    namespace = {**vars(package_plane), "core_projection_content_inventory": content_inventory,
+        "core_content_root": core, "lock": {"coreRuntimeFeed": {"authority": "exact"}, "sdkVersion": "10.0.103"},
+        "environment": {}, "consumer": Path("/isolated/consumer"),
+        "require_exact_sdk": lambda *args: "10.0.103", "focused_test_assembly": {"digest": "exact"},
+        "require_focused_test_inputs_unchanged": unchanged, "run": run,
+        "sdk_root": Path("/verified/sdk"), "focused_test_assembly_path": assembly}
+    if failure == "none":
+        exec(compile(block, str(SCRIPT), "exec"), namespace)
+        assert calls == ["content", "assembly", "run", "assembly", "content"]
+        assert namespace["focused_continuation_execution"]["testAssembly"] == {"digest": "exact"}
+        assert namespace["focused_continuation_execution"]["coreProjectionContent"] == {"digest": "verified"}
+    else:
+        with pytest.raises(package_plane.VerificationError):
+            exec(compile(block, str(SCRIPT), "exec"), namespace)
+        assert calls.count("run") == (0 if failure == "assembly" else 1)
 
 
 def test_local_compatibility_project_defaults_are_overrideable() -> None:

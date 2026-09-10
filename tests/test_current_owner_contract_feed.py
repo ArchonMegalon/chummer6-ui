@@ -61,11 +61,11 @@ def test_current_owner_contract_feed_is_separate_and_reproducible() -> None:
     assert canonical_digest(feed_rows) == current["packageFeedInventorySha256"]
     assert current["packageFeedInventorySha256"] == "ad220c6384644fcd83135e70bb33913e546c758eedfa2fd6da514714730285ca"
 
-    assert canonical["producerCommit"] == "f06bb7e7e71e5afceb115d9078a473b1087ac7df"
+    assert canonical["producerCommit"] == "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6"
     assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v5"
     assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v4"
     assert len(canonical["packages"]) == 4
-    assert canonical["packageVersion"] == "0.1.0-packageplane.candidate.sh1852ea4eef6d"
+    assert canonical["packageVersion"] == "0.1.0-packageplane.candidate.shfe4b2706c44d"
     assert current["lockContract"] != canonical["lockContract"]
     assert current["inventoryContract"] != canonical["inventoryContract"]
     assert current["packageVersion"] != canonical["packageVersion"]

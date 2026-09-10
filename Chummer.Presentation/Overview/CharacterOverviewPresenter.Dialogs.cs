@@ -9,6 +9,7 @@ public sealed partial class CharacterOverviewPresenter
 {
     public Task HandleUiControlAsync(string controlId, CancellationToken ct)
     {
+        Interlocked.Increment(ref _dialogOpeningGeneration);
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ct.ThrowIfCancellationRequested();
@@ -86,7 +87,8 @@ public sealed partial class CharacterOverviewPresenter
                 : field)
             .ToArray();
         DesktopDialogState updatedDialog = dialog with { Fields = updatedFields };
-        updatedDialog = DesktopDialogFactory.RebuildDynamicDialog(updatedDialog, State.Preferences);
+        updatedDialog = DesktopDialogFactory.RebuildDynamicDialog(updatedDialog, State.Preferences)
+            with { CreationAuthority = dialog.CreationAuthority };
 
         Publish(State with
         {
@@ -100,9 +102,19 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        CreationDialogAuthority? creationAuthority = State.ActiveDialog?.CreationAuthority;
+        bool isCreation = State.ActiveDialog?.Id == "dialog.new_character";
+        if (isCreation && (creationAuthority is null || !IsCreationOwnerCurrent(creationAuthority)))
+        {
+            Publish(State with { ActiveDialog = null, Error = "The creation account changed. Reopen New Runner before creating a character." });
+            return;
+        }
         DialogCoordinationContext context = new(
             State: State,
-            Publish: Publish,
+            Publish: state =>
+            {
+                if (!isCreation || IsCreationDialogCurrent(creationAuthority)) Publish(state);
+            },
             ImportAsync: ImportAsync,
             ExportAsync: ExportAsync,
             PrintAsync: PrintAsync,
@@ -111,22 +123,55 @@ public sealed partial class CharacterOverviewPresenter
             SetPreferredRulesetAsync: SetPreferredRulesetAsync,
             ApplyQuickAddAsync: ApplyQuickAddAsync,
             ExecuteCommandAsync: ExecuteCommandAsync,
-            CreateCharacterBootstrapAsync: CreateCharacterBootstrapAsync,
-            LoadWorkspaceAsync: LoadAsync,
+            CreateCharacterBootstrapAsync: (request, token) => CreateCharacterBootstrapAsync(request, token, creationAuthority),
+            LoadWorkspaceAsync: (id, token) => isCreation
+                ? LoadCreatedWorkspaceAsync(id, creationAuthority, token)
+                : LoadAsync(id, token),
             CreateCharacterBootstrapActivationAsync:
-                _characterCreationBootstrapActivationService is null
+                _characterCreationBootstrapActivationService is null && _ownerBoundCharacterCreationBootstrapService is null
                     ? null
-                    : CreateCharacterBootstrapActivationAsync,
+                    : (request, token) => CreateCharacterBootstrapActivationAsync(request, token, creationAuthority),
             ActivateCharacterBootstrapAsync:
-                _characterCreationBootstrapActivationService is null
+                _characterCreationBootstrapActivationService is null && _ownerBoundCharacterCreationBootstrapService is null
                     ? null
-                    : ActivateCharacterBootstrapAsync);
+                    : (activation, token) => ActivateCharacterBootstrapAsync(activation, token, creationAuthority));
 
-        await _dialogCoordinator.CoordinateAsync(actionId, context, ct);
+        try
+        {
+            await _dialogCoordinator.CoordinateAsync(actionId, context, ct);
+        }
+        finally
+        {
+            // A completed Core create is never converted into a fresh-create
+            // retry merely because activation, refresh or cancellation failed.
+            if (creationAuthority?.Receipt is { } receipt
+                && ReferenceEquals(State.ActiveDialog?.CreationAuthority, creationAuthority))
+            {
+                if (!IsCreationOwnerCurrent(creationAuthority))
+                {
+                    Publish(State with
+                    {
+                        ActiveDialog = null, IsBusy = false,
+                        Error = "The account changed after character creation. Reopen the original account to find the created runner."
+                    });
+                }
+                else
+                {
+                    string message = $"Character created and saved ({receipt.WorkspaceId.Value}). Reload the runner to continue; do not create it again.";
+                    Publish(State with
+                    {
+                        IsBusy = false, Error = null, Notice = message,
+                        ActiveDialog = new DesktopDialogState("dialog.character_created", "Character created",
+                            message, [], [new DesktopDialogAction("close", "Close", true)])
+                    });
+                }
+            }
+        }
     }
 
     public Task CloseDialogAsync(CancellationToken ct)
     {
+        Interlocked.Increment(ref _dialogOpeningGeneration);
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ct.ThrowIfCancellationRequested();

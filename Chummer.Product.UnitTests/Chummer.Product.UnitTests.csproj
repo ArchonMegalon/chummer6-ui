@@ -29,6 +29,16 @@
     <Compile Include="../Chummer.Tests/DesktopPreferenceRuntimeTests.cs" Link="DesktopPreferenceRuntimeTests.cs" />
     <Compile Include="../Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs" Link="DesktopStartupSmokeRuntimeTests.cs" />
     <Compile Include="../Chummer.Tests/DesktopUpdateRuntimeTests.cs" Link="DesktopUpdateRuntimeTests.cs" />
+    <Compile Include="../Chummer.Tests/InProcessWorkspaceContinuationTests.cs" Link="InProcessWorkspaceContinuationTests.cs" />
+    <Compile Include="../Chummer.Tests/InProcessShellOwnerContextTests.cs" Link="InProcessShellOwnerContextTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs" Link="Presentation/WorkspaceRecoveryOwnerTests.cs" />
+    <Compile Include="../Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs" Link="InProcessChummerClientRulesetPluginTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs" Link="Presentation/ShellBootstrapDataProviderTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/ShellPresenterTests.cs" Link="Presentation/ShellPresenterTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs" Link="Presentation/WorkspaceSessionActivationServiceTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs" Link="Presentation/WorkspaceSessionPresenterTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs" Link="Presentation/WorkspaceViewStateStoreTests.cs" />
+    <Compile Include="../Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs" Link="RestartSafeWorkspacePersistenceTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs" Link="Presentation/CareerActiveSkillAdvanceParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs" Link="Presentation/CareerSkillGroupAdvanceParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs" Link="Presentation/CareerSkillSpecializationParityTests.cs" />

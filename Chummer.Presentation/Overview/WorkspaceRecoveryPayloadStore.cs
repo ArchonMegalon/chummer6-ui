@@ -1,3 +1,4 @@
+using Chummer.Application.Owners;
 using System.Security.Cryptography;
 using System.Text;
 using Chummer.Contracts.Workspaces;
@@ -6,6 +7,13 @@ namespace Chummer.Presentation.Overview;
 
 public interface IWorkspaceRecoveryPayloadStore : IDisposable
 {
+    /// <summary>Confirmed local erasure retires this exact in-memory owner epoch.</summary>
+    bool RetireOwner(OwnerContextStamp originalOwner) => false;
+
+    /// <summary>Memory-only original-owner partition; never recaptures current identity.</summary>
+    IWorkspaceRecoveryPayloadStore ForOwner(OwnerContextStamp originalOwner)
+        => throw new NotSupportedException("Owner-bound recovery is unavailable.");
+
     bool TryBeginCaptureIntent(
         CharacterWorkspaceId workspaceId,
         long sourceRevision,
@@ -178,7 +186,7 @@ public sealed record WorkspaceRecoveryCloseResult(
 /// deliberately not static and has no persistence, broadcast, logging, or
 /// analytics surface. Callers receive defensive copies only.
 /// </summary>
-public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadStore, IWorkspaceRecoveryCaptureStore
+public sealed partial class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadStore, IWorkspaceRecoveryCaptureStore
 {
     public const int MaxPayloadBytes = 8 * 1024 * 1024;
     public const int MaxRetainedEntries = 4;
@@ -192,9 +200,10 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         throwOnInvalidBytes: true);
 
     private readonly object _gate = new();
-    private readonly Dictionary<string, Entry> _entries = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, CaptureFailure> _captureFailures = new(StringComparer.Ordinal);
+    private readonly Dictionary<RecoveryKey, Entry> _entries = new();
+    private readonly Dictionary<RecoveryKey, CaptureFailure> _captureFailures = new();
     private readonly Dictionary<long, CaptureIntent> _captureIntents = [];
+    private readonly HashSet<OwnerContextStamp> _retiredOwners = [];
     private readonly Action? _captureCommitStarted;
     private long _nextGeneration;
     private long _nextCaptureIntent;
@@ -243,10 +252,11 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         }
     }
 
-    public bool TryBeginCaptureIntent(
+    private bool TryBeginCaptureIntentCore(
         CharacterWorkspaceId workspaceId,
         long sourceRevision,
-        out IWorkspaceRecoveryCaptureIntent? captureIntent)
+        out IWorkspaceRecoveryCaptureIntent? captureIntent,
+        OwnerContextStamp? originalOwner)
     {
         captureIntent = null;
         if (!IsWorkspaceKeyValid(workspaceId.Value)
@@ -258,6 +268,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         lock (_gate)
         {
             if (_disposed
+                || (originalOwner is { } owner && _retiredOwners.Contains(owner))
                 || _captureIntents.Count >= MaxActiveCaptureIntents
                 || _nextCaptureIntent == long.MaxValue)
             {
@@ -265,7 +276,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             }
 
             long token = ++_nextCaptureIntent;
-            var ownedIntent = new CaptureIntent(this, token, workspaceId, sourceRevision);
+            var ownedIntent = new CaptureIntent(this, token, workspaceId, sourceRevision, originalOwner);
             _captureIntents.Add(token, ownedIntent);
             captureIntent = ownedIntent;
             return true;
@@ -284,6 +295,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
 
         CharacterWorkspaceId workspaceId;
         long sourceRevision;
+        OwnerContextStamp? originalOwner;
         CaptureIntent ownedIntent;
         lock (_gate)
         {
@@ -300,6 +312,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             ownedIntent = candidate;
             workspaceId = ownedIntent.WorkspaceId;
             sourceRevision = ownedIntent.SourceRevision;
+            originalOwner = ownedIntent.OriginalOwner;
         }
 
         byte[]? bytes = null;
@@ -315,13 +328,13 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
                 || document.RulesetId.Length > 128
                 || document.RulesetId.Any(character =>
                     !(char.IsAsciiLetterOrDigit(character) || character is '-' or '_' or '.')))
-                return RecordFailure(workspaceId, sourceRevision, "Recovery ruleset identity is unavailable.");
+                return RecordFailure(originalOwner, workspaceId, sourceRevision, "Recovery ruleset identity is unavailable.");
             if (string.IsNullOrEmpty(document.Content))
-                return RecordFailure(workspaceId, sourceRevision, "Recovery payload is empty.");
+                return RecordFailure(originalOwner, workspaceId, sourceRevision, "Recovery payload is empty.");
 
             bytes = StrictUtf8.GetBytes(document.Content);
             if (bytes.Length is <= 0 or > MaxPayloadBytes)
-                return RecordFailure(workspaceId, sourceRevision, "Recovery payload size is outside the supported boundary.");
+                return RecordFailure(originalOwner, workspaceId, sourceRevision, "Recovery payload size is outside the supported boundary.");
 
             string contentType = document.Format switch
             {
@@ -330,13 +343,14 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
                 _ => string.Empty
             };
             if (contentType.Length == 0)
-                return RecordFailure(workspaceId, sourceRevision, "Recovery payload format is unsupported.");
+                return RecordFailure(originalOwner, workspaceId, sourceRevision, "Recovery payload format is unsupported.");
 
             string fileName = BuildFileName(workspaceId, document.Format);
             digest = SHA256.HashData(bytes);
-            if (!validationCapability.Matches(workspaceId, sourceRevision, document, digest))
+            if (!validationCapability.Matches(workspaceId, sourceRevision, document, digest, originalOwner))
             {
                 return RecordFailure(
+                    originalOwner,
                     workspaceId,
                     sourceRevision,
                     "Recovery payload does not match the canonical loader validation receipt.");
@@ -345,12 +359,14 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             lock (_gate)
             {
                 ThrowIfDisposed();
-                if (_entries.TryGetValue(workspaceId.Value, out Entry? current))
+                if (originalOwner is { } owner && _retiredOwners.Contains(owner))
+                    return Failed(sourceRevision, "This recovery account context was retired.");
+                if (_entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? current))
                 {
                     if (sourceRevision < current.SourceRevision)
                     {
                         CryptographicOperations.ZeroMemory(digest);
-                        return RecordFailure(workspaceId, sourceRevision, "A newer recovery payload already exists.");
+                        return RecordFailure(originalOwner, workspaceId, sourceRevision, "A newer recovery payload already exists.");
                     }
 
                     if (sourceRevision == current.SourceRevision)
@@ -368,12 +384,12 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
                         }
 
                         CryptographicOperations.ZeroMemory(digest);
-                        return RecordFailure(workspaceId, sourceRevision, "Conflicting recovery payloads share one revision.");
+                        return RecordFailure(originalOwner, workspaceId, sourceRevision, "Conflicting recovery payloads share one revision.");
                     }
                 }
 
                 Entry[] evictionPlan = BuildEvictionPlan(
-                    workspaceId.Value,
+                    new RecoveryKey(originalOwner, workspaceId.Value),
                     bytes.LongLength,
                     current);
                 if (!HasCapacityAfterEviction(
@@ -383,6 +399,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
                 {
                     CryptographicOperations.ZeroMemory(digest);
                     return RecordFailure(
+                        originalOwner,
                         workspaceId,
                         sourceRevision,
                         "Recovery vault capacity is occupied by protected dirty or conflicted payloads.");
@@ -391,26 +408,26 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
                 if (_nextGeneration == long.MaxValue)
                 {
                     CryptographicOperations.ZeroMemory(digest);
-                    return RecordFailure(workspaceId, sourceRevision, "Recovery generation capacity was exceeded.");
+                    return RecordFailure(originalOwner, workspaceId, sourceRevision, "Recovery generation capacity was exceeded.");
                 }
 
                 foreach (Entry evicted in evictionPlan)
                 {
-                    _entries.Remove(evicted.WorkspaceId);
+                    _entries.Remove(evicted.Key);
                     _retainedBytes -= evicted.Bytes.LongLength;
                     evicted.Zero();
                 }
 
                 if (current is not null)
                 {
-                    _entries.Remove(workspaceId.Value);
+                    _entries.Remove(new RecoveryKey(originalOwner, workspaceId.Value));
                     _retainedBytes -= current.Bytes.LongLength;
                     current.Zero();
                 }
 
                 long generation = ++_nextGeneration;
-                _entries[workspaceId.Value] = new Entry(
-                    workspaceId.Value,
+                _entries[new RecoveryKey(originalOwner, workspaceId.Value)] = new Entry(
+                    new RecoveryKey(originalOwner, workspaceId.Value),
                     bytes,
                     digest!,
                     document.Format,
@@ -421,7 +438,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
                     contentType,
                     protectFromEviction);
                 _retainedBytes += bytes.LongLength;
-                _captureFailures.Remove(workspaceId.Value);
+                _captureFailures.Remove(new RecoveryKey(originalOwner, workspaceId.Value));
                 bytes = null;
                 digest = null;
                 return new WorkspaceRecoveryCaptureResult(true, sourceRevision, generation);
@@ -429,7 +446,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         }
         catch (EncoderFallbackException)
         {
-            return RecordFailure(workspaceId, sourceRevision, "Recovery payload is not valid UTF-8 text.");
+            return RecordFailure(originalOwner, workspaceId, sourceRevision, "Recovery payload is not valid UTF-8 text.");
         }
         finally
         {
@@ -449,16 +466,17 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         bool protectFromEviction)
         => Capture(captureIntent, document, validationCapability, protectFromEviction);
 
-    public bool SetProtected(
+    private bool SetProtectedCore(
         CharacterWorkspaceId workspaceId,
         long expectedSourceRevision,
-        bool protectedFromEviction)
+        bool protectedFromEviction,
+        OwnerContextStamp? originalOwner)
     {
         lock (_gate)
         {
             if (_disposed
                 || !IsWorkspaceKeyValid(workspaceId.Value)
-                || !_entries.TryGetValue(workspaceId.Value, out Entry? entry)
+                || !_entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? entry)
                 || entry.SourceRevision != expectedSourceRevision)
             {
                 return false;
@@ -469,9 +487,10 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         }
     }
 
-    public WorkspaceRecoveryCopyAvailability GetAvailability(
+    private WorkspaceRecoveryCopyAvailability GetAvailabilityCore(
         CharacterWorkspaceId workspaceId,
-        long expectedSourceRevision)
+        long expectedSourceRevision,
+        OwnerContextStamp? originalOwner)
     {
         lock (_gate)
         {
@@ -483,11 +502,11 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             PruneCaptureFailures(DateTimeOffset.UtcNow);
 
             if (!IsWorkspaceKeyValid(workspaceId.Value)
-                || !_entries.TryGetValue(workspaceId.Value, out Entry? entry)
+                || !_entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? entry)
                 || entry.SourceRevision != expectedSourceRevision)
             {
                 if (IsWorkspaceKeyValid(workspaceId.Value)
-                    && _captureFailures.TryGetValue(workspaceId.Value, out CaptureFailure? failure)
+                    && _captureFailures.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out CaptureFailure? failure)
                     && failure.SourceRevision == expectedSourceRevision)
                 {
                     return WorkspaceRecoveryCopyAvailability.Unavailable(
@@ -504,18 +523,19 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         }
     }
 
-    public bool TryAcquireLease(
+    private bool TryAcquireLeaseCore(
         CharacterWorkspaceId workspaceId,
         long expectedSourceRevision,
         long expectedLocalGeneration,
-        out WorkspaceRecoveryPayloadLease? lease)
+        out WorkspaceRecoveryPayloadLease? lease,
+        OwnerContextStamp? originalOwner)
     {
         lock (_gate)
         {
             lease = null;
             if (_disposed
                 || !IsWorkspaceKeyValid(workspaceId.Value)
-                || !_entries.TryGetValue(workspaceId.Value, out Entry? entry)
+                || !_entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? entry)
                 || !entry.Matches(expectedSourceRevision, expectedLocalGeneration))
             {
                 return false;
@@ -526,16 +546,17 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         }
     }
 
-    public bool MarkExported(
+    private bool MarkExportedCore(
         CharacterWorkspaceId workspaceId,
         long expectedSourceRevision,
-        long expectedLocalGeneration)
+        long expectedLocalGeneration,
+        OwnerContextStamp? originalOwner)
     {
         lock (_gate)
         {
             if (_disposed
                 || !IsWorkspaceKeyValid(workspaceId.Value)
-                || !_entries.TryGetValue(workspaceId.Value, out Entry? entry)
+                || !_entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? entry)
                 || !entry.Matches(expectedSourceRevision, expectedLocalGeneration))
             {
                 return false;
@@ -546,26 +567,28 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         }
     }
 
-    public bool CanCloseAfterExport(
+    private bool CanCloseAfterExportCore(
         CharacterWorkspaceId workspaceId,
         long expectedSourceRevision,
-        long expectedLocalGeneration)
+        long expectedLocalGeneration,
+        OwnerContextStamp? originalOwner)
     {
         lock (_gate)
         {
             return !_disposed
                 && IsWorkspaceKeyValid(workspaceId.Value)
-                && _entries.TryGetValue(workspaceId.Value, out Entry? entry)
+                && _entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? entry)
                 && entry.Matches(expectedSourceRevision, expectedLocalGeneration)
                 && entry.Exported;
         }
     }
 
-    public bool TryCommitExplicitClose(
+    private bool TryCommitExplicitCloseCore(
         CharacterWorkspaceId workspaceId,
         long expectedSourceRevision,
         long expectedLocalGeneration,
-        Action localCommit)
+        Action localCommit,
+        OwnerContextStamp? originalOwner)
     {
         ArgumentNullException.ThrowIfNull(localCommit);
         lock (_gate)
@@ -573,8 +596,9 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             if (_disposed
                 || !IsWorkspaceKeyValid(workspaceId.Value)
                 || _captureIntents.Values.Any(intent =>
-                    string.Equals(intent.WorkspaceId.Value, workspaceId.Value, StringComparison.Ordinal))
-                || !_entries.TryGetValue(workspaceId.Value, out Entry? entry)
+                    intent.OriginalOwner == originalOwner
+                    && string.Equals(intent.WorkspaceId.Value, workspaceId.Value, StringComparison.Ordinal))
+                || !_entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? entry)
                 || !entry.Matches(expectedSourceRevision, expectedLocalGeneration)
                 || !entry.Exported)
             {
@@ -586,14 +610,14 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             // close abort or queues behind this short section; a queued newer
             // capture is applied afterwards and is never cleared here.
             localCommit();
-            if (!_entries.TryGetValue(workspaceId.Value, out Entry? current)
+            if (!_entries.TryGetValue(new RecoveryKey(originalOwner, workspaceId.Value), out Entry? current)
                 || !ReferenceEquals(current, entry)
                 || !current.Matches(expectedSourceRevision, expectedLocalGeneration))
             {
                 return false;
             }
 
-            _entries.Remove(workspaceId.Value);
+            _entries.Remove(new RecoveryKey(originalOwner, workspaceId.Value));
             _retainedBytes -= entry.Bytes.LongLength;
             entry.Zero();
             return true;
@@ -613,6 +637,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             _entries.Clear();
             _captureFailures.Clear();
             _captureIntents.Clear();
+            _retiredOwners.Clear();
             _retainedBytes = 0;
         }
     }
@@ -647,6 +672,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         => new(false, revision, 0, error);
 
     private WorkspaceRecoveryCaptureResult RecordFailure(
+        OwnerContextStamp? originalOwner,
         CharacterWorkspaceId workspaceId,
         long revision,
         string error)
@@ -655,16 +681,16 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         {
             lock (_gate)
             {
-                if (!_disposed)
+                if (!_disposed && !(originalOwner is { } owner && _retiredOwners.Contains(owner)))
                 {
                     DateTimeOffset now = DateTimeOffset.UtcNow;
                     PruneCaptureFailures(now);
-                    _captureFailures[workspaceId.Value] = new CaptureFailure(revision, error, now);
+                    _captureFailures[new RecoveryKey(originalOwner, workspaceId.Value)] = new CaptureFailure(revision, error, now);
                     while (_captureFailures.Count > MaxCaptureFailures)
                     {
-                        string oldest = _captureFailures
+                        RecoveryKey oldest = _captureFailures
                             .OrderBy(pair => pair.Value.RecordedAtUtc)
-                            .ThenBy(pair => pair.Key, StringComparer.Ordinal)
+                            .ThenBy(pair => pair.Key.WorkspaceId, StringComparer.Ordinal)
                             .First()
                             .Key;
                         _captureFailures.Remove(oldest);
@@ -683,7 +709,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
 
     private void PruneCaptureFailures(DateTimeOffset now)
     {
-        foreach (string key in _captureFailures
+        foreach (RecoveryKey key in _captureFailures
                      .Where(pair => now - pair.Value.RecordedAtUtc > CaptureFailureLifetime)
                      .Select(pair => pair.Key)
                      .ToArray())
@@ -693,7 +719,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
     }
 
     private Entry[] BuildEvictionPlan(
-        string replacingWorkspaceId,
+        RecoveryKey replacingKey,
         long incomingBytes,
         Entry? replacingEntry)
     {
@@ -707,7 +733,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
 
         var plan = new List<Entry>();
         foreach (Entry candidate in _entries.Values
-                     .Where(entry => !string.Equals(entry.WorkspaceId, replacingWorkspaceId, StringComparison.Ordinal)
+                     .Where(entry => entry.Key != replacingKey
                          && !entry.ProtectedFromEviction)
                      .OrderBy(entry => entry.LocalGeneration))
         {
@@ -767,10 +793,12 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
         ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
+    private readonly record struct RecoveryKey(OwnerContextStamp? OriginalOwner, string WorkspaceId);
+
     private sealed class Entry
     {
         public Entry(
-            string workspaceId,
+            RecoveryKey key,
             byte[] bytes,
             byte[] digest,
             WorkspaceDocumentFormat format,
@@ -781,7 +809,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             string contentType,
             bool protectedFromEviction)
         {
-            WorkspaceId = workspaceId;
+            Key = key;
             Bytes = bytes;
             Digest = digest;
             Format = format;
@@ -793,7 +821,7 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             ProtectedFromEviction = protectedFromEviction;
         }
 
-        public string WorkspaceId { get; }
+        public RecoveryKey Key { get; }
         public byte[] Bytes { get; }
         public byte[] Digest { get; }
         public WorkspaceDocumentFormat Format { get; }
@@ -849,14 +877,17 @@ public sealed class WorkspaceRecoveryPayloadStore : IWorkspaceRecoveryPayloadSto
             WorkspaceRecoveryPayloadStore owner,
             long token,
             CharacterWorkspaceId workspaceId,
-            long sourceRevision)
+            long sourceRevision,
+            OwnerContextStamp? originalOwner)
         {
+            OriginalOwner = originalOwner;
             Owner = owner;
             Token = token;
             WorkspaceId = workspaceId;
             SourceRevision = sourceRevision;
         }
 
+        public OwnerContextStamp? OriginalOwner { get; }
         public WorkspaceRecoveryPayloadStore Owner { get; }
         public long Token { get; }
         public CharacterWorkspaceId WorkspaceId { get; }

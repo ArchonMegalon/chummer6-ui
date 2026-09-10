@@ -67,7 +67,14 @@ public sealed record DesktopInstallLinkingState(
     string? LinkedEmail = null,
     DateTimeOffset? LastBrowserDispatchAttemptUtc = null,
     string? LastBrowserDispatchUri = null,
-    string? LastBrowserDispatchFailure = null);
+    string? LastBrowserDispatchFailure = null,
+    long StateRevision = 0,
+    long OwnerTransitionRevision = 0);
+
+internal readonly record struct DesktopInstallOwnerAuthorityStamp(
+    OwnerScope Owner,
+    string AuthorityInstanceId,
+    long TransitionRevision);
 
 public static class DesktopInstallLinkingRuntime
 {
@@ -127,15 +134,14 @@ public static class DesktopInstallLinkingRuntime
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
         ArgumentNullException.ThrowIfNull(args);
 
-        DesktopInstallLinkingState state = LoadOrCreateState(headId);
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        state = RefreshRuntimeMetadata(state, now) with
-        {
-            LaunchCount = state.LaunchCount + 1,
-            LastStartedAtUtc = now,
-            UpdatedAtUtc = now
-        };
-        SaveState(state);
+        DesktopInstallLinkingState state = UpdateCurrentState(headId, current =>
+            RefreshRuntimeMetadata(current, now) with
+            {
+                LaunchCount = current.LaunchCount + 1,
+                LastStartedAtUtc = now,
+                UpdatedAtUtc = now
+            });
 
         DesktopInstallLinkingState preClaimState = state;
         string? startupBrowserCallbackCode = ExtractStartupBrowserCallbackCode(args, state);
@@ -383,35 +389,94 @@ public static class DesktopInstallLinkingRuntime
         DesktopRuntimeReleaseMetadata release = DesktopRuntimeReleaseMetadata.Load(headId);
         DesktopRuntimePlatformIdentity identity = DesktopRuntimePlatformIdentity.Current();
         DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(headId, identity);
-        DesktopInstallLinkingState? state = DesktopInstallLinkingStateStore.Load(paths);
-        if (state is null)
+        using DesktopInstallLinkingStateStore.StatePathLock stateLock = DesktopInstallLinkingStateStore.Acquire(paths);
+        return LoadOrCreateStateUnderLock(release, identity, paths);
+    }
+
+    internal static DesktopInstallOwnerAuthorityStamp CaptureOwnerContext(string headId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopRuntimeReleaseMetadata release = DesktopRuntimeReleaseMetadata.Load(headId);
+        DesktopRuntimePlatformIdentity identity = DesktopRuntimePlatformIdentity.Current();
+        DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(headId, identity);
+        using DesktopInstallLinkingStateStore.StatePathLock stateLock = DesktopInstallLinkingStateStore.Acquire(paths);
+        DesktopInstallLinkingState state = LoadOrCreateStateUnderLock(release, identity, paths);
+        return CreateOwnerContextStamp(state);
+    }
+
+    internal static bool TryAcquireOwnerContext(
+        string headId,
+        DesktopInstallOwnerAuthorityStamp expected,
+        out IDisposable? authorityLock,
+        out DesktopInstallOwnerAuthorityStamp admitted)
+    {
+        authorityLock = null;
+        admitted = default;
+        if (string.IsNullOrWhiteSpace(expected.Owner.Value)
+            || string.IsNullOrWhiteSpace(expected.AuthorityInstanceId)
+            || expected.TransitionRevision < 0)
         {
-            state = CreateInitialState(release, identity, DateTimeOffset.UtcNow);
-            SaveState(state);
-            return state;
+            return false;
         }
 
-        if (ShouldProtectPrivateKeyAtRest()
-            && !string.IsNullOrWhiteSpace(state.PrivateKey)
-            && DesktopInstallLinkingStateStore.ShouldMigratePlaintextPrivateKey(paths))
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+        DesktopRuntimeReleaseMetadata release = DesktopRuntimeReleaseMetadata.Load(headId);
+        DesktopRuntimePlatformIdentity identity = DesktopRuntimePlatformIdentity.Current();
+        DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(headId, identity);
+        DesktopInstallLinkingStateStore.StatePathLock? stateLock = DesktopInstallLinkingStateStore.Acquire(paths);
+        try
         {
-            DesktopInstallLinkingStateStore.Save(paths, state);
+            DesktopInstallLinkingState state = LoadOrCreateStateUnderLock(release, identity, paths);
+            DesktopInstallOwnerAuthorityStamp actual = CreateOwnerContextStamp(state);
+            if (actual != expected)
+            {
+                return false;
+            }
+
+            admitted = actual;
+            authorityLock = stateLock;
+            stateLock = null;
+            return true;
+        }
+        finally
+        {
+            stateLock?.Dispose();
+        }
+    }
+
+    private static DesktopInstallLinkingState LoadOrCreateStateUnderLock(
+        DesktopRuntimeReleaseMetadata release,
+        DesktopRuntimePlatformIdentity identity,
+        DesktopInstallLinkingPaths paths)
+    {
+        DesktopInstallLinkingState? state = DesktopInstallLinkingStateStore.LoadAndMigrateUnderLock(paths);
+        if (state is null)
+        {
+            return DesktopInstallLinkingStateStore.SaveUnderLock(
+                paths,
+                CreateInitialState(release, identity, DateTimeOffset.UtcNow));
         }
 
         if (string.IsNullOrWhiteSpace(state.PublicKey) || string.IsNullOrWhiteSpace(state.PrivateKey))
         {
             (string publicKey, string privateKey) = CreateInstallationKeyPair();
-            state = state with
+            state = DesktopInstallLinkingStateStore.SaveUnderLock(paths, state with
             {
                 PublicKey = publicKey,
                 PrivateKey = privateKey,
                 UpdatedAtUtc = DateTimeOffset.UtcNow
-            };
-            SaveState(state);
+            });
         }
 
         return RefreshRuntimeMetadata(state, DateTimeOffset.UtcNow);
     }
+
+    private static DesktopInstallOwnerAuthorityStamp CreateOwnerContextStamp(DesktopInstallLinkingState state)
+        => new(
+            ResolveOwnerScope(state),
+            state.InstallationId,
+            state.OwnerTransitionRevision);
 
     public static async Task<DesktopInstallClaimResult> RedeemClaimCodeAsync(
         string headId,
@@ -421,8 +486,7 @@ public static class DesktopInstallLinkingRuntime
 
     public static void MarkPromptDismissed(string headId)
     {
-        DesktopInstallLinkingState state = LoadOrCreateState(headId);
-        SaveState(state with
+        UpdateCurrentState(headId, state => state with
         {
             LastPromptDismissedAtUtc = DateTimeOffset.UtcNow,
             UpdatedAtUtc = DateTimeOffset.UtcNow
@@ -443,37 +507,55 @@ public static class DesktopInstallLinkingRuntime
             await TryRevokeInstallGrantAsync(state, cancellationToken).ConfigureAwait(false);
         }
 
-        return ClearLinkedInstallState(LoadOrCreateState(headId));
+        DesktopInstallLinkingState latest = LoadOrCreateState(headId);
+        return string.Equals(latest.InstallationId, state.InstallationId, StringComparison.Ordinal)
+               && latest.OwnerTransitionRevision == state.OwnerTransitionRevision
+            ? ClearLinkedInstallState(latest)
+            : latest;
     }
 
     private static DesktopInstallLinkingState ClearLinkedInstallState(DesktopInstallLinkingState state)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        DesktopInstallLinkingState unlinkedState = RefreshRuntimeMetadata(state, now) with
+        bool cleared = false;
+        DesktopInstallLinkingState unlinkedState = UpdateCurrentState(state.HeadId, current =>
         {
-            Status = GuestStatus,
-            ClaimedAtUtc = null,
-            LastPromptDismissedAtUtc = now,
-            ClaimTicketId = null,
-            LastClaimCode = null,
-            LastClaimMessage = null,
-            LastClaimError = null,
-            LastClaimAttemptUtc = null,
-            GrantId = null,
-            GrantToken = null,
-            GrantIssuedAtUtc = null,
-            GrantExpiresAtUtc = null,
-            UserId = null,
-            SubjectId = null,
-            LinkedEmail = null,
-            LastBrowserDispatchAttemptUtc = null,
-            LastBrowserDispatchUri = null,
-            LastBrowserDispatchFailure = null,
-            UpdatedAtUtc = now
-        };
-        SaveState(unlinkedState);
-        TryDeletePendingClaimCode(unlinkedState);
-        TryDeletePendingInstallLinkCallback(unlinkedState);
+            if (!string.Equals(current.InstallationId, state.InstallationId, StringComparison.Ordinal)
+                || current.OwnerTransitionRevision != state.OwnerTransitionRevision)
+            {
+                return null;
+            }
+
+            cleared = true;
+            return RefreshRuntimeMetadata(current, now) with
+            {
+                Status = GuestStatus,
+                ClaimedAtUtc = null,
+                LastPromptDismissedAtUtc = now,
+                ClaimTicketId = null,
+                LastClaimCode = null,
+                LastClaimMessage = null,
+                LastClaimError = null,
+                LastClaimAttemptUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                UserId = null,
+                SubjectId = null,
+                LinkedEmail = null,
+                LastBrowserDispatchAttemptUtc = null,
+                LastBrowserDispatchUri = null,
+                LastBrowserDispatchFailure = null,
+                UpdatedAtUtc = now
+            };
+        });
+        if (cleared)
+        {
+            TryDeletePendingClaimCode(unlinkedState);
+            TryDeletePendingInstallLinkCallback(unlinkedState);
+        }
+
         return unlinkedState;
     }
 
@@ -1063,7 +1145,10 @@ public static class DesktopInstallLinkingRuntime
                 LastClaimMessage = null,
                 UpdatedAtUtc = DateTimeOffset.UtcNow
             };
-            SaveState(invalidState);
+            if (!TrySaveState(invalidState, out invalidState))
+            {
+                return BuildStaleOwnerClaimResult(invalidState);
+            }
             return new DesktopInstallClaimResult(false, false, "Claim code is required.", invalidState);
         }
 
@@ -1100,7 +1185,10 @@ public static class DesktopInstallLinkingRuntime
                     LastClaimMessage = null,
                     UpdatedAtUtc = attemptAtUtc
                 };
-                SaveState(failedState);
+                if (!TrySaveState(failedState, out failedState))
+                {
+                    return BuildStaleOwnerClaimResult(failedState);
+                }
                 return new DesktopInstallClaimResult(false, false, error, failedState);
             }
 
@@ -1116,7 +1204,10 @@ public static class DesktopInstallLinkingRuntime
                     LastClaimMessage = null,
                     UpdatedAtUtc = attemptAtUtc
                 };
-                SaveState(invalidState);
+                if (!TrySaveState(invalidState, out invalidState))
+                {
+                    return BuildStaleOwnerClaimResult(invalidState);
+                }
                 return new DesktopInstallClaimResult(false, false, error, invalidState);
             }
 
@@ -1148,7 +1239,10 @@ public static class DesktopInstallLinkingRuntime
                     accepted.Installation.SubjectId,
                     currentState.LinkedEmail)
             };
-            SaveState(claimedState);
+            if (!TrySaveState(claimedState, out claimedState))
+            {
+                return BuildStaleOwnerClaimResult(claimedState);
+            }
             return new DesktopInstallClaimResult(
                 true,
                 accepted.AlreadyClaimed,
@@ -1165,7 +1259,10 @@ public static class DesktopInstallLinkingRuntime
                 LastClaimMessage = null,
                 UpdatedAtUtc = attemptAtUtc
             };
-            SaveState(failedState);
+            if (!TrySaveState(failedState, out failedState))
+            {
+                return BuildStaleOwnerClaimResult(failedState);
+            }
             return new DesktopInstallClaimResult(false, false, $"Install linking failed: {ex.Message}", failedState);
         }
     }
@@ -1187,7 +1284,10 @@ public static class DesktopInstallLinkingRuntime
                 LastClaimMessage = null,
                 UpdatedAtUtc = DateTimeOffset.UtcNow
             };
-            SaveState(invalidState);
+            if (!TrySaveState(invalidState, out invalidState))
+            {
+                return BuildStaleOwnerClaimResult(invalidState);
+            }
             return new DesktopInstallClaimResult(false, false, "Browser callback code is required.", invalidState);
         }
 
@@ -1224,7 +1324,10 @@ public static class DesktopInstallLinkingRuntime
                     LastClaimMessage = null,
                     UpdatedAtUtc = attemptAtUtc
                 };
-                SaveState(failedState);
+                if (!TrySaveState(failedState, out failedState))
+                {
+                    return BuildStaleOwnerClaimResult(failedState);
+                }
                 return new DesktopInstallClaimResult(false, false, error, failedState);
             }
 
@@ -1240,7 +1343,10 @@ public static class DesktopInstallLinkingRuntime
                     LastClaimMessage = null,
                     UpdatedAtUtc = attemptAtUtc
                 };
-                SaveState(invalidState);
+                if (!TrySaveState(invalidState, out invalidState))
+                {
+                    return BuildStaleOwnerClaimResult(invalidState);
+                }
                 return new DesktopInstallClaimResult(false, false, error, invalidState);
             }
 
@@ -1256,7 +1362,10 @@ public static class DesktopInstallLinkingRuntime
                 LastClaimMessage = null,
                 UpdatedAtUtc = attemptAtUtc
             };
-            SaveState(failedState);
+            if (!TrySaveState(failedState, out failedState))
+            {
+                return BuildStaleOwnerClaimResult(failedState);
+            }
             return new DesktopInstallClaimResult(false, false, $"Install linking failed: {ex.Message}", failedState);
         }
     }
@@ -1266,34 +1375,48 @@ public static class DesktopInstallLinkingRuntime
         ExchangeInstallBrowserCallbackResponseDto accepted,
         DateTimeOffset attemptAtUtc)
     {
-        DesktopInstallLinkingState claimedState = currentState with
+        bool applied = false;
+        DesktopInstallLinkingState claimedState = UpdateCurrentState(currentState.HeadId, latestState =>
         {
-            Status = ClaimedStatus,
-            ClaimedAtUtc = currentState.ClaimedAtUtc ?? attemptAtUtc,
-            LastClaimAttemptUtc = attemptAtUtc,
-            LastClaimCode = null,
-            LastClaimError = null,
-            LastClaimMessage = accepted.AlreadyClaimed
-                ? "This copy was already linked. Hub refreshed the installation grant from the browser callback."
-                : "This copy is now linked to your Hub account.",
-            UpdatedAtUtc = attemptAtUtc,
-            HeadId = accepted.Installation.HeadId ?? currentState.HeadId,
-            ApplicationVersion = accepted.Installation.Version,
-            ChannelId = accepted.Installation.Channel,
-            Platform = accepted.Installation.Platform ?? currentState.Platform,
-            Arch = accepted.Installation.Arch ?? currentState.Arch,
-            GrantId = accepted.Grant.GrantId,
-            GrantToken = accepted.Grant.AccessToken,
-            GrantIssuedAtUtc = accepted.Grant.IssuedAtUtc,
-            GrantExpiresAtUtc = accepted.Grant.ExpiresAtUtc,
-            UserId = accepted.Installation.UserId,
-            SubjectId = accepted.Installation.SubjectId,
-            LinkedEmail = ResolveLinkedEmail(
-                accepted.Installation.UserId,
-                accepted.Installation.SubjectId,
-                currentState.LinkedEmail)
-        };
-        SaveState(claimedState);
+            if (!IsSameOwnerAuthority(latestState, currentState)
+                || !IsSameInstallCredentialGeneration(latestState, currentState))
+            {
+                return null;
+            }
+
+            applied = true;
+            return latestState with
+            {
+                Status = ClaimedStatus,
+                ClaimedAtUtc = latestState.ClaimedAtUtc ?? attemptAtUtc,
+                LastClaimAttemptUtc = attemptAtUtc,
+                LastClaimCode = null,
+                LastClaimError = null,
+                LastClaimMessage = accepted.AlreadyClaimed
+                    ? "This copy was already linked. Hub refreshed the installation grant from the browser callback."
+                    : "This copy is now linked to your Hub account.",
+                UpdatedAtUtc = attemptAtUtc,
+                HeadId = accepted.Installation.HeadId ?? latestState.HeadId,
+                ApplicationVersion = accepted.Installation.Version,
+                ChannelId = accepted.Installation.Channel,
+                Platform = accepted.Installation.Platform ?? latestState.Platform,
+                Arch = accepted.Installation.Arch ?? latestState.Arch,
+                GrantId = accepted.Grant.GrantId,
+                GrantToken = accepted.Grant.AccessToken,
+                GrantIssuedAtUtc = accepted.Grant.IssuedAtUtc,
+                GrantExpiresAtUtc = accepted.Grant.ExpiresAtUtc,
+                UserId = accepted.Installation.UserId,
+                SubjectId = accepted.Installation.SubjectId,
+                LinkedEmail = ResolveLinkedEmail(
+                    accepted.Installation.UserId,
+                    accepted.Installation.SubjectId,
+                    latestState.LinkedEmail)
+            };
+        });
+        if (!applied)
+        {
+            return BuildStaleOwnerClaimResult(claimedState);
+        }
         return new DesktopInstallClaimResult(
             true,
             accepted.AlreadyClaimed,
@@ -1378,13 +1501,54 @@ public static class DesktopInstallLinkingRuntime
         };
     }
 
-    private static void SaveState(DesktopInstallLinkingState state)
+    private static DesktopInstallLinkingState SaveState(DesktopInstallLinkingState state)
     {
         DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(
             state.HeadId,
             new DesktopRuntimePlatformIdentity(state.Platform, state.Arch));
-        DesktopInstallLinkingStateStore.Save(paths, state);
+        return DesktopInstallLinkingStateStore.Save(paths, state);
     }
+
+    private static bool TrySaveState(
+        DesktopInstallLinkingState state,
+        out DesktopInstallLinkingState persisted)
+    {
+        try
+        {
+            persisted = SaveState(state);
+            return true;
+        }
+        catch (DesktopInstallLinkingStateConflictException)
+        {
+            persisted = LoadOrCreateState(state.HeadId);
+            return false;
+        }
+    }
+
+    private static DesktopInstallLinkingState UpdateCurrentState(
+        string headId,
+        Func<DesktopInstallLinkingState, DesktopInstallLinkingState?> update)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+        ArgumentNullException.ThrowIfNull(update);
+
+        DesktopRuntimeReleaseMetadata release = DesktopRuntimeReleaseMetadata.Load(headId);
+        DesktopRuntimePlatformIdentity identity = DesktopRuntimePlatformIdentity.Current();
+        DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(headId, identity);
+        using DesktopInstallLinkingStateStore.StatePathLock stateLock = DesktopInstallLinkingStateStore.Acquire(paths);
+        DesktopInstallLinkingState current = LoadOrCreateStateUnderLock(release, identity, paths);
+        DesktopInstallLinkingState? proposed = update(current);
+        return proposed is null
+            ? current
+            : DesktopInstallLinkingStateStore.SaveUnderLock(paths, proposed);
+    }
+
+    private static DesktopInstallClaimResult BuildStaleOwnerClaimResult(DesktopInstallLinkingState latest)
+        => new(
+            Succeeded: false,
+            AlreadyClaimed: false,
+            Message: "Install state or ownership changed while the Hub response was in flight. The stale response was not applied.",
+            State: latest);
 
     private static string? ExtractStartupBrowserCallbackCode(IReadOnlyList<string> args, DesktopInstallLinkingState state)
     {
@@ -2043,40 +2207,40 @@ public static class DesktopInstallLinkingRuntime
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
         string? normalizedFailure = NormalizeBrowserDispatchFailure(failureReason);
-        DesktopInstallLinkingState currentState;
         try
         {
-            currentState = LoadOrCreateState(state.HeadId);
+            UpdateCurrentState(state.HeadId, currentState =>
+            {
+                if (!string.Equals(currentState.InstallationId, state.InstallationId, StringComparison.Ordinal)
+                    || currentState.OwnerTransitionRevision != state.OwnerTransitionRevision)
+                {
+                    return null;
+                }
+
+                string? claimError = currentState.LastClaimError;
+                if (normalizedFailure is not null && !IsClaimed(currentState))
+                {
+                    claimError = $"Browser claim could not open automatically: {normalizedFailure}";
+                }
+                else if (claimError?.StartsWith("Browser handoff could not open automatically:", StringComparison.OrdinalIgnoreCase) == true
+                    || claimError?.StartsWith("Browser claim could not open automatically:", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    claimError = null;
+                }
+
+                return currentState with
+                {
+                    LastBrowserDispatchAttemptUtc = now,
+                    LastBrowserDispatchUri = string.IsNullOrWhiteSpace(absoluteUri) ? null : absoluteUri.Trim(),
+                    LastBrowserDispatchFailure = normalizedFailure,
+                    LastClaimError = claimError,
+                    UpdatedAtUtc = now
+                };
+            });
         }
         catch
         {
-            currentState = state;
         }
-
-        if (!string.Equals(currentState.InstallationId, state.InstallationId, StringComparison.OrdinalIgnoreCase))
-        {
-            currentState = state;
-        }
-
-        string? claimError = currentState.LastClaimError;
-        if (normalizedFailure is not null && !IsClaimed(currentState))
-        {
-            claimError = $"Browser claim could not open automatically: {normalizedFailure}";
-        }
-        else if (claimError?.StartsWith("Browser handoff could not open automatically:", StringComparison.OrdinalIgnoreCase) == true
-            || claimError?.StartsWith("Browser claim could not open automatically:", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            claimError = null;
-        }
-
-        SaveState(currentState with
-        {
-            LastBrowserDispatchAttemptUtc = now,
-            LastBrowserDispatchUri = string.IsNullOrWhiteSpace(absoluteUri) ? null : absoluteUri.Trim(),
-            LastBrowserDispatchFailure = normalizedFailure,
-            LastClaimError = claimError,
-            UpdatedAtUtc = now
-        });
     }
 
     private static string? NormalizeBrowserDispatchFailure(string? failureReason)
@@ -2134,7 +2298,7 @@ public static class DesktopInstallLinkingRuntime
         {
             try
             {
-                await PollRemoteBrowserCallbackAsync(state).ConfigureAwait(false);
+                await PollRemoteBrowserCallbackAsync(state, CancellationToken.None).ConfigureAwait(false);
             }
             finally
             {
@@ -2143,7 +2307,9 @@ public static class DesktopInstallLinkingRuntime
         });
     }
 
-    private static async Task PollRemoteBrowserCallbackAsync(DesktopInstallLinkingState initialState)
+    private static async Task PollRemoteBrowserCallbackAsync(
+        DesktopInstallLinkingState initialState,
+        CancellationToken cancellationToken)
     {
         DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(15);
         int transientFailures = 0;
@@ -2152,10 +2318,7 @@ public static class DesktopInstallLinkingRuntime
         while (DateTimeOffset.UtcNow < deadline)
         {
             DesktopInstallLinkingState currentState = LoadOrCreateState(initialState.HeadId);
-            if (!string.Equals(
-                    currentState.InstallationId,
-                    initialState.InstallationId,
-                    StringComparison.OrdinalIgnoreCase)
+            if (!IsSameOwnerAuthority(currentState, initialState)
                 || IsClaimed(currentState))
             {
                 return;
@@ -2179,8 +2342,8 @@ public static class DesktopInstallLinkingRuntime
                 using HttpResponseMessage response = await client.PostAsync(
                     "api/v1/install-linking/callbacks/poll",
                     content,
-                    CancellationToken.None).ConfigureAwait(false);
-                string responseText = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    cancellationToken).ConfigureAwait(false);
+                string responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                 if (response.StatusCode is HttpStatusCode.Accepted or HttpStatusCode.NotFound)
                 {
                     transientFailures = 0;
@@ -2190,14 +2353,14 @@ public static class DesktopInstallLinkingRuntime
                         waitingStateRecorded = true;
                     }
 
-                    await Task.Delay(TimeSpan.FromMilliseconds(1250)).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(1250), cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
                 if (IsTransientRemoteCallbackStatus(response.StatusCode))
                 {
                     transientFailures += 1;
-                    await Task.Delay(ResolveRemoteCallbackRetryDelay(response, transientFailures))
+                    await Task.Delay(ResolveRemoteCallbackRetryDelay(response, transientFailures), cancellationToken)
                         .ConfigureAwait(false);
                     continue;
                 }
@@ -2221,15 +2384,19 @@ public static class DesktopInstallLinkingRuntime
                 ApplyAcceptedBrowserCallback(currentState, accepted, DateTimeOffset.UtcNow);
                 return;
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
             catch (HttpRequestException) when (DateTimeOffset.UtcNow < deadline)
             {
                 transientFailures += 1;
-                await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures)).ConfigureAwait(false);
+                await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures), cancellationToken).ConfigureAwait(false);
             }
-            catch (TaskCanceledException) when (DateTimeOffset.UtcNow < deadline)
+            catch (TaskCanceledException) when (DateTimeOffset.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
             {
                 transientFailures += 1;
-                await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures)).ConfigureAwait(false);
+                await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -2240,13 +2407,28 @@ public static class DesktopInstallLinkingRuntime
 
         DesktopInstallLinkingState finalState = LoadOrCreateState(initialState.HeadId);
         if (!IsClaimed(finalState)
-            && string.Equals(finalState.InstallationId, initialState.InstallationId, StringComparison.OrdinalIgnoreCase))
+            && IsSameOwnerAuthority(finalState, initialState))
         {
             RecordRemoteCallbackPollFailure(
                 finalState,
                 "Remote browser approval timed out. Open the claim link again to retry safely.");
         }
     }
+
+    private static bool IsSameOwnerAuthority(
+        DesktopInstallLinkingState current,
+        DesktopInstallLinkingState expected)
+        => string.Equals(current.InstallationId, expected.InstallationId, StringComparison.Ordinal)
+           && current.OwnerTransitionRevision == expected.OwnerTransitionRevision;
+
+    private static bool IsSameInstallCredentialGeneration(
+        DesktopInstallLinkingState current,
+        DesktopInstallLinkingState expected)
+        => string.Equals(current.PublicKey, expected.PublicKey, StringComparison.Ordinal)
+           && string.Equals(current.GrantId, expected.GrantId, StringComparison.Ordinal)
+           && string.Equals(current.GrantToken, expected.GrantToken, StringComparison.Ordinal)
+           && current.GrantIssuedAtUtc == expected.GrantIssuedAtUtc
+           && current.GrantExpiresAtUtc == expected.GrantExpiresAtUtc;
 
     private static bool IsTransientRemoteCallbackStatus(HttpStatusCode statusCode)
         => statusCode is HttpStatusCode.RequestTimeout
@@ -2388,16 +2570,6 @@ public static class DesktopInstallLinkingRuntime
         DesktopInstallLinkingState state,
         string failureReason)
     {
-        DesktopInstallLinkingState latestState = LoadOrCreateState(state.HeadId);
-        if (IsClaimed(latestState)
-            || !string.Equals(
-                latestState.InstallationId,
-                state.InstallationId,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
         DateTimeOffset now = DateTimeOffset.UtcNow;
         string normalizedFailure = string.IsNullOrWhiteSpace(failureReason)
             ? "Remote browser approval failed."
@@ -2407,34 +2579,44 @@ public static class DesktopInstallLinkingRuntime
             normalizedFailure = normalizedFailure[..MaxRemoteCallbackFailureLength];
         }
 
-        SaveState(latestState with
+        UpdateCurrentState(state.HeadId, latestState =>
         {
-            LastClaimAttemptUtc = now,
-            LastClaimError = normalizedFailure,
-            LastClaimMessage = null,
-            UpdatedAtUtc = now
+            if (IsClaimed(latestState)
+                || !string.Equals(latestState.InstallationId, state.InstallationId, StringComparison.Ordinal)
+                || latestState.OwnerTransitionRevision != state.OwnerTransitionRevision)
+            {
+                return null;
+            }
+
+            return latestState with
+            {
+                LastClaimAttemptUtc = now,
+                LastClaimError = normalizedFailure,
+                LastClaimMessage = null,
+                UpdatedAtUtc = now
+            };
         });
     }
 
     private static void RecordRemoteCallbackPollWaiting(DesktopInstallLinkingState state)
     {
-        DesktopInstallLinkingState latestState = LoadOrCreateState(state.HeadId);
-        if (IsClaimed(latestState)
-            || !string.Equals(
-                latestState.InstallationId,
-                state.InstallationId,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        SaveState(latestState with
+        UpdateCurrentState(state.HeadId, latestState =>
         {
-            LastClaimAttemptUtc = now,
-            LastClaimError = null,
-            LastClaimMessage = "Secure approval is open. Waiting for your account confirmation and device-key handoff.",
-            UpdatedAtUtc = now
+            if (IsClaimed(latestState)
+                || !string.Equals(latestState.InstallationId, state.InstallationId, StringComparison.Ordinal)
+                || latestState.OwnerTransitionRevision != state.OwnerTransitionRevision)
+            {
+                return null;
+            }
+
+            return latestState with
+            {
+                LastClaimAttemptUtc = now,
+                LastClaimError = null,
+                LastClaimMessage = "Secure approval is open. Waiting for your account confirmation and device-key handoff.",
+                UpdatedAtUtc = now
+            };
         });
     }
 
@@ -3113,7 +3295,8 @@ public static class DesktopInstallLinkingRuntime
 
     private sealed record DesktopInstallLinkingPaths(
         string StateFilePath,
-        string ProtectedPrivateKeyFilePath)
+        string ProtectedPrivateKeyFilePath,
+        string LockFilePath)
     {
         public static DesktopInstallLinkingPaths Create(string headId, DesktopRuntimePlatformIdentity identity)
         {
@@ -3125,7 +3308,8 @@ public static class DesktopInstallLinkingRuntime
                 identity.Arch);
             return new DesktopInstallLinkingPaths(
                 StateFilePath: Path.Combine(root, "state.json"),
-                ProtectedPrivateKeyFilePath: Path.Combine(root, ProtectedPrivateKeyFileName));
+                ProtectedPrivateKeyFilePath: Path.Combine(root, ProtectedPrivateKeyFileName),
+                LockFilePath: Path.Combine(root, "state.lock"));
         }
     }
 
@@ -3136,7 +3320,132 @@ public static class DesktopInstallLinkingRuntime
 
     private static class DesktopInstallLinkingStateStore
     {
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> ProcessLocks =
+            new(StringComparer.OrdinalIgnoreCase);
+
         public static DesktopInstallLinkingState? Load(DesktopInstallLinkingPaths paths)
+        {
+            using StatePathLock stateLock = Acquire(paths);
+            return LoadAndMigrateUnderLock(paths);
+        }
+
+        public static DesktopInstallLinkingState Save(
+            DesktopInstallLinkingPaths paths,
+            DesktopInstallLinkingState state)
+        {
+            using StatePathLock stateLock = Acquire(paths);
+            return SaveUnderLock(paths, state);
+        }
+
+        public static DesktopInstallLinkingState SaveUnderLock(
+            DesktopInstallLinkingPaths paths,
+            DesktopInstallLinkingState state)
+        {
+            DesktopInstallLinkingState? current = LoadRawUnderLock(paths);
+            if (current is null)
+            {
+                if (state.StateRevision != 0)
+                {
+                    throw new DesktopInstallLinkingStateConflictException(
+                        "Install-linking state disappeared before the update could be committed.");
+                }
+
+                DesktopInstallLinkingState created = state with
+                {
+                    StateRevision = 1,
+                    OwnerTransitionRevision = 1
+                };
+                WriteUnderLock(paths, created);
+                return created;
+            }
+
+            if (!string.Equals(current.InstallationId, state.InstallationId, StringComparison.Ordinal)
+                || current.StateRevision != state.StateRevision)
+            {
+                throw new DesktopInstallLinkingStateConflictException(
+                    "Install-linking state changed before the update could be committed.");
+            }
+
+            long currentOwnerRevision = Math.Max(1, current.OwnerTransitionRevision);
+            long nextOwnerRevision = ResolveOwnerScope(current) == ResolveOwnerScope(state)
+                ? currentOwnerRevision
+                : checked(currentOwnerRevision + 1);
+            DesktopInstallLinkingState persisted = state with
+            {
+                StateRevision = checked(current.StateRevision + 1),
+                OwnerTransitionRevision = nextOwnerRevision
+            };
+            WriteUnderLock(paths, persisted);
+            return persisted;
+        }
+
+        public static StatePathLock Acquire(DesktopInstallLinkingPaths paths)
+        {
+            string lockKey = Path.GetFullPath(paths.LockFilePath);
+            SemaphoreSlim processLock = ProcessLocks.GetOrAdd(lockKey, static _ => new SemaphoreSlim(1, 1));
+            processLock.Wait();
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(paths.LockFilePath)!);
+                for (int attempt = 0; ; attempt++)
+                {
+                    try
+                    {
+                        FileStream fileLock = new(
+                            paths.LockFilePath,
+                            FileMode.OpenOrCreate,
+                            FileAccess.ReadWrite,
+                            FileShare.None,
+                            bufferSize: 1,
+                            FileOptions.None);
+                        return new StatePathLock(processLock, fileLock);
+                    }
+                    catch (IOException) when (attempt < 1000)
+                    {
+                        Thread.Sleep(10);
+                    }
+                }
+            }
+            catch
+            {
+                processLock.Release();
+                throw;
+            }
+        }
+
+        public static DesktopInstallLinkingState? LoadAndMigrateUnderLock(DesktopInstallLinkingPaths paths)
+        {
+            DesktopInstallLinkingState? state = LoadRawUnderLock(paths);
+            if (state is null)
+            {
+                return null;
+            }
+
+            if (state.StateRevision < 0
+                || state.OwnerTransitionRevision < 0
+                || (state.StateRevision == 0) != (state.OwnerTransitionRevision == 0))
+            {
+                throw new InvalidDataException("Install-linking state contains an invalid revision history.");
+            }
+
+            bool needsRevisionMigration = state.StateRevision == 0;
+            bool needsPrivateKeyMigration = ShouldProtectPrivateKeyAtRest()
+                && ShouldMigratePlaintextPrivateKeyUnderLock(paths);
+            if (!needsRevisionMigration && !needsPrivateKeyMigration)
+            {
+                return state;
+            }
+
+            state = state with
+            {
+                StateRevision = state.StateRevision <= 0 ? 1 : checked(state.StateRevision + 1),
+                OwnerTransitionRevision = Math.Max(1, state.OwnerTransitionRevision)
+            };
+            WriteUnderLock(paths, state);
+            return state;
+        }
+
+        private static DesktopInstallLinkingState? LoadRawUnderLock(DesktopInstallLinkingPaths paths)
         {
             if (!File.Exists(paths.StateFilePath))
             {
@@ -3162,22 +3471,32 @@ public static class DesktopInstallLinkingRuntime
                 : state with { PrivateKey = privateKey };
         }
 
-        public static void Save(DesktopInstallLinkingPaths paths, DesktopInstallLinkingState state)
+        private static void WriteUnderLock(DesktopInstallLinkingPaths paths, DesktopInstallLinkingState state)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(paths.StateFilePath)!);
             if (!ShouldProtectPrivateKeyAtRest())
             {
                 TryDeleteProtectedPrivateKey(paths);
-                File.WriteAllText(paths.StateFilePath, JsonSerializer.Serialize(state, JsonOptions), Encoding.UTF8);
+                WriteAllBytesAtomically(
+                    paths.StateFilePath,
+                    Encoding.UTF8.GetBytes(JsonSerializer.Serialize(state, JsonOptions)));
                 return;
             }
 
             SaveProtectedPrivateKey(paths, state);
             DesktopInstallLinkingState persisted = state with { PrivateKey = string.Empty };
-            File.WriteAllText(paths.StateFilePath, JsonSerializer.Serialize(persisted, JsonOptions), Encoding.UTF8);
+            WriteAllBytesAtomically(
+                paths.StateFilePath,
+                Encoding.UTF8.GetBytes(JsonSerializer.Serialize(persisted, JsonOptions)));
         }
 
         public static bool ShouldMigratePlaintextPrivateKey(DesktopInstallLinkingPaths paths)
+        {
+            using StatePathLock stateLock = Acquire(paths);
+            return ShouldMigratePlaintextPrivateKeyUnderLock(paths);
+        }
+
+        private static bool ShouldMigratePlaintextPrivateKeyUnderLock(DesktopInstallLinkingPaths paths)
         {
             if (!File.Exists(paths.StateFilePath))
             {
@@ -3244,7 +3563,55 @@ public static class DesktopInstallLinkingRuntime
                 privateKeyBytes,
                 BuildProtectionEntropy(state.InstallationId),
                 DataProtectionScope.CurrentUser);
-            File.WriteAllBytes(paths.ProtectedPrivateKeyFilePath, protectedBytes);
+            WriteAllBytesAtomically(paths.ProtectedPrivateKeyFilePath, protectedBytes);
+        }
+
+        private static void WriteAllBytesAtomically(string destinationPath, byte[] contents)
+        {
+            string directory = Path.GetDirectoryName(destinationPath)!;
+            Directory.CreateDirectory(directory);
+            string temporaryPath = Path.Combine(
+                directory,
+                $".{Path.GetFileName(destinationPath)}.{Guid.NewGuid():N}.tmp");
+            try
+            {
+                FileStreamOptions options = new()
+                {
+                    Mode = FileMode.CreateNew,
+                    Access = FileAccess.Write,
+                    Share = FileShare.None,
+                    BufferSize = 4096,
+                    Options = FileOptions.WriteThrough
+                };
+                if (!OperatingSystem.IsWindows())
+                {
+                    options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+                }
+
+                using (FileStream stream = new(temporaryPath, options))
+                {
+                    stream.Write(contents);
+                    stream.Flush(flushToDisk: true);
+                }
+
+                File.Move(temporaryPath, destinationPath, overwrite: true);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(temporaryPath))
+                    {
+                        File.Delete(temporaryPath);
+                    }
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
         }
 
         private static void TryDeleteProtectedPrivateKey(DesktopInstallLinkingPaths paths)
@@ -3266,6 +3633,34 @@ public static class DesktopInstallLinkingRuntime
 
         private static byte[] BuildProtectionEntropy(string installationId)
             => Encoding.UTF8.GetBytes($"chummer6.install-linking.private-key:{installationId}");
+
+        public sealed class StatePathLock : IDisposable
+        {
+            private SemaphoreSlim? _processLock;
+            private FileStream? _fileLock;
+
+            public StatePathLock(SemaphoreSlim processLock, FileStream fileLock)
+            {
+                _processLock = processLock;
+                _fileLock = fileLock;
+            }
+
+            public void Dispose()
+            {
+                FileStream? fileLock = Interlocked.Exchange(ref _fileLock, null);
+                SemaphoreSlim? processLock = Interlocked.Exchange(ref _processLock, null);
+                fileLock?.Dispose();
+                processLock?.Release();
+            }
+        }
+    }
+
+    private sealed class DesktopInstallLinkingStateConflictException : IOException
+    {
+        public DesktopInstallLinkingStateConflictException(string message)
+            : base(message)
+        {
+        }
     }
 
     [SupportedOSPlatformGuard("windows")]
