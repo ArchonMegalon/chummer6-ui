@@ -216,6 +216,232 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    [DataRow("primary-arm", "same")]
+    [DataRow("condition-monitor", "same")]
+    [DataRow("primary-arm", "owner-b")]
+    [DataRow("condition-monitor", "owner-b")]
+    [DataRow("primary-arm", "owner-aba")]
+    [DataRow("condition-monitor", "owner-aba")]
+    [DataRow("primary-arm", "workspace")]
+    [DataRow("condition-monitor", "workspace")]
+    [DataRow("primary-arm", "revision")]
+    [DataRow("condition-monitor", "revision")]
+    [DataRow("primary-arm", "post-owner")]
+    [DataRow("condition-monitor", "post-owner")]
+    [DataRow("primary-arm", "post-cancel")]
+    [DataRow("condition-monitor", "post-cancel")]
+    public async Task Bound_arm_and_condition_mutations_retain_original_admission_and_canonical_receipt(
+        string entry, string scenario)
+    {
+        // Presenter seam fixture, not canonical Core or account-custody proof.
+        OwnerBoundFakeChummerClient client = new();
+        SeedArmConditionWorkspace(client);
+        CharacterWorkspaceId id = new("ws-arm-condition");
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp original = presenter.State.DisplayOwnerContext
+            ?? throw new AssertFailedException("Bound overview did not issue owner authority.");
+        WorkspaceDocument before = client.GetDocument(id.Value);
+        using CancellationTokenSource canceled = new();
+        if (scenario is "owner-b" or "owner-aba")
+        {
+            if (scenario == "owner-b") client.TransitionToOwnerB();
+            else client.TransitionAwayAndBack();
+            await presenter.LoadAsync(id, CancellationToken.None);
+            Assert.AreEqual(client.CaptureOwnerContext(), presenter.State.DisplayOwnerContext);
+            Assert.AreNotEqual(original, presenter.State.DisplayOwnerContext);
+        }
+        if (scenario == "post-owner") client.AfterBoundReplace = client.TransitionToOwnerB;
+        if (scenario == "post-cancel") client.AfterBoundReplace = canceled.Cancel;
+        client.ClearBoundObservations();
+        CharacterWorkspaceId requestedId = scenario == "workspace" ? new("other-runner") : id;
+        long revision = scenario == "revision" ? 4 : 5;
+        IOwnerBoundWorkspaceMutationPresenter bound = presenter;
+        CommandResult<WorkspaceRevisionReceipt> result = entry == "primary-arm"
+            ? await bound.ApplyPrimaryArmEditAsync(new(requestedId, revision, "Left"), original, canceled.Token)
+            : await bound.ApplyConditionMonitorEditAsync(new(WorkspaceConditionMonitorTrack.Physical, 3),
+                original, requestedId, revision, canceled.Token);
+
+        bool committed = scenario is "same" or "post-owner" or "post-cancel";
+        Assert.AreEqual(committed, result.Success, result.Error);
+        Assert.AreEqual(committed ? 1 : 0, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(committed ? 6L : 5L, client.GetWorkspaceItem(id.Value).ContentRevision);
+        Assert.AreEqual(5L, client.GetWorkspaceItem(id.Value).SavedRevision,
+            "The presenter XML mutation must not invent a checkpoint; the host owns an explicit Save gesture.");
+        if (committed)
+        {
+            Assert.IsNotNull(result.Value);
+            Assert.AreSame(client.LastBoundResult!.Value, result.Value,
+                "Return the observed canonical receipt, not a fabricated UI postcondition.");
+            Assert.AreEqual(6L, result.Value.ContentRevision);
+            Assert.AreEqual(5L, result.Value.SavedRevision);
+            Assert.AreEqual(original, client.LastBoundReplaceOwner);
+            Assert.AreEqual(id, client.LastReplaceWorkspaceId);
+            var xml = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content).Root!;
+            Assert.AreEqual(entry == "primary-arm" ? "Left" : "3",
+                xml.Element(entry == "primary-arm" ? "primaryarm" : "physicalcmfilled")!.Value);
+            Assert.AreEqual("Keep", xml.Element("notes")!.Value);
+            if (scenario == "post-owner")
+                Assert.AreNotEqual(original, presenter.State.DisplayOwnerContext,
+                    "A retained committed receipt cannot reauthorize the old account display.");
+        }
+        else
+        {
+            Assert.IsNull(result.Value);
+            Assert.IsNull(client.LastBoundReadOwner, "Rejected original intent reached the mutation read.");
+            Assert.IsNull(client.LastBoundReplaceOwner);
+            Assert.AreSame(before, client.GetDocument(id.Value));
+        }
+    }
+
+    [TestMethod]
+    [DataRow("same")]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    [DataRow("reload")]
+    [DataRow("workspace")]
+    [DataRow("owner-b-error")]
+    public async Task Primary_arm_prepare_joins_original_read_without_minting_an_editor_for_a_new_view(string change)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedArmConditionWorkspace(client);
+        SeedArmConditionWorkspace(client, "other-runner");
+        CharacterWorkspaceId id = new("ws-arm-condition");
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp original = presenter.State.DisplayOwnerContext!.Value;
+        TaskCompletionSource entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.AfterBoundWorkspaceRead = async () =>
+        {
+            entered.TrySetResult();
+            await release.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        };
+        Task<PrimaryArmEditorState?> pending = presenter.PreparePrimaryArmEditAsync(CancellationToken.None);
+        CharacterOverviewState expected = presenter.State;
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo? setupFailure = null;
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsFalse(pending.IsCompleted);
+            Assert.AreEqual(original, client.LastBoundReadOwner);
+            client.AfterBoundWorkspaceRead = null; // New actual reads must not join the old read's barrier.
+            if (change != "same")
+            {
+                if (change.StartsWith("owner-b", StringComparison.Ordinal)) client.TransitionToOwnerB();
+                if (change == "owner-aba") client.TransitionAwayAndBack();
+                await presenter.LoadAsync(change == "workspace" ? new("other-runner") : id, CancellationToken.None);
+                expected = presenter.State;
+                if (change == "owner-b-error")
+                    client.AfterBoundRead = () => throw new IOException("Stale read failure must not enter the new view.");
+            }
+        }
+        catch (Exception exception)
+        {
+            setupFailure = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception);
+        }
+        finally { release.TrySetResult(); }
+        PrimaryArmEditorState? editor = null;
+        try
+        {
+            // Join the released read even when setup failed; retain the primary failure.
+            editor = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch when (setupFailure is not null) { }
+        setupFailure?.Throw();
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+        if (change == "same")
+        {
+            Assert.IsNotNull(editor);
+            Assert.AreEqual(id, editor.WorkspaceId);
+            Assert.AreEqual(5L, editor.ContentRevision);
+            Assert.AreEqual("Right", editor.Value);
+            Assert.IsFalse(editor.Ambidextrous);
+            Assert.AreEqual(original, presenter.State.DisplayOwnerContext);
+        }
+        else
+        {
+            Assert.IsNull(editor);
+            Assert.AreSame(expected, presenter.State, "Old preparation published an editor/error into a newer view.");
+        }
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Primary_arm_prepare_rejects_owner_capability_mismatch_before_read(bool boundWithoutStamp)
+    {
+        FakeChummerClient client = boundWithoutStamp ? new OwnerBoundFakeChummerClient() : new FakeChummerClient();
+        SeedArmConditionWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new("ws-arm-condition"), CancellationToken.None);
+        // Deliberately malformed negative display only; never a source of positive authority.
+        CharacterOverviewState malformed = presenter.State with
+        {
+            DisplayOwnerContext = boundWithoutStamp ? null : new(new OwnerScope("owner-a"), "foreign-test-authority", 0)
+        };
+        typeof(CharacterOverviewPresenter).GetProperty(nameof(CharacterOverviewPresenter.State))!
+            .SetValue(presenter, malformed);
+        int beforeReads = client.GetWorkspaceCalls;
+        Assert.IsNull(await presenter.PreparePrimaryArmEditAsync(CancellationToken.None));
+        Assert.AreEqual(beforeReads, client.GetWorkspaceCalls);
+        Assert.AreSame(malformed, presenter.State);
+    }
+
+    [TestMethod]
+    public async Task Primary_arm_prepare_preserves_genuine_legacy_unstamped_compatibility()
+    {
+        FakeChummerClient client = new();
+        SeedArmConditionWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new("ws-arm-condition"), CancellationToken.None);
+        Assert.IsNull(presenter.State.DisplayOwnerContext);
+        PrimaryArmEditorState? editor = await presenter.PreparePrimaryArmEditAsync(CancellationToken.None);
+        Assert.IsNotNull(editor);
+        Assert.AreEqual("Right", editor.Value);
+        Assert.AreEqual(5L, editor.ContentRevision);
+    }
+
+    [TestMethod]
+    public async Task New_owner_mutation_capabilities_default_to_unavailable_not_an_unbound_fallback()
+    {
+        IOwnerBoundWorkspaceMutationPresenter unavailable = new UnavailableArmConditionPresenter();
+        OwnerContextStamp owner = new(new OwnerScope("owner-a"), "test-authority", 0);
+        CommandResult<WorkspaceRevisionReceipt>[] results =
+        [
+            await unavailable.ApplyPrimaryArmEditAsync(new(new("workspace"), 1, "Left"), owner, CancellationToken.None),
+            await unavailable.ApplyConditionMonitorEditAsync(new(WorkspaceConditionMonitorTrack.Physical, 3),
+                owner, new("workspace"), 1, CancellationToken.None)
+        ];
+        foreach (var result in results)
+        {
+            Assert.IsFalse(result.Success);
+            Assert.IsNull(result.Value);
+            Assert.AreEqual(WorkspaceOperationOutcome.Unavailable, result.Outcome);
+        }
+    }
+
+    private sealed class UnavailableArmConditionPresenter : IOwnerBoundWorkspaceMutationPresenter
+    {
+        public Task<OwnerBoundWorkspaceMutationDispatch> ApplyCollectionMutationAsync(
+            WorkspaceCollectionMutationRequest request, OwnerContextStamp owner, CancellationToken ct)
+            => throw new AssertFailedException("An unavailable domain capability delegated to another mutator.");
+    }
+
+    private static void SeedArmConditionWorkspace(FakeChummerClient client, string id = "ws-arm-condition")
+    {
+        const string xml = """
+            <character><name>Owner</name><alias>OWNER</alias><created>True</created><metatype>Human</metatype>
+            <buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion>
+            <karma>0</karma><nuyen>0</nuyen><primaryarm>Right</primaryarm><improvements/>
+            <physicalcm>10</physicalcm><physicalcmfilled>2</physicalcmfilled><physicalcmoverflow>3</physicalcmoverflow>
+            <stuncm>10</stuncm><stuncmfilled>4</stuncmfilled><notes>Keep</notes><contacts/></character>
+            """;
+        client.SeedWorkspace(id, "Owner", "OWNER", rulesetId: RulesetDefaults.Sr5, contentRevision: 5, savedRevision: 5);
+        client.SeedDocument(id, CanonicalizeRecoveryTestDocument(new WorkspaceDocument(xml, RulesetDefaults.Sr5)));
+    }
+
+    [TestMethod]
     public async Task Displayed_owner_context_first_capture_wait_can_only_issue_newly_read_owner_data()
     {
         OwnerBoundFakeChummerClient client = new();
@@ -4797,6 +5023,9 @@ public class CharacterOverviewPresenterTests
         public OwnerContextStamp? LastBoundReadOwner { get; private set; }
         public OwnerContextStamp? LastBoundReplaceOwner { get; private set; }
         public Action? AfterBoundRead { get; set; }
+        public Func<Task>? AfterBoundWorkspaceRead { get; set; }
+        public Action? AfterBoundReplace { get; set; }
+        public CommandResult<WorkspaceRevisionReceipt>? LastBoundResult { get; private set; }
         public Func<Task>? AfterBoundOverview { get; set; }
         public Func<Task>? AfterBoundSection { get; set; }
         public Action? BeforeOwnerCapture { get; set; }
@@ -4877,7 +5106,7 @@ public class CharacterOverviewPresenterTests
             return operation.GetAwaiter().GetResult();
         }
 
-        public Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
+        public async Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
             OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
         {
             CommandResult<WorkspaceDocumentSnapshot> snapshot;
@@ -4889,14 +5118,16 @@ public class CharacterOverviewPresenterTests
                 Assert.IsTrue(read.IsCompleted, "This gated fixture does not support async store waits.");
                 snapshot = read.GetAwaiter().GetResult();
             }
+            if (AfterBoundWorkspaceRead is { } wait) await wait().ConfigureAwait(false);
             AfterBoundRead?.Invoke();
-            return Task.FromResult(snapshot);
+            return snapshot;
         }
 
         public Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
             OwnerContextStamp expectedOwner, CharacterWorkspaceId id, long expectedContentRevision,
             WorkspaceDocument document, Action onDispatch, CancellationToken ct)
         {
+            CommandResult<WorkspaceRevisionReceipt> result;
             lock (_ownerGate)
             {
                 LastBoundReplaceOwner = expectedOwner;
@@ -4905,10 +5136,12 @@ public class CharacterOverviewPresenterTests
                 if (BoundReplacementOutcome == "core-failure") throw new InvalidOperationException("Synthetic dispatched Core failure.");
                 Task<CommandResult<WorkspaceRevisionReceipt>> replace = base.ReplaceWorkspaceDocumentAsync(id, expectedContentRevision, document, ct);
                 Assert.IsTrue(replace.IsCompleted, "This gated fixture does not support async store waits.");
-                CommandResult<WorkspaceRevisionReceipt> result = replace.GetAwaiter().GetResult();
+                result = replace.GetAwaiter().GetResult();
                 if (BoundReplacementOutcome == "post-commit-failure") throw new InvalidOperationException("Synthetic dispatched post-commit failure.");
-                return Task.FromResult(result);
+                LastBoundResult = result;
             }
+            AfterBoundReplace?.Invoke();
+            return Task.FromResult(result);
         }
 
         private void RequireCurrentOwner(OwnerContextStamp expected)
