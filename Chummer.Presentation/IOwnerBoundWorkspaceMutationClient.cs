@@ -71,6 +71,17 @@ public enum OwnerBoundWorkspaceMutationDispatch
 /// </summary>
 public interface IOwnerBoundWorkspaceMutationPresenter
 {
+    Task<CommandResult<WorkspaceRevisionReceipt>> ApplyPrimaryArmEditAsync(
+        PrimaryArmEditRequest request, OwnerContextStamp expectedOwner, CancellationToken ct)
+        => Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
+            "Original-account primary-arm mutation is unavailable.", WorkspaceOperationOutcome.Unavailable));
+
+    Task<CommandResult<WorkspaceRevisionReceipt>> ApplyConditionMonitorEditAsync(
+        ConditionMonitorEditRequest request, OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId, long expectedContentRevision, CancellationToken ct)
+        => Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
+            "Original-account condition-monitor mutation is unavailable.", WorkspaceOperationOutcome.Unavailable));
+
     Task<CommandResult<WorkspaceRevisionReceipt>> ApplyCareerReputationEditAsync(
         CareerReputationEditRequest request, OwnerContextStamp expectedOwner, CancellationToken ct)
         => Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,

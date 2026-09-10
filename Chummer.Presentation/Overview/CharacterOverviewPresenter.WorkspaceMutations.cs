@@ -72,6 +72,17 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public Task<CommandResult<WorkspaceRevisionReceipt>> ApplyConditionMonitorEditAsync(
+        ConditionMonitorEditRequest request, OwnerContextStamp expectedOwner,
+        CharacterWorkspaceId workspaceId, long expectedContentRevision, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return RunOriginalPersistenceGestureAsync<WorkspaceRevisionReceipt>(expectedOwner, workspaceId,
+            expectedContentRevision, (_, observe) => ApplyOriginalWorkspaceXmlMutationAsync(
+                workspaceId, expectedContentRevision, expectedOwner,
+                xml => WorkspaceXmlMutationCatalog.ApplyConditionMonitorEdit(xml, request), observe, ct));
+    }
+
     public async Task<CareerReputationEditorState?> PrepareCareerReputationEditAsync(CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
@@ -147,7 +158,7 @@ public sealed partial class CharacterOverviewPresenter
             return Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
                 "The reputation draft belongs to another account context.", WorkspaceOperationOutcome.Conflict));
         return RunOriginalPersistenceGestureAsync<WorkspaceRevisionReceipt>(expectedOwner, request.WorkspaceId,
-            request.ExpectedContentRevision, (_, observe) => ApplyOriginalReputationMutationAsync(
+            request.ExpectedContentRevision, (_, observe) => ApplyOriginalWorkspaceXmlMutationAsync(
                 request.WorkspaceId, request.ExpectedContentRevision, expectedOwner,
                 xml => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(xml, request, _characterSourceDataResolver),
                 observe, ct));
@@ -161,12 +172,12 @@ public sealed partial class CharacterOverviewPresenter
             return Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
                 "The Street Cred confirmation belongs to another account context.", WorkspaceOperationOutcome.Conflict));
         return RunOriginalPersistenceGestureAsync<WorkspaceRevisionReceipt>(expectedOwner, request.WorkspaceId,
-            request.ExpectedContentRevision, (_, observe) => ApplyOriginalReputationMutationAsync(
+            request.ExpectedContentRevision, (_, observe) => ApplyOriginalWorkspaceXmlMutationAsync(
                 request.WorkspaceId, request.ExpectedContentRevision, expectedOwner,
                 xml => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(xml, request), observe, ct));
     }
 
-    private async Task ApplyOriginalReputationMutationAsync(CharacterWorkspaceId workspaceId, long revision,
+    private async Task ApplyOriginalWorkspaceXmlMutationAsync(CharacterWorkspaceId workspaceId, long revision,
         OwnerContextStamp originalOwner, Func<string, string> mutateXml,
         Action<CommandResult<WorkspaceRevisionReceipt>?> observe, CancellationToken ct)
     {
@@ -299,35 +310,55 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
-        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
-        long expectedContentRevision = State.ContentRevision;
+        CharacterOverviewState originalState = State;
+        OwnerContextStamp? originalOwner = originalState.DisplayOwnerContext;
+        long generation = CaptureDisplayGeneration();
+        CharacterWorkspaceId? currentWorkspace = originalState.WorkspaceId;
+        long expectedContentRevision = originalState.ContentRevision;
+        long expectedSavedRevision = originalState.SavedRevision;
+        bool OriginalViewIsCurrent()
+            => IsDisplayGenerationCurrent(generation)
+               && IsOriginalPersistenceOwnerCurrent(originalOwner)
+               && State.DisplayOwnerContext == originalOwner
+               && State.Session.OwnerContext == originalState.Session.OwnerContext
+               && State.WorkspaceId == currentWorkspace
+               && State.ContentRevision == expectedContentRevision
+               && State.SavedRevision == expectedSavedRevision
+               && ReferenceEquals(State.Profile, originalState.Profile);
+        if (!OriginalViewIsCurrent()) return null;
         if (currentWorkspace is null || expectedContentRevision <= 0)
         {
-            Publish(State with { Error = "Open a saved runner before editing primary arm." });
+            TryPublishDisplayTransition(generation,
+                originalState with { Error = "Open a saved runner before editing primary arm." }, originalState);
             return null;
         }
 
         try
         {
-            CommandResult<WorkspaceDocumentSnapshot> read = await _client
-                .GetWorkspaceAsync(currentWorkspace.Value, ct)
-                .ConfigureAwait(false);
+            CommandResult<WorkspaceDocumentSnapshot> read = await (originalOwner is { } owner
+                ? ((IOwnerBoundWorkspaceMutationClient)_client).GetWorkspaceAsync(owner, currentWorkspace.Value, ct)
+                : _client.GetWorkspaceAsync(currentWorkspace.Value, ct)).ConfigureAwait(false);
+            if (!OriginalViewIsCurrent()) return null;
             if (!read.Success || read.Value is null)
             {
-                Publish(State with { Error = read.Error ?? "Dossier could not be read for primary-arm editing." });
+                TryPublishDisplayTransition(generation,
+                    originalState with { Error = read.Error ?? "Dossier could not be read for primary-arm editing." }, originalState);
                 return null;
             }
 
             if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
-                || read.Value.ContentRevision != expectedContentRevision)
+                || read.Value.ContentRevision != expectedContentRevision
+                || read.Value.SavedRevision != expectedSavedRevision)
             {
-                Publish(State with { Error = "The dossier changed before primary-arm editing could begin." });
+                TryPublishDisplayTransition(generation,
+                    originalState with { Error = "The dossier changed before primary-arm editing could begin." }, originalState);
                 return null;
             }
 
             if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
             {
-                Publish(State with { Error = "Primary-arm editing requires a native XML dossier." });
+                TryPublishDisplayTransition(generation,
+                    originalState with { Error = "Primary-arm editing requires a native XML dossier." }, originalState);
                 return null;
             }
 
@@ -335,8 +366,9 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
-            return editor;
+            if (!OriginalViewIsCurrent()) return null;
+            if (!TryPublishDisplayTransition(generation, State with { Error = null }, originalState)) return null;
+            return OriginalViewIsCurrent() ? editor : null;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -344,9 +376,20 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch (Exception exception)
         {
-            Publish(State with { Error = exception.Message });
+            if (OriginalViewIsCurrent())
+                TryPublishDisplayTransition(generation, State with { Error = exception.Message }, originalState);
             return null;
         }
+    }
+
+    public Task<CommandResult<WorkspaceRevisionReceipt>> ApplyPrimaryArmEditAsync(
+        PrimaryArmEditRequest request, OwnerContextStamp expectedOwner, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return RunOriginalPersistenceGestureAsync<WorkspaceRevisionReceipt>(expectedOwner, request.WorkspaceId,
+            request.ExpectedContentRevision, (_, observe) => ApplyOriginalWorkspaceXmlMutationAsync(
+                request.WorkspaceId, request.ExpectedContentRevision, expectedOwner,
+                xml => WorkspaceXmlMutationCatalog.ApplyPrimaryArmEdit(xml, request), observe, ct));
     }
 
     public async Task ApplyPrimaryArmEditAsync(PrimaryArmEditRequest request, CancellationToken ct)
