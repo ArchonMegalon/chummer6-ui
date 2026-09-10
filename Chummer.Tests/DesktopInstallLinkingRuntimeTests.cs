@@ -311,18 +311,21 @@ public sealed class DesktopInstallLinkingRuntimeTests
             Environment.SetEnvironmentVariable("WSL_DISTRO_NAME", null);
             Environment.SetEnvironmentVariable("WSL_INTEROP", null);
 
+            // The dispatch receipt belongs to the current durable installation and owner epoch.
+            // Keep the dummy keys so this launcher test cannot start remote proof polling.
+            DesktopInstallLinkingState guestState = PersistInstallLinkingState(CreateState() with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null
+            });
             using StringWriter output = new();
             using StringWriter error = new();
             DesktopInstallLinkingStartupContext context = new(
-                State: CreateState() with
-                {
-                    Status = "guest",
-                    ClaimedAtUtc = null,
-                    GrantId = null,
-                    GrantToken = null,
-                    GrantIssuedAtUtc = null,
-                    GrantExpiresAtUtc = null
-                },
+                State: guestState,
                 ClaimResult: null,
                 StartupClaimCode: null,
                 ShouldPrompt: true,
@@ -370,6 +373,20 @@ public sealed class DesktopInstallLinkingRuntimeTests
             }
         }
     }
+
+    [TestMethod]
+    public void RecordBrowserDispatchAttempt_rejects_foreign_installation_without_changing_durable_state()
+        => AssertBrowserDispatchPreservesCurrentState(current => current with
+        {
+            InstallationId = "ins-foreign-installation"
+        });
+
+    [TestMethod]
+    public void RecordBrowserDispatchAttempt_rejects_stale_owner_revision_without_changing_durable_state()
+        => AssertBrowserDispatchPreservesCurrentState(current => current with
+        {
+            OwnerTransitionRevision = current.OwnerTransitionRevision - 1
+        });
 
     [TestMethod]
     public async Task TryHandleHeadlessInstallLinkModeAsync_exits_cleanly_when_already_linked()
@@ -1288,6 +1305,79 @@ public sealed class DesktopInstallLinkingRuntimeTests
             {
                 Assert.AreEqual(state.PrivateKey, persistedPrivateKey, "Non-Windows installs should continue to persist the key inline until an OS-backed store exists.");
             }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    private static DesktopInstallLinkingState PersistInstallLinkingState(DesktopInstallLinkingState state)
+    {
+        MethodInfo saveState = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "SaveState",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The actual install state writer should exist.");
+        return saveState.Invoke(null, [state]) as DesktopInstallLinkingState
+            ?? throw new AssertFailedException("The install state writer should return the committed state.");
+    }
+
+    private static void AssertBrowserDispatchPreservesCurrentState(
+        Func<DesktopInstallLinkingState, DesktopInstallLinkingState> createStaleState)
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), "desktop-install-linking-stale-browser-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            DesktopInstallLinkingState initial = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            DesktopInstallLinkingState current = PersistInstallLinkingState(initial with
+            {
+                Status = "claimed",
+                ClaimedAtUtc = now,
+                GrantId = "current-grant",
+                GrantToken = "current-token",
+                GrantIssuedAtUtc = now,
+                GrantExpiresAtUtc = now.AddDays(1),
+                UserId = "current-user",
+                SubjectId = "current-subject",
+                LastBrowserDispatchAttemptUtc = now,
+                LastBrowserDispatchUri = "https://chummer.run/account?current-installation=1",
+                LastBrowserDispatchFailure = "Existing browser diagnostic",
+                LastClaimError = "Existing claim diagnostic"
+            });
+            Assert.IsTrue(current.OwnerTransitionRevision > initial.OwnerTransitionRevision,
+                "The fixture must advance a real durable owner transition.");
+            string statePath = Path.Combine(tempRoot, "Chummer6", "install-linking",
+                current.HeadId, current.Platform, current.Arch, "state.json");
+            byte[] before = File.ReadAllBytes(statePath);
+            MethodInfo recordAttempt = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "RecordBrowserDispatchAttempt",
+                BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new AssertFailedException("The actual browser dispatch recorder should exist.");
+
+            recordAttempt.Invoke(null,
+                [createStaleState(current), "https://chummer.run/login?next=stale-dispatch", "Stale browser failure"]);
+
+            CollectionAssert.AreEqual(before, File.ReadAllBytes(statePath),
+                "Rejected browser diagnostics must not rewrite any durable installation bytes.");
+            DesktopInstallLinkingState after = DesktopInstallLinkingRuntime.LoadOrCreateState(current.HeadId);
+            Assert.AreEqual(current.InstallationId, after.InstallationId);
+            Assert.AreEqual(current.StateRevision, after.StateRevision);
+            Assert.AreEqual(current.OwnerTransitionRevision, after.OwnerTransitionRevision);
+            Assert.AreEqual(DesktopInstallLinkingRuntime.ResolveOwnerScope(current),
+                DesktopInstallLinkingRuntime.ResolveOwnerScope(after));
+            Assert.AreEqual(current.UserId, after.UserId);
+            Assert.AreEqual(current.SubjectId, after.SubjectId);
+            Assert.AreEqual(current.LastBrowserDispatchAttemptUtc, after.LastBrowserDispatchAttemptUtc);
+            Assert.AreEqual(current.LastBrowserDispatchUri, after.LastBrowserDispatchUri);
+            Assert.AreEqual(current.LastBrowserDispatchFailure, after.LastBrowserDispatchFailure);
+            Assert.AreEqual(current.LastClaimError, after.LastClaimError);
         }
         finally
         {
