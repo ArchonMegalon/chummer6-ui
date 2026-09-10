@@ -5,11 +5,16 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Shell;
 using System.Security.Cryptography;
 using Chummer.Application.Characters;
+using Chummer.Application.Owners;
 
 namespace Chummer.Presentation.Overview;
 
 public sealed partial class CharacterOverviewPresenter :
     ICharacterOverviewPresenter,
+    IOwnerBoundWorkspaceMutationPresenter,
+    IOwnerBoundWorkspaceRefreshPresenter,
+    IOwnerBoundWorkspacePersistencePresenter,
+    IOwnerBoundWorkspaceCleanupPresenter,
     IWorkspaceDeletionCommitSource,
     IWorkspaceRecoveryCopySource,
     IWorkspaceRecoveryDownloadDispatchSink,
@@ -37,6 +42,8 @@ public sealed partial class CharacterOverviewPresenter :
     private readonly ICharacterSourceDataResolver? _characterSourceDataResolver;
     private readonly ICharacterCreationBootstrapService? _characterCreationBootstrapService;
     private readonly ICharacterCreationBootstrapActivationService? _characterCreationBootstrapActivationService;
+    private readonly IOwnerBoundCharacterCreationBootstrapService? _ownerBoundCharacterCreationBootstrapService;
+    private long _dialogOpeningGeneration;
     private readonly bool _ownsWorkspaceOperationCoordinator;
     private readonly bool _ownsWorkspaceRecoveryPayloadStore;
     private readonly object _lifecycleSync = new();
@@ -76,7 +83,8 @@ public sealed partial class CharacterOverviewPresenter :
         TimeSpan? deletionNotificationBudget = null,
         ICharacterSourceDataResolver? characterSourceDataResolver = null,
         ICharacterCreationBootstrapService? characterCreationBootstrapService = null,
-        ICharacterCreationBootstrapActivationService? characterCreationBootstrapActivationService = null)
+        ICharacterCreationBootstrapActivationService? characterCreationBootstrapActivationService = null,
+        IOwnerBoundCharacterCreationBootstrapService? ownerBoundCharacterCreationBootstrapService = null)
     {
         _client = client;
         IWorkspaceSessionManager manager = workspaceSessionManager ?? new WorkspaceSessionManager();
@@ -95,6 +103,7 @@ public sealed partial class CharacterOverviewPresenter :
         _workspaceRecoveryPayloadStore = workspaceRecoveryPayloadStore ?? new WorkspaceRecoveryPayloadStore();
         _characterSourceDataResolver = characterSourceDataResolver;
         _characterCreationBootstrapService = characterCreationBootstrapService;
+        _ownerBoundCharacterCreationBootstrapService = ownerBoundCharacterCreationBootstrapService;
         _characterCreationBootstrapActivationService =
             characterCreationBootstrapActivationService
             ?? characterCreationBootstrapService as ICharacterCreationBootstrapActivationService;
@@ -123,6 +132,45 @@ public sealed partial class CharacterOverviewPresenter :
 
     public CharacterOverviewState State { get; private set; } = CharacterOverviewState.Empty;
 
+    // Display publication only; this is not an owner epoch or store authority.
+    private long _displayPublicationGeneration;
+
+    private long BeginDisplayTransition()
+    {
+        lock (_lifecycleSync)
+            return checked(++_displayPublicationGeneration);
+    }
+
+    private long CaptureDisplayGeneration()
+    {
+        lock (_lifecycleSync) return _displayPublicationGeneration;
+    }
+
+    private bool IsDisplayGenerationCurrent(long generation)
+    {
+        lock (_lifecycleSync)
+            return !_disposed && !_disposeRequested && generation == _displayPublicationGeneration;
+    }
+
+    private bool TryPublishDisplayTransition(
+        long generation, CharacterOverviewState state, CharacterOverviewState? expectedDisplay = null)
+    {
+        lock (_lifecycleSync)
+        {
+            if (_disposed || _disposeRequested || generation != _displayPublicationGeneration)
+                return false;
+            if (expectedDisplay is not null
+                && (State.WorkspaceId != expectedDisplay.WorkspaceId
+                    || State.ContentRevision != expectedDisplay.ContentRevision
+                    || State.SavedRevision != expectedDisplay.SavedRevision
+                    || State.DisplayOwnerContext != expectedDisplay.DisplayOwnerContext))
+                return false;
+            State = state;
+        }
+        NotifyStatePublished(state);
+        return true;
+    }
+
     public event EventHandler? StateChanged;
 
     public event Func<WorkspaceDeletionCommit, CancellationToken, Task>? WorkspaceDeletionCommitted
@@ -144,7 +192,9 @@ public sealed partial class CharacterOverviewPresenter :
         long expectedSourceRevision)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(CancellationToken.None);
-        if (State.WorkspaceId is not { } activeWorkspace
+        OwnerContextStamp? originalOwner = State.DisplayOwnerContext;
+        if (!IsOriginalPersistenceOwnerCurrent(originalOwner)
+            || State.WorkspaceId is not { } activeWorkspace
             || !string.Equals(activeWorkspace.Value, workspaceId.Value, StringComparison.Ordinal)
             || State.ContentRevision != expectedSourceRevision
             || (!State.IsDirty && State.ConflictState is null))
@@ -154,7 +204,7 @@ public sealed partial class CharacterOverviewPresenter :
                 "A complete recovery payload for this dirty revision is unavailable.");
         }
 
-        WorkspaceRecoveryCopyAvailability availability = _workspaceRecoveryPayloadStore.GetAvailability(
+        WorkspaceRecoveryCopyAvailability availability = RecoveryPayloads(originalOwner).GetAvailability(
             workspaceId,
             expectedSourceRevision);
         lock (_recoveryDispatchSync)
@@ -165,7 +215,8 @@ public sealed partial class CharacterOverviewPresenter :
                 && pending.Matches(
                     workspaceId,
                     expectedSourceRevision,
-                    availability.LocalGeneration);
+                    availability.LocalGeneration)
+                && pending.OriginalOwner == originalOwner;
             return availability with
             {
                 ExportPrepared = prepared,
@@ -183,6 +234,8 @@ public sealed partial class CharacterOverviewPresenter :
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ct.ThrowIfCancellationRequested();
+        OwnerContextStamp? originalOwner = State.DisplayOwnerContext;
+        long displayGeneration = CaptureDisplayGeneration();
         WorkspaceRecoveryCopyAvailability availability = GetRecoveryCopyAvailability(
             workspaceId,
             expectedSourceRevision);
@@ -236,7 +289,8 @@ public sealed partial class CharacterOverviewPresenter :
             requestVersion);
         lock (_recoveryDispatchSync)
         {
-            if (_disposed)
+            if (_disposed || !IsOriginalPersistenceOwnerCurrent(originalOwner)
+                || !IsDisplayGenerationCurrent(displayGeneration))
                 return Task.FromResult(new WorkspaceRecoveryCopyExportResult(
                     false,
                     expectedSourceRevision,
@@ -246,10 +300,10 @@ public sealed partial class CharacterOverviewPresenter :
                     0,
                     "Recovery payload is unavailable."));
 
-            _pendingRecoveryExport = new PendingRecoveryExport(workspaceId, request);
+            _pendingRecoveryExport = new PendingRecoveryExport(workspaceId, request, originalOwner);
         }
 
-        Publish(State with
+        TryPublishDisplayTransition(displayGeneration, State with
         {
             IsBusy = false,
             Error = null,
@@ -283,6 +337,7 @@ public sealed partial class CharacterOverviewPresenter :
             if (_disposed
                 || _pendingRecoveryExport is not { } candidate
                 || !candidate.MatchesRequest(request)
+                || !IsOriginalPersistenceOwnerCurrent(candidate.OriginalOwner)
                 || candidate.LeaseIssued
                 || candidate.AwaitingExplicitUserAck
                 || !EqualityComparer<WorkspaceRecoveryExportRequest?>.Default.Equals(
@@ -300,7 +355,7 @@ public sealed partial class CharacterOverviewPresenter :
             _pendingRecoveryExport = pending;
         }
 
-        if (!_workspaceRecoveryPayloadStore.TryAcquireLease(
+        if (!RecoveryPayloads(pending.OriginalOwner).TryAcquireLease(
                 pending.WorkspaceId,
                 request.SourceRevision,
                 request.LocalGeneration,
@@ -316,6 +371,7 @@ public sealed partial class CharacterOverviewPresenter :
             if (_disposed
                 || _pendingRecoveryExport is not { } current
                 || !current.MatchesRequest(request)
+                || !IsOriginalPersistenceOwnerCurrent(current.OriginalOwner)
                 || !current.LeaseIssued)
             {
                 lease.Dispose();
@@ -346,6 +402,7 @@ public sealed partial class CharacterOverviewPresenter :
             if (_disposed
                 || _pendingRecoveryExport is not { } candidate
                 || !candidate.MatchesRequest(request)
+                || !IsOriginalPersistenceOwnerCurrent(candidate.OriginalOwner)
                 || !candidate.LeaseIssued
                 || !EqualityComparer<WorkspaceRecoveryExportRequest?>.Default.Equals(
                     State.PendingRecoveryExport,
@@ -375,7 +432,7 @@ public sealed partial class CharacterOverviewPresenter :
 
         if (outcome.Status == WorkspaceRecoveryBrowserExportOutcome.DurableSaved)
         {
-            bool confirmed = _workspaceRecoveryPayloadStore.MarkExported(
+            bool confirmed = RecoveryPayloads(pending.OriginalOwner).MarkExported(
                 pending.WorkspaceId,
                 request.SourceRevision,
                 request.LocalGeneration);
@@ -422,7 +479,8 @@ public sealed partial class CharacterOverviewPresenter :
         {
             if (_disposed
                 || _pendingRecoveryExport is not { } pending
-                || !pending.MatchesRequest(request))
+                || !pending.MatchesRequest(request)
+                || !IsOriginalPersistenceOwnerCurrent(pending.OriginalOwner))
             {
                 return;
             }
@@ -446,11 +504,13 @@ public sealed partial class CharacterOverviewPresenter :
         long expectedLocalGeneration)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(CancellationToken.None);
+        OwnerContextStamp? originalOwner = State.DisplayOwnerContext;
         lock (_recoveryDispatchSync)
         {
             if (_disposed
                 || _pendingRecoveryExport is not { AwaitingExplicitUserAck: true } pending
                 || !pending.Matches(workspaceId, expectedSourceRevision, expectedLocalGeneration)
+                || !IsOriginalPersistenceOwnerCurrent(pending.OriginalOwner)
                 || State.WorkspaceId is not { } activeWorkspace
                 || !string.Equals(activeWorkspace.Value, workspaceId.Value, StringComparison.Ordinal)
                 || State.ContentRevision != expectedSourceRevision
@@ -462,7 +522,7 @@ public sealed partial class CharacterOverviewPresenter :
             _pendingRecoveryExport = null;
         }
 
-        bool confirmed = _workspaceRecoveryPayloadStore.MarkExported(
+        bool confirmed = RecoveryPayloads(originalOwner).MarkExported(
             workspaceId,
             expectedSourceRevision,
             expectedLocalGeneration);
@@ -485,7 +545,10 @@ public sealed partial class CharacterOverviewPresenter :
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
-        if (!_workspaceRecoveryPayloadStore.CanCloseAfterExport(
+        CharacterOverviewState originalState = State;
+        OwnerContextStamp? originalOwner = originalState.DisplayOwnerContext;
+        if (!IsOriginalPersistenceOwnerCurrent(originalOwner)
+            || !RecoveryPayloads(originalOwner).CanCloseAfterExport(
                 workspaceId,
                 expectedSourceRevision,
                 expectedLocalGeneration))
@@ -495,11 +558,13 @@ public sealed partial class CharacterOverviewPresenter :
                 "Export the complete recovery copy before closing this preserved runner.");
         }
 
+        long displayGeneration = BeginDisplayTransition();
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator
             .CloseDeletedRecoveryAtomicallyAsync(
-                State,
+                originalState,
                 workspaceId,
-                localCommit => _workspaceRecoveryPayloadStore.TryCommitExplicitClose(
+                localCommit => IsOriginalPersistenceOwnerCurrent(originalOwner)
+                    && RecoveryPayloads(originalOwner).TryCommitExplicitClose(
                     workspaceId,
                     expectedSourceRevision,
                     expectedLocalGeneration,
@@ -511,7 +576,7 @@ public sealed partial class CharacterOverviewPresenter :
 
         // The exact generation and local close committed together. Shell or
         // subscriber feedback cannot roll that boundary back or reclassify it.
-        PublishPostCommitState(result.State);
+        PublishPostCommitState(result.State, displayGeneration);
 
         try
         {
@@ -880,6 +945,7 @@ public sealed partial class CharacterOverviewPresenter :
     private sealed record PendingRecoveryExport(
         CharacterWorkspaceId WorkspaceId,
         WorkspaceRecoveryExportRequest Request,
+        OwnerContextStamp? OriginalOwner,
         bool LeaseIssued = false,
         bool AwaitingExplicitUserAck = false)
     {
@@ -899,40 +965,59 @@ public sealed partial class CharacterOverviewPresenter :
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
-        DesktopPreferenceState preferences = DesktopPreferenceStateRuntime.Current;
-        Publish(State with
-        {
-            IsBusy = true,
-            Error = null,
-            Preferences = preferences
-        });
-
+        long generation = BeginDisplayTransition();
         try
         {
+            // Capturing can fail while an account is recovering or revoked. It
+            // must retire the old display through the same guarded publication
+            // path, not throw before startup can render account recovery.
+            OwnerContextStamp? requestedOwner = (_client as IOwnerBoundShellStateClient)?.CaptureOwnerContext();
+            DesktopPreferenceState preferences = DesktopPreferenceStateRuntime.Current;
+            CharacterOverviewState initial = requestedOwner is { } original
+                && (State.Session.OwnerContext != original
+                    || (State.DisplayOwnerContext is { } displayOwner && displayOwner != original))
+                ? CharacterOverviewState.Empty
+                : State;
+            TryPublishDisplayTransition(generation, initial with
+            {
+                IsBusy = true,
+                Error = null,
+                Preferences = preferences
+            });
             ShellBootstrapData bootstrap = TryCreateBootstrapFromShellState(out ShellBootstrapData shellBootstrap)
                 ? shellBootstrap
                 : await _bootstrapDataProvider.GetAsync(ct);
             bootstrap = NormalizeBootstrapData(bootstrap);
-            WorkspaceSessionState session = _workspaceSessionPresenter.Restore(
-                bootstrap.Workspaces,
-                bootstrap.ActiveWorkspaceId);
+            if (!IsDisplayGenerationCurrent(generation)) return;
+            if (requestedOwner is { } retained
+                && (bootstrap.OwnerContext != retained
+                    || _client is not IOwnerBoundShellStateClient bound
+                    || bound.CaptureOwnerContext() != retained)) return;
+            WorkspaceSessionState session = requestedOwner is { } owner
+                ? _workspaceSessionPresenter.Restore(owner, bootstrap.Workspaces, bootstrap.ActiveWorkspaceId)
+                : _workspaceSessionPresenter.Restore(bootstrap.Workspaces, bootstrap.ActiveWorkspaceId);
 
-            Publish(State with
+            CharacterOverviewState restored = initial with
             {
                 IsBusy = false,
                 Error = null,
+                Preferences = preferences,
                 Session = session,
                 Commands = bootstrap.Commands,
                 NavigationTabs = bootstrap.NavigationTabs,
                 OpenWorkspaces = session.OpenWorkspaces,
                 Notice = session.OpenWorkspaces.Count == 0
-                    ? State.Notice
+                    ? null
                     : BuildRestoredDossierNotice(session.OpenWorkspaces.Count)
-            });
+            };
+            if (requestedOwner is { } feedbackOwner)
+                restored = restored with { FeedbackProvenance = new(feedbackOwner, restored.Notice, restored.Error, restored.LastCommandId) };
+            TryPublishDisplayTransition(generation, restored);
         }
         catch (Exception ex)
         {
-            Publish(State with
+            TryPublishDisplayTransition(generation, (_client is IOwnerBoundShellStateClient
+                ? CharacterOverviewState.Empty : State) with
             {
                 IsBusy = false,
                 Error = ex.Message
@@ -947,8 +1032,16 @@ public sealed partial class CharacterOverviewPresenter :
 
     private void Publish(CharacterOverviewState state)
     {
-        ThrowIfDisposed();
-        State = state;
+        lock (_lifecycleSync)
+        {
+            ThrowIfDisposed();
+            State = state;
+        }
+        NotifyStatePublished(state);
+    }
+
+    private void NotifyStatePublished(CharacterOverviewState state)
+    {
         SyncRosterWatchRuntime(state);
         _shellPresenter?.SyncOverviewFeedback(CreateShellOverviewFeedback(state));
         StateChanged?.Invoke(this, EventArgs.Empty);
@@ -969,7 +1062,13 @@ public sealed partial class CharacterOverviewPresenter :
             OpenWorkspaces: openWorkspaces,
             Notice: state.Notice,
             Error: state.Error,
-            LastCommandId: state.LastCommandId);
+            LastCommandId: state.LastCommandId)
+        {
+            RosterOwnerContext = state.OpenWorkspaces.SequenceEqual(state.Session.OpenWorkspaces)
+                ? state.Session.OwnerContext : null,
+            FeedbackOwnerContext = state.FeedbackProvenance is { } proof && proof.Matches(state)
+                ? proof.OriginalOwner : null
+        };
     }
 
     private bool TryCreateBootstrapFromShellState(out ShellBootstrapData bootstrap)
@@ -979,6 +1078,9 @@ public sealed partial class CharacterOverviewPresenter :
             return false;
 
         ShellState shellState = _shellPresenter.State;
+        if (_client is IOwnerBoundShellStateClient bound
+            && (shellState.OwnerContext is not { IsValid: true } original
+                || bound.CaptureOwnerContext() != original)) return false;
         if (shellState.Commands.Count == 0 || shellState.NavigationTabs.Count == 0)
             return false;
 
@@ -1011,7 +1113,7 @@ public sealed partial class CharacterOverviewPresenter :
             ActiveTabId: shellState.ActiveTabId,
             WorkflowDefinitions: shellState.WorkflowDefinitions ?? [],
             WorkflowSurfaces: shellState.WorkflowSurfaces ?? [],
-            ActiveRuntime: shellState.ActiveRuntime);
+            ActiveRuntime: shellState.ActiveRuntime) { OwnerContext = shellState.OwnerContext };
         return true;
     }
 

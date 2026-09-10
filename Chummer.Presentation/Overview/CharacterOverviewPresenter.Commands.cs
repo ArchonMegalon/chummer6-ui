@@ -17,6 +17,11 @@ public sealed partial class CharacterOverviewPresenter
             return;
         }
 
+        long dialogGeneration = Interlocked.Increment(ref _dialogOpeningGeneration);
+        CreationDialogAuthority? creationAuthority = commandId == "new_character"
+            ? CaptureCreationDialogAuthority()
+            : null;
+
         Publish(State with
         {
             LastCommandId = commandId,
@@ -27,7 +32,21 @@ public sealed partial class CharacterOverviewPresenter
             State: State,
             CurrentWorkspace: ResolveCurrentWorkspaceId(),
             DialogFactory: _dialogFactory,
-            Publish: Publish,
+            Publish: state =>
+            {
+                if (dialogGeneration != Volatile.Read(ref _dialogOpeningGeneration)) return;
+                if (creationAuthority is not null)
+                {
+                    if (!IsCreationOwnerCurrent(creationAuthority)) return;
+                    state = state with
+                    {
+                        ActiveDialog = state.ActiveDialog is { } dialog
+                            ? dialog with { CreationAuthority = creationAuthority }
+                            : null
+                    };
+                }
+                Publish(state);
+            },
             GetShellBootstrapAsync: (rulesetId, token) => _client.GetShellBootstrapAsync(rulesetId, token),
             GetRuntimeInspectorProfileAsync: (profileId, rulesetId, token) => _client.GetRuntimeInspectorProfileAsync(profileId, rulesetId, token),
             GetMasterIndexAsync: _client.GetMasterIndexAsync,

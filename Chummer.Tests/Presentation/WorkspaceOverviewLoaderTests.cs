@@ -22,7 +22,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Chummer.Tests.Presentation;
 
 [TestClass]
-public class WorkspaceOverviewLoaderTests
+public partial class WorkspaceOverviewLoaderTests
 {
     [TestMethod]
     public async Task LoadAsync_returns_expected_sections_from_client()
@@ -476,7 +476,7 @@ public class WorkspaceOverviewLoaderTests
 
         public Task<bool> CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct) => throw new NotImplementedException();
 
-        public Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
+        public virtual Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
             CharacterWorkspaceId id,
             CancellationToken ct)
         {

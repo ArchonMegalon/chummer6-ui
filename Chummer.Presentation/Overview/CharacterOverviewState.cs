@@ -1,6 +1,8 @@
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Owners;
+using System.Text.Json.Serialization;
 
 namespace Chummer.Presentation.Overview;
 
@@ -44,6 +46,20 @@ public sealed record CharacterOverviewState(
     ConditionMonitorEditorState? ActiveConditionMonitor = null,
     WorkspaceLocationEditorState? ActiveLocationEditor = null)
 {
+    [System.Text.Json.Serialization.JsonIgnore]
+    internal OverviewFeedbackProvenance? FeedbackProvenance { get; init; }
+
+    /// <summary>
+    /// Transient owner authority of the actual bound overview/section reads that
+    /// produced this display. Never a credential, persisted state or commit receipt.
+    /// Unbound and remote projections do not issue this capability.
+    /// </summary>
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; init; }
+
+    [JsonIgnore]
+    public WorkspaceOutputBinding? PendingOutputBinding { get; init; }
+
     /// <summary>
     /// Grounded creation journey for an unfinished character. Completed characters use the
     /// advanced editor surface and therefore keep this projection null.

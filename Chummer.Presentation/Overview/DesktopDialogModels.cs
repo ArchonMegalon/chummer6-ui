@@ -1,3 +1,7 @@
+using Chummer.Application.Owners;
+using Chummer.Contracts.Characters;
+using System.Text.Json.Serialization;
+
 namespace Chummer.Presentation.Overview;
 
 public sealed record DesktopDialogField(
@@ -39,7 +43,22 @@ public sealed record DesktopDialogState(
     string Title,
     string? Message,
     IReadOnlyList<DesktopDialogField> Fields,
-    IReadOnlyList<DesktopDialogAction> Actions);
+    IReadOnlyList<DesktopDialogAction> Actions)
+{
+    // In-process opening authority, not form data or a persisted credential.
+    [JsonIgnore]
+    internal CreationDialogAuthority? CreationAuthority { get; init; }
+}
+
+internal sealed class CreationDialogAuthority(OwnerContextStamp? owner, bool requiresOwner)
+{
+    private int _started;
+    public OwnerContextStamp? Owner { get; } = owner;
+    public bool RequiresOwner { get; } = requiresOwner;
+    public CharacterCreationBootstrapReceipt? Receipt { get; set; }
+    public bool TryStart() => Interlocked.CompareExchange(ref _started, 1, 0) == 0;
+    public void RejectedBeforeCommit() => Interlocked.Exchange(ref _started, 0);
+}
 
 public sealed record DesktopDialogFieldOption(
     string Value,

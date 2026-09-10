@@ -3,7 +3,7 @@ using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
-public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
+public sealed partial class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
 {
     private const int MaxRecentWorkspaceCount = 24;
     private readonly IWorkspaceSessionManager _manager;
@@ -16,7 +16,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
 
     public WorkspaceSessionState State { get; private set; } = WorkspaceSessionState.Empty;
 
-    public WorkspaceSessionState Restore(IReadOnlyList<WorkspaceListItem> workspaces, CharacterWorkspaceId? activeWorkspaceId = null)
+    private WorkspaceSessionState RestoreCore(IReadOnlyList<WorkspaceListItem> workspaces, CharacterWorkspaceId? activeWorkspaceId)
     {
         IReadOnlyList<OpenWorkspaceState> openWorkspaces = _manager.Restore(workspaces)
             .Select(MergeRetainedState)
@@ -29,7 +29,8 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         State = new WorkspaceSessionState(
             ActiveWorkspaceId: activeWorkspace,
             OpenWorkspaces: openWorkspaces,
-            RecentWorkspaceIds: BuildRecentList(openWorkspaces.Select(workspace => workspace.Id), State.RecentWorkspaceIds));
+            RecentWorkspaceIds: BuildRecentList(openWorkspaces.Select(workspace => workspace.Id), State.RecentWorkspaceIds))
+        { OwnerContext = State.OwnerContext };
         return State;
     }
 
@@ -38,7 +39,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return Open(id, profile, rulesetId: null);
     }
 
-    public WorkspaceSessionState Open(CharacterWorkspaceId id, CharacterProfileSection? profile, string? rulesetId)
+    private WorkspaceSessionState OpenCore(CharacterWorkspaceId id, CharacterProfileSection? profile, string? rulesetId)
     {
         IReadOnlyList<OpenWorkspaceState> activationSource = State.OpenWorkspaces;
         if (!Contains(activationSource, id) && _closedWorkspaceCache.TryGetValue(id.Value, out OpenWorkspaceState? retainedWorkspace))
@@ -55,9 +56,9 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return State;
     }
 
-    public WorkspaceSessionState Switch(CharacterWorkspaceId id)
+    private WorkspaceSessionState SwitchCore(CharacterWorkspaceId id)
     {
-        if (!Contains(id))
+        if (!ContainsCore(id))
             return State;
 
         State = State with
@@ -68,7 +69,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return State;
     }
 
-    public WorkspaceSessionState ClearActive()
+    private WorkspaceSessionState ClearActiveCore()
     {
         State = State with
         {
@@ -77,7 +78,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return State;
     }
 
-    public WorkspaceSessionState Close(CharacterWorkspaceId id)
+    private WorkspaceSessionState CloseCore(CharacterWorkspaceId id)
     {
         OpenWorkspaceState? closingWorkspace = State.FindWorkspace(id);
         if (closingWorkspace is not null)
@@ -86,7 +87,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return RemoveOpenWorkspace(id);
     }
 
-    public WorkspaceSessionState Forget(CharacterWorkspaceId id)
+    private WorkspaceSessionState ForgetCore(CharacterWorkspaceId id)
     {
         _closedWorkspaceCache.Remove(id.Value);
         RemoveOpenWorkspace(id);
@@ -126,7 +127,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return State;
     }
 
-    public WorkspaceSessionState CloseAll()
+    private WorkspaceSessionState CloseAllCore()
     {
         foreach (OpenWorkspaceState workspace in State.OpenWorkspaces)
             CacheClosedWorkspace(workspace);
@@ -139,7 +140,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
         return State;
     }
 
-    public WorkspaceSessionState SetRevisions(
+    private WorkspaceSessionState SetRevisionsCore(
         CharacterWorkspaceId id,
         long contentRevision,
         long savedRevision,
@@ -156,13 +157,12 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
             });
     }
 
-    public WorkspaceSessionState SetConflictState(CharacterWorkspaceId id, WorkspaceConflictState? conflictState)
+    private WorkspaceSessionState SetConflictStateCore(CharacterWorkspaceId id, WorkspaceConflictState? conflictState)
     {
         return UpdateWorkspace(id, workspace => workspace with { ConflictState = conflictState });
     }
 
-    [Obsolete("Use SetRevisions. HasSavedWorkspace is derived from SavedRevision.")]
-    public WorkspaceSessionState SetSavedStatus(CharacterWorkspaceId id, bool hasSavedWorkspace)
+    private WorkspaceSessionState SetSavedStatusCore(CharacterWorkspaceId id, bool hasSavedWorkspace)
     {
         return UpdateWorkspace(
             id,
@@ -178,7 +178,7 @@ public sealed class WorkspaceSessionPresenter : IWorkspaceSessionPresenter
             });
     }
 
-    public bool Contains(CharacterWorkspaceId id)
+    private bool ContainsCore(CharacterWorkspaceId id)
     {
         return Contains(State.OpenWorkspaces, id);
     }

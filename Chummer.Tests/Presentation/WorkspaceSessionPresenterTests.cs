@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Chummer.Application.Owners;
+using Chummer.Contracts.Owners;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
@@ -11,6 +13,57 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public class WorkspaceSessionPresenterTests
 {
+    [TestMethod]
+    [DataRow("owner-b", false)]
+    [DataRow("owner-aba", false)]
+    [DataRow("unchanged", false)]
+    [DataRow("owner-b", true)]
+    [DataRow("owner-aba", true)]
+    [DataRow("unchanged", true)]
+    public void Owner_partitioned_restore_retains_only_same_epoch_revisions_and_conflicts(string transition, bool knownRevision)
+    {
+        var first = new OwnerContextStamp(new OwnerScope("roster-a"), "roster-host", 0);
+        var next = transition == "unchanged" ? first : first with
+        {
+            Owner = new OwnerScope(transition == "owner-b" ? "roster-b" : "roster-a"),
+            TransitionRevision = transition == "owner-b" ? 1 : 2
+        };
+        var id = new CharacterWorkspaceId("shared-workspace");
+        var row = CreateWorkspace(id.Value, "runner", "", DateTimeOffset.UtcNow,
+            contentRevision: knownRevision ? 2 : 0, savedRevision: knownRevision ? 1 : 0);
+        var presenter = new WorkspaceSessionPresenter();
+        presenter.Restore(first, [row], id);
+        presenter.SetRevisions(first, id, 9, 8);
+        presenter.SetConflictState(first, id, new WorkspaceConflictState("save", 9, 10, "Old owner conflict"));
+        presenter.Close(first, id);
+        var restored = presenter.Restore(next, [row], id);
+        Assert.AreEqual(next, restored.OwnerContext);
+        bool retainRevision = transition == "unchanged" && !knownRevision;
+        Assert.AreEqual(retainRevision ? 9 : row.ContentRevision, restored.ContentRevision);
+        Assert.AreEqual(retainRevision ? 8 : row.SavedRevision, restored.SavedRevision);
+        Assert.AreEqual(transition == "unchanged", restored.ActiveWorkspace?.ConflictState is not null);
+    }
+
+    [TestMethod]
+    [DataRow("older-epoch")]
+    [DataRow("foreign-host")]
+    [DataRow("same-epoch-other-owner")]
+    public void Roster_restore_cannot_rewind_an_observed_authority_or_replace_its_issuer(string invalidKind)
+    {
+        var current = new OwnerContextStamp(new OwnerScope("roster-b"), "roster-host", 2);
+        var old = current with
+        {
+            Owner = new OwnerScope("roster-a"),
+            AuthorityInstanceId = invalidKind == "foreign-host" ? "other-host" : current.AuthorityInstanceId,
+            TransitionRevision = invalidKind == "older-epoch" ? 0 : 2
+        };
+        var row = CreateWorkspace("shared-workspace", "Current runner", "", DateTimeOffset.UtcNow);
+        var presenter = new WorkspaceSessionPresenter();
+        var expected = presenter.Restore(current, [row], row.Id);
+        Assert.ThrowsExactly<InvalidOperationException>(() => presenter.Restore(old, [row], row.Id));
+        Assert.AreSame(expected, presenter.State);
+    }
+
     [TestMethod]
     public void Restore_sets_active_workspace_and_recent_order()
     {

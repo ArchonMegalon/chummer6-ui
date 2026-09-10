@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Chummer.Application.Owners;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Owners;
@@ -8,7 +9,7 @@ using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Desktop.Runtime;
 
-public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync
+public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync, IOwnerBoundDesktopWorkspaceRoamingSync
 {
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
@@ -19,31 +20,34 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
     private readonly IWorkspaceService _workspaceService;
     private readonly HttpClient _httpClient;
     private readonly Func<DesktopInstallLinkingState> _stateLoader;
+    private readonly IOwnerContextLeaseAccessor _ownerContext;
 
     public GrantBoundDesktopWorkspaceRoamingSync(
         string desktopHeadId,
         IWorkspaceStore workspaceStore,
         IWorkspaceService workspaceService,
         HttpClient? httpClient = null,
-        Func<DesktopInstallLinkingState>? stateLoader = null)
+        Func<DesktopInstallLinkingState>? stateLoader = null,
+        IOwnerContextLeaseAccessor? ownerContext = null)
     {
         _desktopHeadId = desktopHeadId;
         _workspaceStore = workspaceStore;
         _workspaceService = workspaceService;
         _httpClient = httpClient ?? CreateHttpClient();
         _stateLoader = stateLoader ?? (() => DesktopInstallLinkingRuntime.LoadOrCreateState(_desktopHeadId));
+        _ownerContext = ownerContext ?? new DesktopInstallOwnerContextAccessor(_desktopHeadId);
     }
 
     public async Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        DesktopInstallLinkingState? state = TryLoadClaimedState();
-        if (state is null)
+        CapturedOwnerContext? context = TryCaptureClaimedOwner(owner, ct);
+        if (context is null)
         {
             return new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
         }
 
-        RemoteSnapshotListResult remoteList = await TryListRemoteSnapshotsAsync(state, ct).ConfigureAwait(false);
+        RemoteSnapshotListResult remoteList = await TryListRemoteSnapshotsAsync(context, ct).ConfigureAwait(false);
         if (!remoteList.Result.Success)
         {
             return remoteList.Result;
@@ -72,7 +76,12 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         foreach (RoamingWorkspaceSnapshotDto remote in remoteById.Values)
         {
             ct.ThrowIfCancellationRequested();
-            DesktopWorkspaceRoamingResult applied = ApplyInboundSnapshot(owner, remote);
+            if (!TryWithOwnerLease(context.Stamp, ct,
+                    admittedOwner => ApplyInboundSnapshot(admittedOwner, remote),
+                    out DesktopWorkspaceRoamingResult applied))
+            {
+                return new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
+            }
             results.Add(applied);
             if (applied.Outcome == DesktopWorkspaceRoamingOutcome.Conflict
                 && IsFarFuture(remote.UpdatedAtUtc))
@@ -81,14 +90,26 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
             }
         }
 
-        foreach (WorkspaceStoreEntry local in _workspaceStore.List(owner))
+        if (!TryWithOwnerLease(context.Stamp, ct,
+                admittedOwner => _workspaceStore.List(admittedOwner).ToArray(),
+                out WorkspaceStoreEntry[] localEntries))
+        {
+            return new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
+        }
+
+        foreach (WorkspaceStoreEntry local in localEntries)
         {
             ct.ThrowIfCancellationRequested();
             bool shouldPush = !remoteById.TryGetValue(local.Id.Value, out RoamingWorkspaceSnapshotDto? remote)
                               || rejectedFutureSnapshots.Contains(local.Id.Value);
             if (!shouldPush && remote is not null)
             {
-                WorkspaceStoreReadResult currentRead = _workspaceStore.Get(owner, local.Id);
+                if (!TryWithOwnerLease(context.Stamp, ct,
+                        admittedOwner => _workspaceStore.Get(admittedOwner, local.Id),
+                        out WorkspaceStoreReadResult currentRead))
+                {
+                    return new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
+                }
                 shouldPush = currentRead.Success
                              && currentRead.Value is WorkspaceStoredDocument current
                              && !DocumentsEquivalent(current.Document, remote)
@@ -97,11 +118,14 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
 
             if (shouldPush)
             {
-                results.Add(await SynchronizeOutboundCoreAsync(owner, local.Id, state, ct).ConfigureAwait(false));
+                results.Add(await SynchronizeOutboundCoreAsync(local.Id, context, ct).ConfigureAwait(false));
             }
         }
 
-        return Aggregate(results, remoteList.Result.ServerToken);
+        return TryWithOwnerLease(context.Stamp, ct, _ => Aggregate(results, remoteList.Result.ServerToken),
+            out DesktopWorkspaceRoamingResult result)
+            ? result
+            : new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
     }
 
     public async Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
@@ -110,45 +134,72 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        DesktopInstallLinkingState? state = TryLoadClaimedState();
-        if (state is null)
+        CapturedOwnerContext? context = TryCaptureClaimedOwner(owner, ct);
+        if (context is null)
         {
             return new DesktopWorkspaceRoamingResult(
                 DesktopWorkspaceRoamingOutcome.Unavailable,
                 workspaceId);
         }
 
-        return await SynchronizeOutboundCoreAsync(owner, workspaceId, state, ct).ConfigureAwait(false);
+        return await SynchronizeOutboundCoreAsync(workspaceId, context, ct).ConfigureAwait(false);
+    }
+
+    public async Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
+        OwnerContextStamp originalOwner, CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        CapturedOwnerContext? context = originalOwner.IsValid
+            ? TryCaptureClaimedOwner(originalOwner.Owner, ct) : null;
+        if (context is null || context.Stamp != originalOwner)
+            return new(DesktopWorkspaceRoamingOutcome.Unavailable);
+        return await SynchronizeOutboundCoreAsync(workspaceId, context, ct).ConfigureAwait(false);
     }
 
     private async Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundCoreAsync(
-        OwnerScope owner,
         CharacterWorkspaceId workspaceId,
-        DesktopInstallLinkingState state,
+        CapturedOwnerContext context,
         CancellationToken ct)
     {
-        WorkspaceStoreReadResult read = _workspaceStore.Get(owner, workspaceId);
-        if (!read.Success || read.Value is not WorkspaceStoredDocument stored)
-        {
-            return new DesktopWorkspaceRoamingResult(
-                DesktopWorkspaceRoamingOutcome.Unavailable,
-                workspaceId);
-        }
+        // Materialize credentials and the complete payload under the same original authority.
+        // The state loader is deliberately not called here: it takes the same state-file lock.
+        if (!TryWithOwnerLease<RoamingWorkspaceSnapshotUpsertRequest?>(context.Stamp, ct, admittedOwner =>
+            {
+                WorkspaceStoreReadResult read = _workspaceStore.Get(admittedOwner, workspaceId);
+                if (!read.Success || read.Value is not WorkspaceStoredDocument stored)
+                {
+                    return null;
+                }
 
-        WorkspaceDocument document = stored.Document;
-        CharacterFileSummary? summary;
-        try
-        {
-            summary = _workspaceService.GetSummary(owner, workspaceId);
-        }
-        catch (Exception ex) when (IsNonFatalSyncFailure(ex, ct))
-        {
-            return new DesktopWorkspaceRoamingResult(
-                DesktopWorkspaceRoamingOutcome.Unavailable,
-                workspaceId);
-        }
+                CharacterFileSummary? summary = _workspaceService.GetSummary(admittedOwner, workspaceId);
+                if (summary is null)
+                {
+                    return null;
+                }
 
-        if (summary is null)
+                WorkspaceDocument document = stored.Document;
+                return new RoamingWorkspaceSnapshotUpsertRequest(
+                    InstallationId: context.State.InstallationId,
+                    AccessToken: context.State.GrantToken!,
+                    WorkspaceId: workspaceId.Value,
+                    RulesetId: document.RulesetId,
+                    Format: document.Format.ToString(),
+                    SchemaVersion: document.SchemaVersion,
+                    PayloadKind: document.PayloadKind,
+                    Payload: document.Content,
+                    UpdatedAtUtc: stored.LastUpdatedUtc,
+                    OriginInstallationId: context.State.InstallationId,
+                    Name: summary.Name,
+                    Alias: summary.Alias,
+                    Metatype: summary.Metatype,
+                    BuildMethod: summary.BuildMethod,
+                    CreatedVersion: summary.CreatedVersion,
+                    AppVersion: summary.AppVersion,
+                    Karma: summary.Karma,
+                    Nuyen: summary.Nuyen,
+                    Created: summary.Created,
+                    ContentRevision: stored.ContentRevision);
+            }, out RoamingWorkspaceSnapshotUpsertRequest? request) || request is null)
         {
             return new DesktopWorkspaceRoamingResult(
                 DesktopWorkspaceRoamingOutcome.Unavailable,
@@ -159,27 +210,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         {
             using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
                 "api/v1/install-linking/continuation/workspaces/upsert",
-                new RoamingWorkspaceSnapshotUpsertRequest(
-                    InstallationId: state.InstallationId,
-                    AccessToken: state.GrantToken!,
-                    WorkspaceId: workspaceId.Value,
-                    RulesetId: document.RulesetId,
-                    Format: document.Format.ToString(),
-                    SchemaVersion: document.SchemaVersion,
-                    PayloadKind: document.PayloadKind,
-                    Payload: document.Content,
-                    UpdatedAtUtc: stored.LastUpdatedUtc,
-                    OriginInstallationId: state.InstallationId,
-                    Name: summary.Name,
-                    Alias: summary.Alias,
-                    Metatype: summary.Metatype,
-                    BuildMethod: summary.BuildMethod,
-                    CreatedVersion: summary.CreatedVersion,
-                    AppVersion: summary.AppVersion,
-                    Karma: summary.Karma,
-                    Nuyen: summary.Nuyen,
-                    Created: summary.Created,
-                    ContentRevision: stored.ContentRevision),
+                request,
                 ct).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
@@ -204,11 +235,15 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
                 }
             }
 
-            return new DesktopWorkspaceRoamingResult(
-                DesktopWorkspaceRoamingOutcome.Applied,
-                workspaceId,
-                receipt?.RemoteRevision,
-                receipt?.ServerToken);
+            // A previously sent request cannot be retracted. If ownership changed while HTTP
+            // was pending, Unavailable is an unknown remote outcome, not a no-effect receipt.
+            return TryWithOwnerLease(context.Stamp, ct, _ => new DesktopWorkspaceRoamingResult(
+                    DesktopWorkspaceRoamingOutcome.Applied,
+                    workspaceId,
+                    receipt?.RemoteRevision,
+                    receipt?.ServerToken), out DesktopWorkspaceRoamingResult result)
+                ? result
+                : new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable, workspaceId);
         }
         catch (Exception ex) when (IsNonFatalSyncFailure(ex, ct))
         {
@@ -279,14 +314,22 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
     }
 
     private async Task<RemoteSnapshotListResult> TryListRemoteSnapshotsAsync(
-        DesktopInstallLinkingState state,
+        CapturedOwnerContext context,
         CancellationToken ct)
     {
+        if (!TryWithOwnerLease(context.Stamp, ct,
+                _ => new RoamingWorkspaceGrantRequest(context.State.InstallationId, context.State.GrantToken!),
+                out RoamingWorkspaceGrantRequest request))
+        {
+            return new RemoteSnapshotListResult(
+                new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable), []);
+        }
+
         try
         {
             using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
                 "api/v1/install-linking/continuation/workspaces/list",
-                new RoamingWorkspaceGrantRequest(state.InstallationId, state.GrantToken!),
+                request,
                 ct).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
             {
@@ -319,7 +362,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         }
     }
 
-    private DesktopInstallLinkingState? TryLoadClaimedState()
+    private CapturedOwnerContext? TryCaptureClaimedOwner(OwnerScope owner, CancellationToken ct)
     {
         Uri? baseUri = ResolveApiBaseAddress();
         if (baseUri is null)
@@ -329,20 +372,64 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
 
         try
         {
+            OwnerContextStamp stamp = _ownerContext.Capture();
+            if (!stamp.IsValid || stamp.Owner != owner)
+            {
+                return null;
+            }
+
+            // Load outside the live lease. A later exact-stamp acquisition rejects transitions
+            // during this read, including a switch away and back to the same visible owner.
             DesktopInstallLinkingState state = _stateLoader();
             if (!string.Equals(state.Status, "claimed", StringComparison.OrdinalIgnoreCase)
                 || string.IsNullOrWhiteSpace(state.InstallationId)
-                || string.IsNullOrWhiteSpace(state.GrantToken))
+                || string.IsNullOrWhiteSpace(state.GrantToken)
+                || DesktopInstallLinkingRuntime.ResolveOwnerScope(state) != stamp.Owner
+                || !string.Equals(state.InstallationId, stamp.AuthorityInstanceId, StringComparison.Ordinal)
+                || state.OwnerTransitionRevision != stamp.TransitionRevision)
             {
                 return null;
             }
 
             _httpClient.BaseAddress ??= baseUri;
-            return state;
+            return new CapturedOwnerContext(stamp, state);
         }
-        catch
+        catch (Exception ex) when (IsNonFatalSyncFailure(ex, ct))
         {
             return null;
+        }
+    }
+
+    private bool TryWithOwnerLease<T>(
+        OwnerContextStamp expected,
+        CancellationToken ct,
+        Func<OwnerScope, T> action,
+        out T result)
+    {
+        result = default!;
+        ct.ThrowIfCancellationRequested();
+        try
+        {
+            if (!expected.IsValid || !_ownerContext.TryAcquire(expected, out IOwnerContextLease? lease))
+            {
+                return false;
+            }
+
+            using (lease)
+            {
+                if (lease.Stamp != expected)
+                {
+                    return false;
+                }
+
+                ct.ThrowIfCancellationRequested();
+                result = action(lease.Stamp.Owner);
+                return true;
+            }
+        }
+        catch (Exception ex) when (IsNonFatalSyncFailure(ex, ct))
+        {
+            return false;
         }
     }
 
@@ -501,6 +588,8 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
     private sealed record RoamingWorkspaceGrantRequest(
         string InstallationId,
         string AccessToken);
+
+    private sealed record CapturedOwnerContext(OwnerContextStamp Stamp, DesktopInstallLinkingState State);
 
     private sealed record RoamingWorkspaceSnapshotUpsertRequest(
         string InstallationId,

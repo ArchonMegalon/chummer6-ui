@@ -1,3 +1,4 @@
+using Chummer.Application.Owners;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
@@ -12,6 +13,8 @@ public sealed class ShellPresenter : IShellPresenter
     private readonly IChummerClient _runtimeClient;
     private readonly IShellBootstrapDataProvider _bootstrapDataProvider;
     private Dictionary<string, string> _activeTabsByWorkspace = new(StringComparer.Ordinal);
+    private readonly object _publicationSync = new();
+    private long _publicationGeneration;
 
     public ShellPresenter(IChummerClient client, IShellBootstrapDataProvider? bootstrapDataProvider = null)
     {
@@ -25,15 +28,22 @@ public sealed class ShellPresenter : IShellPresenter
 
     public async Task InitializeAsync(CancellationToken ct)
     {
-        Publish(State with
-        {
-            IsBusy = true,
-            Error = null
-        });
-
+        long generation = Interlocked.Increment(ref _publicationGeneration);
         try
         {
+            OwnerContextStamp? originalOwner = CaptureInitialOwner();
+            if (_runtimeClient is IOwnerBoundShellStateClient && State.OwnerContext != originalOwner)
+            {
+                Publish(ShellState.Empty with { IsBusy = true }, generation,
+                    new Dictionary<string, string>(StringComparer.Ordinal));
+            }
+            else
+            {
+                Publish(State with { IsBusy = true, Error = null }, generation);
+            }
             ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(ct);
+            if (!IsTransitionCurrent(generation)) return;
+            RequireBootstrapOwner(bootstrap, originalOwner);
             string preferredRulesetId = ResolveRulesetId(
                 bootstrap.PreferredRulesetId,
                 bootstrap.Workspaces.Select(workspace => workspace.RulesetId),
@@ -60,6 +70,8 @@ public sealed class ShellPresenter : IShellPresenter
                 && !string.Equals(bootstrapRulesetId, activeRulesetId, StringComparison.Ordinal))
             {
                 bootstrap = await _bootstrapDataProvider.GetAsync(activeRulesetId, ct);
+                if (!IsTransitionCurrent(generation)) return;
+                RequireBootstrapOwner(bootstrap, originalOwner);
                 openWorkspaces = MapWorkspaces(bootstrap.Workspaces);
                 activeWorkspaceId = ResolveActiveWorkspaceId(activeWorkspaceId ?? bootstrap.ActiveWorkspaceId, openWorkspaces);
                 activeRulesetId = ResolveRulesetForActiveWorkspace(activeWorkspaceId, openWorkspaces, preferredRulesetId);
@@ -94,20 +106,22 @@ public sealed class ShellPresenter : IShellPresenter
             bool workspaceTabMapChanged = !WorkspaceTabMapsEqual(bootstrapWorkspaceTabMap, workspaceTabMap);
             if (activeWorkspaceChanged || activeTabChanged || workspaceTabMapChanged)
             {
-                await _runtimeClient.SaveShellSessionAsync(
+                await SaveShellSessionAsync(originalOwner,
                     new ShellSessionState(
                         ActiveWorkspaceId: activeWorkspaceId?.Value,
                         ActiveTabId: resolvedActiveTabId,
                         ActiveTabsByWorkspace: workspaceTabMap),
                     ct);
             }
-            _activeTabsByWorkspace = workspaceTabMap;
+            if (!IsTransitionCurrent(generation)) return;
+            RequireOwner(originalOwner);
 
             AppCommandDefinition[] menuRoots = BuildMenuRoots(commands);
 
             Publish(State with
             {
                 IsBusy = false,
+                OwnerContext = originalOwner,
                 Error = null,
                 Notice = openWorkspaces.Length == 0 ? "Shell initialized." : $"Restored {openWorkspaces.Length} workspace(s).",
                 ActiveRulesetId = activeRulesetId,
@@ -122,15 +136,17 @@ public sealed class ShellPresenter : IShellPresenter
                 WorkflowDefinitions = workflowDefinitions,
                 WorkflowSurfaces = workflowSurfaces,
                 ActiveRuntime = bootstrap.ActiveRuntime
-            });
+            }, generation, workspaceTabMap);
         }
         catch (Exception ex)
         {
-            Publish(State with
+            if (!IsTransitionCurrent(generation)) return;
+            Publish((_runtimeClient is IOwnerBoundShellStateClient ? ShellState.Empty : State) with
             {
                 IsBusy = false,
                 Error = ex.Message
-            });
+            }, generation, _runtimeClient is IOwnerBoundShellStateClient
+                ? new Dictionary<string, string>(StringComparer.Ordinal) : null);
         }
     }
 
@@ -195,6 +211,8 @@ public sealed class ShellPresenter : IShellPresenter
 
     public async Task SelectTabAsync(string tabId, CancellationToken ct)
     {
+        OwnerContextStamp? originalOwner = RequireDisplayedOwner();
+        long generation = Interlocked.Increment(ref _publicationGeneration);
         if (string.IsNullOrWhiteSpace(tabId))
         {
             Publish(State with { Error = "Tab id is required." });
@@ -223,13 +241,13 @@ public sealed class ShellPresenter : IShellPresenter
         }
 
         Dictionary<string, string> nextWorkspaceTabs = BuildUpdatedWorkspaceTabMap(State.ActiveWorkspaceId, tab.Id);
-        await _runtimeClient.SaveShellSessionAsync(
+        await SaveShellSessionAsync(originalOwner,
             new ShellSessionState(
                 ActiveWorkspaceId: State.ActiveWorkspaceId?.Value,
                 ActiveTabId: tab.Id,
                 ActiveTabsByWorkspace: nextWorkspaceTabs),
             ct);
-        _activeTabsByWorkspace = nextWorkspaceTabs;
+        RequireTransitionCurrent(generation);
 
         Publish(State with
         {
@@ -237,7 +255,7 @@ public sealed class ShellPresenter : IShellPresenter
             ActiveTabId = tab.Id,
             OpenMenuId = null,
             Notice = $"Selected tab '{tab.Id}'."
-        });
+        }, generation, nextWorkspaceTabs);
 
     }
 
@@ -290,6 +308,8 @@ public sealed class ShellPresenter : IShellPresenter
 
     public async Task SetPreferredRulesetAsync(string rulesetId, CancellationToken ct)
     {
+        OwnerContextStamp? originalOwner = RequireDisplayedOwner();
+        long generation = Interlocked.Increment(ref _publicationGeneration);
         string? preferredRulesetId = RulesetDefaults.NormalizeOptional(rulesetId);
         if (preferredRulesetId is null)
         {
@@ -305,9 +325,7 @@ public sealed class ShellPresenter : IShellPresenter
             || State.Commands.Count == 0
             || State.NavigationTabs.Count == 0
             || State.WorkflowDefinitions is null
-            || State.WorkflowSurfaces is null
-            || State.WorkflowDefinitions.Count == 0
-            || State.WorkflowSurfaces.Count == 0;
+            || State.WorkflowSurfaces is null;
 
         IReadOnlyList<AppCommandDefinition> commands = State.Commands;
         IReadOnlyList<NavigationTabDefinition> tabs = State.NavigationTabs;
@@ -317,6 +335,8 @@ public sealed class ShellPresenter : IShellPresenter
         if (requiresCatalogRefresh)
         {
             ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(activeRulesetId, ct);
+            RequireTransitionCurrent(generation);
+            RequireBootstrapOwner(bootstrap, originalOwner);
             commands = EnsureClassicShellCommands(activeRulesetId, bootstrap.Commands);
             tabs = bootstrap.NavigationTabs;
             workflowDefinitions = bootstrap.WorkflowDefinitions ?? [];
@@ -324,10 +344,12 @@ public sealed class ShellPresenter : IShellPresenter
             activeRuntime = bootstrap.ActiveRuntime;
         }
 
-        await _runtimeClient.SaveShellPreferencesAsync(
+        await SaveShellPreferencesAsync(originalOwner,
             new ShellPreferences(
                 PreferredRulesetId: preferredRulesetId),
             ct);
+
+        RequireTransitionCurrent(generation);
 
         Dictionary<string, string> nextWorkspaceTabs = BuildUpdatedWorkspaceTabMap(State.ActiveWorkspaceId, State.ActiveTabId);
         string? resolvedActiveTabId = ResolveActiveTabId(
@@ -344,14 +366,14 @@ public sealed class ShellPresenter : IShellPresenter
         bool workspaceTabMapChanged = !WorkspaceTabMapsEqual(_activeTabsByWorkspace, nextWorkspaceTabs);
         if (activeTabChanged || workspaceTabMapChanged)
         {
-            await _runtimeClient.SaveShellSessionAsync(
+            await SaveShellSessionAsync(originalOwner,
                 new ShellSessionState(
                     ActiveWorkspaceId: State.ActiveWorkspaceId?.Value,
                     ActiveTabId: resolvedActiveTabId,
                     ActiveTabsByWorkspace: nextWorkspaceTabs),
                 ct);
         }
-        _activeTabsByWorkspace = nextWorkspaceTabs;
+        RequireTransitionCurrent(generation);
 
         Publish(State with
         {
@@ -367,12 +389,35 @@ public sealed class ShellPresenter : IShellPresenter
             WorkflowDefinitions = workflowDefinitions,
             WorkflowSurfaces = workflowSurfaces,
             ActiveRuntime = activeRuntime
-        });
+        }, generation, nextWorkspaceTabs);
     }
 
-    public async Task SyncWorkspaceContextAsync(CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
+    public Task SyncWorkspaceContextAsync(CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
     {
-        IReadOnlyList<WorkspaceListItem> workspaces = await _runtimeClient.ListWorkspacesAsync(ct);
+        if (_runtimeClient is IOwnerBoundShellStateClient)
+            return Task.FromException(new InvalidOperationException("Local workspace navigation requires its original owner stamp."));
+        return SyncWorkspaceContextCoreAsync(null, activeWorkspaceId, ct);
+    }
+
+    public Task SyncWorkspaceContextAsync(OwnerContextStamp originalOwner, CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
+    {
+        if (_runtimeClient is not IOwnerBoundShellStateClient)
+            return Task.FromException(new NotSupportedException("Remote workspace navigation does not accept a local owner stamp."));
+        RequireOwner(originalOwner);
+        if (State.OwnerContext != originalOwner)
+            RejectStaleOwner();
+        return SyncWorkspaceContextCoreAsync(originalOwner, activeWorkspaceId, ct);
+    }
+
+    private async Task SyncWorkspaceContextCoreAsync(OwnerContextStamp? originalOwner, CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
+    {
+        RequireOwner(originalOwner);
+        long generation = Interlocked.Increment(ref _publicationGeneration);
+        IReadOnlyList<WorkspaceListItem> workspaces = _runtimeClient is IOwnerBoundShellStateClient boundClient
+            ? await boundClient.ListWorkspacesAsync(originalOwner!.Value, ct)
+            : await _runtimeClient.ListWorkspacesAsync(ct);
+        RequireTransitionCurrent(generation);
+        RequireOwner(originalOwner);
         ShellWorkspaceState[] openWorkspaces = MapWorkspaces(workspaces);
         string preferredRulesetId = ResolveRulesetId(
             State.PreferredRulesetId,
@@ -396,6 +441,8 @@ public sealed class ShellPresenter : IShellPresenter
             || workflowSurfaces.Count == 0)
         {
             ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(activeRulesetId, ct);
+            RequireTransitionCurrent(generation);
+            RequireBootstrapOwner(bootstrap, originalOwner);
             commands = EnsureClassicShellCommands(activeRulesetId, bootstrap.Commands);
             tabs = bootstrap.NavigationTabs;
             workflowDefinitions = bootstrap.WorkflowDefinitions ?? [];
@@ -421,15 +468,16 @@ public sealed class ShellPresenter : IShellPresenter
 
         if (activeWorkspaceChanged || activeTabChanged || workspaceTabMapChanged)
         {
-            await _runtimeClient.SaveShellSessionAsync(
+            await SaveShellSessionAsync(originalOwner,
                 new ShellSessionState(
                     ActiveWorkspaceId: resolvedActiveWorkspace?.Value,
                     ActiveTabId: resolvedActiveTabId,
                     ActiveTabsByWorkspace: nextWorkspaceTabs),
                 ct);
         }
-        _activeTabsByWorkspace = nextWorkspaceTabs;
+        RequireTransitionCurrent(generation);
 
+        RequireOwner(originalOwner);
         Publish(State with
         {
             ActiveRulesetId = activeRulesetId,
@@ -443,11 +491,41 @@ public sealed class ShellPresenter : IShellPresenter
             WorkflowDefinitions = workflowDefinitions,
             WorkflowSurfaces = workflowSurfaces,
             ActiveRuntime = activeRuntime
-        });
+        }, generation, nextWorkspaceTabs);
     }
 
     public void SyncOverviewFeedback(ShellOverviewFeedback feedback)
     {
+        ArgumentNullException.ThrowIfNull(feedback);
+        if (_runtimeClient is IOwnerBoundShellStateClient bound)
+        {
+            long generation = Volatile.Read(ref _publicationGeneration);
+            OwnerContextStamp current;
+            try { current = bound.CaptureOwnerContext(); }
+            catch (InvalidOperationException) { current = default; }
+            if (!current.IsValid)
+            {
+                // Feedback is not authority. An unavailable credential context
+                // must neither retain an old roster nor throw out of recovery's
+                // empty-state publication. Never overwrite a newer initialize.
+                Publish(ShellState.Empty with
+                {
+                    Error = "Shell owner is unavailable; recover the account before continuing."
+                }, generation, new Dictionary<string, string>(StringComparer.Ordinal));
+                return;
+            }
+            if (State.OwnerContext != current) return;
+            bool rosterCurrent = feedback.RosterOwnerContext == current;
+            bool feedbackCurrent = feedback.FeedbackOwnerContext == current;
+            if (!rosterCurrent && !feedbackCurrent) return;
+            feedback = feedback with
+            {
+                OpenWorkspaces = rosterCurrent ? feedback.OpenWorkspaces : State.OpenWorkspaces,
+                Notice = feedbackCurrent ? feedback.Notice : State.Notice,
+                Error = feedbackCurrent ? feedback.Error : State.Error,
+                LastCommandId = feedbackCurrent ? feedback.LastCommandId : State.LastCommandId
+            };
+        }
         ArgumentNullException.ThrowIfNull(feedback);
 
         ShellWorkspaceState[] openWorkspaces = feedback.OpenWorkspaces
@@ -774,9 +852,114 @@ public sealed class ShellPresenter : IShellPresenter
         return WorkspaceIdsEqual(left.Value, right.Value);
     }
 
-    private void Publish(ShellState nextState)
+    private OwnerContextStamp? CaptureInitialOwner()
     {
-        State = nextState;
+        if (_runtimeClient is not IOwnerBoundShellStateClient client)
+            return null;
+        OwnerContextStamp stamp = client.CaptureOwnerContext();
+        RequireOwner(stamp);
+        return stamp;
+    }
+
+    private OwnerContextStamp? RequireDisplayedOwner()
+    {
+        OwnerContextStamp? originalOwner = State.OwnerContext;
+        RequireOwner(originalOwner);
+        return originalOwner;
+    }
+
+    private void RequireBootstrapOwner(ShellBootstrapData bootstrap, OwnerContextStamp? originalOwner)
+    {
+        RequireOwner(originalOwner);
+        if (_runtimeClient is IOwnerBoundShellStateClient && bootstrap.OwnerContext != originalOwner)
+            RejectStaleOwner();
+    }
+
+    private void RequireOwner(OwnerContextStamp? originalOwner)
+    {
+        if (_runtimeClient is not IOwnerBoundShellStateClient client)
+            return;
+        if (originalOwner is not { IsValid: true } expected || client.CaptureOwnerContext() != expected)
+            RejectStaleOwner();
+    }
+
+    private void RejectStaleOwner()
+    {
+        const string error = "Shell owner changed; reload the shell before continuing.";
+        OwnerContextStamp? live = (_runtimeClient as IOwnerBoundShellStateClient)?.CaptureOwnerContext();
+        bool cleared = false;
+        lock (_publicationSync)
+        {
+            // Reject the stale caller, not a newer correctly loaded account.
+            if (live is not { IsValid: true } || State.OwnerContext != live)
+            {
+                _activeTabsByWorkspace = new(StringComparer.Ordinal);
+                State = ShellState.Empty with { Error = error };
+                cleared = true;
+            }
+        }
+        if (cleared) StateChanged?.Invoke(this, EventArgs.Empty);
+        throw new InvalidOperationException(error);
+    }
+
+    private async Task SaveShellSessionAsync(OwnerContextStamp? originalOwner, ShellSessionState session, CancellationToken ct)
+    {
+        RequireOwner(originalOwner);
+        try
+        {
+            if (_runtimeClient is IOwnerBoundShellStateClient client)
+                await client.SaveShellSessionAsync(originalOwner!.Value, session, ct);
+            else
+                await _runtimeClient.SaveShellSessionAsync(session, ct);
+        }
+        catch
+        {
+            RequireOwner(originalOwner);
+            throw;
+        }
+        // The save may already have committed for the original owner. A stale
+        // continuation is rejected, not described as a rollback or no effect.
+        RequireOwner(originalOwner);
+    }
+
+    private async Task SaveShellPreferencesAsync(OwnerContextStamp? originalOwner, ShellPreferences preferences, CancellationToken ct)
+    {
+        RequireOwner(originalOwner);
+        try
+        {
+            if (_runtimeClient is IOwnerBoundShellStateClient client)
+                await client.SaveShellPreferencesAsync(originalOwner!.Value, preferences, ct);
+            else
+                await _runtimeClient.SaveShellPreferencesAsync(preferences, ct);
+        }
+        catch
+        {
+            RequireOwner(originalOwner);
+            throw;
+        }
+        RequireOwner(originalOwner);
+    }
+
+    private bool IsTransitionCurrent(long generation)
+        => generation == Volatile.Read(ref _publicationGeneration);
+
+    private void RequireTransitionCurrent(long generation)
+    {
+        if (!IsTransitionCurrent(generation))
+            throw new InvalidOperationException("A newer shell transition superseded this result; reload before continuing.");
+    }
+
+    private void Publish(ShellState nextState, long? generation = null, Dictionary<string, string>? workspaceTabs = null)
+    {
+        if (generation is { } expected && !IsTransitionCurrent(expected)) return;
+        if (nextState.OwnerContext is not null)
+            RequireOwner(nextState.OwnerContext);
+        lock (_publicationSync)
+        {
+            if (generation is { } original && !IsTransitionCurrent(original)) return;
+            if (workspaceTabs is not null) _activeTabsByWorkspace = workspaceTabs;
+            State = nextState;
+        }
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 }

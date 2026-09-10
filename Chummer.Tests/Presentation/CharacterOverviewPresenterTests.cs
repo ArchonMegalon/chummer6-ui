@@ -11,6 +11,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Chummer.Campaign.Contracts;
+using Chummer.Application.Owners;
+using Chummer.Application.Workspaces;
+using Chummer.Application.Characters;
+using Chummer.Contracts.Owners;
 using Chummer.Contracts.Api;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Content;
@@ -31,6 +35,410 @@ public class CharacterOverviewPresenterTests
 {
     private static readonly string[] LegacyUiControlIds = LegacyUiControlCatalog.All.ToArray();
     private const string CareerKarmaExpenseXml = "<character><name>Karma Runner</name><alias>KARMA</alias><metatype>Human</metatype><buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><created>True</created><karma>10</karma><nuyen>0</nuyen><expenses><expense><guid>65da27db-24a8-4b6e-b42c-30f4bb13a4f8</guid><date>2081-05-12T14:30:00</date><amount>1.9</amount><reason>Run reward</reason><type>Karma</type><refund>False</refund><forcecareervisible>False</forcecareervisible><undo><karmatype>ManualAdd</karmatype><extra>keep</extra></undo></expense></expenses></character>";
+
+    [TestMethod]
+    public async Task Displayed_owner_context_is_issued_by_the_read_not_the_next_gesture()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        OwnerContextStamp beforeLoad = client.CaptureOwnerContext();
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+
+        Assert.AreEqual(beforeLoad, presenter.State.DisplayOwnerContext,
+            "A successful bound display must retain the authority of its actual reads.");
+        string serialized = JsonSerializer.Serialize(presenter.State);
+        Assert.DoesNotContain(nameof(CharacterOverviewState.DisplayOwnerContext), serialized);
+        Assert.DoesNotContain(beforeLoad.AuthorityInstanceId, serialized);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Displayed_owner_context_prevents_old_view_mutating_identical_other_owner_workspace(bool returnToOwnerA)
+    {
+        // The fixture deliberately exposes identical workspace identity, revision
+        // and bytes under either owner. Only real owner authority can fence this.
+        OwnerBoundFakeChummerClient client = new();
+        WorkspaceCollectionMutationRequest request = SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        CharacterOverviewState rendered = presenter.State;
+        WorkspaceDocument before = client.GetDocument("ws-owner-bound");
+        if (returnToOwnerA) client.TransitionAwayAndBack();
+        else client.TransitionToOwnerB();
+
+        await presenter.ApplyCollectionMutationAsync(request, CancellationToken.None);
+
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls,
+            "Click-time capture must not authorize a view rendered before an owner transition.");
+        Assert.AreSame(before, client.GetDocument("ws-owner-bound"));
+        Assert.AreEqual(5L, client.GetWorkspaceItem("ws-owner-bound").ContentRevision);
+        Assert.AreEqual(rendered.DisplayOwnerContext, client.LastBoundReadOwner);
+    }
+
+    [TestMethod]
+    public async Task Displayed_owner_context_is_absent_for_unbound_client()
+    {
+        FakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+
+        Assert.IsNull(presenter.State.DisplayOwnerContext);
+    }
+
+    [TestMethod]
+    public async Task Generic_xml_mutation_carries_one_owner_stamp_from_read_through_replace()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        WorkspaceCollectionMutationRequest request = SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        WorkspaceDocument before = client.GetDocument("ws-owner-bound");
+        OwnerContextStamp original = presenter.State.DisplayOwnerContext!.Value;
+        client.AfterBoundRead = client.TransitionAwayAndBack;
+
+        await presenter.ApplyCollectionMutationAsync(request, CancellationToken.None);
+
+        // A later live check is required to retire a stale display, but must not
+        // become replacement write authority. Assert the actual call arguments.
+        Assert.AreEqual(original, client.LastBoundReadOwner);
+        Assert.AreEqual(original, client.LastBoundReplaceOwner);
+        Assert.AreNotEqual(original, client.CaptureOwnerContext());
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls, "An owner ABA between read and replace must not mutate.");
+        Assert.AreSame(before, client.GetDocument("ws-owner-bound"));
+        Assert.IsNull(presenter.State.WorkspaceId);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Reload");
+    }
+
+    [TestMethod]
+    public async Task Bound_collection_keeps_pre_intent_owner_stamp_and_reports_joined_non_dispatch()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        WorkspaceCollectionMutationRequest request = SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        OwnerContextStamp original = presenter.State.DisplayOwnerContext
+            ?? throw new AssertFailedException("The actual load did not issue displayed owner authority.");
+        client.TransitionAwayAndBack(); // Represents a picker/host-intent wait before presenter entry.
+
+        OwnerBoundWorkspaceMutationDispatch dispatch = await presenter.ApplyCollectionMutationAsync(
+            request, original, CancellationToken.None);
+
+        Assert.AreEqual(OwnerBoundWorkspaceMutationDispatch.NotDispatched, dispatch);
+        Assert.AreEqual(original, client.LastBoundReadOwner);
+        Assert.AreNotEqual(original, client.CaptureOwnerContext());
+        Assert.IsNull(client.LastBoundReplaceOwner);
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(5L, client.GetWorkspaceItem("ws-owner-bound").ContentRevision);
+    }
+
+    [TestMethod]
+    [DataRow("success")]
+    [DataRow("core-failure")]
+    [DataRow("post-commit-failure")]
+    public async Task Bound_collection_dispatch_signal_is_not_a_success_or_commit_receipt(string outcome)
+    {
+        OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = outcome };
+        WorkspaceCollectionMutationRequest request = SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+
+        OwnerBoundWorkspaceMutationDispatch dispatch = await presenter.ApplyCollectionMutationAsync(
+            request, presenter.State.DisplayOwnerContext
+                ?? throw new AssertFailedException("The actual load did not issue displayed owner authority."), CancellationToken.None);
+
+        Assert.AreEqual(OwnerBoundWorkspaceMutationDispatch.Dispatched, dispatch, presenter.State.Error);
+        Assert.AreEqual(outcome == "core-failure" ? 5L : 6L,
+            client.GetWorkspaceItem("ws-owner-bound").ContentRevision);
+        if (outcome == "success") Assert.IsNull(presenter.State.Error);
+        else StringAssert.Contains(presenter.State.Error ?? string.Empty, "Synthetic dispatched");
+    }
+
+    [TestMethod]
+    public async Task Bound_collection_does_not_fabricate_local_authority_for_remote_client()
+    {
+        FakeChummerClient client = new();
+        WorkspaceCollectionMutationRequest request = SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        OwnerContextStamp original = new(new OwnerScope("owner-a"), "test-authority", 0);
+
+        OwnerBoundWorkspaceMutationDispatch dispatch = await presenter.ApplyCollectionMutationAsync(
+            request, original, CancellationToken.None);
+
+        Assert.AreEqual(OwnerBoundWorkspaceMutationDispatch.NotDispatched, dispatch);
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+        await presenter.ApplyCollectionMutationAsync(request, CancellationToken.None);
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls, "The existing remote-owned path must remain available.");
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    public async Task Pre_canceled_bound_collection_joins_without_entering_client_dispatch()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        WorkspaceCollectionMutationRequest request = SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        OwnerContextStamp original = presenter.State.DisplayOwnerContext
+            ?? throw new AssertFailedException("The actual load did not issue displayed owner authority.");
+        client.ClearBoundObservations();
+        using CancellationTokenSource canceled = new();
+        canceled.Cancel();
+
+        OwnerBoundWorkspaceMutationDispatch dispatch = await presenter.ApplyCollectionMutationAsync(
+            request, original, canceled.Token);
+
+        Assert.AreEqual(OwnerBoundWorkspaceMutationDispatch.NotDispatched, dispatch);
+        Assert.IsNull(client.LastBoundReadOwner);
+        Assert.IsNull(client.LastBoundReplaceOwner);
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(5L, client.GetWorkspaceItem("ws-owner-bound").ContentRevision);
+    }
+
+    private static WorkspaceCollectionMutationRequest SeedOwnerBoundWorkspace(FakeChummerClient client)
+    {
+        const string xml = """
+            <character><name>Owner</name><alias>OWNER</alias><created>True</created><metatype>Human</metatype>
+              <buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion>
+              <karma>0</karma><nuyen>0</nuyen><contacts><contact><guid>contact</guid><name>Original</name>
+              <metatype>Human</metatype><type>Contact</type></contact></contacts></character>
+            """;
+        client.SeedWorkspace("ws-owner-bound", "Owner", "OWNER", rulesetId: RulesetDefaults.Sr5, contentRevision: 5, savedRevision: 3);
+        client.SeedDocument("ws-owner-bound", CanonicalizeRecoveryTestDocument(new WorkspaceDocument(xml, RulesetDefaults.Sr5)));
+        return new WorkspaceSetLinkedCharacterRequest(new(WorkspaceCollectionKind.Contact, "contact"),
+            Path.GetFullPath(Path.Combine(Path.GetTempPath(), "linked-characters", "owner-dispatch-test.chum5")),
+            "linked-characters/owner-dispatch-test.chum5", "Owner.chum5",
+            new CharacterLinkedDocument("Linked", "Linked", string.Empty, "Human", string.Empty, string.Empty, string.Empty));
+    }
+
+    [TestMethod]
+    public async Task Displayed_owner_context_first_capture_wait_can_only_issue_newly_read_owner_data()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        WorkspaceDocument oldOwnerDocument = client.GetDocument(id.Value);
+        using ManualResetEventSlim release = new();
+        TaskCompletionSource entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int first = 1;
+        client.BeforeOwnerCapture = () =>
+        {
+            if (Interlocked.Exchange(ref first, 0) == 0) return;
+            Assert.IsTrue(Thread.CurrentThread.IsThreadPoolThread);
+            Assert.IsNull(SynchronizationContext.Current);
+            entered.TrySetResult();
+            Assert.IsTrue(release.Wait(TimeSpan.FromSeconds(5)), "Fresh-read owner capture did not leave the caller free to continue.");
+        };
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        Task pending = presenter.LoadAsync(id, CancellationToken.None);
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.AreEqual(0, client.BoundOverviewCalls);
+            Assert.IsNull(client.LastBoundReadOwner, "No document read may precede the initial authority capture.");
+            client.TransitionToOwnerB();
+            client.SetOwnerBoundaryProfile("Fresh Owner B", "FRESH-B");
+            client.SeedDocument(id.Value, oldOwnerDocument.Content.Replace(
+                "<name>Owner</name>", "<name>Fresh Owner B</name>", StringComparison.Ordinal));
+        }
+        finally { release.Set(); }
+        await pending.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(client.CaptureOwnerContext(), presenter.State.DisplayOwnerContext);
+        Assert.AreEqual(new OwnerScope("owner-b"), presenter.State.DisplayOwnerContext!.Value.Owner);
+        Assert.AreEqual("Fresh Owner B", presenter.State.Profile?.Name);
+        Assert.IsNotNull(client.LastBoundOverviewDocument);
+        Assert.AreEqual(client.GetDocument(id.Value).Content, client.LastBoundOverviewDocument.Content);
+        Assert.AreNotEqual(oldOwnerDocument.Content, client.LastBoundOverviewDocument.Content);
+    }
+
+    [TestMethod]
+    public async Task Displayed_owner_context_rejects_owner_drift_during_projection()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        client.AfterBoundOverview = () => { client.TransitionToOwnerB(); return Task.CompletedTask; };
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+
+        Assert.AreEqual(1, client.BoundOverviewCalls);
+        Assert.IsNull(presenter.State.DisplayOwnerContext);
+        Assert.IsNull(presenter.State.WorkspaceId);
+        StringAssert.Contains(presenter.State.Error ?? string.Empty, "Owner authority changed");
+    }
+
+    [TestMethod]
+    [DataRow("load")]
+    [DataRow("close")]
+    [DataRow("dispose")]
+    [DataRow("switch-away-back")]
+    [DataRow("import")]
+    public async Task Displayed_owner_context_does_not_publish_late_materialized_state(string successor)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        client.SeedWorkspace("ws-owner-bound", "Owner", "OWNER", rulesetId: RulesetDefaults.Sr5, contentRevision: 5, savedRevision: 5);
+        using ManualResetEventSlim release = new();
+        TaskCompletionSource entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        PausingDisplayStateFactory factory = new();
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, workspaceOverviewStateFactory: factory);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp ownerA = presenter.State.DisplayOwnerContext
+            ?? throw new AssertFailedException("Initial owner-bound load failed.");
+        int pause = 1;
+        factory.AfterMaterialization = _ =>
+        {
+            if (Interlocked.Exchange(ref pause, 0) == 0) return;
+            entered.TrySetResult();
+            Assert.IsTrue(release.Wait(TimeSpan.FromSeconds(5)), "Late display result was not released.");
+        };
+        Task pending = Task.Run(() => presenter.LoadAsync(id, CancellationToken.None));
+        Task? disposal = null;
+        CharacterOverviewState winner = presenter.State;
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            client.TransitionToOwnerB();
+            switch (successor)
+            {
+                case "load": await presenter.LoadAsync(id, CancellationToken.None); break;
+                case "close": await presenter.CloseWorkspaceAsync(id, CancellationToken.None); break;
+                case "dispose": disposal = presenter.DisposeAsync().AsTask(); break;
+                case "switch-away-back":
+                    client.SeedWorkspace("ws-other", "Other", "OTHER", rulesetId: RulesetDefaults.Sr5);
+                    await presenter.SwitchWorkspaceAsync(new CharacterWorkspaceId("ws-other"), CancellationToken.None);
+                    await presenter.SwitchWorkspaceAsync(id, CancellationToken.None);
+                    break;
+                case "import": await presenter.ImportAsync(new WorkspaceImportDocument("<character><name>Imported</name></character>", RulesetDefaults.Sr5), CancellationToken.None); break;
+            }
+            winner = presenter.State;
+        }
+        finally { release.Set(); }
+        await pending.WaitAsync(TimeSpan.FromSeconds(5));
+        if (disposal is not null) await disposal.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreSame(winner, presenter.State, "The old already-materialized load republished after a newer display transition.");
+        if (successor == "close") Assert.IsNull(presenter.State.WorkspaceId);
+        if (successor is "load" or "switch-away-back" or "import")
+        {
+            Assert.IsNotNull(presenter.State.DisplayOwnerContext);
+            Assert.AreNotEqual(ownerA, presenter.State.DisplayOwnerContext);
+            Assert.AreEqual(client.CaptureOwnerContext(), presenter.State.DisplayOwnerContext);
+        }
+    }
+
+    [TestMethod]
+    public async Task Displayed_owner_context_discards_late_section_before_same_id_new_owner_load()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        TaskCompletionSource entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int pause = 1;
+        client.AfterBoundSection = async () =>
+        {
+            if (Interlocked.Exchange(ref pause, 0) == 0) return;
+            entered.TrySetResult();
+            await release.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        };
+        Task pending = presenter.SelectTabAsync("tab-gear", CancellationToken.None);
+        Task reload;
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            client.TransitionToOwnerB();
+            reload = presenter.LoadAsync(id, CancellationToken.None);
+        }
+        finally { release.TrySetResult(); }
+        await Task.WhenAll(pending, reload).WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.AreEqual(client.CaptureOwnerContext(), presenter.State.DisplayOwnerContext);
+        Assert.IsNull(presenter.State.Error);
+        Assert.AreEqual(id, presenter.State.WorkspaceId);
+    }
+
+    private sealed class PausingDisplayStateFactory : IWorkspaceOverviewStateFactory
+    {
+        private readonly WorkspaceOverviewStateFactory _inner = new();
+        public Action<CharacterOverviewState>? AfterMaterialization { get; set; }
+        public CharacterOverviewState CreateLoadedState(CharacterOverviewState currentState,
+            CharacterWorkspaceId workspaceId, WorkspaceSessionState session, WorkspaceOverviewLoadResult loadedOverview,
+            WorkspaceViewState? restoredView, bool hasSavedWorkspace)
+        {
+            CharacterOverviewState materialized = _inner.CreateLoadedState(currentState, workspaceId, session, loadedOverview, restoredView, hasSavedWorkspace);
+            // Actual canonical load and state factory already ran; this pause is
+            // after lifecycle CanPublish was computed but before presenter publication.
+            AfterMaterialization?.Invoke(materialized);
+            return materialized;
+        }
+    }
+
+    [TestMethod]
+    public async Task Displayed_owner_context_does_not_upgrade_cached_section_bytes()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        WorkspaceOverviewLoadResult loaded = await new WorkspaceOverviewLoader().LoadAsync(client, id, CancellationToken.None);
+        WorkspaceViewState cached = new("tab-gear", "gear-summary", "gear", "{\"oldOwner\":true}",
+            [new SectionRowState("oldOwner", "true")], null, null, 5, 3);
+
+        CharacterOverviewState restored = new WorkspaceOverviewStateFactory().CreateLoadedState(
+            presenter.State, id, presenter.State.Session, loaded, cached, hasSavedWorkspace: true);
+
+        Assert.AreEqual(loaded.DisplayOwnerContext, restored.DisplayOwnerContext);
+        Assert.IsNotNull(restored.DisplayOwnerContext);
+        Assert.AreEqual("tab-gear", restored.ActiveTabId, "Navigation preference is not owner authority.");
+        Assert.IsNull(restored.ActiveSectionId);
+        Assert.IsNull(restored.ActiveSectionJson);
+        Assert.IsEmpty(restored.ActiveSectionRows);
+        Assert.IsNull(restored.ActiveCollectionEditor);
+    }
+
+    [TestMethod]
+    [DataRow("content-revision")]
+    [DataRow("saved-revision")]
+    [DataRow("document-bytes")]
+    public async Task Displayed_owner_context_rejects_section_snapshot_drift(string drift)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        CharacterOverviewState expected = presenter.State;
+        int captures = client.OwnerCaptureCalls;
+        client.AfterBoundSection = () =>
+        {
+            if (drift == "document-bytes")
+                client.SeedDocument(id.Value, client.GetDocument(id.Value) with
+                {
+                    State = client.GetDocument(id.Value).State with { Payload = "<character><name>Changed</name></character>" }
+                });
+            else
+                client.SeedWorkspace(id.Value, "Owner", "OWNER", rulesetId: RulesetDefaults.Sr5,
+                    contentRevision: drift == "content-revision" ? 6 : 5,
+                    savedRevision: drift == "saved-revision" ? 4 : 3);
+            return Task.CompletedTask;
+        };
+
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => new WorkspaceSectionRenderer().RenderSectionAsync(
+            client, expected, "gear", null, null, CancellationToken.None));
+
+        Assert.AreEqual(captures, client.OwnerCaptureCalls, "Section reads reuse displayed authority, never capture a replacement stamp.");
+        Assert.AreSame(expected, presenter.State);
+    }
 
     private static CharacterOverviewPresenter CreateTrustedPresenter(
         IChummerClient client,
@@ -4378,10 +4786,148 @@ public class CharacterOverviewPresenterTests
         }
     }
 
-    private sealed class FakeChummerClient : IChummerClient
+    // Presenter seam fixture only: the production executor/lease is tested against
+    // InProcessChummerClient separately. This gate really excludes its test owner
+    // writer, and it never spans an asynchronous fake-store continuation.
+    private sealed class OwnerBoundFakeChummerClient : FakeChummerClient, IOwnerBoundWorkspaceProjectionClient
+    {
+        private readonly object _ownerGate = new();
+        private OwnerContextStamp _owner = new(new OwnerScope("owner-a"), Guid.NewGuid().ToString("N"), 0);
+        public int OwnerCaptureCalls { get; private set; }
+        public OwnerContextStamp? LastBoundReadOwner { get; private set; }
+        public OwnerContextStamp? LastBoundReplaceOwner { get; private set; }
+        public Action? AfterBoundRead { get; set; }
+        public Func<Task>? AfterBoundOverview { get; set; }
+        public Func<Task>? AfterBoundSection { get; set; }
+        public Action? BeforeOwnerCapture { get; set; }
+        public WorkspaceDocument? LastBoundOverviewDocument { get; private set; }
+        public int BoundOverviewCalls { get; private set; }
+        public string BoundReplacementOutcome { get; init; } = "success";
+
+        public void ClearBoundObservations()
+        {
+            LastBoundReadOwner = null;
+            LastBoundReplaceOwner = null;
+        }
+
+        public OwnerContextStamp CaptureOwnerContext()
+        {
+            BeforeOwnerCapture?.Invoke();
+            lock (_ownerGate) { OwnerCaptureCalls++; return _owner; }
+        }
+
+        public void TransitionAwayAndBack()
+        {
+            lock (_ownerGate) _owner = _owner with { Owner = new OwnerScope("owner-b"), TransitionRevision = checked(_owner.TransitionRevision + 1) };
+            lock (_ownerGate) _owner = _owner with { Owner = new OwnerScope("owner-a"), TransitionRevision = checked(_owner.TransitionRevision + 1) };
+        }
+
+        public void TransitionToOwnerB()
+        {
+            lock (_ownerGate) _owner = _owner with { Owner = new OwnerScope("owner-b"), TransitionRevision = checked(_owner.TransitionRevision + 1) };
+        }
+
+        public async Task<CommandResult<WorkspaceOverviewProjection>> GetWorkspaceOverviewAsync(
+            OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
+        {
+            CommandResult<WorkspaceOverviewProjection> result;
+            lock (_ownerGate)
+            {
+                RequireCurrentOwner(expectedOwner);
+                BoundOverviewCalls++;
+                WorkspaceDocumentSnapshot snapshot = Completed(base.GetWorkspaceAsync(id, ct)).Value!;
+                LastBoundOverviewDocument = snapshot.Document;
+                CharacterOverviewProjection overview = new(
+                    Completed(base.GetProfileAsync(id, ct)), Completed(base.GetProgressAsync(id, ct)),
+                    Completed(base.GetSkillsAsync(id, ct)), Completed(base.GetRulesAsync(id, ct)),
+                    Completed(base.GetBuildAsync(id, ct)), Completed(base.GetMovementAsync(id, ct)),
+                    Completed(base.GetAwakeningAsync(id, ct)));
+                result = new(true, new WorkspaceOverviewProjection(snapshot, overview, Completed(base.ValidateAsync(id, ct))), null);
+            }
+            if (AfterBoundOverview is { } wait) await wait().ConfigureAwait(false);
+            return result;
+        }
+
+        public async Task<JsonNode> GetSectionAsync(
+            OwnerContextStamp expectedOwner, CharacterWorkspaceId id, string sectionId, CancellationToken ct)
+        {
+            JsonNode result;
+            lock (_ownerGate)
+            {
+                RequireCurrentOwner(expectedOwner);
+                result = Completed(base.GetSectionAsync(id, sectionId, ct));
+            }
+            if (AfterBoundSection is { } wait) await wait().ConfigureAwait(false);
+            return result;
+        }
+
+        public Task<CharacterFileSummary> GetSummaryAsync(OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
+        {
+            lock (_ownerGate) { RequireCurrentOwner(expectedOwner); return Task.FromResult(Completed(base.GetSummaryAsync(id, ct))); }
+        }
+
+        public Task<CharacterValidationResult> ValidateAsync(OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
+        {
+            lock (_ownerGate) { RequireCurrentOwner(expectedOwner); return Task.FromResult(Completed(base.ValidateAsync(id, ct))); }
+        }
+
+        private static T Completed<T>(Task<T> operation)
+        {
+            Assert.IsTrue(operation.IsCompleted, "The test owner lease cannot span an asynchronous projection.");
+            return operation.GetAwaiter().GetResult();
+        }
+
+        public Task<CommandResult<WorkspaceDocumentSnapshot>> GetWorkspaceAsync(
+            OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
+        {
+            CommandResult<WorkspaceDocumentSnapshot> snapshot;
+            lock (_ownerGate)
+            {
+                LastBoundReadOwner = expectedOwner;
+                RequireCurrentOwner(expectedOwner);
+                Task<CommandResult<WorkspaceDocumentSnapshot>> read = base.GetWorkspaceAsync(id, ct);
+                Assert.IsTrue(read.IsCompleted, "This gated fixture does not support async store waits.");
+                snapshot = read.GetAwaiter().GetResult();
+            }
+            AfterBoundRead?.Invoke();
+            return Task.FromResult(snapshot);
+        }
+
+        public Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
+            OwnerContextStamp expectedOwner, CharacterWorkspaceId id, long expectedContentRevision,
+            WorkspaceDocument document, Action onDispatch, CancellationToken ct)
+        {
+            lock (_ownerGate)
+            {
+                LastBoundReplaceOwner = expectedOwner;
+                RequireCurrentOwner(expectedOwner);
+                onDispatch();
+                if (BoundReplacementOutcome == "core-failure") throw new InvalidOperationException("Synthetic dispatched Core failure.");
+                Task<CommandResult<WorkspaceRevisionReceipt>> replace = base.ReplaceWorkspaceDocumentAsync(id, expectedContentRevision, document, ct);
+                Assert.IsTrue(replace.IsCompleted, "This gated fixture does not support async store waits.");
+                CommandResult<WorkspaceRevisionReceipt> result = replace.GetAwaiter().GetResult();
+                if (BoundReplacementOutcome == "post-commit-failure") throw new InvalidOperationException("Synthetic dispatched post-commit failure.");
+                return Task.FromResult(result);
+            }
+        }
+
+        private void RequireCurrentOwner(OwnerContextStamp expected)
+        {
+            if (!expected.IsValid || expected != _owner)
+                throw new InvalidOperationException("Owner authority changed before test dispatch.");
+        }
+    }
+
+    private class FakeChummerClient : IChummerClient
     {
         private string _name = "Troy Simmons";
         private string _alias = "BLUE";
+
+        public void SetOwnerBoundaryProfile(string name, string alias)
+        {
+            _name = name;
+            _alias = alias;
+        }
         private readonly Dictionary<string, WorkspaceListItem> _workspaces = new(StringComparer.Ordinal);
         private readonly Dictionary<string, WorkspaceDocument> _documents = new(StringComparer.Ordinal);
         private readonly Dictionary<(string ProfileId, string RulesetId), RuntimeInspectorProjection> _runtimeInspectors = new();

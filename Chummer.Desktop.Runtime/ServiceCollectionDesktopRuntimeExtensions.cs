@@ -1,4 +1,7 @@
 using Chummer.Application.Owners;
+using Chummer.Application.Characters;
+using Chummer.Application.LifeModules;
+using Chummer.Application.Workspaces;
 using Chummer.Infrastructure.DependencyInjection;
 using Chummer.Presentation;
 using Chummer.Presentation.OriginBooks;
@@ -61,14 +64,27 @@ public static class ServiceCollectionDesktopRuntimeExtensions
             services.TryAddSingleton<IDesktopWorkspaceRoamingSync>(provider => new GrantBoundDesktopWorkspaceRoamingSync(
                 desktopHeadId,
                 provider.GetRequiredService<Chummer.Application.Workspaces.IWorkspaceStore>(),
-                provider.GetRequiredService<Chummer.Application.Workspaces.IWorkspaceService>()));
+                provider.GetRequiredService<Chummer.Application.Workspaces.IWorkspaceService>(),
+                ownerContext: provider.GetRequiredService<IOwnerContextAccessor>() as IOwnerContextLeaseAccessor
+                    ?? throw new InvalidOperationException("Desktop roaming requires the shared owner's live lease capability.")));
         }
         else
         {
             services.TryAddSingleton<IDesktopWorkspaceRoamingSync, NoOpDesktopWorkspaceRoamingSync>();
         }
 
+        services.TryAddSingleton<WorkspaceContinuationExportService>();
+        services.TryAddSingleton<WorkspaceContinuationRestoreService>(provider => new(
+            provider.GetRequiredService<IWorkspaceStore>(),
+            provider.GetRequiredService<IOwnerContextAccessor>(),
+            provider.GetRequiredService<ICharacterSourceDataResolver>(),
+            provider.GetRequiredService<ICharacterFileQueries>(),
+            provider.GetRequiredService<ILifeModulesCatalogService>(),
+            InProcessChummerClient.MaximumWorkspaceContinuationBytes));
         services.TryAddSingleton<IChummerClient, InProcessChummerClient>();
+        services.TryAddSingleton<IOwnerBoundWorkspaceContinuationClient>(provider =>
+            provider.GetRequiredService<IChummerClient>() as IOwnerBoundWorkspaceContinuationClient
+                ?? throw new InvalidOperationException("The local client does not support complete workspace continuations."));
         services.TryAddSingleton<ISessionClient, InProcessSessionClient>();
         return services;
     }

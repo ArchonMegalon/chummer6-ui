@@ -2,6 +2,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Contracts.Characters;
 using Chummer.Infrastructure.Xml;
+using Chummer.Application.Owners;
 
 namespace Chummer.Presentation.Overview;
 
@@ -40,6 +41,27 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    public async Task<OwnerBoundWorkspaceMutationDispatch> ApplyCollectionMutationAsync(
+        WorkspaceCollectionMutationRequest request,
+        OwnerContextStamp expectedOwner,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        ArgumentNullException.ThrowIfNull(request);
+        OwnerBoundWorkspaceMutationDispatch dispatch = OwnerBoundWorkspaceMutationDispatch.NotDispatched;
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyCollectionMutation(xml, request, _characterSourceDataResolver),
+            ct,
+            expectedOwner,
+            // This is deliberately only a local synchronous state assignment.
+            // It cannot reenter the owner authority while the client holds its lease.
+            () => dispatch = OwnerBoundWorkspaceMutationDispatch.Dispatched).ConfigureAwait(false);
+        // The complete existing mutation/recovery flow has joined. Dispatched
+        // means only that Core may have run, never success or commit attribution.
+        return dispatch;
+    }
+
     public async Task ApplyConditionMonitorEditAsync(ConditionMonitorEditRequest request, CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
@@ -54,35 +76,45 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
-        CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
-        long expectedContentRevision = State.ContentRevision;
+        CharacterOverviewState originalState = State;
+        OwnerContextStamp? originalOwner = originalState.DisplayOwnerContext;
+        long generation = CaptureDisplayGeneration();
+        CharacterWorkspaceId? currentWorkspace = originalState.WorkspaceId;
+        long expectedContentRevision = originalState.ContentRevision;
         if (currentWorkspace is null || expectedContentRevision <= 0)
         {
-            Publish(State with { Error = "Open a saved career runner before editing reputation." });
+            TryPublishDisplayTransition(generation, originalState with { Error = "Open a saved career runner before editing reputation." }, originalState);
             return null;
         }
 
+        bool OriginalViewIsCurrent()
+            => IsDisplayGenerationCurrent(generation)
+               && IsOriginalPersistenceOwnerCurrent(originalOwner)
+               && State.WorkspaceId == currentWorkspace && State.ContentRevision == expectedContentRevision;
+        if (!OriginalViewIsCurrent()) return null;
+
         try
         {
-            CommandResult<WorkspaceDocumentSnapshot> read = await _client
-                .GetWorkspaceAsync(currentWorkspace.Value, ct)
-                .ConfigureAwait(false);
+            CommandResult<WorkspaceDocumentSnapshot> read = await (originalOwner is { } owner
+                ? ((IOwnerBoundWorkspaceMutationClient)_client).GetWorkspaceAsync(owner, currentWorkspace.Value, ct)
+                : _client.GetWorkspaceAsync(currentWorkspace.Value, ct)).ConfigureAwait(false);
+            if (!OriginalViewIsCurrent()) return null;
             if (!read.Success || read.Value is null)
             {
-                Publish(State with { Error = read.Error ?? "Dossier could not be read for reputation editing." });
+                TryPublishDisplayTransition(generation, originalState with { Error = read.Error ?? "Dossier could not be read for reputation editing." }, originalState);
                 return null;
             }
 
             if (!string.Equals(read.Value.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal)
                 || read.Value.ContentRevision != expectedContentRevision)
             {
-                Publish(State with { Error = "The dossier changed before reputation editing could begin." });
+                TryPublishDisplayTransition(generation, originalState with { Error = "The dossier changed before reputation editing could begin." }, originalState);
                 return null;
             }
 
             if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
             {
-                Publish(State with { Error = "Reputation editing requires a native XML dossier." });
+                TryPublishDisplayTransition(generation, originalState with { Error = "Reputation editing requires a native XML dossier." }, originalState);
                 return null;
             }
 
@@ -91,8 +123,9 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
-            return editor;
+            if (!OriginalViewIsCurrent()) return null;
+            if (!TryPublishDisplayTransition(generation, State with { Error = null }, originalState)) return null;
+            return editor with { OriginalOwner = originalOwner };
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -100,13 +133,56 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch (Exception exception)
         {
-            Publish(State with { Error = exception.Message });
+            if (OriginalViewIsCurrent())
+                TryPublishDisplayTransition(generation, State with { Error = exception.Message }, originalState);
             return null;
         }
     }
 
+    public Task<CommandResult<WorkspaceRevisionReceipt>> ApplyCareerReputationEditAsync(
+        CareerReputationEditRequest request, OwnerContextStamp expectedOwner, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.OriginalOwner != expectedOwner)
+            return Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
+                "The reputation draft belongs to another account context.", WorkspaceOperationOutcome.Conflict));
+        return RunOriginalPersistenceGestureAsync<WorkspaceRevisionReceipt>(expectedOwner, request.WorkspaceId,
+            request.ExpectedContentRevision, (_, observe) => ApplyOriginalReputationMutationAsync(
+                request.WorkspaceId, request.ExpectedContentRevision, expectedOwner,
+                xml => WorkspaceXmlMutationCatalog.ApplyCareerReputationEdit(xml, request, _characterSourceDataResolver),
+                observe, ct));
+    }
+
+    public Task<CommandResult<WorkspaceRevisionReceipt>> ApplyBurnStreetCredAsync(
+        BurnStreetCredRequest request, OwnerContextStamp expectedOwner, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.OriginalOwner != expectedOwner)
+            return Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
+                "The Street Cred confirmation belongs to another account context.", WorkspaceOperationOutcome.Conflict));
+        return RunOriginalPersistenceGestureAsync<WorkspaceRevisionReceipt>(expectedOwner, request.WorkspaceId,
+            request.ExpectedContentRevision, (_, observe) => ApplyOriginalReputationMutationAsync(
+                request.WorkspaceId, request.ExpectedContentRevision, expectedOwner,
+                xml => WorkspaceXmlMutationCatalog.ApplyBurnStreetCred(xml, request), observe, ct));
+    }
+
+    private async Task ApplyOriginalReputationMutationAsync(CharacterWorkspaceId workspaceId, long revision,
+        OwnerContextStamp originalOwner, Func<string, string> mutateXml,
+        Action<CommandResult<WorkspaceRevisionReceipt>?> observe, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        await ApplyWorkspaceXmlMutationAsync(workspaceId, revision, mutateXml, operation.Token,
+            expectedOwner: originalOwner, observeCanonical: observe).ConfigureAwait(false);
+    }
+
     public async Task ApplyCareerReputationEditAsync(CareerReputationEditRequest request, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.OriginalOwner is { } original)
+        {
+            await ApplyCareerReputationEditAsync(request, original, ct).ConfigureAwait(false);
+            return;
+        }
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ArgumentNullException.ThrowIfNull(request);
@@ -127,6 +203,12 @@ public sealed partial class CharacterOverviewPresenter
 
     public async Task ApplyBurnStreetCredAsync(BurnStreetCredRequest request, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        if (request.OriginalOwner is { } original)
+        {
+            await ApplyBurnStreetCredAsync(request, original, ct).ConfigureAwait(false);
+            return;
+        }
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ArgumentNullException.ThrowIfNull(request);
@@ -4246,7 +4328,11 @@ public sealed partial class CharacterOverviewPresenter
             ct);
     }
 
-    private Task ApplyWorkspaceXmlMutationAsync(Func<string, string> mutateXml, CancellationToken ct)
+    private Task ApplyWorkspaceXmlMutationAsync(
+        Func<string, string> mutateXml,
+        CancellationToken ct,
+        OwnerContextStamp? expectedOwner = null,
+        Action? onDispatch = null)
     {
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
@@ -4266,7 +4352,9 @@ public sealed partial class CharacterOverviewPresenter
             currentWorkspace.Value,
             expectedContentRevision,
             mutateXml,
-            ct);
+            ct,
+            expectedOwner: expectedOwner,
+            onDispatch: onDispatch);
     }
 
     private async Task ApplyWorkspaceXmlMutationAsync(
@@ -4274,9 +4362,13 @@ public sealed partial class CharacterOverviewPresenter
         long expectedContentRevision,
         Func<string, string> mutateXml,
         CancellationToken ct,
-        Action? onCommitted = null)
+        Action? onCommitted = null,
+        OwnerContextStamp? expectedOwner = null,
+        Action? onDispatch = null,
+        Action<CommandResult<WorkspaceRevisionReceipt>>? observeCanonical = null)
     {
         ArgumentNullException.ThrowIfNull(mutateXml);
+        CharacterOverviewState originalState = State;
         if (string.IsNullOrWhiteSpace(expectedWorkspaceId.Value))
         {
             Publish(State with { Error = "Dossier identity is unavailable. Reload before editing." });
@@ -4306,15 +4398,33 @@ public sealed partial class CharacterOverviewPresenter
         string? returnTabId = State.ActiveTabId;
         string? returnActionId = State.ActiveActionId;
         string? returnSectionId = State.ActiveSectionId;
+        long displayGeneration = CaptureDisplayGeneration();
         WorkspaceDocument? committedDocument = null;
         IWorkspaceRecoveryCaptureIntent? postCommitCaptureIntent = null;
         WorkspaceOperationExecution<CommandResult<WorkspaceRevisionReceipt>> execution;
+        OwnerContextStamp? originalOwner = expectedOwner ?? originalState.DisplayOwnerContext;
         try
         {
+            IOwnerBoundWorkspaceMutationClient? boundClient = _client as IOwnerBoundWorkspaceMutationClient;
+            if (expectedOwner.HasValue && boundClient is null)
+            {
+                Publish(State with { Error = "This client does not support owner-bound local mutation dispatch." });
+                return;
+            }
+            // Reuse the authority issued by the actual display read. Neither
+            // a click nor a caller's pre-intent wait may recapture Current to
+            // authorize an old view after an owner A -> B -> A transition.
+            if (boundClient is not null
+                && (originalOwner is not { IsValid: true }
+                    || originalOwner != State.DisplayOwnerContext))
+            {
+                Publish(State with { Error = "The displayed runner has no matching owner-bound read. Reload before editing." });
+                return;
+            }
             if (HasAuthoritativeRecoveryLoader)
             {
                 long anticipatedContentRevision = checked(expectedContentRevision + 1);
-                _workspaceRecoveryPayloadStore.TryBeginCaptureIntent(
+                RecoveryPayloads(originalOwner).TryBeginCaptureIntent(
                     expectedWorkspaceId,
                     anticipatedContentRevision,
                     out postCommitCaptureIntent);
@@ -4324,9 +4434,11 @@ public sealed partial class CharacterOverviewPresenter
                 expectedWorkspaceId,
                 async token =>
                 {
-                    CommandResult<WorkspaceDocumentSnapshot> read = await _client
-                        .GetWorkspaceAsync(expectedWorkspaceId, token)
-                        .ConfigureAwait(false);
+                    CommandResult<WorkspaceDocumentSnapshot> read = await (boundClient is null
+                        ? _client.GetWorkspaceAsync(expectedWorkspaceId, token)
+                        : boundClient.GetWorkspaceAsync(
+                            originalOwner ?? throw new InvalidOperationException("Owner authority was not captured."),
+                            expectedWorkspaceId, token)).ConfigureAwait(false);
                     if (!read.Success || read.Value is null)
                     {
                         return new CommandResult<WorkspaceRevisionReceipt>(
@@ -4372,11 +4484,14 @@ public sealed partial class CharacterOverviewPresenter
                         State = read.Value.Document.State with { Payload = mutatedXml }
                     };
                     committedDocument = replacement;
-                    CommandResult<WorkspaceRevisionReceipt> replacementResult = await _client.ReplaceWorkspaceDocumentAsync(
-                        expectedWorkspaceId,
-                        expectedContentRevision,
-                        replacement,
-                        token).ConfigureAwait(false);
+                    CommandResult<WorkspaceRevisionReceipt> replacementResult = await (boundClient is null
+                        ? _client.ReplaceWorkspaceDocumentAsync(
+                            expectedWorkspaceId, expectedContentRevision, replacement, token)
+                        : boundClient.ReplaceWorkspaceDocumentAsync(
+                            originalOwner ?? throw new InvalidOperationException("Owner authority was not captured."),
+                            expectedWorkspaceId, expectedContentRevision, replacement,
+                            onDispatch ?? (static () => { }), token)).ConfigureAwait(false);
+                    observeCanonical?.Invoke(replacementResult);
                     return replacementResult;
                 },
                 ct).ConfigureAwait(false);
@@ -4384,7 +4499,17 @@ public sealed partial class CharacterOverviewPresenter
         catch (Exception ex)
         {
             postCommitCaptureIntent?.Dispose();
-            Publish(State with { Error = ex.Message });
+            if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+                AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
+            else TryPublishDisplayTransition(displayGeneration, State with { Error = ex.Message }, originalState);
+            return;
+        }
+
+        if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+        {
+            postCommitCaptureIntent?.Dispose();
+            AbandonOriginalPersistenceView(displayGeneration, originalState,
+                execution.HasValue && execution.Value.Success);
             return;
         }
 
@@ -4401,10 +4526,11 @@ public sealed partial class CharacterOverviewPresenter
                     staleResult.Value.ContentRevision,
                     stalePostCommitBudget.Token,
                     postCommitCaptureIntent,
-                    committedDocument).ConfigureAwait(false);
+                    committedDocument, originalOwner).ConfigureAwait(false);
                 if (!staleRecoveryCaptured)
                 {
                     GateStalePostCommitRecovery(
+                        originalOwner,
                         expectedWorkspaceId,
                         staleResult.Value.ContentRevision,
                         "stale postcommit XML recovery",
@@ -4422,7 +4548,7 @@ public sealed partial class CharacterOverviewPresenter
         {
             postCommitCaptureIntent?.Dispose();
             WorkspaceSessionState failedSession = replaced.Outcome == WorkspaceOperationOutcome.Conflict
-                ? _workspaceSessionPresenter.SetConflictState(
+                ? SetOriginalSessionConflict(originalOwner,
                     expectedWorkspaceId,
                     new WorkspaceConflictState(
                         "XML edit",
@@ -4466,11 +4592,17 @@ public sealed partial class CharacterOverviewPresenter
                 replaced.Value.ContentRevision,
                 postCommitBudget.Token,
                 postCommitCaptureIntent,
-                committedDocument).ConfigureAwait(false);
+                committedDocument, originalOwner).ConfigureAwait(false);
             postCommitCaptureIntent = null;
         }
 
-        WorkspaceSessionState session = _workspaceSessionPresenter.SetRevisions(
+        if (!IsDisplayGenerationCurrent(displayGeneration)) return;
+        if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: true);
+            return;
+        }
+        WorkspaceSessionState session = SetOriginalSessionRevisions(originalOwner,
             expectedWorkspaceId,
             replaced.Value.ContentRevision,
             replaced.Value.SavedRevision);
@@ -4492,10 +4624,11 @@ public sealed partial class CharacterOverviewPresenter
         WorkspaceOverviewLifecycleResult? reloaded = null;
         try
         {
-            reloaded = await _workspaceOverviewLifecycleCoordinator.LoadAsync(
-                revisionState,
-                expectedWorkspaceId,
-                postCommitBudget.Token);
+            reloaded = originalOwner is { } retained && _workspaceOverviewLifecycleCoordinator is IOwnerBoundWorkspaceOverviewLifecycleCoordinator boundLifecycle
+                ? await boundLifecycle.LoadAsync(revisionState, retained, expectedWorkspaceId, postCommitBudget.Token)
+                : originalOwner is null
+                    ? await _workspaceOverviewLifecycleCoordinator.LoadAsync(revisionState, expectedWorkspaceId, postCommitBudget.Token)
+                    : throw new InvalidOperationException("Original-owner postcommit refresh is unavailable.");
         }
         catch
         {
@@ -4503,9 +4636,15 @@ public sealed partial class CharacterOverviewPresenter
             // bounded overview projection failure is review-gated below.
         }
 
+        if (!IsDisplayGenerationCurrent(displayGeneration)) return;
+        if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, originalState, committed: true);
+            return;
+        }
         if (!recoveryCaptured || reloaded is null || !reloaded.CanPublish)
         {
-            WorkspaceSessionState reviewSession = _workspaceSessionPresenter.SetConflictState(
+            WorkspaceSessionState reviewSession = SetOriginalSessionConflict(originalOwner,
                 expectedWorkspaceId,
                 new WorkspaceConflictState(
                     "postcommit XML refresh",
@@ -4522,12 +4661,13 @@ public sealed partial class CharacterOverviewPresenter
                     ? "Edit committed. Exact postcommit recovery is secured; keep this runner open while the refreshed view is reviewed."
                     : "Edit committed, but exact postcommit recovery is review-gated. Keep this runner open.",
                 Session = reviewSession,
-                OpenWorkspaces = reviewSession.OpenWorkspaces
-            });
+                OpenWorkspaces = reviewSession.OpenWorkspaces,
+                DisplayOwnerContext = null
+            }, displayGeneration);
             return;
         }
 
-        PublishPostCommitState(reloaded.State);
+        if (!PublishPostCommitState(reloaded.State, displayGeneration)) return;
         if (viewCaptureFailed)
         {
             PublishPostCommitWarning(
@@ -4548,7 +4688,7 @@ public sealed partial class CharacterOverviewPresenter
             }
             catch
             {
-                WorkspaceSessionState reviewSession = _workspaceSessionPresenter.SetConflictState(
+                WorkspaceSessionState reviewSession = SetOriginalSessionConflict(originalOwner,
                     expectedWorkspaceId,
                     new WorkspaceConflictState(
                         "postcommit section refresh",
@@ -4566,4 +4706,16 @@ public sealed partial class CharacterOverviewPresenter
             }
         }
     }
+
+    private WorkspaceSessionState SetOriginalSessionRevisions(OwnerContextStamp? originalOwner,
+        CharacterWorkspaceId workspaceId, long contentRevision, long savedRevision)
+        => originalOwner is { } original
+            ? _workspaceSessionPresenter.SetRevisions(original, workspaceId, contentRevision, savedRevision)
+            : _workspaceSessionPresenter.SetRevisions(workspaceId, contentRevision, savedRevision);
+
+    private WorkspaceSessionState SetOriginalSessionConflict(OwnerContextStamp? originalOwner,
+        CharacterWorkspaceId workspaceId, WorkspaceConflictState conflict)
+        => originalOwner is { } original
+            ? _workspaceSessionPresenter.SetConflictState(original, workspaceId, conflict)
+            : _workspaceSessionPresenter.SetConflictState(workspaceId, conflict);
 }

@@ -764,14 +764,34 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         }
     }
 
-    private sealed class FixedOwnerContextAccessor : IOwnerContextAccessor
+    // This fixture authority is immutable; there are no owner writers to exclude.
+    private sealed class FixedOwnerContextAccessor : IOwnerContextLeaseAccessor
     {
+        private readonly OwnerContextStamp _stamp;
+
         public FixedOwnerContextAccessor(OwnerScope owner)
         {
-            Current = owner;
+            _stamp = new(owner, Guid.NewGuid().ToString("N"), 0);
         }
 
-        public OwnerScope Current { get; }
+        public OwnerScope Current => _stamp.Owner;
+
+        public OwnerContextStamp Capture() => _stamp;
+
+        public bool TryAcquire(OwnerContextStamp expected,
+            [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out IOwnerContextLease? lease)
+        {
+            lease = expected.IsValid && expected == _stamp ? new FixedLease(_stamp) : null;
+            return lease is not null;
+        }
+
+        private sealed class FixedLease(OwnerContextStamp stamp) : IOwnerContextLease
+        {
+            private int _disposed;
+            public OwnerContextStamp Stamp => Volatile.Read(ref _disposed) == 0
+                ? stamp : throw new ObjectDisposedException(nameof(FixedLease));
+            public void Dispose() => Interlocked.Exchange(ref _disposed, 1);
+        }
     }
 
     private sealed class MutableTimeProvider(DateTimeOffset utcNow) : TimeProvider

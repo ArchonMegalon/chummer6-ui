@@ -2,6 +2,8 @@ using System.Linq;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using Chummer.Application.Owners;
+using Chummer.Contracts.Owners;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,6 +12,21 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public class WorkspaceSessionActivationServiceTests
 {
+    [TestMethod]
+    public void Bound_activation_opens_original_roster_and_rejects_a_foreign_seed()
+    {
+        var owner = new OwnerContextStamp(new OwnerScope("activation-a"), "activation-host", 0);
+        var presenter = new WorkspaceSessionPresenter();
+        var service = new WorkspaceSessionActivationService();
+        var id = new CharacterWorkspaceId("bound-runner");
+        var current = service.Activate(owner, presenter, id, CreateProfile("Bound", "B"), null, true, "sr5");
+        Assert.AreEqual(owner, current.OwnerContext);
+        Assert.AreEqual(id, current.ActiveWorkspaceId);
+        Assert.ThrowsExactly<InvalidOperationException>(() => service.Activate(owner, presenter, id, null,
+            current with { OwnerContext = owner with { TransitionRevision = 2 } }, false, "sr5"));
+        Assert.AreSame(current, presenter.State);
+    }
+
     [TestMethod]
     public void Activate_without_seed_and_update_enabled_opens_workspace_with_blank_ruleset_when_context_is_missing()
     {
