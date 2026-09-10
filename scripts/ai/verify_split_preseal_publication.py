@@ -129,6 +129,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceTestFixture.cs",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceWorkflowTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardPresentationTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs",
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
@@ -188,15 +189,15 @@ SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 TRUSTED_GIT = Path("/usr/bin/git")
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "2c684185a2b94796b9b3dee66dc1b0d8552a7c7c",
-        "commit": "8d1779aca9175ec9cf24788461b539366ef0fccf",
+        "blob": "eb0f0f8f86d3e8f2d5cecbd62133961dd1268e2d",
+        "commit": "3f503175f2653558637a67b4a82094c8e61f16f6",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
-        "rawSizeBytes": 63546,
-        "semanticCanonicalSha256": "876917cf0240e1b396ce3778e5df5e04d696d5353a57a22a6e9e9231a6378f83",
-        "semanticCanonicalSizeBytes": 63546,
-        "tree": "ede91b92b51304de1f8d630952ec661ac5e97293",
+        "rawSha256": "c3699ef25e27c103ea3ba0f1dce0073f768d3e05fae32b9f0aefecb072f8f418",
+        "rawSizeBytes": 63582,
+        "semanticCanonicalSha256": "c3699ef25e27c103ea3ba0f1dce0073f768d3e05fae32b9f0aefecb072f8f418",
+        "semanticCanonicalSizeBytes": 63582,
+        "tree": "75ee50da602b5672c25e9a3f6ac3deec1ea2982c",
     },
     "producerLock": {
         "absentAtCommit": True,
