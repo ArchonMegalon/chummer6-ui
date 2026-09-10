@@ -1979,7 +1979,7 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 118
+    assert len(oracle["consumer"]["sourceFiles"]) == 119
     assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 120
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
