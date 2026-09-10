@@ -100,6 +100,7 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/Shell/ShellState.cs",
         "Chummer.Presentation/Shell/ShellWorkspaceContextSynchronization.cs",
         "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
+        "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "Chummer.Tests/InProcessShellOwnerContextTests.cs",
         "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs",
         "Chummer.Tests/Presentation/ShellPresenterTests.cs",

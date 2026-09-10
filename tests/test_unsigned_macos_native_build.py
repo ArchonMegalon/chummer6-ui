@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import subprocess
@@ -15,6 +16,7 @@ SCRIPT = REPO_ROOT / "scripts" / "materialize_unsigned_macos_build_receipt.py"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "unsigned-macos-native-build.yml"
 BUILD_SCRIPT = REPO_ROOT / "scripts" / "build-unsigned-macos-native.sh"
 DOC = REPO_ROOT / "docs" / "UNSIGNED_MACOS_NATIVE_BUILD.md"
+PACKAGE_PLANE_RECIPE = REPO_ROOT / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
 PACKAGE_PLANE_LOCK = REPO_ROOT / "config" / "package-plane.lock.json"
 PRESENTATION_PROJECT = REPO_ROOT / "Chummer.Presentation" / "Chummer.Presentation.csproj"
 
@@ -240,7 +242,31 @@ def test_workflow_is_dual_arch_secretless_and_nonpublishing() -> None:
 
 
 def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
-    lock = json.loads(PACKAGE_PLANE_LOCK.read_text(encoding="utf-8"))
+    spec = importlib.util.spec_from_file_location("macos_package_plane_recipe", PACKAGE_PLANE_RECIPE)
+    assert spec is not None and spec.loader is not None
+    package_plane = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(package_plane)
+    # Only the exact retained historical pair selects the pending recipe oracle.
+    # Otherwise preserve the current sealed-lock check, not a publication bypass.
+    marker = json.loads(subprocess.check_output(
+        ["/usr/bin/git", "--no-replace-objects", "show", "HEAD:config/ui-preseal-publication.json"],
+        cwd=REPO_ROOT,
+    ))
+    retained = {row["path"]: row for row in marker["canonicalSealedLocks"]}
+    raw = PACKAGE_PLANE_LOCK.read_bytes()
+    if hashlib.sha256(raw).hexdigest() == retained["config/package-plane.lock.json"]["sha256"]:
+        for relative, binding in retained.items():
+            historical = subprocess.check_output(
+                ["/usr/bin/git", "--no-replace-objects", "show", f'{marker["baseCommit"]}:{relative}'],
+                cwd=REPO_ROOT,
+            )
+            assert (REPO_ROOT / relative).read_bytes() == historical
+            assert len(historical) == binding["sizeBytes"]
+            assert hashlib.sha256(historical).hexdigest() == binding["sha256"]
+        lock = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    else:
+        lock = json.loads(raw)
+        package_plane.validate_lock(lock)
     workflow = WORKFLOW.read_text(encoding="utf-8")
     build_script = BUILD_SCRIPT.read_text(encoding="utf-8")
     canonical = lock["canonicalOwnerFeed"]
@@ -252,8 +278,8 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
         {row["repository"]: row["commit"] for row in lock["owners"]}
     )
     assert expected == {
-        "https://github.com/ArchonMegalon/chummer6-core.git": "1d8cf694d0412b3bd9f4a241fb95244fad341160",
-        "https://github.com/ArchonMegalon/chummer6-hub.git": "f06bb7e7e71e5afceb115d9078a473b1087ac7df",
+        "https://github.com/ArchonMegalon/chummer6-core.git": "2c7f566dfbedddaa4e4b15c975b1e17e6f14990a",
+        "https://github.com/ArchonMegalon/chummer6-hub.git": "894cb12281eb1315a202c7f1ac5d7de9f70e5fd6",
         "https://github.com/ArchonMegalon/chummer6-hub-registry.git": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
     }

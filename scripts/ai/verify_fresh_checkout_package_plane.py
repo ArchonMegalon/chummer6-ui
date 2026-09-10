@@ -353,7 +353,9 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
 # The sealed baseline already contains the 19 base overview cases. Newly linked
 # continuation (19), shell owner (26), recovery (20), and older regressions (213)
 # increase its 467-case floor without counting those base overview cases twice.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 745
+# Two diagnostic-fencing regressions additionally reject foreign installations
+# and stale owner-transition revisions without overwriting persisted state.
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 747
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
