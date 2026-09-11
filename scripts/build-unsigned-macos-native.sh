@@ -88,10 +88,10 @@ declare -a OWNER_NAMES=(
   "chummer.run-services"
 )
 declare -a OWNER_COMMITS=(
-  "090fea64da64195ee0df12ab7c1f4fa089f368c8"
+  "2d97ba450de0cb2b558984cc4637f2678a75d26a"
   "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"
   "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61"
-  "c4e79a6939b76dcc42d2cbc27fb324e5b8fa1fbe"
+  "6b1b2e03b2768f820b54a77bb474fbdd2fdfdc0e"
 )
 
 WORKSPACE_PARENT="$(cd "$REPO_ROOT/.." && pwd -P)"
