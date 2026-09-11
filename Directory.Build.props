@@ -6,7 +6,7 @@
     <RestoreDisableParallel>true</RestoreDisableParallel>
     <MaxCpuCount>1</MaxCpuCount>
     <ChummerContractsPackageId Condition="'$(ChummerContractsPackageId)' == ''">Chummer.Engine.Contracts</ChummerContractsPackageId>
-    <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">0.0.0-packageplane.candidate.shb32ee7d37b539</ChummerContractsPackageVersion>
+    <ChummerContractsPackageVersion Condition="'$(ChummerContractsPackageVersion)' == ''">0.0.0-packageplane.candidate.shaeeb4717633e3</ChummerContractsPackageVersion>
     <ChummerCampaignContractsPackageId Condition="'$(ChummerCampaignContractsPackageId)' == ''">Chummer.Campaign.Contracts</ChummerCampaignContractsPackageId>
     <ChummerCampaignContractsPackageVersion Condition="'$(ChummerCampaignContractsPackageVersion)' == ''">0.1.0-preview</ChummerCampaignContractsPackageVersion>
     <ChummerRunContractsPackageId Condition="'$(ChummerRunContractsPackageId)' == ''">Chummer.Run.Contracts</ChummerRunContractsPackageId>
@@ -15,7 +15,7 @@
     <ChummerHubRegistryContractsPackageVersion Condition="'$(ChummerHubRegistryContractsPackageVersion)' == ''">0.1.1-packageplane.20260910.1</ChummerHubRegistryContractsPackageVersion>
     <ChummerUiKitPackageId Condition="'$(ChummerUiKitPackageId)' == ''">Chummer.Ui.Kit</ChummerUiKitPackageId>
     <ChummerUiKitPackageVersion Condition="'$(ChummerUiKitPackageVersion)' == ''">0.1.0-preview</ChummerUiKitPackageVersion>
-    <ChummerCoreRuntimePackageVersion Condition="'$(ChummerCoreRuntimePackageVersion)' == ''">0.0.0-packageplane.candidate.shb32ee7d37b539</ChummerCoreRuntimePackageVersion>
+    <ChummerCoreRuntimePackageVersion Condition="'$(ChummerCoreRuntimePackageVersion)' == ''">0.0.0-packageplane.candidate.shaeeb4717633e3</ChummerCoreRuntimePackageVersion>
     <ChummerCompatibilityRoot Condition="'$(ChummerCompatibilityRoot)' == ''">$(MSBuildThisFileDirectory)../</ChummerCompatibilityRoot>
     <ChummerLocalContractsProject Condition="'$(ChummerLocalContractsProject)' == ''">$(ChummerCompatibilityRoot)chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj</ChummerLocalContractsProject>
     <ChummerLocalCampaignContractsProject Condition="'$(ChummerLocalCampaignContractsProject)' == ''">$(ChummerCompatibilityRoot)chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj</ChummerLocalCampaignContractsProject>
