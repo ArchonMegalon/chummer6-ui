@@ -186,7 +186,7 @@
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20",
       "Directory.Build.props": "35231cbdd31d3c0c92958ed14c335a144f946dc37336866f26562334e8f6b81d",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "3bb31f112a24aaf51e7edd8360e447ba8578e3565c2d4314b2a49a3b0c385904",
+      "config/ui-owner-package-plane.lock.json": "eb93d051a81f8387c8329107e7f71b3dcf4422f511c6be5c2459e1ef613e1521",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/verify.sh": "d19ca0db538b86a3248489e1f9cc1ef8bcf99aada139991c1b202c325a8acf09",
       "scripts/ai/with-package-plane.sh": "51c81c5aab16ecd0fd62b7e9c40a5cd59414ab3f9ae86ef0fd886009ee0802ec"
@@ -1015,8 +1015,8 @@
     "dependencyAuthorityCacheKey": "55983b531f0d91d323234fe00f779b956c663f70e7afcea5ae72dc228cd6f755",
     "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
     "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "5c09d65ca109aa8688bdc0c4aee910a588184d00c4589732ab4db8a56c708aa2",
-    "packageRecipeCommit": "868e7439a72c7e50dbd94f4b600a4ddeb5ad5ac2",
+    "inventorySha256": "b6655371b9f2b7c3c26532cf012707e86421e29b678b746a1d213505d9413735",
+    "packageRecipeCommit": "8f6b9a75858f036f2653b4ba431d22a3ff528940",
     "packageRecipeSha256": "a14f4a32f2729357edd989d701995e1af14a172c2c910ebf50189e87f2761bf2",
     "packages": [
       {
@@ -1048,10 +1048,10 @@
     ],
     "producerLockFileName": "ui-owner-package-plane.lock.json",
     "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "3bb31f112a24aaf51e7edd8360e447ba8578e3565c2d4314b2a49a3b0c385904",
+    "producerLockSha256": "eb93d051a81f8387c8329107e7f71b3dcf4422f511c6be5c2459e1ef613e1521",
     "receiptContract": "chummer6-ui.owner-package-production/v1",
     "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "96809e8908ea644a1f439afd7d4d3a156af55b5b3d2d84bd489be550cf405743",
+    "receiptSha256": "98720646815ed3349f47b1824b4f35926cc9a1ffee415ec7c8d447ad1517c55d",
     "sdkVersion": "10.0.103"
   }
 }
