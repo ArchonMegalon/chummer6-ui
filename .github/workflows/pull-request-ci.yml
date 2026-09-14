@@ -154,6 +154,7 @@ jobs:
         run: >-
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q
           tests/test_creation_projection_content.py
+          tests/test_source_link_portability.py
 
       - name: Release-control unit tests
         if: steps.package-plane-state.outputs.mode == 'sealed'
