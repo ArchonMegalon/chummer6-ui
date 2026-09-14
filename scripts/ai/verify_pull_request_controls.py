@@ -4,13 +4,14 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import os
 import re
 import stat
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -60,6 +61,74 @@ def changed_paths(base: str | None, head: str | None) -> list[str]:
     ):
         raise ControlError("base/head must be paired exact commits")
     return git_paths(["diff", "--name-only", "--diff-filter=ACMRT", base, head, "--"])
+
+
+def check_source_link_portability() -> None:
+    """Resolve tracked link blobs entirely in the index, never on the host.
+
+    Index mode remains authoritative with sparse checkouts or core.symlinks=false.
+    Targets must resolve within tracked source, including every intermediate hop.
+    """
+    def git(*arguments: str) -> bytes:
+        try:
+            result = subprocess.run(
+                ["git", *arguments], cwd=REPO_ROOT, check=False, timeout=30,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                env={"PATH": os.defpath, "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": os.devnull,
+                     "GIT_NO_REPLACE_OBJECTS": "1", "GIT_TERMINAL_PROMPT": "0",
+                     "GIT_NO_LAZY_FETCH": "1", "GIT_ALLOW_PROTOCOL": ""},
+            )
+        except (OSError, subprocess.SubprocessError):
+            raise ControlError("tracked source link inventory failed") from None
+        if result.returncode:
+            raise ControlError("tracked source link inventory failed")
+        return result.stdout
+
+    entries, directories, links = {}, {""}, {}
+    try:
+        for row in git("ls-files", "--stage", "-z").split(b"\0"):
+            if not row:
+                continue
+            header, raw_path = row.split(b"\t", 1)
+            mode, oid, stage = header.decode("ascii").split()
+            name = raw_path.decode("utf-8")
+            path = PurePosixPath(name)
+            if stage != "0" or name in entries or str(path) != name or path.is_absolute() or ".." in path.parts:
+                raise ValueError()
+            entries[name] = mode
+            directories.update(str(parent) if str(parent) != "." else "" for parent in path.parents)
+            if mode == "120000":
+                if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", oid) or not 0 < int(git("cat-file", "-s", oid)) <= 4096:
+                    raise ValueError()
+                target = git("cat-file", "blob", oid).decode("utf-8")
+                if not target or len(target.encode("utf-8")) > 4096 or "\0" in target \
+                        or "\\" in target or PureWindowsPath(target).drive or target.startswith("/"):
+                    raise ControlError(f"tracked source link is not portable: {name!r}")
+                links[name] = target
+    except (ValueError, UnicodeError) as error:
+        if isinstance(error, ControlError):
+            raise
+        raise ControlError("tracked source link index or blob is invalid") from None
+    for name, target in links.items():
+        location = list(PurePosixPath(name).parent.parts)
+        pending, hops = deque(target.split("/")), 0
+        while pending:
+            part = pending.popleft()
+            if part == "..":
+                if not location:
+                    raise ControlError(f"tracked source link escapes the repository: {name!r}")
+                location.pop()
+            elif part and part != ".":
+                candidate = "/".join([*location, part])
+                if candidate in links:
+                    hops += 1
+                    if hops > 64:
+                        raise ControlError(f"tracked source link has a cyclic or excessive chain: {name!r}")
+                    pending.extendleft(reversed(links[candidate].split("/")))
+                else:
+                    if candidate not in directories and (pending or entries.get(candidate) not in ("100644", "100755")):
+                        raise ControlError(f"tracked source link does not resolve within tracked source: {name!r}")
+                    location.append(part)
 
 
 def regular_text(relative: str) -> str | None:
@@ -202,6 +271,7 @@ def main() -> int:
     args = parse_args()
     try:
         changed = changed_paths(args.base, args.head)
+        check_source_link_portability()
         check_secret_scan(changed)
         check_receipt_portability(changed)
         check_dependency_versions(tracked_paths())

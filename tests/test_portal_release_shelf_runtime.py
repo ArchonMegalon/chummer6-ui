@@ -32,6 +32,26 @@ REGISTRY_FIXTURE_SHA256 = {
 }
 
 
+def _portal_playwright_node_path(environment: dict[str, str]) -> str:
+    """Keep explicit paths first, then the local roots used by e2e-portal.sh.
+
+    Preserve NODE_PATH lists verbatim and leave module loading (and missing
+    dependency errors) to the existing Node invocation. No host alias is needed.
+    """
+    candidates = [
+        environment.get("NODE_PATH", ""),
+        environment.get("CHUMMER_PLAYWRIGHT_NODE_PATH", ""),
+    ]
+    if environment.get("CHUMMER_PLAYWRIGHT_ROOT"):
+        candidates.append(str(Path(environment["CHUMMER_PLAYWRIGHT_ROOT"]) / "node_modules"))
+    candidates.extend([
+        str(REPO_ROOT.parent / "chummer.run-services" / "node_modules"),
+        str(REPO_ROOT.parent / "node_modules"),
+        str(REPO_ROOT / "scripts" / "node_modules"),
+    ])
+    return os.pathsep.join(candidate for candidate in candidates if candidate)
+
+
 def _resolve_registry_8f02_root() -> Path:
     configured = (
         os.environ.get("CHUMMER_REGISTRY_8F02_ROOT")
@@ -166,13 +186,16 @@ def _running_portal(
                 "-p:ChummerUseLocalCompatibilityTree=true",
                 (
                     "-p:ChummerLocalContractsProject="
-                    + str(
-                        (
-                            REPO_ROOT
-                            / "chummer-core-engine"
-                            / "Chummer.Contracts"
-                            / "Chummer.Contracts.csproj"
-                        ).resolve()
+                    + (
+                        env.get("CHUMMER_LOCAL_CONTRACTS_PROJECT")
+                        or str(
+                            (
+                                REPO_ROOT.parent
+                                / "chummer-core-engine"
+                                / "Chummer.Contracts"
+                                / "Chummer.Contracts.csproj"
+                            ).resolve()
+                        )
                     )
                 ),
             ],
@@ -948,9 +971,7 @@ def test_downloads_playwright_failure_removes_partial_pass_receipts(
 ) -> None:
     receipt_dir = tmp_path / "downloads-polish-receipt"
     env = os.environ.copy()
-    env["NODE_PATH"] = str(
-        (REPO_ROOT / "chummer.run-services" / "node_modules").resolve()
-    )
+    env["NODE_PATH"] = _portal_playwright_node_path(env)
     env["CHUMMER_PORTAL_PLAYWRIGHT_SCOPE"] = "downloads"
     env["CHUMMER_PORTAL_DOWNLOADS_POLISH_RECEIPT_DIR"] = str(receipt_dir)
     env["CHUMMER_PORTAL_DOWNLOADS_POLISH_TEST_FAIL_AFTER_VIEWPORT"] = "desktop"

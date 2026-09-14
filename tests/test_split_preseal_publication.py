@@ -26,6 +26,25 @@ def load_module() -> ModuleType:
 preseal = load_module()
 
 
+def test_portal_lookup_correction_has_exact_recipe_membership(tmp_path, monkeypatch) -> None:
+    path = "tests/test_portal_release_shelf_runtime.py"
+    assert path in preseal.ALLOWED_RECIPE_PATHS
+    assert path not in preseal.RETIRED_SOURCE_LINKS
+    monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"M\t{path}")
+    monkeypatch.setattr(preseal, "commit_bytes", lambda *args: b"reviewed portal lookup")
+    monkeypatch.setattr(preseal, "commit_blob", lambda *args: "c" * 40)
+    assert preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)[0]["path"] == path
+    for status, candidate in (
+        ("D", path),
+        ("M", "tests/test_unreviewed_portal_lookup.py"),
+        ("M", preseal.MARKER_PATH),
+        *(("M", name) for name in preseal.CANONICAL_LOCK_PATHS),
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{candidate}")
+        with pytest.raises(preseal.PresealError, match="not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def test_linked_character_preview_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert {
         "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
@@ -795,3 +814,138 @@ def test_current_main_workflow_emits_exact_sealed_or_nonclaim_receipt() -> None:
     assert 'test "$EVENT_REF_NAME" = "main"' in source
     assert 'test "$EVENT_REF_TYPE" = "branch"' in source
     assert "persist-credentials: false" in source
+
+
+PORTABILITY_RECIPE_PATHS = {
+    "scripts/ai/verify_pull_request_controls.py", "tests/test_source_link_portability.py", "docs/COMPATIBILITY_CARGO.md",
+}
+LEGACY_LINK_NAMES = {"chummer-core-engine", "chummer-hub-registry", "chummer-ui-kit", "chummer.run-services"}
+
+
+def legacy_link_base(tmp_path):
+    repository, base, _, _ = fixture(tmp_path)
+    checkout(repository, base)
+    for name in LEGACY_LINK_NAMES:
+        (repository / name).symlink_to("/docker/chummercomplete/" + name)
+    (repository / "scripts/ai/verify_pull_request_controls.py").write_text("# old guard\n")
+    return repository, commit(repository, "original legacy links")
+
+
+def retired_link_transaction(tmp_path):
+    repository, base = legacy_link_base(tmp_path)
+    git(repository, "rm", "--", *sorted(LEGACY_LINK_NAMES))
+    for name in PORTABILITY_RECIPE_PATHS:
+        path = repository / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# reviewed portability input\n")
+    (repository / preseal.ORACLE_FIXTURE_PATH).write_bytes((REPO_ROOT / preseal.ORACLE_FIXTURE_PATH).read_bytes())
+    recipe = commit(repository, "retire exact legacy links")
+    marker = preseal.expected_marker(repository, base, recipe)
+    (repository / preseal.MARKER_PATH).write_bytes(preseal.canonical_json_bytes(marker))
+    return repository, base, recipe, commit(repository, "retirement marker")
+
+
+def test_retirement_inventory_binds_exact_base_links_and_target_recipe_bytes(tmp_path):
+    repository, base, recipe, head = retired_link_transaction(tmp_path)
+    assert set(preseal.RETIRED_SOURCE_LINKS) == LEGACY_LINK_NAMES
+    assert not LEGACY_LINK_NAMES & preseal.ALLOWED_RECIPE_PATHS
+    assert PORTABILITY_RECIPE_PATHS <= preseal.ALLOWED_RECIPE_PATHS
+    rows = {row["path"]: row for row in preseal.diff_rows(repository, base, recipe)}
+    assert {name for name, row in rows.items() if row["status"] == "D"} == LEGACY_LINK_NAMES
+    for name in LEGACY_LINK_NAMES:
+        raw = ("/docker/chummercomplete/" + name).encode()
+        mode, oid = preseal.RETIRED_SOURCE_LINKS[name]
+        assert git(repository, "ls-tree", base, "--", name) == f"{mode} blob {oid}\t{name}"
+        assert rows[name] == {"path": name, "status": "D", "blob": oid,
+                              "sha256": preseal.sha256_bytes(raw), "sizeBytes": len(raw)}
+        assert not preseal.commit_path_exists(repository, recipe, name)
+    assert rows["scripts/ai/verify_pull_request_controls.py"]["status"] == "M"
+    for name in PORTABILITY_RECIPE_PATHS:
+        assert rows[name]["blob"] == preseal.commit_blob(repository, recipe, name)
+    receipt = preseal.validate_preseal(repository, base=base, head=head)
+    assert receipt["contractVersion"] == 2
+    assert all(receipt[key] is False for key in ("authority", "packageConsumerClaim", "publicationAuthorized", "releaseClaim"))
+    merge = synthetic_commit(repository, preseal.tree(repository, head), base, head)
+    checkout(repository, merge)
+    assert preseal.validate_preseal(repository, base=base, head=head, checkout=merge)["syntheticPullRequestMerge"]
+    checkout(repository, head)
+    write_seal_locks(repository, head)
+    sealed = commit(repository, "exact two-lock retirement seal")
+    assert preseal.validate_existing_sealed_marker(repository, sealed) == head
+    synthetic_seal = synthetic_commit(repository, preseal.tree(repository, sealed), head, sealed)
+    preseal.validate_marker_seal_topology(repository, sealed_commit=synthetic_seal, locked_recipe_commit=head)
+
+
+@pytest.mark.parametrize("attack", ["wrong-blob", "wrong-mode", "unrelated-link", "regular-deletion",
+                                   "rename", "type-change", "alias-modify", "alias-add", "replacement-directory"])
+def test_retirement_does_not_grant_other_deletion_or_alias_mutation_authority(tmp_path, attack):
+    repository, base = legacy_link_base(tmp_path)
+    name = "chummer-core-engine"
+    path = repository / name
+    if attack in {"wrong-blob", "wrong-mode"}:
+        path.unlink()
+        if attack == "wrong-blob":
+            path.symlink_to("/different/host/target")
+        else:
+            path.write_text("/docker/chummercomplete/" + name)  # Same blob, wrong mode.
+        base = commit(repository, "different base authority")
+        path.unlink()
+    elif attack == "unrelated-link":
+        path = repository / "unreviewed-link"
+        path.symlink_to("/other/host")
+        base = commit(repository, "unrelated base link")
+        path.unlink()
+    elif attack == "regular-deletion":
+        (repository / "scripts/ai/verify_pull_request_controls.py").unlink()
+    elif attack == "rename":
+        path.rename(repository / "README.md")
+    elif attack == "alias-add":
+        path.unlink()
+        base = commit(repository, "base without retired alias")
+        path.symlink_to("/docker/chummercomplete/" + name)
+    else:
+        path.unlink()
+        if attack == "type-change":
+            path.write_text("replacement regular bytes")
+        elif attack == "replacement-directory":
+            path.mkdir()
+            (path / "file").write_text("replacement")
+        else:
+            path.symlink_to("relative-replacement")
+    recipe = commit(repository, "forbidden retirement change")
+    with pytest.raises(preseal.PresealError):
+        preseal.diff_rows(repository, base, recipe)
+
+
+@pytest.mark.parametrize("kind", ["file", "directory", "broken-link"])
+@pytest.mark.parametrize("ignored", [False, True])
+def test_retired_path_must_be_absent_even_when_git_status_hides_resurrection(tmp_path, kind, ignored):
+    repository, base, _, head = retired_link_transaction(tmp_path)
+    name = "chummer-core-engine"
+    if ignored:
+        (repository / ".git/info/exclude").write_text(name + "\n")
+    path = repository / name
+    if kind == "file":
+        path.write_text("resurrected")
+    elif kind == "directory":
+        path.mkdir()
+    else:
+        path.symlink_to("missing-host-target")
+    hidden = ignored or kind == "directory"
+    assert (git(repository, "status", "--porcelain") == "") == hidden
+    with pytest.raises(preseal.PresealError, match="resurrected" if hidden else "dirty"):
+        preseal.validate_preseal(repository, base=base, head=head)
+
+
+@pytest.mark.parametrize("field,value", [("blob", "0" * 40), ("sha256", "0" * 64), ("sizeBytes", 1),
+                                        ("status", "A"), ("path", "unrelated-file")])
+def test_forged_deletion_marker_metadata_cannot_replace_exact_base_binding(tmp_path, field, value):
+    repository, base, recipe, head = retired_link_transaction(tmp_path)
+    marker = json.loads(preseal.commit_bytes(repository, head, preseal.MARKER_PATH))
+    row = next(row for row in marker["recipeChanges"] if row["status"] == "D")
+    row[field] = value
+    checkout(repository, recipe)
+    (repository / preseal.MARKER_PATH).write_bytes(preseal.canonical_json_bytes(marker))
+    forged = commit(repository, "forged deletion marker")
+    with pytest.raises(preseal.PresealError, match="differs from exact recipe authority"):
+        preseal.validate_preseal(repository, base=base, head=forged)

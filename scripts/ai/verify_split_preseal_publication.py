@@ -165,7 +165,9 @@ ALLOWED_RECIPE_PATHS = frozenset(
         ORACLE_FIXTURE_PATH,
         "Directory.Build.props",
         "README.md",
+        "docs/COMPATIBILITY_CARGO.md",
         "scripts/ai/verify_fresh_checkout_package_plane.py",
+        "scripts/ai/verify_pull_request_controls.py",
         "scripts/ai/verify.sh",
         "scripts/ai/verify_creation_projection_content.py",
         "scripts/ai/verify_split_preseal_publication.py",
@@ -179,10 +181,20 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "tests/test_fresh_package_plane_controls.py",
         "tests/test_keylocker_fixture_intake.py",
         "tests/test_split_preseal_publication.py",
+        "tests/test_source_link_portability.py",
+        "tests/test_portal_release_shelf_runtime.py",
         "tests/fixtures/keylocker-signer-v1/MANIFEST.json",
         "tests/test_unsigned_macos_native_build.py",
     }
 )
+# Retirement authority is separate from recipe A/M membership: only these
+# original link objects may be deleted, never replaced or silently normalized.
+RETIRED_SOURCE_LINKS = {
+    "chummer-core-engine": ("120000", "780339eb049c48b4f26334592892e8c2e85545c7"),
+    "chummer-hub-registry": ("120000", "10e92acd7d2551101980a99ae442344a429c54f9"),
+    "chummer-ui-kit": ("120000", "9cdb25636c7dc984d5913881b85f8c6cdf709535"),
+    "chummer.run-services": ("120000", "dcd9bc2375fc03ee724b2d64f376cbe210ae2f96"),
+}
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 TREE_RE = COMMIT_RE
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -371,6 +383,7 @@ def diff_rows(repo_root: Path, base: str, target: str) -> list[dict[str, Any]]:
             "diff-tree",
             "--no-commit-id",
             "--name-status",
+            "--find-renames",
             "-r",
             require_commit(base, "diff base"),
             require_commit(target, "diff target"),
@@ -379,15 +392,25 @@ def diff_rows(repo_root: Path, base: str, target: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for line in output.splitlines() if output else []:
         fields = line.split("\t")
-        if len(fields) != 2 or fields[0] not in {"A", "M"}:
-            raise PresealError("preseal recipe contains a rename, deletion, or malformed row")
+        if len(fields) != 2 or fields[0] not in {"A", "M", "D"}:
+            raise PresealError("preseal recipe contains a rename, type change, or malformed row")
         status_value, relative = fields
-        if relative not in ALLOWED_RECIPE_PATHS:
+        content_commit = target
+        if status_value == "D":
+            binding = RETIRED_SOURCE_LINKS.get(relative)
+            if binding is None:
+                raise PresealError(f"preseal recipe deletion is not allowed: {relative}")
+            mode, blob = binding
+            entry = str(git(repo_root, "ls-tree", base, "--", relative))
+            if entry != f"{mode} blob {blob}\t{relative}" or commit_path_exists(repo_root, target, relative):
+                raise PresealError(f"retired source link differs from exact base or remains in target: {relative}")
+            content_commit = base
+        elif relative not in ALLOWED_RECIPE_PATHS:
             raise PresealError(f"preseal recipe path is not allowed: {relative}")
-        payload = commit_bytes(repo_root, target, relative)
+        payload = commit_bytes(repo_root, content_commit, relative)
         rows.append(
             {
-                "blob": commit_blob(repo_root, target, relative),
+                "blob": commit_blob(repo_root, content_commit, relative),
                 "path": relative,
                 "sha256": sha256_bytes(payload),
                 "sizeBytes": len(payload),
@@ -780,7 +803,16 @@ def validate_preseal(
         raise PresealError("preseal marker differs from exact recipe authority")
     for row in [*marker["recipeChanges"], *marker["canonicalSealedLocks"]]:
         relative = row["path"]
-        if worktree_blob(root, relative) != row["blob"]:
+        if row.get("status") == "D":
+            try:
+                (root / relative).lstat()
+            except FileNotFoundError:
+                pass
+            except OSError:
+                raise PresealError(f"retired source link absence cannot be checked: {relative}") from None
+            else:
+                raise PresealError(f"retired source link path was resurrected: {relative}")
+        elif worktree_blob(root, relative) != row["blob"]:
             raise PresealError(f"worktree bytes differ from reviewed preseal input: {relative}")
     if worktree_blob(root, MARKER_PATH) != commit_blob(root, head_exact, MARKER_PATH):
         raise PresealError("worktree marker differs from exact head")
