@@ -55,6 +55,7 @@
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardPresentationTests.cs" Link="CreationWizard/CharacterCreationWizardPresentationTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs" Link="CreationWizard/WorkspaceOverviewPreparationTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs" Link="CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/NewRunnerBuildMethodTests.cs" Link="CreationWizard/NewRunnerBuildMethodTests.cs" />
     <Compile Include="CreationWizardCoreProjectionTests.cs" />
     <Compile Include="../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs" Link="CreationWizard/CoreCreationProjectionScenario.cs" />
   </ItemGroup>
