@@ -1331,6 +1331,14 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        // The existing UI/preferences use SumToTen; Core's canonical wire value
+        // is SumtoTen. Translate that single legacy UI alias at the boundary,
+        // without relaxing Core's exact build-method/profile validation.
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
+        {
+            buildMethod = CharacterCreationBuildMethods.SumToTen;
+        }
+
         if (!CharacterCreationBootstrapProfiles.TryResolveCanonicalSettingsProfileId(
                 buildMethod,
                 out string settingsProfileId))
