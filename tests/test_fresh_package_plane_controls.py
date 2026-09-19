@@ -261,24 +261,24 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "14a57a82ce1842bf38bd63a1018a54038a9fe9a9",
-            "commit": "af8b53f15af3eface243f295d225673b725ac25e",
+            "blob": "4c9e5e3ed326b699c0146c1bf8fe9b2a451d4e50",
+            "commit": "aa39af4ec1b2250daea8bd27e9643e92f2e65459",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "0caa4693938fce056b224aa9214113318147f6a2ce65e095e39a7358f323d5a9",
-            "rawSizeBytes": 63583,
-            "semanticCanonicalSha256": "0caa4693938fce056b224aa9214113318147f6a2ce65e095e39a7358f323d5a9",
-            "semanticCanonicalSizeBytes": 63583,
-            "tree": "837f9764e10e93a8858d4673baacae20363de252",
+            "rawSha256": "3cef38c53dc94b18b62c1604a4659528a7844dc6d770fc55e37d2bebf31060d9",
+            "rawSizeBytes": 63731,
+            "semanticCanonicalSha256": "3cef38c53dc94b18b62c1604a4659528a7844dc6d770fc55e37d2bebf31060d9",
+            "semanticCanonicalSizeBytes": 63731,
+            "tree": "67c028c8bc3d2885f2edc446df05c24ae8d5d317",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 63583
+    assert len(package_plane.encoded_json(next_lock)) == 63731
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "0caa4693938fce056b224aa9214113318147f6a2ce65e095e39a7358f323d5a9"
+        "3cef38c53dc94b18b62c1604a4659528a7844dc6d770fc55e37d2bebf31060d9"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -1950,6 +1950,16 @@ def test_reviewed_next_oracle_and_consumer_source_digests_are_current() -> None:
     assert len(rows) == len(lock["consumer"]["sourceFiles"])
 
 
+def test_new_runner_method_regression_is_a_bound_package_consumer_input() -> None:
+    relative = "Chummer.CreationWizard.Presentation.Tests/NewRunnerBuildMethodTests.cs"
+    oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    assert oracle["consumer"]["sourceFiles"][relative] == package_plane.source_digest(REPO_ROOT / relative)
+    assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == "CreationWizard/NewRunnerBuildMethodTests.cs"
+    package_plane.validate_test_compile_items(REPO_ROOT)
+    assert (REPO_ROOT / relative).read_text(encoding="utf-8").count("[DataRow(") == 9
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 771
+
+
 def test_checked_in_locks_are_exact_retained_bytes_or_current_sealed_authority() -> None:
     # Keep the original current-lock test after a seal. Before sealing, only
     # the unchanged historical pair is allowed; it grants no consumer claim.
@@ -1983,8 +1993,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 119
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 120
+    assert len(oracle["consumer"]["sourceFiles"]) == 120
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 121
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2043,6 +2053,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         "CharacterCreationMagicResonanceWorkflowTests.cs",
         "CharacterCreationWizardDesktopSessionTests.cs",
         "CharacterCreationWizardPresentationTests.cs",
+        "NewRunnerBuildMethodTests.cs",
         "WorkspaceOverviewFinalizationOwnerTests.cs",
         "WorkspaceOverviewPreparationTests.cs",
     }
@@ -2629,7 +2640,7 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 120
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 121
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -2749,7 +2760,7 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
             if row[0] == expected[0] or row[1] == relative] == [expected]
     assert static_mstest_case_count(relative) == 24
     assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 24
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 120
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 121
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"
