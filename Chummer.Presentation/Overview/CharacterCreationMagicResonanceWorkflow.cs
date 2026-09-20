@@ -6,7 +6,7 @@ using Chummer.Contracts.Workspaces;
 namespace Chummer.Presentation.Overview;
 
 /// <summary>
-/// Renderer-neutral statement of the Presentation/Core boundary for the SR5 Standard Priority
+/// Renderer-neutral statement of the Presentation/Core boundary for SR5 Priority and Sum-to-Ten
 /// Magic/Resonance step. Presentation may collect only typed identities and levels. Core remains
 /// the sole owner of source interpretation, legality, budgets, preview, atomic auxiliary-state
 /// persistence, idempotent replay, and the eventual character-effect composition.
@@ -26,6 +26,11 @@ public static class CharacterCreationMagicResonancePresentationContract
         "creation-magic-resonance-talent-owned-by-prerequisite";
     public const string PresentationProjectionInvalid =
         "creation-magic-resonance-presentation-projection-invalid";
+
+    // Keep the original schema/default-method identifiers for stored projections. The
+    // exact selected method remains part of Core's prerequisite and snapshot binding.
+    public static bool IsSupportedBuildMethod(string? method) => method is
+        CharacterCreationBuildMethods.Priority or CharacterCreationBuildMethods.SumToTen;
 
     public static bool IsSupportedTalentKind(string? kind) => kind is
         CharacterCreationMagicResonanceKinds.Mundane
@@ -134,7 +139,7 @@ public sealed record CharacterCreationMagicResonanceConfirmation(
     bool IsCurrentDraft);
 
 /// <summary>
-/// Typed SR5 Standard Priority Magic/Resonance interaction boundary. This class never accepts a
+/// Typed SR5 priority-table Magic/Resonance interaction boundary. This class never accepts a
 /// write-capable workspace and never mutates character XML. Preview and confirmation are always
 /// delegated to <see cref="ICharacterCreationMagicResonanceService"/>.
 /// </summary>
@@ -432,10 +437,8 @@ public static class CharacterCreationMagicResonanceWorkflow
             || !CharacterCreationMagicResonanceDigest.EqualsFixedTime(
                 state.Binding.AttributesDraftDigest,
                 state.AttributesDraft.DraftDigest)
-            || !string.Equals(
-                state.PrerequisiteDraft.BuildMethod,
-                CharacterCreationMagicResonancePresentationContract.BuildMethod,
-                StringComparison.Ordinal)
+            || !CharacterCreationMagicResonancePresentationContract.IsSupportedBuildMethod(
+                state.PrerequisiteDraft.BuildMethod)
             || !string.Equals(
                 state.PrerequisiteDraft.SettingsProfileId,
                 state.Authority.SettingsProfileId,
