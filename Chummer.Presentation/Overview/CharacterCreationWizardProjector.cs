@@ -1257,13 +1257,16 @@ public static class CharacterCreationWizardProjector
                    RulesetDefaults.NormalizeOptional(loadedOverview.Document.RulesetId),
                    CharacterCreationMagicResonancePresentationContract.RulesetId,
                    StringComparison.Ordinal)
+               && magicResonance.PrerequisiteDraft is not null
+               && CharacterCreationMagicResonancePresentationContract.IsSupportedBuildMethod(
+                   magicResonance.PrerequisiteDraft.BuildMethod)
                && string.Equals(
                    CanonicalBuildMethod(loadedOverview.Profile.BuildMethod),
-                   CharacterCreationMagicResonancePresentationContract.BuildMethod,
+                   magicResonance.PrerequisiteDraft.BuildMethod,
                    StringComparison.Ordinal)
                && string.Equals(
                    CanonicalBuildMethod(loadedOverview.Build.BuildMethod),
-                   CharacterCreationMagicResonancePresentationContract.BuildMethod,
+                   magicResonance.PrerequisiteDraft.BuildMethod,
                    StringComparison.Ordinal)
                && CharacterCreationMagicResonanceWorkflow.TryProject(
                    magicResonance,

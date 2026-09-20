@@ -25,10 +25,11 @@ internal static class CharacterCreationMagicResonanceTestFixture
     internal static CharacterCreationMagicResonanceState CreateState(
         string rawCharacterXmlDigest,
         long contentRevision = 12,
-        string talentKind = CharacterCreationMagicResonanceKinds.Magician)
+        string talentKind = CharacterCreationMagicResonanceKinds.Magician,
+        string buildMethod = CharacterCreationBuildMethods.Priority)
     {
         CharacterCreationMagicResonanceAuthority authority = CreateAuthority(talentKind);
-        CharacterCreationPrerequisiteDraft prerequisite = CreatePrerequisite(authority, rawCharacterXmlDigest);
+        CharacterCreationPrerequisiteDraft prerequisite = CreatePrerequisite(authority, rawCharacterXmlDigest, buildMethod);
         CharacterCreationAttributesDraft attributes = CreateAttributes(prerequisite, rawCharacterXmlDigest);
         var binding = new CharacterCreationMagicResonanceBinding(
             WorkspaceId,
@@ -384,7 +385,8 @@ internal static class CharacterCreationMagicResonanceTestFixture
 
     private static CharacterCreationPrerequisiteDraft CreatePrerequisite(
         CharacterCreationMagicResonanceAuthority authority,
-        string rawDigest)
+        string rawDigest,
+        string buildMethod)
     {
         var draft = new CharacterCreationPrerequisiteDraft(
             CharacterCreationPrerequisiteSchemas.DraftV1,
@@ -393,11 +395,11 @@ internal static class CharacterCreationMagicResonanceTestFixture
             BaseContentRevision: 10,
             BaseRawCharacterXmlDigest: rawDigest,
             AuthorityDigest: authority.PrerequisiteAuthorityDigest,
-            BuildMethod: CharacterCreationBuildMethods.Priority,
+            BuildMethod: buildMethod,
             SettingsProfileId: authority.SettingsProfileId,
             PriorityTable: "Standard",
             PriorityArray: ["A", "B", "C", "D", "E"],
-            SumToTenTarget: null,
+            SumToTenTarget: buildMethod == CharacterCreationBuildMethods.SumToTen ? 10 : null,
             Assignments:
             [
                 new CharacterCreationPriorityAssignment(

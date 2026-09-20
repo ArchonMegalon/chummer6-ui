@@ -8,6 +8,26 @@ namespace Chummer.CreationWizard.Presentation.Tests;
 public sealed class CharacterCreationMagicResonanceWorkflowTests
 {
     [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Priority, true)]
+    [DataRow(CharacterCreationBuildMethods.SumToTen, true)]
+    [DataRow(CharacterCreationBuildMethods.Karma, false)]
+    [DataRow(CharacterCreationBuildMethods.LifeModules, false)]
+    [DataRow("SumToTen", false)]
+    [DataRow("unknown", false)]
+    public void Projection_accepts_only_canonical_priority_table_methods(string method, bool expected)
+    {
+        var core = CharacterCreationMagicResonanceTestFixture.CreateState(
+            CharacterCreationMagicResonanceTestFixture.Digest('0'), buildMethod: method);
+        Assert.AreEqual(expected, CharacterCreationMagicResonanceWorkflow.TryProject(core, out var projected));
+        if (expected)
+        {
+            Assert.AreEqual(core.Binding, projected!.Binding);
+            Assert.AreEqual(core.SnapshotDigest, projected.CoreSnapshotDigest);
+            Assert.AreEqual(method, core.PrerequisiteDraft!.BuildMethod);
+        }
+    }
+
+    [TestMethod]
     public void Rehashed_outer_snapshot_cannot_replace_confirmed_special_attribute_authority()
     {
         var state = CharacterCreationMagicResonanceTestFixture.CreateState(
