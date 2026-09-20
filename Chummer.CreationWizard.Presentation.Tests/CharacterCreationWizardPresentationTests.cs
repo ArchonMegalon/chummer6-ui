@@ -905,18 +905,20 @@ public sealed class CharacterCreationWizardPresentationTests
     }
 
     [TestMethod]
-    public void Priority_magic_authority_opens_typed_step_from_exact_core_talent_and_budgets()
+    [DataRow(CharacterCreationBuildMethods.Priority)]
+    [DataRow(CharacterCreationBuildMethods.SumToTen)]
+    public void Priority_magic_authority_opens_typed_step_from_exact_core_talent_and_budgets(string buildMethod)
     {
         const string content = "<character><name>Nova</name></character>";
         WorkspaceOverviewLoadResult loaded = CreateOverview(
             created: false,
-            buildMethod: CharacterCreationBuildMethods.Priority,
+            buildMethod: buildMethod,
             content: content,
             revision: 12);
         string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(
             Encoding.UTF8.GetBytes(content))).ToLowerInvariant()}";
         CharacterCreationMagicResonanceState magic =
-            CharacterCreationMagicResonanceTestFixture.CreateState(rawDigest);
+            CharacterCreationMagicResonanceTestFixture.CreateState(rawDigest, buildMethod: buildMethod);
         var service = new StubMagicResonanceService(magic);
 
         CharacterOverviewState state = CreateState(
@@ -955,6 +957,24 @@ public sealed class CharacterCreationWizardPresentationTests
         Assert.AreEqual(magic.Authority.RuntimeDigest, wizard.RuntimeFingerprint);
         CollectionAssert.DoesNotContain(
             wizard.CompletionBlockers.ToArray(),
+            CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
+    }
+
+    [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Priority, CharacterCreationBuildMethods.SumToTen)]
+    [DataRow(CharacterCreationBuildMethods.SumToTen, CharacterCreationBuildMethods.Priority)]
+    public void Magic_authority_cannot_cross_priority_table_build_methods(string overviewMethod, string draftMethod)
+    {
+        const string content = "<character><name>Nova</name></character>";
+        var loaded = CreateOverview(created: false, buildMethod: overviewMethod, content: content, revision: 12);
+        string rawDigest = $"sha256:{Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content))).ToLowerInvariant()}";
+        var magic = CharacterCreationMagicResonanceTestFixture.CreateState(rawDigest, buildMethod: draftMethod);
+        Assert.IsTrue(CharacterCreationMagicResonanceWorkflow.TryProject(magic, out _));
+        var state = CreateState(loaded,
+            new WorkspaceOverviewStateFactory(creationMagicResonanceService: new StubMagicResonanceService(magic)));
+        Assert.IsNull(state.CreationMagicResonance);
+        Assert.IsNull(state.CreationMagicResonanceEditor);
+        CollectionAssert.Contains(RequireWizard(state).CompletionBlockers.ToArray(),
             CharacterCreationWizardProjector.MagicResonanceAuthorityUnavailable);
     }
 
