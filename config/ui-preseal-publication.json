@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "eab90a6f9c0113e81c04f24bc4625d6c644d652a",
-  "baseTree": "fde329ab67458d1070aaac68fc6ebbb846d29290",
+  "baseCommit": "d1be0457b9280eaaf0792c8e7ae7ba4b47846518",
+  "baseTree": "578623be05bb7f5a5d9b4d28f7e1ae0afc1e891c",
   "canonicalSealedLocks": [
     {
       "blob": "2dad6065635df9db85d65b524c46c6c78b0caa30",
@@ -44,97 +44,13 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "1fd100fffa18a44b3014b3088c305cb946cadc6d",
-      "path": ".github/workflows/unsigned-macos-native-build.yml",
-      "sha256": "11187d6bd43c0de03373730c01b6230683f23732221e50d186625fefd22299fc",
-      "sizeBytes": 5764,
-      "status": "M"
-    },
-    {
-      "blob": "78cec7facafd711146c2c0c729df324df963698b",
-      "path": "Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs",
-      "sha256": "2b05365398c4362b8d2436fea268d3e2a293ae5e6cd06d96687d615c2d66bcb2",
-      "sizeBytes": 27447,
-      "status": "M"
-    },
-    {
-      "blob": "73b018cc435bce4bdc822e7df259c99bc0e9cfee",
-      "path": "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs",
-      "sha256": "d03f56617b9e613dae458c23edb6ff762453d107555b9b5c759162a4dafa4172",
-      "sizeBytes": 54279,
-      "status": "M"
-    },
-    {
-      "blob": "e815257b250a390d13e487f8192562f10895bb77",
-      "path": "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
-      "sha256": "aafb8502dc190bfcb53baa1c1f29080b065376592446f82360ec9b5629eba77b",
-      "sizeBytes": 115178,
-      "status": "M"
-    },
-    {
-      "blob": "18091c4f3fc4b3cd40f9792b326e4c4599d0a77a",
-      "path": "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
-      "sha256": "b21a75eca4dd372a8fd1b4f54e02d200be20b0cf77177bc78c128619e2874f82",
-      "sizeBytes": 22392,
-      "status": "M"
-    },
-    {
-      "blob": "83e1810e5d0d3b43292e761a272e68105a377912",
-      "path": "Directory.Build.props",
-      "sha256": "b4c6413f723f9811438e4485827e10eb9df24d4a365ee7370693e0de1605dc92",
-      "sizeBytes": 3969,
-      "status": "M"
-    },
-    {
-      "blob": "04fc9cdc2f1e9f593ddf1917c5fffa68b55384eb",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f",
-      "sizeBytes": 63731,
-      "status": "M"
-    },
-    {
-      "blob": "f485f34a3a94e1a157a3dd2b7eb3686d86010ea5",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "40bd811258b27fc12f5e8a5039cadc82329266db7d32de6527033334b71a2667",
-      "sizeBytes": 282352,
-      "status": "M"
-    },
-    {
-      "blob": "67a9af75d226e9a84aea87b5252e416545b3b031",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "bd0b47f49f13937dc06722310f79c160c1a2854c194db9c0aeb2d09767e8b862",
-      "sizeBytes": 44906,
-      "status": "M"
-    },
-    {
-      "blob": "0de5e4b6f743947bb602a5f775d1491761fecea1",
-      "path": "scripts/ai/with-package-plane.sh",
-      "sha256": "18e5c797ab62a642811db64b62a3ee32c047fdcca2c25bb1b4d7d3c241463aa6",
-      "sizeBytes": 20776,
-      "status": "M"
-    },
-    {
-      "blob": "cbb8e3db8478be728865db45add1df96723afe8d",
-      "path": "scripts/build-unsigned-macos-native.sh",
-      "sha256": "535afe50c617c51de1004724cc31291db31c2da56340a2451074a8c18561a85a",
-      "sizeBytes": 9578,
-      "status": "M"
-    },
-    {
-      "blob": "74b29c673c052760d79feb1ded00eeb6c04b5430",
+      "blob": "7822d24f982fc1316fbbda326eaf0977e3c3042c",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "28616c76b6bdfb73d57eea1d70d8c1d55d4fd35274743764ccbaccb42ea5c9b5",
-      "sizeBytes": 186226,
-      "status": "M"
-    },
-    {
-      "blob": "d4b98bcadaf56839881004bf61cc849db1748f0a",
-      "path": "tests/test_unsigned_macos_native_build.py",
-      "sha256": "f0fbaab83f65a8d0c82791c2511314730338e1e45d9cf3227e05125bca549e32",
-      "sizeBytes": 13126,
+      "sha256": "17c5bad30e48a58c477c5b2981c510706cfbd597a2184fcde9d49cae3a528d4a",
+      "sizeBytes": 186532,
       "status": "M"
     }
   ],
-  "recipeTree": "41297c2d1eb8e2d01c57348b61d1f1e5e61ac317",
+  "recipeTree": "b5e3abae48389136a67b1a707954e064f4d52e5c",
   "releaseClaim": false
 }
