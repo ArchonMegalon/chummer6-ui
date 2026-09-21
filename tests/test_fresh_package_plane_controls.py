@@ -214,15 +214,16 @@ def test_hub_cold_feed_materializes_verified_core_before_supported_producer_call
 
     def run(command: list, **kwargs: object) -> None:
         assert "--download-core-runtime" not in command
-        assert "--core-runtime-bundle-input" not in command
+        assert "--core-runtime-bundle-input" in command
         assert (core_feed / "verified.nupkg").read_bytes() == b"verified"
-        assert command[command.index("--core-feed") + 1] == str(core_feed)
+        assert command[command.index("--core-feed") + 1] == str(tmp_path / "hub-producer-core-feed")
         assert command[command.index("--dotnet") + 1] == str(tmp_path / "dotnet")
         calls.append("producer")
         raise ProducerReached
 
     monkeypatch.setattr(package_plane, "acquire_public_core_runtime_bundle", acquire)
     monkeypatch.setattr(package_plane, "materialize_cold_core_runtime_bundle", materialize)
+    monkeypatch.setattr(package_plane, "stage_hub_core_bundle", lambda *a: calls.append("stage-hub-original-core"))
     monkeypatch.setattr(package_plane, "run", run)
     lock = {"canonicalOwnerFeed": {
         "producerPath": producer.name, "producerSha256": hashlib.sha256(b"producer").hexdigest(),
@@ -233,7 +234,48 @@ def test_hub_cold_feed_materializes_verified_core_before_supported_producer_call
             lock, tmp_path, tmp_path, core_feed, tmp_path / "hub", tmp_path / "destination",
             {}, preloaded_core_runtime=preloaded,
         )
-    assert calls == (["producer"] if preloaded else ["download", "verify", "producer"])
+    assert calls == (([] if preloaded else ["download", "verify"]) + ["stage-hub-original-core", "producer"])
+
+
+def test_hub_producer_uses_its_own_exact_core_bundle_without_repinning_consumer(tmp_path, monkeypatch):
+    stage = tmp_path / "eng/core-runtime-bundle"
+    stage.mkdir(parents=True)
+    recipe = "b" * 40
+    name = f"chummer-core-runtime-package-plane-{recipe}.zip"
+    bundle = {
+        "file_name": name, "sha256": hashlib.sha256(b"abc").hexdigest(), "size_bytes": 3,
+        "url": f"https://github.com/ArchonMegalon/chummer6-core/releases/download/core-runtime-package-plane-{recipe}/{name}",
+    }
+    lock = tmp_path / "lock.json"
+    lock.write_text(json.dumps({"core_runtime": {"package_recipe_commit": recipe, "bundle": bundle}}))
+    (stage / "core-runtime-bundle-input.json").write_bytes(package_plane.encoded_json({
+        "contract": "chummer-hub.core-runtime-bundle-input/v1", **bundle,
+    }))
+    calls = []
+    def respond(request, **kwargs):
+        calls.append(request.full_url)
+        return io.BytesIO(b"abc")
+    monkeypatch.setattr(package_plane.urllib.request, "urlopen", respond)
+    consumer_recipe = package_plane.CORE_RUNTIME_RECIPE_COMMIT
+    package_plane.stage_hub_core_bundle(tmp_path, lock)
+    assert (stage / name).read_bytes() == b"abc"
+    assert json.loads((stage / "core-runtime-bundle-input.json").read_bytes()) == {
+        "contract": "chummer-hub.core-runtime-bundle-input/v1", **bundle,
+    }
+    assert calls == [bundle["url"]]
+    assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == consumer_recipe
+    with pytest.raises(package_plane.VerificationError, match="manifest or directory differs"):
+        package_plane.stage_hub_core_bundle(tmp_path, lock)
+    assert calls == [bundle["url"]]  # Never overwrite or retry an ambient input.
+
+
+@pytest.mark.parametrize("field,value", [("recipe", "../escape"), ("digest", "bad"), ("size", True), ("size", 0), ("size", 100_000_000)])
+def test_owner_core_bundle_rejects_invalid_identity_before_network(tmp_path, monkeypatch, field, value):
+    arguments = {"recipe": "a" * 40, "digest": "b" * 64, "size": 3}
+    arguments[field] = value
+    monkeypatch.setattr(package_plane.urllib.request, "urlopen", lambda *a, **k: pytest.fail("no network"))
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.acquire_exact_core_bundle(tmp_path / "bundle.zip", **arguments)
 
 
 def cold_hub_contract_fixture(tmp_path: Path) -> tuple[dict, Path]:

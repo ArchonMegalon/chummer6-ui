@@ -4389,6 +4389,22 @@ def write_regular_bytes_exact(path: Path, content: bytes, label: str) -> None:
 
 def acquire_public_core_runtime_bundle(target: Path) -> None:
     """Fetch only the pinned public bytes; never delegate discovery to Hub."""
+    acquire_exact_core_bundle(
+        target,
+        recipe=CORE_RUNTIME_RECIPE_COMMIT,
+        digest=CORE_RUNTIME_PUBLIC_BUNDLE_SHA256,
+        size=CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES,
+    )
+
+
+def acquire_exact_core_bundle(target: Path, *, recipe: str, digest: str, size: int) -> None:
+    """Download a bounded Core release selected by an authenticated owner lock."""
+    if (
+        not isinstance(recipe, str) or not re.fullmatch(r"[0-9a-f]{40}", recipe)
+        or not isinstance(digest, str) or not SHA256_RE.fullmatch(digest)
+        or type(size) is not int or not 0 < size <= 64 * 1024 * 1024
+    ):
+        raise VerificationError("public Core bundle identity is invalid")
     if (
         not target.is_absolute()
         or target.exists()
@@ -4396,7 +4412,6 @@ def acquire_public_core_runtime_bundle(target: Path) -> None:
         or target.parent.resolve(strict=True) != target.parent
     ):
         raise VerificationError("public Core bundle target must be absent and physical")
-    recipe = CORE_RUNTIME_RECIPE_COMMIT
     request = urllib.request.Request(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
         f"core-runtime-package-plane-{recipe}/chummer-core-runtime-package-plane-{recipe}.zip",
@@ -4404,16 +4419,48 @@ def acquire_public_core_runtime_bundle(target: Path) -> None:
     )
     content = bytearray()
     with urllib.request.urlopen(request, timeout=30) as response:
-        while chunk := response.read(min(128 * 1024, CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES + 1 - len(content))):
+        while chunk := response.read(min(128 * 1024, size + 1 - len(content))):
             content.extend(chunk)
-            if len(content) > CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES:
+            if len(content) > size:
                 raise VerificationError("public Core bundle exceeds its exact size")
     if (
-        len(content) != CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES
-        or hashlib.sha256(content).hexdigest() != CORE_RUNTIME_PUBLIC_BUNDLE_SHA256
+        len(content) != size
+        or hashlib.sha256(content).hexdigest() != digest
     ):
         raise VerificationError("public Core bundle bytes differ from authority")
     write_regular_bytes_exact(target, bytes(content), "public Core runtime bundle")
+
+
+def stage_hub_core_bundle(hub_root: Path, producer_lock: Path) -> None:
+    """Stage Hub's original Core input, not the UI consumer's newer runtime.
+
+    The caller authenticates producer_lock against the pinned Hub digest first.
+    Hub's own --core-runtime-bundle-input verifier authenticates every member.
+    """
+    authority = load_json(producer_lock)["core_runtime"]
+    recipe = authority["package_recipe_commit"]
+    bundle = authority["bundle"]
+    expected_name = f"chummer-core-runtime-package-plane-{recipe}.zip"
+    expected_url = (
+        "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
+        f"core-runtime-package-plane-{recipe}/{expected_name}"
+    )
+    if bundle["file_name"] != expected_name or bundle["url"] != expected_url:
+        raise VerificationError("Hub producer Core bundle location differs from authority")
+    bundle_root = hub_root / "eng/core-runtime-bundle"
+    require_owned_traversable_directory(bundle_root, "Hub Core input directory")
+    manifest = bundle_root / "core-runtime-bundle-input.json"
+    expected_manifest = encoded_json({"contract": "chummer-hub.core-runtime-bundle-input/v1", **bundle})
+    if (
+        bundle_root.resolve(strict=True) != bundle_root
+        or {entry.name for entry in bundle_root.iterdir()} != {manifest.name}
+        or secure_regular_file_bytes(manifest, label="Hub Core input manifest") != expected_manifest
+    ):
+        raise VerificationError("Hub producer Core input manifest or directory differs")
+    acquire_exact_core_bundle(
+        bundle_root / expected_name, recipe=recipe,
+        digest=bundle["sha256"], size=bundle["size_bytes"],
+    )
 
 
 def materialize_cold_core_runtime_bundle(
@@ -4627,9 +4674,8 @@ def import_hub_canonical_feed(
         raise VerificationError("Core runtime feed destination must start absent")
 
     if not preloaded_core_runtime:
-        # Current Hub accepts an already verified Core feed, not the removed
-        # --download-core-runtime option. Use the same exact bundle/member
-        # verifier as cold owner-cache production before invoking its CLI.
+        # This is the current UI runtime feed, independent of Hub's producer
+        # dependencies. Never pass it to an unchanged older Hub build recipe.
         with tempfile.TemporaryDirectory(prefix="core-public-input-", dir=core_feed.parent) as name:
             temporary = Path(name)
             bundle = temporary / "core-runtime.zip"
@@ -4654,6 +4700,11 @@ def import_hub_canonical_feed(
         str(sdk_root / "dotnet"),
     ]
     if prebuilt_hub_feed is None:
+        stage_hub_core_bundle(hub_root, producer_lock)
+        command[command.index("--core-feed") + 1] = str(
+            core_feed.parent / "hub-producer-core-feed"
+        )
+        command.append("--core-runtime-bundle-input")
         run(command, cwd=hub_root, environment=environment)
     else:
         # Reusing byte-identical contracts does not claim that Hub was rebuilt
