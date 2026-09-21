@@ -204,7 +204,7 @@ jobs:
             tests/test_unsigned_macos_native_build.py
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
             tests/test_fresh_package_plane_controls.py \
-            -k 'sealed_next_transition or transition_capture or cold_core_bundle or cold_hub_receipt'
+            -k 'sealed_next_transition or transition_capture or cold_core_bundle or cold_hub_receipt or public_core_bundle or hub_cold_feed or hub_producer_uses or owner_core_bundle'
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
             tests/test_desktop_downloads_local_release_policy.py \
             -k 'github_actions_workflows_are_an_exact_read_only_ci_and_evidence_allowlist or pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authority'

@@ -212,7 +212,7 @@ def unsealed_recovery(repository: Path, first_marker: str) -> tuple[str, str]:
     return second_recipe, second_head
 
 
-def test_later_cycle_allows_one_recovery_only_after_an_exact_prior_seal(tmp_path: Path) -> None:
+def test_later_cycle_authenticates_recoveries_after_an_exact_prior_seal(tmp_path: Path) -> None:
     repository, _, _, first_marker = fixture(tmp_path)
     write_seal_locks(repository, first_marker)
     first_seal = commit(repository, "first exact seal")
@@ -231,10 +231,11 @@ def test_later_cycle_allows_one_recovery_only_after_an_exact_prior_seal(tmp_path
     assert receipt["authority"] is receipt["publicationAuthorized"] is receipt["packageConsumerClaim"] is False
     for relative in preseal.CANONICAL_LOCK_PATHS:
         assert preseal.commit_blob(repository, first_seal, relative) == preseal.commit_blob(repository, recovered_head, relative)
-    recipe_path.write_text("# forbidden repeated recovery\n", encoding="utf-8")
-    repeated = commit(repository, "forbidden repeated recovery")
-    with pytest.raises(preseal.PresealError):
-        preseal.expected_marker(repository, recovered_head, repeated)
+    recipe_path.write_text("# further reviewed recovery\n", encoding="utf-8")
+    repeated = commit(repository, "further reviewed recovery")
+    next_marker = preseal.expected_marker(repository, recovered_head, repeated)
+    assert next_marker["canonicalSealedLocks"] == preseal.lock_rows(repository, first_seal)
+    assert next_marker["authority"] is next_marker["publicationAuthorized"] is False
     checkout(repository, recovered_head)
     write_seal_locks(repository, recovered_head, cycle=2)
     sealed = commit(repository, "recovered exact two-lock seal")
@@ -542,15 +543,27 @@ def test_unsealed_supersession_requires_marker_only_refresh(tmp_path: Path) -> N
         )
 
 
-def test_unsealed_marker_cannot_be_superseded_twice(tmp_path: Path) -> None:
+def test_multiple_unsealed_recoveries_retain_exact_history_and_allow_final_seal(tmp_path: Path) -> None:
     repository, _, _, first_marker = fixture(tmp_path)
     _, second_head = unsealed_recovery(repository, first_marker)
-    recipe_path = repository / "scripts" / "ai" / "verify_fresh_checkout_package_plane.py"
-    recipe_path.write_text("# forbidden third recipe\n", encoding="utf-8")
-    third_recipe = commit(repository, "third recipe")
+    # Use a distinct recipe because the helper's fixed fixture would be a no-op.
+    (repository / "README.md").write_text("next bounded recovery\n", encoding="utf-8")
+    _, third_head = unsealed_recovery(repository, second_head)
+    result = preseal.validate_preseal(repository, base=second_head, head=third_head)
+    assert result["authority"] is False
+    assert result["packageConsumerClaim"] is False
+    assert result["publicationAuthorized"] is False
+    write_seal_locks(repository, third_head, cycle=3)
+    seal = commit(repository, "seal after authenticated recovery history")
+    assert preseal.validate_existing_sealed_marker(repository, seal) == third_head
 
-    with pytest.raises(preseal.PresealError, match="neither an exact seal"):
-        preseal.expected_marker(repository, second_head, third_recipe)
+
+def test_unsealed_recovery_history_has_a_fail_closed_depth_bound(tmp_path: Path, monkeypatch) -> None:
+    repository, _, _, first_marker = fixture(tmp_path)
+    _, second_head = unsealed_recovery(repository, first_marker)
+    monkeypatch.setattr(preseal, "MAX_UNSEALED_RECOVERY_DEPTH", 1)
+    with pytest.raises(preseal.PresealError):
+        preseal.validate_existing_unsealed_marker(repository, second_head)
 
 
 def test_retained_marker_can_start_one_later_exact_preseal_cycle(tmp_path: Path) -> None:
