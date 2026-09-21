@@ -201,6 +201,7 @@ COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 TREE_RE = COMMIT_RE
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 TRUSTED_GIT = Path("/usr/bin/git")
+MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
         "blob": "04fc9cdc2f1e9f593ddf1917c5fffa68b55384eb",
@@ -625,9 +626,13 @@ def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     return marker_commit
 
 
-def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> str:
-    """Validate one unsealed Q since an exact prior seal, never a recovery chain."""
+def validate_existing_unsealed_marker(
+    repo_root: Path, marker_commit: str, *, _depth: int = 0
+) -> str:
+    """Authenticate every recovery transaction back to its prior sealed base."""
 
+    if _depth >= MAX_UNSEALED_RECOVERY_DEPTH:
+        raise PresealError("unsealed preseal recovery history exceeds its bounded depth")
     published = require_commit(marker_commit, "unsealed preseal base")
     if not commit_path_exists(repo_root, published, MARKER_PATH):
         raise PresealError("unsealed preseal base does not retain a marker")
@@ -640,11 +645,6 @@ def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> st
         raise PresealError("unsealed preseal recipe has unexpected parents")
     original_base = recipe_parents[0]
     base_has_marker = commit_path_exists(repo_root, original_base, MARKER_PATH)
-    if base_has_marker:
-        try:
-            validate_existing_sealed_marker(repo_root, original_base)
-        except PresealError as exc:
-            raise PresealError("unsealed preseal marker cannot be superseded twice") from exc
     recipe_has_marker = commit_path_exists(repo_root, recipe, MARKER_PATH)
     if base_has_marker != recipe_has_marker or (
         base_has_marker
@@ -675,6 +675,7 @@ def validate_existing_unsealed_marker(repo_root: Path, marker_commit: str) -> st
         original_base,
         recipe,
         next_authority_oracle=historical_oracle,
+        _unsealed_depth=_depth + 1,
     )
     if marker != expected:
         raise PresealError("unsealed preseal base marker differs from its exact transaction")
@@ -692,6 +693,7 @@ def expected_marker(
     recipe: str,
     *,
     next_authority_oracle: object | None = None,
+    _unsealed_depth: int = 0,
 ) -> dict[str, Any]:
     base_exact = require_commit(base, "preseal base")
     recipe_exact = require_commit(recipe, "preseal recipe")
@@ -703,10 +705,10 @@ def expected_marker(
             validate_existing_sealed_marker(repo_root, base_exact)
         except PresealError:
             try:
-                validate_existing_unsealed_marker(repo_root, base_exact)
+                validate_existing_unsealed_marker(repo_root, base_exact, _depth=_unsealed_depth)
             except PresealError as unsealed_error:
                 raise PresealError(
-                    "preseal base is neither an exact seal nor one recoverable unsealed marker"
+                    "preseal base is neither an exact seal nor an authenticated recovery history"
                 ) from unsealed_error
     recipe_has_marker = commit_path_exists(repo_root, recipe_exact, MARKER_PATH)
     if base_has_marker != recipe_has_marker or (
