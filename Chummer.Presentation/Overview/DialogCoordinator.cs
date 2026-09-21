@@ -1322,12 +1322,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         ct.ThrowIfCancellationRequested();
 
-        if (!string.Equals(rulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal))
+        if (rulesetId is not (RulesetDefaults.Sr5 or RulesetDefaults.Sr6))
         {
             PublishBootstrapFailure(
                 dialog,
                 context,
-                CharacterCreationBootstrapBlockers.RulesetSr5Required);
+                CharacterCreationBootstrapBlockers.RulesetUnsupported);
             return;
         }
 
@@ -1340,6 +1340,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         if (!CharacterCreationBootstrapProfiles.TryResolveCanonicalSettingsProfileId(
+                rulesetId,
                 buildMethod,
                 out string settingsProfileId))
         {
@@ -1388,7 +1389,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         var request = new CharacterCreationBootstrapRequest(
             CharacterCreationBootstrapSchemas.RequestV1,
             CharacterCreationBootstrapStages.AwaitingFoundationSelection,
-            RulesetDefaults.Sr5,
+            rulesetId,
             name,
             alias,
             buildMethod,
@@ -1457,7 +1458,9 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             ActiveDialog = null,
             Error = null,
-            Notice = $"Opened {name} · {buildMethod} · SR5"
+            Notice = rulesetId == RulesetDefaults.Sr6
+                ? $"Opened {name} · {buildMethod} · SR6 draft. The remaining SR6 wizard steps are not available yet."
+                : $"Opened {name} · {buildMethod} · SR5"
         });
     }
 

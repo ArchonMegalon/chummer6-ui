@@ -2882,7 +2882,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
     {
         if (string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
         {
-            return "Choose an SR6 build method. SR6 creation is not connected to the native wizard yet; selecting a method does not create a runner.";
+            return "Create an SR6 draft with the selected build method. Companion methods use their own SR6 profiles, not SR5 rules. The remaining SR6 wizard steps are not available yet.";
         }
         string route = UsesPriorityWorkflow(buildMethod)
             ? "Next you will choose metatype and priorities."
