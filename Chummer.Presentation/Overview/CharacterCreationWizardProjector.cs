@@ -1346,6 +1346,15 @@ public static class CharacterCreationWizardProjector
                    contacts with { SnapshotDigest = string.Empty }),
                StringComparison.Ordinal)
            && contacts.Contacts.All(ContactProjectionShapeIsValid)
+           && contacts.Contacts.All(static contact => !contact.IsAbsent)
+           && (contacts.NewContactTemplate is null
+               || contacts.NewContactTemplate.ContactId == Guid.Empty
+                  && !contacts.NewContactTemplate.IsAbsent
+                  && !contacts.NewContactTemplate.CanDelete
+                  && contacts.NewContactTemplate.ContactPointCost == 0
+                  && !contacts.NewContactTemplate.CountsAgainstContactBudget
+                  && !contacts.NewContactTemplate.CountsAgainstHighPlacesBudget
+                  && ContactProjectionShapeIsValid(contacts.NewContactTemplate, allowEmptyId: true))
            && contacts.Contacts.Select(static contact => contact.ContactId).Distinct().Count()
               == contacts.Contacts.Count
            && string.Equals(
@@ -1600,8 +1609,12 @@ public static class CharacterCreationWizardProjector
 
     internal static bool ContactProjectionShapeIsValid(
         CharacterCreationContactProjection contact)
+        => ContactProjectionShapeIsValid(contact, allowEmptyId: false);
+
+    private static bool ContactProjectionShapeIsValid(
+        CharacterCreationContactProjection contact, bool allowEmptyId)
         => contact is not null
-           && contact.ContactId != Guid.Empty
+           && (allowEmptyId || contact.ContactId != Guid.Empty)
            && contact.Identity is not null
            && IsLowerSha256(contact.ContactDigest)
            && contact.ContactPointCost >= 0
