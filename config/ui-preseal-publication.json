@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "cb1ede9102187b95ce0e6cc4ad76c08cef9e59a1",
-  "baseTree": "887073261a9b8a822b2b1ff3453982241b7d0b96",
+  "baseCommit": "81ca6e24513ec0a2ca33e0c843fbfe7a6ad1bba3",
+  "baseTree": "1cfc582e47df12049c5adc181ebc844820e27b39",
   "canonicalSealedLocks": [
     {
       "blob": "2dad6065635df9db85d65b524c46c6c78b0caa30",
@@ -44,41 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "eb3427d0eb933f7efece9cb7b4780795ec65e7b8",
-      "path": "README.md",
-      "sha256": "35611ece766de773c6feb3edb833b4f6c61dfac980e8d2a8669f6f2f510e0631",
-      "sizeBytes": 10508,
-      "status": "M"
-    },
-    {
-      "blob": "ec795b7a7a40115b1266522ff39541a5759b1bbb",
+      "blob": "fd11e8aad7939174035e26aa7c4bc2119af7e36e",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "34308b537d3ff2c95c0dd6fbc3300ae97d245715480e002389ba2d793d7fafcf",
-      "sizeBytes": 284692,
+      "sha256": "20dcf7deef241d91651f2ab0c341d64437b3c940ae2b8ba95dbeee75d4ef7eee",
+      "sizeBytes": 285280,
       "status": "M"
     },
     {
-      "blob": "ceb44d80580eba624ac61cb47035092373d3f214",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "f55611ee0672fc8389826e44641e9342faa9e81e84dd5a17bcb9850bb7a25ad0",
-      "sizeBytes": 44952,
-      "status": "M"
-    },
-    {
-      "blob": "08530b57b8e91dbb59e8caa8a8c9d6a3497b0c93",
+      "blob": "216b8c4e26f9b8a5db5cb89adc7559fe9d4b6dbf",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "8851b1936f340954a79a5c593466d38775f597a36a97db45e0b33a34e88d4ef1",
-      "sizeBytes": 188974,
-      "status": "M"
-    },
-    {
-      "blob": "f60675f149ccc6820b133c02040dd92307e43aa2",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "6f550d1c16053331ac6ef7eab655d3d0fce1738c767ba51b82d0176a0a36bf25",
-      "sizeBytes": 45695,
+      "sha256": "8d49965f4b02080646a690503fdbae19c7e190473cf9c874546e9b136abd7b3a",
+      "sizeBytes": 189557,
       "status": "M"
     }
   ],
-  "recipeTree": "bf43ba2d8343a34295307312229b747e3cc8bf62",
+  "recipeTree": "96e6bc577cc7820214dcfbf7b27782f4a3c37f67",
   "releaseClaim": false
 }
