@@ -4431,7 +4431,7 @@ def acquire_exact_core_bundle(target: Path, *, recipe: str, digest: str, size: i
     write_regular_bytes_exact(target, bytes(content), "public Core runtime bundle")
 
 
-def stage_hub_core_bundle(hub_root: Path, producer_lock: Path) -> None:
+def stage_hub_core_bundle(hub_root: Path, producer_lock: Path) -> Path:
     """Stage Hub's original Core input, not the UI consumer's newer runtime.
 
     The caller authenticates producer_lock against the pinned Hub digest first.
@@ -4461,6 +4461,7 @@ def stage_hub_core_bundle(hub_root: Path, producer_lock: Path) -> None:
         bundle_root / expected_name, recipe=recipe,
         digest=bundle["sha256"], size=bundle["size_bytes"],
     )
+    return bundle_root / expected_name
 
 
 def materialize_cold_core_runtime_bundle(
@@ -4700,12 +4701,20 @@ def import_hub_canonical_feed(
         str(sdk_root / "dotnet"),
     ]
     if prebuilt_hub_feed is None:
-        stage_hub_core_bundle(hub_root, producer_lock)
+        staged_bundle = stage_hub_core_bundle(hub_root, producer_lock)
+        staged_inventory = secure_regular_file_inventory(staged_bundle, label="staged Hub Core bundle")
         command[command.index("--core-feed") + 1] = str(
             core_feed.parent / "hub-producer-core-feed"
         )
         command.append("--core-runtime-bundle-input")
-        run(command, cwd=hub_root, environment=environment)
+        try:
+            run(command, cwd=hub_root, environment=environment)
+        finally:
+            # Campaign packing reuses this exact source checkout. Retire only
+            # our authenticated temporary input; never ignore dirty sources.
+            if secure_regular_file_inventory(staged_bundle, label="staged Hub Core bundle") != staged_inventory:
+                raise VerificationError("staged Hub Core bundle changed during production")
+            staged_bundle.unlink()
     else:
         # Reusing byte-identical contracts does not claim that Hub was rebuilt
         # or requalified against the next Core. Its original receipt remains.

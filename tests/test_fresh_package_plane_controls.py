@@ -185,8 +185,9 @@ def test_public_core_bundle_preserves_existing_or_linked_target_without_request(
 
 
 @pytest.mark.parametrize("preloaded", [False, True])
+@pytest.mark.parametrize("tampered", [False, True])
 def test_hub_cold_feed_materializes_verified_core_before_supported_producer_call(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, preloaded: bool
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, preloaded: bool, tampered: bool
 ) -> None:
     producer = tmp_path / "producer.py"
     producer.write_bytes(b"producer")
@@ -212,29 +213,41 @@ def test_hub_cold_feed_materializes_verified_core_before_supported_producer_call
     class ProducerReached(Exception):
         pass
 
+    staged_bundle = tmp_path / "staged-core.zip"
+    def stage(*args):
+        staged_bundle.write_bytes(b"original staged input")
+        calls.append("stage-hub-original-core")
+        return staged_bundle
+
     def run(command: list, **kwargs: object) -> None:
         assert "--download-core-runtime" not in command
         assert "--core-runtime-bundle-input" in command
         assert (core_feed / "verified.nupkg").read_bytes() == b"verified"
         assert command[command.index("--core-feed") + 1] == str(tmp_path / "hub-producer-core-feed")
         assert command[command.index("--dotnet") + 1] == str(tmp_path / "dotnet")
+        assert staged_bundle.read_bytes() == b"original staged input"
+        if tampered:
+            staged_bundle.write_bytes(b"unexpected producer write")
         calls.append("producer")
         raise ProducerReached
 
     monkeypatch.setattr(package_plane, "acquire_public_core_runtime_bundle", acquire)
     monkeypatch.setattr(package_plane, "materialize_cold_core_runtime_bundle", materialize)
-    monkeypatch.setattr(package_plane, "stage_hub_core_bundle", lambda *a: calls.append("stage-hub-original-core"))
+    monkeypatch.setattr(package_plane, "stage_hub_core_bundle", stage)
     monkeypatch.setattr(package_plane, "run", run)
     lock = {"canonicalOwnerFeed": {
         "producerPath": producer.name, "producerSha256": hashlib.sha256(b"producer").hexdigest(),
         "lockPath": producer_lock.name, "lockSha256": hashlib.sha256(b"lock").hexdigest(),
     }}
-    with pytest.raises(ProducerReached):
+    with pytest.raises(package_plane.VerificationError if tampered else ProducerReached):
         package_plane.import_hub_canonical_feed(
             lock, tmp_path, tmp_path, core_feed, tmp_path / "hub", tmp_path / "destination",
             {}, preloaded_core_runtime=preloaded,
         )
     assert calls == (([] if preloaded else ["download", "verify"]) + ["stage-hub-original-core", "producer"])
+    assert staged_bundle.exists() is tampered
+    assert producer.read_bytes() == b"producer"
+    assert producer_lock.read_bytes() == b"lock"
 
 
 def test_hub_producer_uses_its_own_exact_core_bundle_without_repinning_consumer(tmp_path, monkeypatch):
