@@ -37,26 +37,26 @@ package_plane = load_module()
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "b8cb7dcba5a704948a6eb994c99bb3525b935845"
-    runtime = "3bc5fe725fd2bbbad0333c5c7a3f849e53808c4f"
-    version = "0.0.0-packageplane.candidate.sh3bc5fe725fd2b"
+    recipe = "67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea"
+    runtime = "d1c6e3d22360ce61fd32ed58cb571ac2b50b070d"
+    version = "0.0.0-packageplane.candidate.shd1c6e3d22360c"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 3324929
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 3593451
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "6006a99d40ea63323b19c3e629c8b3c0810b0f599909071110409e742e5a3a12"
+        "3d24479296b5f951a5d47f44bd62c962812def7be8b8699f3569e7be21d17430"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "98be085fd15f798263785bcf98c4d5ed1bebdb41f98ff5f0ec8d9b6f5ee73589"
-    assert metadata["lockSha256"] == "ed62c7b27c11b748e0780257b8df8a6f205933e1258d5c2288df0060b2edad79"
-    assert metadata["receiptSha256"] == "d13730413dc918e067e481ba76d24ab6194319cb721bcd4bbb715dcd00da0bdb"
+    assert metadata["inventorySha256"] == "80852aece172e972719237d56454f8eab49276385a138e3a67474d3fced2b612"
+    assert metadata["lockSha256"] == "df586b172f2ad5653a30c9fdd9876b3d296cc96739517acd9ec3d9fa9d96da2e"
+    assert metadata["receiptSha256"] == "abbf0d56069e119fb02ce83bbf5f9672c2dbe616261e00117d4a8ea7dd3cd7fc"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -160,8 +160,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-b8cb7dcba5a704948a6eb994c99bb3525b935845/"
-        "chummer-core-runtime-package-plane-b8cb7dcba5a704948a6eb994c99bb3525b935845.zip",
+        "core-runtime-package-plane-67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea/"
+        "chummer-core-runtime-package-plane-67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -235,6 +235,117 @@ def test_hub_cold_feed_materializes_verified_core_before_supported_producer_call
     assert calls == (["producer"] if preloaded else ["download", "verify", "producer"])
 
 
+def cold_hub_contract_fixture(tmp_path: Path) -> tuple[dict, Path]:
+    lock = json.loads(LOCK.read_text(encoding="utf-8"))
+    authority = lock["canonicalOwnerFeed"]
+    feed = tmp_path / "recorded-hub-contracts"
+    feed.mkdir(mode=0o700)
+    for row in authority["packages"]:
+        content = ("fixture:" + row["packageId"]).encode()
+        (feed / row["fileName"]).write_bytes(content)
+        row["sha256"] = hashlib.sha256(content).hexdigest()
+        row["sizeBytes"] = len(content)
+    inventory = package_plane.encoded_json(package_plane.expected_hub_inventory(lock))
+    (feed / authority["inventoryFileName"]).write_bytes(inventory)
+    authority["inventorySha256"] = hashlib.sha256(inventory).hexdigest()
+    return lock, feed
+
+
+def test_cold_hub_contracts_keep_their_original_byte_authority(tmp_path: Path) -> None:
+    lock, feed = cold_hub_contract_fixture(tmp_path)
+    before = package_plane.directory_asset_inventory(feed)
+    result = package_plane.cold_hub_contract_feed_inventory(lock, feed)
+    assert result == before
+    # A new UI runtime pin cannot relabel or regenerate these Hub inputs.
+    lock["coreRuntimeFeed"]["runtimeSourceCommit"] = "a" * 40
+    assert package_plane.cold_hub_contract_feed_inventory(lock, feed) == result
+    assert package_plane.directory_asset_inventory(feed) == before
+
+
+@pytest.mark.parametrize("damage", ["missing", "extra", "size", "digest", "symlink", "inventory"])
+def test_cold_hub_contracts_reject_unbound_members(tmp_path: Path, damage: str) -> None:
+    lock, feed = cold_hub_contract_fixture(tmp_path)
+    authority = lock["canonicalOwnerFeed"]
+    member = feed / authority["packages"][0]["fileName"]
+    if damage == "missing":
+        member.unlink()
+    elif damage == "extra":
+        (feed / "foreign.nupkg").write_bytes(b"foreign")
+    elif damage == "size":
+        member.write_bytes(b"too short")
+    elif damage == "digest":
+        member.write_bytes(b"x" * member.stat().st_size)
+    elif damage == "symlink":
+        outside = tmp_path / "foreign-package"
+        outside.write_bytes(member.read_bytes())
+        member.unlink()
+        member.symlink_to(outside)
+    else:
+        wrong = package_plane.expected_hub_inventory(lock)
+        wrong["package_version"] = "foreign"
+        content = package_plane.encoded_json(wrong)
+        (feed / authority["inventoryFileName"]).write_bytes(content)
+        authority["inventorySha256"] = hashlib.sha256(content).hexdigest()
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.cold_hub_contract_feed_inventory(lock, feed)
+
+
+def test_cold_hub_contract_import_validates_but_never_rebuilds_hub(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    lock, feed = cold_hub_contract_fixture(tmp_path)
+    authority = lock["canonicalOwnerFeed"]
+    producer = tmp_path / "producer.py"
+    producer.write_bytes(b"producer")
+    producer_lock = tmp_path / "hub-lock.json"
+    producer_lock.write_bytes(b"lock")
+    authority.update(producerPath=producer.name, producerSha256=hashlib.sha256(b"producer").hexdigest(),
+                     lockPath=producer_lock.name, lockSha256=hashlib.sha256(b"lock").hexdigest())
+    inventory = package_plane.encoded_json(package_plane.expected_hub_inventory(lock))
+    (feed / authority["inventoryFileName"]).write_bytes(inventory)
+    authority["inventorySha256"] = hashlib.sha256(inventory).hexdigest()
+    core_feed = tmp_path / "next-core"
+    core_feed.mkdir()
+    output = tmp_path / "hub-import"
+    calls = []
+
+    class ValidationReached(Exception):
+        pass
+
+    def run(command: list, **kwargs):
+        calls.append(command)
+        assert "--validate-only" in command
+        assert "--core-feed" not in command
+        raise ValidationReached
+
+    monkeypatch.setattr(package_plane, "run", run)
+    with pytest.raises(ValidationReached):
+        package_plane.import_hub_canonical_feed(
+            lock, tmp_path, tmp_path, core_feed, output, tmp_path / "destination", {},
+            preloaded_core_runtime=True, prebuilt_hub_feed=feed)
+    assert len(calls) == 1
+    assert package_plane.directory_asset_inventory(output) == package_plane.directory_asset_inventory(feed)
+    assert not list(core_feed.iterdir())
+
+
+def test_cold_hub_contracts_reject_directory_aliases(tmp_path: Path) -> None:
+    lock, feed = cold_hub_contract_fixture(tmp_path)
+    alias = tmp_path / "alias"
+    alias.symlink_to(feed, target_is_directory=True)
+    with pytest.raises(package_plane.VerificationError, match="physical directory"):
+        package_plane.cold_hub_contract_feed_inventory(lock, alias)
+
+
+def test_cold_hub_contracts_reject_in_place_changes_on_recheck(tmp_path: Path) -> None:
+    lock, feed = cold_hub_contract_fixture(tmp_path)
+    package_plane.cold_hub_contract_feed_inventory(lock, feed)
+    member = feed / lock["canonicalOwnerFeed"]["packages"][0]["fileName"]
+    content = member.read_bytes()
+    member.write_bytes(bytes([content[0] ^ 1]) + content[1:])
+    with pytest.raises(package_plane.VerificationError, match="digest differs"):
+        package_plane.cold_hub_contract_feed_inventory(lock, feed)
+
+
 def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation() -> None:
     previous = json.loads(LOCK.read_text(encoding="utf-8"))
     previous_bytes = package_plane.encoded_json(previous)
@@ -248,10 +359,10 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "b8cb7dcba5a704948a6eb994c99bb3525b935845"
+        "67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "3bc5fe725fd2bbbad0333c5c7a3f849e53808c4f"
+        "d1c6e3d22360ce61fd32ed58cb571ac2b50b070d"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
         "e35db6feca8f194161302064a9f77d4f8e60fe14"
@@ -261,15 +372,15 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "49bd0fffb6c3e12a2ae2072876d4681befd7e3d5",
-            "commit": "fe2b6af8947db78e93da5a4d3e97f233f4288daf",
+            "blob": "04fc9cdc2f1e9f593ddf1917c5fffa68b55384eb",
+            "commit": "b30eacf4ecd6a912705cee3097a6dc02b2621e72",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "1fc46ed676816cc45254b306238d3a1df8bb24676120a97e04e71f6e238159ec",
+            "rawSha256": "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f",
             "rawSizeBytes": 63731,
-            "semanticCanonicalSha256": "1fc46ed676816cc45254b306238d3a1df8bb24676120a97e04e71f6e238159ec",
+            "semanticCanonicalSha256": "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f",
             "semanticCanonicalSizeBytes": 63731,
-            "tree": "173686a586ba07169394a378ad3c844213a2a2b1",
+            "tree": "6ba16b55f37f5e358d9096359f44c3dba914fe7d",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -278,7 +389,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 63731
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "1fc46ed676816cc45254b306238d3a1df8bb24676120a97e04e71f6e238159ec"
+        "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2275,10 +2386,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "e35db6feca8f194161302064a9f77d4f8e60fe14"
     )
     assert core["packageRecipeCommit"] == (
-        "b8cb7dcba5a704948a6eb994c99bb3525b935845"
+        "67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea"
     )
     assert core["runtimeSourceCommit"] == (
-        "3bc5fe725fd2bbbad0333c5c7a3f849e53808c4f"
+        "d1c6e3d22360ce61fd32ed58cb571ac2b50b070d"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"

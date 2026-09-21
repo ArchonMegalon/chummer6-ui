@@ -48,6 +48,9 @@ public sealed record CharacterCreationContactEditInput(
     bool? Family = null,
     bool? Blackmail = null)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public CharacterCreationContactChangeKind ChangeKind { get; init; }
+
     [JsonIgnore]
     public OwnerContextStamp? DisplayOwnerContext { get; init; }
 
@@ -60,7 +63,7 @@ public sealed record CharacterCreationContactEditInput(
             IsGroup,
             Free,
             Family,
-            Blackmail);
+            Blackmail) { ChangeKind = ChangeKind };
 }
 
 public sealed record CharacterCreationContactsInteractionState(
@@ -72,6 +75,8 @@ public sealed record CharacterCreationContactsInteractionState(
     bool CanEdit,
     string SnapshotDigest)
 {
+    public CharacterCreationContactProjection? NewContactTemplate { get; init; }
+
     [JsonIgnore]
     public OwnerContextStamp? DisplayOwnerContext { get; init; }
 }
@@ -543,7 +548,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
             state.HighPlacesBudget,
             state.Blockers,
             state.CanEdit,
-            state.SnapshotDigest) { DisplayOwnerContext = owner };
+            state.SnapshotDigest) { DisplayOwnerContext = owner, NewContactTemplate = state.NewContactTemplate };
 
     private static CharacterCreationContactPreparedPreview Project(
         CharacterCreationContactsState state,
@@ -578,7 +583,8 @@ public sealed class CharacterCreationContactsInteractionPresenter
            && preview.ContactAfter.ContactId == edit.ContactId
            && CharacterCreationWizardProjector.ContactProjectionShapeIsValid(preview.ContactBefore)
            && CharacterCreationWizardProjector.ContactProjectionShapeIsValid(preview.ContactAfter)
-           && state.Contacts.Any(contact => ContactProjectionEquals(contact, preview.ContactBefore))
+           && ContactBeforeMatches(state, edit, preview.ContactBefore)
+           && preview.WritePlan.ChangeKind == edit.ChangeKind
            && PlanMatchesPreview(preview)
            && CharacterCreationWizardProjector.ContactBudgetShapeIsValid(preview.ContactBudgetBefore)
            && CharacterCreationWizardProjector.ContactBudgetShapeIsValid(preview.ContactBudgetAfter)
@@ -598,12 +604,18 @@ public sealed class CharacterCreationContactsInteractionPresenter
         CharacterCreationContactsState state,
         CharacterCreationContactPreparedPreview prepared)
         => ContactProjectionSetsEqual(state.Contacts, prepared.ContactsBefore)
-           && state.Contacts.Any(contact => ContactProjectionEquals(contact, prepared.ContactBefore))
+           && ContactBeforeMatches(state, prepared.Edit, prepared.ContactBefore)
            && BudgetEquals(state.ContactBudget, prepared.ContactBudgetBefore)
            && BudgetEquals(state.HighPlacesBudget, prepared.HighPlacesBudgetBefore);
 
     private static bool PlanMatchesPreview(CharacterCreationContactPreview preview)
-        => string.Equals(preview.WritePlan.Schema, CharacterCreationContactsSchemas.WritePlanV1, StringComparison.Ordinal)
+        => PlanSchemaMatches(preview.WritePlan)
+           && (preview.WritePlan.PendingDraft is not { } draft || (
+               preview.Binding.ContentRevision < long.MaxValue
+               && CharacterCreationContactsDraftRules.IsValidShape(preview.Binding.WorkspaceId,
+                   preview.Binding.ContentRevision + 1, draft)
+               && draft.BaseContentRevision == preview.Binding.ContentRevision
+               && draft.RawCharacterXmlDigest == preview.Binding.ContentDigest))
            && string.Equals(preview.WritePlan.StepId, CharacterCreationWizardStepIds.ContactsLifestyles, StringComparison.Ordinal)
            && preview.WritePlan.ContactId == preview.ContactBefore.ContactId
            && string.Equals(preview.WritePlan.ContentDigestBefore, preview.Binding.ContentDigest, StringComparison.Ordinal)
@@ -613,7 +625,8 @@ public sealed class CharacterCreationContactsInteractionPresenter
            && IsDigest(preview.WritePlan.NestedStateDigestBefore)
            && IsDigest(preview.WritePlan.NestedStateDigestAfter)
            && (!preview.CanConfirm || preview.WritePlan.PreservesUntouchedSiblingState)
-           && (!preview.CanConfirm || preview.WritePlan.PreservesNestedState)
+           && (!preview.CanConfirm || preview.WritePlan.ChangeKind != CharacterCreationContactChangeKind.Edit
+               || preview.WritePlan.PreservesNestedState)
            && preview.WritePlan.Operations.Select(static operation => operation.Order)
                .SequenceEqual(Enumerable.Range(1, preview.WritePlan.Operations.Count))
            && preview.WritePlan.Operations.Select(static operation => operation.FieldId)
@@ -665,7 +678,9 @@ public sealed class CharacterCreationContactsInteractionPresenter
            && string.Equals(refreshed.Binding.SourceDigest, receipt.SourceDigest, StringComparison.Ordinal)
            && string.Equals(refreshed.Binding.RulesDigest, receipt.RulesDigest, StringComparison.Ordinal)
            && string.Equals(refreshed.Binding.RuntimeDigest, receipt.RuntimeDigest, StringComparison.Ordinal)
-           && refreshed.Contacts.Any(contact => ContactProjectionEquals(contact, prepared.ContactAfter))
+           && (prepared.Edit.ChangeKind == CharacterCreationContactChangeKind.Remove
+               ? !refreshed.Contacts.Any(contact => contact.ContactId == prepared.Edit.ContactId)
+               : refreshed.Contacts.Any(contact => ContactProjectionEquals(contact, prepared.ContactAfter)))
            && SiblingsPreserved(prepared, refreshed)
            && BudgetEquals(refreshed.ContactBudget, prepared.ContactBudgetAfter)
            && BudgetEquals(refreshed.HighPlacesBudget, prepared.HighPlacesBudgetAfter);
@@ -708,8 +723,9 @@ public sealed class CharacterCreationContactsInteractionPresenter
         CharacterCreationContactAtomicWritePlan plan = receipt.WritePlan;
         CharacterCreationContactProjection? contact = current.Contacts.SingleOrDefault(candidate =>
             candidate.ContactId == receipt.ContactId);
-        if (contact is null
-            || !string.Equals(plan.Schema, CharacterCreationContactsSchemas.WritePlanV1, StringComparison.Ordinal)
+        bool removing = plan.ChangeKind == CharacterCreationContactChangeKind.Remove;
+        if ((removing ? contact is not null : contact is null)
+            || !PlanSchemaMatches(plan)
             || !string.Equals(plan.StepId, CharacterCreationWizardStepIds.ContactsLifestyles, StringComparison.Ordinal)
             || plan.ContactId != receipt.ContactId
             || !string.Equals(plan.ContentDigestBefore, receipt.ContentDigestBefore, StringComparison.Ordinal)
@@ -722,7 +738,7 @@ public sealed class CharacterCreationContactsInteractionPresenter
             || !IsDigest(plan.NestedStateDigestAfter)
             || !IsDigest(plan.PlanDigest)
             || !plan.PreservesUntouchedSiblingState
-            || !plan.PreservesNestedState
+            || plan.ChangeKind == CharacterCreationContactChangeKind.Edit && !plan.PreservesNestedState
             || plan.Operations.Count == 0
             || !plan.Operations.Select(static operation => operation.Order)
                 .SequenceEqual(Enumerable.Range(1, plan.Operations.Count))
@@ -732,9 +748,18 @@ public sealed class CharacterCreationContactsInteractionPresenter
             return false;
         }
 
+        IEnumerable<CharacterCreationContactWriteOperation> operations = plan.Operations;
+        if (plan.ChangeKind != CharacterCreationContactChangeKind.Edit)
+        {
+            if (!PresenceMatches(plan.Operations[0], plan.ChangeKind))
+                return false;
+            if (removing)
+                return plan.Operations.Count == 1;
+            operations = operations.Skip(1);
+        }
         Dictionary<string, CharacterCreationContactFieldAuthority> fields =
-            contact.Fields.ToDictionary(static field => field.FieldId, StringComparer.Ordinal);
-        return plan.Operations.All(operation =>
+            contact!.Fields.ToDictionary(static field => field.FieldId, StringComparer.Ordinal);
+        return operations.All(operation =>
             CharacterCreationContactFieldIds.All.Contains(operation.FieldId, StringComparer.Ordinal)
             && !string.Equals(operation.BeforeValue, operation.AfterValue, StringComparison.Ordinal)
             && string.Equals(operation.AfterValue, fields[operation.FieldId].SerializedValue, StringComparison.Ordinal)
@@ -770,7 +795,13 @@ public sealed class CharacterCreationContactsInteractionPresenter
         CharacterCreationContactPreparedPreview prepared,
         CharacterCreationContactsState refreshed)
     {
-        if (refreshed.Contacts.Count != prepared.ContactsBefore.Count)
+        int countChange = prepared.Edit.ChangeKind switch
+        {
+            CharacterCreationContactChangeKind.Add => 1,
+            CharacterCreationContactChangeKind.Remove => -1,
+            _ => 0
+        };
+        if (refreshed.Contacts.Count != prepared.ContactsBefore.Count + countChange)
             return false;
         Dictionary<Guid, CharacterCreationContactProjection> after = refreshed.Contacts.ToDictionary(
             static contact => contact.ContactId,
@@ -790,6 +821,17 @@ public sealed class CharacterCreationContactsInteractionPresenter
 
     private static bool PlanOperationsMatchContacts(CharacterCreationContactPreview preview)
     {
+        var kind = preview.WritePlan.ChangeKind;
+        if (preview.ContactBefore.IsAbsent != (kind == CharacterCreationContactChangeKind.Add)
+            || preview.ContactAfter.IsAbsent != (kind == CharacterCreationContactChangeKind.Remove))
+            return false;
+        IEnumerable<CharacterCreationContactWriteOperation> operations = preview.WritePlan.Operations;
+        if (kind != CharacterCreationContactChangeKind.Edit)
+        {
+            if (preview.WritePlan.Operations.Count == 0 || !PresenceMatches(preview.WritePlan.Operations[0], kind))
+                return false;
+            operations = operations.Skip(1);
+        }
         Dictionary<string, CharacterCreationContactFieldAuthority> before =
             preview.ContactBefore.Fields.ToDictionary(static field => field.FieldId, StringComparer.Ordinal);
         Dictionary<string, CharacterCreationContactFieldAuthority> after =
@@ -800,13 +842,13 @@ public sealed class CharacterCreationContactsInteractionPresenter
                 after[fieldId].SerializedValue,
                 StringComparison.Ordinal))
             .ToArray();
-        if (!preview.WritePlan.Operations.Select(static operation => operation.FieldId)
+        if (!operations.Select(static operation => operation.FieldId)
             .SequenceEqual(changedFieldIds, StringComparer.Ordinal))
         {
             return false;
         }
 
-        return preview.WritePlan.Operations.All(operation =>
+        return operations.All(operation =>
             CharacterCreationContactFieldIds.All.Contains(operation.FieldId, StringComparer.Ordinal)
             && string.Equals(operation.BeforeValue, before[operation.FieldId].SerializedValue, StringComparison.Ordinal)
             && string.Equals(operation.AfterValue, after[operation.FieldId].SerializedValue, StringComparison.Ordinal)
@@ -816,10 +858,42 @@ public sealed class CharacterCreationContactsInteractionPresenter
                 StringComparer.Ordinal));
     }
 
+    private static bool ContactBeforeMatches(CharacterCreationContactsState state,
+        CharacterCreationContactEdit edit, CharacterCreationContactProjection before)
+    {
+        if (edit.ChangeKind != CharacterCreationContactChangeKind.Add)
+            return !before.IsAbsent && state.Contacts.Any(contact => ContactProjectionEquals(contact, before));
+        if (state.NewContactTemplate is not { } template || !before.IsAbsent
+            || state.Contacts.Any(contact => contact.ContactId == edit.ContactId))
+            return false;
+        var expected = template with { ContactId = edit.ContactId, IsAbsent = true, ContactDigest = string.Empty };
+        expected = expected with { ContactDigest = CharacterCreationFinalizationDigest.Compute(expected) };
+        return ContactProjectionEquals(expected, before);
+    }
+
+    private static bool PlanSchemaMatches(CharacterCreationContactAtomicWritePlan plan)
+        => Enum.IsDefined(plan.ChangeKind) && string.Equals(plan.Schema,
+            plan.PendingDraft is not null ? CharacterCreationContactsSchemas.DraftWritePlanV1
+                : plan.ChangeKind == CharacterCreationContactChangeKind.Edit
+                ? CharacterCreationContactsSchemas.WritePlanV1 : CharacterCreationContactsSchemas.WritePlanV2,
+            StringComparison.Ordinal)
+           && (plan.PendingDraft is null || (
+               plan.ContentDigestBefore == plan.ContentDigestAfter
+               && plan.PendingDraft.DraftDigest == CharacterCreationContactsDraftRules.Digest(plan.PendingDraft)));
+
+    private static bool PresenceMatches(CharacterCreationContactWriteOperation operation,
+        CharacterCreationContactChangeKind kind)
+        => operation.Order == 1 && operation.FieldId == CharacterCreationContactFieldIds.Presence
+           && operation.BeforeValue == (kind == CharacterCreationContactChangeKind.Add ? "absent" : "present")
+           && operation.AfterValue == (kind == CharacterCreationContactChangeKind.Add ? "present" : "absent")
+           && operation.SourceAnchorIds.SequenceEqual(CharacterCreationContactSourceAnchors.All, StringComparer.Ordinal);
+
     private static bool ContactProjectionEquals(
         CharacterCreationContactProjection left,
         CharacterCreationContactProjection right)
         => left.ContactId == right.ContactId
+           && left.IsAbsent == right.IsAbsent
+           && left.CanDelete == right.CanDelete
            && left.Identity == right.Identity
            && left.Connection == right.Connection
            && left.Loyalty == right.Loyalty
@@ -866,6 +940,9 @@ public sealed class CharacterCreationContactsInteractionPresenter
         CharacterCreationContactAtomicWritePlan left,
         CharacterCreationContactAtomicWritePlan right)
         => string.Equals(left.Schema, right.Schema, StringComparison.Ordinal)
+           && left.ChangeKind == right.ChangeKind
+           && CharacterCreationFinalizationDigest.Compute(left.PendingDraft)
+                == CharacterCreationFinalizationDigest.Compute(right.PendingDraft)
            && string.Equals(left.StepId, right.StepId, StringComparison.Ordinal)
            && left.ContactId == right.ContactId
            && string.Equals(left.ContentDigestBefore, right.ContentDigestBefore, StringComparison.Ordinal)
