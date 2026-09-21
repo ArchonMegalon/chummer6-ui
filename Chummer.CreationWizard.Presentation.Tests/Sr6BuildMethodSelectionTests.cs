@@ -14,6 +14,7 @@ public sealed class Sr6BuildMethodSelectionTests
     [DataRow("SumtoTen")]
     [DataRow("PointBuy")]
     [DataRow("LifePath")]
+    [DataRow("Karma")]
     public void Selection_and_rebuild_preserve_exact_sr6_identity(string method)
     {
         DesktopDialogState dialog = Create(method);
@@ -23,7 +24,7 @@ public sealed class Sr6BuildMethodSelectionTests
             values);
         Assert.AreEqual(method, field.Value);
         Assert.AreEqual(method, DesktopDialogFieldValueParser.GetValue(Rebuild(dialog), "newCharacterBuildMethod"));
-        CollectionAssert.DoesNotContain(values, "Karma");
+        CollectionAssert.Contains(values, Sr6CharacterCreationBuildMethods.Karma);
         CollectionAssert.DoesNotContain(values, "LifeModule");
         StringAssert.Contains(dialog.Message!, "not connected");
     }
@@ -31,6 +32,7 @@ public sealed class Sr6BuildMethodSelectionTests
     [TestMethod]
     [DataRow("PointBuy")]
     [DataRow("LifePath")]
+    [DataRow("Karma")]
     public void Alternative_never_substitutes_sr5_karma(string method)
     {
         MethodInfo continuation = typeof(DesktopDialogFactory)
@@ -81,6 +83,7 @@ public sealed class Sr6BuildMethodSelectionTests
     [DataRow("SumtoTen")]
     [DataRow("PointBuy")]
     [DataRow("LifePath")]
+    [DataRow("Karma")]
     public async Task Unavailable_sr6_bootstrap_never_creates_an_sr5_runner(string method)
     {
         CharacterOverviewState state = CharacterOverviewState.Empty with { ActiveDialog = Create(method) };

@@ -1331,7 +1331,8 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.Priority, "Priority"),
                 new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.SumToTen, "Sum-to-Ten"),
                 new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.PointBuy, "Point Buy"),
-                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.LifePath, "Life Path")
+                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.LifePath, "Life Path"),
+                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.Karma, "Karma (SR6)")
             ],
             _ =>
             [
@@ -1392,7 +1393,8 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             : characterSetting.Trim();
         if (string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
             && resolvedBuildMethod is (Sr6CharacterCreationBuildMethods.PointBuy
-                or Sr6CharacterCreationBuildMethods.LifePath))
+                or Sr6CharacterCreationBuildMethods.LifePath
+                or Sr6CharacterCreationBuildMethods.Karma))
         {
             // Recognizing a method does not authorize SR5 budgets, grants or
             // finalization. Keep the exact SR6 choice until its own wizard exists.
