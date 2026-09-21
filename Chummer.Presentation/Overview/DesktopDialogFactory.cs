@@ -1326,6 +1326,13 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("Karma", "Karma"),
                 new DesktopDialogFieldOption("LifeModule", "Life Modules")
             ],
+            var id when string.Equals(id, RulesetDefaults.Sr6, StringComparison.Ordinal) =>
+            [
+                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.Priority, "Priority"),
+                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.SumToTen, "Sum-to-Ten"),
+                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.PointBuy, "Point Buy"),
+                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.LifePath, "Life Path")
+            ],
             _ =>
             [
                 new DesktopDialogFieldOption("Priority", "Priority"),
@@ -1383,6 +1390,24 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string normalizedCharacterSetting = string.IsNullOrWhiteSpace(characterSetting)
             ? "Core Rulebook"
             : characterSetting.Trim();
+        if (string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+            && resolvedBuildMethod is (Sr6CharacterCreationBuildMethods.PointBuy
+                or Sr6CharacterCreationBuildMethods.LifePath))
+        {
+            // Recognizing a method does not authorize SR5 budgets, grants or
+            // finalization. Keep the exact SR6 choice until its own wizard exists.
+            return new DesktopDialogState(
+                "dialog.new_character.sr6_wizard_unavailable",
+                "SR6 character creation",
+                "This SR6 method needs its own Creation Wizard. SR5 Karma and Life Modules cannot be substituted. No runner has been created.",
+                [
+                    BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", normalizedRulesetId),
+                    BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", resolvedBuildMethod),
+                    BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
+                    BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias)
+                ],
+                [new DesktopDialogAction("cancel", "Back", true)]);
+        }
         if (string.Equals(
             resolvedBuildMethod,
             CharacterCreationBuildMethods.LifeModules,
@@ -2837,19 +2862,26 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             "life modules" => "LifeModule",
             "sumtoten" => "SumToTen",
             "sum-to-ten" => "SumToTen",
+            "pointbuy" or "point buy" => Sr6CharacterCreationBuildMethods.PointBuy,
+            "lifepath" or "life path" => Sr6CharacterCreationBuildMethods.LifePath,
             _ => normalized
         };
     }
 
     private static bool UsesPriorityWorkflow(string buildMethod)
         => string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
-            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal);
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
+            || string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal);
 
     private static string BuildNewCharacterMessage(
         string rulesetId,
         string buildMethod,
         bool houseRulesEnabled)
     {
+        if (string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
+        {
+            return "Choose an SR6 build method. SR6 creation is not connected to the native wizard yet; selecting a method does not create a runner.";
+        }
         string route = UsesPriorityWorkflow(buildMethod)
             ? "Next you will choose metatype and priorities."
             : "Next you will choose metatype.";
@@ -2880,7 +2912,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             $"Talent Choice | {talentChoice}",
             $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
         ];
-        if (string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
         {
             int total = GetPriorityLetterValue(heritagePriority)
                 + GetPriorityLetterValue(attributesPriority)
