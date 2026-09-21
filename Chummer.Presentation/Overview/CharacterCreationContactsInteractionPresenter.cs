@@ -610,6 +610,12 @@ public sealed class CharacterCreationContactsInteractionPresenter
 
     private static bool PlanMatchesPreview(CharacterCreationContactPreview preview)
         => PlanSchemaMatches(preview.WritePlan)
+           && (preview.WritePlan.PendingDraft is not { } draft || (
+               preview.Binding.ContentRevision < long.MaxValue
+               && CharacterCreationContactsDraftRules.IsValidShape(preview.Binding.WorkspaceId,
+                   preview.Binding.ContentRevision + 1, draft)
+               && draft.BaseContentRevision == preview.Binding.ContentRevision
+               && draft.RawCharacterXmlDigest == preview.Binding.ContentDigest))
            && string.Equals(preview.WritePlan.StepId, CharacterCreationWizardStepIds.ContactsLifestyles, StringComparison.Ordinal)
            && preview.WritePlan.ContactId == preview.ContactBefore.ContactId
            && string.Equals(preview.WritePlan.ContentDigestBefore, preview.Binding.ContentDigest, StringComparison.Ordinal)
@@ -867,9 +873,13 @@ public sealed class CharacterCreationContactsInteractionPresenter
 
     private static bool PlanSchemaMatches(CharacterCreationContactAtomicWritePlan plan)
         => Enum.IsDefined(plan.ChangeKind) && string.Equals(plan.Schema,
-            plan.ChangeKind == CharacterCreationContactChangeKind.Edit
+            plan.PendingDraft is not null ? CharacterCreationContactsSchemas.DraftWritePlanV1
+                : plan.ChangeKind == CharacterCreationContactChangeKind.Edit
                 ? CharacterCreationContactsSchemas.WritePlanV1 : CharacterCreationContactsSchemas.WritePlanV2,
-            StringComparison.Ordinal);
+            StringComparison.Ordinal)
+           && (plan.PendingDraft is null || (
+               plan.ContentDigestBefore == plan.ContentDigestAfter
+               && plan.PendingDraft.DraftDigest == CharacterCreationContactsDraftRules.Digest(plan.PendingDraft)));
 
     private static bool PresenceMatches(CharacterCreationContactWriteOperation operation,
         CharacterCreationContactChangeKind kind)
@@ -931,6 +941,8 @@ public sealed class CharacterCreationContactsInteractionPresenter
         CharacterCreationContactAtomicWritePlan right)
         => string.Equals(left.Schema, right.Schema, StringComparison.Ordinal)
            && left.ChangeKind == right.ChangeKind
+           && CharacterCreationFinalizationDigest.Compute(left.PendingDraft)
+                == CharacterCreationFinalizationDigest.Compute(right.PendingDraft)
            && string.Equals(left.StepId, right.StepId, StringComparison.Ordinal)
            && left.ContactId == right.ContactId
            && string.Equals(left.ContentDigestBefore, right.ContentDigestBefore, StringComparison.Ordinal)
