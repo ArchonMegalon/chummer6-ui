@@ -67,7 +67,7 @@ public static class CoreCreationProjectionScenario
             var contacts = new CharacterCreationContactsService(store);
             var lifestyles = new CharacterCreationLifestylesService(store, resolver);
             var finalizer = new CharacterCreationFinalizationService(store, queries, prerequisites, attributes,
-                skills, qualities, magic, resources, gear);
+                skills, qualities, magic, resources, gear, resolver);
             var factory = new WorkspaceOverviewStateFactory(null, contacts, qualities, magic, lifestyles, finalizer);
             var activation = created.Bundle!;
             var activationService = new ObservedActivationService(bootstrap);
