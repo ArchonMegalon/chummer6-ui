@@ -2616,7 +2616,11 @@ def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
     assert "-p:ChummerUseLocalCompatibilityTree=false" in source
     assert "-p:RestoreLockedMode=false" not in source
     assert "-p:RestorePackagesWithLockFile=false" not in source
-    assert source.count("-p:RestoreLockedMode=true") == 0
+    # Campaign repack uses an exact external lock derived from admitted Core bytes.
+    # Require that one locked restore; never permit unlocked or lock-disabled restore.
+    assert source.count("-p:RestoreLockedMode=true") == 1
+    assert source.count("-p:RestorePackagesWithLockFile=true") == 1
+    assert 'f"-p:NuGetLockFilePath={restore_lock_path}"' in source
     assert "canonical_feed_receipts = import_hub_canonical_feed(" in source
     assert "current_owner_contract_feed_receipt = import_current_owner_contract_feed(" in source
     assert '"compatibilityPurpose": "exact-core-runtime-transitive-dependencies"' in source
