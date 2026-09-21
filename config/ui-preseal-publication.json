@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "d1be0457b9280eaaf0792c8e7ae7ba4b47846518",
-  "baseTree": "578623be05bb7f5a5d9b4d28f7e1ae0afc1e891c",
+  "baseCommit": "cb1ede9102187b95ce0e6cc4ad76c08cef9e59a1",
+  "baseTree": "887073261a9b8a822b2b1ff3453982241b7d0b96",
   "canonicalSealedLocks": [
     {
       "blob": "2dad6065635df9db85d65b524c46c6c78b0caa30",
@@ -44,13 +44,48 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "7822d24f982fc1316fbbda326eaf0977e3c3042c",
+      "blob": "65eb45a866dcb4a7fa1844d28def800347d490c4",
+      "path": ".github/workflows/pull-request-ci.yml",
+      "sha256": "0c8827c2b57cad1858ecf6ad152a2c9329678150cc98393d5fcb0f4f3088ea8c",
+      "sizeBytes": 14107,
+      "status": "M"
+    },
+    {
+      "blob": "eb3427d0eb933f7efece9cb7b4780795ec65e7b8",
+      "path": "README.md",
+      "sha256": "35611ece766de773c6feb3edb833b4f6c61dfac980e8d2a8669f6f2f510e0631",
+      "sizeBytes": 10508,
+      "status": "M"
+    },
+    {
+      "blob": "ec795b7a7a40115b1266522ff39541a5759b1bbb",
+      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
+      "sha256": "34308b537d3ff2c95c0dd6fbc3300ae97d245715480e002389ba2d793d7fafcf",
+      "sizeBytes": 284692,
+      "status": "M"
+    },
+    {
+      "blob": "ceb44d80580eba624ac61cb47035092373d3f214",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "f55611ee0672fc8389826e44641e9342faa9e81e84dd5a17bcb9850bb7a25ad0",
+      "sizeBytes": 44952,
+      "status": "M"
+    },
+    {
+      "blob": "08530b57b8e91dbb59e8caa8a8c9d6a3497b0c93",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "17c5bad30e48a58c477c5b2981c510706cfbd597a2184fcde9d49cae3a528d4a",
-      "sizeBytes": 186532,
+      "sha256": "8851b1936f340954a79a5c593466d38775f597a36a97db45e0b33a34e88d4ef1",
+      "sizeBytes": 188974,
+      "status": "M"
+    },
+    {
+      "blob": "f60675f149ccc6820b133c02040dd92307e43aa2",
+      "path": "tests/test_split_preseal_publication.py",
+      "sha256": "6f550d1c16053331ac6ef7eab655d3d0fce1738c767ba51b82d0176a0a36bf25",
+      "sizeBytes": 45695,
       "status": "M"
     }
   ],
-  "recipeTree": "b5e3abae48389136a67b1a707954e064f4d52e5c",
+  "recipeTree": "c803ded6d42852773b159a00956106b6f63b602c",
   "releaseClaim": false
 }
