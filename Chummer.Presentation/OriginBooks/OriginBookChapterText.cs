@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Chummer.Application.LifeModules;
 using Chummer.Contracts.LifeModules;
 
 namespace Chummer.Presentation.OriginBooks;
@@ -18,12 +19,28 @@ public static partial class OriginBookChapterText
         if (!book.VisibleChapters.Contains(chapter)
             || !book.CanonicalLayer.AcceptedDecisionIds.Contains(chapter.ThroughAcceptedDecisionId, StringComparer.Ordinal))
             throw new InvalidOperationException("The chapter does not belong to this accepted book.");
+
+        string language = OriginDossierNarrativeLocalePolicy.PrimaryLanguage(book.CurrentTurn.Locale);
+        string runner = book.CurrentTurn.RunnerDisplayName;
+        // The canonical finish chapter contains the old wizard prompt, not
+        // authored prose. Present the recorded choice in the past tense so it
+        // cannot ask a Career runner to finish Creation again. Selection alone
+        // does not prove Career entry; never infer that from this historical fact.
+        // Approved reading editions remain a separate, higher-priority layer.
+        if (chapter.PlayerLayerDigest == LifeModuleOriginDossierService.EmptyPlayerLayerDigest
+            && chapter.ProviderLayerDigest == LifeModuleOriginDossierService.EmptyProviderLayerDigest
+            && book.CanonicalLayer.Facts.Any(fact => fact.AcceptedDecisionId == chapter.ThroughAcceptedDecisionId
+                && fact.FactKind == "accepted-module-selection-finish"))
+            return language switch
+            {
+                "de" => $"Deine Modulauswahl ist abgeschlossen. Die bestätigten Entscheidungen für {runner} bleiben in den vorherigen Kapiteln erhalten.",
+                "es" => $"La selección de módulos de vida está completa. Las decisiones confirmadas de {runner} se conservan en los capítulos anteriores.",
+                _ => $"The Life Modules selection is complete. {runner}'s confirmed choices are preserved in the preceding chapters."
+            };
         if (!LegacyTemplateToken().IsMatch(chapter.VisibleMarkdown))
             return chapter.VisibleMarkdown;
 
-        string language = OriginDossierNarrativeLocalePolicy.PrimaryLanguage(book.CurrentTurn.Locale);
         string title = chapter.Title;
-        string runner = book.CurrentTurn.RunnerDisplayName;
         string lead = language switch
         {
             "de" => $"Dieser Teil von {runner}s Vorgeschichte steht fest: {title}.",
