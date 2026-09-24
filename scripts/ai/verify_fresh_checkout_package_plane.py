@@ -2607,7 +2607,18 @@ def require_ui_owner_recipe_authority(
             check=False,
         )
         if ancestry.returncode != 0:
-            raise VerificationError(failure)
+            # A protected merge of the exact preseal marker is not an ancestor
+            # of that marker. Authenticate its complete unchanged transaction;
+            # equal trees or reversed/arbitrary ancestry alone are insufficient.
+            split_preseal = load_split_preseal_verifier()
+            try:
+                published_marker = split_preseal.validate_existing_unsealed_marker(
+                    repo_root, base_commit
+                )
+            except split_preseal.PresealError as exc:
+                raise VerificationError(failure) from exc
+            if published_marker != locked_recipe_commit:
+                raise VerificationError(failure)
     else:
         raise VerificationError(failure)
 
