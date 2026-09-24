@@ -618,6 +618,11 @@ def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     if len(marker_parents) != 1:
         raise PresealError("seal is not the sole child of its marker commit")
     marker_commit = marker_parents[0]
+    if len(parents(repo_root, marker_commit)) == 2:
+        # Strict protected branches require the seal to descend from current
+        # main. Authenticate its exact published marker without rewriting the
+        # original recipe identity recorded by the package producer.
+        marker_commit = validate_existing_unsealed_marker(repo_root, marker_commit)
     recipe_parents = parents(repo_root, marker_commit)
     if len(recipe_parents) != 1:
         raise PresealError("retained marker commit has unexpected parents")

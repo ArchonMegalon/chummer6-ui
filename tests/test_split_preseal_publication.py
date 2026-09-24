@@ -801,6 +801,61 @@ def test_recovery_from_merge_published_marker_retains_exact_locks(tmp_path: Path
         )
 
 
+@pytest.mark.parametrize("merge_result", (False, True))
+def test_seal_on_current_published_main_preserves_recipe_identity(tmp_path: Path, merge_result: bool) -> None:
+    repository, base, _, marker = fixture(tmp_path)
+    published = synthetic_commit(repository, preseal.tree(repository, marker), base, marker)
+    checkout(repository, published)
+    write_seal_locks(repository, marker)
+    seal = commit(repository, "two locks directly on protected main")
+    assert preseal.parents(repository, seal) == [published]
+    tested = synthetic_commit(repository, preseal.tree(repository, seal), published, seal) if merge_result else seal
+    checkout(repository, tested)
+    preseal.validate_marker_seal_topology(repository, sealed_commit=tested, locked_recipe_commit=marker)
+    spec = importlib.util.spec_from_file_location(
+        "fresh_package_plane_current_main_regression",
+        REPO_ROOT / "scripts/ai/verify_fresh_checkout_package_plane.py",
+    )
+    assert spec is not None and spec.loader is not None
+    consumer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(consumer)
+    consumer.require_ui_owner_recipe_authority(
+        repository, sealed_commit=tested, locked_recipe_commit=marker,
+        producer_lock_recipe_commit=marker,
+    )
+
+
+@pytest.mark.parametrize("case", ("wrong-base", "changed-tree", "wrong-lock", "extra-seal-change"))
+def test_seal_on_published_main_rejects_unbound_inputs(tmp_path: Path, case: str) -> None:
+    repository, base, recipe, marker = fixture(tmp_path)
+    published_tree = preseal.tree(repository, marker)
+    if case == "changed-tree":
+        (repository / "scripts/ai/verify_fresh_checkout_package_plane.py").write_text("# changed publication\n")
+        changed = commit(repository, "unreviewed publication bytes")
+        published_tree = preseal.tree(repository, changed)
+    published = synthetic_commit(repository, published_tree, recipe if case == "wrong-base" else base, marker)
+    checkout(repository, published)
+    write_seal_locks(repository, published if case == "wrong-lock" else marker)
+    if case == "extra-seal-change":
+        (repository / "scripts/ai/verify_fresh_checkout_package_plane.py").write_text("# unreviewed\n")
+    seal = commit(repository, "hostile seal on published main")
+    with pytest.raises(preseal.PresealError):
+        preseal.validate_marker_seal_topology(repository, sealed_commit=seal, locked_recipe_commit=marker)
+    spec = importlib.util.spec_from_file_location(
+        "fresh_package_plane_hostile_current_main",
+        REPO_ROOT / "scripts/ai/verify_fresh_checkout_package_plane.py",
+    )
+    assert spec is not None and spec.loader is not None
+    consumer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(consumer)
+    actual_binding = published if case == "wrong-lock" else marker
+    with pytest.raises(consumer.VerificationError):
+        consumer.require_ui_owner_recipe_authority(
+            repository, sealed_commit=seal, locked_recipe_commit=actual_binding,
+            producer_lock_recipe_commit=actual_binding,
+        )
+
+
 def test_merge_published_marker_does_not_reset_recovery_depth(tmp_path: Path, monkeypatch) -> None:
     repository, base, _, marker = fixture(tmp_path)
     published = synthetic_commit(repository, preseal.tree(repository, marker), base, marker)

@@ -2584,13 +2584,43 @@ def require_ui_owner_recipe_authority(
     ):
         raise VerificationError(failure)
 
+    # A retained marker fixes the original recipe identity even when a caller
+    # presents the publication merge itself as the locked recipe.
+    split_preseal = load_split_preseal_verifier()
+    try:
+        split_preseal.validate_marker_seal_topology(
+            repo_root, sealed_commit=sealed_commit, locked_recipe_commit=locked_recipe_commit
+        )
+    except split_preseal.PresealError as exc:
+        raise VerificationError(failure) from exc
+
     sealed_parents = commit_parents(sealed_commit)
-    if sealed_parents == [locked_recipe_commit]:
+    if len(sealed_parents) == 1:
         seal_commit = sealed_commit
     elif len(sealed_parents) == 2:
         base_commit, seal_commit = sealed_parents
-        if commit_parents(seal_commit) != [locked_recipe_commit]:
+    else:
+        raise VerificationError(failure)
+
+    recipe_parents = commit_parents(seal_commit)
+    if len(recipe_parents) != 1:
+        raise VerificationError(failure)
+    recipe_parent = recipe_parents[0]
+    if recipe_parent != locked_recipe_commit:
+        # A seal may directly extend the authenticated marker publication on
+        # protected main; its locks still identify the original recipe.
+        split_preseal = load_split_preseal_verifier()
+        try:
+            published_marker = split_preseal.validate_existing_sealed_marker(
+                repo_root, sealed_commit
+            )
+        except split_preseal.PresealError as exc:
+            raise VerificationError(failure) from exc
+        if published_marker != locked_recipe_commit or (
+            len(sealed_parents) == 2 and base_commit != recipe_parent
+        ):
             raise VerificationError(failure)
+    elif len(sealed_parents) == 2:
         ancestry = subprocess.run(
             [
                 str(TRUSTED_GIT),
@@ -2619,9 +2649,6 @@ def require_ui_owner_recipe_authority(
                 raise VerificationError(failure) from exc
             if published_marker != locked_recipe_commit:
                 raise VerificationError(failure)
-    else:
-        raise VerificationError(failure)
-
     if git_output("rev-parse", f"{sealed_commit}^{{tree}}") != git_output(
         "rev-parse", f"{seal_commit}^{{tree}}"
     ):
