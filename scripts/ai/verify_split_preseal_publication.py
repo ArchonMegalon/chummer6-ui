@@ -136,6 +136,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/NewRunnerBuildMethodTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/OwnerBoundWorkspaceRefreshContractTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/Sr6BuildMethodSelectionTests.cs",
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
