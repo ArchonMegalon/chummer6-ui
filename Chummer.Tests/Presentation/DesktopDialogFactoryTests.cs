@@ -2708,7 +2708,7 @@ public class DesktopDialogFactoryTests
             alias: "Cipher");
 
         Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
-        Assert.AreEqual("SumToTen", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual(Sr6CharacterCreationBuildMethods.SumToTen, DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowHouseRulesEnabled"));
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterPriorityHeritage", StringComparison.Ordinal)));

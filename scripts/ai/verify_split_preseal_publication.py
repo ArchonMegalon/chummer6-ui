@@ -132,12 +132,17 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/NewRunnerBuildMethodTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/Sr6BuildMethodSelectionTests.cs",
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.Continuation.cs",
         "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
         "Chummer.Presentation/Chummer.Presentation.csproj",
+        "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs",
+        "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs",
+        "Chummer.Presentation/OriginBooks/OriginBookProseDraft.cs",
+        "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
         "Chummer.Presentation/IOwnerBoundWorkspaceContinuationClient.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs",
         "Chummer.Presentation/Overview/IOwnerBoundWorkspaceContinuationPresenter.cs",
@@ -160,6 +165,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/InProcessWorkspaceContinuationTests.cs",
         "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+        "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
         "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationResourcesInteractionPresenterTests.cs",
         "Chummer.Tests/Presentation/Chummer5CharacterSettingsProfilesTests.cs",
@@ -168,6 +174,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Directory.Build.props",
         "README.md",
         "docs/COMPATIBILITY_CARGO.md",
+        "docs/SR6_CREATION_METHODS_20260921.md",
         "scripts/ai/verify_fresh_checkout_package_plane.py",
         "scripts/ai/verify_pull_request_controls.py",
         "scripts/ai/verify.sh",
@@ -204,20 +211,20 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "04fc9cdc2f1e9f593ddf1917c5fffa68b55384eb",
-        "commit": "b30eacf4ecd6a912705cee3097a6dc02b2621e72",
+        "blob": "977f65b3ca04c465264a4b368332434f5e9f4311",
+        "commit": "a5c1dab8f3484755fd24213b5edd572d9117cef0",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f",
-        "rawSizeBytes": 63731,
-        "semanticCanonicalSha256": "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f",
-        "semanticCanonicalSizeBytes": 63731,
-        "tree": "6ba16b55f37f5e358d9096359f44c3dba914fe7d",
+        "rawSha256": "ab05cd2a1f45e2864111df6b2782f0f443e30f3554d96d831af419ce095df2c1",
+        "rawSizeBytes": 64555,
+        "semanticCanonicalSha256": "ab05cd2a1f45e2864111df6b2782f0f443e30f3554d96d831af419ce095df2c1",
+        "semanticCanonicalSizeBytes": 64555,
+        "tree": "53796a2eadea9a97087e3d83330765224eaa3316"
     },
     "producerLock": {
         "absentAtCommit": True,
-        "path": "config/ui-owner-package-plane.lock.json",
-    },
+        "path": "config/ui-owner-package-plane.lock.json"
+    }
 }
 
 
