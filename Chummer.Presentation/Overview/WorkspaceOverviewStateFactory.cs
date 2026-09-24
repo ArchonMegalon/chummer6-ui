@@ -9,6 +9,7 @@ public sealed class WorkspaceOverviewStateFactory :
     IWorkspaceOverviewPreparationFactory
 {
     private readonly ICharacterCreationFoundationService? _creationFoundationService;
+    private readonly IOwnerBoundCharacterCreationLifeModuleFinalizationService? _ownerBoundFoundationReader;
     private readonly ICharacterCreationContactsService? _creationContactsService;
     private readonly IOwnerBoundCharacterCreationContactsService? _ownerBoundCreationContactsService;
     private readonly ICharacterCreationQualitiesService? _creationQualitiesService;
@@ -27,9 +28,11 @@ public sealed class WorkspaceOverviewStateFactory :
         ICharacterCreationFinalizationService? creationFinalizationService = null,
         IOwnerBoundCharacterCreationContactsService? ownerBoundCreationContactsService = null,
         IOwnerBoundCharacterCreationFinalizationService? ownerBoundCreationFinalizationService = null,
-        IOwnerBoundCharacterCreationLifestylesReader? ownerBoundCreationLifestylesReader = null)
+        IOwnerBoundCharacterCreationLifestylesReader? ownerBoundCreationLifestylesReader = null,
+        IOwnerBoundCharacterCreationLifeModuleFinalizationService? ownerBoundFoundationReader = null)
     {
         _creationFoundationService = creationFoundationService;
+        _ownerBoundFoundationReader = ownerBoundFoundationReader;
         _creationContactsService = creationContactsService;
         _ownerBoundCreationContactsService = ownerBoundCreationContactsService;
         _creationQualitiesService = creationQualitiesService;
@@ -311,11 +314,14 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview)
     {
-        if (_creationFoundationService is null)
+        // A linked workspace must never fall back to the local-single-user store.
+        CharacterCreationFoundationResult<CharacterCreationFoundationState>? result =
+            loadedOverview.DisplayOwnerContext is { IsValid: true } owner && _ownerBoundFoundationReader is not null
+                ? _ownerBoundFoundationReader.Load(owner, workspaceId)
+                : loadedOverview.DisplayOwnerContext is null or { Owner.IsLocalSingleUser: true }
+                    ? _creationFoundationService?.Load(new CharacterCreationFoundationLoadRequest(workspaceId)) : null;
+        if (result is null)
             return null;
-
-        CharacterCreationFoundationResult<CharacterCreationFoundationState> result =
-            _creationFoundationService.Load(new CharacterCreationFoundationLoadRequest(workspaceId));
         return result.Outcome == CharacterCreationFoundationOutcomes.Success
                && result.Value is CharacterCreationFoundationState state
                && BlockersMatch(result.Blockers, state.AuthorityBlockers)
