@@ -273,7 +273,14 @@ public sealed partial class CharacterOverviewPresenter
             ? LoadWorkspaceForOwnerAsync(id, expectedOwner, ct)
             : throw new InvalidOperationException("Original owner authority is required for workspace refresh.");
 
-    private async Task LoadWorkspaceForOwnerAsync(CharacterWorkspaceId id, OwnerContextStamp? expectedOwner, CancellationToken ct)
+    Task IOwnerBoundWorkspaceRefreshPresenter.LoadBeforeShellSyncAsync(
+        OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
+        => expectedOwner.IsValid
+            ? LoadWorkspaceForOwnerAsync(id, expectedOwner, ct, synchronizeShell: false)
+            : throw new InvalidOperationException("Original owner authority is required for workspace refresh.");
+
+    private async Task LoadWorkspaceForOwnerAsync(CharacterWorkspaceId id, OwnerContextStamp? expectedOwner,
+        CancellationToken ct, bool synchronizeShell = true)
     {
         if (expectedOwner is { } original
             && (State.DisplayOwnerContext != original
@@ -310,7 +317,7 @@ public sealed partial class CharacterOverviewPresenter
             if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
-            await SyncShellWorkspaceContextAsync(ct);
+            if (synchronizeShell) await SyncShellWorkspaceContextAsync(ct);
         }
         catch (Exception ex)
         {

@@ -57,6 +57,25 @@ def test_life_book_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert "Chummer.Presentation/OriginBooks/UnreviewedAuthoring.cs" not in preseal.ALLOWED_RECIPE_PATHS
 
 
+def test_owner_refresh_contract_test_has_exact_recipe_membership(tmp_path, monkeypatch) -> None:
+    path = "Chummer.CreationWizard.Presentation.Tests/OwnerBoundWorkspaceRefreshContractTests.cs"
+    assert path in preseal.ALLOWED_RECIPE_PATHS
+    monkeypatch.setattr(preseal, "commit_bytes", lambda *args: b"owner-bound refresh contract")
+    monkeypatch.setattr(preseal, "commit_blob", lambda *args: "c" * 40)
+    for status in ("A", "M"):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{path}")
+        assert preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)[0]["path"] == path
+    for status, candidate in (
+        ("D", path),
+        ("M", "Chummer.CreationWizard.Presentation.Tests/UnreviewedRefreshTests.cs"),
+        ("M", preseal.MARKER_PATH),
+        *(("M", name) for name in preseal.CANONICAL_LOCK_PATHS),
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{candidate}")
+        with pytest.raises(preseal.PresealError, match="not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def test_linked_character_preview_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert {
         "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
