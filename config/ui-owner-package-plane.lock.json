@@ -1,13 +1,13 @@
 {
   "contract": "chummer6-ui.owner-package-plane-lock/v1",
-  "dependencyAuthorityCacheKey": "051b05d125ac8aa9b69622560d4a07c89750a32ab77253cc0a5dcfcb9c818aa0",
-  "packageRecipeCommit": "3ed35545535879b20f7076580af45419fc866bd1",
+  "dependencyAuthorityCacheKey": "521a4f6d7d557c445cfbefa5bdf9afb782db3034cd60d75d5ac1cc2d6721d0b3",
+  "packageRecipeCommit": "edc5312fbbe46c40dc9cd1256b887e27ee3a7177",
   "packageRecipePath": "scripts/ai/verify_fresh_checkout_package_plane.py",
-  "packageRecipeSha256": "20dcf7deef241d91651f2ab0c341d64437b3c940ae2b8ba95dbeee75d4ef7eee",
+  "packageRecipeSha256": "f2ace88eae5a917a104fbb88ab5ddd476891308d7db5d207986e26e376307844",
   "packages": [
     {
       "dependencies": {
-        "Chummer.Engine.Contracts": "0.0.0-packageplane.candidate.shd1c6e3d22360c"
+        "Chummer.Engine.Contracts": "0.0.0-packageplane.candidate.shd9051e0d214a5"
       },
       "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
       "packageId": "Chummer.Campaign.Contracts",
@@ -25,13 +25,13 @@
   "sdkVersion": "10.0.103",
   "sources": [
     {
-      "commit": "e35db6feca8f194161302064a9f77d4f8e60fe14",
+      "commit": "026943cd5d3413f390452dfbec06852ef10b0d55",
       "ownerDirectory": "chummer.run-services",
       "packageId": "Chummer.Campaign.Contracts",
       "project": "Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj",
       "projectSha256": "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0",
       "repository": "https://github.com/ArchonMegalon/chummer6-hub.git",
-      "sourceTree": "58a03c18139ed860c442fad05ba4af8f33d6bd5b"
+      "sourceTree": "61eb8d4c093be8897e7781ffbeb8e286ee34a710"
     },
     {
       "commit": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
