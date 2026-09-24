@@ -757,6 +757,86 @@ def test_retained_marker_allows_only_exact_two_lock_seal(tmp_path: Path) -> None
         )
 
 
+def test_merge_published_marker_keeps_original_seal_identity(tmp_path: Path) -> None:
+    repository, base, _, marker = fixture(tmp_path)
+    published = synthetic_commit(repository, preseal.tree(repository, marker), base, marker)
+    write_seal_locks(repository, marker)
+    seal = commit(repository, "exact original two-lock seal")
+    merged = synthetic_commit(repository, preseal.tree(repository, seal), published, seal)
+
+    assert preseal.validate_existing_unsealed_marker(repository, published) == marker
+    preseal.validate_marker_seal_topology(
+        repository, sealed_commit=merged, locked_recipe_commit=marker
+    )
+
+    # The actual consumer admission must accept the same authenticated shape,
+    # not only the independent marker verifier.
+    spec = importlib.util.spec_from_file_location(
+        "fresh_package_plane_merge_regression",
+        REPO_ROOT / "scripts/ai/verify_fresh_checkout_package_plane.py",
+    )
+    assert spec is not None and spec.loader is not None
+    consumer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(consumer)
+    checkout(repository, merged)
+    consumer.require_ui_owner_recipe_authority(
+        repository,
+        sealed_commit=merged,
+        locked_recipe_commit=marker,
+        producer_lock_recipe_commit=marker,
+    )
+
+
+def test_recovery_from_merge_published_marker_retains_exact_locks(tmp_path: Path) -> None:
+    repository, base, _, marker = fixture(tmp_path)
+    published = synthetic_commit(repository, preseal.tree(repository, marker), base, marker)
+    checkout(repository, published)
+    recipe, recovered = unsealed_recovery(repository, published)
+    receipt = preseal.validate_preseal(repository, base=published, head=recovered)
+    assert receipt["recipeCommitObserved"] == recipe
+    assert receipt["authority"] is receipt["publicationAuthorized"] is False
+    for path in preseal.CANONICAL_LOCK_PATHS:
+        assert preseal.commit_blob(repository, recovered, path) == preseal.commit_blob(
+            repository, marker, path
+        )
+
+
+def test_merge_published_marker_does_not_reset_recovery_depth(tmp_path: Path, monkeypatch) -> None:
+    repository, base, _, marker = fixture(tmp_path)
+    published = synthetic_commit(repository, preseal.tree(repository, marker), base, marker)
+    checkout(repository, published)
+    _, recovered = unsealed_recovery(repository, published)
+    merged_recovery = synthetic_commit(
+        repository, preseal.tree(repository, recovered), published, recovered
+    )
+    monkeypatch.setattr(preseal, "MAX_UNSEALED_RECOVERY_DEPTH", 1)
+    with pytest.raises(preseal.PresealError):
+        preseal.validate_existing_unsealed_marker(repository, merged_recovery)
+
+
+@pytest.mark.parametrize("case", ("wrong-base", "reversed", "extra-parent", "changed-tree"))
+def test_merge_published_marker_rejects_unbound_history(tmp_path: Path, case: str) -> None:
+    repository, base, recipe, marker = fixture(tmp_path)
+    marker_tree = preseal.tree(repository, marker)
+    write_seal_locks(repository, marker)
+    seal = commit(repository, "exact seal")
+    if case == "wrong-base":
+        published = synthetic_commit(repository, marker_tree, recipe, marker)
+    elif case == "reversed":
+        published = synthetic_commit(repository, marker_tree, marker, base)
+    elif case == "extra-parent":
+        published = synthetic_commit(repository, marker_tree, base, marker, recipe)
+    else:
+        published = synthetic_commit(repository, preseal.tree(repository, seal), base, marker)
+    with pytest.raises(preseal.PresealError):
+        preseal.validate_existing_unsealed_marker(repository, published)
+    merged = synthetic_commit(repository, preseal.tree(repository, seal), published, seal)
+    with pytest.raises(preseal.PresealError):
+        preseal.validate_marker_seal_topology(
+            repository, sealed_commit=merged, locked_recipe_commit=marker
+        )
+
+
 def test_retained_marker_rejects_incomplete_or_extra_seal(tmp_path: Path) -> None:
     for case in ("incomplete", "extra"):
         repository, _, recipe, marker = fixture(tmp_path / case)

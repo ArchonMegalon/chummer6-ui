@@ -2,7 +2,7 @@
 """Validate the non-authoritative split-preseal publication transaction.
 
 The preseal lane exists only to publish package-recipe and verification code
-through protected, linear-history pull requests.  It never validates package
+through protected pull requests.  It never validates package
 consumers and never grants release or publication authority.
 
 Topology:
@@ -14,6 +14,10 @@ direct child of the marker commit and changes exactly the two canonical lock
 files.  The marker binds the recipe tree rather than the recipe commit so that
 GitHub's protected rebase merge may rewrite commit identities without changing
 the reviewed bytes.
+
+A merge publication may wrap the exact base/marker pair without changing its
+tree. The original marker/recipe identity remains authoritative; arbitrary
+content-equal ancestry is not sufficient.
 """
 
 from __future__ import annotations
@@ -557,6 +561,31 @@ def validate_oracle_at_recipe(
     return json.loads(json.dumps(oracle))
 
 
+def unwrap_published_marker(repo_root: Path, marker_commit: str) -> str:
+    """Unwrap only an unchanged merge of the marker onto its exact recipe base.
+
+    This proves the wrapper shape only. Callers still authenticate the marker,
+    recipe diff, prior history and unchanged locks below.
+    """
+
+    published = require_commit(marker_commit, "published preseal marker")
+    published_parents = parents(repo_root, published)
+    if len(published_parents) == 1:
+        return published
+    if len(published_parents) != 2:
+        raise PresealError("published preseal marker has unexpected parents")
+    base, marker = published_parents
+    if tree(repo_root, published) != tree(repo_root, marker):
+        raise PresealError("published preseal merge tree differs from marker")
+    marker_parents = parents(repo_root, marker)
+    if len(marker_parents) != 1 or parents(repo_root, marker_parents[0]) != [base]:
+        raise PresealError("published preseal merge does not bind the exact recipe base")
+    retained = load_marker_bytes(commit_bytes(repo_root, marker, MARKER_PATH))
+    if retained.get("baseCommit") != base:
+        raise PresealError("published preseal merge base differs from retained marker")
+    return marker
+
+
 def unwrap_seal_commit(repo_root: Path, sealed_commit: str) -> str:
     sealed = require_commit(sealed_commit, "sealed commit")
     sealed_parents = parents(repo_root, sealed)
@@ -564,8 +593,14 @@ def unwrap_seal_commit(repo_root: Path, sealed_commit: str) -> str:
         base_parent, candidate = sealed_parents
         if tree(repo_root, sealed) != tree(repo_root, candidate):
             raise PresealError("sealed pull-request merge tree differs from seal")
-        if parents(repo_root, candidate) != [base_parent]:
-            raise PresealError("sealed pull-request merge parents are not exact")
+        candidate_parents = parents(repo_root, candidate)
+        if candidate_parents != [base_parent]:
+            if (
+                len(candidate_parents) != 1
+                or unwrap_published_marker(repo_root, base_parent) != candidate_parents[0]
+            ):
+                raise PresealError("sealed pull-request merge parents are not exact")
+            validate_existing_unsealed_marker(repo_root, base_parent)
         return candidate
     if len(sealed_parents) != 1:
         raise PresealError("sealed preseal topology has unexpected parents")
@@ -640,7 +675,7 @@ def validate_existing_unsealed_marker(
 
     if _depth >= MAX_UNSEALED_RECOVERY_DEPTH:
         raise PresealError("unsealed preseal recovery history exceeds its bounded depth")
-    published = require_commit(marker_commit, "unsealed preseal base")
+    published = unwrap_published_marker(repo_root, marker_commit)
     if not commit_path_exists(repo_root, published, MARKER_PATH):
         raise PresealError("unsealed preseal base does not retain a marker")
     marker_parents = parents(repo_root, published)
