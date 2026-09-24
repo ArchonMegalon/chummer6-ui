@@ -102,4 +102,13 @@ public interface IOwnerBoundWorkspaceMutationPresenter
 public interface IOwnerBoundWorkspaceRefreshPresenter
 {
     Task LoadAsync(OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct);
+
+    /// <summary>
+    /// Reload for a host that will synchronize its shell after validating the
+    /// refreshed state. Implementations may defer their own shell synchronization;
+    /// the caller must still perform its owner-bound shell synchronization.
+    /// Older implementations retain their normal load behavior.
+    /// </summary>
+    Task LoadBeforeShellSyncAsync(OwnerContextStamp expectedOwner, CharacterWorkspaceId id, CancellationToken ct)
+        => LoadAsync(expectedOwner, id, ct);
 }
