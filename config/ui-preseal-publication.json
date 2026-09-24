@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "ea3bf14aecb2da0197d952a2ea34e67574632eb0",
-  "baseTree": "e3931da1894f74569b1ac7aa21a46ac83409f5cf",
+  "baseCommit": "0005cfadc72052ec9b453208ab36b524a2fc2603",
+  "baseTree": "fc1fae2c844b8c92293c51a6ee537d151f71c871",
   "canonicalSealedLocks": [
     {
       "blob": "5c9ac6b1b0e5f32b59521cfb7fc73e636731077b",
@@ -44,27 +44,27 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "8c437287f9e39123b20bc648b7926d514bd798af",
+      "blob": "73b4fbb07eddf480b670b139cb0af453f382a924",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "3fd8e3b02c05447c2ca77f6c2ec14e4df1f62e6f05197211f614638c5b4e0073",
-      "sizeBytes": 286903,
+      "sha256": "1d82841bbbbcb29bbe753573c1aa0de2bdbf60a9bf40ce4e83423a197ca4ef60",
+      "sizeBytes": 288111,
       "status": "M"
     },
     {
-      "blob": "a668811c247c570b53df1038566217c558d20290",
+      "blob": "5de42987ca8f896fe642d7286404a242faf7ba69",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "3958c0420bb2ac6f8c906c0999f78ff007fe71a3506f58aef4d3ba245cda19c4",
-      "sizeBytes": 47119,
+      "sha256": "6410184dbbab5e3397535458b7e910b67b65571f2f25ea586ef6a737642dba2f",
+      "sizeBytes": 47479,
       "status": "M"
     },
     {
-      "blob": "998e3ead8feeb08671a7cb527a79e363d22e2a71",
+      "blob": "0c7b4f5d495007fbe495870ad5d0e32f93dfaa0c",
       "path": "tests/test_split_preseal_publication.py",
-      "sha256": "c40f1591ad47ac5d694db0919110e3c54635b1047fd03e4b2f10e774cbd7641d",
-      "sizeBytes": 50247,
+      "sha256": "7aa555dcb436b1fb69029a9cad486562a68dfe5621e52cc788c1a0e5ab322c60",
+      "sizeBytes": 53331,
       "status": "M"
     }
   ],
-  "recipeTree": "1f3b7b4e964cb8447812bf25d341ab92fe744ed8",
+  "recipeTree": "7964a46ce80fecda5f27ba9d7cd2a9fdb66f39ff",
   "releaseClaim": false
 }
