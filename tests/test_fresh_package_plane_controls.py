@@ -38,26 +38,26 @@ package_plane = load_module()
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea"
-    runtime = "d1c6e3d22360ce61fd32ed58cb571ac2b50b070d"
-    version = "0.0.0-packageplane.candidate.shd1c6e3d22360c"
+    recipe = "bd955ad8e5ef4344ec6f87180b872d563f081ac8"
+    runtime = "d9051e0d214a56b515e14b164500f9e70f09edcd"
+    version = "0.0.0-packageplane.candidate.shd9051e0d214a5"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 3593451
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 4087408
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "3d24479296b5f951a5d47f44bd62c962812def7be8b8699f3569e7be21d17430"
+        "1c226111ea3ae41fdde33b29bf9d3debd55e4d56b1d0a907b2292e77080be6c6"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "80852aece172e972719237d56454f8eab49276385a138e3a67474d3fced2b612"
-    assert metadata["lockSha256"] == "df586b172f2ad5653a30c9fdd9876b3d296cc96739517acd9ec3d9fa9d96da2e"
-    assert metadata["receiptSha256"] == "abbf0d56069e119fb02ce83bbf5f9672c2dbe616261e00117d4a8ea7dd3cd7fc"
+    assert metadata["inventorySha256"] == "004cdc834c465c75753b2139f14acbb7322ed5087738f82c257866c839275a24"
+    assert metadata["lockSha256"] == "d009a8846fce0629b3bc56e42ab27debed27b8c78e84e3e23bc36efdedf537a3"
+    assert metadata["receiptSha256"] == "028942671658b9970937667b8d43c54a96ec2363c0f29d459632f7c9b7133329"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -71,29 +71,29 @@ def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -
     assert 'core_runtime_version="${CHUMMER_CORE_RUNTIME_PACKAGE_VERSION:-' + version + '}"' in helper
 
 
-def test_current_hub_main_pins_bind_receipt_package_sources_and_consumer_defaults() -> None:
-    main = "e35db6feca8f194161302064a9f77d4f8e60fe14"
-    version = "0.1.1-packageplane.20260910.1"
+def test_current_hub_producer_pins_bind_receipt_package_sources_and_consumer_defaults() -> None:
+    producer = "026943cd5d3413f390452dfbec06852ef10b0d55"
+    version = "0.1.1-packageplane.20260924.2"
     authority = package_plane.EXPECTED_HUB_CANONICAL_FEED
-    assert authority["producerCommit"] == main
+    assert authority["producerCommit"] == producer
     assert authority["packageVersion"] == package_plane.CANONICAL_HUB_CONTRACTS_VERSION == version
-    assert authority["lockSha256"] == "7ab44ee70aa50d0a533315926d40a7ad80019d532f3220349bff2b95293040bf"
-    assert authority["inventorySha256"] == "fc1825ed1cc94ae7a5d923238387a6f61a732994a383254ab7f709523da46106"
+    assert authority["lockSha256"] == "5c9d5a9361564f7f59fcdba5f2896b218e57082a892d2ece766fdd227a250a62"
+    assert authority["inventorySha256"] == "e0fafc0086b328e627b98006efc74905c71877c5ecb76c2dcc3743bf90f50d14"
     assert authority["receiptSha256"] == package_plane.HUB_NO_SIBLINGS_RECEIPT_SHA256 == (
-        "24a2396b4341c1a7d7b9021a8b9c4e2a54fa76717c90bbbf11f420f1dd8ffd68"
+        "45067cc5f0d314fec042d5cff84cc8daab4e63a1600a04e6d5f0717ddd2b9f1f"
     )
     assert [(row["packageId"], row["commit"]) for row in authority["packages"]] == [
         ("Chummer.Hub.Registry.Contracts", "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"),
         ("Chummer.Run.Registry", "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"),
-        ("Chummer.Play.Contracts", "104275ad751cbd0006cac993ac71f1c2b428c3d0"),
-        ("Chummer.Run.Contracts", "104275ad751cbd0006cac993ac71f1c2b428c3d0"),
+        ("Chummer.Play.Contracts", "ddf9bde1e74a2b5fb3aeeaa8f1f45cba694e71f1"),
+        ("Chummer.Run.Contracts", "ddf9bde1e74a2b5fb3aeeaa8f1f45cba694e71f1"),
     ]
     for row in authority["packages"]:
         assert row["version"] == version
         assert row["fileName"] == f"{row['packageId']}.{version}.nupkg"
     campaign = package_plane.EXPECTED_UI_OWNER_SOURCES["Chummer.Campaign.Contracts"]
-    assert campaign["commit"] == main
-    assert campaign["sourceTree"] == "58a03c18139ed860c442fad05ba4af8f33d6bd5b"
+    assert campaign["commit"] == producer
+    assert campaign["sourceTree"] == "61eb8d4c093be8897e7781ffbeb8e286ee34a710"
     assert campaign["projectSha256"] == "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0"
     properties = ET.parse(REPO_ROOT / "Directory.Build.props").getroot()
     for name in ("ChummerRunContractsPackageVersion", "ChummerHubRegistryContractsPackageVersion"):
@@ -109,10 +109,10 @@ def test_current_hub_main_pins_bind_receipt_package_sources_and_consumer_default
     "c4e79a6939b76dcc42d2cbc27fb324e5b8fa1fbe",  # Previous main is not this recipe's producer.
     "128a16275c0aa115eb4b8d1c89bd0c905d96f32e",  # Reviewed local head is not actual main.
     "290035a44f20bbc2fb3dcaa8dd7d2d466b7cf9f6",  # Qualified local seal is not hosted main.
-    "104275ad751cbd0006cac993ac71f1c2b428c3d0",  # Package source is not receipt producer.
+    "ddf9bde1e74a2b5fb3aeeaa8f1f45cba694e71f1",  # Package source is not receipt producer.
     "f" * 40,
 ])
-def test_current_hub_receipt_binding_rejects_non_main_producer_even_with_rehashed_header(
+def test_current_hub_receipt_binding_rejects_other_producer_even_with_rehashed_header(
     tmp_path: Path, wrong_commit: str
 ) -> None:
     authority = dict(package_plane.EXPECTED_HUB_CANONICAL_FEED)
@@ -161,8 +161,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea/"
-        "chummer-core-runtime-package-plane-67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea.zip",
+        "core-runtime-package-plane-bd955ad8e5ef4344ec6f87180b872d563f081ac8/"
+        "chummer-core-runtime-package-plane-bd955ad8e5ef4344ec6f87180b872d563f081ac8.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -415,37 +415,37 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea"
+        "bd955ad8e5ef4344ec6f87180b872d563f081ac8"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "d1c6e3d22360ce61fd32ed58cb571ac2b50b070d"
+        "d9051e0d214a56b515e14b164500f9e70f09edcd"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "e35db6feca8f194161302064a9f77d4f8e60fe14"
+        "026943cd5d3413f390452dfbec06852ef10b0d55"
     )
     assert package_plane.UI_OWNER_PRODUCER_LOCK_PATH not in (
         next_lock["consumer"]["sourceFiles"]
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "04fc9cdc2f1e9f593ddf1917c5fffa68b55384eb",
-            "commit": "b30eacf4ecd6a912705cee3097a6dc02b2621e72",
+            "blob": "2c4ad0af7770d5068bf7e188e9e5c721f8a1ccda",
+            "commit": "a39e56db53f742a286bdae1d10b522552fb9af14",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f",
-            "rawSizeBytes": 63731,
-            "semanticCanonicalSha256": "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f",
-            "semanticCanonicalSizeBytes": 63731,
-            "tree": "6ba16b55f37f5e358d9096359f44c3dba914fe7d",
+            "rawSha256": "f87b656a6e1c2dd7f67892c7901e33605015d44d0ac3d51fcf0b717baf2081d6",
+            "rawSizeBytes": 64555,
+            "semanticCanonicalSha256": "f87b656a6e1c2dd7f67892c7901e33605015d44d0ac3d51fcf0b717baf2081d6",
+            "semanticCanonicalSizeBytes": 64555,
+            "tree": "cb18136c8bc2fff5c061f2dd1f5a38d54a0b9669",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 63731
+    assert len(package_plane.encoded_json(next_lock)) == 64555
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "c124effab29e423f2dde049ea8b6b3b0e0ff20f8670208f5bbfbd42cdbb2845f"
+        "f87b656a6e1c2dd7f67892c7901e33605015d44d0ac3d51fcf0b717baf2081d6"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2236,8 +2236,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 120
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 121
+    assert len(oracle["consumer"]["sourceFiles"]) == 126
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 127
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2297,6 +2297,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         "CharacterCreationWizardDesktopSessionTests.cs",
         "CharacterCreationWizardPresentationTests.cs",
         "NewRunnerBuildMethodTests.cs",
+        "Sr6BuildMethodSelectionTests.cs",
         "WorkspaceOverviewFinalizationOwnerTests.cs",
         "WorkspaceOverviewPreparationTests.cs",
     }
@@ -2512,16 +2513,16 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "e35db6feca8f194161302064a9f77d4f8e60fe14"
+        "026943cd5d3413f390452dfbec06852ef10b0d55"
     )
     assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
-        "e35db6feca8f194161302064a9f77d4f8e60fe14"
+        "026943cd5d3413f390452dfbec06852ef10b0d55"
     )
     assert core["packageRecipeCommit"] == (
-        "67ea1136f739256ceedb4b89eb3a5df2a1d4b3ea"
+        "bd955ad8e5ef4344ec6f87180b872d563f081ac8"
     )
     assert core["runtimeSourceCommit"] == (
-        "d1c6e3d22360ce61fd32ed58cb571ac2b50b070d"
+        "d9051e0d214a56b515e14b164500f9e70f09edcd"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -2627,6 +2628,12 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
         "NUGET_CREDENTIALPROVIDERS_PATH": "/tmp/injected-provider",
         "BASH_ENV": "/tmp/injected-bash-env",
         "LD_PRELOAD": "/tmp/injected.so",
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": "protocol.version",
+        "GIT_CONFIG_VALUE_0": "2",
+        "GIT_CONFIG_GLOBAL": "/tmp/ambient.gitconfig",
+        "GIT_CONFIG_SYSTEM": "/tmp/system.gitconfig",
+        "GIT_CONFIG_PARAMETERS": "'credential.helper'='malicious-helper'",
     }
 
     environment = package_plane.isolated_child_environment(
@@ -2647,6 +2654,25 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
     ).returncode == 0
     assert not malicious_marker.exists()
     assert Path(environment["NUGET_PACKAGES"]).is_relative_to(tmp_path)
+    git_config = Path(environment["GIT_CONFIG_GLOBAL"])
+    assert git_config.is_relative_to(tmp_path / "caches")
+    assert git_config.read_text(encoding="utf-8") == (
+        "[protocol]\n\tversion = 1\n[http]\n\tversion = HTTP/1.1\n[credential]\n\thelper =\n"
+    )
+    assert environment["GIT_CONFIG_NOSYSTEM"] == "1"
+    assert environment["GIT_TERMINAL_PROMPT"] == "0"
+    assert subprocess.run(
+        [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", "protocol.version"],
+        env=environment, check=True, capture_output=True, text=True,
+    ).stdout.strip() == "1"
+    assert subprocess.run(
+        [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", "http.version"],
+        env=environment, check=True, capture_output=True, text=True,
+    ).stdout.strip() == "HTTP/1.1"
+    assert subprocess.run(
+        [str(package_plane.TRUSTED_GIT), "config", "--global", "--get-all", "credential.helper"],
+        env=environment, check=True, capture_output=True, text=True,
+    ).stdout.strip() == ""
     for name in (
         "DirectoryBuildPropsPath",
         "CustomBeforeMicrosoftCommonTargets",
@@ -2656,8 +2682,38 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
         "NUGET_CREDENTIALPROVIDERS_PATH",
         "BASH_ENV",
         "LD_PRELOAD",
+        "GIT_CONFIG_COUNT",
+        "GIT_CONFIG_KEY_0",
+        "GIT_CONFIG_VALUE_0",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_CONFIG_PARAMETERS",
     ):
         assert name not in environment
+
+
+@pytest.mark.parametrize("head_matches,dirty", [(True, False), (False, False), (True, True)])
+def test_anonymous_owner_fetch_keeps_exact_clean_checkout_checks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, head_matches: bool, dirty: bool,
+) -> None:
+    owner = {"directory": "owner", "repository": "https://github.com/example/owner.git",
+             "commit": "1" * 40}
+    commands = []
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        if "rev-parse" in command:
+            return SimpleNamespace(stdout=owner["commit"] if head_matches else "2" * 40)
+        return SimpleNamespace(stdout=" M source.cs\n" if dirty and "status" in command else "")
+
+    monkeypatch.setattr(package_plane, "run", fake_run)
+    if not head_matches or dirty:
+        with pytest.raises(package_plane.VerificationError, match="owner checkout"):
+            package_plane.acquire_owner(owner, tmp_path, {})
+    else:
+        assert package_plane.acquire_owner(owner, tmp_path, {}) == tmp_path / "owner"
+    assert commands[2] == [str(package_plane.TRUSTED_GIT), "-c", "credential.helper=",
+        "-c", "protocol.version=1", "-c", "http.version=HTTP/1.1",
+        "fetch", "--quiet", "--depth=1", "origin", owner["commit"]]
 
 
 def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
@@ -2887,7 +2943,7 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 121
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 127
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -3007,7 +3063,7 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
             if row[0] == expected[0] or row[1] == relative] == [expected]
     assert static_mstest_case_count(relative) == 24
     assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 24
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 121
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 127
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"

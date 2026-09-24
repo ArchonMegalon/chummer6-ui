@@ -45,6 +45,18 @@ def test_portal_lookup_correction_has_exact_recipe_membership(tmp_path, monkeypa
             preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
 
 
+def test_life_book_inputs_are_explicit_preseal_recipe_paths() -> None:
+    assert {
+        "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs",
+        "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs",
+        "Chummer.Presentation/OriginBooks/OriginBookProseDraft.cs",
+        "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+        "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/Sr6BuildMethodSelectionTests.cs",
+    } <= preseal.ALLOWED_RECIPE_PATHS
+    assert "Chummer.Presentation/OriginBooks/UnreviewedAuthoring.cs" not in preseal.ALLOWED_RECIPE_PATHS
+
+
 def test_linked_character_preview_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert {
         "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
