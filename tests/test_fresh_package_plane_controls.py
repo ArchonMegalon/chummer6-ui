@@ -72,15 +72,15 @@ def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -
 
 
 def test_current_hub_producer_pins_bind_receipt_package_sources_and_consumer_defaults() -> None:
-    producer = "026943cd5d3413f390452dfbec06852ef10b0d55"
-    version = "0.1.1-packageplane.20260924.2"
+    producer = "42d0bfbb117ab6250e8b0512dd92585916c6469f"
+    version = "0.1.1-packageplane.20260924.3"
     authority = package_plane.EXPECTED_HUB_CANONICAL_FEED
     assert authority["producerCommit"] == producer
     assert authority["packageVersion"] == package_plane.CANONICAL_HUB_CONTRACTS_VERSION == version
-    assert authority["lockSha256"] == "5c9d5a9361564f7f59fcdba5f2896b218e57082a892d2ece766fdd227a250a62"
-    assert authority["inventorySha256"] == "e0fafc0086b328e627b98006efc74905c71877c5ecb76c2dcc3743bf90f50d14"
+    assert authority["lockSha256"] == "68dfa407f4122de168c988e797dec9f5bc4665cb82a8e5be0831149cb8eba45e"
+    assert authority["inventorySha256"] == "647cc4e134e4a8934e4d23188f78dc350dc50bc62bdcd9a026bdb77f5734bdcf"
     assert authority["receiptSha256"] == package_plane.HUB_NO_SIBLINGS_RECEIPT_SHA256 == (
-        "45067cc5f0d314fec042d5cff84cc8daab4e63a1600a04e6d5f0717ddd2b9f1f"
+        "a6e5b2432c22a9a6f5c2ee0c256999a83e3039073b55c1d2077d1bd59eb4764a"
     )
     assert [(row["packageId"], row["commit"]) for row in authority["packages"]] == [
         ("Chummer.Hub.Registry.Contracts", "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"),
@@ -93,7 +93,7 @@ def test_current_hub_producer_pins_bind_receipt_package_sources_and_consumer_def
         assert row["fileName"] == f"{row['packageId']}.{version}.nupkg"
     campaign = package_plane.EXPECTED_UI_OWNER_SOURCES["Chummer.Campaign.Contracts"]
     assert campaign["commit"] == producer
-    assert campaign["sourceTree"] == "61eb8d4c093be8897e7781ffbeb8e286ee34a710"
+    assert campaign["sourceTree"] == "694fcd76929820d84db20107c52faa6d9f3bc677"
     assert campaign["projectSha256"] == "94c8d6582bc4b902673d5a09e6218adee82fdf7d5478a8b1e3434697b83957e0"
     properties = ET.parse(REPO_ROOT / "Directory.Build.props").getroot()
     for name in ("ChummerRunContractsPackageVersion", "ChummerHubRegistryContractsPackageVersion"):
@@ -421,22 +421,22 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
         "5160e78a60bcefd952e8720aae6032a127c3a755"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "026943cd5d3413f390452dfbec06852ef10b0d55"
+        "42d0bfbb117ab6250e8b0512dd92585916c6469f"
     )
     assert package_plane.UI_OWNER_PRODUCER_LOCK_PATH not in (
         next_lock["consumer"]["sourceFiles"]
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "1b893077f5d968f4a9c40d8da6db383244718997",
-            "commit": "a3d20c572d9400552bdb67e713bab7f484aa3428",
+            "blob": "eed9a87b0db63fc0da80b14001deec733d42d288",
+            "commit": "9aebd5c875c5356cd6bb78ae80db9299ddc9ae68",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "63adf927a8776a6515a380fa766248b2902346fd84f67b6ed35f4b9de446db6c",
+            "rawSha256": "4956ee21f4db2ce65957a03a17a2a7d087f4ddfe7d2f42f43d10eabb58e55ff9",
             "rawSizeBytes": 64555,
-            "semanticCanonicalSha256": "63adf927a8776a6515a380fa766248b2902346fd84f67b6ed35f4b9de446db6c",
+            "semanticCanonicalSha256": "4956ee21f4db2ce65957a03a17a2a7d087f4ddfe7d2f42f43d10eabb58e55ff9",
             "semanticCanonicalSizeBytes": 64555,
-            "tree": "a61dce007f27e1c1b692e30f12aebb9392f4982a",
+            "tree": "61d8387bce54c204a5212503d808054af20a647f",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -445,7 +445,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 64555
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "63adf927a8776a6515a380fa766248b2902346fd84f67b6ed35f4b9de446db6c"
+        "4956ee21f4db2ce65957a03a17a2a7d087f4ddfe7d2f42f43d10eabb58e55ff9"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2513,10 +2513,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
     assert current_receipt["status"] == "bound_not_selected"
 
     assert lock["canonicalOwnerFeed"]["producerCommit"] == (
-        "026943cd5d3413f390452dfbec06852ef10b0d55"
+        "42d0bfbb117ab6250e8b0512dd92585916c6469f"
     )
     assert lock["uiOwnerFeed"]["packages"][0]["commit"] == (
-        "026943cd5d3413f390452dfbec06852ef10b0d55"
+        "42d0bfbb117ab6250e8b0512dd92585916c6469f"
     )
     assert core["packageRecipeCommit"] == (
         "1e477c0f5e036eed241f4fe723a0e2eda30c51dd"

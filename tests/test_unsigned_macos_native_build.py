@@ -279,7 +279,7 @@ def test_workflow_and_builder_use_exact_package_plane_owner_commits() -> None:
     )
     assert expected == {
         "https://github.com/ArchonMegalon/chummer6-core.git": "1e477c0f5e036eed241f4fe723a0e2eda30c51dd",
-        "https://github.com/ArchonMegalon/chummer6-hub.git": "026943cd5d3413f390452dfbec06852ef10b0d55",
+        "https://github.com/ArchonMegalon/chummer6-hub.git": "42d0bfbb117ab6250e8b0512dd92585916c6469f",
         "https://github.com/ArchonMegalon/chummer6-hub-registry.git": "af9a7e19c3bf331e96411dfb8f9e7820a98cab29",
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git": "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61",
     }
