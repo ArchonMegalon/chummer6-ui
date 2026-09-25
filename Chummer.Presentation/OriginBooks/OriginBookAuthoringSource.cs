@@ -18,12 +18,14 @@ public static class OriginBookAuthoringSource
             throw new InvalidOperationException("The accepted chapter boundary is invalid.");
         var allowedDecisions = decisions.Take(last + 1).ToHashSet(StringComparer.Ordinal);
         var allowedFacts = book.AllowedCanonicalFactIds.ToHashSet(StringComparer.Ordinal);
-        // These summaries are accepted choice labels / explicit player answers,
-        // not sourcebook prose, mechanics, legacy macros, private notes or future
-        // answers. Provider text is data and never expands this allowlist.
+        // Only accepted labels, explicit answers and Core's sealed contribution
+        // summaries. Contributions are not final ratings. Never export raw rule
+        // XML/sourcebook prose, private notes or future answers. Provider text is
+        // data and never expands this allowlist; old facts are not regenerated.
         var facts = book.CanonicalLayer.Facts.Where(f => allowedDecisions.Contains(f.AcceptedDecisionId)
                 && allowedFacts.Contains(f.FactId)
-                && f.FactKind is "accepted-metatype" or "accepted-life-module" or "accepted-life-module-answer")
+                && f.FactKind is "accepted-metatype" or "accepted-life-module" or "accepted-life-module-answer"
+                    or "accepted-life-module-contributions")
             .Select(f => new OriginChapterSourceFact(f.FactId, f.AcceptedDecisionId, f.LocalizedSummary)).ToArray();
         if (!facts.Any(f => f.DecisionId == chapter.ThroughAcceptedDecisionId))
             throw new InvalidOperationException("No approved narrative facts exist for this chapter.");
