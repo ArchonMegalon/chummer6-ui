@@ -32,6 +32,8 @@ import stat
 import subprocess
 import sys
 from datetime import UTC, datetime
+from contextvars import ContextVar
+from functools import wraps
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -608,6 +610,40 @@ def unwrap_seal_commit(repo_root: Path, sealed_commit: str) -> str:
     return sealed
 
 
+_history_results: ContextVar[dict[tuple, str] | None] = ContextVar(
+    "preseal_history_results", default=None
+)
+
+
+def _memoize_history_validation(validate):
+    """Reuse successful immutable-history checks only within one call tree.
+
+    Published merge wrappers can reach the same sealed history by more than
+    one path. Replaying that history on every path grows exponentially with
+    rolling releases. Keep all checks, including recovery depth, but validate
+    each exact repository/commit/argument tuple once per top-level invocation.
+    Neither failures nor mutable checkout checks are cached, and no result
+    survives the call (including exceptional exits).
+    """
+    @wraps(validate)
+    def checked(repo_root: Path, commit: str, **kwargs) -> str:
+        results = _history_results.get()
+        token = None
+        if results is None:
+            results = {}
+            token = _history_results.set(results)
+        try:
+            key = (validate.__name__, repo_root.resolve(), commit, tuple(sorted(kwargs.items())))
+            if key not in results:
+                results[key] = validate(repo_root, commit, **kwargs)
+            return results[key]
+        finally:
+            if token is not None:
+                _history_results.reset(token)
+    return checked
+
+
+@_memoize_history_validation
 def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     """Validate one retained marker transaction and return its published Q commit."""
 
@@ -674,6 +710,7 @@ def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     return marker_commit
 
 
+@_memoize_history_validation
 def validate_existing_unsealed_marker(
     repo_root: Path, marker_commit: str, *, _depth: int = 0
 ) -> str:
