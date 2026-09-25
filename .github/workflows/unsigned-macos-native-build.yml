@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: ArchonMegalon/chummer6-core
-          ref: 69f6fb96fd237976c48a3671d01bf7d01a6e0cad
+          ref: 139868cb7a6d545e1cbb2da6deb59420cb24c55a
           path: .tmp/macos-owner-checkouts/chummer-core-engine
           fetch-depth: 1
           persist-credentials: false
