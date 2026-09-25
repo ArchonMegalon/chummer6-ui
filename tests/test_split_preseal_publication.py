@@ -26,6 +26,55 @@ def load_module() -> ModuleType:
 preseal = load_module()
 
 
+def test_history_validation_reuses_success_only_inside_one_call_tree(tmp_path) -> None:
+    calls = []
+
+    @preseal._memoize_history_validation
+    def history(root, commit, *, _depth=0):
+        calls.append((root, commit, _depth))
+        if commit != "0":
+            prior = str(int(commit) - 1)
+            assert history(root, prior, _depth=_depth) == prior
+            assert history(root, prior, _depth=_depth) == prior
+        return commit
+
+    assert history(tmp_path, "8") == "8"
+    assert len(calls) == 9  # A merge-shaped DAG must not replay 511 validations.
+    assert preseal._history_results.get() is None
+    assert history(tmp_path, "8") == "8"
+    assert len(calls) == 18  # A later verification never trusts an earlier cache.
+
+
+def test_history_cache_preserves_depth_repository_and_failures(tmp_path) -> None:
+    calls = []
+
+    @preseal._memoize_history_validation
+    def history(root, commit, *, _depth=0):
+        calls.append((root, commit, _depth))
+        if commit == "bad" or _depth >= 1:
+            raise preseal.PresealError("rejected exact history")
+        return commit
+
+    @preseal._memoize_history_validation
+    def transaction(root, commit):
+        assert history(root, commit) == commit
+        assert history(root, commit) == commit
+        assert history(root / "another-repository", commit) == commit
+        with pytest.raises(preseal.PresealError):
+            history(root, commit, _depth=1)
+        for _ in range(2):
+            with pytest.raises(preseal.PresealError):
+                history(root, "bad")
+        raise preseal.PresealError("transaction failed")
+
+    with pytest.raises(preseal.PresealError, match="transaction failed"):
+        transaction(tmp_path, "same")
+    assert len(calls) == 5
+    assert preseal._history_results.get() is None
+    assert history(tmp_path, "same") == "same"
+    assert len(calls) == 6
+
+
 def test_portal_lookup_correction_has_exact_recipe_membership(tmp_path, monkeypatch) -> None:
     path = "tests/test_portal_release_shelf_runtime.py"
     assert path in preseal.ALLOWED_RECIPE_PATHS

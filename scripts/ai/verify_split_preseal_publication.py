@@ -32,6 +32,8 @@ import stat
 import subprocess
 import sys
 from datetime import UTC, datetime
+from contextvars import ContextVar
+from functools import wraps
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -216,15 +218,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "7f0c3e4336a115da20a2677f32de8cbfd64c421a",
-        "commit": "fd9f99456147b863760e72ba6c37b5007432f508",
+        "blob": "57923636c07eea2e5875bad2368216817e4473a0",
+        "commit": "f00df45f36c4e95b8fe9997d15b9d073e826085f",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "64429c5bd4c0f03afb6fab07d33701103bd9a2f43e0b8738d7fcc5fae4b00df2",
+        "rawSha256": "86c17101b44c32c5ddb485111d524f21524a5fe2f12492f7ff15d70c1cfd0de3",
         "rawSizeBytes": 64759,
-        "semanticCanonicalSha256": "64429c5bd4c0f03afb6fab07d33701103bd9a2f43e0b8738d7fcc5fae4b00df2",
+        "semanticCanonicalSha256": "86c17101b44c32c5ddb485111d524f21524a5fe2f12492f7ff15d70c1cfd0de3",
         "semanticCanonicalSizeBytes": 64759,
-        "tree": "cf326cf8737bc612540eff9c9da33b4b55eb1556"
+        "tree": "b0a5710866745961bec7f846869be5b2923f78c5"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -608,6 +610,40 @@ def unwrap_seal_commit(repo_root: Path, sealed_commit: str) -> str:
     return sealed
 
 
+_history_results: ContextVar[dict[tuple, str] | None] = ContextVar(
+    "preseal_history_results", default=None
+)
+
+
+def _memoize_history_validation(validate):
+    """Reuse successful immutable-history checks only within one call tree.
+
+    Published merge wrappers can reach the same sealed history by more than
+    one path. Replaying that history on every path grows exponentially with
+    rolling releases. Keep all checks, including recovery depth, but validate
+    each exact repository/commit/argument tuple once per top-level invocation.
+    Neither failures nor mutable checkout checks are cached, and no result
+    survives the call (including exceptional exits).
+    """
+    @wraps(validate)
+    def checked(repo_root: Path, commit: str, **kwargs) -> str:
+        results = _history_results.get()
+        token = None
+        if results is None:
+            results = {}
+            token = _history_results.set(results)
+        try:
+            key = (validate.__name__, repo_root.resolve(), commit, tuple(sorted(kwargs.items())))
+            if key not in results:
+                results[key] = validate(repo_root, commit, **kwargs)
+            return results[key]
+        finally:
+            if token is not None:
+                _history_results.reset(token)
+    return checked
+
+
+@_memoize_history_validation
 def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     """Validate one retained marker transaction and return its published Q commit."""
 
@@ -674,6 +710,7 @@ def validate_existing_sealed_marker(repo_root: Path, sealed_commit: str) -> str:
     return marker_commit
 
 
+@_memoize_history_validation
 def validate_existing_unsealed_marker(
     repo_root: Path, marker_commit: str, *, _depth: int = 0
 ) -> str:
