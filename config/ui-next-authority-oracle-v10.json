@@ -105,7 +105,7 @@
       "Chummer.Presentation/IOwnerBoundWorkspaceOutputClient.cs": "347d05c58c8f72274ce7e5fffd962cf9d282063a4e1d367b89359e23970b1103",
       "Chummer.Presentation/IOwnerBoundWorkspacePersistenceClient.cs": "03a79157301b75781414fa51aecfa30628bdfb36d839e5b1982f3d8dd1625143",
       "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs": "b45bef6e0198836874030888881a07833e24aa8a94db09a6ee8e65ef1152bfac",
-      "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs": "8b88721f3335eff441d3cb548f865d98721c7ec3fda8461910e4c7ce2fb60953",
+      "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs": "e27e82cfb0edf87809001d50c7356fe7b8d3fa46d63b8bbf08b7013e5fe3f9fe",
       "Chummer.Presentation/OriginBooks/OriginBookProseDraft.cs": "c06ceece5f93d7ca4d681e0c04565febd257fc8d56872004f6a551f816fd9845",
       "Chummer.Presentation/Overview/CareerReputationEditRequest.cs": "e8ea9445319890ccad09ef0d28eb5e4f0a558c94377d4d45e7263c930df326b2",
       "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs": "d03f56617b9e613dae458c23edb6ff762453d107555b9b5c759162a4dafa4172",
