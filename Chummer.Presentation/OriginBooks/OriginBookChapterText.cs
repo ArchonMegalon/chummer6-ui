@@ -40,6 +40,42 @@ public static partial class OriginBookChapterText
         if (!LegacyTemplateToken().IsMatch(chapter.VisibleMarkdown))
             return chapter.VisibleMarkdown;
 
+        // SR5's first accepted boundary records metatype and birth, before
+        // childhood completes the first authoring input. It is a saved setup,
+        // not a separately queued story chapter. This is display only: do not
+        // synthesize biography, alter sealed bytes or mark prose as accepted.
+        if (book.CurrentTurn.JourneyId == "sr5-life-modules-foundation"
+            && book.CanonicalLayer.AcceptedDecisionIds.FirstOrDefault() == chapter.ThroughAcceptedDecisionId)
+        {
+            if (chapter.PlayerLayerDigest != LifeModuleOriginDossierService.EmptyPlayerLayerDigest
+                || chapter.ProviderLayerDigest != LifeModuleOriginDossierService.EmptyProviderLayerDigest)
+                return chapter.VisibleMarkdown;
+
+            var facts = book.CanonicalLayer.Facts.Where(fact =>
+                fact.AcceptedDecisionId == chapter.ThroughAcceptedDecisionId
+                && book.AllowedCanonicalFactIds.Contains(fact.FactId)
+                && !string.IsNullOrWhiteSpace(fact.LocalizedSummary)).ToArray();
+            if (facts.Any(fact => fact.FactKind == "accepted-metatype")
+                && facts.Any(fact => fact.FactKind == "accepted-life-module"))
+            {
+                string heading = language switch
+                {
+                    "de" => $"Die bestätigte Ausgangslage für {runner}: {chapter.Title}.",
+                    "es" => $"La situación inicial confirmada de {runner}: {chapter.Title}.",
+                    _ => $"The confirmed starting situation for {runner}: {chapter.Title}."
+                };
+                string explanation = language switch
+                {
+                    "de" => "Zusammen mit deinen bestätigten Kindheitsentscheidungen bilden diese Angaben die Grundlage des ersten Erzählkapitels. Diese Zusammenfassung ist kein separates KI-Kapitel.",
+                    "es" => "Junto con tus decisiones confirmadas sobre la infancia, estos datos forman la base del primer capítulo narrativo. Este resumen no es un capítulo de IA separado.",
+                    _ => "Together with your confirmed childhood choices, these facts form the basis of the first story chapter. This summary is not a separate AI chapter."
+                };
+                var setup = facts.Where(fact => fact.FactKind is "accepted-metatype" or "accepted-life-module" or "accepted-life-module-answer")
+                    .Select(fact => fact.LocalizedSummary).Distinct(StringComparer.Ordinal);
+                return string.Join("\n\n", new[] { heading }.Concat(setup).Append(explanation));
+            }
+        }
+
         string title = chapter.Title;
         string lead = language switch
         {
