@@ -105,7 +105,7 @@
       "Chummer.Presentation/IOwnerBoundWorkspaceOutputClient.cs": "347d05c58c8f72274ce7e5fffd962cf9d282063a4e1d367b89359e23970b1103",
       "Chummer.Presentation/IOwnerBoundWorkspacePersistenceClient.cs": "03a79157301b75781414fa51aecfa30628bdfb36d839e5b1982f3d8dd1625143",
       "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs": "b45bef6e0198836874030888881a07833e24aa8a94db09a6ee8e65ef1152bfac",
-      "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs": "8b88721f3335eff441d3cb548f865d98721c7ec3fda8461910e4c7ce2fb60953",
+      "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs": "e27e82cfb0edf87809001d50c7356fe7b8d3fa46d63b8bbf08b7013e5fe3f9fe",
       "Chummer.Presentation/OriginBooks/OriginBookProseDraft.cs": "c06ceece5f93d7ca4d681e0c04565febd257fc8d56872004f6a551f816fd9845",
       "Chummer.Presentation/Overview/CareerReputationEditRequest.cs": "e8ea9445319890ccad09ef0d28eb5e4f0a558c94377d4d45e7263c930df326b2",
       "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs": "d03f56617b9e613dae458c23edb6ff762453d107555b9b5c759162a4dafa4172",
@@ -193,7 +193,7 @@
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20",
       "Directory.Build.props": "4b313282ffdcdd6886378c02af9aabbda8e243a44dff9f0415075b9a3c376203",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "280f2dd9b23c206e32206e7595296a46b223fd27eb4ac443cb9b999c54a81098",
+      "config/ui-owner-package-plane.lock.json": "4693d0523a9a6544d01ee86457f4047df1684d614e7a902adf2accc85b743aaf",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/verify.sh": "d19ca0db538b86a3248489e1f9cc1ef8bcf99aada139991c1b202c325a8acf09",
       "scripts/ai/with-package-plane.sh": "5816c557b595d378f543d8a013de2eb82059f2c27b97404f324cb84b51c3738a"
@@ -1022,9 +1022,9 @@
     "dependencyAuthorityCacheKey": "195e9e1d7462a0edf9269275a2c56cf2001020130149ba1b3e7aaf7b854ed249",
     "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
     "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "a7496d913fe43bac2326093928b2e75efac312444221c97fffb041e1fe97820f",
-    "packageRecipeCommit": "ba970a1ec7e9b9336e9dc0092c4a542e2adf9349",
-    "packageRecipeSha256": "3907d29518e1446c69befe52ce42deb0871229e4df8df1635a69d7549948f003",
+    "inventorySha256": "afe082d64e0bd36f7ae8da7449f42fd126514a0c10a94f36873aa8362c5725c6",
+    "packageRecipeCommit": "e7bb79c2c2ee60c2ba886fa024b9081996f50099",
+    "packageRecipeSha256": "e87cc29b005ba02a88de4f89e845fbc4fa43577d8821bdeb0d3ea83923da8121",
     "packages": [
       {
         "commit": "42d0bfbb117ab6250e8b0512dd92585916c6469f",
@@ -1055,10 +1055,10 @@
     ],
     "producerLockFileName": "ui-owner-package-plane.lock.json",
     "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "280f2dd9b23c206e32206e7595296a46b223fd27eb4ac443cb9b999c54a81098",
+    "producerLockSha256": "4693d0523a9a6544d01ee86457f4047df1684d614e7a902adf2accc85b743aaf",
     "receiptContract": "chummer6-ui.owner-package-production/v1",
     "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "947f1a6e99a062d80fd27f00c80ba043bc1b459b79de79abb5459df28c1431e4",
+    "receiptSha256": "8d87b022a3eb3a1ee20232e8b567df7d6f820306de258077437e61231e4461be",
     "sdkVersion": "10.0.103"
   }
 }
