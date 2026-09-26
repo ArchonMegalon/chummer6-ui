@@ -88,7 +88,7 @@ declare -a OWNER_NAMES=(
   "chummer.run-services"
 )
 declare -a OWNER_COMMITS=(
-  "b194b5eabb4691c7307a7c794177abdb8b282614"
+  "3b9d39286f24be21750a44400cac846d28b26f9b"
   "af9a7e19c3bf331e96411dfb8f9e7820a98cab29"
   "d51ecd99cf72098d4adc8db0192bff7bf9fd8e61"
   "42d0bfbb117ab6250e8b0512dd92585916c6469f"
