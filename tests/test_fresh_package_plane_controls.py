@@ -2236,8 +2236,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 126
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 127
+    assert len(oracle["consumer"]["sourceFiles"]) == 128
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 129
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2297,6 +2297,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         "CharacterCreationWizardDesktopSessionTests.cs",
         "CharacterCreationWizardPresentationTests.cs",
         "NewRunnerBuildMethodTests.cs",
+        "OriginStoryDecisionTextTests.cs",
         "Sr6BuildMethodSelectionTests.cs",
         "WorkspaceOverviewFinalizationOwnerTests.cs",
         "WorkspaceOverviewPreparationTests.cs",
@@ -2943,7 +2944,7 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 127
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 129
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -3063,7 +3064,7 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
             if row[0] == expected[0] or row[1] == relative] == [expected]
     assert static_mstest_case_count(relative) == 24
     assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 24
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 127
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 129
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"
