@@ -138,6 +138,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/NewRunnerBuildMethodTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/OriginStoryDecisionTextTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/OwnerBoundWorkspaceRefreshContractTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/Sr6BuildMethodSelectionTests.cs",
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
@@ -149,6 +150,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs",
         "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs",
         "Chummer.Presentation/OriginBooks/OriginBookProseDraft.cs",
+        "Chummer.Presentation/OriginBooks/OriginStoryDecisionText.cs",
         "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
         "Chummer.Presentation/IOwnerBoundWorkspaceContinuationClient.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs",
@@ -218,15 +220,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "5929b33ede4489fd9f86bae3f9150addac55db25",
-        "commit": "822fb42017e078d79e9c0c49ac2e709b8634d497",
+        "blob": "3bdb1bbc5c643e00f840fa7b56d7e782e95d59f8",
+        "commit": "ad473d6c4211cf18543ea8f541053d9eac325c4c",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "175b562216aacf18ad477fcaf5224db5a787edf519103349acbcefabc47d0aec",
-        "rawSizeBytes": 64759,
-        "semanticCanonicalSha256": "175b562216aacf18ad477fcaf5224db5a787edf519103349acbcefabc47d0aec",
-        "semanticCanonicalSizeBytes": 64759,
-        "tree": "94084543302c50fd3ff464e816c75ff5aff6b78e"
+        "rawSha256": "4d34a1a9817aa360152210706c254d4975274699140a0e1b862cda79a69a1b28",
+        "rawSizeBytes": 65047,
+        "semanticCanonicalSha256": "4d34a1a9817aa360152210706c254d4975274699140a0e1b862cda79a69a1b28",
+        "semanticCanonicalSizeBytes": 65047,
+        "tree": "bf46040dfcd66f125664e9114114e3a2aa732a62"
     },
     "producerLock": {
         "absentAtCommit": True,
