@@ -220,15 +220,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "978fc3b5efe9696ae05c0afe6c2baf5c7362f953",
-        "commit": "c67742774110d6380ef65361617e2f93b44143e8",
+        "blob": "90bb628d95ed807a4d6fffcf303e26ef532cdfe7",
+        "commit": "d948eeff18ca6eaef014d6fe8db74fc8c6ad30c7",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "1ccc4f3e2e8a0e3274edfbbada29e7595f067f50ea027a0a349b104f65372105",
+        "rawSha256": "f9eefb7d30f156a806ab689ed3c74c665d8232c218f0ca79c363cfccc3b00ec7",
         "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "1ccc4f3e2e8a0e3274edfbbada29e7595f067f50ea027a0a349b104f65372105",
+        "semanticCanonicalSha256": "f9eefb7d30f156a806ab689ed3c74c665d8232c218f0ca79c363cfccc3b00ec7",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "c9e50c74feee8fd809bf26817e5e71851550adea"
+        "tree": "9627ec02faea8bea9ef2506c71dc930bc2d0df04"
     },
     "producerLock": {
         "absentAtCommit": True,
