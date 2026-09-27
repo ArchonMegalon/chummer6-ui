@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "93edcbb4c6028582b851e063c3146824c49d59a7",
-  "baseTree": "fdffd93b016e13cfa309f6d0a7b3968abc5ebc81",
+  "baseCommit": "807cf86fecf23fecbc89cc2cbbb60dc1367b5b75",
+  "baseTree": "e73933ebac99feebf009b97b938c942ff2cf78a5",
   "canonicalSealedLocks": [
     {
-      "blob": "1991534615c17474740560f8f8dfbbe95a743f41",
+      "blob": "022599ed5dde56fd22eee4bc0a15f57e5a4a0497",
       "path": "config/package-plane.lock.json",
-      "sha256": "0c798ec2504e3634b0e9362a3272ea1685e38a38ec5ee5eb2883d3477f94ec1b",
+      "sha256": "179605a96c30286943c3dbf02321e51f5c2db61da5aac77119beeef041469a40",
       "sizeBytes": 68066
     },
     {
-      "blob": "f4e2a300bb74e25b18a9fc7dcd9eeb26075a73f9",
+      "blob": "976d7d0f081ec1f61cef4399632bd79a0b2e204c",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "58c6c2009a71b348aa8b4ab768077cf6fe967cc425499fd5be4598f15ae1ec5a",
+      "sha256": "a1f786e6e6111a8ce0a04448cae435589600c85f8b7e28de811bf8b65bfd5928",
       "sizeBytes": 2031
     }
   ],
@@ -25,15 +25,15 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "a54f77123be99173b1f6815b024a978708f9cd39",
-      "commit": "8a2451354828822152560e2a5335c84d9126f3c9",
+      "blob": "5929b33ede4489fd9f86bae3f9150addac55db25",
+      "commit": "822fb42017e078d79e9c0c49ac2e709b8634d497",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "4c99a5fcc6f9d50726235f702a449f091bd15e14a7831ec855a7c918abae2ae5",
+      "rawSha256": "175b562216aacf18ad477fcaf5224db5a787edf519103349acbcefabc47d0aec",
       "rawSizeBytes": 64759,
-      "semanticCanonicalSha256": "4c99a5fcc6f9d50726235f702a449f091bd15e14a7831ec855a7c918abae2ae5",
+      "semanticCanonicalSha256": "175b562216aacf18ad477fcaf5224db5a787edf519103349acbcefabc47d0aec",
       "semanticCanonicalSizeBytes": 64759,
-      "tree": "8f32e8e8ab59a7f0bd5191b4c7b29b3db67a09d8"
+      "tree": "94084543302c50fd3ff464e816c75ff5aff6b78e"
     },
     "producerLock": {
       "absentAtCommit": true,
@@ -44,69 +44,69 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "93d35e8fcb341ecaafff42ae1627443603050740",
+      "blob": "e871bfbd1797b385c60845047130608f0251880c",
       "path": ".github/workflows/unsigned-macos-native-build.yml",
-      "sha256": "6b0b8809027a0879d3b11bc47d63e68fe63d28c37827bbe6a7709a263080b478",
+      "sha256": "a02abf4561ebeb16b2f5d87e7e0bcbc4dceafc19e3139d39ebe6f2240e1c00d2",
       "sizeBytes": 5764,
       "status": "M"
     },
     {
-      "blob": "fe23833a71bc9c4426af0bf909692b812c0ad5a3",
+      "blob": "3e20dd9661c3deeb63daa016a4bfd70ab9c922c7",
       "path": "Directory.Build.props",
-      "sha256": "e08641893e5f1111a13cdb1535ab399629944de83bd476548b024e4a97adba1d",
+      "sha256": "bd047310c298364f64e4621bf9d4da8c8a616c63becf17b6d20c2b4e1371e6df",
       "sizeBytes": 3993,
       "status": "M"
     },
     {
-      "blob": "a54f77123be99173b1f6815b024a978708f9cd39",
+      "blob": "5929b33ede4489fd9f86bae3f9150addac55db25",
       "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "4c99a5fcc6f9d50726235f702a449f091bd15e14a7831ec855a7c918abae2ae5",
+      "sha256": "175b562216aacf18ad477fcaf5224db5a787edf519103349acbcefabc47d0aec",
       "sizeBytes": 64759,
       "status": "M"
     },
     {
-      "blob": "4a57e30d2eacb2830a5b07ba812f6f684fea58c3",
+      "blob": "1b966524f87f40586198ca24bb090f9274d166be",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "c4b754b77213050dceea5e543592db68991044c68a5187764f73488579381d7b",
+      "sha256": "ef34f8f2806d30a5e18ff00750d72e0db6ca96ff44712b9b305d54900219958a",
       "sizeBytes": 288219,
       "status": "M"
     },
     {
-      "blob": "13c8c6e8b7f28ecdb99f6e67f6b97be643100399",
+      "blob": "f840852c1b61504c5435800760b64d6027a237b2",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "cd85b6ec7fd66b138f566b5295a3477d0917c9621a0fbfacd280f7717a73ae13",
+      "sha256": "ed920ee957469ed39125fee5cccf1330dd33ce1b193a4d1a08c1f36bb286b3df",
       "sizeBytes": 48992,
       "status": "M"
     },
     {
-      "blob": "b98e9f94aa4bdd383a7c5007417fbae79a50259d",
+      "blob": "ee168c7340d667a36fac163e6cb37f68226db023",
       "path": "scripts/ai/with-package-plane.sh",
-      "sha256": "50899dc2ba2839b3d1367e985adad11f34729d60f04337a703da32fe9434d29e",
+      "sha256": "70354d89dee5ce0d5d6155c1651f7ecc20fff84720b384031bf2b004b89ca9da",
       "sizeBytes": 20800,
       "status": "M"
     },
     {
-      "blob": "d2a19bdc65b18fae1e873519c37b91d4fd4716e8",
+      "blob": "145466387ceb05ffac8fba5eaec7494e5518e13f",
       "path": "scripts/build-unsigned-macos-native.sh",
-      "sha256": "54cfe9320278c972d88479bb26cdd7a47968b6070c1ab6bdf13014bb14f44fe9",
+      "sha256": "83675162da95b448b6d8d7674d8d72a9ecb9846fb11733f2c8f9dacb75698e3a",
       "sizeBytes": 9578,
       "status": "M"
     },
     {
-      "blob": "53411a03ce8780bc9d4a5456fc05f2f9c4cac071",
+      "blob": "f4878b2757e10e7a44c37f14675f840588aca800",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "246bd7e0d5494fb4b6911a8e7c2aa6da75125b6b0896a296a7aa7ac756b5e347",
+      "sha256": "076039d82b5d7cde54ed989f83ea7803bab1c654c80237feaeefcb03ad5c218d",
       "sizeBytes": 192352,
       "status": "M"
     },
     {
-      "blob": "63dfebe349f6201ec9339be42f4d7b658da4c166",
+      "blob": "bfebbd89aa41695cea2158b11c8bbd895ca1acf8",
       "path": "tests/test_unsigned_macos_native_build.py",
-      "sha256": "6f76f07d015ab93e0b68738a7068a6620a4730b3fd965e747a375847d55f10b5",
+      "sha256": "b8bdb79d95801e7eb9e9d9d2445cc0cd2755fb719cbdfa4ef4b3e854befff02e",
       "sizeBytes": 13126,
       "status": "M"
     }
   ],
-  "recipeTree": "7197f72c0d843bf892b8d2a8b6a293805a186dd9",
+  "recipeTree": "353da809320fb8dc07adfcb97f42b5ea69aaca48",
   "releaseClaim": false
 }
