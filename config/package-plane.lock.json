@@ -82,6 +82,7 @@
       "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardDesktopSessionTests.cs": "66fab95e7964b38437462ca46e394de5ec2978338618eaf68b636e6245c7f51d",
       "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardPresentationTests.cs": "cb6147f41da2aac4a89d8c738375d8ee68ba8f92557d9adcae08f4945b6eca1f",
       "Chummer.CreationWizard.Presentation.Tests/NewRunnerBuildMethodTests.cs": "12a64a42be094371ef0cf29eafa41c3446c9721ebb00fce1f86001265ec7024c",
+      "Chummer.CreationWizard.Presentation.Tests/OriginStoryDecisionTextTests.cs": "47a2fb847644e9e217764a4a099c37e605cd83165d051ec5235b3d656c05347e",
       "Chummer.CreationWizard.Presentation.Tests/Sr6BuildMethodSelectionTests.cs": "5456e48c6dc318dfb93c05689a1db44d3511c0a4b15183f605ff6343d0bd468a",
       "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs": "46c8e38a3a9b80c7d464b546fd2d196c90f9dbeaa930f007f4194432706a3da1",
       "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs": "36a11f46faee9ffa71598023b34aacb3a64a6ac1598765a1660172c699c94ede",
@@ -107,6 +108,7 @@
       "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs": "b45bef6e0198836874030888881a07833e24aa8a94db09a6ee8e65ef1152bfac",
       "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs": "e27e82cfb0edf87809001d50c7356fe7b8d3fa46d63b8bbf08b7013e5fe3f9fe",
       "Chummer.Presentation/OriginBooks/OriginBookProseDraft.cs": "c06ceece5f93d7ca4d681e0c04565febd257fc8d56872004f6a551f816fd9845",
+      "Chummer.Presentation/OriginBooks/OriginStoryDecisionText.cs": "80be381ea8ccf148c7120955f2a0c9d545fd7f227ce5410769364e63e6b2c8f7",
       "Chummer.Presentation/Overview/CareerReputationEditRequest.cs": "e8ea9445319890ccad09ef0d28eb5e4f0a558c94377d4d45e7263c930df326b2",
       "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs": "d03f56617b9e613dae458c23edb6ff762453d107555b9b5c759162a4dafa4172",
       "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs": "aafb8502dc190bfcb53baa1c1f29080b065376592446f82360ec9b5629eba77b",
@@ -163,7 +165,7 @@
       "Chummer.Presentation/Shell/ShellPresenter.cs": "ea97f9ee39b6d9ccdf81631a596ce643b84ff7dd6b98dbbc8b5e4b4ccd55a4b8",
       "Chummer.Presentation/Shell/ShellState.cs": "bb96667558863383ab9c31959725a08c0c3e60ad12e5277b8d5ca034f393311a",
       "Chummer.Presentation/Shell/ShellWorkspaceContextSynchronization.cs": "ae77eab6a3ad122e2b4005fc722c1e69b71ae164e9d87b96856e5611502704d4",
-      "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj": "f3b6cbe2c8cc50dd3034f1803fb70e2114d483bc5c25f15dfcf88f20ccf8955a",
+      "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj": "bb2d9bbc9217d20495789be9f58b7ba88a9c74a0272d823c5db3b9a29216f2e8",
       "Chummer.Product.UnitTests/CreationWizardCoreProjectionTests.cs": "ea3b652f6f206e4c263807e091ae5ba77591889daa3c396bb4302bf67fe57c69",
       "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs": "f4bb5312f979860e5f146b58ac01f273b5726c4c69ef913fb2121b8aa3d5daaf",
       "Chummer.Tests/DesktopCrashRuntimeTests.cs": "465265c02dbcb9d6ee1b7530eb42a8919a411911913ad76f3deaf489f76a40f0",
@@ -193,7 +195,7 @@
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20",
       "Directory.Build.props": "bd047310c298364f64e4621bf9d4da8c8a616c63becf17b6d20c2b4e1371e6df",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "01c1778069116240bc79c5d037b0a9ef7ccedea529494a7113f7fcd2afcf2dbb",
+      "config/ui-owner-package-plane.lock.json": "2d4b8f67b8997e2c6c21f6fa50c2296409389ab216a316965c5d12fcbb79b72a",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/verify.sh": "d19ca0db538b86a3248489e1f9cc1ef8bcf99aada139991c1b202c325a8acf09",
       "scripts/ai/with-package-plane.sh": "70354d89dee5ce0d5d6155c1651f7ecc20fff84720b384031bf2b004b89ca9da"
@@ -1022,9 +1024,9 @@
     "dependencyAuthorityCacheKey": "7562dd72182f9423fe66ad5d011c8b473e1f6827fd87a187d81c2f67e7e39bb9",
     "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
     "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "44c1f8f7139a9e33c017997f90b176a37d5d53973fe39716ffb6adc05db32c84",
-    "packageRecipeCommit": "aadbc8bdda877e4c12bfc4cd013561caa217661f",
-    "packageRecipeSha256": "ef34f8f2806d30a5e18ff00750d72e0db6ca96ff44712b9b305d54900219958a",
+    "inventorySha256": "698c3388b839c9f1462324270f50ba323c4c327a191628ccfa70f0683e6769b5",
+    "packageRecipeCommit": "87f10d64f6392f9f0fe2fbd4203b24b1d9f9b000",
+    "packageRecipeSha256": "de201bf8115982bd423827a2a0a9d581922b023ede53342631bfd4935bb91313",
     "packages": [
       {
         "commit": "42d0bfbb117ab6250e8b0512dd92585916c6469f",
@@ -1055,10 +1057,10 @@
     ],
     "producerLockFileName": "ui-owner-package-plane.lock.json",
     "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "01c1778069116240bc79c5d037b0a9ef7ccedea529494a7113f7fcd2afcf2dbb",
+    "producerLockSha256": "2d4b8f67b8997e2c6c21f6fa50c2296409389ab216a316965c5d12fcbb79b72a",
     "receiptContract": "chummer6-ui.owner-package-production/v1",
     "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "2fbdd8f5edf17616629218e7cd8aaac3508a62433f3b06fc70aee154a4a4e4aa",
+    "receiptSha256": "d846f0586cc80b6080c36ab8438aa1f15fbc4c4c461bb48065f06d64ec69d994",
     "sdkVersion": "10.0.103"
   }
 }
