@@ -22,6 +22,58 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
     private const string FixtureBlocker = CharacterCreationFinalizationBlockers.DraftAuthorityInvalid;
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Qualities_projection_uses_loaded_owner_without_unscoped_retry(bool local)
+    {
+        var original = local ? new OwnerContextStamp(OwnerScope.LocalSingleUser, "local-issuer", 4) : LinkedOwner;
+        var scoped = new QualitiesSpy();
+        var legacy = new QualitiesSpy();
+        var state = Project(new WorkspaceOverviewStateFactory(creationQualitiesService: legacy,
+            ownerBoundCreationQualitiesService: scoped), Overview(original));
+        Assert.AreEqual(1, scoped.BoundLoads);
+        Assert.AreEqual(original, scoped.Owner);
+        Assert.AreEqual(WorkspaceId, scoped.Workspace);
+        Assert.AreEqual(0, legacy.UnboundLoads);
+        Assert.IsNull(state.CreationQualities);
+    }
+
+    [TestMethod]
+    public void Qualities_missing_or_invalid_scoped_authority_never_uses_legacy_fallback()
+    {
+        var legacy = new QualitiesSpy();
+        Project(new WorkspaceOverviewStateFactory(creationQualitiesService: legacy), Overview(LinkedOwner));
+        Project(new WorkspaceOverviewStateFactory(creationQualitiesService: legacy), Overview(default(OwnerContextStamp)));
+        Project(new WorkspaceOverviewStateFactory(creationQualitiesService: legacy,
+            ownerBoundCreationQualitiesService: new QualitiesSpy()), Overview(null));
+        Assert.AreEqual(0, legacy.UnboundLoads);
+        Project(new WorkspaceOverviewStateFactory(creationQualitiesService: legacy), Overview(null));
+        Assert.AreEqual(1, legacy.UnboundLoads, "Only genuinely unstamped legacy compositions retain the old read path.");
+    }
+
+    private sealed class QualitiesSpy : ICharacterCreationQualitiesService, IOwnerBoundCharacterCreationQualitiesService
+    {
+        public int BoundLoads, UnboundLoads;
+        public OwnerContextStamp? Owner;
+        public CharacterWorkspaceId? Workspace;
+        public CharacterCreationFoundationResult<CharacterCreationQualitiesState> Load(OwnerContextStamp owner,
+            CharacterCreationQualitiesLoadRequest request)
+        {
+            BoundLoads++; Owner = owner; Workspace = request.WorkspaceId;
+            return new(CharacterCreationFoundationOutcomes.Blocked, null, [CharacterCreationQualitiesBlockers.RevisionConflict]);
+        }
+        public CharacterCreationFoundationResult<CharacterCreationQualitiesState> Load(CharacterCreationQualitiesLoadRequest request)
+        {
+            UnboundLoads++;
+            return new(CharacterCreationFoundationOutcomes.Blocked, null, [CharacterCreationQualitiesBlockers.RevisionConflict]);
+        }
+        public CharacterCreationFoundationResult<CharacterCreationQualitiesPreview> Preview(CharacterCreationQualitiesPreviewRequest request) => throw new NotSupportedException();
+        public CharacterCreationFoundationResult<CharacterCreationQualitiesDraftReceipt> Confirm(CharacterCreationQualitiesConfirmRequest request) => throw new NotSupportedException();
+        public CharacterCreationFoundationResult<CharacterCreationQualitiesPreview> Preview(OwnerContextStamp owner, CharacterCreationQualitiesPreviewRequest request) => throw new NotSupportedException();
+        public CharacterCreationFoundationResult<CharacterCreationQualitiesDraftReceipt> Confirm(OwnerContextStamp owner, CharacterCreationQualitiesConfirmRequest request) => throw new NotSupportedException();
+    }
+
+    [TestMethod]
     [DataRow(false, false)]
     [DataRow(false, true)]
     [DataRow(true, false)]
