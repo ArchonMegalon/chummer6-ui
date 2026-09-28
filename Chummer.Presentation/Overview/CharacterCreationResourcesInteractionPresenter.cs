@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using Chummer.Application.Characters;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Characters;
 
 namespace Chummer.Presentation.Overview;
@@ -96,11 +98,16 @@ public sealed class CharacterCreationResourcesInteractionPresenter
     : ICharacterCreationResourcesInteractionPresenter
 {
     private readonly ICharacterCreationResourcesService _service;
+    private readonly IOwnerBoundCharacterCreationResourcesService? _ownerBound;
+    private readonly ConditionalWeakTable<CharacterCreationResourcesPreparedPreview, OriginalOwner> _preparedOwners = new();
+    private sealed record OriginalOwner(OwnerContextStamp Stamp);
 
     public CharacterCreationResourcesInteractionPresenter(
-        ICharacterCreationResourcesService service)
+        ICharacterCreationResourcesService service,
+        IOwnerBoundCharacterCreationResourcesService? ownerBound = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
+        _ownerBound = ownerBound;
     }
 
     public CharacterCreationResourcesInteractionLoadResult Load(CharacterOverviewState overview)
@@ -148,7 +155,7 @@ public sealed class CharacterCreationResourcesInteractionPresenter
         }
 
         CharacterCreationResourcesResult<CharacterCreationResourcesPreview> result =
-            _service.Preview(new CharacterCreationResourcesPreviewRequest(
+            ServiceFor(overview).Preview(new CharacterCreationResourcesPreviewRequest(
                 resources.Binding,
                 option.OptionId));
         if (result.Value is not CharacterCreationResourcesPreview preview)
@@ -168,10 +175,12 @@ public sealed class CharacterCreationResourcesInteractionPresenter
                 [CharacterCreationResourcesInteractionBlockers.PreparedPreviewMismatch]);
         }
 
+        var prepared = Project(resources, preview);
+        RememberOwner(overview, prepared);
         return new CharacterCreationResourcesInteractionPrepareResult(
             result.Outcome,
             state,
-            Project(resources, preview),
+            prepared,
             Normalize(result.Blockers.Concat(preview.Blockers)));
     }
 
@@ -182,6 +191,12 @@ public sealed class CharacterCreationResourcesInteractionPresenter
         ArgumentNullException.ThrowIfNull(confirmation);
         ArgumentNullException.ThrowIfNull(confirmation.PreparedPreview);
         CharacterCreationResourcesPreparedPreview prepared = confirmation.PreparedPreview;
+        if ((_ownerBound is not null || overview.DisplayOwnerContext is not null)
+            && (!_preparedOwners.TryGetValue(prepared, out var admitted)
+                || overview.DisplayOwnerContext != admitted.Stamp))
+            return Failure(CharacterCreationResourcesOutcomes.Conflict, prepared,
+                CharacterCreationResourcesInteractionBlockers.OverviewAuthorityRequired);
+
         if (!confirmation.ExplicitlyConfirmed)
         {
             return Failure(
@@ -245,7 +260,7 @@ public sealed class CharacterCreationResourcesInteractionPresenter
         // Re-preview against the just-loaded binding. This turns even a structurally
         // plausible stale prepared envelope into a conflict before the commit call.
         CharacterCreationResourcesResult<CharacterCreationResourcesPreview> repreview =
-            _service.Preview(new CharacterCreationResourcesPreviewRequest(
+            ServiceFor(overview).Preview(new CharacterCreationResourcesPreviewRequest(
                 resources.Binding,
                 prepared.SelectedOption.OptionId));
         if (repreview.Outcome != CharacterCreationResourcesOutcomes.Available
@@ -266,7 +281,7 @@ public sealed class CharacterCreationResourcesInteractionPresenter
             prepared.IdempotencyKey,
             ExplicitlyConfirmed: true);
         CharacterCreationResourcesResult<CharacterCreationResourcesReceipt> result =
-            _service.Confirm(request);
+            ServiceFor(overview).Confirm(request);
         if (result.Value is not CharacterCreationResourcesReceipt receipt)
         {
             return new CharacterCreationResourcesInteractionConfirmResult(
@@ -288,14 +303,24 @@ public sealed class CharacterCreationResourcesInteractionPresenter
                 [CharacterCreationResourcesInteractionBlockers.ReceiptMismatch]);
         }
 
-        CharacterCreationResourcesResult<CharacterCreationResourcesState> refresh =
-            _service.Load(new CharacterCreationResourcesLoadRequest(receipt.WorkspaceId));
+        CharacterCreationResourcesResult<CharacterCreationResourcesState> refresh;
+        try
+        {
+            refresh = ServiceFor(overview).Load(new CharacterCreationResourcesLoadRequest(receipt.WorkspaceId));
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            // The durable receipt remains a success even when its follow-up read
+            // is canceled or the owner changed. Never invite a duplicate mutation.
+            return new(result.Outcome, prepared, receipt, null,
+                [CharacterCreationResourcesInteractionBlockers.RefreshAuthorityRequired]);
+        }
         if (refresh.Outcome != CharacterCreationResourcesOutcomes.Available
             || refresh.Value is not CharacterCreationResourcesState refreshed
             || !RefreshedStateMatches(prepared, receipt, refreshed))
         {
             return new CharacterCreationResourcesInteractionConfirmResult(
-                CharacterCreationResourcesOutcomes.Conflict,
+                result.Outcome,
                 prepared,
                 receipt,
                 null,
@@ -330,7 +355,7 @@ public sealed class CharacterCreationResourcesInteractionPresenter
         }
 
         CharacterCreationResourcesResult<CharacterCreationResourcesReceipt> lookup =
-            _service.LookupReceipt(new CharacterCreationResourcesReceiptLookupRequest(
+            ServiceFor(overview).LookupReceipt(new CharacterCreationResourcesReceiptLookupRequest(
                 workspaceId,
                 idempotencyKey));
         if (lookup.Value is not CharacterCreationResourcesReceipt receipt)
@@ -343,7 +368,7 @@ public sealed class CharacterCreationResourcesInteractionPresenter
         }
 
         CharacterCreationResourcesResult<CharacterCreationResourcesState> current =
-            _service.Load(new CharacterCreationResourcesLoadRequest(workspaceId));
+            ServiceFor(overview).Load(new CharacterCreationResourcesLoadRequest(workspaceId));
         if (current.Outcome != CharacterCreationResourcesOutcomes.Available
             || current.Value is not CharacterCreationResourcesState state
             || !ReceiptCanBelongToCurrentState(receipt, state))
@@ -361,6 +386,46 @@ public sealed class CharacterCreationResourcesInteractionPresenter
             receipt,
             Project(state),
             Normalize(lookup.Blockers.Concat(current.Blockers)));
+    }
+
+    private void RememberOwner(CharacterOverviewState overview, CharacterCreationResourcesPreparedPreview prepared)
+    {
+        if (overview.DisplayOwnerContext is { IsValid: true } original)
+            _preparedOwners.Add(prepared, new OriginalOwner(original));
+    }
+
+    private ICharacterCreationResourcesService ServiceFor(CharacterOverviewState overview)
+        => _ownerBound is null && overview.DisplayOwnerContext is null
+            ? _service // Only an explicitly unstamped legacy composition.
+            : new OriginalOwnerService(_ownerBound, overview.DisplayOwnerContext);
+
+    private sealed class OriginalOwnerService(
+        IOwnerBoundCharacterCreationResourcesService? service,
+        OwnerContextStamp? original) : ICharacterCreationResourcesService
+    {
+        public CharacterCreationResourcesResult<CharacterCreationResourcesState> Load(
+            CharacterCreationResourcesLoadRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.Load(owner, request) : Denied<CharacterCreationResourcesState>();
+
+        public CharacterCreationResourcesResult<CharacterCreationResourcesPreview> Preview(
+            CharacterCreationResourcesPreviewRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.Preview(owner, request) : Denied<CharacterCreationResourcesPreview>();
+
+        public CharacterCreationResourcesResult<CharacterCreationResourcesReceipt> Confirm(
+            CharacterCreationResourcesConfirmRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.Confirm(owner, request) : Denied<CharacterCreationResourcesReceipt>();
+
+        public CharacterCreationResourcesResult<CharacterCreationResourcesReceipt> LookupReceipt(
+            CharacterCreationResourcesReceiptLookupRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.LookupReceipt(owner, request) : Denied<CharacterCreationResourcesReceipt>();
+
+        private static CharacterCreationResourcesResult<T> Denied<T>() where T : class
+            => new(CharacterCreationResourcesOutcomes.Blocked, null,
+                [CharacterCreationResourcesInteractionBlockers.OverviewAuthorityRequired]);
     }
 
     private ExactLoad LoadExact(CharacterOverviewState overview)
@@ -384,7 +449,7 @@ public sealed class CharacterCreationResourcesInteractionPresenter
         }
 
         CharacterCreationResourcesResult<CharacterCreationResourcesState> result =
-            _service.Load(new CharacterCreationResourcesLoadRequest(workspaceId));
+            ServiceFor(overview).Load(new CharacterCreationResourcesLoadRequest(workspaceId));
         if (result.Outcome != CharacterCreationResourcesOutcomes.Available
             || result.Value is not CharacterCreationResourcesState resources)
         {
