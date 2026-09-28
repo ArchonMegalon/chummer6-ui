@@ -168,6 +168,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs",
         "Chummer.Presentation/Overview/Chummer5CharacterSettingsProfiles.cs",
         "Chummer.Presentation/Overview/CharacterCreationResourcesInteractionPresenter.cs",
+        "Chummer.Presentation/Overview/CharacterCreationGearInteractionPresenter.cs",
         "Chummer.Presentation/Overview/DesktopDialogFactory.CharacterSettings.cs",
         "Chummer.Presentation/Overview/DialogCoordinator.cs",
         "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs",
@@ -220,15 +221,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "842e3c36c4f63fcc07f6be78ddf2f724e75bb986",
-        "commit": "08142e6c0045a6f25452194b9a8bc100b9a672aa",
+        "blob": "2c152aba8a3848fd609ca6c1a9e04f556d7b8696",
+        "commit": "d4c6bbcd1a7a46c9d8839494909cf074cffb7b28",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "8614632982d2c962cc90184db9983c61a1feece7988e72aa9835d394dac87013",
+        "rawSha256": "a2003af8dc02fe9250d3edb9fa89e9a06cac7ad6edf9441596613a9c8c268754",
         "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "8614632982d2c962cc90184db9983c61a1feece7988e72aa9835d394dac87013",
+        "semanticCanonicalSha256": "a2003af8dc02fe9250d3edb9fa89e9a06cac7ad6edf9441596613a9c8c268754",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "68e894a5211b833a9a978624f91026d7c617547f"
+        "tree": "a3ec17a57a01786058d70d39421a7fce05a55ead"
     },
     "producerLock": {
         "absentAtCommit": True,

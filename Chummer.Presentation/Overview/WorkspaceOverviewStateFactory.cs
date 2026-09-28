@@ -13,6 +13,7 @@ public sealed class WorkspaceOverviewStateFactory :
     private readonly ICharacterCreationContactsService? _creationContactsService;
     private readonly IOwnerBoundCharacterCreationContactsService? _ownerBoundCreationContactsService;
     private readonly ICharacterCreationQualitiesService? _creationQualitiesService;
+    private readonly IOwnerBoundCharacterCreationQualitiesService? _ownerBoundCreationQualitiesService;
     private readonly ICharacterCreationMagicResonanceService? _creationMagicResonanceService;
     private readonly ICharacterCreationLifestylesService? _creationLifestylesService;
     private readonly IOwnerBoundCharacterCreationLifestylesReader? _ownerBoundCreationLifestylesReader;
@@ -29,13 +30,15 @@ public sealed class WorkspaceOverviewStateFactory :
         IOwnerBoundCharacterCreationContactsService? ownerBoundCreationContactsService = null,
         IOwnerBoundCharacterCreationFinalizationService? ownerBoundCreationFinalizationService = null,
         IOwnerBoundCharacterCreationLifestylesReader? ownerBoundCreationLifestylesReader = null,
-        IOwnerBoundCharacterCreationLifeModuleFinalizationService? ownerBoundFoundationReader = null)
+        IOwnerBoundCharacterCreationLifeModuleFinalizationService? ownerBoundFoundationReader = null,
+        IOwnerBoundCharacterCreationQualitiesService? ownerBoundCreationQualitiesService = null)
     {
         _creationFoundationService = creationFoundationService;
         _ownerBoundFoundationReader = ownerBoundFoundationReader;
         _creationContactsService = creationContactsService;
         _ownerBoundCreationContactsService = ownerBoundCreationContactsService;
         _creationQualitiesService = creationQualitiesService;
+        _ownerBoundCreationQualitiesService = ownerBoundCreationQualitiesService;
         _creationMagicResonanceService = creationMagicResonanceService;
         _creationLifestylesService = creationLifestylesService;
         _ownerBoundCreationLifestylesReader = ownerBoundCreationLifestylesReader;
@@ -363,11 +366,17 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview)
     {
-        if (_creationQualitiesService is null)
+        if (_creationQualitiesService is null && _ownerBoundCreationQualitiesService is null)
             return null;
 
-        CharacterCreationFoundationResult<CharacterCreationQualitiesState> result =
-            _creationQualitiesService.Load(new CharacterCreationQualitiesLoadRequest(workspaceId));
+        var request = new CharacterCreationQualitiesLoadRequest(workspaceId);
+        CharacterCreationFoundationResult<CharacterCreationQualitiesState>? result =
+            loadedOverview.DisplayOwnerContext is { IsValid: true } original
+                ? _ownerBoundCreationQualitiesService?.Load(original, request)
+                : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationQualitiesService is null
+                    ? _creationQualitiesService?.Load(request) : null;
+        if (result is null)
+            return null;
         return result.Outcome == CharacterCreationFoundationOutcomes.Success
                && result.Value is CharacterCreationQualitiesState state
                && BlockersMatch(result.Blockers, state.Blockers)

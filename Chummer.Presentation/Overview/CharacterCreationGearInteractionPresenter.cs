@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using Chummer.Application.Characters;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 
@@ -88,10 +90,15 @@ public sealed class CharacterCreationGearInteractionPresenter
 {
     private const int MaximumIdempotencyKeyLength = 200;
     private readonly ICharacterCreationGearService _service;
+    private readonly IOwnerBoundCharacterCreationGearService? _ownerBound;
+    private readonly ConditionalWeakTable<CharacterCreationGearPreparedPreview, OriginalOwner> _preparedOwners = new();
+    private sealed record OriginalOwner(OwnerContextStamp Stamp);
 
-    public CharacterCreationGearInteractionPresenter(ICharacterCreationGearService service)
+    public CharacterCreationGearInteractionPresenter(ICharacterCreationGearService service,
+        IOwnerBoundCharacterCreationGearService? ownerBound = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
+        _ownerBound = ownerBound;
     }
 
     public CharacterCreationGearInteractionLoadResult Load(CharacterOverviewState overview)
@@ -135,7 +142,7 @@ public sealed class CharacterCreationGearInteractionPresenter
                 [CharacterCreationGearBlockers.InvalidBasket]);
         }
 
-        CharacterCreationGearResult<CharacterCreationGearPreview> result = _service.Preview(
+        CharacterCreationGearResult<CharacterCreationGearPreview> result = ServiceFor(overview).Preview(
             new CharacterCreationGearPreviewRequest(gear.Binding, basket));
         if (result.Value is not CharacterCreationGearPreview preview)
         {
@@ -162,6 +169,7 @@ public sealed class CharacterCreationGearInteractionPresenter
             canonicalBasket,
             preview,
             "creation-gear-" + Guid.NewGuid().ToString("N"));
+        RememberOwner(overview, prepared);
         return new CharacterCreationGearInteractionPrepareResult(
             result.Outcome,
             state,
@@ -176,6 +184,12 @@ public sealed class CharacterCreationGearInteractionPresenter
         ArgumentNullException.ThrowIfNull(confirmation);
         ArgumentNullException.ThrowIfNull(confirmation.PreparedPreview);
         CharacterCreationGearPreparedPreview prepared = confirmation.PreparedPreview;
+        if ((_ownerBound is not null || overview.DisplayOwnerContext is not null)
+            && (!_preparedOwners.TryGetValue(prepared, out var admitted)
+                || overview.DisplayOwnerContext != admitted.Stamp))
+            return Failure(CharacterCreationGearOutcomes.Conflict, prepared,
+                CharacterCreationGearInteractionBlockers.OverviewAuthorityRequired);
+
         if (!confirmation.ExplicitlyConfirmed)
         {
             return Failure(
@@ -236,7 +250,7 @@ public sealed class CharacterCreationGearInteractionPresenter
                 CharacterCreationGearInteractionBlockers.PreviewNotConfirmable);
         }
 
-        CharacterCreationGearResult<CharacterCreationGearPreview> repreview = _service.Preview(
+        CharacterCreationGearResult<CharacterCreationGearPreview> repreview = ServiceFor(overview).Preview(
             new CharacterCreationGearPreviewRequest(current.Binding, prepared.Basket));
         if (repreview.Outcome != CharacterCreationGearOutcomes.Available
             || repreview.Value is not CharacterCreationGearPreview currentPreview
@@ -257,7 +271,7 @@ public sealed class CharacterCreationGearInteractionPresenter
             prepared.Preview.PreviewDigest,
             prepared.IdempotencyKey,
             ExplicitlyConfirmed: true);
-        CharacterCreationGearResult<CharacterCreationGearReceipt> result = _service.Confirm(request);
+        CharacterCreationGearResult<CharacterCreationGearReceipt> result = ServiceFor(overview).Confirm(request);
         if (result.Value is not CharacterCreationGearReceipt receipt)
         {
             return new CharacterCreationGearInteractionConfirmResult(
@@ -279,8 +293,19 @@ public sealed class CharacterCreationGearInteractionPresenter
                 [CharacterCreationGearInteractionBlockers.ReceiptMismatch]);
         }
 
-        CharacterCreationGearResult<CharacterCreationGearState> refresh = _service.Load(
+        CharacterCreationGearResult<CharacterCreationGearState> refresh;
+        try
+        {
+            refresh = ServiceFor(overview).Load(
             new CharacterCreationGearLoadRequest(receipt.WorkspaceId));
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            // The durable receipt remains a success even when its follow-up read
+            // is canceled or the owner changed. Never invite a duplicate mutation.
+            return new(result.Outcome, prepared, receipt, null,
+                [CharacterCreationGearInteractionBlockers.RefreshAuthorityRequired]);
+        }
         if (refresh.Outcome != CharacterCreationGearOutcomes.Available
             || refresh.Value is not CharacterCreationGearState refreshed
             || refreshed.PendingDraft is not CharacterCreationGearDraft draft
@@ -291,7 +316,7 @@ public sealed class CharacterCreationGearInteractionPresenter
             || refreshed.Binding.SavedRevision != receipt.WorkspaceRevision)
         {
             return new CharacterCreationGearInteractionConfirmResult(
-                CharacterCreationGearOutcomes.Conflict,
+                result.Outcome,
                 prepared,
                 receipt,
                 null,
@@ -320,7 +345,7 @@ public sealed class CharacterCreationGearInteractionPresenter
                 null,
                 [CharacterCreationGearInteractionBlockers.OverviewAuthorityRequired]);
         }
-        CharacterCreationGearResult<CharacterCreationGearReceipt> lookup = _service.LookupReceipt(
+        CharacterCreationGearResult<CharacterCreationGearReceipt> lookup = ServiceFor(overview).LookupReceipt(
             new CharacterCreationGearReceiptLookupRequest(workspaceId, idempotencyKey));
         if (lookup.Value is not CharacterCreationGearReceipt receipt)
         {
@@ -330,7 +355,7 @@ public sealed class CharacterCreationGearInteractionPresenter
                 null,
                 Normalize(lookup.Blockers));
         }
-        CharacterCreationGearResult<CharacterCreationGearState> current = _service.Load(
+        CharacterCreationGearResult<CharacterCreationGearState> current = ServiceFor(overview).Load(
             new CharacterCreationGearLoadRequest(workspaceId));
         if (current.Outcome != CharacterCreationGearOutcomes.Available
             || current.Value is not CharacterCreationGearState state
@@ -355,6 +380,46 @@ public sealed class CharacterCreationGearInteractionPresenter
             Normalize(lookup.Blockers.Concat(current.Blockers)));
     }
 
+    private void RememberOwner(CharacterOverviewState overview, CharacterCreationGearPreparedPreview prepared)
+    {
+        if (overview.DisplayOwnerContext is { IsValid: true } original)
+            _preparedOwners.Add(prepared, new OriginalOwner(original));
+    }
+
+    private ICharacterCreationGearService ServiceFor(CharacterOverviewState overview)
+        => _ownerBound is null && overview.DisplayOwnerContext is null
+            ? _service // Only an explicitly unstamped legacy composition.
+            : new OriginalOwnerService(_ownerBound, overview.DisplayOwnerContext);
+
+    private sealed class OriginalOwnerService(
+        IOwnerBoundCharacterCreationGearService? service,
+        OwnerContextStamp? original) : ICharacterCreationGearService
+    {
+        public CharacterCreationGearResult<CharacterCreationGearState> Load(
+            CharacterCreationGearLoadRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.Load(owner, request) : Denied<CharacterCreationGearState>();
+
+        public CharacterCreationGearResult<CharacterCreationGearPreview> Preview(
+            CharacterCreationGearPreviewRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.Preview(owner, request) : Denied<CharacterCreationGearPreview>();
+
+        public CharacterCreationGearResult<CharacterCreationGearReceipt> Confirm(
+            CharacterCreationGearConfirmRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.Confirm(owner, request) : Denied<CharacterCreationGearReceipt>();
+
+        public CharacterCreationGearResult<CharacterCreationGearReceipt> LookupReceipt(
+            CharacterCreationGearReceiptLookupRequest request)
+            => original is { IsValid: true } owner && service is not null
+                ? service.LookupReceipt(owner, request) : Denied<CharacterCreationGearReceipt>();
+
+        private static CharacterCreationGearResult<T> Denied<T>() where T : class
+            => new(CharacterCreationGearOutcomes.Blocked, null,
+                [CharacterCreationGearInteractionBlockers.OverviewAuthorityRequired]);
+    }
+
     private ExactLoad LoadExact(CharacterOverviewState overview)
     {
         ArgumentNullException.ThrowIfNull(overview);
@@ -372,7 +437,7 @@ public sealed class CharacterCreationGearInteractionPresenter
                 CharacterCreationGearOutcomes.Invalid,
                 CharacterCreationGearInteractionBlockers.OverviewAuthorityRequired);
         }
-        CharacterCreationGearResult<CharacterCreationGearState> result = _service.Load(
+        CharacterCreationGearResult<CharacterCreationGearState> result = ServiceFor(overview).Load(
             new CharacterCreationGearLoadRequest(workspaceId));
         if (result.Outcome != CharacterCreationGearOutcomes.Available
             || result.Value is not CharacterCreationGearState gear)
