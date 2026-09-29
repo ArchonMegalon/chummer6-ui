@@ -15,6 +15,7 @@ public sealed class WorkspaceOverviewStateFactory :
     private readonly ICharacterCreationQualitiesService? _creationQualitiesService;
     private readonly IOwnerBoundCharacterCreationQualitiesService? _ownerBoundCreationQualitiesService;
     private readonly ICharacterCreationMagicResonanceService? _creationMagicResonanceService;
+    private readonly IOwnerBoundCharacterCreationMagicResonanceService? _ownerBoundCreationMagicResonanceService;
     private readonly ICharacterCreationLifestylesService? _creationLifestylesService;
     private readonly IOwnerBoundCharacterCreationLifestylesReader? _ownerBoundCreationLifestylesReader;
     private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
@@ -31,7 +32,8 @@ public sealed class WorkspaceOverviewStateFactory :
         IOwnerBoundCharacterCreationFinalizationService? ownerBoundCreationFinalizationService = null,
         IOwnerBoundCharacterCreationLifestylesReader? ownerBoundCreationLifestylesReader = null,
         IOwnerBoundCharacterCreationLifeModuleFinalizationService? ownerBoundFoundationReader = null,
-        IOwnerBoundCharacterCreationQualitiesService? ownerBoundCreationQualitiesService = null)
+        IOwnerBoundCharacterCreationQualitiesService? ownerBoundCreationQualitiesService = null,
+        IOwnerBoundCharacterCreationMagicResonanceService? ownerBoundCreationMagicResonanceService = null)
     {
         _creationFoundationService = creationFoundationService;
         _ownerBoundFoundationReader = ownerBoundFoundationReader;
@@ -40,6 +42,7 @@ public sealed class WorkspaceOverviewStateFactory :
         _creationQualitiesService = creationQualitiesService;
         _ownerBoundCreationQualitiesService = ownerBoundCreationQualitiesService;
         _creationMagicResonanceService = creationMagicResonanceService;
+        _ownerBoundCreationMagicResonanceService = ownerBoundCreationMagicResonanceService;
         _creationLifestylesService = creationLifestylesService;
         _ownerBoundCreationLifestylesReader = ownerBoundCreationLifestylesReader;
         _creationFinalizationService = creationFinalizationService;
@@ -392,12 +395,17 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview)
     {
-        if (_creationMagicResonanceService is null)
+        if (_creationMagicResonanceService is null && _ownerBoundCreationMagicResonanceService is null)
             return null;
 
-        CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> result =
-            _creationMagicResonanceService.Load(
-                new CharacterCreationMagicResonanceLoadRequest(workspaceId));
+        var request = new CharacterCreationMagicResonanceLoadRequest(workspaceId);
+        CharacterCreationFoundationResult<CharacterCreationMagicResonanceState>? result =
+            loadedOverview.DisplayOwnerContext is { IsValid: true } original
+                ? _ownerBoundCreationMagicResonanceService?.Load(original, request)
+                : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationMagicResonanceService is null
+                    ? _creationMagicResonanceService?.Load(request) : null;
+        if (result is null)
+            return null;
         return result.Outcome == CharacterCreationFoundationOutcomes.Success
                && result.Value is CharacterCreationMagicResonanceState state
                && BlockersMatch(result.Blockers, state.Blockers)
