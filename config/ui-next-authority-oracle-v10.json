@@ -193,11 +193,11 @@
       "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs": "53c9dc1cc272372cb4e15460efd8dcec6e7d001258cedb7c6f1d3729c86c62d0",
       "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs": "a65682a6bfc9f19acd31aa0f123e428363c71303bb836498dfe5a24098d416c7",
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20",
-      "Directory.Build.props": "5ef4e4a6e6a45a7bf4f3c2e8feca2ed92f51724704aecc5d3c854d5ce3a3708f",
+      "Directory.Build.props": "348316460d74f9b25be98af3ba10740aa3d331831d8ccf1080baedea2dbe2982",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/verify.sh": "2266af04b592c387556e2fb04bb57b9627b5c1928b57d512703209bfa5890da3",
-      "scripts/ai/with-package-plane.sh": "105a8c64cabc956eba72fa76d1d4c9523ac61288d50106ca20fcdafa9cfcd29d"
+      "scripts/ai/with-package-plane.sh": "fa9bb17bd64d111bd9bd6d2f23660e4683899b5c8fc7ea730dab94b6e796598a"
     },
     "testProjects": [
       "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
@@ -208,99 +208,99 @@
   "coreRuntimeFeed": {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "e989de4184b6525fd7df9adce3d5eb817c294d3e268118869312954dc3d19099",
+    "inventorySha256": "8eaf6c9fe5e9f66cf55911887c2761cbb72a0f9676ec5ec858695127d59a9022",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "e26b61eee16a7d81f7b34dbfcf2e8b08e0835515dd320e73e718efb4ddbeefbd",
-    "packageRecipeCommit": "0d4887f0c6ca3ca2afd883577e682f053dbad6d2",
-    "packageVersion": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f",
+    "lockSha256": "124a14ff9723065524c28628bd1264262311078d5ed8eb9b5e4a71aa067faab1",
+    "packageRecipeCommit": "553aef0c60a149f41eb564d28328118fdf6aba8a",
+    "packageVersion": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125",
     "packages": [
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Engine.Contracts",
         "project": "Chummer.Contracts/Chummer.Contracts.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "6072683c349d237c71d57fe856db68ad61f4d7529c8f6941af78a23526955f11",
-        "sizeBytes": 1448463,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "sha256": "c3fe11edfe1294496c53cde80e971587282d23e9f2cdcf68de360d9e88dcee49",
+        "sizeBytes": 1448998,
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       },
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Application.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Application.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Application",
         "project": "Chummer.Application/Chummer.Application.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "b3799dc7d175a0e5991d347c0c7bb3938fe4e59ffcf8d7832611d45ae5359d9d",
-        "sizeBytes": 809378,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "sha256": "d34c65353ba966926b1f079adc1646eb864ba5e59865cdf9c2cb5bc08b580a49",
+        "sizeBytes": 809369,
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       },
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Rulesets.Hosting",
         "project": "Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "119a08370d0e2101a7f47ced4e62658e9b9458f9c7513a4a6ee7346403b20822",
+        "sha256": "40b1c975cd6a551855acbd01eb37dcbc5fc888c7bed9c002eaafc83da051d772",
         "sizeBytes": 14388,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       },
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Rulesets.Sr5",
         "project": "Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "0b33bcccb68bc0b73c0865f2f752d5ef4ae7cffcd1ae23b46667ab73b4b02552",
-        "sizeBytes": 31648,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "sha256": "501a215fcea95a6a4fc8e3c2e494df8e226876e488853b65deaf0e28f8ff2a63",
+        "sizeBytes": 31643,
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       },
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Rulesets.Sr6",
         "project": "Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "aaaba29c89c3175cf7132366e7706a1b179c9fcd3d4d5abf480d9e351c24d362",
-        "sizeBytes": 120253,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "sha256": "7cdf807e40e9d93b99f963b0f9e4822d24f49ed9ac27c4da9d52457894963607",
+        "sizeBytes": 120256,
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       },
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Infrastructure.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Infrastructure.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Infrastructure",
         "project": "Chummer.Infrastructure/Chummer.Infrastructure.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "4e9ffd0fa57d48e23e2997b3a3ce190556065f89b223c9248fe444b824ef7bbd",
-        "sizeBytes": 340962,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "sha256": "3d8474c7ff77ee0b58beecaa07d3c8c4a4d3b2d6819fe1d7236dd3ab2c761562",
+        "sizeBytes": 340967,
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       },
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Rulesets.Sr4",
         "project": "Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "b36b0f78c5c8d7bfae397899a0818b96a482f96f6ac554b95c0bf864ad79c8c2",
-        "sizeBytes": 34050,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "sha256": "c8f7bb940e094211c28eceb28b598f8d406a66221a63a23c6b55720beeac1faa",
+        "sizeBytes": 34055,
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       },
       {
-        "commit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77",
-        "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f.nupkg",
+        "commit": "ad730073a01259e7f601af15b089c26b4313b665",
+        "fileName": "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20260930.4.shad730073a0125.nupkg",
         "packageId": "Chummer.Engine.GmCharacterEdits",
         "project": "Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj",
         "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-        "sha256": "e55f1eca9a33936be71c2562324ba4d67d7f20624ccf6f4e2c9e6110b19036bd",
-        "sizeBytes": 1312625,
-        "version": "0.0.0-packageplane.candidate.v20260930.3.sha5a03a8bd529f"
+        "sha256": "6a8707879f316f083592d4ba98810c7a0dbeba4f4f1690fa8e48e07d6faa0906",
+        "sizeBytes": 1312616,
+        "version": "0.0.0-packageplane.candidate.v20260930.4.shad730073a0125"
       }
     ],
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "3bdd1fb2fa3b0fc5b0155f03f120a974c3e4a7fc4c04a6f686b8bff13f9fe48e",
+    "receiptSha256": "3137173fc9869858795e654cb182bf5dd1503c3339b2f5dd448a4279a0938cad",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
-    "runtimeSourceCommit": "a5a03a8bd529f3dc9ed6658b55cc6d37daa6da77"
+    "runtimeSourceCommit": "ad730073a01259e7f601af15b089c26b4313b665"
   },
   "currentOwnerContractFeed": {
     "inventoryContract": "chummer-core.owner-contract-package-inventory/v1",
@@ -973,7 +973,7 @@
   ],
   "owners": [
     {
-      "commit": "0d4887f0c6ca3ca2afd883577e682f053dbad6d2",
+      "commit": "553aef0c60a149f41eb564d28328118fdf6aba8a",
       "directory": "chummer-core-engine",
       "repository": "https://github.com/ArchonMegalon/chummer6-core.git"
     },
