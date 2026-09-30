@@ -349,7 +349,7 @@ public partial class WorkspaceOverviewLoaderTests
             canonicalDigest,
             canonicalDigest,
             canonicalDigest,
-            $"settings.xml#setting:{request.SettingsProfileId}",
+            CharacterCreationBootstrapProfiles.SettingsSourceAnchor(request.RulesetId, request.SettingsProfileId),
             sourceAnchorIds,
             string.Empty);
         CharacterCreationBootstrapBinding binding = unsignedBinding with
