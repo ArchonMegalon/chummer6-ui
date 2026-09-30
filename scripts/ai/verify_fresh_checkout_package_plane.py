@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "e41caf0a49b7fb6323a12776352159bcdeb10b01",
-        "commit": "2e9c3e05da00dbb50f5b1d13c67c96d6a83414f5",
+        "blob": "ff29045dbd047a099f5ecf0722383ac48e3ff783",
+        "commit": "385225ea37d20c16c76d7ed83f555a6d25c629dd",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "66f67c0044bf72527de08d1995927bd9fbc9ec43ff92762702b876c426504f08",
+        "rawSha256": "80093f4631efa5ae1155d83a8c74a8e3eadff08260ef7b0bc1c5cf355e3ac2f9",
         "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "66f67c0044bf72527de08d1995927bd9fbc9ec43ff92762702b876c426504f08",
+        "semanticCanonicalSha256": "80093f4631efa5ae1155d83a8c74a8e3eadff08260ef7b0bc1c5cf355e3ac2f9",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "c423d5c3f842651b078e97c1dfa2612c4277b411"
+        "tree": "0133bf44806006d13b4fdba9538c7edae99edab3"
     },
     "producerLock": {
         "absentAtCommit": True,

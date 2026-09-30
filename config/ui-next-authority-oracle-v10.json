@@ -184,7 +184,7 @@
       "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs": "93079fabecf9ed07c5791fdeb32f48190b25614a079f00682ca557db3c5d7e20",
       "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs": "680dc726b6a0d50880d50404a798f0e4e8ea4d5eabdd5111f1babf0a618ff1d7",
       "Chummer.Tests/Presentation/ShellPresenterTests.cs": "a9b873cbe2bb8128c93d6e03cf4b38abe818880e4e71288d3b9066267952c4af",
-      "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs": "3a00217631cdc9b71aea258c512efed7eb733f11f56c9b56939bc2c042921ca3",
+      "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs": "bbf2d04037e97df95ee0be964870cb69366bbedb0490bbf932d2072455231aa2",
       "Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs": "2e1cce796f5166bbb37ae5dcb11148a85feaf44de924ef015b6ada235b313e1b",
       "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs": "6baec51131ed5b497f05d153e7c62007181e3df80bcc251696759fdfe425ba78",
       "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs": "c0daf4929eba16c0684eabd56871cadb41329cdd7338ddeadaa97c5c1cc078e9",
