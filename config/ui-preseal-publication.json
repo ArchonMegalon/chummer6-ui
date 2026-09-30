@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "f6ee5226ad9aef380f3fc14dcb5bdb658fdb5248",
-  "baseTree": "b48da67ef183a83dff2b402fc9b551058388028c",
+  "baseCommit": "e4a5bd3869665f710314286419449c744b8b5cff",
+  "baseTree": "eeac4d235eaedc39cca340bfc5c16a7adb61b06a",
   "canonicalSealedLocks": [
     {
       "blob": "c9aad6ab8ffd22bcf817281ee18ddd1e82f489b3",
@@ -44,69 +44,41 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "3742243565d53ab432dfce3b3f6e551c545e318d",
-      "path": ".github/workflows/unsigned-macos-native-build.yml",
-      "sha256": "7d6ea5c153ff63d2383441fbec7972cd19706648db3b02e62add3bd554a98b43",
-      "sizeBytes": 5764,
+      "blob": "86efbd8b1ddeb6e57b89624e7eb800dd41bad032",
+      "path": "Chummer.Tests/Presentation/DialogCoordinatorTests.cs",
+      "sha256": "c9d78e24af5a166b31492b2393c71866784c1ec833edbebd295851787143ade8",
+      "sizeBytes": 142233,
       "status": "M"
     },
     {
-      "blob": "abefc8fdf3592f694f6e661e26a3522d7eb28111",
-      "path": "Directory.Build.props",
-      "sha256": "522d28cd8691c9a67ac54fbed79a5c20de5ee6f4b78968be088e5db809a2b42b",
-      "sizeBytes": 3993,
+      "blob": "c988038cd6c35caf48e00c43e784973fec8bb450",
+      "path": "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
+      "sha256": "1a92a1125093ab68d1bec7183a801caff50acb16aedd99116c10285d6b81609d",
+      "sizeBytes": 123148,
       "status": "M"
     },
     {
-      "blob": "e41caf0a49b7fb6323a12776352159bcdeb10b01",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "66f67c0044bf72527de08d1995927bd9fbc9ec43ff92762702b876c426504f08",
-      "sizeBytes": 65047,
+      "blob": "0fe78ecf8503b1dad03d362453e9600067a7fd7d",
+      "path": "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs",
+      "sha256": "bbf2d04037e97df95ee0be964870cb69366bbedb0490bbf932d2072455231aa2",
+      "sizeBytes": 32791,
       "status": "M"
     },
     {
-      "blob": "20f5078644aacbe24ac958c4a1c84facfb2ba071",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "d730e3ce56e2ea590f6f290a65273e7da0dd956210248e43aa151f6e58cce0fd",
-      "sizeBytes": 288335,
-      "status": "M"
-    },
-    {
-      "blob": "671afe548b46a05bb9daade7f843fff38155dcc9",
+      "blob": "4d17506ac4898453759c3cc3d26a252e56b9e9e7",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "38d437dfd0ccf3b858418d91a4a464058c460aa793cd8608fec8af54711006e7",
-      "sizeBytes": 49234,
+      "sha256": "1b03ef2f5ee0168a7cc7c25346aa561615dc79eaa1aed262e9438016adbabf2a",
+      "sizeBytes": 49363,
       "status": "M"
     },
     {
-      "blob": "f18e4a28e8369497dd161216d30e2fc141bcb7c4",
-      "path": "scripts/ai/with-package-plane.sh",
-      "sha256": "22c445182d0dc65bf160a5fc786def1965c6d45b376b8e47a1defbc583bf3d17",
-      "sizeBytes": 20800,
-      "status": "M"
-    },
-    {
-      "blob": "77161e0099c054e04e2a997df945d7edf1d3ec48",
-      "path": "scripts/build-unsigned-macos-native.sh",
-      "sha256": "842a9cc6a80f5e19c9b91af73e3780ea7033ef70fa6f9f76f631669eed6fdfa5",
-      "sizeBytes": 9578,
-      "status": "M"
-    },
-    {
-      "blob": "ca81b8f78a18f3563cff9b8f9a4fafed20cc1ddc",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "6e2c2c3feeefe57cd10b9feb6a992f06b45675998a6d8d9dbe0a9263acd76025",
-      "sizeBytes": 192750,
-      "status": "M"
-    },
-    {
-      "blob": "3913ebbd0053adbdee317987c196af899b61de8f",
-      "path": "tests/test_unsigned_macos_native_build.py",
-      "sha256": "77b3210b2139adc0851dd281a2289315aca0e6a578626664227b7d4a504f6e75",
-      "sizeBytes": 13126,
+      "blob": "0011e0c83d4f36bac84ffb3e802e662787f35a40",
+      "path": "tests/test_split_preseal_publication.py",
+      "sha256": "5f16b0c71663f22dc0e6d8f25b8b7a84ea1dba68e38997b740baea76fda0438e",
+      "sizeBytes": 56819,
       "status": "M"
     }
   ],
-  "recipeTree": "855a149ef17ab38bd17d599ed18f42428f528cb5",
+  "recipeTree": "4fd588d7652290a19ff6149f4f24d529b3e3f3fa",
   "releaseClaim": false
 }
