@@ -3036,7 +3036,7 @@ public class DialogCoordinatorTests
                 or CharacterCreationBuildMethods.SumToTen
                 ? canonicalDigest
                 : string.Empty,
-            $"settings.xml#setting:{request.SettingsProfileId}",
+            CharacterCreationBootstrapProfiles.SettingsSourceAnchor(request.RulesetId, request.SettingsProfileId),
             sourceAnchorIds,
             string.Empty);
         CharacterCreationBootstrapBinding binding = unsignedBinding with

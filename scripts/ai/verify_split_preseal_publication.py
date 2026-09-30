@@ -176,6 +176,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
         "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+        "Chummer.Tests/Presentation/DialogCoordinatorTests.cs",
+        "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
         "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationResourcesInteractionPresenterTests.cs",
         "Chummer.Tests/Presentation/Chummer5CharacterSettingsProfilesTests.cs",
