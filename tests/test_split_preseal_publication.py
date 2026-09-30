@@ -175,6 +175,16 @@ def test_continuation_recipe_membership_remains_explicit_and_seal_topology_uncha
     assert not set(preseal.CANONICAL_LOCK_PATHS) & preseal.ALLOWED_RECIPE_PATHS
 
 
+def test_bootstrap_source_anchor_fixtures_have_exact_recipe_membership() -> None:
+    assert {
+        "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs",
+        "Chummer.Tests/Presentation/DialogCoordinatorTests.cs",
+        "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
+    } <= preseal.ALLOWED_RECIPE_PATHS
+    assert "Chummer.Tests/Presentation/UnreviewedBootstrapTests.cs" not in preseal.ALLOWED_RECIPE_PATHS
+    assert not set(preseal.CANONICAL_LOCK_PATHS) & preseal.ALLOWED_RECIPE_PATHS
+
+
 def test_owner_context_recipe_accepts_only_exact_reviewed_file_names(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     members = preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert len(members) == 66
