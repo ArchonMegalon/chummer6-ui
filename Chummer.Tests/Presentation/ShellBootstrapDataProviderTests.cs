@@ -40,6 +40,71 @@ public class ShellBootstrapDataProviderTests
     }
 
     [TestMethod]
+    public async Task RefreshAsync_replaces_same_owner_cached_rosters_without_waiting_for_expiry()
+    {
+        var client = new BootstrapClientStub();
+        var provider = new ShellBootstrapDataProvider(client);
+        await provider.GetAsync(CancellationToken.None);
+        await provider.GetAsync("sr6", CancellationToken.None);
+        client.Workspaces = [CreateWorkspace("adopted", DateTimeOffset.UtcNow, "sr5")];
+
+        ShellBootstrapData fresh = await provider.RefreshAsync(CancellationToken.None);
+        ShellBootstrapData shared = await provider.GetAsync(CancellationToken.None);
+        ShellBootstrapData otherRuleset = await provider.GetAsync("sr6", CancellationToken.None);
+
+        Assert.HasCount(1, fresh.Workspaces);
+        Assert.AreEqual("adopted", fresh.Workspaces[0].Id.Value);
+        Assert.AreSame(fresh, shared, "Overview may reuse the newly refreshed Shell snapshot.");
+        Assert.HasCount(1, otherRuleset.Workspaces, "A ruleset alias must not resurrect the old roster.");
+        Assert.AreEqual(client.CaptureOwnerContext(), fresh.OwnerContext);
+        Assert.AreEqual(4, client.GetShellBootstrapCalls);
+    }
+
+    [TestMethod]
+    public async Task Shell_reinitialization_reads_a_new_same_owner_workspace_immediately()
+    {
+        var client = new BootstrapClientStub();
+        var provider = new ShellBootstrapDataProvider(client);
+        var shell = new ShellPresenter(client, provider);
+        await shell.InitializeAsync(CancellationToken.None);
+        Assert.HasCount(0, shell.State.OpenWorkspaces);
+        client.Workspaces = [CreateWorkspace("adopted", DateTimeOffset.UtcNow, "sr5")];
+
+        await shell.InitializeAsync(CancellationToken.None);
+
+        Assert.HasCount(1, shell.State.OpenWorkspaces);
+        Assert.AreEqual("adopted", shell.State.OpenWorkspaces[0].Id.Value);
+        Assert.AreEqual(2, client.GetShellBootstrapCalls);
+    }
+
+    [TestMethod]
+    public async Task Overview_reinitialization_does_not_erase_a_fresh_same_owner_shell_roster()
+    {
+        var client = new BootstrapClientStub();
+        var provider = new ShellBootstrapDataProvider(client);
+        var shell = new ShellPresenter(client, provider);
+        await using var overview = new CharacterOverviewPresenter(client, shellPresenter: shell,
+            bootstrapDataProvider: provider);
+        await shell.InitializeAsync(CancellationToken.None);
+        await overview.InitializeAsync(CancellationToken.None);
+        Assert.HasCount(0, overview.State.OpenWorkspaces);
+        client.Workspaces = [CreateWorkspace("adopted", DateTimeOffset.UtcNow, "sr5")];
+        await shell.InitializeAsync(CancellationToken.None);
+        Assert.HasCount(1, shell.State.OpenWorkspaces);
+        var observedRosterSizes = new List<int>();
+        shell.StateChanged += (_, _) => observedRosterSizes.Add(shell.State.OpenWorkspaces.Count);
+
+        await overview.InitializeAsync(CancellationToken.None);
+
+        Assert.IsNull(overview.State.Error);
+        Assert.HasCount(1, overview.State.OpenWorkspaces);
+        Assert.HasCount(1, shell.State.OpenWorkspaces);
+        Assert.AreEqual("adopted", overview.State.OpenWorkspaces[0].Id.Value);
+        Assert.IsFalse(observedRosterSizes.Contains(0), "Busy feedback must not republish the obsolete empty roster.");
+        Assert.AreEqual(2, client.GetShellBootstrapCalls);
+    }
+
+    [TestMethod]
     public async Task GetWorkspacesAsync_caches_authoritative_bootstrap_snapshot()
     {
         var client = new BootstrapClientStub();
