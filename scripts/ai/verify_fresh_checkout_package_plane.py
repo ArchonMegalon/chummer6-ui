@@ -49,14 +49,14 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
         "blob": "2d6094cd7377aed8b3e949a7332032beb0b52e33",
-        "commit": "861162f739a30c8feee66045ccc62f0349b99a06",
+        "commit": "7ff24e810bdaa9fe5dcbefa7046c3633fb8a4145",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
         "rawSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
         "rawSizeBytes": 65047,
         "semanticCanonicalSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "6140c0d4032bd03c22a26de9f90e412b475e36f4"
+        "tree": "2651d872d79924fdd71e82737f76039192cc799b"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -6158,8 +6158,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         core_content_root = owner_roots["chummer-core-engine"]
         # The owner checkout is shallow at the recipe commit. Fetch the exact
         # semantic tree only to verify its data; no source ProjectReference.
-        run([str(TRUSTED_GIT), "-c", "credential.helper=", "-c", "protocol.version=1",
-             "-c", "http.version=HTTP/1.1",
+        run([str(TRUSTED_GIT), "-c", "credential.helper=",
              "fetch", "--quiet", "--no-tags", "--depth=1", "origin",
              lock["coreRuntimeFeed"]["runtimeSourceCommit"]],
             cwd=core_content_root, environment=environment)
