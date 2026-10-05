@@ -1138,6 +1138,46 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    [DataRow("cleared-display")]
+    [DataRow("cleared-session")]
+    [DataRow("owner-b")]
+    [DataRow("owner-aba")]
+    public async Task SwitchWorkspaceAsync_reloads_cached_identity_without_a_current_owner_display(string scenario)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        client.SeedWorkspace("ws-owner-bound", "Owner", "OWNER", rulesetId: RulesetDefaults.Sr5,
+            contentRevision: 5, savedRevision: 5);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        Assert.IsNull(presenter.State.Error);
+        int reads = client.BoundOverviewCalls;
+        CharacterOverviewState state = presenter.State;
+        if (scenario == "cleared-display")
+            state = CharacterOverviewState.Empty with { Session = state.Session };
+        else if (scenario == "cleared-session")
+            state = state with { Session = WorkspaceSessionState.Empty };
+        else if (scenario == "owner-b") client.TransitionToOwnerB();
+        else client.TransitionAwayAndBack();
+
+        // Exercise the same long-lived lifecycle instance after its host has
+        // retired the display/session or changed owner, without clearing its ID.
+        var lifecycle = (IWorkspaceOverviewLifecycleCoordinator)typeof(CharacterOverviewPresenter)
+            .GetField("_workspaceOverviewLifecycleCoordinator", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(presenter)!;
+        WorkspaceOverviewLifecycleResult loaded = await lifecycle.SwitchAsync(state, id, CancellationToken.None);
+
+        Assert.IsTrue(loaded.CanPublish);
+        Assert.AreEqual(reads + 1, client.BoundOverviewCalls, "Cached identity must not replace an actual owner-bound read.");
+        Assert.IsNotNull(loaded.State.Profile);
+        Assert.AreEqual(id, loaded.State.WorkspaceId);
+        Assert.AreEqual(id, loaded.State.Session.ActiveWorkspaceId);
+        Assert.AreEqual(client.CaptureOwnerContext(), loaded.State.DisplayOwnerContext);
+        Assert.AreEqual(client.CaptureOwnerContext(), loaded.State.Session.OwnerContext);
+    }
+
+    [TestMethod]
     public async Task CloseWorkspaceAsync_closes_active_workspace_and_switches_to_recent_workspace()
     {
         var client = new FakeChummerClient();

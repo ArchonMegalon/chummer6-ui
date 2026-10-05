@@ -41,7 +41,7 @@ public sealed class ShellPresenter : IShellPresenter
             {
                 Publish(State with { IsBusy = true, Error = null }, generation);
             }
-            ShellBootstrapData bootstrap = await _bootstrapDataProvider.GetAsync(ct);
+            ShellBootstrapData bootstrap = await _bootstrapDataProvider.RefreshAsync(ct);
             if (!IsTransitionCurrent(generation)) return;
             RequireBootstrapOwner(bootstrap, originalOwner);
             string preferredRulesetId = ResolveRulesetId(
