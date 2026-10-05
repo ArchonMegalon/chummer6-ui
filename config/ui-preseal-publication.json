@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "f927f4e5d02bc3fabcad70a7ba4ba9fccd13d078",
-  "baseTree": "5bb558c197b2b21ca9be2254de54685c25d6b0a8",
+  "baseCommit": "54c576c261e641fd39070fb34a8f99c4a7069b7b",
+  "baseTree": "7f60cdbcd8eff1afae7410cefa8bfcc659247eb5",
   "canonicalSealedLocks": [
     {
-      "blob": "0209d779f53f46654c442e0c39b5d9fbdef12403",
+      "blob": "34798f0235fd228e169913aca581456e89f3b743",
       "path": "config/package-plane.lock.json",
-      "sha256": "18a9b26531c4d43358999663b6b30eb22855007e18ccb674a63fc6b987167f9b",
+      "sha256": "38c565d637443266e19df00bb982a88bb8a2b09a7d5cfab1c98889fa56d3cd02",
       "sizeBytes": 68354
     },
     {
-      "blob": "02ae2e4d7f0147043eec2cf2df35dde57d966634",
+      "blob": "493c4cdc6d2c18956204bcee059b114a85d84a58",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "8bd6b4f5f426ece090a91086e470eb1a70526447153251d56c2c8a4ff5898bda",
+      "sha256": "9a27c9e1dc4eadcc0cc09befc9d60587f86cd5902a18696009b947c222dc74b2",
       "sizeBytes": 2031
     }
   ],
@@ -26,14 +26,14 @@
   "nextAuthorityOracle": {
     "canonicalLock": {
       "blob": "2d6094cd7377aed8b3e949a7332032beb0b52e33",
-      "commit": "861162f739a30c8feee66045ccc62f0349b99a06",
+      "commit": "7ff24e810bdaa9fe5dcbefa7046c3633fb8a4145",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
       "rawSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
       "rawSizeBytes": 65047,
       "semanticCanonicalSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
       "semanticCanonicalSizeBytes": 65047,
-      "tree": "6140c0d4032bd03c22a26de9f90e412b475e36f4"
+      "tree": "2651d872d79924fdd71e82737f76039192cc799b"
     },
     "producerLock": {
       "absentAtCommit": true,
@@ -44,27 +44,27 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "126e985afc09fb5e667d810498750a71ec0d8325",
+      "blob": "94e213d0b45e74ca6fa7aef0d00be32eeae5a69e",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "91c0a94231db55b240cf00719b5831c7c0c4bafbb082f1cfa0526550d58234dd",
-      "sizeBytes": 288333,
+      "sha256": "aff6749c4d1645911304da5827b569042162ed109bda59b524554ea59f58a636",
+      "sizeBytes": 288261,
       "status": "M"
     },
     {
-      "blob": "0764f4d7985365a08876aa7776f386d3fab38de6",
+      "blob": "0bf116a8d2bead834626d8e36617f47dbf6c83f3",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "76dc915d35491c20f41682a78621447e46d92f6557f15c7d6bf74fdec425f045",
+      "sha256": "0304789d723aeae68359fc6c60187ab05a8d6a1d3532e51472a068565addbf76",
       "sizeBytes": 49445,
       "status": "M"
     },
     {
-      "blob": "b49c4e10b0ff7e3f8e4e6a0efdbd6c1b03739495",
+      "blob": "d3f94a998f967251b691b669e694ce459256cc2e",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "a084a0bfd99f746a6482d2f8126dc2c64cfba98b0b6f014b515e3bd6a7b3baf9",
-      "sizeBytes": 192769,
+      "sha256": "cd0a4e05a4b9dd2f909779613d700307482347cc3330427721d3901d57b85184",
+      "sizeBytes": 193831,
       "status": "M"
     }
   ],
-  "recipeTree": "0ba5c8696b34f01dddaed57318c96211da4827e0",
+  "recipeTree": "825ea4f32c833faa76a8d26b52f8b5dbff0f51de",
   "releaseClaim": false
 }
