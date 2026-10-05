@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import ast
 import base64
 import hashlib
 import io
@@ -429,14 +430,14 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
             "blob": "2d6094cd7377aed8b3e949a7332032beb0b52e33",
-            "commit": "861162f739a30c8feee66045ccc62f0349b99a06",
+            "commit": "7ff24e810bdaa9fe5dcbefa7046c3633fb8a4145",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
             "rawSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
             "rawSizeBytes": 65047,
             "semanticCanonicalSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
             "semanticCanonicalSizeBytes": 65047,
-            "tree": "6140c0d4032bd03c22a26de9f90e412b475e36f4",
+            "tree": "2651d872d79924fdd71e82737f76039192cc799b",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -2718,6 +2719,25 @@ def test_anonymous_owner_fetch_keeps_exact_clean_checkout_checks(
         assert package_plane.acquire_owner(owner, tmp_path, {}) == tmp_path / "owner"
     assert commands[2] == [str(package_plane.TRUSTED_GIT), "-c", "credential.helper=",
         "fetch", "--quiet", "--depth=1", "origin", owner["commit"]]
+
+
+def test_every_anonymous_fetch_allows_transport_negotiation() -> None:
+    # The semantic-content fetch runs after consumer compilation, separately
+    # from acquire_owner. Both must keep credential isolation without forcing
+    # the HTTP/1.1 transport that fails on the local builder's network path.
+    fetches = []
+    for node in ast.walk(ast.parse(SCRIPT.read_text(encoding="utf-8"))):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == "run" and node.args
+                and isinstance(node.args[0], ast.List)):
+            literals = [item.value for item in node.args[0].elts
+                        if isinstance(item, ast.Constant) and isinstance(item.value, str)]
+            if "fetch" in literals:
+                fetches.append(literals)
+                assert "credential.helper=" in literals
+                assert not any(item.startswith(("http.version=", "protocol.version="))
+                               for item in literals), literals
+    assert len(fetches) == 2
 
 
 def test_owner_pack_and_consumer_restore_reject_version_approximation() -> None:
