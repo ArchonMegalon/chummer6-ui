@@ -500,7 +500,8 @@ public sealed partial class WorkspaceOverviewLifecycleCoordinator :
         }
 
         if (CurrentWorkspaceId is { } activeWorkspace
-            && string.Equals(activeWorkspace.Value, workspaceId.Value, StringComparison.Ordinal))
+            && string.Equals(activeWorkspace.Value, workspaceId.Value, StringComparison.Ordinal)
+            && IsCurrentWorkspaceDisplay(currentState, workspaceId))
         {
             return Task.FromResult(new WorkspaceOverviewLifecycleResult(
                 currentState with
@@ -517,6 +518,22 @@ public sealed partial class WorkspaceOverviewLifecycleCoordinator :
         }
 
         return LoadWorkspaceAsync(currentState, workspaceId, ct);
+    }
+
+    private bool IsCurrentWorkspaceDisplay(CharacterOverviewState state, CharacterWorkspaceId workspaceId)
+    {
+        // The lifecycle cache can outlive account initialization, which clears
+        // the displayed runner. A cached ID alone is not an activated display.
+        if (state.Profile is null
+            || !WorkspaceIdsEqual(state.WorkspaceId, workspaceId)
+            || !WorkspaceIdsEqual(state.Session.ActiveWorkspaceId, workspaceId))
+            return false;
+
+        return _client is IOwnerBoundWorkspaceProjectionClient bound
+            ? state.DisplayOwnerContext is { IsValid: true } owner
+                && state.Session.OwnerContext == owner
+                && bound.CaptureOwnerContext() == owner
+            : state.DisplayOwnerContext is null && state.Session.OwnerContext is null;
     }
 
     public async Task<WorkspaceOverviewLifecycleResult> CloseAsync(
