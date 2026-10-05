@@ -6158,8 +6158,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         core_content_root = owner_roots["chummer-core-engine"]
         # The owner checkout is shallow at the recipe commit. Fetch the exact
         # semantic tree only to verify its data; no source ProjectReference.
-        run([str(TRUSTED_GIT), "-c", "credential.helper=", "-c", "protocol.version=1",
-             "-c", "http.version=HTTP/1.1",
+        run([str(TRUSTED_GIT), "-c", "credential.helper=",
              "fetch", "--quiet", "--no-tags", "--depth=1", "origin",
              lock["coreRuntimeFeed"]["runtimeSourceCommit"]],
             cwd=core_content_root, environment=environment)
