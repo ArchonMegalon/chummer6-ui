@@ -2661,18 +2661,19 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
     git_config = Path(environment["GIT_CONFIG_GLOBAL"])
     assert git_config.is_relative_to(tmp_path / "caches")
     assert git_config.read_text(encoding="utf-8") == (
-        "[protocol]\n\tversion = 1\n[http]\n\tversion = HTTP/1.1\n[credential]\n\thelper =\n"
+        "[credential]\n\thelper =\n"
     )
     assert environment["GIT_CONFIG_NOSYSTEM"] == "1"
     assert environment["GIT_TERMINAL_PROMPT"] == "0"
-    assert subprocess.run(
-        [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", "protocol.version"],
-        env=environment, check=True, capture_output=True, text=True,
-    ).stdout.strip() == "1"
-    assert subprocess.run(
-        [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", "http.version"],
-        env=environment, check=True, capture_output=True, text=True,
-    ).stdout.strip() == "HTTP/1.1"
+    # Ambient protocol overrides must remain excluded, while trusted Git/libcurl
+    # can negotiate a working anonymous transport instead of forcing HTTP/1.1.
+    for setting in ("protocol.version", "http.version"):
+        result = subprocess.run(
+            [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", setting],
+            env=environment, check=False, capture_output=True, text=True,
+        )
+        assert result.returncode == 1
+        assert result.stdout == ""
     assert subprocess.run(
         [str(package_plane.TRUSTED_GIT), "config", "--global", "--get-all", "credential.helper"],
         env=environment, check=True, capture_output=True, text=True,
@@ -2716,7 +2717,6 @@ def test_anonymous_owner_fetch_keeps_exact_clean_checkout_checks(
     else:
         assert package_plane.acquire_owner(owner, tmp_path, {}) == tmp_path / "owner"
     assert commands[2] == [str(package_plane.TRUSTED_GIT), "-c", "credential.helper=",
-        "-c", "protocol.version=1", "-c", "http.version=HTTP/1.1",
         "fetch", "--quiet", "--depth=1", "origin", owner["commit"]]
 
 

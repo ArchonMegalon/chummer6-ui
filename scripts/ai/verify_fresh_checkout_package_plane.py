@@ -1297,11 +1297,12 @@ def isolated_child_environment(
     git_config = caches / "isolated.gitconfig"
     if git_config.exists() or git_config.is_symlink():
         raise VerificationError("isolated child Git configuration already exists")
-    # Qualify anonymous HTTP/1.1 + Git v1 for this network path, including the
-    # nested historical owner producer. HTTP/2 returned 401 for public fetches.
-    # No credential helper, authentication material or ambient config is admitted.
+    # Let the trusted Git/libcurl negotiate the transport. Pinning HTTP/1.1
+    # broke anonymous public fetches on the local builder's network path.
+    # This also applies to nested producers. No credential helper,
+    # authentication material or ambient configuration is admitted.
     git_config.write_text(
-        "[protocol]\n\tversion = 1\n[http]\n\tversion = HTTP/1.1\n[credential]\n\thelper =\n",
+        "[credential]\n\thelper =\n",
         encoding="utf-8",
     )
     environment.update(
@@ -3199,8 +3200,7 @@ def acquire_owner(owner: dict[str, str], owners_root: Path, environment: dict[st
     run([str(TRUSTED_GIT), "init", "--quiet"], cwd=target, environment=environment)
     run([str(TRUSTED_GIT), "remote", "add", "origin", owner["repository"]], cwd=target, environment=environment)
     run(
-        [str(TRUSTED_GIT), "-c", "credential.helper=", "-c", "protocol.version=1",
-         "-c", "http.version=HTTP/1.1",
+        [str(TRUSTED_GIT), "-c", "credential.helper=",
          "fetch", "--quiet", "--depth=1", "origin", owner["commit"]],
         cwd=target,
         environment=environment,
