@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Chummer.Application.Owners;
 using Chummer.Contracts.LifeModules;
 
 namespace Chummer.Presentation.OriginBooks;
@@ -85,13 +86,34 @@ public static class OriginDossierLifeModuleInteractionProjector
 {
     public static OriginDossierLifeModuleDecisionState Project(
         LifeModuleOriginDossierDraftCheckpoint checkpoint)
+        => ProjectCore(checkpoint, admittedWorkspaceOwner: null);
+
+    /// <summary>
+    /// Renders a checkpoint already validated by Core for this live owner stamp.
+    /// A store-authorized local adoption changes workspace custody, not the sealed
+    /// narrative's original owner. This entry point is not an authorization check:
+    /// callers must first admit through the owner-bound Core service and reject
+    /// stale owner transitions. Raw/unadmitted checkpoints use Project instead.
+    /// </summary>
+    public static OriginDossierLifeModuleDecisionState ProjectAdmitted(
+        LifeModuleOriginDossierDraftCheckpoint checkpoint,
+        OwnerContextStamp admittedOwner)
+    {
+        if (!admittedOwner.IsValid)
+            throw new InvalidOperationException("A valid Core-admitted workspace owner is required.");
+        return ProjectCore(checkpoint, admittedOwner.Owner.NormalizedValue);
+    }
+
+    private static OriginDossierLifeModuleDecisionState ProjectCore(
+        LifeModuleOriginDossierDraftCheckpoint checkpoint,
+        string? admittedWorkspaceOwner)
     {
         ArgumentNullException.ThrowIfNull(checkpoint);
         OriginStoryArcSeed projection = checkpoint.Projection
             ?? throw new InvalidOperationException("The Origin Dossier checkpoint has no canonical projection.");
         LifeModuleNarrativeTurnSeed turn = projection.CurrentTurn
             ?? throw new InvalidOperationException("The Origin Dossier checkpoint has no current decision turn.");
-        if (!string.Equals(checkpoint.OwnerId, turn.OwnerId, StringComparison.Ordinal)
+        if (!string.Equals(checkpoint.OwnerId, admittedWorkspaceOwner ?? turn.OwnerId, StringComparison.Ordinal)
             || !string.Equals(checkpoint.WorkspaceId, turn.WorkspaceId, StringComparison.Ordinal)
             || checkpoint.WorkspaceRevision != turn.WorkspaceRevision
             || string.IsNullOrWhiteSpace(checkpoint.CheckpointDigest)
