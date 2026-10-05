@@ -429,14 +429,14 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
             "blob": "2d6094cd7377aed8b3e949a7332032beb0b52e33",
-            "commit": "1a40cd9f18686d7428e931eda6e3d1e97ad836f2",
+            "commit": "861162f739a30c8feee66045ccc62f0349b99a06",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
             "rawSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
             "rawSizeBytes": 65047,
             "semanticCanonicalSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
             "semanticCanonicalSizeBytes": 65047,
-            "tree": "5b733a04b455264fec6fa2a236b3aba9e61e0a5d",
+            "tree": "6140c0d4032bd03c22a26de9f90e412b475e36f4",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -2661,18 +2661,19 @@ def test_child_environment_drops_ambient_msbuild_nuget_and_chummer_inputs(
     git_config = Path(environment["GIT_CONFIG_GLOBAL"])
     assert git_config.is_relative_to(tmp_path / "caches")
     assert git_config.read_text(encoding="utf-8") == (
-        "[protocol]\n\tversion = 1\n[http]\n\tversion = HTTP/1.1\n[credential]\n\thelper =\n"
+        "[credential]\n\thelper =\n"
     )
     assert environment["GIT_CONFIG_NOSYSTEM"] == "1"
     assert environment["GIT_TERMINAL_PROMPT"] == "0"
-    assert subprocess.run(
-        [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", "protocol.version"],
-        env=environment, check=True, capture_output=True, text=True,
-    ).stdout.strip() == "1"
-    assert subprocess.run(
-        [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", "http.version"],
-        env=environment, check=True, capture_output=True, text=True,
-    ).stdout.strip() == "HTTP/1.1"
+    # Ambient protocol overrides must remain excluded, while trusted Git/libcurl
+    # can negotiate a working anonymous transport instead of forcing HTTP/1.1.
+    for setting in ("protocol.version", "http.version"):
+        result = subprocess.run(
+            [str(package_plane.TRUSTED_GIT), "config", "--global", "--get", setting],
+            env=environment, check=False, capture_output=True, text=True,
+        )
+        assert result.returncode == 1
+        assert result.stdout == ""
     assert subprocess.run(
         [str(package_plane.TRUSTED_GIT), "config", "--global", "--get-all", "credential.helper"],
         env=environment, check=True, capture_output=True, text=True,
@@ -2716,7 +2717,6 @@ def test_anonymous_owner_fetch_keeps_exact_clean_checkout_checks(
     else:
         assert package_plane.acquire_owner(owner, tmp_path, {}) == tmp_path / "owner"
     assert commands[2] == [str(package_plane.TRUSTED_GIT), "-c", "credential.helper=",
-        "-c", "protocol.version=1", "-c", "http.version=HTTP/1.1",
         "fetch", "--quiet", "--depth=1", "origin", owner["commit"]]
 
 
