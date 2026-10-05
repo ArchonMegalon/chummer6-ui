@@ -30,7 +30,13 @@ public sealed class ShellBootstrapDataProvider : IShellBootstrapDataProvider
         return bootstrap.Workspaces;
     }
 
-    public async Task<ShellBootstrapData> GetAsync(string? rulesetId, CancellationToken ct)
+    public Task<ShellBootstrapData> RefreshAsync(CancellationToken ct)
+        => GetAsync(rulesetId: null, refresh: true, ct);
+
+    public Task<ShellBootstrapData> GetAsync(string? rulesetId, CancellationToken ct)
+        => GetAsync(rulesetId, refresh: false, ct);
+
+    private async Task<ShellBootstrapData> GetAsync(string? rulesetId, bool refresh, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         string? requestedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId);
@@ -52,6 +58,7 @@ public sealed class ShellBootstrapDataProvider : IShellBootstrapDataProvider
             foreach (BootstrapCacheKey staleKey in _cachedBootstrapsByKey.Keys
                 .Where(key => key.OwnerContext != original).ToArray())
                 _cachedBootstrapsByKey.Remove(staleKey);
+            if (refresh) _cachedBootstrapsByKey.Clear();
             if (TryGetCachedBootstrap(cacheKey, out ShellBootstrapData? cachedBootstrap))
             {
                 return cachedBootstrap;

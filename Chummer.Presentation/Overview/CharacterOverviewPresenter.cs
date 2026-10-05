@@ -153,7 +153,8 @@ public sealed partial class CharacterOverviewPresenter :
     }
 
     private bool TryPublishDisplayTransition(
-        long generation, CharacterOverviewState state, CharacterOverviewState? expectedDisplay = null)
+        long generation, CharacterOverviewState state, CharacterOverviewState? expectedDisplay = null,
+        bool syncShellFeedback = true)
     {
         lock (_lifecycleSync)
         {
@@ -167,7 +168,7 @@ public sealed partial class CharacterOverviewPresenter :
                 return false;
             State = state;
         }
-        NotifyStatePublished(state);
+        NotifyStatePublished(state, syncShellFeedback);
         return true;
     }
 
@@ -983,7 +984,10 @@ public sealed partial class CharacterOverviewPresenter :
                 IsBusy = true,
                 Error = null,
                 Preferences = preferences
-            });
+            }, syncShellFeedback: false);
+            // The busy display still contains the previous roster. Shell may
+            // already have refreshed this same owner's account after a local
+            // adoption/recovery, so only the restored result may feed it back.
             ShellBootstrapData bootstrap = TryCreateBootstrapFromShellState(out ShellBootstrapData shellBootstrap)
                 ? shellBootstrap
                 : await _bootstrapDataProvider.GetAsync(ct);
@@ -1040,10 +1044,11 @@ public sealed partial class CharacterOverviewPresenter :
         NotifyStatePublished(state);
     }
 
-    private void NotifyStatePublished(CharacterOverviewState state)
+    private void NotifyStatePublished(CharacterOverviewState state, bool syncShellFeedback = true)
     {
         SyncRosterWatchRuntime(state);
-        _shellPresenter?.SyncOverviewFeedback(CreateShellOverviewFeedback(state));
+        if (syncShellFeedback)
+            _shellPresenter?.SyncOverviewFeedback(CreateShellOverviewFeedback(state));
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 

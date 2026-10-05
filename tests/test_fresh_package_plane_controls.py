@@ -38,26 +38,26 @@ package_plane = load_module()
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "d498a45a4e18ad88109abc88789c271f752505e6"
-    runtime = "5d1a1d74e9027895d68fa48162f310e663521d35"
-    version = "0.0.0-packageplane.candidate.v20261004.1.sh5d1a1d74e9027"
+    recipe = "51c6a6bbdb1a498352f95512b7d47f11e6fa42b7"
+    runtime = "5f4e6350791c2c4fd7959da1f07cc1a85ce5446e"
+    version = "0.0.0-packageplane.candidate.v20261005.1.sh5f4e6350791c2"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 4165758
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 4175697
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "73f0086891881bff2d7c8ebfa5a1d784e797ac5f0b129fcce48ee67dd30d89a5"
+        "af860370463db7d239e962efaab877265e4ffcd39c378bac8a1edb735a743397"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "875ecc4870ffbdff4a450e76ea3add8c5d446daae144c773d1f58fd74a1c3c3d"
-    assert metadata["lockSha256"] == "fb85197c1377e71f7618235cfc28bdb63cc7cda1c63982885d21c56333563818"
-    assert metadata["receiptSha256"] == "6f0ea49804735907ab35a0a4816cf78b237f703059423af746cd44cd2156e95e"
+    assert metadata["inventorySha256"] == "555f791cb5171b6e3d762641672b224568b407693f748be581b19c93a010a743"
+    assert metadata["lockSha256"] == "0d3d823f965c82a99aca48faffaa75c7a6cf62a1fb8b706c8a42b2a8323e3946"
+    assert metadata["receiptSha256"] == "e28169e445ebe1501fe34095533cc5cc42211e1240eb677bb3ce376c9568343c"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -161,8 +161,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-d498a45a4e18ad88109abc88789c271f752505e6/"
-        "chummer-core-runtime-package-plane-d498a45a4e18ad88109abc88789c271f752505e6.zip",
+        "core-runtime-package-plane-51c6a6bbdb1a498352f95512b7d47f11e6fa42b7/"
+        "chummer-core-runtime-package-plane-51c6a6bbdb1a498352f95512b7d47f11e6fa42b7.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -415,10 +415,10 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "d498a45a4e18ad88109abc88789c271f752505e6"
+        "51c6a6bbdb1a498352f95512b7d47f11e6fa42b7"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "5d1a1d74e9027895d68fa48162f310e663521d35"
+        "5f4e6350791c2c4fd7959da1f07cc1a85ce5446e"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
         "c77395de9f733427ef952c851f4a95b063cb5573"
@@ -428,15 +428,15 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "15facdfe628e78627a562030e5fba3b62ac2733b",
-            "commit": "f5d458a032bd12bd96489aac53eaa4556b48be21",
+            "blob": "2d6094cd7377aed8b3e949a7332032beb0b52e33",
+            "commit": "5e6b51dedc83acebcb485f006199a38aaa1b3bb6",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "16772f055509d8f4ddbbe643ceb9df06486b04c106064c28cfda3ac761847a32",
+            "rawSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
             "rawSizeBytes": 65047,
-            "semanticCanonicalSha256": "16772f055509d8f4ddbbe643ceb9df06486b04c106064c28cfda3ac761847a32",
+            "semanticCanonicalSha256": "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51",
             "semanticCanonicalSizeBytes": 65047,
-            "tree": "318944c8c99954dc88c5b5ffee522cbd142cd6d9",
+            "tree": "dfd2dea83ea0af12a8d4c3d0722f6d79c11de0d0",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -445,7 +445,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 65047
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "16772f055509d8f4ddbbe643ceb9df06486b04c106064c28cfda3ac761847a32"
+        "fb997f63364dec461f7972af628e04bc950582ff64797c09ad37975578a82d51"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2523,10 +2523,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "c77395de9f733427ef952c851f4a95b063cb5573"
     )
     assert core["packageRecipeCommit"] == (
-        "d498a45a4e18ad88109abc88789c271f752505e6"
+        "51c6a6bbdb1a498352f95512b7d47f11e6fa42b7"
     )
     assert core["runtimeSourceCommit"] == (
-        "5d1a1d74e9027895d68fa48162f310e663521d35"
+        "5f4e6350791c2c4fd7959da1f07cc1a85ce5446e"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -3007,7 +3007,7 @@ def test_new_owner_test_links_and_minimums_bind_actual_mstest_cases() -> None:
 def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependencies() -> None:
     expected = (
         ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 74),
-        ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 24),
+        ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 27),
         ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
         ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),
         ("WorkspaceSessionPresenterTests", "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs", 23),
@@ -3023,8 +3023,8 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == relative.removeprefix("Chummer.Tests/")
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
-    assert sum(minimum for _, _, minimum in expected) == 213
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 213 + 2 + 27
+    assert sum(minimum for _, _, minimum in expected) == 216
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 27 + 4
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
         ("Chummer.Tests/Presentation/ShellPresenterTests.cs", "Chummer.Rulesets.Hosting.Presentation"),

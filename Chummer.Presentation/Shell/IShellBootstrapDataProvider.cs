@@ -34,6 +34,10 @@ public interface IShellBootstrapDataProvider
 
     Task<ShellBootstrapData> GetAsync(CancellationToken ct);
 
+    // Explicit reinitialization follows store changes such as import, recovery
+    // and account adoption. Cached startup data must not hide those changes.
+    Task<ShellBootstrapData> RefreshAsync(CancellationToken ct) => GetAsync(ct);
+
     Task<ShellBootstrapData> GetAsync(string? rulesetId, CancellationToken ct)
     {
         return GetAsync(ct);
