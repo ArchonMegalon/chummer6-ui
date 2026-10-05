@@ -2200,7 +2200,7 @@ def test_new_runner_method_regression_is_a_bound_package_consumer_input() -> Non
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == "CreationWizard/NewRunnerBuildMethodTests.cs"
     package_plane.validate_test_compile_items(REPO_ROOT)
     assert (REPO_ROOT / relative).read_text(encoding="utf-8").count("[DataRow(") == 9
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 774
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 781
 
 
 def test_checked_in_locks_are_exact_retained_bytes_or_current_sealed_authority() -> None:
@@ -2310,7 +2310,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
         assert (REPO_ROOT / source).is_file()
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 774
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 781
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -2861,7 +2861,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 774' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 781' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
@@ -3066,7 +3066,8 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
     assert [row for row in package_plane.FOCUSED_EXISTING_OWNER_REGRESSION_TESTS
             if row[0] == expected[0] or row[1] == relative] == [expected]
     assert static_mstest_case_count(relative) == 27
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 27
+    # Retain the finalization cases and the seven later adoption/roster cases.
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 27 + 7
     assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 129
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
