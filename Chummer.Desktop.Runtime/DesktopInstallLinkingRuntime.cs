@@ -594,13 +594,13 @@ public static class DesktopInstallLinkingRuntime
             return linkedEmail;
         }
 
-        string? userId = NormalizeLinkedIdentityLabel(state.UserId);
+        string? userId = NormalizeLinkedAccountLabel(state.UserId);
         if (!string.IsNullOrWhiteSpace(userId))
         {
             return userId;
         }
 
-        string? subjectId = NormalizeLinkedIdentityLabel(state.SubjectId);
+        string? subjectId = NormalizeLinkedAccountLabel(state.SubjectId);
         if (!string.IsNullOrWhiteSpace(subjectId))
         {
             return subjectId;
@@ -620,6 +620,22 @@ public static class DesktopInstallLinkingRuntime
         return normalized.Contains('@', StringComparison.Ordinal)
             ? normalized
             : null;
+    }
+
+    private static string? NormalizeLinkedAccountLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        if (trimmed.Length == 0 || LooksOpaqueIdentityToken(trimmed))
+        {
+            return null;
+        }
+
+        return trimmed;
     }
 
     private static bool LooksOpaqueIdentityToken(string value)

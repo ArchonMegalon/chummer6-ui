@@ -156,22 +156,31 @@ public partial class CharacterRosterControl : UserControl
             .OfType<TreeViewItem>()
             .FirstOrDefault();
 
-        if (item?.DataContext is not CharacterRosterNode node || node.IsGroup)
+        if (item?.DataContext is CharacterRosterNode node && !node.IsGroup)
         {
+            _pendingRosterNode = node;
+            ShowRosterContextMenu(node, e.GetPosition(this));
+            e.Handled = true;
             return;
         }
 
-        _pendingRosterNode = node;
-        ShowRosterContextMenu(node, e.GetPosition(this));
+        // Empty roster area: still offer the node-independent creation
+        // actions (Chummer5a parity: list context menu without selection).
+        _pendingRosterNode = null;
+        ShowRosterContextMenu(null, e.GetPosition(this));
+        e.Handled = true;
     }
 
-    private void ShowRosterContextMenu(CharacterRosterNode node, Point position)
+    private void ShowRosterContextMenu(CharacterRosterNode? node, Point position)
     {
         var menu = new ContextMenu();
-        AddRosterMenuItem(menu, RosterActionIds.Open, "Open");
         AddRosterMenuItem(menu, RosterActionIds.NewRunner, "New Runner...");
         AddRosterMenuItem(menu, RosterActionIds.NewRunnerOrigin, "New Runner (Origin Dossier)...");
-        AddRosterMenuItem(menu, RosterActionIds.Delete, "Delete Runner...");
+        if (node is { })
+        {
+            AddRosterMenuItem(menu, RosterActionIds.Open, "Open");
+            AddRosterMenuItem(menu, RosterActionIds.Delete, "Delete Runner...");
+        }
         menu.Open(this);
     }
 
@@ -181,13 +190,16 @@ public partial class CharacterRosterControl : UserControl
         item.Click += (_, _) =>
         {
             var node = _pendingRosterNode;
-            if (node is null)
+            var isNodeIndependent = actionId is RosterActionIds.NewRunner or RosterActionIds.NewRunnerOrigin;
+            if (node is null && !isNodeIndependent)
             {
                 menu.Close();
                 return;
             }
 
-            RosterActionRequested?.Invoke(this, new CharacterRosterActionEventArgs(actionId, node.Id, node.Name));
+            var workspaceId = node?.Id ?? string.Empty;
+            var workspaceName = node?.Name ?? string.Empty;
+            RosterActionRequested?.Invoke(this, new CharacterRosterActionEventArgs(actionId, workspaceId, workspaceName));
         };
         menu.Items.Add(item);
     }
