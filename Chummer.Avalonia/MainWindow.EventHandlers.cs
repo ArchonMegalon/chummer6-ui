@@ -343,9 +343,25 @@ public partial class MainWindow
 
     private async void MenuBar_OnMenuSelected(object? sender, string menuId)
     {
+        // Classic menu selections are command ids (same catalog as the modern bar).
+        // Route them exactly like hotkeys; ToggleMenuAsync only knows panel menus and
+        // silently dropped every command id ("Unknown menu"), killing all menu actions.
+        if (await TryHandleHostCommandAsync(menuId))
+        {
+            return;
+        }
+
+        if (_shellPresenter.State.MenuRoots.Any(m => m.Id == menuId))
+        {
+            await RunUiActionAsync(
+                () => _interactionCoordinator.ToggleMenuAsync(menuId, CancellationToken.None),
+                $"toggle menu '{menuId}'");
+            return;
+        }
+
         await RunUiActionAsync(
-            () => _interactionCoordinator.ToggleMenuAsync(menuId, CancellationToken.None),
-            $"toggle menu '{menuId}'");
+            () => _interactionCoordinator.ExecuteCommandAsync(menuId, CancellationToken.None),
+            $"execute menu command '{menuId}'");
     }
 
     private async void Window_OnKeyDown(object? sender, KeyEventArgs e)
