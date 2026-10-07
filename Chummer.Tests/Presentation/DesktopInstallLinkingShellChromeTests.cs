@@ -79,10 +79,10 @@ public sealed class DesktopInstallLinkingShellChromeTests
             "subject@example.test",
             DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(status: "claimed", userId: null, subjectId: "subject@example.test")));
         Assert.AreEqual(
-            "linked account",
+            "not linked",
             DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(status: "claimed", userId: "1234543", subjectId: null)));
         Assert.AreEqual(
-            "linked account",
+            "not linked",
             DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(status: "claimed", userId: null, subjectId: "subject-42")));
         Assert.AreEqual(
             "runner@example.test",

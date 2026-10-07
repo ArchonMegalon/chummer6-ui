@@ -594,19 +594,19 @@ public static class DesktopInstallLinkingRuntime
             return linkedEmail;
         }
 
-        string? userId = NormalizeLinkedAccountLabel(state.UserId);
+        string? userId = NormalizeLinkedIdentityLabel(state.UserId);
         if (!string.IsNullOrWhiteSpace(userId))
         {
             return userId;
         }
 
-        string? subjectId = NormalizeLinkedAccountLabel(state.SubjectId);
+        string? subjectId = NormalizeLinkedIdentityLabel(state.SubjectId);
         if (!string.IsNullOrWhiteSpace(subjectId))
         {
             return subjectId;
         }
 
-        return "linked account";
+        return "not linked";
     }
 
     private static string? NormalizeLinkedIdentityLabel(string? value)
@@ -622,21 +622,6 @@ public static class DesktopInstallLinkingRuntime
             : null;
     }
 
-    private static string? NormalizeLinkedAccountLabel(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        var trimmed = value.Trim();
-        if (trimmed.Length == 0 || LooksOpaqueIdentityToken(trimmed))
-        {
-            return null;
-        }
-
-        return trimmed;
-    }
 
     private static bool LooksOpaqueIdentityToken(string value)
     {
