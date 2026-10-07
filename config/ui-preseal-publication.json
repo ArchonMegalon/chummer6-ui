@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "10977d64d0179e12c25ff3fd6c35a963a71f2454",
-  "baseTree": "fc2c67ea6f8d781d0b3a92d619c51ac3197bbf2d",
+  "baseCommit": "756fb2d84d0eda28c946457fc0348d658370b4b5",
+  "baseTree": "9ff23c9ffb5cdd005de28eb9d8bb536ecb7c81fa",
   "canonicalSealedLocks": [
     {
-      "blob": "6a92761f85683cf2420b4241dbe03f84fcbfae9a",
+      "blob": "38b81bd7948cfe7b4dd08ca11bdea6c73be95d39",
       "path": "config/package-plane.lock.json",
-      "sha256": "84533f62a849a8cb2739fff8da4deccb05d7f65803c72098401cc5b628501f77",
+      "sha256": "a95e8669b28234f186e83ff4695bbb61741b0b6ecdfa990c9116d004318152df",
       "sizeBytes": 68354
     },
     {
-      "blob": "6ce4284957a686544af0fc2e3ae7bec8aff317c6",
+      "blob": "8d478419ecaa135e40a460c062b71696723522c9",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "5f44f755c68977ee2066bc3936f56d995a8a526bd4ba7b5099894a4e8b92d44e",
+      "sha256": "73a1f0213e061b6a261183f66fa969f5f479f9f0adc50b5c7b9daf4f46889959",
       "sizeBytes": 2031
     }
   ],
@@ -44,62 +44,34 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "133b4c4022c2ffe1156549717685e9ae513173b2",
-      "path": "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
-      "sha256": "3b2fbf23724e03735239e161540f05138bdfd95b61ec48b5e270b992e98d8421",
-      "sizeBytes": 25231,
-      "status": "M"
-    },
-    {
-      "blob": "a1a9d01d0d35b53cedf421e699046c89de11e43a",
-      "path": "Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj",
-      "sha256": "5391e1febbddb47264e11ec38d9f2d9e7e567c8337f816d7c6ee2e77a1f52f32",
-      "sizeBytes": 3599,
-      "status": "M"
-    },
-    {
-      "blob": "a1c17273a8293b8b177957c37ae03b06b65e4d24",
-      "path": "Chummer.Tests/Presentation/WorkspaceOverviewStateFactoryTests.cs",
-      "sha256": "b239de60b347a66ac28ab87303a1a17b9478a1d9c3cab3db6cdc668e25a246af",
-      "sizeBytes": 24463,
-      "status": "M"
-    },
-    {
-      "blob": "a69db4e3eac92b0716b3930f919c8fbd9cedd0a7",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "bdc50ee8c11c5b8b1bc1e23d71eb35065de0ea0c880a71b9abe7967695bc7a37",
-      "sizeBytes": 65047,
-      "status": "M"
-    },
-    {
-      "blob": "a2918a8c79dd9efd392f95d16b46728db7194e44",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "2cfc51f477a24b657b63fe2d7a535255245a029ceabea986bd250624ac8e163e",
-      "sizeBytes": 288261,
-      "status": "M"
-    },
-    {
-      "blob": "3dfa8954cc996c2824dffa750d9c2c76951b8c21",
+      "blob": "4e403746b95129a64b0609674d8e560b7bd80e4f",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "8e29a84cd5e766c917d59a82d11b15a3f3a9a4bde545dd52446f9ae585c30548",
-      "sizeBytes": 49521,
+      "sha256": "8e192ec5fb83ae649c48a80c1ffc2fffa8f22b1525b6fdbd197b4f9685c93864",
+      "sizeBytes": 49626,
       "status": "M"
     },
     {
-      "blob": "6abb04aa624ed3a4a7467cb26126b8641d3a70a1",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "21375977bb1915caa146acada739ca2d6e68243d37d39a94254f037511eb17a7",
-      "sizeBytes": 193831,
+      "blob": "36c855595d6a292f790025c3171b552305aede92",
+      "path": "scripts/generate-releases-manifest.sh",
+      "sha256": "098a6e6e57d8932bec8c1704273dd0fe965d3d0d6f3a221f1317401bf139510b",
+      "sizeBytes": 114445,
       "status": "M"
     },
     {
-      "blob": "e09b1ecd868d1227fed2f0646b499f83c59275ac",
+      "blob": "d8dedb799c60676321f01843ada03f4ab5f580b4",
       "path": "tests/test_split_preseal_publication.py",
-      "sha256": "46e4a3de6277641f5d3ae9301af9670a959f9e5af7b2f7573bb6caad2ecaa5e0",
-      "sizeBytes": 57856,
+      "sha256": "879b176059d0f9d24986c61b67a8c70a72e9544fadc95dacc5de2cc366507a23",
+      "sizeBytes": 59887,
+      "status": "M"
+    },
+    {
+      "blob": "89e9447e81b0c07b807e9c9a358cf15ce2de2bf0",
+      "path": "tests/test_windows_installer_payload_gate.py",
+      "sha256": "68e413492574af1cd2b770fcbeb33d8ee155b6f1244fc8114fa4364531c6e57d",
+      "sizeBytes": 131258,
       "status": "M"
     }
   ],
-  "recipeTree": "b20d85eb5ee0830380489853dc15024dd6ccb213",
+  "recipeTree": "55c70f2f97d358a54dc3539eb6eef54df97013aa",
   "releaseClaim": false
 }
