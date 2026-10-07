@@ -1,5 +1,6 @@
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
@@ -70,6 +71,7 @@ public sealed class WorkspaceOverviewStateFactory :
         WorkspaceOverviewLoadResult loadedOverview)
     {
         CharacterCreationFoundationState? foundation = loadedOverview.Profile.Created
+            || HasUnrelatedCreationMethod(loadedOverview)
             ? null
             : LoadFoundation(workspaceId, loadedOverview);
         CharacterCreationContactsState? contacts = loadedOverview.Profile.Created
@@ -315,6 +317,15 @@ public sealed class WorkspaceOverviewStateFactory :
                 "Creation activation supporting projections are incomplete.");
         }
     }
+
+    private static bool HasUnrelatedCreationMethod(WorkspaceOverviewLoadResult overview)
+        // Foundation describes only the Life Modules draft. Do not parse its
+        // catalog during every Priority/Sum-to-Ten/Karma restore. Unknown or
+        // disagreeing method projections keep the existing fail-closed path.
+        => overview.Document?.RulesetId == RulesetDefaults.Sr5
+           && overview.Profile.BuildMethod is CharacterCreationBuildMethods.Priority
+               or CharacterCreationBuildMethods.SumToTen or CharacterCreationBuildMethods.Karma
+           && string.Equals(overview.Profile.BuildMethod, overview.Build.BuildMethod, StringComparison.Ordinal);
 
     private CharacterCreationFoundationState? LoadFoundation(
         CharacterWorkspaceId workspaceId,

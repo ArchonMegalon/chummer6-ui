@@ -41,6 +41,7 @@
     <Compile Include="CharacterCreationResourcesInteractionPresenterTests.cs" />
     <Compile Include="CharacterRosterStructureParityGuardTests.cs" />
     <Compile Include="RulesetUiDirectiveCatalogTests.cs" />
+    <Compile Include="WorkspaceOverviewStateFactoryTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MSTest" Version="4.0.2" />
