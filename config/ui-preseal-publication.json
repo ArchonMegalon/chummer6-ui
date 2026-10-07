@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "756fb2d84d0eda28c946457fc0348d658370b4b5",
-  "baseTree": "9ff23c9ffb5cdd005de28eb9d8bb536ecb7c81fa",
+  "baseCommit": "436dbb03ecec4d0fd23af056c5f37ae635cab6f4",
+  "baseTree": "caf10cd624b4648960695fcd47f12585d5e9f573",
   "canonicalSealedLocks": [
     {
       "blob": "38b81bd7948cfe7b4dd08ca11bdea6c73be95d39",
@@ -25,15 +25,15 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "a69db4e3eac92b0716b3930f919c8fbd9cedd0a7",
-      "commit": "f74acb6470b6956bed17f46e032a8a5364faf8b9",
+      "blob": "a0a1cca9a5ddac9ef27a5f7488d5075defe20079",
+      "commit": "861339abb41e4f4f791b19a785597157270143da",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "bdc50ee8c11c5b8b1bc1e23d71eb35065de0ea0c880a71b9abe7967695bc7a37",
+      "rawSha256": "affd4197b471207a644e00251cbfa797aa3d9e57213ae105d26bf7531703aa0c",
       "rawSizeBytes": 65047,
-      "semanticCanonicalSha256": "bdc50ee8c11c5b8b1bc1e23d71eb35065de0ea0c880a71b9abe7967695bc7a37",
+      "semanticCanonicalSha256": "affd4197b471207a644e00251cbfa797aa3d9e57213ae105d26bf7531703aa0c",
       "semanticCanonicalSizeBytes": 65047,
-      "tree": "920fd445bd291a5c3920b4c50044b9386eb79aa3"
+      "tree": "8b3335bda605d53c10a16e9d3bc0ad0d62e24b34"
     },
     "producerLock": {
       "absentAtCommit": true,
@@ -44,34 +44,69 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "4e403746b95129a64b0609674d8e560b7bd80e4f",
+      "blob": "15795874db6d878ba6c3353e2f5c168162fbf32d",
+      "path": ".github/workflows/unsigned-macos-native-build.yml",
+      "sha256": "8c01a527ca63ec00f9fbee85f85413590a28734706de85e661b100c78e9657c7",
+      "sizeBytes": 5764,
+      "status": "M"
+    },
+    {
+      "blob": "1fd3435cbc5caecef4e31f9331d639126e84a0c6",
+      "path": "Directory.Build.props",
+      "sha256": "d026b2475f016a15a1538cab31697ad89016e36a09392a9cdcbdde69b71f05ed",
+      "sizeBytes": 3993,
+      "status": "M"
+    },
+    {
+      "blob": "a0a1cca9a5ddac9ef27a5f7488d5075defe20079",
+      "path": "config/ui-next-authority-oracle-v10.json",
+      "sha256": "affd4197b471207a644e00251cbfa797aa3d9e57213ae105d26bf7531703aa0c",
+      "sizeBytes": 65047,
+      "status": "M"
+    },
+    {
+      "blob": "70b0bf21fa1feb32db87c4aa3989d82bde1ad5f3",
+      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
+      "sha256": "2eca6c0f14490b881253493b619012d7c459a369e1f1f6b761a1dfea7838f5e6",
+      "sizeBytes": 288261,
+      "status": "M"
+    },
+    {
+      "blob": "b38aa9c25df8ad398c60fb900ae5a9736f8e9d93",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "8e192ec5fb83ae649c48a80c1ffc2fffa8f22b1525b6fdbd197b4f9685c93864",
+      "sha256": "89faa968bcb2e59944ad935759c677ad7ec71c09a3adcf0f973b1fbdbd34fcfc",
       "sizeBytes": 49626,
       "status": "M"
     },
     {
-      "blob": "36c855595d6a292f790025c3171b552305aede92",
-      "path": "scripts/generate-releases-manifest.sh",
-      "sha256": "098a6e6e57d8932bec8c1704273dd0fe965d3d0d6f3a221f1317401bf139510b",
-      "sizeBytes": 114445,
+      "blob": "4e9f98b255afde9c859622ef6c9a50137a44c004",
+      "path": "scripts/ai/with-package-plane.sh",
+      "sha256": "7a776029d668f4e7b89a3c7dab231a841829abd9c6c77e59af7e60d751b77d8c",
+      "sizeBytes": 20800,
       "status": "M"
     },
     {
-      "blob": "d8dedb799c60676321f01843ada03f4ab5f580b4",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "879b176059d0f9d24986c61b67a8c70a72e9544fadc95dacc5de2cc366507a23",
-      "sizeBytes": 59887,
+      "blob": "bf95d5e6aba67fc6a5f293fa55a30eb8d509db58",
+      "path": "scripts/build-unsigned-macos-native.sh",
+      "sha256": "0dbc4974199f67541c8660f07793c454bfd55e9cbc25d7ea56a9ef4d5c1b5f0d",
+      "sizeBytes": 9578,
       "status": "M"
     },
     {
-      "blob": "89e9447e81b0c07b807e9c9a358cf15ce2de2bf0",
-      "path": "tests/test_windows_installer_payload_gate.py",
-      "sha256": "68e413492574af1cd2b770fcbeb33d8ee155b6f1244fc8114fa4364531c6e57d",
-      "sizeBytes": 131258,
+      "blob": "4f141e2f592666204037b16e245691731e8535b6",
+      "path": "tests/test_fresh_package_plane_controls.py",
+      "sha256": "8d0e4531509793cb1f8e6f33e545842eea1551e3a3a17b1f32369e94856eba56",
+      "sizeBytes": 193831,
+      "status": "M"
+    },
+    {
+      "blob": "e6b90a7846b57d10afd084ba8a06704ead1df4f2",
+      "path": "tests/test_unsigned_macos_native_build.py",
+      "sha256": "60385392af765e95d1df6ecf2234a6cee2aac620e2115fc579d9fea00014540e",
+      "sizeBytes": 13126,
       "status": "M"
     }
   ],
-  "recipeTree": "55c70f2f97d358a54dc3539eb6eef54df97013aa",
+  "recipeTree": "e04f6d58474caed8807403e6686291bf1db12e18",
   "releaseClaim": false
 }
