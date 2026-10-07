@@ -1754,6 +1754,41 @@ run_materializer() {
   fi
 
   python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
+
+  # code-deploy current-shelf contract (hub a1ca1b3): the materializer emits all
+  # five mode-field keys unconditionally into its outputs (null when the source
+  # carries none), and the hub verifier treats mere key presence as a claim,
+  # demanding the 6-key codeDeployCurrentShelfAuthority object. Null placeholders
+  # are not claims: strip them from BOTH materializer outputs so only genuine
+  # mode assertions survive. Non-null values are preserved (and will still fail
+  # verification correctly when unauthorized).
+  for _cdm_target in "$CANONICAL_MANIFEST_PATH" "$MANIFEST_PATH"; do
+    [[ -f "$_cdm_target" ]] || continue
+    python3 - "$_cdm_target" <<'PY_CD_STRIP'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+mode_keys = (
+    "releaseDecisionStatus",
+    "projectionStage",
+    "codeDeploymentAuthority",
+    "releaseUploadAuthority",
+    "codeDeployCurrentShelfAuthority",
+)
+stripped = [key for key in mode_keys if key in payload and payload[key] is None]
+if not stripped:
+    sys.exit(0)
+for key in stripped:
+    del payload[key]
+with open(path, "w", encoding="utf-8") as handle:
+    handle.write(json.dumps(payload, indent=2) + "\n")
+print(f"stripped null code-deploy mode keys: {','.join(stripped)} -> {path}")
+PY_CD_STRIP
+  done
 }
 
 normalize_startup_smoke_receipt_channel_identity "$STARTUP_SMOKE_DIR" "$RELEASE_CHANNEL"
