@@ -6,6 +6,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -57,6 +58,8 @@ public partial class CharacterRosterControl : UserControl
     public CharacterRosterControl()
     {
         InitializeComponent();
+
+        RosterTree.PointerReleased += OnRosterPointerReleased;
     }
 
     internal void SetState(RosterPaneState state)
@@ -134,6 +137,96 @@ public partial class CharacterRosterControl : UserControl
 
         return null;
     }
+    private CharacterRosterNode? _pendingRosterNode;
+
+    private void OnRosterPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.InitialPressMouseButton != MouseButton.Right)
+        {
+            return;
+        }
+
+        if (e.Source is not Visual visual)
+        {
+            return;
+        }
+
+        var item = visual
+            .GetSelfAndVisualAncestors()
+            .OfType<TreeViewItem>()
+            .FirstOrDefault();
+
+        if (item?.DataContext is not CharacterRosterNode node || node.IsGroup)
+        {
+            return;
+        }
+
+        _pendingRosterNode = node;
+        ShowRosterContextMenu(node, e.GetPosition(this));
+    }
+
+    private void ShowRosterContextMenu(CharacterRosterNode node, Point position)
+    {
+        var menu = new ContextMenu();
+        AddRosterMenuItem(menu, RosterActionIds.Open, "Open");
+        AddRosterMenuItem(menu, RosterActionIds.NewRunner, "New Runner...");
+        AddRosterMenuItem(menu, RosterActionIds.NewRunnerOrigin, "New Runner (Origin Dossier)...");
+        AddRosterMenuItem(menu, RosterActionIds.Delete, "Delete Runner...");
+        menu.Open(this);
+    }
+
+    private void AddRosterMenuItem(ContextMenu menu, RosterActionIds actionId, string header)
+    {
+        var item = new MenuItem { Header = header };
+        item.Click += (_, _) =>
+        {
+            var node = _pendingRosterNode;
+            if (node is null)
+            {
+                menu.Close();
+                return;
+            }
+
+            RosterActionRequested?.Invoke(this, new CharacterRosterActionEventArgs(actionId, node.Id, node.Name));
+        };
+        menu.Items.Add(item);
+    }
+
+
+    /// <summary>
+    /// Per-runner roster context-menu actions (Chummer5a parity).
+    /// </summary>
+    /// <summary>Raised when the user picks an action from the roster context menu.</summary>
+    public event EventHandler<CharacterRosterActionEventArgs>? RosterActionRequested;
+
+    public enum RosterActionIds
+    {
+        Open,
+        NewRunner,
+        NewRunnerOrigin,
+        Delete,
+    }
+
+
+    /// <summary>
+    /// Per-runner roster context-menu action event args.
+    /// </summary>
+    public sealed class CharacterRosterActionEventArgs : EventArgs
+    {
+        public CharacterRosterActionEventArgs(RosterActionIds actionId, string workspaceId, string displayName)
+        {
+            ActionId = actionId;
+            WorkspaceId = workspaceId;
+            DisplayName = displayName;
+        }
+
+        public RosterActionIds ActionId { get; }
+
+        public string WorkspaceId { get; }
+
+        public string DisplayName { get; }
+    }
+
 }
 
 /// <summary>

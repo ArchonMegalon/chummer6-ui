@@ -135,6 +135,7 @@ public partial class MainWindow : Window
             onWorkspaceSupportRequested: SummaryHeader_OnWorkspaceSupportRequested,
             onMenuSelected: MenuBar_OnMenuSelected,
             onRosterWorkspaceSelected: NavigatorPane_OnWorkspaceSelected,
+            onRosterActionRequested: NavigatorPane_OnRosterAction,
             onWorkspaceSelected: NavigatorPane_OnWorkspaceSelected,
             onNavigationTabSelected: NavigatorPane_OnNavigationTabSelected,
             onSectionActionSelected: NavigatorPane_OnSectionActionSelected,

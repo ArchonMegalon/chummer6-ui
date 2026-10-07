@@ -48,6 +48,7 @@ internal static class MainWindowControlBinder
         EventHandler onWorkspaceSupportRequested,
         EventHandler<string> onMenuSelected,
         EventHandler<string> onRosterWorkspaceSelected,
+        EventHandler<CharacterRosterControl.CharacterRosterActionEventArgs> onRosterActionRequested,
         EventHandler<string> onWorkspaceSelected,
         EventHandler<string> onNavigationTabSelected,
         EventHandler<string> onSectionActionSelected,
@@ -73,6 +74,7 @@ internal static class MainWindowControlBinder
         summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
         summaryHeader.WorkspaceSupportRequested += onWorkspaceSupportRequested;
         characterRoster.SelectionChanged += (_, args) => onRosterWorkspaceSelected(characterRoster, args.SelectedNode.Id);
+        characterRoster.RosterActionRequested += (_, args) => onRosterActionRequested(characterRoster, args);
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;
         navigatorPane.SectionActionSelected += onSectionActionSelected;

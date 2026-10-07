@@ -29,6 +29,80 @@ public partial class MainWindow
             () => _interactionCoordinator.ExecuteCommandAsync(commandId, CancellationToken.None),
             $"execute command '{commandId}'");
     }
+        private async void NavigatorPane_OnRosterAction(object? sender, CharacterRosterControl.CharacterRosterActionEventArgs e)
+        {
+            switch (e.ActionId)
+            {
+                case CharacterRosterControl.RosterActionIds.Open:
+                    await RunUiActionAsync(
+                        () => _interactionCoordinator.SwitchWorkspaceAsync(e.WorkspaceId, CancellationToken.None),
+                        $"switch workspace '{e.WorkspaceId}' from roster");
+                    break;
+                case CharacterRosterControl.RosterActionIds.NewRunner:
+                    await RunUiActionAsync(
+                        () => _interactionCoordinator.ExecuteCommandAsync("new_character", CancellationToken.None),
+                        "new runner wizard from roster");
+                    break;
+                case CharacterRosterControl.RosterActionIds.NewRunnerOrigin:
+                    await RunUiActionAsync(
+                        () => _interactionCoordinator.ExecuteCommandAsync("new_character_origin", CancellationToken.None),
+                        "origin wizard from roster");
+                    break;
+                case CharacterRosterControl.RosterActionIds.Delete:
+                    ShowRosterDeleteConfirmation(e.WorkspaceId, e.DisplayName);
+                    break;
+            }
+        }
+
+
+        private void ShowRosterDeleteConfirmation(string workspaceId, string displayName)
+        {
+            var dialog = new global::Avalonia.Controls.Window
+            {
+                Title = "Delete runner",
+                SizeToContent = global::Avalonia.Controls.SizeToContent.WidthAndHeight,
+                CanResize = false,
+                ShowInTaskbar = false,
+                WindowStartupLocation = global::Avalonia.Controls.WindowStartupLocation.CenterOwner,
+            };
+
+            var text = new global::Avalonia.Controls.TextBlock
+            {
+                Text = $"Delete runner '{displayName}' from Chummer?",
+                Margin = new global::Avalonia.Thickness(24, 20, 24, 8),
+                MaxWidth = 360,
+                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
+            };
+
+            var buttons = new global::Avalonia.Controls.StackPanel
+            {
+                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                Spacing = 8,
+                Margin = new global::Avalonia.Thickness(24, 12, 24, 20),
+            };
+
+            var deleteButton = new global::Avalonia.Controls.Button { Content = "Delete" };
+            var cancelButton = new global::Avalonia.Controls.Button { Content = "Cancel" };
+            deleteButton.Click += async (_, _) =>
+            {
+                dialog.Close();
+                await _interactionCoordinator.SwitchWorkspaceAsync(workspaceId, CancellationToken.None);
+                await RunUiActionAsync(
+                    () => _adapter.DeleteWorkspaceAsync(new CharacterWorkspaceId(workspaceId), CancellationToken.None),
+                    $"delete runner '{workspaceId}'");
+            };
+            cancelButton.Click += (_, _) => dialog.Close();
+            buttons.Children.Add(deleteButton);
+            buttons.Children.Add(cancelButton);
+
+            var panel = new global::Avalonia.Controls.StackPanel();
+            panel.Children.Add(text);
+            panel.Children.Add(buttons);
+            dialog.Content = panel;
+            _ = dialog.ShowDialog(this);
+        }
+
 
     private async void NavigatorPane_OnWorkspaceSelected(object? sender, string workspaceId)
     {

@@ -34,6 +34,11 @@ public sealed class CharacterOverviewViewModelAdapter : IDisposable
         return _presenter.SwitchWorkspaceAsync(workspaceId, ct);
     }
 
+    public Task DeleteWorkspaceAsync(CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        return _presenter.DeleteWorkspaceAsync(workspaceId, confirmed: true, ct);
+    }
+
     public Task CloseWorkspaceAsync(CharacterWorkspaceId workspaceId, CancellationToken ct)
     {
         return _presenter.CloseWorkspaceAsync(workspaceId, ct);
