@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
@@ -14,6 +16,61 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public class WorkspaceOverviewStateFactoryTests
 {
+    [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Priority, CharacterCreationBuildMethods.Priority, false, 0)]
+    [DataRow(CharacterCreationBuildMethods.SumToTen, CharacterCreationBuildMethods.SumToTen, false, 0)]
+    [DataRow(CharacterCreationBuildMethods.Karma, CharacterCreationBuildMethods.Karma, false, 0)]
+    [DataRow(CharacterCreationBuildMethods.LifeModules, CharacterCreationBuildMethods.LifeModules, false, 1)]
+    [DataRow("unknown", "unknown", false, 1)]
+    [DataRow(CharacterCreationBuildMethods.Priority, CharacterCreationBuildMethods.LifeModules, false, 1)]
+    [DataRow(CharacterCreationBuildMethods.LifeModules, CharacterCreationBuildMethods.Priority, false, 1)]
+    [DataRow(CharacterCreationBuildMethods.LifeModules, CharacterCreationBuildMethods.LifeModules, true, 0)]
+    public void Restore_loads_foundation_only_when_the_method_can_use_it(
+        string profileMethod, string buildMethod, bool created, int expectedReads)
+    {
+        CharacterWorkspaceId id = new("foundation-restore");
+        var reader = new ObservedFoundationReader(id);
+        var factory = new WorkspaceOverviewStateFactory(creationFoundationService: reader);
+        var overview = CreateLoadedOverview("Restore", "R", created, profileMethod,
+            new WorkspaceDocument("<character />", RulesetDefaults.Sr5), 7);
+        overview = overview with
+        {
+            Build = overview.Build with { BuildMethod = buildMethod }
+        };
+        var next = factory.CreateLoadedState(CharacterOverviewState.Empty, id, CreateSession(id),
+            overview, restoredView: null, hasSavedWorkspace: true);
+        Assert.AreEqual(expectedReads, reader.Reads);
+        var withoutFoundation = new WorkspaceOverviewStateFactory().CreateLoadedState(
+            CharacterOverviewState.Empty, id, CreateSession(id), overview, null, true);
+        Assert.AreEqual(JsonSerializer.Serialize(withoutFoundation.CreationWizard),
+            JsonSerializer.Serialize(next.CreationWizard), "Omitting an unused/unavailable foundation must not invent readiness.");
+    }
+
+    private sealed class ObservedFoundationReader(CharacterWorkspaceId expectedId)
+        : ICharacterCreationFoundationService
+    {
+        public int Reads { get; private set; }
+        public CharacterCreationFoundationResult<CharacterCreationFoundationState> Load(
+            CharacterCreationFoundationLoadRequest request)
+        {
+            Assert.AreEqual(expectedId, request.WorkspaceId);
+            Reads++;
+            return new(CharacterCreationFoundationOutcomes.Blocked, null, ["unavailable-test-foundation"]);
+        }
+        public CharacterCreationFoundationResult<CharacterCreationFoundationPreview> Preview(
+            CharacterCreationFoundationPreviewRequest request)
+            => throw new AssertFailedException("Restore must not preview a mutation.");
+        public CharacterCreationFoundationResult<CharacterCreationFoundationApplyReceipt> Confirm(
+            CharacterCreationFoundationConfirmRequest request)
+            => throw new AssertFailedException("Restore must not confirm a mutation.");
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationPreview> PreviewFinalization(
+            CharacterCreationFoundationFinalizationPreviewRequest request)
+            => throw new AssertFailedException("Restore must not preview a mutation.");
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationReceipt> ConfirmFinalization(
+            CharacterCreationFoundationFinalizationConfirmRequest request)
+            => throw new AssertFailedException("Restore must not confirm a mutation.");
+    }
+
     [TestMethod]
     public void CreateLoadedState_projects_grounded_creation_wizard_for_uncreated_canonical_document()
     {
@@ -47,7 +104,7 @@ public class WorkspaceOverviewStateFactoryTests
         Assert.AreEqual(expectedContentDigest, wizard.ContentDigest);
         Assert.AreEqual(RulesetDefaults.Sr5, wizard.RulesetId);
         Assert.AreEqual(CharacterCreationBuildMethods.Priority, wizard.BuildMethod);
-        Assert.AreEqual(CharacterCreationWizardStepIds.Foundation, wizard.ActiveStepId);
+        Assert.AreEqual(CharacterCreationWizardStepIds.Method, wizard.ActiveStepId);
         Assert.IsFalse(wizard.CharacterCreated);
         Assert.IsFalse(wizard.CanFinalize);
         Assert.IsTrue(wizard.SnapshotDigest.StartsWith("sha256:", StringComparison.Ordinal));
@@ -55,8 +112,9 @@ public class WorkspaceOverviewStateFactoryTests
         Assert.AreEqual(string.Empty, wizard.SourceDigest);
         Assert.AreEqual(string.Empty, wizard.RuntimeFingerprint);
         CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.SourceAuthorityUnavailable);
-        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.RuntimeAuthorityUnavailable);
-        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.BuildGhostContextUnavailable);
+        CollectionAssert.Contains(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.FinalizationAuthorityUnavailable);
+        CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.RuntimeAuthorityUnavailable);
+        CollectionAssert.DoesNotContain(wizard.CompletionBlockers.ToArray(), CharacterCreationWizardProjector.BuildGhostContextUnavailable);
         Assert.IsTrue(wizard.LegalOptionsByStep.Values.All(static options => options.Count == 0));
 
         CharacterCreationBudgetState contacts = wizard.Budgets.Single(
@@ -172,11 +230,13 @@ public class WorkspaceOverviewStateFactoryTests
     }
 
     [TestMethod]
-    public void CreateLoadedState_maps_loaded_payload_and_restored_view()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void CreateLoadedState_maps_loaded_payload_and_restored_view(bool sessionHasSavedWorkspace)
     {
         WorkspaceOverviewStateFactory factory = new();
         CharacterWorkspaceId workspaceId = new("ws-1");
-        WorkspaceSessionState session = CreateSession(workspaceId);
+        WorkspaceSessionState session = CreateSession(workspaceId, sessionHasSavedWorkspace);
         WorkspaceOverviewLoadResult loadedOverview = CreateLoadedOverview("Troy", "BLUE");
         WorkspaceViewState restoredView = new(
             ActiveTabId: "tab-gear",
@@ -276,7 +336,8 @@ public class WorkspaceOverviewStateFactoryTests
         Assert.IsNotNull(next.ActiveBrowseWorkspace);
         Assert.AreEqual("Browse Armor", next.ActiveBrowseWorkspace.DialogTitle);
         Assert.AreEqual(50, next.ActiveBrowseWorkspace.QueryLimit);
-        Assert.IsTrue(next.HasSavedWorkspace);
+        Assert.AreEqual(sessionHasSavedWorkspace, next.HasSavedWorkspace,
+            "Saved status must come from the current session, not the cached view or legacy boolean argument.");
         Assert.IsNull(next.ActiveDialog);
     }
 
@@ -324,7 +385,7 @@ public class WorkspaceOverviewStateFactoryTests
         Assert.IsFalse(next.HasSavedWorkspace);
     }
 
-    private static WorkspaceSessionState CreateSession(CharacterWorkspaceId workspaceId)
+    private static WorkspaceSessionState CreateSession(CharacterWorkspaceId workspaceId, bool hasSavedWorkspace = false)
     {
         return new WorkspaceSessionState(
             ActiveWorkspaceId: workspaceId,
@@ -336,7 +397,7 @@ public class WorkspaceOverviewStateFactoryTests
                     Alias: "TW",
                     LastOpenedUtc: DateTimeOffset.UtcNow,
                     RulesetId: RulesetDefaults.Sr5,
-                    HasSavedWorkspace: false)
+                    HasSavedWorkspace: hasSavedWorkspace)
             ],
             RecentWorkspaceIds: [workspaceId]);
     }

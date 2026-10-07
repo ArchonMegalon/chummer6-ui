@@ -94,6 +94,25 @@ def test_portal_lookup_correction_has_exact_recipe_membership(tmp_path, monkeypa
             preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
 
 
+def test_overview_restore_test_has_exact_recipe_membership(tmp_path, monkeypatch) -> None:
+    path = "Chummer.Tests/Presentation/WorkspaceOverviewStateFactoryTests.cs"
+    assert path in preseal.ALLOWED_RECIPE_PATHS
+    monkeypatch.setattr(preseal, "commit_bytes", lambda *args: b"reviewed restore test")
+    monkeypatch.setattr(preseal, "commit_blob", lambda *args: "c" * 40)
+    for status in ("A", "M"):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{path}")
+        assert preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)[0]["path"] == path
+    for status, candidate in (
+        ("D", path),
+        ("M", "Chummer.Tests/Presentation/UnreviewedRestoreTests.cs"),
+        ("M", preseal.MARKER_PATH),
+        *(("M", name) for name in preseal.CANONICAL_LOCK_PATHS),
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{candidate}")
+        with pytest.raises(preseal.PresealError, match="not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def test_life_book_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert {
         "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs",
