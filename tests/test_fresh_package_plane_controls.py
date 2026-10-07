@@ -39,26 +39,26 @@ package_plane = load_module()
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "9c3d4ef3e8a7529173428cc1c1c80e0819cb0dc2"
-    runtime = "355436ecbf105f56d81902f9e58916337b4ff758"
-    version = "0.0.0-packageplane.candidate.v20261007.1.sh355436ecbf105"
+    recipe = "2425d79d72ec349c0adf9ff26b5e68bc588e3c9b"
+    runtime = "ae364169d38fcfc70cd9c3793fda0dbf4435b971"
+    version = "0.0.0-packageplane.candidate.v20261007.2.shae364169d38fc"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 4178562
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 4178586
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "bd54565325cdd6a213a125a027273a1a5e21a552e4916eb61b9ca05b0f0d2b2a"
+        "dac07e3c5f477b171147287d800a32d64e7fd5a459e45797fc796ae1f5c19150"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "b5590c75595e28994965c7557b5bf6a91cdd134cdae5929c4672607156671ef6"
-    assert metadata["lockSha256"] == "6fc92e3a0e5fea6cdb676b02179c05148dd122955d339a470d2b40c58d7af2e5"
-    assert metadata["receiptSha256"] == "e3a6bc3538a2d78ba86fab3b2e52301045c617bf7a9ceaed8214900d1cb5a8be"
+    assert metadata["inventorySha256"] == "4352dcc339e60c3592a625063116966a3e5bb775d41532324a4be9efc584a7c3"
+    assert metadata["lockSha256"] == "c545fac90845f17b9ac7393510175162d5d1f9b70fb51a48f32233d63254489a"
+    assert metadata["receiptSha256"] == "f5e5162f3e39a16218d4e5ab301483deca6e10734ae0634c9ce995a428e3c59c"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -162,8 +162,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-9c3d4ef3e8a7529173428cc1c1c80e0819cb0dc2/"
-        "chummer-core-runtime-package-plane-9c3d4ef3e8a7529173428cc1c1c80e0819cb0dc2.zip",
+        "core-runtime-package-plane-2425d79d72ec349c0adf9ff26b5e68bc588e3c9b/"
+        "chummer-core-runtime-package-plane-2425d79d72ec349c0adf9ff26b5e68bc588e3c9b.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -416,10 +416,10 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "9c3d4ef3e8a7529173428cc1c1c80e0819cb0dc2"
+        "2425d79d72ec349c0adf9ff26b5e68bc588e3c9b"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "355436ecbf105f56d81902f9e58916337b4ff758"
+        "ae364169d38fcfc70cd9c3793fda0dbf4435b971"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
         "c77395de9f733427ef952c851f4a95b063cb5573"
@@ -2524,10 +2524,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "c77395de9f733427ef952c851f4a95b063cb5573"
     )
     assert core["packageRecipeCommit"] == (
-        "9c3d4ef3e8a7529173428cc1c1c80e0819cb0dc2"
+        "2425d79d72ec349c0adf9ff26b5e68bc588e3c9b"
     )
     assert core["runtimeSourceCommit"] == (
-        "355436ecbf105f56d81902f9e58916337b4ff758"
+        "ae364169d38fcfc70cd9c3793fda0dbf4435b971"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
