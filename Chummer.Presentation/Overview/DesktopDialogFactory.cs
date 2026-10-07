@@ -1328,7 +1328,6 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("Priority", "Priority"),
                 new DesktopDialogFieldOption("SumToTen", "Sum-to-Ten"),
                 new DesktopDialogFieldOption("Karma", "Karma"),
-                new DesktopDialogFieldOption("LifeModule", "Life Modules")
             ]
         };
     }
