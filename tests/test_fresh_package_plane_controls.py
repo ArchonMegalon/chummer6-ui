@@ -39,26 +39,26 @@ package_plane = load_module()
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "9f44361649bd109f522a6610b41cb9f1def75905"
-    runtime = "d884b1f17025847704c64d4957f87253f9bca31b"
-    version = "0.0.0-packageplane.candidate.v20261008.3.shd884b1f170258"
+    recipe = "953957152206c8981a2177ffec4923059971e6eb"
+    runtime = "c73e43fb144b50cc7f85a71f8aeee50e28f74dd2"
+    version = "0.0.0-packageplane.candidate.v20261009.1.shc73e43fb144b5"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 5965032
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 5965218
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "2b6772b72b4715f29504a09bededad1e0e732943bb65937c3d98e76ea43b7a02"
+        "3b630f906fcc605facdd8cdea5cdba88eea7a1313f5f6023230791988f531a99"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "6399fb8ac281062274243a2c2100297154f8a31faa0c3f3c20193a9407628dde"
-    assert metadata["lockSha256"] == "f9788d06e323ed7acc6a68867d48534f9c676dce151b6fc2cadec3d4c67b7e53"
-    assert metadata["receiptSha256"] == "8f2489c5e79585a29415e1e1a9708d58c77365aec1efe1b3ff88759898b73a6a"
+    assert metadata["inventorySha256"] == "2f5555abfa67eb11bd7029010e26e50abcac9e27346c55be77b287c0a7a375c2"
+    assert metadata["lockSha256"] == "90148e02bc73ba50ef14f79271fa4029d044e98270263c0d1b933df0e3c3405f"
+    assert metadata["receiptSha256"] == "0653f6f46a2461b9e0cc1dd9253d69562c15755a4a730404952003dc963c27a9"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -162,8 +162,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-9f44361649bd109f522a6610b41cb9f1def75905/"
-        "chummer-core-runtime-package-plane-9f44361649bd109f522a6610b41cb9f1def75905.zip",
+        "core-runtime-package-plane-953957152206c8981a2177ffec4923059971e6eb/"
+        "chummer-core-runtime-package-plane-953957152206c8981a2177ffec4923059971e6eb.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -416,10 +416,10 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "9f44361649bd109f522a6610b41cb9f1def75905"
+        "953957152206c8981a2177ffec4923059971e6eb"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "d884b1f17025847704c64d4957f87253f9bca31b"
+        "c73e43fb144b50cc7f85a71f8aeee50e28f74dd2"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
         "c77395de9f733427ef952c851f4a95b063cb5573"
@@ -429,15 +429,15 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "54266c94e6c1be4189bd0ab5d294943727e56e83",
-            "commit": "e39d9a240f9f19787b634c6075943f003ea562e6",
+            "blob": "159beebd36463e1dfb123d15b566bb001dba766c",
+            "commit": "7a2a39a235ef457a3f2c8c99f902779a79ab1cdc",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "d77c41b475614a02c7a682328389a3eb0fa5d9852d6d5f3e2f5765949462b6f9",
+            "rawSha256": "1aff187d0ec37e77f2e5dcdc9b7de225731d4db69db2eb4da38394f6513f1fad",
             "rawSizeBytes": 65047,
-            "semanticCanonicalSha256": "d77c41b475614a02c7a682328389a3eb0fa5d9852d6d5f3e2f5765949462b6f9",
+            "semanticCanonicalSha256": "1aff187d0ec37e77f2e5dcdc9b7de225731d4db69db2eb4da38394f6513f1fad",
             "semanticCanonicalSizeBytes": 65047,
-            "tree": "ec6f29b82e211a106a6678c41469893d7b9082ba",
+            "tree": "f4a35392a691908a9bf3409ab0fd771859a21d33",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -446,7 +446,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 65047
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "d77c41b475614a02c7a682328389a3eb0fa5d9852d6d5f3e2f5765949462b6f9"
+        "1aff187d0ec37e77f2e5dcdc9b7de225731d4db69db2eb4da38394f6513f1fad"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2524,10 +2524,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "c77395de9f733427ef952c851f4a95b063cb5573"
     )
     assert core["packageRecipeCommit"] == (
-        "9f44361649bd109f522a6610b41cb9f1def75905"
+        "953957152206c8981a2177ffec4923059971e6eb"
     )
     assert core["runtimeSourceCommit"] == (
-        "d884b1f17025847704c64d4957f87253f9bca31b"
+        "c73e43fb144b50cc7f85a71f8aeee50e28f74dd2"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
