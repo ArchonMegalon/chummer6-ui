@@ -22,6 +22,93 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
     private const string FixtureBlocker = CharacterCreationFinalizationBlockers.DraftAuthorityInvalid;
 
     [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Karma, false)]
+    [DataRow(CharacterCreationBuildMethods.Karma, true)]
+    [DataRow(CharacterCreationBuildMethods.LifeModules, false)]
+    [DataRow(CharacterCreationBuildMethods.LifeModules, true)]
+    public void Non_priority_restore_skips_unrelated_readers_but_still_loads_finalization(string method, bool scoped)
+    {
+        var overview = Overview(scoped ? LinkedOwner : null);
+        overview = overview with
+        {
+            Profile = overview.Profile with { BuildMethod = method },
+            Build = overview.Build with { BuildMethod = method }
+        };
+        var qualities = new QualitiesSpy();
+        var magic = new MagicSpy();
+        var finalization = new FinalizationSpy(new(CharacterCreationFinalizationOutcomes.Unavailable,
+            null, [CharacterCreationFinalizationBlockers.WorkspaceUnavailable]));
+
+        var state = Project(new WorkspaceOverviewStateFactory(
+            creationQualitiesService: qualities, creationMagicResonanceService: magic,
+            creationFinalizationService: finalization,
+            ownerBoundCreationQualitiesService: scoped ? qualities : null,
+            ownerBoundCreationMagicResonanceService: scoped ? magic : null,
+            ownerBoundCreationFinalizationService: scoped ? finalization : null), overview);
+
+        Assert.AreEqual(0, qualities.BoundLoads + qualities.UnboundLoads);
+        Assert.AreEqual(0, magic.BoundLoads + magic.UnboundLoads);
+        Assert.AreEqual(scoped ? 1 : 0, finalization.BoundLoads);
+        Assert.AreEqual(scoped ? 0 : 1, finalization.UnboundLoads);
+        Assert.AreEqual(overview.DisplayOwnerContext, state.DisplayOwnerContext);
+        Assert.IsNull(state.CreationQualities);
+        Assert.IsNull(state.CreationMagicResonance);
+        Assert.IsFalse(state.CreationWizard!.CanFinalize);
+    }
+
+    [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Priority, CharacterCreationBuildMethods.Priority, "sr5")]
+    [DataRow(CharacterCreationBuildMethods.SumToTen, CharacterCreationBuildMethods.SumToTen, "sr5")]
+    [DataRow(CharacterCreationBuildMethods.Karma, CharacterCreationBuildMethods.Priority, "sr5")]
+    [DataRow(CharacterCreationBuildMethods.LifeModules, CharacterCreationBuildMethods.Karma, "sr5")]
+    [DataRow("unknown", "unknown", "sr5")]
+    [DataRow(CharacterCreationBuildMethods.Karma, CharacterCreationBuildMethods.Karma, "sr6")]
+    public void Priority_or_uncertain_method_keeps_both_owner_bound_checks(string profile, string build, string ruleset)
+    {
+        var overview = Overview(LinkedOwner);
+        overview = overview with
+        {
+            Profile = overview.Profile with { BuildMethod = profile },
+            Build = overview.Build with { BuildMethod = build },
+            Document = new WorkspaceDocument(overview.Document!.Content, ruleset)
+        };
+        var qualities = new QualitiesSpy();
+        var magic = new MagicSpy();
+        var state = Project(new WorkspaceOverviewStateFactory(
+            creationQualitiesService: qualities, creationMagicResonanceService: magic,
+            ownerBoundCreationQualitiesService: qualities,
+            ownerBoundCreationMagicResonanceService: magic), overview);
+
+        Assert.AreEqual(1, qualities.BoundLoads);
+        Assert.AreEqual(1, magic.BoundLoads);
+        Assert.AreEqual(LinkedOwner, qualities.Owner);
+        Assert.AreEqual(LinkedOwner, magic.Owner);
+        Assert.AreEqual(0, qualities.UnboundLoads + magic.UnboundLoads);
+        Assert.IsFalse(state.CreationWizard!.CanFinalize);
+    }
+
+    private sealed class MagicSpy : ICharacterCreationMagicResonanceService, IOwnerBoundCharacterCreationMagicResonanceService
+    {
+        public int BoundLoads, UnboundLoads;
+        public OwnerContextStamp? Owner;
+        public CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> Load(OwnerContextStamp owner,
+            CharacterCreationMagicResonanceLoadRequest request)
+        {
+            BoundLoads++; Owner = owner;
+            return new(CharacterCreationFoundationOutcomes.Blocked, null, [CharacterCreationMagicResonanceBlockers.AuthorityUnavailable]);
+        }
+        public CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> Load(CharacterCreationMagicResonanceLoadRequest request)
+        {
+            UnboundLoads++;
+            return new(CharacterCreationFoundationOutcomes.Blocked, null, [CharacterCreationMagicResonanceBlockers.AuthorityUnavailable]);
+        }
+        public CharacterCreationFoundationResult<CharacterCreationMagicResonancePreview> Preview(CharacterCreationMagicResonancePreviewRequest request) => throw new NotSupportedException();
+        public CharacterCreationFoundationResult<CharacterCreationMagicResonanceReceipt> Confirm(CharacterCreationMagicResonanceConfirmRequest request) => throw new NotSupportedException();
+        public CharacterCreationFoundationResult<CharacterCreationMagicResonancePreview> Preview(OwnerContextStamp owner, CharacterCreationMagicResonancePreviewRequest request) => throw new NotSupportedException();
+        public CharacterCreationFoundationResult<CharacterCreationMagicResonanceReceipt> Confirm(OwnerContextStamp owner, CharacterCreationMagicResonanceConfirmRequest request) => throw new NotSupportedException();
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public void Qualities_projection_uses_loaded_owner_without_unscoped_retry(bool local)

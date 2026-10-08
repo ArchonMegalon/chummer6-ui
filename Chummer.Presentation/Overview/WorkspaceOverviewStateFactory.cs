@@ -77,10 +77,11 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterCreationContactsState? contacts = loadedOverview.Profile.Created
             ? null
             : LoadContacts(workspaceId, loadedOverview);
-        CharacterCreationQualitiesState? qualities = loadedOverview.Profile.Created
+        bool unrelatedPriorityDraft = HasUnrelatedPriorityCreationMethod(loadedOverview);
+        CharacterCreationQualitiesState? qualities = loadedOverview.Profile.Created || unrelatedPriorityDraft
             ? null
             : LoadQualities(workspaceId, loadedOverview);
-        CharacterCreationMagicResonanceState? magicResonance = loadedOverview.Profile.Created
+        CharacterCreationMagicResonanceState? magicResonance = loadedOverview.Profile.Created || unrelatedPriorityDraft
             ? null
             : LoadMagicResonance(workspaceId, loadedOverview);
         CharacterCreationLifestylesState? lifestyles = loadedOverview.Profile.Created
@@ -325,6 +326,17 @@ public sealed class WorkspaceOverviewStateFactory :
         => overview.Document?.RulesetId == RulesetDefaults.Sr5
            && overview.Profile.BuildMethod is CharacterCreationBuildMethods.Priority
                or CharacterCreationBuildMethods.SumToTen or CharacterCreationBuildMethods.Karma
+           && string.Equals(overview.Profile.BuildMethod, overview.Build.BuildMethod, StringComparison.Ordinal);
+
+    private static bool HasUnrelatedPriorityCreationMethod(WorkspaceOverviewLoadResult overview)
+        // These two readers project Priority/Sum-to-Ten drafts, not the separate
+        // Karma or Life Modules editors. Their snapshots cannot supply those
+        // methods' overview authority. Do not construct their source catalogs on
+        // restore; keep the finalizer and method-specific readers unchanged.
+        // Unknown rulesets or disagreeing method projections retain every check.
+        => overview.Document?.RulesetId == RulesetDefaults.Sr5
+           && overview.Profile.BuildMethod is CharacterCreationBuildMethods.Karma
+               or CharacterCreationBuildMethods.LifeModules
            && string.Equals(overview.Profile.BuildMethod, overview.Build.BuildMethod, StringComparison.Ordinal);
 
     private CharacterCreationFoundationState? LoadFoundation(
