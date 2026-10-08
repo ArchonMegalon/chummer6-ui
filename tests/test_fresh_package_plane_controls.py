@@ -429,15 +429,15 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "57fbaddddcb7e66210baf5d6005ab9ca88deaa9b",
-            "commit": "c919c4d0bb5ae3c4f0fac87adea0a405c08523c5",
+            "blob": "860a04d4e345f68e81df4c273d5720308defe81a",
+            "commit": "fb7b3bda60c37d9491dd9b46b1d074b34f1f4078",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "454c29e9b4daf897359139e1e89a1b9a87aac1a12078367718fe84ef2b251a6a",
+            "rawSha256": "7c94c0292d1204fedc71e0593ba44fe63470ebdaaf527bb38fdb6a700b1e04c5",
             "rawSizeBytes": 65047,
-            "semanticCanonicalSha256": "454c29e9b4daf897359139e1e89a1b9a87aac1a12078367718fe84ef2b251a6a",
+            "semanticCanonicalSha256": "7c94c0292d1204fedc71e0593ba44fe63470ebdaaf527bb38fdb6a700b1e04c5",
             "semanticCanonicalSizeBytes": 65047,
-            "tree": "0674f3658f5ed89ac2f8abbc3bff3b5fe281735e",
+            "tree": "5de0decabd4cbfd3dd79888f93fe88869fb26ad4",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -446,7 +446,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 65047
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "454c29e9b4daf897359139e1e89a1b9a87aac1a12078367718fe84ef2b251a6a"
+        "7c94c0292d1204fedc71e0593ba44fe63470ebdaaf527bb38fdb6a700b1e04c5"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2201,7 +2201,7 @@ def test_new_runner_method_regression_is_a_bound_package_consumer_input() -> Non
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == "CreationWizard/NewRunnerBuildMethodTests.cs"
     package_plane.validate_test_compile_items(REPO_ROOT)
     assert (REPO_ROOT / relative).read_text(encoding="utf-8").count("[DataRow(") == 9
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 781
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 791
 
 
 def test_checked_in_locks_are_exact_retained_bytes_or_current_sealed_authority() -> None:
@@ -2311,7 +2311,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
         assert (REPO_ROOT / source).is_file()
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 781
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 791
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -2881,7 +2881,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 781' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 791' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
@@ -3035,7 +3035,7 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         ("RestartSafeWorkspacePersistenceTests", "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs", 1),
     )
     assert package_plane.FOCUSED_EXISTING_OWNER_REGRESSION_TESTS == expected + (
-        ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 27),
+        ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 37),
     )
     package_plane.validate_test_compile_items(REPO_ROOT)
     for test_class, relative, minimum in expected:
@@ -3044,7 +3044,7 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
     assert sum(minimum for _, _, minimum in expected) == 216
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 27 + 4
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 37 + 4
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
         ("Chummer.Tests/Presentation/ShellPresenterTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
@@ -3082,12 +3082,12 @@ def test_existing_owner_regressions_execute_each_class_against_same_built_assemb
 
 def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source() -> None:
     relative = "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs"
-    expected = ("WorkspaceOverviewFinalizationOwnerTests", relative, 27)
+    expected = ("WorkspaceOverviewFinalizationOwnerTests", relative, 37)
     assert [row for row in package_plane.FOCUSED_EXISTING_OWNER_REGRESSION_TESTS
             if row[0] == expected[0] or row[1] == relative] == [expected]
-    assert static_mstest_case_count(relative) == 27
-    # Retain the finalization cases and the seven later adoption/roster cases.
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 27 + 7
+    assert static_mstest_case_count(relative) == 37
+    # Retain finalization/restore routing and the seven later adoption/roster cases.
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 37 + 7
     assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 129
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
@@ -3156,8 +3156,8 @@ def test_finalization_owner_focused_execution_fails_closed_before_publishing_met
         assert cwd == assembly.parent and environment == {}
         if in_target():
             calls.append("run")
-            assert minimum == 27 and namespace["test_file"] == target_source
-            observed = {"missing-tests": 0, "short-tests": 26}.get(failure, 27)
+            assert minimum == 37 and namespace["test_file"] == target_source
+            observed = {"missing-tests": 0, "short-tests": 36}.get(failure, 37)
             if observed < minimum or failure == "runner":
                 raise package_plane.VerificationError("focused runner failed")
 
@@ -3171,7 +3171,7 @@ def test_finalization_owner_focused_execution_fails_closed_before_publishing_met
         assert calls == ["content", "assembly", "run", "assembly", "content"]
         actual = [row for row in namespace["focused_existing_owner_executions"] if row["filter"] == target_filter]
         assert actual == [{"coreProjectionContent": {"digest": "verified"}, "filter": target_filter,
-            "minimumExpectedTests": 27, "project": package_plane.EXPECTED_TEST_PROJECTS[0],
+            "minimumExpectedTests": 37, "project": package_plane.EXPECTED_TEST_PROJECTS[0],
             "reuseFullSuiteBuild": True, "runner": "direct-exact-assembly", "sdkVersion": "10.0.103",
             "sourceFiles": [target_source], "testAssembly": {"digest": "exact"}}]
     else:
