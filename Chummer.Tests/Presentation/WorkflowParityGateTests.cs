@@ -1103,7 +1103,8 @@ public sealed class WorkflowParityGateTests
                 DesktopPreferenceState.Default.CharacterPriority,
                 ("Priority", "Priority"),
                 ("SumToTen", "Sum-to-Ten"),
-                ("Karma", "Karma")),
+                ("Karma", "Karma"),
+                ("LifeModule", "Life Modules")),
 
             ("dialog.character_settings", _, _) => ResolveCharacterSettingsSelectContract(fieldId),
 

@@ -42,19 +42,19 @@ public sealed class DesktopShellOriginDialogTests
         Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
 
         await cut.Find("select[data-field-id='newCharacterOriginBuildPreference']")
-            .ChangeAsync(new ChangeEventArgs { Value = "Karma" });
+            .ChangeAsync(new ChangeEventArgs { Value = "LifeModule" });
 
         cut.WaitForAssertion(() =>
         {
             Assert.AreEqual("true", cut.Find("[data-origin-advanced-toggle]").GetAttribute("aria-expanded"));
             Assert.IsFalse(cut.Find("[data-origin-advanced-content]").HasAttribute("hidden"));
             Assert.AreEqual(
-                "Karma",
+                "LifeModule",
                 cut.Find("select[data-field-id='newCharacterOriginBuildPreference']").GetAttribute("value"));
         });
 
         Assert.AreEqual("newCharacterOriginBuildPreference", presenter.UpdatedDialogFieldId);
-        Assert.AreEqual("Karma", presenter.UpdatedDialogFieldValue);
+        Assert.AreEqual("LifeModule", presenter.UpdatedDialogFieldValue);
         Assert.IsTrue(
             context.JSInterop.Invocations.Any(invocation => string.Equals(invocation.Identifier, "chummerDialogs.captureDialogScroll", StringComparison.Ordinal)),
             "The live DesktopShell select path should capture dialog scroll before the origin dialog refreshes.");
