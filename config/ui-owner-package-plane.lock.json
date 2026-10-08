@@ -1,9 +1,9 @@
 {
   "contract": "chummer6-ui.owner-package-plane-lock/v1",
   "dependencyAuthorityCacheKey": "c4dd1ae7482730ced0ff95264b63b9112cfb411a58b6a44654a0feeb3cf9e968",
-  "packageRecipeCommit": "8dd1e741fc0ea79bc5f641194c3784177833896e",
+  "packageRecipeCommit": "22c893a707ad2cdb50344b3212404ee65237912c",
   "packageRecipePath": "scripts/ai/verify_fresh_checkout_package_plane.py",
-  "packageRecipeSha256": "0b8cf54c929103ebe33e9734b7de4aaf6c95bccdca233370babed65ac6b5d379",
+  "packageRecipeSha256": "a05c23938128f9d8d9f9016dad8d81593302c70839efe2b7d750282d74f995cb",
   "packages": [
     {
       "dependencies": {
