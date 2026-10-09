@@ -24,6 +24,105 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
+    public void Foundation_overview_shares_original_owner_and_preserves_the_full_projection(bool local)
+    {
+        var overview = LifeOverview(local ? new(OwnerScope.LocalSingleUser, "local-issuer", 4) : LinkedOwner);
+        var foundation = FoundationProjection(overview);
+        var reader = new FoundationOverviewSpy(BlockedOverview(overview) with { Foundation = foundation });
+        var priority = new OverviewSpy(null);
+        var state = Project(SharedFactory(priority, reader), overview);
+        Assert.AreSame(foundation.Value, state.CreationFoundation);
+        Assert.AreEqual(1, reader.OverviewLoads);
+        Assert.AreEqual(overview.DisplayOwnerContext, reader.Owner);
+        Assert.AreEqual(WorkspaceId, reader.Workspace);
+        Assert.IsFalse(reader.IncludePriorityDrafts);
+        Assert.AreEqual(0, priority.OverviewLoads + priority.BoundLoads + priority.UnboundLoads);
+    }
+
+    [TestMethod]
+    [DataRow("denied")]
+    [DataRow("exception")]
+    [DataRow("missing-foundation")]
+    public void Foundation_overview_failure_does_not_retry_an_individual_or_priority_reader(string failure)
+    {
+        var overview = LifeOverview(LinkedOwner);
+        var reader = new FoundationOverviewSpy(failure == "missing-foundation" ? BlockedOverview(overview) : null)
+            { ThrowOnOverview = failure == "exception" };
+        var priority = new OverviewSpy(BlockedOverview(overview));
+        if (failure == "exception")
+            Assert.ThrowsExactly<InvalidOperationException>(() => Project(SharedFactory(priority, reader), overview));
+        else
+            Assert.IsNull(Project(SharedFactory(priority, reader), overview).CreationFoundation);
+        Assert.AreEqual(1, reader.OverviewLoads);
+        Assert.AreEqual(0, priority.OverviewLoads + priority.BoundLoads + priority.UnboundLoads);
+    }
+
+    [TestMethod]
+    [DataRow("workspace")]
+    [DataRow("revision")]
+    [DataRow("saved-revision")]
+    [DataRow("raw-digest")]
+    [DataRow("blockers")]
+    public void Foundation_overview_does_not_accept_a_different_display_binding(string mismatch)
+    {
+        var overview = LifeOverview(LinkedOwner);
+        var response = FoundationProjection(overview);
+        var valid = response.Value!;
+        var invalid = valid with { Binding = mismatch switch
+        {
+            "workspace" => valid.Binding with { WorkspaceId = new("other-runner") },
+            "revision" => valid.Binding with { ContentRevision = valid.Binding.ContentRevision + 1 },
+            "saved-revision" => valid.Binding with { SavedRevision = valid.Binding.SavedRevision + 1 },
+            "raw-digest" => valid.Binding with { RawCharacterXmlDigest = Digest("other bytes") },
+            _ => valid.Binding
+        }};
+        response = response with { Value = invalid,
+            Blockers = mismatch == "blockers" ? [] : response.Blockers };
+        var reader = new FoundationOverviewSpy(BlockedOverview(overview) with { Foundation = response });
+        Assert.IsNull(Project(SharedFactory(new OverviewSpy(null), reader), overview).CreationFoundation);
+        Assert.AreEqual(1, reader.OverviewLoads);
+    }
+
+    [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Priority)]
+    [DataRow(CharacterCreationBuildMethods.SumToTen)]
+    [DataRow(CharacterCreationBuildMethods.Karma)]
+    public void Non_foundation_methods_do_not_load_the_life_modules_catalog(string method)
+    {
+        var overview = Overview(LinkedOwner);
+        overview = overview with { Profile = overview.Profile with { BuildMethod = method },
+            Build = overview.Build with { BuildMethod = method } };
+        var foundation = new FoundationOverviewSpy(null);
+        var priority = new OverviewSpy(BlockedOverview(overview));
+        Assert.IsNull(Project(SharedFactory(priority, foundation), overview).CreationFoundation);
+        Assert.AreEqual(0, foundation.OverviewLoads);
+        Assert.AreEqual(1, priority.OverviewLoads);
+    }
+
+    private static WorkspaceOverviewLoadResult LifeOverview(OwnerContextStamp owner)
+    {
+        var result = Overview(owner);
+        return result with { Profile = result.Profile with { BuildMethod = CharacterCreationBuildMethods.LifeModules },
+            Build = result.Build with { BuildMethod = CharacterCreationBuildMethods.LifeModules } };
+    }
+
+    private static CharacterCreationFoundationResult<CharacterCreationFoundationState> FoundationProjection(
+        WorkspaceOverviewLoadResult overview)
+    {
+        string[] blockers = [CharacterCreationFoundationBlockers.MetatypeCatalogAuthorityRequired];
+        var binding = new CharacterCreationFoundationBinding(WorkspaceId, overview.ContentRevision, overview.SavedRevision,
+            Digest(overview.Document!.Content), CharacterCreationFoundationDigestSemantics.RawCharacterXmlSha256,
+            Digest("test-only source"), CharacterCreationFoundationDigestSemantics.RawSourceInputsSha256, false, ["RF"]);
+        return new(CharacterCreationFoundationOutcomes.Success,
+            new(CharacterCreationFoundationSchemas.SnapshotV1, binding, overview.Document.RulesetId,
+                overview.Profile.Metatype, CharacterCreationBuildMethods.LifeModules, false, [], [],
+                new(CharacterCreationBudgetIds.LifeModules, "Life Modules", 750m, 0m, 750m, true, [], "karma"),
+                null, CharacterCreationFoundationResumeStatuses.AuthorityRequired, blockers, Digest("test-only snapshot")), blockers);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
     public void Shared_overview_uses_original_owner_once_and_keeps_projection_validation(bool local)
     {
         var overview = Overview(local ? new(OwnerScope.LocalSingleUser, "local-issuer", 4) : LinkedOwner);
@@ -124,7 +223,10 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
         new(CharacterCreationLifestyleOutcomes.Unavailable, null, [CharacterCreationLifestylesBlockers.PersistenceAuthorityRequired]),
         BlockedProjection(overview));
 
-    private static WorkspaceOverviewStateFactory SharedFactory(OverviewSpy reader) => new(
+    private static WorkspaceOverviewStateFactory SharedFactory(OverviewSpy reader,
+        IOwnerBoundCharacterCreationLifeModuleFinalizationService? foundation = null) => new(
+        creationFoundationService: foundation is null ? null : NeverRead<ICharacterCreationFoundationService>(),
+        ownerBoundFoundationReader: foundation,
         creationFinalizationService: reader,
         ownerBoundCreationFinalizationService: reader,
         ownerBoundCreationContactsService: NeverRead<IOwnerBoundCharacterCreationContactsService>(),
@@ -139,7 +241,7 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
             => throw new AssertFailedException("Shared read retried an individual reader: " + method?.Name);
     }
 
-    private sealed class OverviewSpy(CharacterCreationOverviewRead? response)
+    private class OverviewSpy(CharacterCreationOverviewRead? response)
         : FinalizationSpy(response?.Finalization ?? new(CharacterCreationFinalizationOutcomes.Unavailable,
             null, [CharacterCreationFinalizationBlockers.WorkspaceUnavailable])), IOwnerBoundCharacterCreationOverviewReader
     {
@@ -154,6 +256,20 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
             if (ThrowOnOverview) throw new InvalidOperationException("Test-only shared read failure.");
             return response;
         }
+    }
+
+    private sealed class FoundationOverviewSpy(CharacterCreationOverviewRead? response)
+        : OverviewSpy(response), IOwnerBoundCharacterCreationLifeModuleFinalizationService
+    {
+        public CharacterCreationFoundationResult<CharacterCreationFoundationState> Load(
+            OwnerContextStamp owner, CharacterWorkspaceId workspace)
+            => throw new AssertFailedException("Foundation must come from the same shared read.");
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationPreview> Preview(
+            OwnerContextStamp owner, CharacterCreationFoundationFinalizationPreviewRequest request)
+            => throw new AssertFailedException("A display read must not preview a mutation.");
+        public CharacterCreationFoundationResult<CharacterCreationFoundationFinalizationReceipt> Confirm(
+            OwnerContextStamp owner, CharacterCreationFoundationFinalizationConfirmRequest request)
+            => throw new AssertFailedException("A display read must not commit a mutation.");
     }
 
     [TestMethod]

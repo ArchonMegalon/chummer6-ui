@@ -70,17 +70,18 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview)
     {
-        CharacterCreationFoundationState? foundation = loadedOverview.Profile.Created
-            || HasUnrelatedCreationMethod(loadedOverview)
-            ? null
-            : LoadFoundation(workspaceId, loadedOverview);
+        bool needsFoundation = !loadedOverview.Profile.Created && !HasUnrelatedCreationMethod(loadedOverview);
         bool unrelatedPriorityDraft = HasUnrelatedPriorityCreationMethod(loadedOverview);
         // Share only a complete owner-bound composition. A denied shared read
         // must not retry through independent readers or an ambient local owner.
-        var overviewReader = _ownerBoundCreationFinalizationService as IOwnerBoundCharacterCreationOverviewReader;
+        var foundationOverviewReader = needsFoundation
+            ? _ownerBoundFoundationReader as IOwnerBoundCharacterCreationOverviewReader : null;
+        var overviewReader = foundationOverviewReader
+            ?? _ownerBoundCreationFinalizationService as IOwnerBoundCharacterCreationOverviewReader;
         bool useSharedRead = !loadedOverview.Profile.Created
             && loadedOverview.DisplayOwnerContext is { IsValid: true }
             && overviewReader is not null
+            && _ownerBoundCreationFinalizationService is not null
             && _ownerBoundCreationContactsService is not null
             && _ownerBoundCreationQualitiesService is not null
             && _ownerBoundCreationMagicResonanceService is not null
@@ -89,6 +90,10 @@ public sealed class WorkspaceOverviewStateFactory :
             ? overviewReader!.LoadOverview(loadedOverview.DisplayOwnerContext!.Value,
                 workspaceId, includePriorityDrafts: !unrelatedPriorityDraft)
             : null;
+        CharacterCreationFoundationState? foundation = !needsFoundation ? null
+            : useSharedRead && foundationOverviewReader is not null
+                ? SelectFoundation(workspaceId, loadedOverview, shared?.Foundation)
+                : LoadFoundation(workspaceId, loadedOverview);
         CharacterCreationContactsState? contacts = loadedOverview.Profile.Created
             ? null
             : useSharedRead ? SelectContacts(workspaceId, loadedOverview, shared?.Contacts)
@@ -368,6 +373,13 @@ public sealed class WorkspaceOverviewStateFactory :
                 ? _ownerBoundFoundationReader.Load(owner, workspaceId)
                 : loadedOverview.DisplayOwnerContext is null or { Owner.IsLocalSingleUser: true }
                     ? _creationFoundationService?.Load(new CharacterCreationFoundationLoadRequest(workspaceId)) : null;
+        return SelectFoundation(workspaceId, loadedOverview, result);
+    }
+
+    private static CharacterCreationFoundationState? SelectFoundation(
+        CharacterWorkspaceId workspaceId, WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFoundationResult<CharacterCreationFoundationState>? result)
+    {
         if (result is null)
             return null;
         return result.Outcome == CharacterCreationFoundationOutcomes.Success
