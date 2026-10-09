@@ -676,9 +676,14 @@ public sealed class CharacterCreationWizardPresentationTests
         Assert.AreEqual("dialog.new_character.life_modules_wizard_blocked", dialog.Id);
         Assert.AreNotEqual("dialog.new_character.karma_workflow", dialog.Id);
         Assert.AreEqual(
+            CharacterCreationBuildMethods.LifeModules,
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual(
             CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterLifeModulesWizardBlocker"));
         Assert.IsFalse(dialog.Fields.Any(field => field.Id.Contains("Karma", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(dialog.Fields.All(field => field.IsReadOnly));
+        CollectionAssert.AreEqual(new[] { "cancel" }, dialog.Actions.Select(action => action.Id).ToArray());
     }
 
     [TestMethod]
