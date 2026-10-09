@@ -165,7 +165,7 @@
       "Chummer.Presentation/Shell/ShellPresenter.cs": "04553e3dc061814a6d83d68fc6610ced8038586c724580f773561150c817b1a1",
       "Chummer.Presentation/Shell/ShellState.cs": "bb96667558863383ab9c31959725a08c0c3e60ad12e5277b8d5ca034f393311a",
       "Chummer.Presentation/Shell/ShellWorkspaceContextSynchronization.cs": "ae77eab6a3ad122e2b4005fc722c1e69b71ae164e9d87b96856e5611502704d4",
-      "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj": "bb2d9bbc9217d20495789be9f58b7ba88a9c74a0272d823c5db3b9a29216f2e8",
+      "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj": "a835322b8910055669dfb6d7822f07ac821d447565b7e8c006300ef44b268044",
       "Chummer.Product.UnitTests/CreationWizardCoreProjectionTests.cs": "ea3b652f6f206e4c263807e091ae5ba77591889daa3c396bb4302bf67fe57c69",
       "Chummer.Product.UnitTests/DesktopUpdateArtifactTests.cs": "f4bb5312f979860e5f146b58ac01f273b5726c4c69ef913fb2121b8aa3d5daaf",
       "Chummer.Tests/DesktopCrashRuntimeTests.cs": "465265c02dbcb9d6ee1b7530eb42a8919a411911913ad76f3deaf489f76a40f0",
