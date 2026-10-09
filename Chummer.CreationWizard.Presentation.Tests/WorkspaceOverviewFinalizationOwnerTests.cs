@@ -22,6 +22,141 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
     private const string FixtureBlocker = CharacterCreationFinalizationBlockers.DraftAuthorityInvalid;
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Shared_overview_uses_original_owner_once_and_keeps_projection_validation(bool local)
+    {
+        var overview = Overview(local ? new(OwnerScope.LocalSingleUser, "local-issuer", 4) : LinkedOwner);
+        var response = BlockedOverview(overview);
+        var reader = new OverviewSpy(response);
+        var state = Project(SharedFactory(reader), overview);
+        Assert.AreEqual(1, reader.OverviewLoads);
+        Assert.AreEqual(0, reader.BoundLoads + reader.UnboundLoads);
+        Assert.AreEqual(overview.DisplayOwnerContext, reader.Owner);
+        Assert.AreEqual(WorkspaceId, reader.Workspace);
+        Assert.IsTrue(reader.IncludePriorityDrafts);
+        Assert.AreSame(response.Finalization.Value, state.CreationFinalization);
+        Assert.IsFalse(state.CreationWizard!.CanFinalize);
+        Assert.IsNull(state.CreationContacts);
+        Assert.IsNull(state.CreationQualities);
+        Assert.IsNull(state.CreationMagicResonance);
+        Assert.IsNull(state.CreationLifestyles);
+    }
+
+    [TestMethod]
+    [DataRow(CharacterCreationBuildMethods.Karma)]
+    [DataRow(CharacterCreationBuildMethods.LifeModules)]
+    public void Shared_overview_keeps_method_specific_priority_exclusion(string method)
+    {
+        var overview = Overview(LinkedOwner);
+        overview = overview with
+        {
+            Profile = overview.Profile with { BuildMethod = method },
+            Build = overview.Build with { BuildMethod = method }
+        };
+        var reader = new OverviewSpy(BlockedOverview(overview));
+        var state = Project(SharedFactory(reader), overview);
+        Assert.AreEqual(1, reader.OverviewLoads);
+        Assert.IsFalse(reader.IncludePriorityDrafts);
+        Assert.IsNull(state.CreationQualities);
+        Assert.IsNull(state.CreationMagicResonance);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Shared_overview_rejection_or_exception_never_retries_individual_readers(bool throws)
+    {
+        var reader = new OverviewSpy(null) { ThrowOnOverview = throws };
+        if (throws)
+            Assert.ThrowsExactly<InvalidOperationException>(() => Project(SharedFactory(reader), Overview(LinkedOwner)));
+        else
+        {
+            var state = Project(SharedFactory(reader), Overview(LinkedOwner));
+            Assert.IsNull(state.CreationFinalization);
+            Assert.IsFalse(state.CreationWizard!.CanFinalize);
+        }
+        Assert.AreEqual(1, reader.OverviewLoads);
+        Assert.AreEqual(0, reader.BoundLoads + reader.UnboundLoads);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Shared_overview_rejects_revision_or_snapshot_mismatch(bool snapshot)
+    {
+        var overview = Overview(LinkedOwner);
+        var response = BlockedOverview(overview);
+        var valid = response.Finalization.Value!;
+        var invalid = snapshot ? valid with { SnapshotDigest = Digest("different snapshot") }
+            : Seal(valid with { Binding = valid.Binding with { ContentRevision = valid.Binding.ContentRevision + 1 } });
+        var reader = new OverviewSpy(response with { Finalization = response.Finalization with { Value = invalid } });
+        var state = Project(SharedFactory(reader), overview);
+        Assert.AreEqual(1, reader.OverviewLoads);
+        Assert.IsNull(state.CreationFinalization);
+        Assert.IsFalse(state.CreationWizard!.CanFinalize);
+    }
+
+    [TestMethod]
+    public void Shared_overview_is_not_used_for_invalid_owner_or_created_runner()
+    {
+        var reader = new OverviewSpy(null);
+        Project(SharedFactory(reader), Overview(default(OwnerContextStamp)));
+        var overview = Overview(LinkedOwner);
+        Project(SharedFactory(reader), overview with { Profile = overview.Profile with { Created = true } });
+        Assert.AreEqual(0, reader.OverviewLoads + reader.BoundLoads + reader.UnboundLoads);
+    }
+
+    [TestMethod]
+    public void Shared_overview_does_not_expand_partial_service_composition()
+    {
+        var overview = Overview(LinkedOwner);
+        var reader = new OverviewSpy(BlockedOverview(overview));
+        Project(new WorkspaceOverviewStateFactory(ownerBoundCreationFinalizationService: reader), overview);
+        Assert.AreEqual(0, reader.OverviewLoads);
+        Assert.AreEqual(1, reader.BoundLoads);
+    }
+
+    private static CharacterCreationOverviewRead BlockedOverview(WorkspaceOverviewLoadResult overview) => new(
+        new(CharacterCreationContactOutcomes.Unavailable, null, [CharacterCreationContactsBlockers.PersistenceAuthorityRequired]),
+        new(CharacterCreationFoundationOutcomes.Blocked, null, [CharacterCreationQualitiesBlockers.RevisionConflict]),
+        new(CharacterCreationFoundationOutcomes.Blocked, null, [CharacterCreationMagicResonanceBlockers.AuthorityUnavailable]),
+        new(CharacterCreationLifestyleOutcomes.Unavailable, null, [CharacterCreationLifestylesBlockers.PersistenceAuthorityRequired]),
+        BlockedProjection(overview));
+
+    private static WorkspaceOverviewStateFactory SharedFactory(OverviewSpy reader) => new(
+        creationFinalizationService: reader,
+        ownerBoundCreationFinalizationService: reader,
+        ownerBoundCreationContactsService: NeverRead<IOwnerBoundCharacterCreationContactsService>(),
+        ownerBoundCreationQualitiesService: NeverRead<IOwnerBoundCharacterCreationQualitiesService>(),
+        ownerBoundCreationMagicResonanceService: NeverRead<IOwnerBoundCharacterCreationMagicResonanceService>(),
+        ownerBoundCreationLifestylesReader: NeverRead<IOwnerBoundCharacterCreationLifestylesReader>());
+
+    private static T NeverRead<T>() where T : class => System.Reflection.DispatchProxy.Create<T, UnexpectedReadProxy>();
+    public class UnexpectedReadProxy : System.Reflection.DispatchProxy
+    {
+        protected override object? Invoke(System.Reflection.MethodInfo? method, object?[]? args)
+            => throw new AssertFailedException("Shared read retried an individual reader: " + method?.Name);
+    }
+
+    private sealed class OverviewSpy(CharacterCreationOverviewRead? response)
+        : FinalizationSpy(response?.Finalization ?? new(CharacterCreationFinalizationOutcomes.Unavailable,
+            null, [CharacterCreationFinalizationBlockers.WorkspaceUnavailable])), IOwnerBoundCharacterCreationOverviewReader
+    {
+        public int OverviewLoads;
+        public OwnerContextStamp? Owner;
+        public CharacterWorkspaceId? Workspace;
+        public bool IncludePriorityDrafts;
+        public bool ThrowOnOverview { get; init; }
+        public CharacterCreationOverviewRead? LoadOverview(OwnerContextStamp owner, CharacterWorkspaceId workspace, bool includePriorityDrafts)
+        {
+            OverviewLoads++; Owner = owner; Workspace = workspace; IncludePriorityDrafts = includePriorityDrafts;
+            if (ThrowOnOverview) throw new InvalidOperationException("Test-only shared read failure.");
+            return response;
+        }
+    }
+
+    [TestMethod]
     [DataRow(CharacterCreationBuildMethods.Karma, false)]
     [DataRow(CharacterCreationBuildMethods.Karma, true)]
     [DataRow(CharacterCreationBuildMethods.LifeModules, false)]
@@ -381,7 +516,7 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
     private static CharacterCreationFinalizationState Seal(CharacterCreationFinalizationState state)
         => state with { SnapshotDigest = CharacterCreationFinalizationDigest.Compute(state with { SnapshotDigest = string.Empty }) };
 
-    private sealed class FinalizationSpy(CharacterCreationFinalizationResult<CharacterCreationFinalizationState> response)
+    private class FinalizationSpy(CharacterCreationFinalizationResult<CharacterCreationFinalizationState> response)
         : ICharacterCreationFinalizationService, IOwnerBoundCharacterCreationFinalizationService
     {
         public int BoundLoads { get; private set; }

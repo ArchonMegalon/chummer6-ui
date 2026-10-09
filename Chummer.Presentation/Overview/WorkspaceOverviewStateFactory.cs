@@ -74,22 +74,41 @@ public sealed class WorkspaceOverviewStateFactory :
             || HasUnrelatedCreationMethod(loadedOverview)
             ? null
             : LoadFoundation(workspaceId, loadedOverview);
+        bool unrelatedPriorityDraft = HasUnrelatedPriorityCreationMethod(loadedOverview);
+        // Share only a complete owner-bound composition. A denied shared read
+        // must not retry through independent readers or an ambient local owner.
+        var overviewReader = _ownerBoundCreationFinalizationService as IOwnerBoundCharacterCreationOverviewReader;
+        bool useSharedRead = !loadedOverview.Profile.Created
+            && loadedOverview.DisplayOwnerContext is { IsValid: true }
+            && overviewReader is not null
+            && _ownerBoundCreationContactsService is not null
+            && _ownerBoundCreationQualitiesService is not null
+            && _ownerBoundCreationMagicResonanceService is not null
+            && _ownerBoundCreationLifestylesReader is not null;
+        CharacterCreationOverviewRead? shared = useSharedRead
+            ? overviewReader!.LoadOverview(loadedOverview.DisplayOwnerContext!.Value,
+                workspaceId, includePriorityDrafts: !unrelatedPriorityDraft)
+            : null;
         CharacterCreationContactsState? contacts = loadedOverview.Profile.Created
             ? null
+            : useSharedRead ? SelectContacts(workspaceId, loadedOverview, shared?.Contacts)
             : LoadContacts(workspaceId, loadedOverview);
-        bool unrelatedPriorityDraft = HasUnrelatedPriorityCreationMethod(loadedOverview);
         CharacterCreationQualitiesState? qualities = loadedOverview.Profile.Created || unrelatedPriorityDraft
             ? null
+            : useSharedRead ? SelectQualities(workspaceId, loadedOverview, shared?.Qualities)
             : LoadQualities(workspaceId, loadedOverview);
         CharacterCreationMagicResonanceState? magicResonance = loadedOverview.Profile.Created || unrelatedPriorityDraft
             ? null
+            : useSharedRead ? SelectMagicResonance(workspaceId, loadedOverview, shared?.MagicResonance)
             : LoadMagicResonance(workspaceId, loadedOverview);
         CharacterCreationLifestylesState? lifestyles = loadedOverview.Profile.Created
             ? null
+            : useSharedRead ? SelectLifestyles(workspaceId, loadedOverview, shared?.Lifestyles)
             : LoadLifestyles(workspaceId, loadedOverview);
         CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization =
             loadedOverview.Profile.Created
                 ? null
+                : useSharedRead ? SelectFinalization(workspaceId, loadedOverview, shared?.Finalization)
                 : LoadFinalization(workspaceId, loadedOverview);
         CharacterCreationMagicResonanceEditorState? magicResonanceEditor =
             CharacterCreationMagicResonanceWorkflow.TryProject(
@@ -284,8 +303,8 @@ public sealed class WorkspaceOverviewStateFactory :
     private static CharacterCreationMagicResonanceState? SelectMagicResonance(
         CharacterWorkspaceId workspaceId,
         WorkspaceOverviewLoadResult loadedOverview,
-        CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> result)
-        => result.Outcome == CharacterCreationFoundationOutcomes.Success
+        CharacterCreationFoundationResult<CharacterCreationMagicResonanceState>? result)
+        => result is not null && result.Outcome == CharacterCreationFoundationOutcomes.Success
            && result.Value is CharacterCreationMagicResonanceState state
            && BlockersMatch(result.Blockers, state.Blockers)
            && CharacterCreationWizardProjector.MatchesLoadedOverview(
@@ -375,6 +394,13 @@ public sealed class WorkspaceOverviewStateFactory :
                 ? _ownerBoundCreationContactsService?.Load(original, request)
                 : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationContactsService is null
                     ? _creationContactsService?.Load(request) : null;
+        return SelectContacts(workspaceId, loadedOverview, result);
+    }
+
+    private static CharacterCreationContactsState? SelectContacts(
+        CharacterWorkspaceId workspaceId, WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationContactResult<CharacterCreationContactsState>? result)
+    {
         if (result is null)
             return null;
         return result.Outcome == CharacterCreationContactOutcomes.Available
@@ -401,6 +427,13 @@ public sealed class WorkspaceOverviewStateFactory :
                 ? _ownerBoundCreationQualitiesService?.Load(original, request)
                 : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationQualitiesService is null
                     ? _creationQualitiesService?.Load(request) : null;
+        return SelectQualities(workspaceId, loadedOverview, result);
+    }
+
+    private static CharacterCreationQualitiesState? SelectQualities(
+        CharacterWorkspaceId workspaceId, WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFoundationResult<CharacterCreationQualitiesState>? result)
+    {
         if (result is null)
             return null;
         return result.Outcome == CharacterCreationFoundationOutcomes.Success
@@ -427,17 +460,7 @@ public sealed class WorkspaceOverviewStateFactory :
                 ? _ownerBoundCreationMagicResonanceService?.Load(original, request)
                 : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationMagicResonanceService is null
                     ? _creationMagicResonanceService?.Load(request) : null;
-        if (result is null)
-            return null;
-        return result.Outcome == CharacterCreationFoundationOutcomes.Success
-               && result.Value is CharacterCreationMagicResonanceState state
-               && BlockersMatch(result.Blockers, state.Blockers)
-               && CharacterCreationWizardProjector.MatchesLoadedOverview(
-                   workspaceId,
-                   loadedOverview,
-                   state)
-            ? state
-            : null;
+        return SelectMagicResonance(workspaceId, loadedOverview, result);
     }
 
     private CharacterCreationLifestylesState? LoadLifestyles(
@@ -453,6 +476,13 @@ public sealed class WorkspaceOverviewStateFactory :
                 ? _ownerBoundCreationLifestylesReader?.Load(original, request)
                 : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationLifestylesReader is null
                     ? _creationLifestylesService?.Load(request) : null;
+        return SelectLifestyles(workspaceId, loadedOverview, result);
+    }
+
+    private static CharacterCreationLifestylesState? SelectLifestyles(
+        CharacterWorkspaceId workspaceId, WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationLifestyleResult<CharacterCreationLifestylesState>? result)
+    {
         if (result is null)
             return null;
         return result.Outcome == CharacterCreationLifestyleOutcomes.Available
@@ -479,6 +509,13 @@ public sealed class WorkspaceOverviewStateFactory :
                 ? _ownerBoundCreationFinalizationService?.Load(original, request)
                 : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationFinalizationService is null
                     ? _creationFinalizationService?.Load(request) : null;
+        return SelectFinalization(workspaceId, loadedOverview, result);
+    }
+
+    private static CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? SelectFinalization(
+        CharacterWorkspaceId workspaceId, WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? result)
+    {
         if (result is null)
             return null;
         return CharacterCreationWizardProjector.MatchesLoadedOverview(
