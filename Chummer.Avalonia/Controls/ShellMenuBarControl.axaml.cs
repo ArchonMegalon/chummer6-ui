@@ -1,3 +1,5 @@
+using System.Text;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -10,6 +12,8 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
 {
     private readonly MenuItem[] _rootMenuItems;
     private readonly Dictionary<string, IReadOnlyList<MenuCommandItem>> _commandsByMenuId = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _knownMenuIds = new(StringComparer.Ordinal);
+    private string? _lastAppliedSignature;
     private string? _openMenuId;
     private bool _isBusy;
 
@@ -25,6 +29,10 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
             WindowsMenuButton,
             HelpMenuButton
         ];
+        foreach (MenuItem rootMenuItem in _rootMenuItems)
+        {
+            rootMenuItem.PropertyChanged += RootMenuItem_OnPropertyChanged;
+        }
         ApplyLocalization();
     }
 
@@ -48,24 +56,44 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
         bool isBusy,
         IReadOnlyDictionary<string, IReadOnlyList<MenuCommandItem>>? menuCommandsByMenuId = null)
     {
-        _openMenuId = openMenuId;
-        _isBusy = isBusy;
-        _commandsByMenuId.Clear();
-
+        Dictionary<string, IReadOnlyList<MenuCommandItem>> mergedCommands = new(StringComparer.Ordinal);
         if (menuCommandsByMenuId is not null)
         {
             foreach ((string menuId, IReadOnlyList<MenuCommandItem> commands) in menuCommandsByMenuId)
             {
-                _commandsByMenuId[menuId] = commands;
+                mergedCommands[menuId] = commands;
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(openMenuId) && !_commandsByMenuId.ContainsKey(openMenuId))
+        if (!string.IsNullOrWhiteSpace(openMenuId) && !mergedCommands.ContainsKey(openMenuId))
         {
-            _commandsByMenuId[openMenuId] = openMenuCommands.ToArray();
+            mergedCommands[openMenuId] = openMenuCommands.ToArray();
         }
 
         HashSet<string> knownMenus = knownMenuIds.ToHashSet(StringComparer.Ordinal);
+
+        // Rebuilding a root MenuItem's Items while its submenu popup is open detaches the
+        // MenuItems the user is looking at (and may be pressing), which swallows the click.
+        // A root click fires MenuSelected up to three times (PointerPressed, Click,
+        // SubmenuOpened); each round-trip used to land here and tear the open popup down
+        // mid-gesture. Identical state pushes must therefore rebuild nothing, and content
+        // that genuinely changed is deferred for open submenus until the submenu closes.
+        string signature = BuildStateSignature(openMenuId, knownMenus, isBusy, mergedCommands);
+        if (string.Equals(signature, _lastAppliedSignature, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _lastAppliedSignature = signature;
+        _openMenuId = openMenuId;
+        _isBusy = isBusy;
+        _knownMenuIds.Clear();
+        _knownMenuIds.UnionWith(knownMenus);
+        _commandsByMenuId.Clear();
+        foreach ((string menuId, IReadOnlyList<MenuCommandItem> commands) in mergedCommands)
+        {
+            _commandsByMenuId[menuId] = commands;
+        }
 
         foreach (MenuItem button in _rootMenuItems)
         {
@@ -77,9 +105,24 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
             button.IsVisible = known;
             button.IsEnabled = known && hasCommands;
             button.Classes.Set("active-menu", active);
-            RebuildMenuItemCommands(button, commandsAvailable: known && hasCommands);
+            if (!button.IsSubMenuOpen)
+            {
+                RebuildMenuItemCommands(button, commandsAvailable: known && hasCommands);
+            }
         }
+    }
 
+    private void RootMenuItem_OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        // IsSubMenuOpen true->false is the reliable "submenu closed" signal in this Avalonia
+        // version (no SubmenuClosedEvent). Rebuilding here is safe: no pointer gesture can
+        // be in flight against a closed popup.
+        if (e.Property == MenuItem.IsSubMenuOpenProperty && e.NewValue is false && sender is MenuItem button)
+        {
+            string menuId = GetMenuId(button);
+            bool commandsAvailable = _knownMenuIds.Contains(menuId) && HasVisibleMenuCommands(menuId);
+            RebuildMenuItemCommands(button, commandsAvailable);
+        }
     }
 
     private void RootMenuItem_OnSubmenuOpened(object? sender, RoutedEventArgs e)
@@ -179,6 +222,34 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
     private bool HasVisibleMenuCommands(string menuId)
         => _commandsByMenuId.TryGetValue(menuId, out IReadOnlyList<MenuCommandItem>? commands)
             && commands.Count > 0;
+
+    private static string BuildStateSignature(
+        string? openMenuId,
+        HashSet<string> knownMenus,
+        bool isBusy,
+        Dictionary<string, IReadOnlyList<MenuCommandItem>> mergedCommands)
+    {
+        StringBuilder signature = new();
+        signature.Append(openMenuId ?? "\0").Append('|').Append(isBusy ? '1' : '0').Append('|');
+        signature.AppendJoin(",", knownMenus.OrderBy(static id => id, StringComparer.Ordinal));
+        signature.Append('|');
+        foreach ((string menuId, IReadOnlyList<MenuCommandItem> commands) in mergedCommands.OrderBy(static pair => pair.Key, StringComparer.Ordinal))
+        {
+            signature.Append(menuId).Append('=');
+            foreach (MenuCommandItem command in commands)
+            {
+                signature.Append(command.Id).Append(':')
+                    .Append(command.Label).Append(':')
+                    .Append(command.Enabled ? '1' : '0')
+                    .Append(command.IsPrimary ? '1' : '0')
+                    .Append(';');
+            }
+
+            signature.Append('#');
+        }
+
+        return signature.ToString();
+    }
 
     private static MenuItem CreatePlaceholderMenuItem(bool isBusy)
     {
