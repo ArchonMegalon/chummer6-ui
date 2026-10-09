@@ -18,87 +18,6 @@ namespace Chummer.Tests.Presentation;
 public class DesktopDialogFactoryTests
 {
     [TestMethod]
-    public void New_character_offers_life_modules_only_as_an_sr5_build_method()
-    {
-        DesktopDialogFactory factory = new();
-        DesktopDialogState sr4 = factory.CreateCommandDialog(
-            "new_character", null, DesktopPreferenceState.Default, null, null, RulesetDefaults.Sr4);
-        DesktopDialogState sr5 = factory.CreateCommandDialog(
-            "new_character", null, DesktopPreferenceState.Default, null, null, RulesetDefaults.Sr5);
-        DesktopDialogState sr6 = factory.CreateCommandDialog(
-            "new_character", null, DesktopPreferenceState.Default, null, null, RulesetDefaults.Sr6);
-
-        static string[] Methods(DesktopDialogState dialog)
-            => dialog.Fields.Single(field => string.Equals(
-                    field.Id,
-                    "newCharacterBuildMethod",
-                    StringComparison.Ordinal))
-                .Options!
-                .Select(static option => option.Value)
-                .ToArray();
-
-        CollectionAssert.DoesNotContain(Methods(sr4), CharacterCreationBuildMethods.LifeModules);
-        CollectionAssert.Contains(Methods(sr5), CharacterCreationBuildMethods.LifeModules);
-        CollectionAssert.DoesNotContain(Methods(sr6), CharacterCreationBuildMethods.LifeModules);
-        CollectionAssert.AreEqual(
-            new[] { "create_character", "cancel" },
-            sr5.Actions.Select(static action => action.Id).ToArray());
-        Assert.IsFalse(sr5.Actions.Any(static action => string.Equals(
-            action.Id,
-            "start_from_origin",
-            StringComparison.Ordinal)));
-    }
-
-    [TestMethod]
-    public void New_character_continuation_routes_life_modules_to_wizard_blocker_not_karma()
-    {
-        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
-            RulesetDefaults.Sr5,
-            CharacterCreationBuildMethods.LifeModules,
-            houseRulesEnabled: false,
-            name: "Journey",
-            alias: "J");
-
-        Assert.AreEqual("dialog.new_character.life_modules_wizard_blocked", dialog.Id);
-        Assert.AreNotEqual("dialog.new_character.karma_workflow", dialog.Id);
-        Assert.AreEqual(
-            CharacterCreationBuildMethods.LifeModules,
-            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
-        Assert.AreEqual(
-            CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
-            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterLifeModulesWizardBlocker"));
-        Assert.IsFalse(dialog.Fields.Any(field => field.Id.Contains("Karma", StringComparison.OrdinalIgnoreCase)));
-        CollectionAssert.AreEqual(new[] { "cancel" }, dialog.Actions.Select(static action => action.Id).ToArray());
-    }
-
-    [TestMethod]
-    public void New_character_continuation_keeps_existing_priority_sum_to_ten_and_karma_routes()
-    {
-        DesktopDialogState priority = BuildNewCharacterContinuationDialog(
-            RulesetDefaults.Sr5,
-            CharacterCreationBuildMethods.Priority,
-            houseRulesEnabled: false,
-            name: "Priority",
-            alias: "P");
-        DesktopDialogState sumToTen = BuildNewCharacterContinuationDialog(
-            RulesetDefaults.Sr5,
-            CharacterCreationBuildMethods.SumToTen,
-            houseRulesEnabled: false,
-            name: "Sum",
-            alias: "S");
-        DesktopDialogState karma = BuildNewCharacterContinuationDialog(
-            RulesetDefaults.Sr5,
-            CharacterCreationBuildMethods.Karma,
-            houseRulesEnabled: false,
-            name: "Karma",
-            alias: "K");
-
-        Assert.AreEqual("dialog.new_character.priority_workflow", priority.Id);
-        Assert.AreEqual("dialog.new_character.priority_workflow", sumToTen.Id);
-        Assert.AreEqual("dialog.new_character.karma_workflow", karma.Id);
-    }
-
-    [TestMethod]
     public void Master_index_source_selection_receipt_keeps_readiness_marker()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
@@ -2277,10 +2196,9 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("New runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Start Origin Dossier", dialog.Actions.Single(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)).Label);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)));
-        CollectionAssert.AreEqual(
-            new[] { "create_character", "cancel" },
-            dialog.Actions.Select(static action => action.Id).ToArray());
+        Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -2361,7 +2279,7 @@ public class DesktopDialogFactoryTests
                 .Select(option => option.Value)
                 .ToArray());
         CollectionAssert.AreEqual(
-            new[] { "create_character", "cancel" },
+            new[] { "start_from_origin", "create_character", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());
     }
 
@@ -2708,7 +2626,7 @@ public class DesktopDialogFactoryTests
             alias: "Cipher");
 
         Assert.AreEqual("dialog.new_character.priority_workflow", dialog.Id);
-        Assert.AreEqual(Sr6CharacterCreationBuildMethods.SumToTen, DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual("SumToTen", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowHouseRulesEnabled"));
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterPriorityHeritage", StringComparison.Ordinal)));

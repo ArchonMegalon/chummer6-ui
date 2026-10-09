@@ -14,7 +14,6 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
 {
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
-    private const string NewCharacterLifeModulesWizardBlockedDialogId = "dialog.new_character.life_modules_wizard_blocked";
     private const string NewCharacterOriginWizardDialogId = "dialog.new_character.origin_wizard";
     private const string NewCharacterOriginBuildDialogId = "dialog.new_character.origin_build";
     private const string OriginDossierOnlineRoute = "/app";
@@ -161,8 +160,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 activeDialogId,
                 activeSectionJson,
                 currentWorkspace,
-                rulesetId,
-                preferences.Language),
+                rulesetId),
             "character_settings" => BuildCharacterSettingsDialog(preferences),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
@@ -695,15 +693,21 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                     IsReadOnly: true,
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ],
-            BuildNewCharacterDialogActions());
+            BuildNewCharacterDialogActions(preferences));
     }
 
-    private static IReadOnlyList<DesktopDialogAction> BuildNewCharacterDialogActions()
-        =>
-        [
-            new DesktopDialogAction("create_character", "OK", true),
-            new DesktopDialogAction("cancel", "Cancel")
-        ];
+    private static IReadOnlyList<DesktopDialogAction> BuildNewCharacterDialogActions(DesktopPreferenceState preferences)
+    {
+        List<DesktopDialogAction> actions = [];
+        if (!preferences.DisableAiFeatures)
+        {
+            actions.Add(new DesktopDialogAction("start_from_origin", "Start Origin Dossier"));
+        }
+
+        actions.Add(new DesktopDialogAction("create_character", "OK", true));
+        actions.Add(new DesktopDialogAction("cancel", "Cancel"));
+        return actions;
+    }
 
     internal static DesktopDialogState BuildNewCharacterOriginWizardDialog(
         string? rulesetId,
@@ -1319,26 +1323,12 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("BP", "BP"),
                 new DesktopDialogFieldOption("Karma", "Karma")
             ],
-            var id when string.Equals(id, RulesetDefaults.Sr5, StringComparison.Ordinal) =>
+            _ =>
             [
                 new DesktopDialogFieldOption("Priority", "Priority"),
                 new DesktopDialogFieldOption("SumToTen", "Sum-to-Ten"),
                 new DesktopDialogFieldOption("Karma", "Karma"),
                 new DesktopDialogFieldOption("LifeModule", "Life Modules")
-            ],
-            var id when string.Equals(id, RulesetDefaults.Sr6, StringComparison.Ordinal) =>
-            [
-                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.Priority, "Priority"),
-                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.SumToTen, "Sum-to-Ten"),
-                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.PointBuy, "Point Buy"),
-                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.LifePath, "Life Path"),
-                new DesktopDialogFieldOption(Sr6CharacterCreationBuildMethods.Karma, "Karma (SR6)")
-            ],
-            _ =>
-            [
-                new DesktopDialogFieldOption("Priority", "Priority"),
-                new DesktopDialogFieldOption("SumToTen", "Sum-to-Ten"),
-                new DesktopDialogFieldOption("Karma", "Karma")
             ]
         };
     }
@@ -1391,67 +1381,10 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string normalizedCharacterSetting = string.IsNullOrWhiteSpace(characterSetting)
             ? "Core Rulebook"
             : characterSetting.Trim();
-        if (string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
-            && resolvedBuildMethod is (Sr6CharacterCreationBuildMethods.PointBuy
-                or Sr6CharacterCreationBuildMethods.LifePath
-                or Sr6CharacterCreationBuildMethods.Karma))
-        {
-            // Recognizing a method does not authorize SR5 budgets, grants or
-            // finalization. Keep the exact SR6 choice until its own wizard exists.
-            return new DesktopDialogState(
-                "dialog.new_character.sr6_wizard_unavailable",
-                "SR6 character creation",
-                "This SR6 method needs its own Creation Wizard. SR5 Karma and Life Modules cannot be substituted. No runner has been created.",
-                [
-                    BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", normalizedRulesetId),
-                    BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", resolvedBuildMethod),
-                    BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", normalizedWorkflowName),
-                    BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", normalizedWorkflowAlias)
-                ],
-                [new DesktopDialogAction("cancel", "Back", true)]);
-        }
-        if (string.Equals(
-            resolvedBuildMethod,
-            CharacterCreationBuildMethods.LifeModules,
-            StringComparison.Ordinal))
-        {
-            return BuildNewCharacterLifeModulesWizardBlockedDialog(
-                normalizedRulesetId,
-                normalizedWorkflowName,
-                normalizedWorkflowAlias,
-                normalizedCharacterSetting);
-        }
-
         return UsesPriorityWorkflow(resolvedBuildMethod)
             ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules)
             : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules);
     }
-
-    private static DesktopDialogState BuildNewCharacterLifeModulesWizardBlockedDialog(
-        string rulesetId,
-        string name,
-        string alias,
-        string characterSetting)
-        => new(
-            NewCharacterLifeModulesWizardBlockedDialogId,
-            "Life Modules character creation",
-            "Life Modules require the typed journey wizard. This setup cannot safely substitute the Karma workflow.",
-            [
-                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
-                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", CharacterCreationBuildMethods.LifeModules),
-                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", name),
-                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", alias),
-                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
-                new DesktopDialogField(
-                    "newCharacterLifeModulesWizardBlocker",
-                    "Resume status",
-                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
-                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
-                    IsReadOnly: true,
-                    IsMultiline: true,
-                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
-            ],
-            [new DesktopDialogAction("cancel", "Back", true)]);
 
     private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
         string rulesetId,
@@ -2080,6 +2013,23 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             ]
         };
         return FilterAiRestrictedCharacterOptionsForPreferences(options, preferences ?? DesktopPreferenceStateRuntime.Current);
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> FilterKarmaMetatypeOptions(
+        IReadOnlyList<DesktopDialogFieldOption> options,
+        string? search)
+    {
+        string query = search?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return options;
+        }
+
+        DesktopDialogFieldOption[] matches = options
+            .Where(option => option.Value.Contains(query, StringComparison.OrdinalIgnoreCase)
+                || option.Label.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        return matches.Length > 0 ? matches : options;
     }
 
     internal static IReadOnlyList<DesktopDialogFieldOption> FilterAiRestrictedCharacterOptionsForPreferences(
@@ -2864,26 +2814,19 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             "life modules" => "LifeModule",
             "sumtoten" => "SumToTen",
             "sum-to-ten" => "SumToTen",
-            "pointbuy" or "point buy" => Sr6CharacterCreationBuildMethods.PointBuy,
-            "lifepath" or "life path" => Sr6CharacterCreationBuildMethods.LifePath,
             _ => normalized
         };
     }
 
     private static bool UsesPriorityWorkflow(string buildMethod)
         => string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
-            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
-            || string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal);
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal);
 
     private static string BuildNewCharacterMessage(
         string rulesetId,
         string buildMethod,
         bool houseRulesEnabled)
     {
-        if (string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
-        {
-            return "Create an SR6 draft with the selected build method. Companion methods use their own SR6 profiles, not SR5 rules. The remaining SR6 wizard steps are not available yet.";
-        }
         string route = UsesPriorityWorkflow(buildMethod)
             ? "Next you will choose metatype and priorities."
             : "Next you will choose metatype.";
@@ -2914,7 +2857,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             $"Talent Choice | {talentChoice}",
             $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
         ];
-        if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
         {
             int total = GetPriorityLetterValue(heritagePriority)
                 + GetPriorityLetterValue(attributesPriority)
