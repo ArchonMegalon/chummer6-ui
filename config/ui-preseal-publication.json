@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "14b1548d86e2f6e73d7ed7527286e27a941dcc88",
-  "baseTree": "95cf40a8d713797e860c664f3d28f44f8f4f4c01",
+  "baseCommit": "38648daf54703e7bd14176436b8fa938088af73c",
+  "baseTree": "c2d960031be6ed9d622e7e5e1286c97cdfa63377",
   "canonicalSealedLocks": [
     {
       "blob": "9a56b95a33872d1a4b11032f5fa16af2692dd985",
@@ -44,41 +44,13 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "82405d4952532aaca9c13f3558fcd0f969dea6af",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "980add9ca60835080602dda25ccc3424ac16c867cd764bb92e75620d13bd1a07",
-      "sizeBytes": 65047,
-      "status": "M"
-    },
-    {
-      "blob": "89b909e5da49ca49fb33c145f35344ebd88f350e",
-      "path": "scripts/ai/verify.sh",
-      "sha256": "1cdc274d1229bced185812f5f0d664d94e1551e5fe0fa41a6b1f89a3b8888b6a",
-      "sizeBytes": 70272,
-      "status": "M"
-    },
-    {
-      "blob": "00530b189c564b15c06335621f634233d3fe3c4d",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "f964b982ee84491f30cb799ddc925376cee7ccf19adb6fcde743a63b795bc0f9",
-      "sizeBytes": 288342,
-      "status": "M"
-    },
-    {
-      "blob": "ecd66136b20a098bece1803396247d96b660b6c0",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "a6ab48a58fc498b7d4a264b81e66cb05736a4334601ee17dc8e4c1a58f0ba151",
-      "sizeBytes": 49626,
-      "status": "M"
-    },
-    {
-      "blob": "0dcf8132e2e2f11e0f7da04ce8f78495f220ed8a",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "c393baa784d7d3274eb39e3f40c6b6243d89b018426be98b8d272d4249f0b24d",
-      "sizeBytes": 193904,
+      "blob": "df3a0f3a035ec426ed3cbf5d4ab1322fdb7e1293",
+      "path": "tests/test_verify_mode_controls.py",
+      "sha256": "a72615f90efab3e677ab6b705f1aaaf304871f80304d13f5cb0160d966c7ed20",
+      "sizeBytes": 16948,
       "status": "M"
     }
   ],
-  "recipeTree": "3afd03e66862f3cb79e98baa57ac3f1d28447e55",
+  "recipeTree": "60aff5308303dee31cd2b641f0ecdb75389da63f",
   "releaseClaim": false
 }
