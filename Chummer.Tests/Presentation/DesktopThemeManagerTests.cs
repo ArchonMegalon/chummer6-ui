@@ -1373,7 +1373,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Metahuman\", \"Non-human choices\")");
         StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Show All\", \"All playable options\")");
         StringAssert.Contains(factorySource, "\"Remaining Karma | tracked when the character opens\"");
-        Assert.IsFalse(factorySource.Contains("\"start_from_origin\", \"Start Origin Dossier\"", StringComparison.Ordinal));
+        Assert.IsTrue(factorySource.Contains("\"start_from_origin\", \"Start Origin Dossier\"", StringComparison.Ordinal));
         StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"LifeModule\", \"Life Modules\")");
         Assert.IsFalse(newCharacterPaneSource.Contains("ExecuteCommandAsync(\"character_settings\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("\"Metatype Category\"", StringComparison.Ordinal));

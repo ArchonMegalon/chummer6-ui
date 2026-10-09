@@ -210,6 +210,14 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "tests/test_portal_release_shelf_runtime.py",
         "tests/fixtures/keylocker-signer-v1/MANIFEST.json",
         "tests/test_unsigned_macos_native_build.py",
+    # R7 (2026-10-09): owner-approved Windows client deliverables (R18 menu-click
+    # guard, R20 roster context menu, theme tests, dragon icon) are explicit preseal
+    # recipe paths for the pipeline-app-source round.
+    "Chummer.Avalonia/Controls/CharacterRosterControl.axaml.cs",
+    "Chummer.Avalonia/Controls/ClassicMenuBar.axaml.cs",
+    "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
+    "Chummer.Tests/Presentation/DesktopThemeManagerTests.cs",
+    "Chummer/chummer.ico",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these

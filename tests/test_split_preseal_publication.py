@@ -1244,3 +1244,27 @@ def test_forged_deletion_marker_metadata_cannot_replace_exact_base_binding(tmp_p
     forged = commit(repository, "forged deletion marker")
     with pytest.raises(preseal.PresealError, match="differs from exact recipe authority"):
         preseal.validate_preseal(repository, base=base, head=forged)
+
+
+
+
+def test_pipeline_app_source_inputs_are_explicit_preseal_recipe_paths() -> None:
+    """R7: owner-approved Windows client deliverables ride the explicit preseal recipe path set."""
+    members = {
+        "Chummer.Avalonia/Controls/CharacterRosterControl.axaml.cs",
+        "Chummer.Avalonia/Controls/ClassicMenuBar.axaml.cs",
+        "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
+        "Chummer.Tests/Presentation/DesktopThemeManagerTests.cs",
+        "Chummer/chummer.ico",
+    }
+    assert members <= preseal.ALLOWED_RECIPE_PATHS
+
+
+def test_no_unreviewed_avalonia_paths_in_preseal_recipe_paths() -> None:
+    """R7 guard: only the owner-approved Avalonia/ICO paths may be recipe-legal."""
+    forbidden = {
+        "Chummer.Avalonia/Controls/CharacterRosterControl.axaml",
+        "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+    }
+    assert forbidden.isdisjoint(preseal.ALLOWED_RECIPE_PATHS)

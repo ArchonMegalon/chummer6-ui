@@ -4,19 +4,19 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "60f9f9860a8d95c3b9d390d43a1873e9ec7dec84",
-  "baseTree": "4e12896328f19a9ceec95dbf67cae74f390301d4",
+  "baseCommit": "3ca99cc4dd29e2b5ed4254cd34c0c9ce3a85392d",
+  "baseTree": "92f704ff7ed145df63f187c89cb7d84a209e833a",
   "canonicalSealedLocks": [
     {
-      "blob": "389792bb90b85f91fd136a750a1823e72638f9c7",
+      "blob": "7a64241f56c6e9cafadbc966fb4b8bde3dac9827",
       "path": "config/package-plane.lock.json",
-      "sha256": "bc9b48b8e2484b1f0a75b59865e928aef6fba5cbfd9098dd7a66e93f598c842b",
+      "sha256": "97ab4c033b8a9a89a772d6f75dada6b34a002da24aa1049372ec82cbc16e1a89",
       "sizeBytes": 68354
     },
     {
-      "blob": "b673094314573e025fb6408784e5cbed4b850333",
+      "blob": "eabb3b040cff44ce7c01f6604236bf3a2fc3a74e",
       "path": "config/ui-owner-package-plane.lock.json",
-      "sha256": "ec18a528f2a7bb1463e95ca2b78e0d03ed7775767725232da679cdb74ac20cb1",
+      "sha256": "c2df4aa512386135b81ae9185a5c47c0cf3b645af553a55388acccc65c1d3476",
       "sizeBytes": 2031
     }
   ],
@@ -44,13 +44,55 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "20dbf948812b04054fac9219b4313212f832e721",
-      "path": "tests/test_verify_mode_controls.py",
-      "sha256": "2e5c78f7c9f32a24b5221c20c10b73bc663ae765c8107a364e87df88d81a232c",
-      "sizeBytes": 16948,
+      "blob": "ef8b1f6a883cc04e5fdd0e6d378c514998c6d3dd",
+      "path": "Chummer.Avalonia/Controls/CharacterRosterControl.axaml.cs",
+      "sha256": "21bc810c85bfc588a519ac1ebebcb034285f1ad0f32d589cc0ae5cd5a6bf6a79",
+      "sizeBytes": 8418,
+      "status": "M"
+    },
+    {
+      "blob": "c9aa78ccf37515b5d11511d053abf3696279c660",
+      "path": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml.cs",
+      "sha256": "ec868dba6a09518e6ccd9ef771cd0321dda82600e9be0eee8238e93810778997",
+      "sizeBytes": 7572,
+      "status": "M"
+    },
+    {
+      "blob": "9679388e83ef549733392cff0862ae334f493332",
+      "path": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
+      "sha256": "c08f47337810094a2dd9d77d28bd78a5bb0183bfffdf91872318e6c13e7d91a3",
+      "sizeBytes": 10262,
+      "status": "M"
+    },
+    {
+      "blob": "9cc69b2f96cc9776ed072c49bd961055967ad63f",
+      "path": "Chummer.Tests/Presentation/DesktopThemeManagerTests.cs",
+      "sha256": "fc68cb8850b5abe0e24dd9b13f5e1639f02e7bf4bf34fd747a55224dea689393",
+      "sizeBytes": 164180,
+      "status": "M"
+    },
+    {
+      "blob": "3292a24cacb63e1e5fd8a8ffe0cb298313ab52ec",
+      "path": "Chummer/chummer.ico",
+      "sha256": "4efdb2590e6a5bd67e3b65d230adee0dd45a3f0679a8c66221f87c2dfff43906",
+      "sizeBytes": 303622,
+      "status": "M"
+    },
+    {
+      "blob": "4d52280e04748effa6edb06a40a1fb74d7b9265c",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "4e9acc02074af2add0a3ce84463035d4cd44c018d2753af9f9989233e9a734ea",
+      "sizeBytes": 50120,
+      "status": "M"
+    },
+    {
+      "blob": "625a6ddac001a8e08b8fb66c52773a66ad5d5e75",
+      "path": "tests/test_split_preseal_publication.py",
+      "sha256": "e77c9f95425021002e7874f477a71617919e7b53a579e18379962e266eec5ba2",
+      "sizeBytes": 60870,
       "status": "M"
     }
   ],
-  "recipeTree": "9ec73b0f349c53c23842a12decbfb9454ac3f4f6",
+  "recipeTree": "e1b14f9703285f3841c44db01fbd5c8c0431d442",
   "releaseClaim": false
 }
