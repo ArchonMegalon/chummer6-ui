@@ -311,17 +311,18 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
     ("WorkspaceSessionPresenterTests", "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs", 23),
     ("WorkspaceViewStateStoreTests", "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs", 6),
     ("RestartSafeWorkspacePersistenceTests", "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs", 1),
-    ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 47),
+    ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 60),
 )
 # The sealed baseline already contains the 19 base overview cases. Newly linked
 # continuation (19), shell owner (26), recovery (20), and older regressions (213)
 # increase its 467-case floor without counting those base overview cases twice.
 # Two diagnostic-fencing regressions additionally reject foreign installations
 # and stale owner-transition revisions without overwriting persisted state.
-# The finalization/qualities owner-routing class adds 47 cases to that 747-case floor,
-# including ten method-specific restore and ten operation-scoped overview cases.
+# The finalization/qualities owner-routing class adds 60 cases to that 747-case floor,
+# including ten method-specific restore, ten operation-scoped overview, and
+# thirteen Foundation shared-read/method-exclusion cases.
 # Local adoption adds three cache/roster cases and four same-ID overview cases.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 801
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 814
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
