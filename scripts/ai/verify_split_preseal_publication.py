@@ -231,9 +231,9 @@ NEXT_AUTHORITY_ORACLE = {
         "commit": "ad3dd7b70c08a585e809345117dffabf0e8e002c",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "23718f8684ba71d5f878dca8d86adebdaeb4264061aec01d0480a3aac32fbc1a",
+        "rawSha256": "973b2ecbff41fe2752c26d9d200137e4d1fc3deb6eb210e84454b38e5e6934d9",
         "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "23718f8684ba71d5f878dca8d86adebdaeb4264061aec01d0480a3aac32fbc1a",
+        "semanticCanonicalSha256": "973b2ecbff41fe2752c26d9d200137e4d1fc3deb6eb210e84454b38e5e6934d9",
         "semanticCanonicalSizeBytes": 65047,
         "tree": "e8b6d6c7097b1dbaada06d5b2f002a489d1ce74e"
     },
