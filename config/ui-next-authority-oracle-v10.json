@@ -196,7 +196,7 @@
       "Directory.Build.props": "d571a868644b8c590399144150d3cd979e5873816a676cd16a76c20c862f5e67",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
-      "scripts/ai/verify.sh": "4e91951f6d938ca35b1f811dcbae37714285aa5c90d7e6aefcacae798a48aafa",
+      "scripts/ai/verify.sh": "1cdc274d1229bced185812f5f0d664d94e1551e5fe0fa41a6b1f89a3b8888b6a",
       "scripts/ai/with-package-plane.sh": "1c96ab9aa145a6e1bacdf8c4867b94f3e63ff5d4399e8bd51d27dcbd9a267553"
     },
     "testProjects": [
