@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "56704c3334c0a3b43efb32a00fe08cb2ee0f74f4",
-  "baseTree": "1c6fd28b794e29d443317d2317d2578686f196b9",
+  "baseCommit": "dff1abdba732af309d0a0564e36691f6fba52b8e",
+  "baseTree": "10b91f754e5deb00a2c01796d9b84ad6d1d00ecd",
   "canonicalSealedLocks": [
     {
       "blob": "389792bb90b85f91fd136a750a1823e72638f9c7",
@@ -25,13 +25,13 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "43f8ebd0d3826459d701bde543c9caecedc11854",
+      "blob": "a00c9632aa1be8abd3004b07d268e9fa90713761",
       "commit": "5d5f11959d6823be1d3194bc5d88ee7735bbd7c9",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "973b2ecbff41fe2752c26d9d200137e4d1fc3deb6eb210e84454b38e5e6934d9",
+      "rawSha256": "ae76f060d44154886082072f24d9c581bd0abc797865c2505257760039e337b4",
       "rawSizeBytes": 65047,
-      "semanticCanonicalSha256": "973b2ecbff41fe2752c26d9d200137e4d1fc3deb6eb210e84454b38e5e6934d9",
+      "semanticCanonicalSha256": "ae76f060d44154886082072f24d9c581bd0abc797865c2505257760039e337b4",
       "semanticCanonicalSizeBytes": 65047,
       "tree": "09811f646cb346a5a5591d7282afbf831f6f6d9e"
     },
@@ -44,48 +44,41 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "749768662f232fd54ca5436825d8e6b0c14d9b6e",
-      "path": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
-      "sha256": "cc26cdf0fcd234af7deaf4b69fd52da4818b7f635fe47740ef80fc40ee301788",
-      "sizeBytes": 506273,
+      "blob": "7a2a697dd1122b8d4a518b78633b2b36876e1b7b",
+      "path": "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
+      "sha256": "a835322b8910055669dfb6d7822f07ac821d447565b7e8c006300ef44b268044",
+      "sizeBytes": 6368,
       "status": "M"
     },
     {
-      "blob": "91095280e74ef0ebfbc45566e1eb15d3ac54f6cc",
-      "path": "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
-      "sha256": "e21bbc17b4dc31908919270dab5a9136426b48d7f74f07acf8f991a917cdccd4",
-      "sizeBytes": 246264,
-      "status": "M"
-    },
-    {
-      "blob": "43f8ebd0d3826459d701bde543c9caecedc11854",
+      "blob": "a00c9632aa1be8abd3004b07d268e9fa90713761",
       "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "973b2ecbff41fe2752c26d9d200137e4d1fc3deb6eb210e84454b38e5e6934d9",
+      "sha256": "ae76f060d44154886082072f24d9c581bd0abc797865c2505257760039e337b4",
       "sizeBytes": 65047,
       "status": "M"
     },
     {
-      "blob": "8ae5a26cfa50687004bfe7d79fb1d6749904d45e",
+      "blob": "067980c488f6e67e9bb49b0b44889959c0cafeef",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "2b0cb2526fee764ed44b11017d1f5774ef549e139aae510fbe3465ef971c7f6b",
-      "sizeBytes": 288342,
+      "sha256": "5940d401c3defeefcf86527885c1c275dadafca28cb8bf8fa9cf85e72f30d317",
+      "sizeBytes": 288388,
       "status": "M"
     },
     {
-      "blob": "609b050256c66a6549587d6ab41592bfaa4d1753",
+      "blob": "701050594f0a87c8d591ee7821d6bc748a6a265e",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "e157de1fdebfdd32f2d688fe934812517f78d1087be48f70d5f8a96c596d7138",
+      "sha256": "5823e271338f724cf04582ecfeeeeb9a2a37af655e051cb36d466e85028dbacc",
       "sizeBytes": 49626,
       "status": "M"
     },
     {
-      "blob": "ab0819757731786275f23608aa6b886c286b0440",
+      "blob": "10e0ad0a9e54a4c370975ecca3c84a1b67c622f0",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "61f87cf68d700b97d482a336da313322c75ecf784804f4e6caed92a65c9bc4cc",
-      "sizeBytes": 193904,
+      "sha256": "ba09a6266813829e56109d312c10de91a8580fcec3d5b0eaa13907abd21e567c",
+      "sizeBytes": 193861,
       "status": "M"
     }
   ],
-  "recipeTree": "b3d11fb0131f2336ff5ea81117ea24afe83608ec",
+  "recipeTree": "f88aab791b6ca6b3af6fb3df405912df56135e1e",
   "releaseClaim": false
 }
