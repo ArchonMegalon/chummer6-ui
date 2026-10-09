@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "f2c74b482ff2fc2474796192a0c382620c1ae297",
-        "commit": "e6b7557ae483ac3e5e212af05150837bb930e110",
+        "blob": "5b90c680f4c8889a3a1a62caa965fcdb2602e713",
+        "commit": "32a309bc9e60f6fd93961dc9c3ae277e1f2b4897",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "8dc23e441628752d7d266d077ec9b8db5964cd5d0bd47a2f2425baa77424a370",
+        "rawSha256": "a81511c226df551a53a587793319ffa1fe7e10b0d2effcd653c1a7f1eaaca377",
         "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "8dc23e441628752d7d266d077ec9b8db5964cd5d0bd47a2f2425baa77424a370",
+        "semanticCanonicalSha256": "a81511c226df551a53a587793319ffa1fe7e10b0d2effcd653c1a7f1eaaca377",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "d1edc9009a7391536b570c5aeda6301f12e32841"
+        "tree": "90f6c5d802e68e9c1d18c4654b4caedb2903538c"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -311,17 +311,18 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
     ("WorkspaceSessionPresenterTests", "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs", 23),
     ("WorkspaceViewStateStoreTests", "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs", 6),
     ("RestartSafeWorkspacePersistenceTests", "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs", 1),
-    ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 47),
+    ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 60),
 )
 # The sealed baseline already contains the 19 base overview cases. Newly linked
 # continuation (19), shell owner (26), recovery (20), and older regressions (213)
 # increase its 467-case floor without counting those base overview cases twice.
 # Two diagnostic-fencing regressions additionally reject foreign installations
 # and stale owner-transition revisions without overwriting persisted state.
-# The finalization/qualities owner-routing class adds 47 cases to that 747-case floor,
-# including ten method-specific restore and ten operation-scoped overview cases.
+# The finalization/qualities owner-routing class adds 60 cases to that 747-case floor,
+# including ten method-specific restore, ten operation-scoped overview, and
+# thirteen Foundation shared-read/method-exclusion cases.
 # Local adoption adds three cache/roster cases and four same-ID overview cases.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 801
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 814
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
