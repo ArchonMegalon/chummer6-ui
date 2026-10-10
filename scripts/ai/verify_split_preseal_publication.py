@@ -239,14 +239,14 @@ MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
         "blob": "0daccf4af26ff673137d952e6d0ab2007b639ebb",
-        "commit": "e1cb8251830792c07c9f8fb77600cbdbc3f7777d",
+        "commit": "9d9750c8cab3328c9b59b6f2bef41aa12e586aac",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
         "rawSha256": "ed9f0e282612f2472073550c2512766af3929cf892e09133c41409e2455c49a0",
         "rawSizeBytes": 65047,
         "semanticCanonicalSha256": "ed9f0e282612f2472073550c2512766af3929cf892e09133c41409e2455c49a0",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "8b9c2181fa5a5d58c25085ed8698462d0f5666a2"
+        "tree": "cedc91b05a6a263cb6d870390023fcfac98212cb"
     },
     "producerLock": {
         "absentAtCommit": True,

@@ -4,6 +4,8 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
+import subprocess
 from pathlib import Path
 from types import ModuleType
 
@@ -61,11 +63,11 @@ def test_current_owner_contract_feed_is_separate_and_reproducible() -> None:
     assert canonical_digest(feed_rows) == current["packageFeedInventorySha256"]
     assert current["packageFeedInventorySha256"] == "ad220c6384644fcd83135e70bb33913e546c758eedfa2fd6da514714730285ca"
 
-    assert canonical["producerCommit"] == "e35db6feca8f194161302064a9f77d4f8e60fe14"
+    assert canonical["producerCommit"] == "c77395de9f733427ef952c851f4a95b063cb5573"
     assert canonical["lockContract"] == "chummer-hub.package-plane-lock/v5"
     assert canonical["inventoryContract"] == "chummer-hub.external-package-inventory/v4"
     assert len(canonical["packages"]) == 4
-    assert canonical["packageVersion"] == "0.1.1-packageplane.20260910.1"
+    assert canonical["packageVersion"] == "0.1.1-packageplane.20260927.1"
     assert current["lockContract"] != canonical["lockContract"]
     assert current["inventoryContract"] != canonical["inventoryContract"]
     assert current["packageVersion"] != canonical["packageVersion"]
@@ -204,3 +206,78 @@ def test_cold_owner_contracts_reject_source_changed_during_validation(tmp_path, 
             tmp_path / "workspace", tmp_path / "packages", destination, {},
             prebuilt_owner_feed=source,
         )
+
+
+def make_local_owner_source(tmp_path):
+    cache = tmp_path / "source-cache"
+    cache.mkdir()
+    seed = cache / "seed"
+    seed.mkdir()
+    environment = dict(os.environ, GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL="/dev/null")
+    def git(*args):
+        return subprocess.run(["git", "-C", str(seed), *args], env=environment,
+            text=True, check=True, capture_output=True).stdout.strip()
+    git("init", "--quiet")
+    (seed / "source.txt").write_text("synthetic committed source\n")
+    git("add", "source.txt")
+    git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+        "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "fixture")
+    commit = git("rev-parse", "HEAD")
+    repository = "https://github.com/example/exact-owner.git"
+    git("remote", "add", "origin", repository)
+    source = cache / commit
+    seed.rename(source)
+    return cache, source, {"directory": "owner", "repository": repository, "commit": commit}, environment
+
+
+def test_local_owner_source_is_really_cloned_without_remote_fetch(tmp_path, monkeypatch):
+    cache, source, owner, environment = make_local_owner_source(tmp_path)
+    target = tmp_path / "owners"
+    target.mkdir()
+    original = package_plane.run
+    fetches = []
+    def inspect(command, **kwargs):
+        if "fetch" in command:
+            fetches.append(command)
+            assert command[-2:] == [str(source), owner["commit"]]
+        return original(command, **kwargs)
+    monkeypatch.setattr(package_plane, "run", inspect)
+    checkout = package_plane.acquire_owner(owner, target, environment, source_cache=cache)
+    assert (checkout / "source.txt").read_text() == "synthetic committed source\n"
+    assert len(fetches) == 1
+    assert package_plane.owner_fetch_source(owner, cache, environment) == str(source)
+    assert subprocess.check_output(["git", "-C", str(checkout), "remote", "get-url", "origin"],
+                                  env=environment, text=True).strip() == owner["repository"]
+
+
+@pytest.mark.parametrize("damage", ["dirty", "origin", "head", "alias", "alternates", "gitlink"])
+def test_local_owner_source_rejects_substitution_without_remote_fallback(tmp_path, monkeypatch, damage):
+    cache, source, owner, environment = make_local_owner_source(tmp_path)
+    if damage == "dirty":
+        (source / "source.txt").write_text("changed\n")
+    elif damage == "origin":
+        owner = dict(owner, repository="https://github.com/example/wrong.git")
+    elif damage == "head":
+        wrong = "f" * 40
+        source.rename(cache / wrong)
+        owner = dict(owner, commit=wrong)
+    elif damage == "alias":
+        alias = tmp_path / "alias"
+        alias.symlink_to(cache, target_is_directory=True)
+        cache = alias
+    elif damage == "alternates":
+        (source / ".git/objects/info/alternates").write_text("/not-an-authority\n")
+    else:
+        moved = tmp_path / "moved-git"
+        (source / ".git").rename(moved)
+        (source / ".git").symlink_to(moved, target_is_directory=True)
+    original = package_plane.run
+    def inspect(command, **kwargs):
+        assert "fetch" not in command, "invalid cache must not fall back to network"
+        return original(command, **kwargs)
+    monkeypatch.setattr(package_plane, "run", inspect)
+    target = tmp_path / "owners"
+    target.mkdir()
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.acquire_owner(owner, target, environment, source_cache=cache)
+    assert not (target / "owner").exists()

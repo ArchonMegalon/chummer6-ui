@@ -49,14 +49,14 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
         "blob": "0daccf4af26ff673137d952e6d0ab2007b639ebb",
-        "commit": "e1cb8251830792c07c9f8fb77600cbdbc3f7777d",
+        "commit": "9d9750c8cab3328c9b59b6f2bef41aa12e586aac",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
         "rawSha256": "ed9f0e282612f2472073550c2512766af3929cf892e09133c41409e2455c49a0",
         "rawSizeBytes": 65047,
         "semanticCanonicalSha256": "ed9f0e282612f2472073550c2512766af3929cf892e09133c41409e2455c49a0",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "8b9c2181fa5a5d58c25085ed8698462d0f5666a2"
+        "tree": "cedc91b05a6a263cb6d870390023fcfac98212cb"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -3196,14 +3196,44 @@ def require_exact_nuget_config_source(path: Path, feed: Path | None) -> None:
         raise VerificationError("same-run NuGet config package source differs")
 
 
-def acquire_owner(owner: dict[str, str], owners_root: Path, environment: dict[str, str]) -> Path:
+def owner_fetch_source(
+    owner: dict[str, str], source_cache: Path | None, environment: dict[str, str]
+) -> str:
+    if source_cache is None:
+        return "origin"
+    if (not COMMIT_RE.fullmatch(owner["commit"]) or not source_cache.is_absolute()
+            or source_cache.is_symlink() or source_cache.resolve(strict=True) != source_cache):
+        raise VerificationError("owner source cache must be an exact physical directory")
+    require_owned_traversable_directory(source_cache, "owner source cache")
+    source = source_cache / owner["commit"]
+    if source.is_symlink() or source.resolve(strict=True) != source:
+        raise VerificationError("owner source cache checkout is not exact")
+    require_owned_traversable_directory(source, "owner source checkout")
+    git_directory = source / ".git"
+    if (git_directory.is_symlink() or not git_directory.is_dir()
+            or (git_directory / "objects/info/alternates").exists()):
+        raise VerificationError("owner source cache must contain a standalone Git checkout")
+    def inspect(*arguments: str) -> str:
+        return run([str(TRUSTED_GIT), "--no-replace-objects", *arguments],
+                   cwd=source, environment=environment, capture=True).stdout.strip()
+    if (inspect("rev-parse", "--show-toplevel") != str(source)
+            or inspect("rev-parse", "HEAD") != owner["commit"]
+            or inspect("remote", "get-url", "origin") != owner["repository"]
+            or inspect("status", "--porcelain")):
+        raise VerificationError("owner source cache identity, origin or clean state differs")
+    return str(source)
+
+
+def acquire_owner(owner: dict[str, str], owners_root: Path, environment: dict[str, str],
+                  source_cache: Path | None = None) -> Path:
+    fetch_source = owner_fetch_source(owner, source_cache, environment)
     target = owners_root / owner["directory"]
     target.mkdir(mode=0o700)
     run([str(TRUSTED_GIT), "init", "--quiet"], cwd=target, environment=environment)
     run([str(TRUSTED_GIT), "remote", "add", "origin", owner["repository"]], cwd=target, environment=environment)
     run(
         [str(TRUSTED_GIT), "-c", "credential.helper=",
-         "fetch", "--quiet", "--depth=1", "origin", owner["commit"]],
+         "fetch", "--quiet", "--depth=1", fetch_source, owner["commit"]],
         cwd=target,
         environment=environment,
     )
@@ -5565,7 +5595,8 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
         if len({row["directory"] for row in owner_rows}) != len(owner_rows):
             raise VerificationError("UI-owner package sources are not distinct")
         owner_roots = {
-            row["directory"]: acquire_owner(row, owners_root, environment)
+            row["directory"]: acquire_owner(row, owners_root, environment,
+                source_cache=getattr(args, "owner_source_cache", None))
             for row in owner_rows
         }
         for row in owner_rows:
@@ -5834,6 +5865,7 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             ),
             "dependencyPackageCount": 16,
             "inputMode": producer_mode,
+            "ownerSourceAcquisition": "local-exact-cache" if getattr(args, "owner_source_cache", None) else "anonymous-fetch",
             "coldInputs": cold_input_inventories,
             "packageCount": 18,
             "packagePlaneLock": lock_inventory,
@@ -6008,7 +6040,8 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
         }
         owner_rows = [*lock["owners"], canonical_producer_owner]
         owner_roots = {
-            owner["directory"]: acquire_owner(owner, owners_root, environment)
+            owner["directory"]: acquire_owner(owner, owners_root, environment,
+                source_cache=getattr(args, "owner_source_cache", None))
             for owner in owner_rows
         }
         owner_sdk_versions: dict[str, str] = {}
@@ -6198,10 +6231,14 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             )
         test_executions: list[dict[str, Any]] = []
         core_content_root = owner_roots["chummer-core-engine"]
+        semantic_source = owner_fetch_source(
+            {"commit": lock["coreRuntimeFeed"]["runtimeSourceCommit"],
+             "repository": lock["coreRuntimeFeed"]["repository"]},
+            getattr(args, "owner_source_cache", None), environment)
         # The owner checkout is shallow at the recipe commit. Fetch the exact
         # semantic tree only to verify its data; no source ProjectReference.
         run([str(TRUSTED_GIT), "-c", "credential.helper=",
-             "fetch", "--quiet", "--no-tags", "--depth=1", "origin",
+             "fetch", "--quiet", "--no-tags", "--depth=1", semantic_source,
              lock["coreRuntimeFeed"]["runtimeSourceCommit"]],
             cwd=core_content_root, environment=environment)
         for test_project in lock["consumer"]["testProjects"]:
@@ -6525,6 +6562,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
                 }
                 for owner in owner_rows
             ],
+            "ownerSourceAcquisition": "local-exact-cache" if getattr(args, "owner_source_cache", None) else "anonymous-fetch",
             "packageCacheWasFresh": True,
             "packageInventory": before,
             "packageFeedInventorySha256": feed_sha256,
@@ -6567,6 +6605,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lock", type=Path, default=repo_root / "config" / "package-plane.lock.json")
     parser.add_argument("--current-owner-contract-feed", type=Path)
     parser.add_argument("--owner-package-cache", type=Path)
+    parser.add_argument("--owner-source-cache", type=Path,
+                        help="Read-only local standalone checkouts keyed by exact commit; no network fallback")
     parser.add_argument("--produce-owner-package-cache-output", type=Path)
     parser.add_argument("--cold-core-runtime-bundle", type=Path)
     parser.add_argument("--cold-hub-package-plane-receipt", type=Path)
@@ -6615,6 +6655,8 @@ def main() -> int:
             raise VerificationError(
                 "current owner-contract validation cannot import an owner package cache"
             )
+        if args.current_owner_contract_feed is not None and args.owner_source_cache is not None:
+            raise VerificationError("current owner-contract validation does not acquire owner sources")
         if getattr(args, "produce_owner_package_cache_output", None) is not None:
             if args.current_owner_contract_feed is not None:
                 raise VerificationError(
