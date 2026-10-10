@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "19f0be1e8742bdf7bd503e52ad0d0a8bc3aed0d1",
-        "commit": "4c8977553c6f6b88f378306d0b6ee763ad933920",
+        "blob": "0daccf4af26ff673137d952e6d0ab2007b639ebb",
+        "commit": "e1cb8251830792c07c9f8fb77600cbdbc3f7777d",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "ef4840861870f6bc3ab8576de474f2ae85e5a9414792d83b2c38e799e0174b9a",
+        "rawSha256": "ed9f0e282612f2472073550c2512766af3929cf892e09133c41409e2455c49a0",
         "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "ef4840861870f6bc3ab8576de474f2ae85e5a9414792d83b2c38e799e0174b9a",
+        "semanticCanonicalSha256": "ed9f0e282612f2472073550c2512766af3929cf892e09133c41409e2455c49a0",
         "semanticCanonicalSizeBytes": 65047,
-        "tree": "752a0a3d819bf71a368c2fdea065bd6415b73ab4"
+        "tree": "8b9c2181fa5a5d58c25085ed8698462d0f5666a2"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -103,7 +103,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "48e1849e80b9bdf0359007b7d125f0e88999cbac",
+        "0e03f6affc030cffdabcde70bfe0a65b331ad1a7",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -173,58 +173,58 @@ EXPECTED_HUB_CANONICAL_FEED = {'inventoryContract': 'chummer-hub.external-packag
                'sha256': '002dbe7ccf56cc306d9fecd048d6c3025481547b0bf082b94ceac5bc6d563f30',
                'sizeBytes': 1862480,
                'version': '0.1.1-packageplane.20260927.1'}]}
-CORE_RUNTIME_SOURCE_COMMIT = "1fbea12d95e7fcf946571d15f144c8c3126bad03"
-CORE_RUNTIME_RECIPE_COMMIT = "48e1849e80b9bdf0359007b7d125f0e88999cbac"
-CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f"
-CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = 'b1a2697039235307efe14662ccf044db16d8fe59fd5053f92e84d4c06d66ab9d'
-CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 5973160
+CORE_RUNTIME_SOURCE_COMMIT = "c8e7f795d8796ed3b52280fa7a9003e988cd5213"
+CORE_RUNTIME_RECIPE_COMMIT = "0e03f6affc030cffdabcde70bfe0a65b331ad1a7"
+CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796"
+CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = '72632ee7fa3a734f76ec5834f714d17250a50b4a7930f40e54d6e990c37bb0df'
+CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 5985843
 EXPECTED_CORE_RUNTIME_FEED_METADATA = {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "129ced4e8d164b0365ea95002464d62f00e4cdf79ad111ab44bb7d003d5e2346",
+    "inventorySha256": "2412d1c1975a1d3fd1622a8cac78af1e3966b89ef2af90ddda42048554ae0af6",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "e2da10f522348fa303ebb0c7420e9fdbeaf63204a3686d8cc62fc69b12e00f39",
+    "lockSha256": "33d3f9f8658d2cfbd9607c5ba8eb9f57d6cdaa4ce02d4769e3801049654c2459",
     "packageRecipeCommit": CORE_RUNTIME_RECIPE_COMMIT,
     "packageVersion": CORE_RUNTIME_PACKAGE_VERSION,
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "93f6462462d696c129b7d3f9c3298e64df987a569fb7b7ac39c513971bbd99e5",
+    "receiptSha256": "f47ebf594dc141c8ba0f9f1f3377ff1a682ca8040d98c6e235178ab55a92a21f",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
     "runtimeSourceCommit": CORE_RUNTIME_SOURCE_COMMIT,
 }
 EXPECTED_CORE_RUNTIME_PACKAGES = {'Chummer.Engine.Contracts': ('Chummer.Contracts/Chummer.Contracts.csproj',
-                              'Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                              '8be00deb9102d1ff4c05e2bde351a7b6a7e4f120f9a6ddc24798babb6e9cdb2e',
-                              2059477),
+                              'Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                              'dbd62e26662eb2e6e6868514ae72f450523937954b9c6f197d52739ba2fbe265',
+                              2059990),
  'Chummer.Application': ('Chummer.Application/Chummer.Application.csproj',
-                         'Chummer.Application.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                         '7db0eea6f9b93f14a8ff7b4be7d474c822ad7e15e00b727ba8de092f4d847a02',
-                         821895),
+                         'Chummer.Application.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                         '2778ba89267c2e75735ce4c03ec45d7c1128bc6b26036b6f30c5fdd8a3fe456b',
+                         824292),
  'Chummer.Rulesets.Hosting': ('Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj',
-                              'Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                              '3c31a5314754a6c2145b3b67ddd6e1e9881e1235ccd061ba56bf47c5ee66becc',
-                              14379),
+                              'Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                              '85ec284cfccb47155334cadbcbc863b134e4a9848e46cb115692e679b3d7b625',
+                              14386),
  'Chummer.Rulesets.Sr5': ('Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj',
-                          'Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                          '4d908ca6acd551784f0475949060c08c698931d4bdab7b6e724d72fc87fe6f3e',
+                          'Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                          '38103600890438c3cda33a1eb01bdc48e1db5ec1486b3b53714ebb4d69743082',
                           31646),
  'Chummer.Rulesets.Sr6': ('Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj',
-                          'Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                          'e6c61798b1d98df11fbe91bf7e600b8ffe3784b34554bce38e48c4ff274cc2e8',
-                          120259),
+                          'Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                          '69f323d56de257e042f279c14d5b58562323822cb577efe633b8fb624da2682b',
+                          120257),
  'Chummer.Infrastructure': ('Chummer.Infrastructure/Chummer.Infrastructure.csproj',
-                            'Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                            '6cd6a9e6239f309610b1e14368549e2d1098721aea9059dc72ff529ece1b45ba',
-                            935150),
+                            'Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                            '7bd6cdd3121cb7d09a8885e0e64a02190727205b7f8f00c3078c31991ed2b16a',
+                            938826),
  'Chummer.Rulesets.Sr4': ('Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj',
-                          'Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                          '5c8ac1299450dc87039e77d5db8b30935c1b417fb5f9fd84812104c7696ffcfc',
-                          34056),
+                          'Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                          '9dd1c817c7b6393a7ae337bee2ac27a853b9d59920871d1c6a94f66541498ed5',
+                          34057),
  'Chummer.Engine.GmCharacterEdits': ('Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj',
-                                     'Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261010.3.sh1fbea12d95e7f.nupkg',
-                                     '69b238cd683f3142466c11a463068b5a74ad6ded79998be169f1b8addca30c57',
-                                     1919316)}
+                                     'Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261010.5.shc8e7f795d8796.nupkg',
+                                     'a12efd1ad45abb7916597726f502b9ad50a96c9dd0b356ef9e8ea221fe0a11da',
+                                     1925407)}
 EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
     "4c8e2fef141cbd1faf696a1d304bd4216bdd83f9273a82153858fe82518a7d2e"
 )
@@ -5060,6 +5060,21 @@ def validate_materialized_current_owner_contract_feed(
     return receipt
 
 
+def cold_owner_contract_feed_inventory(
+    lock: dict[str, Any], source: Path
+) -> list[dict[str, Any]]:
+    """Reuse exact legacy contracts without fetching historical source again."""
+    if not source.is_absolute() or source.is_symlink() or source.resolve(strict=True) != source:
+        raise VerificationError("cold owner-contract feed must be an exact physical directory")
+    require_owned_traversable_directory(source, "cold owner-contract feed")
+    inventory = source / lock["currentOwnerContractFeed"]["inventoryFileName"]
+    metadata = inventory.lstat()
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 64 * 1024:
+        raise VerificationError("cold owner-contract inventory kind or size differs")
+    validate_materialized_current_owner_contract_feed(lock, source)
+    return directory_asset_inventory(source)
+
+
 def import_current_owner_contract_feed(
     lock: dict[str, Any],
     core_root: Path,
@@ -5069,6 +5084,8 @@ def import_current_owner_contract_feed(
     package_root: Path,
     destination_feed: Path,
     environment: dict[str, str],
+    *,
+    prebuilt_owner_feed: Path | None = None,
 ) -> dict[str, Any]:
     authority = lock["currentOwnerContractFeed"]
     producer = core_root / require_relative(
@@ -5121,7 +5138,12 @@ def import_current_owner_contract_feed(
         "--dotnet",
         str(sdk_root / "dotnet"),
     ]
-    run(command, cwd=core_root, environment=environment)
+    reused_inventory = None
+    if prebuilt_owner_feed is None:
+        run(command, cwd=core_root, environment=environment)
+    else:
+        reused_inventory = cold_owner_contract_feed_inventory(lock, prebuilt_owner_feed)
+        copy_inventory_tree(prebuilt_owner_feed, materialized_feed, reused_inventory)
     run(
         [
             str(TRUSTED_PYTHON3),
@@ -5163,6 +5185,10 @@ def import_current_owner_contract_feed(
             "status": "passed",
         }
     )
+    if prebuilt_owner_feed is not None:
+        if cold_owner_contract_feed_inventory(lock, prebuilt_owner_feed) != reused_inventory:
+            raise VerificationError("cold owner contracts changed during import")
+        receipt["reusedExactContractArtifacts"] = True
     return receipt
 
 
@@ -5386,9 +5412,12 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
     core_bundle = getattr(args, "cold_core_runtime_bundle", None)
     hub_receipt_path = getattr(args, "cold_hub_package_plane_receipt", None)
     hub_contract_feed = getattr(args, "cold_hub_contract_feed", None)
+    owner_contract_feed = getattr(args, "cold_owner_contract_feed", None)
     cold_requested = core_bundle is not None or hub_receipt_path is not None
     if hub_contract_feed is not None and not cold_requested:
         raise VerificationError("prebuilt Hub contracts require exact cold inputs")
+    if owner_contract_feed is not None and not cold_requested:
+        raise VerificationError("prebuilt owner contracts require exact cold inputs")
     transition_requested = bool(
         getattr(args, "transition_from_sealed_preseal", False)
     )
@@ -5570,6 +5599,10 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
                 cold_hub_contract_feed_inventory(lock, hub_contract_feed)
                 if hub_contract_feed is not None else None
             )
+            owner_contract_inventory = (
+                cold_owner_contract_feed_inventory(lock, owner_contract_feed)
+                if owner_contract_feed is not None else None
+            )
             import_hub_canonical_feed(
                 lock,
                 owner_roots[canonical_authority["producerDirectory"]],
@@ -5590,6 +5623,7 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
                 legacy_package_root,
                 feed,
                 environment,
+                prebuilt_owner_feed=owner_contract_feed,
             )
             hub_root = owner_roots[canonical_authority["producerDirectory"]]
             legacy_authority = lock["currentOwnerContractFeed"]
@@ -5636,6 +5670,8 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
             }
             if hub_contract_inventory is not None:
                 cold_input_inventories["reusedHubContracts"] = hub_contract_inventory
+            if owner_contract_inventory is not None:
+                cold_input_inventories["reusedOwnerContracts"] = owner_contract_inventory
         pack_config = temporary / "producer.NuGet.config"
         write_nuget_config(pack_config, feed)
         recipe_sha256 = source_digest(
@@ -5760,6 +5796,10 @@ def produce_owner_package_cache(args: argparse.Namespace) -> dict[str, Any]:
                 lock, hub_contract_feed
             ) != cold_input_inventories["reusedHubContracts"]:
                 raise VerificationError("cold Hub contracts changed during production")
+            if owner_contract_feed is not None and cold_owner_contract_feed_inventory(
+                lock, owner_contract_feed
+            ) != cold_input_inventories["reusedOwnerContracts"]:
+                raise VerificationError("cold owner contracts changed during production")
         final_inventory = directory_asset_inventory(staging)
         retain_owner_package_cache_transaction(
             staging=staging,
@@ -6531,6 +6571,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cold-core-runtime-bundle", type=Path)
     parser.add_argument("--cold-hub-package-plane-receipt", type=Path)
     parser.add_argument("--cold-hub-contract-feed", type=Path)
+    parser.add_argument("--cold-owner-contract-feed", type=Path)
     parser.add_argument("--transition-from-sealed-preseal", action="store_true")
     parser.add_argument("--proposed-package-plane-lock-output", type=Path)
     parser.add_argument("--proposed-ui-owner-lock-output", type=Path)
@@ -6614,6 +6655,7 @@ def main() -> int:
             getattr(args, "cold_core_runtime_bundle", None) is not None
             or getattr(args, "cold_hub_package_plane_receipt", None) is not None
             or getattr(args, "cold_hub_contract_feed", None) is not None
+            or getattr(args, "cold_owner_contract_feed", None) is not None
         )
         if (
             getattr(args, "produce_owner_package_cache_output", None) is None
