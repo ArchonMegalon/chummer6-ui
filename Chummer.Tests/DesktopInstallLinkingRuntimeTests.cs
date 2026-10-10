@@ -1063,7 +1063,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
-    public async Task InitializeForStartupAsync_without_explicit_handoff_skips_install_link_gate_on_local_channel()
+    public async Task InitializeForStartupAsync_without_explicit_handoff_prompts_install_link_gate_on_local_channel()
     {
         string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
         string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
@@ -1082,8 +1082,8 @@ public sealed class DesktopInstallLinkingRuntimeTests
                 Array.Empty<string>(),
                 CancellationToken.None);
 
-            Assert.IsFalse(context.ShouldPrompt, "Local/debug startup must not detour into the install-link gate.");
-            Assert.AreEqual("local_channel_no_claim_required", context.PromptReason);
+            Assert.IsTrue(context.ShouldPrompt, "Local channel prompts the install-link wizard for unclaimed installs (a1e00f405 contract).");
+            Assert.AreEqual("claim_required", context.PromptReason);
             Assert.IsNull(context.ClaimResult);
             Assert.AreEqual(1, context.State.LaunchCount);
         }

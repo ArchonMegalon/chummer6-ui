@@ -69,12 +69,21 @@ internal static class MainWindowPostRefreshCoordinator
         }
 
         DesktopDialogWindow dialogWindow = currentWindow ?? CreateDialogWindow(adapter, onClosed);
+        string? previousBoundDialogId = dialogWindow.BoundDialogId;
         dialogWindow.AttachAdapter(adapter);
         dialogWindow.BindDialog(activeDialog);
 
         if (!dialogWindow.IsVisible)
         {
             dialogWindow.Show(owner);
+            dialogWindow.Activate();
+        }
+        else if (!string.Equals(previousBoundDialogId, activeDialog.Id, StringComparison.Ordinal))
+        {
+            // A NEW dialog (different Id) was bound while the window was already
+            // visible but likely buried behind the owner (modeless Show(owner)):
+            // bring it to the front, otherwise the user sees "New Runner does
+            // nothing" because the previous wizard is still in front.
             dialogWindow.Activate();
         }
 

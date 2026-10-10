@@ -1268,3 +1268,21 @@ def test_no_unreviewed_avalonia_paths_in_preseal_recipe_paths() -> None:
         "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
     }
     assert forbidden.isdisjoint(preseal.ALLOWED_RECIPE_PATHS)
+
+
+def test_pipeline_r9_residual_ports_are_explicit_preseal_recipe_paths() -> None:
+    """R9: pipeline-main residual ports ride the explicit preseal recipe path set."""
+    members = {
+        "Chummer.Avalonia/MainWindow.EventHandlers.cs",
+        "Chummer.Avalonia/MainWindow.PostRefreshCoordinators.cs",
+    }
+    assert members <= preseal.ALLOWED_RECIPE_PATHS
+
+
+def test_no_unreviewed_mainwindow_paths_in_preseal_recipe_paths() -> None:
+    """R9 guard: only the owner-approved MainWindow paths may be recipe-legal."""
+    forbidden = {
+        "Chummer.Avalonia/MainWindow.axaml.cs",
+        "Chummer.Avalonia/MainWindow.SelectionHandlers.cs",
+    }
+    assert forbidden.isdisjoint(preseal.ALLOWED_RECIPE_PATHS)
