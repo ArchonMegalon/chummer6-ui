@@ -109,3 +109,98 @@ def test_current_feed_validation_is_distinct_from_full_feed_import() -> None:
     assert receipt["status"] == "bound_not_selected"
     assert receipt["materializedFeedValidated"] is False
     assert receipt["selectedForCanonicalFullFeed"] is False
+
+
+def make_cold_owner_feed(tmp_path: Path) -> tuple[dict, Path, Path]:
+    lock = package_plane.load_json(LOCK)
+    authority = lock["currentOwnerContractFeed"]
+    feed = tmp_path / "reused-feed"
+    feed.mkdir()
+    core = tmp_path / "core"
+    for field, content in (("producerPath", b"# exact test producer\n"),
+                           ("lockPath", b"{\"fixture\": true}\n")):
+        path = core / authority[field]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        authority["producerSha256" if field == "producerPath" else "lockSha256"] = hashlib.sha256(content).hexdigest()
+    for row in authority["packages"]:
+        content = ("synthetic package " + row["packageId"]).encode()
+        (feed / row["fileName"]).write_bytes(content)
+        row["sha256"] = hashlib.sha256(content).hexdigest()
+        row["sizeBytes"] = len(content)
+    authority["packageFeedInventorySha256"] = canonical_digest(sorted(
+        ({key: row[key] for key in ("fileName", "sha256", "sizeBytes")}
+         for row in authority["packages"]), key=lambda row: row["fileName"]))
+    inventory = package_plane.expected_current_owner_contract_inventory(lock)
+    raw = json.dumps(inventory, sort_keys=True).encode()
+    (feed / authority["inventoryFileName"]).write_bytes(raw)
+    authority["inventorySha256"] = hashlib.sha256(raw).hexdigest()
+    return lock, feed, core
+
+
+def test_cold_owner_contracts_reuse_exact_bytes_without_fetch_or_build(tmp_path, monkeypatch):
+    lock, source, core = make_cold_owner_feed(tmp_path)
+    destination = tmp_path / "destination"
+    destination.mkdir()
+    commands = []
+    monkeypatch.setattr(package_plane, "run", lambda command, **kwargs: commands.append(command))
+    receipt = package_plane.import_current_owner_contract_feed(
+        lock, core, tmp_path / "sdk", tmp_path / "materialized",
+        tmp_path / "workspace", tmp_path / "packages", destination, {},
+        prebuilt_owner_feed=source,
+    )
+    assert len(commands) == 1
+    assert commands[0][-1] == "--validate-only"
+    assert receipt["status"] == "passed"
+    assert receipt["reusedExactContractArtifacts"] is True
+    assert receipt["selectedForCanonicalFullFeed"] is True
+    for row in lock["currentOwnerContractFeed"]["packages"]:
+        assert (destination / row["fileName"]).read_bytes() == (source / row["fileName"]).read_bytes()
+
+
+@pytest.mark.parametrize("damage", ["changed", "missing", "extra", "symlink", "inventory", "oversized"])
+def test_cold_owner_contracts_reject_non_exact_feed_before_execution(tmp_path, monkeypatch, damage):
+    lock, source, core = make_cold_owner_feed(tmp_path)
+    authority = lock["currentOwnerContractFeed"]
+    package = source / authority["packages"][0]["fileName"]
+    if damage == "changed":
+        package.write_bytes(b"X" * package.stat().st_size)
+    elif damage == "missing":
+        package.unlink()
+    elif damage == "extra":
+        (source / "extra.nupkg").write_bytes(b"not admitted")
+    elif damage == "symlink":
+        content = package.read_bytes()
+        package.unlink()
+        target = tmp_path / "alias-target"
+        target.write_bytes(content)
+        package.symlink_to(target)
+    elif damage == "inventory":
+        (source / authority["inventoryFileName"]).write_text("{}")
+    else:
+        (source / authority["inventoryFileName"]).write_bytes(b" " * 65537)
+    def forbidden(*args, **kwargs):
+        pytest.fail("invalid prebuilt contracts must not execute a producer")
+    monkeypatch.setattr(package_plane, "run", forbidden)
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.import_current_owner_contract_feed(
+            lock, core, tmp_path / "sdk", tmp_path / "materialized",
+            tmp_path / "workspace", tmp_path / "packages", tmp_path / "destination", {},
+            prebuilt_owner_feed=source,
+        )
+
+
+def test_cold_owner_contracts_reject_source_changed_during_validation(tmp_path, monkeypatch):
+    lock, source, core = make_cold_owner_feed(tmp_path)
+    destination = tmp_path / "destination"
+    destination.mkdir()
+    def mutate_source(*args, **kwargs):
+        row = lock["currentOwnerContractFeed"]["packages"][0]
+        (source / row["fileName"]).write_bytes(b"X" * row["sizeBytes"])
+    monkeypatch.setattr(package_plane, "run", mutate_source)
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.import_current_owner_contract_feed(
+            lock, core, tmp_path / "sdk", tmp_path / "materialized",
+            tmp_path / "workspace", tmp_path / "packages", destination, {},
+            prebuilt_owner_feed=source,
+        )
