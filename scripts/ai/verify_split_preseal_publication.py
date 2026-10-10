@@ -120,6 +120,9 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
 )
 ALLOWED_RECIPE_PATHS = frozenset(
     {
+        # R9 2026-10-10: pipeline-main residual ports (owner-authorized R26 merge).
+        "Chummer.Avalonia/MainWindow.EventHandlers.cs",
+        "Chummer.Avalonia/MainWindow.PostRefreshCoordinators.cs",
         *OWNER_CONTEXT_RECIPE_PATHS,
         ".github/workflows/current-main-package-plane.yml",
         ".github/workflows/pull-request-ci.yml",
@@ -235,13 +238,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "1c36a44df50aa7f609981a2214d496fea49d69d9",
+        "blob": "8dbfd7089bbe26648357688e3806b48d125a3833",
         "commit": "3d1e730f727f643209f898c9f68f8aa39441dec2",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "860c9c8f5c4fdead8273d7cac649782600915f430206a7ec8c4d832f1f4cea28",
+        "rawSha256": "6981f56ef7d2113513b76e4829f2374636cee8ef631119fb47b99af93f5bc089",
         "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "860c9c8f5c4fdead8273d7cac649782600915f430206a7ec8c4d832f1f4cea28",
+        "semanticCanonicalSha256": "6981f56ef7d2113513b76e4829f2374636cee8ef631119fb47b99af93f5bc089",
         "semanticCanonicalSizeBytes": 65047,
         "tree": "5f3c93c63da8a531cd463a3473832dc0e39a7c70"
     },

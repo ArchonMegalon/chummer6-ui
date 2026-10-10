@@ -3243,7 +3243,7 @@ public static class DesktopInstallLinkingRuntime
         return normalized switch
         {
             "" => false,
-            "local" => false,
+            "local" => true,
             "docker" => false,
             "debug" => false,
             "development" => false,
