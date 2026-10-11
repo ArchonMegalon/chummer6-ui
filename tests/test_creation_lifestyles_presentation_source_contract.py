@@ -15,10 +15,10 @@ class CreationLifestylesPresentationSourceContractTests(unittest.TestCase):
             "CharacterCreationLifestyleMutationInput",
             "CharacterCreationLifestylePreparedPreview",
             "CharacterCreationLifestyleConfirmation",
-            "_service.Load(new CharacterCreationLifestylesLoadRequest",
-            "_service.Preview(new CharacterCreationLifestylePreviewRequest",
-            "_service.Confirm(new CharacterCreationLifestyleConfirmRequest",
-            "_service.LookupReceipt(new CharacterCreationLifestyleReceiptLookupRequest",
+            "LoadCore(overview.DisplayOwnerContext, new CharacterCreationLifestylesLoadRequest",
+            "PreviewCore(overview.DisplayOwnerContext, new CharacterCreationLifestylePreviewRequest",
+            "ConfirmCore(prepared.DisplayOwnerContext, new CharacterCreationLifestyleConfirmRequest",
+            "LookupCore(overview.DisplayOwnerContext, new CharacterCreationLifestyleReceiptLookupRequest",
             "ExplicitlyConfirmed: true",
             "PreparedStillMatches",
             "ReceiptMatches",
@@ -59,6 +59,22 @@ class CreationLifestylesPresentationSourceContractTests(unittest.TestCase):
             "LifestylesSnapshotDigest",
             "PreviewDigest",
             "IdempotencyKey",
+        ):
+            self.assertIn(marker, source)
+
+    def test_pending_plan_and_original_owner_are_preserved(self) -> None:
+        source = SOURCE.read_text(encoding="utf-8")
+        for marker in (
+            "IOwnerBoundCharacterCreationLifestylesService",
+            "OwnerContextMatches(input.DisplayOwnerContext, overview.DisplayOwnerContext)",
+            "OwnerContextMatches(prepared.DisplayOwnerContext, overview.DisplayOwnerContext)",
+            "_ownerBoundService.Confirm(original, request)",
+            "owner is null && _ownerBoundService is null",
+            "CharacterCreationLifestylesSchemas.DraftWritePlanV1",
+            "CharacterCreationLifestylesDraftRules.IsValidShape",
+            "CharacterCreationLifestylesDraftRules.Digest(draft)",
+            "CharacterCreationFinalizationDigest.Compute(left.PendingDraft)",
+            "CharacterCreationFinalizationDigest.Compute(right.PendingDraft)",
         ):
             self.assertIn(marker, source)
 
