@@ -1,5 +1,7 @@
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
+using Chummer.Application.Owners;
+using System.Text.Json.Serialization;
 
 namespace Chummer.Presentation.Overview;
 
@@ -41,6 +43,9 @@ public sealed record CharacterCreationLifestyleMutationInput(
     Guid LifestyleId,
     CharacterCreationLifestyleConfiguration? Configuration)
 {
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; init; }
+
     internal CharacterCreationLifestyleMutation ToCoreMutation()
         => new(MutationKind, LifestyleId, Configuration);
 }
@@ -52,7 +57,11 @@ public sealed record CharacterCreationLifestylesInteractionState(
     CharacterCreationLifestyleBudget Budget,
     IReadOnlyList<string> Blockers,
     bool CanEdit,
-    string SnapshotDigest);
+    string SnapshotDigest)
+{
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; init; }
+}
 
 public sealed record CharacterCreationLifestylePreparedPreview(
     string LifestylesSnapshotDigest,
@@ -68,7 +77,11 @@ public sealed record CharacterCreationLifestylePreparedPreview(
     bool RequiresExplicitConfirmation,
     bool CanConfirm,
     string IdempotencyKey,
-    string PreviewDigest);
+    string PreviewDigest)
+{
+    [JsonIgnore]
+    public OwnerContextStamp? DisplayOwnerContext { get; init; }
+}
 
 public sealed record CharacterCreationLifestyleConfirmation(
     CharacterCreationLifestylePreparedPreview PreparedPreview,
@@ -104,11 +117,14 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
     : ICharacterCreationLifestylesInteractionPresenter
 {
     private readonly ICharacterCreationLifestylesService _service;
+    private readonly IOwnerBoundCharacterCreationLifestylesService? _ownerBoundService;
 
     public CharacterCreationLifestylesInteractionPresenter(
-        ICharacterCreationLifestylesService service)
+        ICharacterCreationLifestylesService service,
+        IOwnerBoundCharacterCreationLifestylesService? ownerBoundService = null)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
+        _ownerBoundService = ownerBoundService;
     }
 
     public CharacterCreationLifestylesInteractionLoadResult Load(CharacterOverviewState overview)
@@ -116,7 +132,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         ExactLoad load = LoadExact(overview);
         return new CharacterCreationLifestylesInteractionLoadResult(
             load.Outcome,
-            load.State is null ? null : Project(load.State),
+            load.State is null ? null : Project(load.State, overview.DisplayOwnerContext),
             load.Blockers);
     }
 
@@ -125,6 +141,10 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         CharacterCreationLifestyleMutationInput input)
     {
         ArgumentNullException.ThrowIfNull(input);
+        ArgumentNullException.ThrowIfNull(overview);
+        if (!OwnerContextMatches(input.DisplayOwnerContext, overview.DisplayOwnerContext))
+            return new(CharacterCreationLifestyleOutcomes.Conflict, null, null,
+                [CharacterCreationLifestylesInteractionBlockers.OverviewAuthorityRequired]);
         ExactLoad load = LoadExact(overview);
         if (load.State is not CharacterCreationLifestylesState lifestyles)
         {
@@ -135,7 +155,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
                 load.Blockers);
         }
 
-        CharacterCreationLifestylesInteractionState state = Project(lifestyles);
+        CharacterCreationLifestylesInteractionState state = Project(lifestyles, overview.DisplayOwnerContext);
         if (!lifestyles.CanEdit || lifestyles.Blockers.Count != 0)
         {
             return new CharacterCreationLifestylesInteractionPrepareResult(
@@ -156,7 +176,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         }
 
         CharacterCreationLifestyleResult<CharacterCreationLifestylePreview> result =
-            _service.Preview(new CharacterCreationLifestylePreviewRequest(
+            PreviewCore(overview.DisplayOwnerContext, new CharacterCreationLifestylePreviewRequest(
                 lifestyles.Binding,
                 mutation));
         if (result.Value is not CharacterCreationLifestylePreview preview)
@@ -176,7 +196,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
                 [CharacterCreationLifestylesInteractionBlockers.PreparedPreviewMismatch]);
         }
 
-        CharacterCreationLifestylePreparedPreview prepared = Project(lifestyles, mutation, preview);
+        CharacterCreationLifestylePreparedPreview prepared = Project(lifestyles, mutation, preview) with { DisplayOwnerContext = overview.DisplayOwnerContext };
         return new CharacterCreationLifestylesInteractionPrepareResult(
             result.Outcome,
             state,
@@ -188,9 +208,13 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         CharacterOverviewState overview,
         CharacterCreationLifestyleConfirmation confirmation)
     {
+        ArgumentNullException.ThrowIfNull(overview);
         ArgumentNullException.ThrowIfNull(confirmation);
         ArgumentNullException.ThrowIfNull(confirmation.PreparedPreview);
         CharacterCreationLifestylePreparedPreview prepared = confirmation.PreparedPreview;
+        if (!OwnerContextMatches(prepared.DisplayOwnerContext, overview.DisplayOwnerContext))
+            return Failure(CharacterCreationLifestyleOutcomes.Conflict, prepared,
+                CharacterCreationLifestylesInteractionBlockers.OverviewAuthorityRequired);
         if (!confirmation.ExplicitlyConfirmed)
         {
             return Failure(
@@ -250,7 +274,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         }
 
         CharacterCreationLifestyleResult<CharacterCreationLifestyleReceipt> result =
-            _service.Confirm(new CharacterCreationLifestyleConfirmRequest(
+            ConfirmCore(prepared.DisplayOwnerContext, new CharacterCreationLifestyleConfirmRequest(
                 prepared.Binding,
                 prepared.Mutation,
                 prepared.PreviewDigest,
@@ -277,8 +301,18 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
                 [CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch]);
         }
 
-        CharacterCreationLifestyleResult<CharacterCreationLifestylesState> refresh =
-            _service.Load(new CharacterCreationLifestylesLoadRequest(receipt.WorkspaceId));
+        CharacterCreationLifestyleResult<CharacterCreationLifestylesState> refresh;
+        try
+        {
+            refresh = LoadCore(overview.DisplayOwnerContext, new CharacterCreationLifestylesLoadRequest(receipt.WorkspaceId));
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            // Commit and subsequent display refresh are distinct operations.
+            // Never discard the already verified receipt when only reading fails.
+            return new(CharacterCreationLifestyleOutcomes.Conflict, prepared, receipt, null,
+                [CharacterCreationLifestylesInteractionBlockers.RefreshAuthorityRequired]);
+        }
         if (refresh.Outcome != CharacterCreationLifestyleOutcomes.Available
             || refresh.Value is not CharacterCreationLifestylesState refreshed
             || !RefreshedStateMatches(prepared, receipt, refreshed))
@@ -296,7 +330,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
             result.Outcome,
             prepared,
             receipt,
-            Project(refreshed),
+            Project(refreshed, prepared.DisplayOwnerContext),
             Normalize(result.Blockers.Concat(refresh.Blockers)));
     }
 
@@ -318,7 +352,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         }
 
         CharacterCreationLifestyleResult<CharacterCreationLifestyleReceipt> lookup =
-            _service.LookupReceipt(new CharacterCreationLifestyleReceiptLookupRequest(
+            LookupCore(overview.DisplayOwnerContext, new CharacterCreationLifestyleReceiptLookupRequest(
                 workspaceId,
                 idempotencyKey));
         if (lookup.Value is not CharacterCreationLifestyleReceipt receipt)
@@ -330,8 +364,16 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
                 Normalize(lookup.Blockers));
         }
 
-        CharacterCreationLifestyleResult<CharacterCreationLifestylesState> current =
-            _service.Load(new CharacterCreationLifestylesLoadRequest(workspaceId));
+        CharacterCreationLifestyleResult<CharacterCreationLifestylesState> current;
+        try
+        {
+            current = LoadCore(overview.DisplayOwnerContext, new CharacterCreationLifestylesLoadRequest(workspaceId));
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            return new(CharacterCreationLifestyleOutcomes.Conflict, receipt, null,
+                [CharacterCreationLifestylesInteractionBlockers.RefreshAuthorityRequired]);
+        }
         if (current.Outcome != CharacterCreationLifestyleOutcomes.Available
             || current.Value is not CharacterCreationLifestylesState state
             || !ReceiptCanBelongToCurrentState(receipt, state))
@@ -347,7 +389,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         return new CharacterCreationLifestylesInteractionReceiptLookupResult(
             lookup.Outcome,
             receipt,
-            Project(state),
+            Project(state, overview.DisplayOwnerContext),
             Normalize(lookup.Blockers.Concat(current.Blockers)));
     }
 
@@ -372,7 +414,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         }
 
         CharacterCreationLifestyleResult<CharacterCreationLifestylesState> result =
-            _service.Load(new CharacterCreationLifestylesLoadRequest(workspaceId));
+            LoadCore(overview.DisplayOwnerContext, new CharacterCreationLifestylesLoadRequest(workspaceId));
         if (result.Outcome != CharacterCreationLifestyleOutcomes.Available
             || result.Value is not CharacterCreationLifestylesState lifestyles)
         {
@@ -390,6 +432,43 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
             Normalize(result.Blockers.Concat(lifestyles.Blockers)));
     }
 
+    private bool OwnerContextMatches(OwnerContextStamp? original, OwnerContextStamp? display)
+        => original is { IsValid: true } && original == display
+           || original is null && display is null && _ownerBoundService is null;
+
+    private CharacterCreationLifestyleResult<CharacterCreationLifestylesState> LoadCore(
+        OwnerContextStamp? owner, CharacterCreationLifestylesLoadRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.Load(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.Load(request) : OwnerUnavailable<CharacterCreationLifestylesState>();
+
+    private CharacterCreationLifestyleResult<CharacterCreationLifestylePreview> PreviewCore(
+        OwnerContextStamp? owner, CharacterCreationLifestylePreviewRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.Preview(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.Preview(request) : OwnerUnavailable<CharacterCreationLifestylePreview>();
+
+    private CharacterCreationLifestyleResult<CharacterCreationLifestyleReceipt> ConfirmCore(
+        OwnerContextStamp? owner, CharacterCreationLifestyleConfirmRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.Confirm(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.Confirm(request) : OwnerUnavailable<CharacterCreationLifestyleReceipt>();
+
+    private CharacterCreationLifestyleResult<CharacterCreationLifestyleReceipt> LookupCore(
+        OwnerContextStamp? owner, CharacterCreationLifestyleReceiptLookupRequest request)
+        => owner is { IsValid: true } original && _ownerBoundService is not null
+            ? _ownerBoundService.LookupReceipt(original, request)
+            : owner is null && _ownerBoundService is null
+                ? _service.LookupReceipt(request) : OwnerUnavailable<CharacterCreationLifestyleReceipt>();
+
+    private static CharacterCreationLifestyleResult<T> OwnerUnavailable<T>() where T : class
+        => new(CharacterCreationLifestyleOutcomes.Unavailable, null,
+            [CharacterCreationLifestylesInteractionBlockers.OverviewAuthorityRequired]);
+
+
     private static bool MatchesOverview(
         long contentRevision,
         long savedRevision,
@@ -406,7 +485,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
            && !wizard.CharacterCreated;
 
     private static CharacterCreationLifestylesInteractionState Project(
-        CharacterCreationLifestylesState state)
+        CharacterCreationLifestylesState state, OwnerContextStamp? owner)
         => new(
             state.Binding,
             state.Authority,
@@ -414,7 +493,7 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
             state.Budget,
             state.Blockers,
             state.CanEdit,
-            state.SnapshotDigest);
+            state.SnapshotDigest) { DisplayOwnerContext = owner };
 
     private static CharacterCreationLifestylePreparedPreview Project(
         CharacterCreationLifestylesState state,
@@ -480,7 +559,15 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
         };
 
     private static bool PlanMatchesPreview(CharacterCreationLifestylePreview preview)
-        => string.Equals(preview.WritePlan.Schema, CharacterCreationLifestylesSchemas.WritePlanV1, StringComparison.Ordinal)
+        => string.Equals(preview.WritePlan.Schema,
+                preview.WritePlan.PendingDraft is null ? CharacterCreationLifestylesSchemas.WritePlanV1
+                    : CharacterCreationLifestylesSchemas.DraftWritePlanV1, StringComparison.Ordinal)
+           && (preview.WritePlan.PendingDraft is not { } draft || (
+               preview.Binding.ContentRevision < long.MaxValue
+               && CharacterCreationLifestylesDraftRules.IsValidShape(preview.Binding.WorkspaceId,
+                   preview.Binding.ContentRevision + 1, draft)
+               && draft.InputAuthority.RawCharacterXmlDigest == preview.Binding.ContentDigest
+               && draft.DraftDigest == CharacterCreationLifestylesDraftRules.Digest(draft)))
            && string.Equals(preview.WritePlan.StepId, CharacterCreationWizardStepIds.ContactsLifestyles, StringComparison.Ordinal)
            && string.Equals(preview.WritePlan.MutationKind, preview.MutationKind, StringComparison.Ordinal)
            && preview.WritePlan.LifestyleId == (preview.Before ?? preview.After)!.Configuration.LifestyleId
@@ -770,6 +857,8 @@ public sealed class CharacterCreationLifestylesInteractionPresenter
            && left.PreservesUntouchedSiblingState == right.PreservesUntouchedSiblingState
            && left.PreservesNestedState == right.PreservesNestedState
            && string.Equals(left.PlanDigest, right.PlanDigest, StringComparison.Ordinal)
+           && CharacterCreationFinalizationDigest.Compute(left.PendingDraft)
+                == CharacterCreationFinalizationDigest.Compute(right.PendingDraft)
            && left.Operations.Count == right.Operations.Count
            && left.Operations.Zip(right.Operations).All(pair =>
                pair.First.Order == pair.Second.Order
