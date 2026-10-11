@@ -291,6 +291,7 @@
     <Compile Include="Presentation\DesktopSupportDiagnosticsTextTests.cs" />
     <Compile Include="Presentation\DesktopTrustPanelFactoryTests.cs" />
     <Compile Include="Presentation\CharacterCreationContactsAvaloniaTests.cs" />
+    <Compile Include="Presentation\CharacterCreationLifestylesOwnerTests.cs" />
     <Compile Include="Presentation\DowntimePlannerProjectorTests.cs" />
     <Compile Include="Presentation\DualHeadAcceptanceTests.cs" />
     <Compile Include="Presentation\MainWindowShellFrameProjectorTests.cs" />

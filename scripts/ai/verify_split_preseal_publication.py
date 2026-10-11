@@ -65,6 +65,7 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/IOwnerBoundWorkspacePersistenceClient.cs",
         "Chummer.Presentation/Overview/CareerReputationEditRequest.cs",
         "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs",
+        "Chummer.Presentation/Overview/CharacterCreationLifestylesInteractionPresenter.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Commands.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Persistence.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.StoredDeletion.cs",
@@ -179,6 +180,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/InProcessWorkspaceContinuationTests.cs",
         "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+        "Chummer.Tests/Presentation/CharacterCreationLifestylesOwnerTests.cs",
+        "Chummer.Tests/Chummer.Tests.csproj",
         "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
         "Chummer.Tests/Presentation/DialogCoordinatorTests.cs",
         "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
@@ -206,6 +209,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "tests/test_verify_mode_controls.py",
         "tests/test_desktop_downloads_local_release_policy.py",
         "tests/test_fresh_package_plane_controls.py",
+        "tests/test_creation_lifestyles_presentation_source_contract.py",
         "tests/test_keylocker_fixture_intake.py",
         "tests/test_split_preseal_publication.py",
         "tests/test_windows_installer_payload_gate.py",
@@ -238,15 +242,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "e2dc609b9a0d4ea5cf02821125e0d31e09867b1a",
-        "commit": "e511502185d5184407ba039b5842e472c5c947b7",
+        "blob": "1d25ff1f28fab1f18d7535f14cfcc5cd6b4d1d77",
+        "commit": "f14438548a084c1b6f1b6bc1a352660becca23db",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "4c84a26195deb53acb34785274a2dc67acd354f679ed3895e873bdd2410a15eb",
-        "rawSizeBytes": 65047,
-        "semanticCanonicalSha256": "4c84a26195deb53acb34785274a2dc67acd354f679ed3895e873bdd2410a15eb",
-        "semanticCanonicalSizeBytes": 65047,
-        "tree": "53d84d602c89dd5238df65abedfb745f82eccd48"
+        "rawSha256": "d1398b6d3771bde8206d817424f48805a141bb9379e4722051b741ef8e75d320",
+        "rawSizeBytes": 65350,
+        "semanticCanonicalSha256": "d1398b6d3771bde8206d817424f48805a141bb9379e4722051b741ef8e75d320",
+        "semanticCanonicalSizeBytes": 65350,
+        "tree": "1a0efffcb4ea5e97e444fe5f9ac9f0abd58593e2"
     },
     "producerLock": {
         "absentAtCommit": True,
