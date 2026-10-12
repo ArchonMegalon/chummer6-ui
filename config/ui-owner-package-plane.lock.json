@@ -1,13 +1,13 @@
 {
   "contract": "chummer6-ui.owner-package-plane-lock/v1",
-  "dependencyAuthorityCacheKey": "9be26442c03f668bfff69864729ad0159b59d6ff5a340faf29a58c4cbae8deb6",
-  "packageRecipeCommit": "328ba617da91afaabecfc7abb4eb44598bfa8751",
+  "dependencyAuthorityCacheKey": "2d97670d4f6a2ed784b387152cfc54f7785ec682d673b615a8d33e1b289afe83",
+  "packageRecipeCommit": "01249a23dc078e8c7099b3a26c082dadbf465c6c",
   "packageRecipePath": "scripts/ai/verify_fresh_checkout_package_plane.py",
-  "packageRecipeSha256": "f8b1703892c475ec7a5ed7aca9a231385b655fcb1adb78f79a4f664e4c99b6b0",
+  "packageRecipeSha256": "4a881cda9285c4ba238b684e0632062ed85e16dc2ccfd9b755fe1332f5206135",
   "packages": [
     {
       "dependencies": {
-        "Chummer.Engine.Contracts": "0.0.0-packageplane.candidate.v20261012.5.shf773b0a8ee518"
+        "Chummer.Engine.Contracts": "0.0.0-packageplane.candidate.v20261012.6.shbd816e1d6d138"
       },
       "fileName": "Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
       "packageId": "Chummer.Campaign.Contracts",
