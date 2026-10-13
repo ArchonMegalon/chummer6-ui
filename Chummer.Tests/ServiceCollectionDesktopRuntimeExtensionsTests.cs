@@ -57,7 +57,7 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                 ApplyEnvironment(mode: null, baseUrl: null, apiKey: null, () =>
                 {
                     var services = new ServiceCollection();
-                    services.AddChummerLocalRuntimeClient(ContentRoot, root);
+                    services.AddChummerLocalRuntimeClient(root, ContentRoot);
 
                     using ServiceProvider provider = services.BuildServiceProvider();
                     IChummerClient client = provider.GetRequiredService<IChummerClient>();
@@ -481,7 +481,7 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
     private ServiceProvider BuildProvider(string root, string desktopHeadId)
     {
         var services = new ServiceCollection();
-        services.AddChummerLocalRuntimeClient(ContentRoot, root, desktopHeadId);
+        services.AddChummerLocalRuntimeClient(root, ContentRoot, desktopHeadId);
         return services.BuildServiceProvider();
     }
 
