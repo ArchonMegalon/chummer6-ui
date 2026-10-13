@@ -38,6 +38,17 @@ public interface IOwnerBoundWorkspaceMutationClient
 }
 
 /// <summary>
+/// Keeps the original live owner stamp throughout a quality review/commit flow,
+/// including the caller's own asynchronous projection and confirmation waits.
+/// The returned workspace must admit that exact stamp at every Core operation;
+/// it must never recapture a later owner with the same account name.
+/// </summary>
+public interface IOwnerBoundCareerQualityAtomicWorkspace
+{
+    ICareerQualityAtomicWorkspace ForOwner(OwnerContextStamp expectedOwner);
+}
+
+/// <summary>
 /// Local read capability. Each projection is materialized under the original
 /// live owner lease; no lease is held across an await. Callers also bind the
 /// before/after canonical snapshot and revisions before publishing display data.

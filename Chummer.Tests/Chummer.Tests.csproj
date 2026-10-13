@@ -178,6 +178,7 @@
     <Compile Include="HeadlessCoreContentBundleValidationTests.cs" />
     <Compile Include="ImprovementManagerSyncWrapperTests.cs" />
     <Compile Include="InProcessChummerClientRulesetPluginTests.cs" />
+    <Compile Include="InProcessCareerQualityTests.cs" />
     <Compile Include="InstallHistoryStoreTests.cs" />
     <Compile Include="InstallStateStoreTests.cs" />
     <Compile Include="LifeModulesServiceTests.cs" />

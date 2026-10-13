@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Application.Owners;
+using Chummer.Application.Characters;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Owners;
@@ -26,6 +27,20 @@ namespace Chummer.Tests;
 [TestClass]
 public class ServiceCollectionDesktopRuntimeExtensionsTests
 {
+    public TestContext TestContext { get; set; } = null!;
+
+    private string ContentRoot
+    {
+        get
+        {
+            TestContext.Properties.TryGetValue("ChummerCoreContentRoot", out object? value);
+            Assert.IsTrue(value is string path && Path.IsPathFullyQualified(path)
+                && File.Exists(Path.Combine(path, "Chummer", "data", "lifemodules.xml")),
+                "Supply the exact ChummerCoreContentRoot for real runtime composition.");
+            return (string)value!;
+        }
+    }
+
     private static readonly object EnvironmentLock = new();
     private const string DefaultRulesetEnvironmentVariable = "CHUMMER_DEFAULT_RULESET";
     private const string DesktopStateRootEnvironmentVariable = "CHUMMER_DESKTOP_STATE_ROOT";
@@ -42,7 +57,7 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                 ApplyEnvironment(mode: null, baseUrl: null, apiKey: null, () =>
                 {
                     var services = new ServiceCollection();
-                    services.AddChummerLocalRuntimeClient(root, root);
+                    services.AddChummerLocalRuntimeClient(root, ContentRoot);
 
                     using ServiceProvider provider = services.BuildServiceProvider();
                     IChummerClient client = provider.GetRequiredService<IChummerClient>();
@@ -55,6 +70,10 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                     IReadOnlyList<IRulesetPlugin> plugins = provider.GetServices<IRulesetPlugin>().ToArray();
 
                     Assert.IsInstanceOfType<InProcessChummerClient>(client);
+                    Assert.IsInstanceOfType<Chummer.Presentation.Overview.ICareerQualityAtomicWorkspace>(client);
+                    Assert.IsInstanceOfType<OwnerManagedCareerQualityAuthorityResolver>(
+                        provider.GetRequiredService<ICharacterCareerQualityAuthorityResolver>());
+                    Assert.IsNotNull(provider.GetRequiredService<OwnerBoundCharacterCareerQualityService>());
                     Assert.IsInstanceOfType<InProcessSessionClient>(sessionClient);
                     Assert.IsInstanceOfType<NoOpDesktopWorkspaceRoamingSync>(roamingSync);
                     Assert.IsTrue(ReferenceEquals(workspaceStore, workspaceReadiness));
@@ -459,10 +478,10 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
         }
     }
 
-    private static ServiceProvider BuildProvider(string root, string desktopHeadId)
+    private ServiceProvider BuildProvider(string root, string desktopHeadId)
     {
         var services = new ServiceCollection();
-        services.AddChummerLocalRuntimeClient(root, root, desktopHeadId);
+        services.AddChummerLocalRuntimeClient(root, ContentRoot, desktopHeadId);
         return services.BuildServiceProvider();
     }
 

@@ -39,26 +39,26 @@ package_plane = load_module()
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "8069140ade4c64ca1ff803144ccdff1c66999988"
-    runtime = "788c4a4908cdc94cf06167d536d951ea6fe08c96"
-    version = "0.0.0-packageplane.candidate.v20261013.4.sh788c4a4908cdc"
+    recipe = "bf757a688fa2070465d6b0122e7e715d6d563baa"
+    runtime = "1ee87c8458c3cd60cfd4f3c463cefd3c8499d03e"
+    version = "0.0.0-packageplane.candidate.v20261013.5.sh1ee87c8458c3c"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 6021798
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 6233387
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "3587e1f28303d0392a27d92e4409d56ce43cfd22814aed07821c3cd702629d53"
+        "9b33e9a94009931f9156800b4488c9f6e934a50db18b718765fbcabf9cea82d3"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "2f0253478663815be57b3c36ee77ff25b452d2b3be6a9a0704f93211b1816cae"
-    assert metadata["lockSha256"] == "fec2b05339275449558cdae8e620bc002185dd431f20d3239a43f3382f8bbb25"
-    assert metadata["receiptSha256"] == "c24ec13df5b3e242ef7f3924273c7a792f0366eff8c564e03403655527830a5d"
+    assert metadata["inventorySha256"] == "a67a0a77db5fed30f46739592888acd96d7dd26c636e5c05886200d710ebefe5"
+    assert metadata["lockSha256"] == "1d6518b484d754a3605516113ed279e3e83f6e2ea4061ba06bc6c18a9d4fc623"
+    assert metadata["receiptSha256"] == "52294af5ead87335b65ba62c7fd4da688fdaf7d1518a05cce9f59ddd08937dd4"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -162,8 +162,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-8069140ade4c64ca1ff803144ccdff1c66999988/"
-        "chummer-core-runtime-package-plane-8069140ade4c64ca1ff803144ccdff1c66999988.zip",
+        "core-runtime-package-plane-bf757a688fa2070465d6b0122e7e715d6d563baa/"
+        "chummer-core-runtime-package-plane-bf757a688fa2070465d6b0122e7e715d6d563baa.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -416,10 +416,10 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "8069140ade4c64ca1ff803144ccdff1c66999988"
+        "bf757a688fa2070465d6b0122e7e715d6d563baa"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "788c4a4908cdc94cf06167d536d951ea6fe08c96"
+        "1ee87c8458c3cd60cfd4f3c463cefd3c8499d03e"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
         "c77395de9f733427ef952c851f4a95b063cb5573"
@@ -429,24 +429,24 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "e92b8403ae3e0bbebf56ae03132bc515e6bf6d0f",
-            "commit": "0be7a7737cf8a9043d1c189637cc0b8e434e8fb6",
+            "blob": "a973f2dc80fb14960516b150927843a0233e34c3",
+            "commit": "230255c00b96d3cf8b189a87c29c2f8964b2ac09",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "b0000543d8a0365a757755993da15eeddfcd58af742565de9e42c81e1cdc56c8",
-            "rawSizeBytes": 65350,
-            "semanticCanonicalSha256": "b0000543d8a0365a757755993da15eeddfcd58af742565de9e42c81e1cdc56c8",
-            "semanticCanonicalSizeBytes": 65350,
-            "tree": "f4138fec5acc60d69ba589211731f48f5f605ac6",
+            "rawSha256": "bf736284fc006a89dedc2a67c26b5f888ca9ceb45d267d950e79b8488c6af8fb",
+            "rawSizeBytes": 65754,
+            "semanticCanonicalSha256": "bf736284fc006a89dedc2a67c26b5f888ca9ceb45d267d950e79b8488c6af8fb",
+            "semanticCanonicalSizeBytes": 65754,
+            "tree": "7168d018968124396d49df5ab6a1d4a8cc8d5964",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 65350
+    assert len(package_plane.encoded_json(next_lock)) == 65754
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "b0000543d8a0365a757755993da15eeddfcd58af742565de9e42c81e1cdc56c8"
+        "bf736284fc006a89dedc2a67c26b5f888ca9ceb45d267d950e79b8488c6af8fb"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2201,7 +2201,7 @@ def test_new_runner_method_regression_is_a_bound_package_consumer_input() -> Non
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == "CreationWizard/NewRunnerBuildMethodTests.cs"
     package_plane.validate_test_compile_items(REPO_ROOT)
     assert (REPO_ROOT / relative).read_text(encoding="utf-8").count("[DataRow(") == 9
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 816
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 834
 
 
 def test_checked_in_locks_are_exact_retained_bytes_or_current_sealed_authority() -> None:
@@ -2237,8 +2237,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 130
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 131
+    assert len(oracle["consumer"]["sourceFiles"]) == 133
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 134
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2310,7 +2310,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         assert source in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
         assert (REPO_ROOT / source).is_file()
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{source}"] == f"CreationWizard/{name}"
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 816
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 834
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -2523,10 +2523,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "c77395de9f733427ef952c851f4a95b063cb5573"
     )
     assert core["packageRecipeCommit"] == (
-        "8069140ade4c64ca1ff803144ccdff1c66999988"
+        "bf757a688fa2070465d6b0122e7e715d6d563baa"
     )
     assert core["runtimeSourceCommit"] == (
-        "788c4a4908cdc94cf06167d536d951ea6fe08c96"
+        "1ee87c8458c3cd60cfd4f3c463cefd3c8499d03e"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -2880,7 +2880,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 816' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 834' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
@@ -2962,11 +2962,11 @@ def test_continuation_tests_and_bridge_are_exact_consumer_members() -> None:
 def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> None:
     preseal = package_plane.load_split_preseal_verifier()
     members = package_plane.OWNER_CONTEXT_SOURCE_FILES
-    assert len(members) == 67
+    assert len(members) == 70
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 131
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 134
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -2979,6 +2979,21 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
         "config/ui-preseal-publication.json",
     ):
         assert forbidden not in members
+
+
+def test_career_quality_adapter_and_actual_store_tests_are_bound_consumer_inputs() -> None:
+    expected = {
+        "Chummer.Desktop.Runtime/InProcessChummerClient.CareerQuality.cs",
+        "Chummer.Tests/InProcessCareerQualityTests.cs",
+        "Chummer.Tests/ServiceCollectionDesktopRuntimeExtensionsTests.cs",
+    }
+    assert expected <= package_plane.OWNER_CONTEXT_SOURCE_FILES
+    assert expected <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
+    for name, cases in (("InProcessCareerQualityTests.cs", 8),
+                        ("ServiceCollectionDesktopRuntimeExtensionsTests.cs", 10)):
+        assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../Chummer.Tests/{name}"] == name
+        assert static_mstest_case_count(f"Chummer.Tests/{name}") == cases
+    package_plane.validate_test_compile_items(REPO_ROOT)
 
 
 @pytest.mark.parametrize("relative", sorted(package_plane.OWNER_CONTEXT_SOURCE_FILES))
@@ -3043,7 +3058,7 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
     assert sum(minimum for _, _, minimum in expected) == 216
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 60 + 4 + 2
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 60 + 4 + 2 + 8 + 10
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
         ("Chummer.Tests/Presentation/ShellPresenterTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
@@ -3087,8 +3102,8 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
     assert static_mstest_case_count(relative) == 60
     # Include all thirteen Foundation shared-read/method-exclusion cases while
     # retaining the previous 47 owner cases and seven adoption/roster cases.
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 60 + 7 + 2
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 131
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 60 + 7 + 2 + 8 + 10
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 134
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"

@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using System.Security.Cryptography;
 using System.Text;
 using Chummer.Application.BuildGhost;
+using Chummer.Application.Characters;
 using Chummer.Application.Content;
 using Chummer.Application.Hub;
 using Chummer.Application.Owners;
@@ -34,6 +35,7 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
 
     private readonly IWorkspaceService _workspaceService;
     private readonly IWorkspaceStore? _workspaceStore;
+    private readonly OwnerBoundCharacterCareerQualityService? _careerQualityService;
     private readonly IRulesetShellCatalogResolver _shellCatalogResolver;
     private readonly IBuildKitRegistryService? _buildKitRegistryService;
     private readonly IHubProjectCompatibilityService? _hubProjectCompatibilityService;
@@ -69,10 +71,12 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
         TimeSpan? postCommitRoamingTimeout = null,
         IWorkspaceStore? workspaceStore = null,
         WorkspaceContinuationExportService? continuationExportService = null,
-        WorkspaceContinuationRestoreService? continuationRestoreService = null)
+        WorkspaceContinuationRestoreService? continuationRestoreService = null,
+        OwnerBoundCharacterCareerQualityService? careerQualityService = null)
     {
         _workspaceService = workspaceService;
         _workspaceStore = workspaceStore;
+        _careerQualityService = careerQualityService;
         _continuationExportService = continuationExportService;
         _continuationRestoreService = continuationRestoreService;
         _shellCatalogResolver = shellCatalogResolver;
