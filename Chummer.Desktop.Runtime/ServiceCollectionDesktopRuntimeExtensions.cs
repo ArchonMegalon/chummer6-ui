@@ -74,6 +74,8 @@ public static class ServiceCollectionDesktopRuntimeExtensions
         }
 
         services.TryAddSingleton<WorkspaceContinuationExportService>();
+        services.TryAddSingleton<ICharacterCareerQualityAuthorityResolver, OwnerManagedCareerQualityAuthorityResolver>();
+        services.TryAddSingleton<OwnerBoundCharacterCareerQualityService>();
         services.TryAddSingleton<WorkspaceContinuationRestoreService>(provider => new(
             provider.GetRequiredService<IWorkspaceStore>(),
             provider.GetRequiredService<IOwnerContextAccessor>(),
