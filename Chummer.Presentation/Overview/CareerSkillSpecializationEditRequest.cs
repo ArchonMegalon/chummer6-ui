@@ -342,7 +342,9 @@ internal static class CareerSkillSpecializationEditorProjector
             dictionaryKey = $"{activeSource.Name} ({specific})";
             displayName = dictionaryKey;
         }
-        if (HasUnsupportedRatingAuthority(improvements, dictionaryKey))
+        if (HasUnsupportedRatingAuthority(improvements, dictionaryKey)
+            || CareerActiveSkillAdvanceEditorProjector.HasUnsupportedGroupRatingAuthority(
+                improvements, activeSource.SkillGroup))
         {
             return false;
         }

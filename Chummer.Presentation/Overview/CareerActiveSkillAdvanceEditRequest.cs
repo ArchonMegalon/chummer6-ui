@@ -190,7 +190,8 @@ internal static class CareerActiveSkillAdvanceEditorProjector
             displayName = dictionaryKey;
         }
 
-        if (HasUnsupportedRatingAuthority(improvements, dictionaryKey))
+        if (HasUnsupportedRatingAuthority(improvements, dictionaryKey)
+            || HasUnsupportedGroupRatingAuthority(improvements, source.SkillGroup))
         {
             return false;
         }
@@ -265,6 +266,14 @@ internal static class CareerActiveSkillAdvanceEditorProjector
                 && TargetMatches(
                     ReadOptionalText(improvement, "improvedname", string.Empty),
                     dictionaryKey));
+
+    internal static bool HasUnsupportedGroupRatingAuthority(XElement? improvements, string groupName)
+        => !string.IsNullOrWhiteSpace(groupName)
+            && (improvements?.Elements("improvement") ?? []).Any(improvement =>
+                IsEnabledInCareer(improvement)
+                && ReadOptionalText(improvement, "improvementttype", string.Empty) is
+                    "SkillGroup" or "SkillGroupBase" or "SkillGroupLevel"
+                && TargetMatches(ReadOptionalText(improvement, "improvedname", string.Empty), groupName));
 
     private static bool TryResolveCostModifiers(
         XElement? improvements,

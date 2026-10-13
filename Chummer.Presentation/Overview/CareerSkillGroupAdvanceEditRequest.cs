@@ -287,7 +287,7 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         => (improvements?.Elements("improvement") ?? [])
             .Any(improvement => IsEnabledInCareer(improvement)
                 && ReadOptionalText(improvement, "improvementttype", string.Empty) is
-                    "Skill" or "SkillBase" or "SkillLevel" or "SkillGroup" or "SkillGroupLevel"
+                    "Skill" or "SkillBase" or "SkillLevel" or "SkillGroup" or "SkillGroupBase" or "SkillGroupLevel"
                 && (TargetMatches(
                         ReadOptionalText(improvement, "improvedname", string.Empty),
                         skillName)

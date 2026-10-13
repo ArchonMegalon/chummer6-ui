@@ -291,7 +291,7 @@ FOCUSED_CAREER_ADVANCE_TEST_FILTER = (
     "FullyQualifiedName~CareerSkillSpecializationParityTests|"
     "FullyQualifiedName~CareerWeaponFireParityTests"
 )
-FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 50
+FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 57
 FOCUSED_OVERVIEW_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
 FOCUSED_OVERVIEW_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs"
 FOCUSED_OVERVIEW_OWNER_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs"
