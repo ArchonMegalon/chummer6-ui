@@ -13,8 +13,9 @@
     <PackageReference Include="MSTest.TestAdapter" Version="4.1.0" />
     <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
     <ProjectReference Include="$(ChummerCoreEngineRoot)/Chummer.Contracts/Chummer.Contracts.csproj" />
-    <Compile Include="$(ChummerCoreEngineRoot)/Chummer.Application/Characters/ICharacterSourceDataResolver.cs" Link="Authority/ICharacterSourceDataResolver.cs" />
+    <ProjectReference Include="$(ChummerCoreEngineRoot)/Chummer.Application/Chummer.Application.csproj" />
     <Compile Include="../Chummer.Presentation/Overview/CareerActiveSkillAdvanceEditRequest.cs" Link="Presentation/CareerActiveSkillAdvanceEditRequest.cs" />
+    <Compile Include="../Chummer.Presentation/Overview/CareerSettingsProfileResolver.cs" Link="Presentation/CareerSettingsProfileResolver.cs" />
     <Compile Include="../Chummer.Presentation/Overview/CareerKnowledgeSkillAdvanceEditRequest.cs" Link="Presentation/CareerKnowledgeSkillAdvanceEditRequest.cs" />
     <Compile Include="../Chummer.Presentation/Overview/CareerKnowledgeSkillAdvanceMutation.cs" Link="Presentation/CareerKnowledgeSkillAdvanceMutation.cs" />
     <Compile Include="Presentation/CareerKnowledgeSettingsTestStub.cs" />

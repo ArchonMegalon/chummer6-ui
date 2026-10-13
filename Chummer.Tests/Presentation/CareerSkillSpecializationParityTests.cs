@@ -55,6 +55,22 @@ public sealed class CareerSkillSpecializationParityTests
         """;
 
     [TestMethod]
+    [DataRow("SkillGroup")]
+    [DataRow("SkillGroupBase")]
+    [DataRow("SkillGroupLevel")]
+    public void Unprojected_group_grants_do_not_invent_specialization_rating_authority(string type)
+    {
+        XElement root = XDocument.Parse(Xml).Root!;
+        XElement grant = XElement.Parse($"<improvement><improvedname>Stealth</improvedname><improvementttype>{type}</improvementttype><val>2</val><enabled>1</enabled><addtorating>0</addtorating></improvement>");
+        root.Element("improvements")!.Add(grant);
+        var unavailable = Project(root.ToString(SaveOptions.DisableFormatting), Resolver);
+        Assert.AreEqual(2, unavailable.OmittedSkillCount);
+        Assert.IsTrue(unavailable.Skills.All(row => row.Identity.Kind == CharacterCareerSkillKind.Knowledge));
+        grant.SetElementValue("enabled", "0");
+        Assert.HasCount(4, Project(root.ToString(SaveOptions.DisableFormatting), Resolver).Skills);
+    }
+
+    [TestMethod]
     public void Editor_and_quote_bind_typed_active_knowledge_custom_options_group_and_exact_cost()
     {
         CareerSkillSpecializationEditorState editor = Project(Xml, Resolver);

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
+using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 
@@ -66,7 +67,8 @@ internal static class CareerAttributeAdvanceEditorProjector
         string xml,
         CharacterWorkspaceId workspaceId,
         long contentRevision,
-        string? settingsCatalogJson)
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
     {
         if (string.IsNullOrWhiteSpace(workspaceId.Value))
         {
@@ -80,7 +82,7 @@ internal static class CareerAttributeAdvanceEditorProjector
         }
 
         (IReadOnlyList<AttributeFacts> facts, int omitted) =
-            ProjectFacts(xml, settingsCatalogJson, requireSavedTotalValueMatch: true);
+            ProjectFacts(xml, settingsCatalogJson, requireSavedTotalValueMatch: true, sourceDataResolver);
         CareerAttributeAdvanceMutation.ReceiptRecovery recovery =
             CareerAttributeAdvanceMutation.RecoverReceipts(xml, facts);
         return new CareerAttributeAdvanceEditorState(
@@ -97,7 +99,8 @@ internal static class CareerAttributeAdvanceEditorProjector
         int OmittedAttributeCount) ProjectFacts(
         string xml,
         string? settingsCatalogJson,
-        bool requireSavedTotalValueMatch)
+        bool requireSavedTotalValueMatch,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
@@ -109,7 +112,8 @@ internal static class CareerAttributeAdvanceEditorProjector
                 "Attribute advancement is available only for career runners.");
         }
 
-        XElement settings = ResolveExactSettings(root, settingsCatalogJson);
+        XElement settings = CareerSettingsProfileResolver.Resolve(root, settingsCatalogJson,
+            sourceDataResolver?.TryCreateContext(xml));
         XElement karmaCost = CareerActiveSkillAdvanceEditorProjector.RequireSingle(
             settings,
             "karmacost",
@@ -173,7 +177,7 @@ internal static class CareerAttributeAdvanceEditorProjector
                 "The saved runner has duplicate <improvements> containers.");
         }
         XElement? improvements = improvementsContainers.SingleOrDefault();
-        string rawRuleState = settings.ToString(SaveOptions.DisableFormatting)
+        string rawRuleState = CareerSettingsProfileResolver.RuleState(settings)
             + "\n"
             + (improvements?.ToString(SaveOptions.DisableFormatting) ?? "<improvements />")
             + "\n"
@@ -760,29 +764,6 @@ internal static class CareerAttributeAdvanceEditorProjector
             : 1;
     }
 
-    private static XElement ResolveExactSettings(XElement root, string? settingsCatalogJson)
-    {
-        string settingsId = CareerActiveSkillAdvanceEditorProjector.ReadRequiredText(
-            root,
-            "settings",
-            "The saved runner");
-        Chummer5CharacterSettingsCatalog catalog =
-            Chummer5CharacterSettingsProfiles.ParseCatalog(settingsCatalogJson);
-        Chummer5CharacterSettingsProfile[] matches = catalog.Profiles
-            .Where(candidate => string.Equals(candidate.Id, settingsId, StringComparison.Ordinal))
-            .Take(2)
-            .ToArray();
-        if (matches.Length != 1)
-        {
-            throw new InvalidOperationException(
-                "The saved runner's exact Chummer5 settings profile is unavailable.");
-        }
-        XElement settings = XElement.Parse(matches[0].Xml, LoadOptions.PreserveWhitespace);
-        return settings.Name == XName.Get("settings")
-            ? settings
-            : throw new InvalidOperationException(
-                "The active Chummer5 settings profile has an invalid root node.");
-    }
 
     internal static int ReadRequiredNonNegativeInt(
         XElement parent,
@@ -833,7 +814,7 @@ internal static class CareerAttributeAdvanceEditorProjector
             return fallback;
         }
         return values.Length == 1
-            && bool.TryParse(values[0].Value.Trim(), out bool value)
+            && CareerSettingsProfileResolver.TryParseBoolean(values[0].Value.Trim(), out bool value)
             ? value
             : throw new InvalidOperationException(
                 $"The saved authority has an invalid or duplicate <{name}> value.");

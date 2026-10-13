@@ -44,6 +44,66 @@ public sealed class CareerKnowledgeSkillAdvanceParityTests
         """;
 
     [TestMethod]
+    public void Core_profile_and_numeric_XML_booleans_allow_exact_advance_and_reopen_without_UI_catalog()
+    {
+        const string profileId = "a75e2db7-54b3-4631-9d3a-e6c697a9018a";
+        var context = new TestContext { ProfileId = profileId };
+        var resolver = new TestResolver(context);
+        string xml = Xml.Replace("223a11ff-80e0-428b-89a9-6ef1c243b8b6", profileId, StringComparison.Ordinal)
+            .Replace(">True<", ">1<", StringComparison.Ordinal).Replace(">False<", ">0<", StringComparison.Ordinal);
+        var editor = CareerKnowledgeSkillAdvanceEditorProjector.Project(xml, WorkspaceId, 7, null, resolver);
+        Assert.HasCount(3, editor.Skills);
+        Assert.AreEqual(0, editor.OmittedSkillCount);
+        var selected = Find(editor, SourceBackedId);
+        Assert.AreEqual(3, selected.KarmaCost);
+        var request = Request(editor, selected, ExpenseId);
+        var result = CareerKnowledgeSkillAdvanceMutation.Apply(xml, request, null, resolver);
+        var reopened = CareerKnowledgeSkillAdvanceEditorProjector.Project(result.Xml, WorkspaceId, 8, null, resolver);
+        Assert.HasCount(1, reopened.RecoverableReceipts);
+        Assert.AreEqual(result.Receipt, reopened.RecoverableReceipts[0]);
+        Assert.AreEqual(17, Find(reopened, SourceBackedId).AvailableKarma);
+        Assert.AreEqual(result.Xml, CareerKnowledgeSkillAdvanceMutation.Apply(result.Xml, request, null, resolver).Xml);
+
+        context.Authority = "changed-profile-inputs";
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerKnowledgeSkillAdvanceMutation.Apply(xml, request, null, resolver),
+            "Changed profile authority must reject a retained quote even if the visible cost is unchanged.");
+    }
+
+    [TestMethod]
+    [DataRow("1", true)]
+    [DataRow("0", false)]
+    [DataRow("True", true)]
+    [DataRow("False", false)]
+    public void Career_XML_booleans_accept_only_supported_encodings(string raw, bool expected)
+        => Assert.AreEqual(expected, CareerActiveSkillAdvanceEditorProjector.ReadRequiredBool(
+            XElement.Parse($"<row><enabled>{raw}</enabled></row>"), "enabled"));
+
+    [TestMethod]
+    [DataRow("2")]
+    [DataRow("-1")]
+    [DataRow("yes")]
+    [DataRow("")]
+    [DataRow("true</enabled><enabled>false")]
+    public void Career_XML_booleans_keep_invalid_and_duplicate_values_closed(string raw)
+        => Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerActiveSkillAdvanceEditorProjector.ReadRequiredBool(
+                XElement.Parse($"<row><enabled>{raw}</enabled></row>"), "enabled"));
+
+    [TestMethod]
+    [DataRow("missing")]
+    [DataRow("wrong-id")]
+    [DataRow("empty-authority")]
+    public void Missing_UI_profile_requires_exact_Core_profile_authority(string scenario)
+    {
+        const string id = "a75e2db7-54b3-4631-9d3a-e6c697a9018a";
+        var context = new TestContext { ProfileId = scenario == "missing" ? null : scenario == "wrong-id" ? "wrong" : id,
+            Authority = scenario == "empty-authority" ? "" : "source-state" };
+        Assert.ThrowsExactly<InvalidOperationException>(() => CareerSettingsProfileResolver.Resolve(
+            XElement.Parse($"<character><settings>{id}</settings></character>"), null, context));
+    }
+
+    [TestMethod]
     public void Projection_preserves_nullable_source_language_gate_and_knowledge_cost_authority()
     {
         CareerKnowledgeSkillAdvanceEditorState editor = Project(Xml);
@@ -179,13 +239,26 @@ public sealed class CareerKnowledgeSkillAdvanceParityTests
             expenseId,
             new DateTime(2081, 5, 12, 14, 30, 0));
 
-    private sealed class TestResolver : ICharacterSourceDataResolver
+    private sealed class TestResolver(TestContext? context = null) : ICharacterSourceDataResolver
     {
-        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new TestContext();
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => context ?? new TestContext();
     }
 
     private sealed class TestContext : ICharacterSourceDataContext
     {
+        public string? ProfileId { get; init; }
+        public string Authority { get; set; } = "selected-source-inputs";
+        public bool TryResolveCareerSettingsProfile(out string xml, out string authority)
+        {
+            xml = authority = string.Empty;
+            if (ProfileId is null) return false;
+            XElement settings = XElement.Parse(Chummer5CharacterSettingsProfiles.ParseCatalog(null).Profiles[0].Xml);
+            settings.SetElementValue("id", ProfileId);
+            xml = settings.ToString(SaveOptions.DisableFormatting);
+            authority = Authority;
+            return true;
+        }
+
         public bool TryResolveKnowledgeSkillSource(
             string sourceSkillId,
             out CharacterKnowledgeSkillSource source)

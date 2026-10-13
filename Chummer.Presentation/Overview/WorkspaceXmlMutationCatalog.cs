@@ -3113,14 +3113,16 @@ internal static class WorkspaceXmlMutationCatalog
     public static CareerAttributeAdvanceMutationResult ApplyCareerAttributeAdvance(
         string xml,
         CareerAttributeAdvanceRequest request,
-        string? settingsCatalogJson)
-        => CareerAttributeAdvanceMutation.Apply(xml, request, settingsCatalogJson);
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+        => CareerAttributeAdvanceMutation.Apply(xml, request, settingsCatalogJson, sourceDataResolver);
 
     public static CareerAttributeCorrectionMutationResult ApplyCareerAttributeCorrection(
         string xml,
         CareerAttributeCorrectionRequest request,
-        string? settingsCatalogJson)
-        => CareerAttributeAdvanceMutation.Correct(xml, request, settingsCatalogJson);
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
+        => CareerAttributeAdvanceMutation.Correct(xml, request, settingsCatalogJson, sourceDataResolver);
 
     public static string ApplyCareerSkillGroupAdvance(
         string xml,

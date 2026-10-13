@@ -174,6 +174,29 @@ public sealed class CareerActiveSkillAdvanceParityTests
         Assert.IsFalse(unsupported.Skills.Any(candidate => candidate.Name == "Sneaking"));
     }
 
+    [TestMethod]
+    [DataRow("SkillGroup")]
+    [DataRow("SkillGroupBase")]
+    [DataRow("SkillGroupLevel")]
+    public void Unprojected_group_grants_cannot_produce_an_underpriced_member_quote(string type)
+    {
+        var resolver = new TestResolver("Stealth");
+        CareerActiveSkillAdvanceEditorState Read(string value) => CareerActiveSkillAdvanceEditorProjector.Project(
+            value, WorkspaceId, 7, null, resolver);
+        XElement root = XDocument.Parse(Xml).Root!;
+        XElement grant = XElement.Parse($"<improvement><improvedname>Stealth</improvedname><improvementttype>{type}</improvementttype><val>2</val><enabled>1</enabled><addtorating>0</addtorating></improvement>");
+        root.Element("improvements")!.Add(grant);
+        var unavailable = Read(root.ToString(SaveOptions.DisableFormatting));
+        Assert.AreEqual(1, unavailable.OmittedSkillCount);
+        Assert.IsFalse(unavailable.Skills.Any(row => row.Identity.SkillId == Guid.Parse(SkillId)));
+        Assert.HasCount(1, unavailable.Skills);
+        grant.SetElementValue("enabled", "0");
+        Assert.HasCount(2, Read(root.ToString(SaveOptions.DisableFormatting)).Skills);
+        grant.SetElementValue("enabled", "1");
+        grant.SetElementValue("improvedname", "Electronics");
+        Assert.HasCount(2, Read(root.ToString(SaveOptions.DisableFormatting)).Skills);
+    }
+
     private static CareerActiveSkillAdvanceEditorState Project(string xml)
         => CareerActiveSkillAdvanceEditorProjector.Project(
             xml,
@@ -182,12 +205,12 @@ public sealed class CareerActiveSkillAdvanceParityTests
             settingsCatalogJson: null,
             Resolver);
 
-    private sealed class TestResolver : ICharacterSourceDataResolver
+    private sealed class TestResolver(string skillGroup = "") : ICharacterSourceDataResolver
     {
-        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new TestContext();
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new TestContext(skillGroup);
     }
 
-    private sealed class TestContext : ICharacterSourceDataContext
+    private sealed class TestContext(string skillGroup) : ICharacterSourceDataContext
     {
         public bool TryResolveActiveSkillSource(
             string sourceSkillId,
@@ -199,7 +222,7 @@ public sealed class CareerActiveSkillAdvanceParityTests
                     SkillSourceId,
                     "Sneaking",
                     "Physical Active",
-                    string.Empty,
+                    skillGroup,
                     "AGI",
                     false,
                     false,

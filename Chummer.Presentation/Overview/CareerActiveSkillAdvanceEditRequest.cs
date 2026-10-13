@@ -74,7 +74,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
             .TryCreateContext(xml)
             ?? throw new InvalidOperationException(
                 "The exact Chummer5 skill source profile is unavailable.");
-        XElement settings = ResolveExactSettings(root, settingsCatalogJson);
+        XElement settings = CareerSettingsProfileResolver.Resolve(root, settingsCatalogJson, sourceContext);
         CharacterCareerActiveSkillAdvanceSettings rules = new(
             ReadRequiredNonNegativeInt(settings, "karmacost", "karmanewactiveskill"),
             ReadRequiredNonNegativeInt(settings, "karmacost", "karmaimproveactiveskill"),
@@ -98,7 +98,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
             throw new InvalidOperationException("The saved runner has duplicate <improvements> containers.");
         }
         XElement? improvements = improvementsContainers.SingleOrDefault();
-        string rawRuleState = settings.ToString(SaveOptions.DisableFormatting)
+        string rawRuleState = CareerSettingsProfileResolver.RuleState(settings)
             + "\n"
             + (improvements?.ToString(SaveOptions.DisableFormatting) ?? "<improvements />");
 
@@ -190,7 +190,8 @@ internal static class CareerActiveSkillAdvanceEditorProjector
             displayName = dictionaryKey;
         }
 
-        if (HasUnsupportedRatingAuthority(improvements, dictionaryKey))
+        if (HasUnsupportedRatingAuthority(improvements, dictionaryKey)
+            || HasUnsupportedGroupRatingAuthority(improvements, source.SkillGroup))
         {
             return false;
         }
@@ -265,6 +266,14 @@ internal static class CareerActiveSkillAdvanceEditorProjector
                 && TargetMatches(
                     ReadOptionalText(improvement, "improvedname", string.Empty),
                     dictionaryKey));
+
+    internal static bool HasUnsupportedGroupRatingAuthority(XElement? improvements, string groupName)
+        => !string.IsNullOrWhiteSpace(groupName)
+            && (improvements?.Elements("improvement") ?? []).Any(improvement =>
+                IsEnabledInCareer(improvement)
+                && ReadOptionalText(improvement, "improvementttype", string.Empty) is
+                    "SkillGroup" or "SkillGroupBase" or "SkillGroupLevel"
+                && TargetMatches(ReadOptionalText(improvement, "improvedname", string.Empty), groupName));
 
     private static bool TryResolveCostModifiers(
         XElement? improvements,
@@ -368,26 +377,6 @@ internal static class CareerActiveSkillAdvanceEditorProjector
         => string.IsNullOrEmpty(target)
             || string.Equals(target, expected, StringComparison.Ordinal);
 
-    private static XElement ResolveExactSettings(XElement root, string? settingsCatalogJson)
-    {
-        string settingsId = ReadRequiredText(root, "settings", "The saved runner");
-        Chummer5CharacterSettingsCatalog catalog =
-            Chummer5CharacterSettingsProfiles.ParseCatalog(settingsCatalogJson);
-        Chummer5CharacterSettingsProfile[] matches = catalog.Profiles
-            .Where(candidate => string.Equals(candidate.Id, settingsId, StringComparison.Ordinal))
-            .Take(2)
-            .ToArray();
-        if (matches.Length != 1)
-        {
-            throw new InvalidOperationException(
-                "The saved runner's exact Chummer5 settings profile is unavailable.");
-        }
-        XElement settings = XElement.Parse(matches[0].Xml, LoadOptions.PreserveWhitespace);
-        return settings.Name == XName.Get("settings")
-            ? settings
-            : throw new InvalidOperationException(
-                "The active Chummer5 settings profile has an invalid root node.");
-    }
 
     private static XElement? ResolveSkillGroup(XElement newSkills, string groupName)
     {
@@ -428,7 +417,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
     internal static bool ReadRequiredBool(XElement parent, string name)
     {
         XElement[] values = parent.Elements(name).Take(2).ToArray();
-        if (values.Length != 1 || !bool.TryParse(values[0].Value.Trim(), out bool value))
+        if (values.Length != 1 || !CareerSettingsProfileResolver.TryParseBoolean(values[0].Value.Trim(), out bool value))
         {
             throw new InvalidOperationException(
                 $"The saved runner has an invalid or duplicate <{name}> value.");
@@ -524,7 +513,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
         {
             return fallback;
         }
-        if (values.Length != 1 || !bool.TryParse(values[0].Value.Trim(), out bool value))
+        if (values.Length != 1 || !CareerSettingsProfileResolver.TryParseBoolean(values[0].Value.Trim(), out bool value))
         {
             throw new InvalidOperationException(
                 $"The saved runner has an invalid or duplicate <{name}> value.");
