@@ -2237,8 +2237,9 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    assert len(oracle["consumer"]["sourceFiles"]) == 133
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 134
+    # Attribute and knowledge Career regressions are now explicit consumer inputs.
+    assert len(oracle["consumer"]["sourceFiles"]) == 135
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 136
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2970,7 +2971,7 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 134
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 136
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -3107,7 +3108,7 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
     # Include all thirteen Foundation shared-read/method-exclusion cases while
     # retaining the previous 47 owner cases and seven adoption/roster cases.
     assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 60 + 7 + 2 + 8 + 10
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 134
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 136
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"
