@@ -277,17 +277,21 @@ FOCUSED_CAREER_ADVANCE_TEST_PROJECT = (
 )
 FOCUSED_CAREER_ADVANCE_TEST_FILES = (
     "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs|"
+    "Chummer.Tests/Presentation/CareerAttributeAdvanceParityTests.cs|"
+    "Chummer.Tests/Presentation/CareerKnowledgeSkillAdvanceParityTests.cs|"
     "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs|"
     "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs|"
     "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs"
 )
 FOCUSED_CAREER_ADVANCE_TEST_FILTER = (
     "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|"
+    "FullyQualifiedName~CareerAttributeAdvanceParityTests|"
+    "FullyQualifiedName~CareerKnowledgeSkillAdvanceParityTests|"
     "FullyQualifiedName~CareerSkillGroupAdvanceParityTests|"
     "FullyQualifiedName~CareerSkillSpecializationParityTests|"
     "FullyQualifiedName~CareerWeaponFireParityTests"
 )
-FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 19
+FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 50
 FOCUSED_OVERVIEW_TEST_PROJECT = "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj"
 FOCUSED_OVERVIEW_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs"
 FOCUSED_OVERVIEW_OWNER_TEST_FILE = "Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs"
@@ -391,6 +395,8 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs": "Presentation/WorkspaceViewStateStoreTests.cs",
     "../Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs": "RestartSafeWorkspacePersistenceTests.cs",
     "../Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs": "Presentation/CareerActiveSkillAdvanceParityTests.cs",
+    "../Chummer.Tests/Presentation/CareerAttributeAdvanceParityTests.cs": "Presentation/CareerAttributeAdvanceParityTests.cs",
+    "../Chummer.Tests/Presentation/CareerKnowledgeSkillAdvanceParityTests.cs": "Presentation/CareerKnowledgeSkillAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs": "Presentation/CareerSkillGroupAdvanceParityTests.cs",
     "../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "Presentation/CareerSkillSpecializationParityTests.cs",
     "../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs": "Presentation/CareerWeaponFireParityTests.cs",
@@ -524,6 +530,8 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Tests/DesktopUpdateRuntimeTests.cs",
         "Chummer.Tests/InProcessWorkspaceContinuationTests.cs",
         "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs",
+        "Chummer.Tests/Presentation/CareerAttributeAdvanceParityTests.cs",
+        "Chummer.Tests/Presentation/CareerKnowledgeSkillAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs",
         "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs",
         "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs",

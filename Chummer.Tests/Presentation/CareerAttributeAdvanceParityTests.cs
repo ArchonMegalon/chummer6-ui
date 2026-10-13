@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Xml.Linq;
+using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
@@ -13,6 +14,80 @@ public sealed class CareerAttributeAdvanceParityTests
     private static readonly CharacterWorkspaceId WorkspaceId = new("career-attribute-tests");
     private static readonly Guid ExpenseId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid CorrectionId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+
+    [TestMethod]
+    [DataRow(CharacterCreationBootstrapProfiles.PrioritySettingsProfileId)]
+    [DataRow(CharacterCreationBootstrapProfiles.SumToTenSettingsProfileId)]
+    [DataRow(CharacterCreationBootstrapProfiles.KarmaSettingsProfileId)]
+    [DataRow(CharacterCreationBootstrapProfiles.LifeModulesSettingsProfileId)]
+    public void Core_profile_survives_attribute_advance_correction_and_reopen(string profileId)
+    {
+        XElement settings = XElement.Parse(Chummer5CharacterSettingsProfiles.ParseCatalog(SettingsCatalog()).Profiles[0].Xml);
+        settings.SetElementValue("id", profileId);
+        var resolver = new SelectedProfileResolver(settings.ToString(SaveOptions.DisableFormatting));
+        string xml = BuildXml().Replace("223a11ff-80e0-428b-89a9-6ef1c243b8b6", profileId, StringComparison.Ordinal)
+            .Replace(">True<", ">1<", StringComparison.Ordinal).Replace(">False<", ">0<", StringComparison.Ordinal)
+            .Replace(">true<", ">1<", StringComparison.Ordinal).Replace(">false<", ">0<", StringComparison.Ordinal);
+        CareerAttributeAdvanceEditorState ProjectSelected(string value, long revision)
+            => CareerAttributeAdvanceEditorProjector.Project(value, WorkspaceId, revision, null, resolver);
+        var selected = Find(ProjectSelected(xml, 7), "BOD");
+        var request = Request(selected);
+        var advanced = WorkspaceXmlMutationCatalog.ApplyCareerAttributeAdvance(xml, request, null, resolver);
+        var reopened = ProjectSelected(advanced.Xml, 8);
+        Assert.AreEqual(5, Find(reopened, "BOD").EffectiveValue);
+        Assert.AreEqual(75, Find(reopened, "BOD").AvailableKarma);
+        Assert.AreEqual(advanced.Receipt, reopened.RecoverableReceipts.Single());
+        var correction = new CareerAttributeCorrectionRequest(WorkspaceId, 8, advanced.Receipt,
+            advanced.Receipt.ReceiptDigest, true, CorrectionId, "Correct test advance");
+        var corrected = WorkspaceXmlMutationCatalog.ApplyCareerAttributeCorrection(advanced.Xml, correction, null, resolver);
+        var restored = ProjectSelected(corrected.Xml, 9);
+        Assert.AreEqual(4, Find(restored, "BOD").EffectiveValue);
+        Assert.AreEqual(100, Find(restored, "BOD").AvailableKarma);
+        Assert.IsEmpty(restored.RecoverableReceipts);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCareerAttributeCorrection(corrected.Xml, correction, null, resolver));
+        resolver.Authority = "changed-source-inputs";
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyCareerAttributeAdvance(xml, request, null, resolver));
+    }
+
+    [TestMethod]
+    public void Numeric_Life_Modules_attribute_grants_remain_free_during_Career_advance()
+    {
+        const string profileId = CharacterCreationBootstrapProfiles.LifeModulesSettingsProfileId;
+        XElement settings = XElement.Parse(Chummer5CharacterSettingsProfiles.ParseCatalog(SettingsCatalog()).Profiles[0].Xml);
+        settings.SetElementValue("id", profileId);
+        var resolver = new SelectedProfileResolver(settings.ToString(SaveOptions.DisableFormatting));
+        string xml = BuildXml(bodyBase: 0, bodyKarma: 0, bodyTotal: 3,
+            improvements: Improvement("Attributelevel", "BOD", value: 2m, source: "Quality"))
+            .Replace("223a11ff-80e0-428b-89a9-6ef1c243b8b6", profileId, StringComparison.Ordinal)
+            .Replace(">True<", ">1<", StringComparison.Ordinal).Replace(">False<", ">0<", StringComparison.Ordinal);
+        var selected = Find(CareerAttributeAdvanceEditorProjector.Project(xml, WorkspaceId, 7, null, resolver), "BOD");
+        Assert.AreEqual(3, selected.EffectiveValue);
+        Assert.AreEqual(20, selected.KarmaCost);
+        var advanced = WorkspaceXmlMutationCatalog.ApplyCareerAttributeAdvance(xml, Request(selected), null, resolver);
+        var reopened = CareerAttributeAdvanceEditorProjector.Project(advanced.Xml, WorkspaceId, 8, null, resolver);
+        Assert.AreEqual(4, Find(reopened, "BOD").EffectiveValue);
+        Assert.AreEqual(80, Find(reopened, "BOD").AvailableKarma);
+        XElement before = XDocument.Parse(xml).Root!;
+        XElement after = XDocument.Parse(advanced.Xml).Root!;
+        Assert.AreEqual("0", Attribute(after, "BOD").Element("base")!.Value);
+        Assert.AreEqual("1", Attribute(after, "BOD").Element("karma")!.Value);
+        Assert.IsTrue(XNode.DeepEquals(before.Element("improvements"), after.Element("improvements")));
+        Assert.AreEqual(advanced.Receipt, reopened.RecoverableReceipts.Single());
+    }
+
+    private sealed class SelectedProfileResolver(string xml) : ICharacterSourceDataResolver, ICharacterSourceDataContext
+    {
+        public string Authority { get; set; } = "selected-source-inputs";
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => this;
+        public bool TryResolveCareerSettingsProfile(out string settingsXml, out string authority)
+        { settingsXml = xml; authority = Authority; return true; }
+        public bool TryResolveCyberwareGradeDeviceRating(string gradeName, string improvementSource, out int deviceRating)
+        { deviceRating = 0; return false; }
+        public bool TryResolveVehicleModBonuses(string sourceId, string name, out CharacterVehicleModSourceBonuses bonuses)
+        { bonuses = CharacterVehicleModSourceBonuses.Empty; return false; }
+    }
 
     [TestMethod]
     public void Projection_is_ordered_typed_and_uses_exact_chummer5_cost_authority()

@@ -81,7 +81,7 @@ internal static class CareerKnowledgeSkillAdvanceEditorProjector
         ICharacterSourceDataContext sourceContext = sourceDataResolver?.TryCreateContext(xml)
             ?? throw new InvalidOperationException(
                 "The exact Chummer5 knowledge-skill source profile is unavailable.");
-        XElement settings = ResolveExactSettings(root, settingsCatalogJson);
+        XElement settings = CareerSettingsProfileResolver.Resolve(root, settingsCatalogJson, sourceContext);
         XElement karmaCost = CareerActiveSkillAdvanceEditorProjector.RequireSingle(
             settings,
             "karmacost",
@@ -115,7 +115,7 @@ internal static class CareerKnowledgeSkillAdvanceEditorProjector
                 "The saved runner has duplicate <improvements> containers.");
         }
         XElement? improvements = improvementContainers.SingleOrDefault();
-        string rawRuleState = settings.ToString(SaveOptions.DisableFormatting)
+        string rawRuleState = CareerSettingsProfileResolver.RuleState(settings)
             + "\n"
             + (improvements?.ToString(SaveOptions.DisableFormatting) ?? "<improvements />");
         string rawCharacterState = CanonicalCharacterState(root);
@@ -397,29 +397,6 @@ internal static class CareerKnowledgeSkillAdvanceEditorProjector
     private static bool TargetMatches(string target, string expected)
         => target.Length == 0 || string.Equals(target, expected, StringComparison.Ordinal);
 
-    private static XElement ResolveExactSettings(XElement root, string? settingsCatalogJson)
-    {
-        string settingsId = CareerActiveSkillAdvanceEditorProjector.ReadRequiredText(
-            root,
-            "settings",
-            "The saved runner");
-        Chummer5CharacterSettingsCatalog catalog =
-            Chummer5CharacterSettingsProfiles.ParseCatalog(settingsCatalogJson);
-        Chummer5CharacterSettingsProfile[] matches = catalog.Profiles
-            .Where(candidate => string.Equals(candidate.Id, settingsId, StringComparison.Ordinal))
-            .Take(2)
-            .ToArray();
-        if (matches.Length != 1)
-        {
-            throw new InvalidOperationException(
-                "The saved runner's exact Chummer5 settings profile is unavailable.");
-        }
-        XElement settings = XElement.Parse(matches[0].Xml, LoadOptions.PreserveWhitespace);
-        return settings.Name == XName.Get("settings")
-            ? settings
-            : throw new InvalidOperationException(
-                "The active Chummer5 settings profile has an invalid root node.");
-    }
 
     private static bool ReadRequiredBool(XElement parent, string name)
         => CareerActiveSkillAdvanceEditorProjector.ReadRequiredBool(parent, name);
@@ -472,7 +449,7 @@ internal static class CareerKnowledgeSkillAdvanceEditorProjector
         {
             return fallback;
         }
-        if (values.Length != 1 || !bool.TryParse(values[0].Value.Trim(), out bool value))
+        if (values.Length != 1 || !CareerSettingsProfileResolver.TryParseBoolean(values[0].Value.Trim(), out bool value))
         {
             throw new InvalidOperationException(
                 $"The saved runner has an invalid or duplicate <{name}> value.");

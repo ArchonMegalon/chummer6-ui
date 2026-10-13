@@ -2834,15 +2834,19 @@ def test_fresh_package_plane_executes_all_career_mutation_parity_suites() -> Non
         in source
     )
     assert "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs|" in source
+    assert "Chummer.Tests/Presentation/CareerAttributeAdvanceParityTests.cs|" in source
+    assert "Chummer.Tests/Presentation/CareerKnowledgeSkillAdvanceParityTests.cs|" in source
     assert "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs|" in source
     assert "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs|" in source
     assert "Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs" in source
     assert "Chummer.Tests/Presentation/WorkspaceOverviewLoaderTests.cs" in source
     assert "FullyQualifiedName~CareerActiveSkillAdvanceParityTests|" in source
+    assert "FullyQualifiedName~CareerAttributeAdvanceParityTests|" in source
+    assert "FullyQualifiedName~CareerKnowledgeSkillAdvanceParityTests|" in source
     assert "FullyQualifiedName~CareerSkillGroupAdvanceParityTests|" in source
     assert "FullyQualifiedName~CareerSkillSpecializationParityTests|" in source
     assert "FullyQualifiedName~CareerWeaponFireParityTests" in source
-    assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 19" in source
+    assert "FOCUSED_CAREER_ADVANCE_MINIMUM_TESTS = 50" in source
     assert '"focusedCareerAdvanceTestExecution": focused_career_advance_execution' in source
     assert 'InternalsVisibleTo("Chummer.Product.UnitTests")' in assembly_info
     focused_execution = source.split(

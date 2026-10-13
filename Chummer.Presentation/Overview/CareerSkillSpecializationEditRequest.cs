@@ -182,7 +182,7 @@ internal static class CareerSkillSpecializationEditorProjector
                 "The exact Chummer5 specialization settings are unavailable.");
         }
 
-        XElement selectedSettings = ResolveExactSettings(root, settingsCatalogJson);
+        XElement selectedSettings = CareerSettingsProfileResolver.Resolve(root, settingsCatalogJson, sourceContext);
         int maximumActiveRating = ReadOptionalNonNegativeInt(
             selectedSettings,
             "maxskillrating",
@@ -212,6 +212,7 @@ internal static class CareerSkillSpecializationEditorProjector
         }
         XElement? improvements = improvementContainers.SingleOrDefault();
         string rawRuleState = sourceRuleState
+            + CareerSettingsProfileResolver.SourceAuthoritySuffix(selectedSettings)
             + "\n"
             + (improvements?.ToString(SaveOptions.DisableFormatting) ?? "<improvements />");
         string rawCharacterState = root.ToString(SaveOptions.DisableFormatting);
@@ -782,29 +783,6 @@ internal static class CareerSkillSpecializationEditorProjector
         return type;
     }
 
-    private static XElement ResolveExactSettings(XElement root, string? settingsCatalogJson)
-    {
-        string settingsId = CareerActiveSkillAdvanceEditorProjector.ReadRequiredText(
-            root,
-            "settings",
-            "The saved runner");
-        Chummer5CharacterSettingsCatalog catalog =
-            Chummer5CharacterSettingsProfiles.ParseCatalog(settingsCatalogJson);
-        Chummer5CharacterSettingsProfile[] matches = catalog.Profiles
-            .Where(candidate => string.Equals(candidate.Id, settingsId, StringComparison.Ordinal))
-            .Take(2)
-            .ToArray();
-        if (matches.Length != 1)
-        {
-            throw new InvalidOperationException(
-                "The saved runner's exact Chummer5 settings profile is unavailable.");
-        }
-        XElement settings = XElement.Parse(matches[0].Xml, LoadOptions.PreserveWhitespace);
-        return settings.Name == XName.Get("settings")
-            ? settings
-            : throw new InvalidOperationException(
-                "The active Chummer5 settings profile has an invalid root node.");
-    }
 
     private static XElement? ResolveSkillGroup(XElement newSkills, string groupName)
     {
@@ -889,7 +867,7 @@ internal static class CareerSkillSpecializationEditorProjector
         {
             return fallback;
         }
-        if (values.Length != 1 || !bool.TryParse(values[0].Value.Trim(), out bool value))
+        if (values.Length != 1 || !CareerSettingsProfileResolver.TryParseBoolean(values[0].Value.Trim(), out bool value))
         {
             throw new InvalidOperationException(
                 $"The saved runner has an invalid or duplicate <{name}> value.");

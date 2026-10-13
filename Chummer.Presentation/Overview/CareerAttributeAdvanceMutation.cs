@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
+using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
 
 namespace Chummer.Presentation.Overview;
@@ -25,7 +26,8 @@ internal static class CareerAttributeAdvanceMutation
     public static CareerAttributeAdvanceMutationResult Apply(
         string xml,
         CareerAttributeAdvanceRequest request,
-        string? settingsCatalogJson)
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
         ArgumentNullException.ThrowIfNull(request);
@@ -37,7 +39,7 @@ internal static class CareerAttributeAdvanceMutation
             CareerAttributeAdvanceEditorProjector.ProjectFacts(
                 xml,
                 settingsCatalogJson,
-                requireSavedTotalValueMatch: true);
+                requireSavedTotalValueMatch: true, sourceDataResolver);
         CareerAttributeAdvanceEditorProjector.AttributeFacts reviewed = ResolveFacts(
             current,
             request.ExpectedAttribute.Identity,
@@ -73,14 +75,14 @@ internal static class CareerAttributeAdvanceMutation
             ReplaceBurnedEdge(root, plan.SavedBurnedEdgePoints);
         }
         AddExpense(root, plan);
-        RefreshCalculatedTotalValue(document, target, plan.Identity, settingsCatalogJson);
+        RefreshCalculatedTotalValue(document, target, plan.Identity, settingsCatalogJson, sourceDataResolver);
 
         string serialized = Serialize(document);
         (IReadOnlyList<CareerAttributeAdvanceEditorProjector.AttributeFacts> afterFacts, _) =
             CareerAttributeAdvanceEditorProjector.ProjectFacts(
                 serialized,
                 settingsCatalogJson,
-                requireSavedTotalValueMatch: true);
+                requireSavedTotalValueMatch: true, sourceDataResolver);
         CareerAttributeAdvanceEditorProjector.AttributeFacts after = ResolveFacts(
             afterFacts,
             plan.Identity,
@@ -135,7 +137,8 @@ internal static class CareerAttributeAdvanceMutation
     public static CareerAttributeCorrectionMutationResult Correct(
         string xml,
         CareerAttributeCorrectionRequest request,
-        string? settingsCatalogJson)
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
         ArgumentNullException.ThrowIfNull(request);
@@ -151,7 +154,7 @@ internal static class CareerAttributeAdvanceMutation
             CareerAttributeAdvanceEditorProjector.ProjectFacts(
                 xml,
                 settingsCatalogJson,
-                requireSavedTotalValueMatch: true);
+                requireSavedTotalValueMatch: true, sourceDataResolver);
         CareerAttributeAdvanceEditorProjector.AttributeFacts observed = ResolveFacts(
             current,
             request.OriginalReceipt.Identity,
@@ -215,14 +218,14 @@ internal static class CareerAttributeAdvanceMutation
         }
         expenses[0].Remove();
         AddCorrectionAudit(root, correction);
-        RefreshCalculatedTotalValue(document, target, correction.Identity, settingsCatalogJson);
+        RefreshCalculatedTotalValue(document, target, correction.Identity, settingsCatalogJson, sourceDataResolver);
 
         string serialized = Serialize(document);
         (IReadOnlyList<CareerAttributeAdvanceEditorProjector.AttributeFacts> revertedFacts, _) =
             CareerAttributeAdvanceEditorProjector.ProjectFacts(
                 serialized,
                 settingsCatalogJson,
-                requireSavedTotalValueMatch: true);
+                requireSavedTotalValueMatch: true, sourceDataResolver);
         CareerAttributeAdvanceEditorProjector.AttributeFacts reverted = ResolveFacts(
             revertedFacts,
             correction.Identity,
@@ -382,14 +385,15 @@ internal static class CareerAttributeAdvanceMutation
         XDocument document,
         XElement target,
         CharacterCareerAttributeIdentity identity,
-        string? settingsCatalogJson)
+        string? settingsCatalogJson,
+        ICharacterSourceDataResolver? sourceDataResolver)
     {
         string staged = Serialize(document);
         (IReadOnlyList<CareerAttributeAdvanceEditorProjector.AttributeFacts> stagedFacts, _) =
             CareerAttributeAdvanceEditorProjector.ProjectFacts(
                 staged,
                 settingsCatalogJson,
-                requireSavedTotalValueMatch: false);
+                requireSavedTotalValueMatch: false, sourceDataResolver);
         CareerAttributeAdvanceEditorProjector.AttributeFacts calculated = ResolveFacts(
             stagedFacts,
             identity,
@@ -533,13 +537,13 @@ internal static class CareerAttributeAdvanceMutation
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AllowWhiteSpaces,
                 out DateTime date)
-            || !bool.TryParse(ReadExactText(expense, "refund"), out bool refund)
+            || !CareerSettingsProfileResolver.TryParseBoolean(ReadExactText(expense, "refund"), out bool refund)
             || !decimal.TryParse(
                 ReadExactText(expense, "amount"),
                 NumberStyles.Number,
                 CultureInfo.InvariantCulture,
                 out decimal amount)
-            || !bool.TryParse(
+            || !CareerSettingsProfileResolver.TryParseBoolean(
                 ReadExactText(expense, "forcecareervisible"),
                 out bool forceCareerVisible))
         {
@@ -878,7 +882,7 @@ internal static class CareerAttributeAdvanceMutation
     private static bool ReadRequiredBoolAttribute(XElement element, string name)
     {
         string value = ReadAttribute(element, name);
-        return bool.TryParse(value, out bool parsed)
+        return CareerSettingsProfileResolver.TryParseBoolean(value, out bool parsed)
             ? parsed
             : throw new InvalidOperationException(
                 $"Attribute ledger authority has an invalid '{name}' value.");
