@@ -227,13 +227,13 @@ internal static class CareerSkillGroupAdvanceMutation
             _ => throw new InvalidOperationException(
                 "A career expense has an invalid <type> value.")
         };
-        if (!bool.TryParse(ReadRequiredExpenseText(expense, "refund"), out bool refund)
+        if (!CareerSettingsProfileResolver.TryParseBoolean(ReadRequiredExpenseText(expense, "refund"), out bool refund)
             || !decimal.TryParse(
                 ReadRequiredExpenseText(expense, "amount"),
                 NumberStyles.Number,
                 CultureInfo.InvariantCulture,
                 out decimal amount)
-            || !bool.TryParse(
+            || !CareerSettingsProfileResolver.TryParseBoolean(
                 ReadRequiredExpenseText(expense, "forcecareervisible"),
                 out bool forceCareerVisible))
         {

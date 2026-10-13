@@ -42,6 +42,8 @@
     <Compile Include="../Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs" Link="Presentation/WorkspaceViewStateStoreTests.cs" />
     <Compile Include="../Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs" Link="RestartSafeWorkspacePersistenceTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs" Link="Presentation/CareerActiveSkillAdvanceParityTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/CareerAttributeAdvanceParityTests.cs" Link="Presentation/CareerAttributeAdvanceParityTests.cs" />
+    <Compile Include="../Chummer.Tests/Presentation/CareerKnowledgeSkillAdvanceParityTests.cs" Link="Presentation/CareerKnowledgeSkillAdvanceParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs" Link="Presentation/CareerSkillGroupAdvanceParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs" Link="Presentation/CareerSkillSpecializationParityTests.cs" />
     <Compile Include="../Chummer.Tests/Presentation/CareerWeaponFireParityTests.cs" Link="Presentation/CareerWeaponFireParityTests.cs" />

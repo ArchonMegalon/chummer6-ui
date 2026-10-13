@@ -3451,7 +3451,8 @@ public sealed partial class CharacterOverviewPresenter
                     read.Value.Document.Content,
                     currentWorkspace.Value,
                     expectedContentRevision,
-                    State.Preferences.CharacterSettingsCatalogJson);
+                    State.Preferences.CharacterSettingsCatalogJson,
+                    _characterSourceDataResolver);
             Publish(State with { Error = null });
             return editor;
         }
@@ -3495,7 +3496,8 @@ public sealed partial class CharacterOverviewPresenter
                 prepared = WorkspaceXmlMutationCatalog.ApplyCareerAttributeAdvance(
                     xml,
                     request,
-                    settingsCatalogJson);
+                    settingsCatalogJson,
+                    _characterSourceDataResolver);
                 return prepared.Xml;
             },
             ct,
@@ -3532,7 +3534,8 @@ public sealed partial class CharacterOverviewPresenter
                 prepared = WorkspaceXmlMutationCatalog.ApplyCareerAttributeCorrection(
                     xml,
                     request,
-                    settingsCatalogJson);
+                    settingsCatalogJson,
+                    _characterSourceDataResolver);
                 return prepared.Xml;
             },
             ct,

@@ -42,6 +42,19 @@ public sealed class CareerSkillGroupAdvanceParityTests
         """;
 
     [TestMethod]
+    public void Unprojected_free_group_base_does_not_produce_an_underpriced_quote()
+    {
+        XElement root = XDocument.Parse(Xml).Root!;
+        XElement grant = XElement.Parse("<improvement><improvedname>Stealth</improvedname><improvementttype>SkillGroupBase</improvementttype><val>2</val><enabled>1</enabled><addtorating>0</addtorating></improvement>");
+        root.Element("improvements")!.Add(grant);
+        var unavailable = Project(root.ToString(SaveOptions.DisableFormatting));
+        Assert.AreEqual(1, unavailable.OmittedSkillGroupCount);
+        Assert.IsEmpty(unavailable.SkillGroups);
+        grant.SetElementValue("enabled", "0");
+        Assert.HasCount(1, Project(root.ToString(SaveOptions.DisableFormatting)).SkillGroups);
+    }
+
+    [TestMethod]
     public void Projection_binds_exact_group_guid_members_settings_and_chummer5_cost()
     {
         CareerSkillGroupAdvanceEditorState editor = Project(Xml);

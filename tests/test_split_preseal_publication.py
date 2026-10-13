@@ -202,6 +202,37 @@ def test_android_import_responsiveness_inputs_are_explicit_preseal_recipe_paths(
     } <= preseal.ALLOWED_RECIPE_PATHS
 
 
+def test_career_profile_recipe_membership_is_exact_and_non_authoritative(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    members = {
+        "Chummer.Presentation/Overview/CareerSettingsProfileResolver.cs",
+        "Chummer.Presentation/Overview/WorkspaceXmlMutationCatalog.cs",
+        "Chummer.Tests/Chummer.CareerKnowledge.Presentation.Tests.csproj",
+        *{
+            f"Chummer.Presentation/Overview/Career{family}{suffix}.cs"
+            for family in ("ActiveSkillAdvance", "AttributeAdvance", "KnowledgeSkillAdvance",
+                           "SkillGroupAdvance", "SkillSpecialization")
+            for suffix in ("EditRequest", "Mutation")
+        },
+        *{
+            f"Chummer.Tests/Presentation/Career{family}ParityTests.cs"
+            for family in ("ActiveSkillAdvance", "AttributeAdvance", "KnowledgeSkillAdvance",
+                           "SkillGroupAdvance", "SkillSpecialization")
+        },
+    }
+    assert members <= preseal.ALLOWED_RECIPE_PATHS
+    assert not set(preseal.CANONICAL_LOCK_PATHS) & preseal.ALLOWED_RECIPE_PATHS
+    assert preseal.MARKER_PATH not in preseal.ALLOWED_RECIPE_PATHS
+    for candidate in (
+        "Chummer.Presentation/Overview/CareerUnreviewedMutation.cs",
+        "Chummer.Tests/Presentation/CareerUnreviewedParityTests.cs",
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"M\t{candidate}")
+        with pytest.raises(preseal.PresealError, match="not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def test_native_character_settings_partial_save_inputs_are_explicit_preseal_recipe_paths() -> None:
     assert {
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Dialogs.cs",
