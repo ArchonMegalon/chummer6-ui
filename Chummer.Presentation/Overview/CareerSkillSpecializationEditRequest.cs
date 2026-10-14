@@ -544,14 +544,20 @@ internal static class CareerSkillSpecializationEditorProjector
                 savedPeer,
                 "suid",
                 "An active skill");
-            if (!TryResolveExactActiveSource(sourceContext, sourceId, out CharacterActiveSkillSource source)
-                || UsesUnsupportedEnabledAuthority(root, source))
+            if (!TryResolveExactActiveSource(sourceContext, sourceId, out CharacterActiveSkillSource source))
             {
                 return false;
             }
             if (!string.Equals(source.SkillGroup, skillGroup, StringComparison.Ordinal))
             {
                 continue;
+            }
+            // Only this group's enabled members determine whether adding the
+            // specialization breaks it. Unrelated movement/magic requirements
+            // must not hide an otherwise admitted skill such as Computer.
+            if (UsesUnsupportedEnabledAuthority(root, source))
+            {
+                return false;
             }
             string dictionaryKey = source.IsExotic
                 ? $"{source.Name} ({CareerActiveSkillAdvanceEditorProjector.ReadRequiredText(savedPeer, "specific", "An exotic active skill")})"

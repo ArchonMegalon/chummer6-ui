@@ -181,7 +181,7 @@
       "Chummer.Tests/InProcessWorkspaceContinuationTests.cs": "2989ade3bd0cf625c73f5110da1ff8e41270355750e60658c00b3af163ba1a43",
       "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs": "44827dc0ddaaecd0f0a26d46a1024dd9611a032154520ab423be24527c697b59",
       "Chummer.Tests/Presentation/CareerAttributeAdvanceParityTests.cs": "cd2db88898fdef4968f81038b5084b3f962c9a1f1f43701e6b2030ae98c06f27",
-      "Chummer.Tests/Presentation/CareerFreeSkillRatingTests.cs": "de9c48814970bfbb090a7e53a4e8365781a0d4a682535d7b42caabde3ce80be9",
+      "Chummer.Tests/Presentation/CareerFreeSkillRatingTests.cs": "495ba754acff4457e9f72128ddf260f4f7b81f5a99661cf1b57d5528d0eeb5aa",
       "Chummer.Tests/Presentation/CareerKnowledgeSkillAdvanceParityTests.cs": "f2fecad8145f3b9287027efd5939558554432de7fda20328842a903baad71ff0",
       "Chummer.Tests/Presentation/CareerSkillGroupAdvanceParityTests.cs": "39761da6ef03fa4efa4f4fcb6755bd7d20f97e12d8e4eadb9405abeae01703b1",
       "Chummer.Tests/Presentation/CareerSkillSpecializationParityTests.cs": "54416bd311004f040ec0b05bd4552810e32c6db89ab9afd787ffb5a99496cbb8",
