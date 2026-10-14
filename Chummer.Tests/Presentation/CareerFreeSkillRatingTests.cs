@@ -19,6 +19,73 @@ public sealed class CareerFreeSkillRatingTests
     private static readonly Resolver Sources = new();
 
     [TestMethod]
+    [DataRow("ground")]
+    [DataRow("swim")]
+    [DataRow("fly")]
+    [DataRow("MAG")]
+    [DataRow("RES")]
+    [DataRow("DEP")]
+    public void Unrelated_enabled_authority_does_not_hide_an_exact_specialization_group(string guard)
+    {
+        string xml = WithThirdSkill();
+        var resolver = new Resolver(guard);
+        var state = CareerSkillSpecializationEditorProjector.Project(xml, Workspace, 1, null, resolver);
+        Assert.HasCount(2, state.Skills);
+        Assert.AreEqual(1, state.OmittedSkillCount);
+        var target = state.Skills.Single(row => row.Identity.SkillId == Guid.Parse(SkillId));
+        var selection = new CharacterCareerSkillSpecializationSelection("Urban",
+            CharacterCareerSkillSpecializationOptionKind.SourceCatalog, new string('a', 64));
+        var quote = CareerSkillSpecializationEditorProjector.ProjectQuote(xml, Workspace, 1,
+            target.Identity, selection, null, resolver);
+        Assert.IsTrue(quote.CanAdd);
+        Assert.AreEqual(2, quote.EnabledSkillGroupMemberCount);
+        Assert.AreEqual(7, quote.KarmaCost);
+        var request = new CareerSkillSpecializationRequest(Workspace, 1, quote, quote.CharacterRevision,
+            quote.SourceRevision, quote.RuleDigest, quote.LogicalRevision, true,
+            Guid.NewGuid(), Guid.NewGuid(), new DateTime(2081, 1, 1));
+        string changed = CareerSkillSpecializationMutation.Apply(xml, request, null, resolver);
+        AssertPreserved(xml, changed, "groups");
+        Assert.AreEqual("93", XElement.Parse(changed).Element("karma")!.Value);
+        Assert.AreEqual(1, CareerSkillSpecializationEditorProjector.Project(changed, Workspace, 2,
+            null, resolver).Skills.Single(row => row.Identity == target.Identity).ExistingSpecializationCount);
+    }
+
+    [TestMethod]
+    [DataRow("ground")]
+    [DataRow("swim")]
+    [DataRow("fly")]
+    [DataRow("MAG")]
+    [DataRow("RES")]
+    [DataRow("DEP")]
+    public void Unresolved_enabled_authority_inside_the_selected_group_still_blocks_specialization(string guard)
+    {
+        var state = CareerSkillSpecializationEditorProjector.Project(WithThirdSkill(), Workspace, 1,
+            null, new Resolver(guard, sameGroup: true));
+        Assert.IsEmpty(state.Skills);
+        Assert.AreEqual(3, state.OmittedSkillCount);
+    }
+
+    [TestMethod]
+    public void Unknown_peer_source_cannot_be_assumed_to_belong_to_an_unrelated_group()
+    {
+        var state = CareerSkillSpecializationEditorProjector.Project(WithThirdSkill(), Workspace, 1,
+            null, Sources);
+        Assert.IsEmpty(state.Skills);
+        Assert.AreEqual(3, state.OmittedSkillCount);
+    }
+
+    private static string WithThirdSkill()
+    {
+        XElement xml = XElement.Parse(Fixture());
+        xml.Element("newskills")!.Element("skills")!.Add(XElement.Parse("""
+            <skill><guid>44444444-4444-4444-4444-444444444444</guid>
+            <suid>cccccccc-cccc-cccc-cccc-cccccccccccc</suid><isknowledge>0</isknowledge>
+            <skillcategory>Physical Active</skillcategory><base>1</base><karma>0</karma></skill>
+            """));
+        return xml.ToString(SaveOptions.DisableFormatting);
+    }
+
+    [TestMethod]
     [DataRow("SkillGroupBase")]
     [DataRow("SkillGroupLevel")]
     public void Specialization_purchase_preserves_free_grants_and_paid_allocations_after_reopen(string groupGrant)
@@ -190,11 +257,11 @@ public sealed class CareerFreeSkillRatingTests
         </improvements><expenses/><customstate>retain history</customstate></character>
         """;
 
-    private sealed class Resolver : ICharacterSourceDataResolver
+    private sealed class Resolver(string guard = "", bool sameGroup = false) : ICharacterSourceDataResolver
     {
-        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new Context();
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new Context(guard, sameGroup);
     }
-    private sealed class Context : ICharacterSourceDataContext
+    private sealed class Context(string guard, bool sameGroup) : ICharacterSourceDataContext
     {
         public bool TryResolveCareerSkillSpecializationSettings(
             out CharacterCareerSkillSpecializationSettings settings, out string rawRuleState)
@@ -223,6 +290,14 @@ public sealed class CareerFreeSkillRatingTests
         public bool TryResolveActiveSkillSource(string sourceSkillId, out CharacterActiveSkillSource source)
         {
             source = CharacterActiveSkillSource.Unavailable;
+            if (sourceSkillId == "cccccccc-cccc-cccc-cccc-cccccccccccc" && guard.Length != 0)
+            {
+                source = new(sourceSkillId, "Guarded peer", "Physical Active", sameGroup ? "Stealth" : "Other group",
+                    guard is "MAG" or "RES" or "DEP" ? guard : "AGI", false,
+                    guard == "ground", guard == "swim", guard == "fly",
+                    $"<skill><id>{sourceSkillId}</id><guard>{guard}</guard></skill>");
+                return true;
+            }
             string name = sourceSkillId switch { FirstSource => "Sneaking", SecondSource => "Palming", _ => "" };
             if (name.Length == 0) return false;
             source = new(sourceSkillId, name, "Physical Active", "Stealth", "AGI", false, false, false, false,
