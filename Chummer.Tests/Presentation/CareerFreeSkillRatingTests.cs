@@ -19,6 +19,42 @@ public sealed class CareerFreeSkillRatingTests
     private static readonly Resolver Sources = new();
 
     [TestMethod]
+    [DataRow("SkillGroupBase")]
+    [DataRow("SkillGroupLevel")]
+    public void Specialization_purchase_preserves_free_grants_and_paid_allocations_after_reopen(string groupGrant)
+    {
+        string xml = Fixture().Replace("SkillGroupLevel", groupGrant, StringComparison.Ordinal);
+        var candidate = Specializations(xml).Skills.Single(s => s.Identity.SkillId == Guid.Parse(SkillId));
+        Assert.AreEqual(3, candidate.TotalBaseRating);
+        var selection = new CharacterCareerSkillSpecializationSelection("Urban",
+            CharacterCareerSkillSpecializationOptionKind.SourceCatalog, new string('a', 64));
+        var quote = CareerSkillSpecializationEditorProjector.ProjectQuote(xml, Workspace, 1,
+            candidate.Identity, selection, null, Sources);
+        Assert.IsTrue(quote.CanAdd);
+        Assert.AreEqual(7, quote.KarmaCost);
+        var request = new CareerSkillSpecializationRequest(Workspace, 1, quote, quote.CharacterRevision,
+            quote.SourceRevision, quote.RuleDigest, quote.LogicalRevision, true,
+            Guid.NewGuid(), Guid.NewGuid(), new DateTime(2081, 1, 1));
+        string changed = CareerSkillSpecializationMutation.Apply(xml, request, null, Sources);
+        AssertPreserved(xml, changed, "groups");
+        var reopened = Specializations(changed).Skills.Single(s => s.Identity == candidate.Identity);
+        Assert.AreEqual(3, reopened.TotalBaseRating);
+        Assert.AreEqual(1, reopened.ExistingSpecializationCount);
+        XElement saved = XElement.Parse(changed);
+        Assert.AreEqual("93", saved.Element("karma")!.Value);
+        Assert.IsTrue(saved.Descendants("skill").All(s => s.Element("base")!.Value == "0"
+            && s.Element("karma")!.Value == "0"));
+        Assert.AreEqual(1, saved.Descendants("spec").Count());
+        Assert.AreEqual(1, saved.Element("expenses")!.Elements().Count());
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerSkillSpecializationMutation.Apply(changed, request, null, Sources));
+        XElement stale = XElement.Parse(xml);
+        stale.Element("improvements")!.Elements().Last().SetElementValue("val", "3");
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerSkillSpecializationMutation.Apply(stale.ToString(), request, null, Sources));
+    }
+
+    [TestMethod]
     public void Active_purchase_retains_module_grants_and_reopens_exact_paid_allocation()
     {
         string xml = Fixture();
@@ -90,6 +126,7 @@ public sealed class CareerFreeSkillRatingTests
         string text = xml.ToString(SaveOptions.DisableFormatting);
         Assert.IsEmpty(Active(text).Skills);
         Assert.IsEmpty(Groups(text).SkillGroups);
+        Assert.IsEmpty(Specializations(text).Skills);
     }
 
     [TestMethod]
@@ -111,6 +148,7 @@ public sealed class CareerFreeSkillRatingTests
             new XElement("enabled", "1"), new XElement("addtorating", "1"), new XElement("val", "1")));
         Assert.IsEmpty(Active(xml.ToString()).Skills);
         Assert.IsEmpty(Groups(xml.ToString()).SkillGroups);
+        Assert.IsEmpty(Specializations(xml.ToString()).Skills);
     }
 
     [TestMethod]
@@ -136,13 +174,15 @@ public sealed class CareerFreeSkillRatingTests
         => CareerActiveSkillAdvanceEditorProjector.Project(xml, Workspace, 1, null, Sources);
     private static CareerSkillGroupAdvanceEditorState Groups(string xml)
         => CareerSkillGroupAdvanceEditorProjector.Project(xml, Workspace, 1, null, Sources);
+    private static CareerSkillSpecializationEditorState Specializations(string xml)
+        => CareerSkillSpecializationEditorProjector.Project(xml, Workspace, 1, null, Sources);
 
     private static string Fixture() => $"""
         <character><created>1</created><settings>{ProfileId}</settings><karma>100</karma>
         <newskills><skills>
         <skill><guid>{SkillId}</guid><suid>{FirstSource}</suid><isknowledge>0</isknowledge><skillcategory>Physical Active</skillcategory><base>0</base><karma>0</karma><notes>retain first</notes></skill>
         <skill><guid>{SecondId}</guid><suid>{SecondSource}</suid><isknowledge>0</isknowledge><skillcategory>Physical Active</skillcategory><base>0</base><karma>0</karma><notes>retain second</notes></skill>
-        </skills><groups><group><id>33333333-3333-3333-3333-333333333333</id><name>Stealth</name><base>0</base><karma>0</karma><isbroken>0</isbroken></group></groups></newskills>
+        </skills><knoskills/><groups><group><id>33333333-3333-3333-3333-333333333333</id><name>Stealth</name><base>0</base><karma>0</karma><isbroken>0</isbroken></group></groups></newskills>
         <improvements>
         <improvement><improvementttype>SkillLevel</improvementttype><improvedname>Sneaking</improvedname><enabled>1</enabled><val>1</val><condition>career</condition></improvement>
         <improvement><improvementttype>SkillLevel</improvementttype><improvedname>Palming</improvedname><enabled>1</enabled><val>1</val></improvement>
@@ -156,6 +196,24 @@ public sealed class CareerFreeSkillRatingTests
     }
     private sealed class Context : ICharacterSourceDataContext
     {
+        public bool TryResolveCareerSkillSpecializationSettings(
+            out CharacterCareerSkillSpecializationSettings settings, out string rawRuleState)
+        {
+            settings = new(7, 3, true);
+            rawRuleState = "<specializations><active>7</active><knowledge>3</knowledge><break>1</break></specializations>";
+            return true;
+        }
+        public bool TryResolveCareerSkillSpecializationSource(string sourceSkillId, CharacterCareerSkillKind kind,
+            out CharacterCareerSkillSpecializationSource source)
+        {
+            source = CharacterCareerSkillSpecializationSource.Unavailable;
+            if (kind != CharacterCareerSkillKind.Active || !TryResolveActiveSkillSource(sourceSkillId, out var active))
+                return false;
+            source = new(sourceSkillId, kind, active.Name, active.SkillCategory,
+                [new(new string('a', 64), "Urban", CharacterCareerSkillSpecializationOptionKind.SourceCatalog,
+                    "skills.xml:" + sourceSkillId)], active.RawSourceXml);
+            return true;
+        }
         public bool TryResolveCareerSettingsProfile(out string xml, out string authority)
         {
             xml = $"<settings><id>{ProfileId}</id><maxskillrating>12</maxskillrating><karmacost><karmanewactiveskill>2</karmanewactiveskill><karmaimproveactiveskill>2</karmaimproveactiveskill><karmanewskillgroup>5</karmanewskillgroup><karmaimproveskillgroup>5</karmaimproveskillgroup></karmacost></settings>";

@@ -20,6 +20,8 @@
     <Compile Include="../Chummer.Presentation/Overview/CareerActiveSkillAdvanceMutation.cs" Link="Presentation/CareerActiveSkillAdvanceMutation.cs" />
     <Compile Include="../Chummer.Presentation/Overview/CareerSkillGroupAdvanceMutation.cs" Link="Presentation/CareerSkillGroupAdvanceMutation.cs" />
     <Compile Include="Presentation/CareerFreeSkillRatingTests.cs" />
+    <Compile Include="../Chummer.Presentation/Overview/CareerSkillSpecializationEditRequest.cs" Link="Presentation/CareerSkillSpecializationEditRequest.cs" />
+    <Compile Include="../Chummer.Presentation/Overview/CareerSkillSpecializationMutation.cs" Link="Presentation/CareerSkillSpecializationMutation.cs" />
     <Compile Include="../Chummer.Presentation/Overview/CareerSettingsProfileResolver.cs" Link="Presentation/CareerSettingsProfileResolver.cs" />
     <Compile Include="../Chummer.Presentation/Overview/CareerKnowledgeSkillAdvanceEditRequest.cs" Link="Presentation/CareerKnowledgeSkillAdvanceEditRequest.cs" />
     <Compile Include="../Chummer.Presentation/Overview/CareerKnowledgeSkillAdvanceMutation.cs" Link="Presentation/CareerKnowledgeSkillAdvanceMutation.cs" />

@@ -261,16 +261,6 @@ internal static class CareerActiveSkillAdvanceEditorProjector
         return CharacterCareerActiveSkillAdvanceRules.TryCreateQuote(input, out quote);
     }
 
-    // Specialization still uses its older paid-only projection. Retain its guard
-    // until that separate consumer also uses the exact Core rating projection.
-    internal static bool HasUnsupportedGroupRatingAuthority(XElement? improvements, string groupName)
-        => !string.IsNullOrWhiteSpace(groupName)
-            && (improvements?.Elements("improvement") ?? []).Any(improvement =>
-                IsEnabledInCareer(improvement)
-                && ReadOptionalText(improvement, "improvementttype", string.Empty) is
-                    "SkillGroup" or "SkillGroupBase" or "SkillGroupLevel"
-                && TargetMatches(ReadOptionalText(improvement, "improvedname", string.Empty), groupName));
-
     private static bool TryResolveCostModifiers(
         XElement? improvements,
         string dictionaryKey,
