@@ -115,6 +115,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
         }
 
         List<CharacterCareerActiveSkillAdvanceQuote> projected = [];
+        Dictionary<string, CareerSkillRatingSourceProjection.Group?> groupCache = new(StringComparer.Ordinal);
         int omitted = 0;
         foreach (XElement savedSkill in savedSkills)
         {
@@ -134,6 +135,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
                     rawRuleState,
                     improvements,
                     sourceContext,
+                    groupCache,
                     out CharacterCareerActiveSkillAdvanceQuote quote))
             {
                 omitted++;
@@ -161,6 +163,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
         string rawRuleState,
         XElement? improvements,
         ICharacterSourceDataContext sourceContext,
+        Dictionary<string, CareerSkillRatingSourceProjection.Group?> groupCache,
         out CharacterCareerActiveSkillAdvanceQuote quote)
     {
         quote = null!;
@@ -190,24 +193,30 @@ internal static class CareerActiveSkillAdvanceEditorProjector
             displayName = dictionaryKey;
         }
 
-        if (HasUnsupportedRatingAuthority(improvements, dictionaryKey)
-            || HasUnsupportedGroupRatingAuthority(improvements, source.SkillGroup))
+        if (CareerSkillRatingSourceProjection.HasUnsupportedRatingAuthority(improvements, source, dictionaryKey)
+            || !CareerSkillRatingSourceProjection.TryReadPoints(savedSkill, improvements, dictionaryKey,
+                false, out var points))
         {
             return false;
         }
 
         int basePoints = ReadRequiredNonNegativeInt(savedSkill, "base");
         int karmaPoints = ReadRequiredNonNegativeInt(savedSkill, "karma");
-        int groupBase = 0;
-        int groupKarma = 0;
+        CareerSkillRatingSourceProjection.Group? groupState = null;
         if (!string.IsNullOrWhiteSpace(source.SkillGroup))
         {
-            XElement? group = ResolveSkillGroup(newSkills, source.SkillGroup);
-            if (group is not null)
+            if (!groupCache.TryGetValue(source.SkillGroup, out groupState))
             {
-                groupBase = ReadRequiredNonNegativeInt(group, "base");
-                groupKarma = ReadRequiredNonNegativeInt(group, "karma");
+                XElement? group = ResolveSkillGroup(newSkills, source.SkillGroup);
+                if (!CareerSkillRatingSourceProjection.TryReadGroup(group, source.SkillGroup,
+                    newSkills.Element("skills")!.Elements("skill"), improvements, sourceContext, maximumRating,
+                    out groupState)) groupState = null;
+                // A projection-call-local cache: never reused across runner revisions/owners.
+                groupCache[source.SkillGroup] = groupState;
             }
+            if (groupState is null) return false;
+            if (!groupState.Rating.KarmaUnbroken && groupState.Points.KarmaPoints > 0)
+                return false; // One paid skill point could also reactivate paid group levels.
             if (rules.CompensateSkillGroupKarmaDifference)
             {
                 // Exact peer Enabled/TotalBase authority also depends on movement, attribute,
@@ -216,13 +225,9 @@ internal static class CareerActiveSkillAdvanceEditorProjector
             }
         }
 
-        int effectiveBase = groupBase > 0 && !usePointsOnBrokenGroups
-            ? groupBase
-            : checked(groupBase + basePoints);
-        int effectiveKarma = checked(groupKarma + karmaPoints);
-        int totalBaseRating = checked(
-            Math.Min(effectiveBase, maximumRating)
-            + Math.Min(effectiveKarma, maximumRating));
+        if (!CharacterCareerSkillRatingRules.TryProjectSkill(points, groupState?.Rating, usePointsOnBrokenGroups,
+                maximumRating, out var rating)) return false;
+        int totalBaseRating = rating.TotalBaseRating;
         if (totalBaseRating > maximumRating)
         {
             return false;
@@ -256,17 +261,8 @@ internal static class CareerActiveSkillAdvanceEditorProjector
         return CharacterCareerActiveSkillAdvanceRules.TryCreateQuote(input, out quote);
     }
 
-    private static bool HasUnsupportedRatingAuthority(
-        XElement? improvements,
-        string dictionaryKey)
-        => (improvements?.Elements("improvement") ?? [])
-            .Any(improvement => IsEnabledInCareer(improvement)
-                && ReadOptionalText(improvement, "improvementttype", string.Empty) is
-                    "Skill" or "SkillBase" or "SkillLevel"
-                && TargetMatches(
-                    ReadOptionalText(improvement, "improvedname", string.Empty),
-                    dictionaryKey));
-
+    // Specialization still uses its older paid-only projection. Retain its guard
+    // until that separate consumer also uses the exact Core rating projection.
     internal static bool HasUnsupportedGroupRatingAuthority(XElement? improvements, string groupName)
         => !string.IsNullOrWhiteSpace(groupName)
             && (improvements?.Elements("improvement") ?? []).Any(improvement =>
@@ -506,7 +502,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
                 out value);
     }
 
-    private static bool ReadOptionalBool(XElement parent, string name, bool fallback)
+    internal static bool ReadOptionalBool(XElement parent, string name, bool fallback)
     {
         XElement[] values = parent.Elements(name).Take(2).ToArray();
         if (values.Length == 0 || values.Length == 1 && string.IsNullOrWhiteSpace(values[0].Value))
@@ -521,7 +517,7 @@ internal static class CareerActiveSkillAdvanceEditorProjector
         return value;
     }
 
-    private static string ReadOptionalText(XElement parent, string name, string fallback)
+    internal static string ReadOptionalText(XElement parent, string name, string fallback)
     {
         XElement[] values = parent.Elements(name).Take(2).ToArray();
         return values.Length switch

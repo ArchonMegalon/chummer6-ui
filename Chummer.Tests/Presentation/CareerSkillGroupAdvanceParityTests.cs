@@ -42,14 +42,19 @@ public sealed class CareerSkillGroupAdvanceParityTests
         """;
 
     [TestMethod]
-    public void Unprojected_free_group_base_does_not_produce_an_underpriced_quote()
+    public void Free_group_base_is_priced_without_converting_it_to_paid_points()
     {
         XElement root = XDocument.Parse(Xml).Root!;
         XElement grant = XElement.Parse("<improvement><improvedname>Stealth</improvedname><improvementttype>SkillGroupBase</improvementttype><val>2</val><enabled>1</enabled><addtorating>0</addtorating></improvement>");
         root.Element("improvements")!.Add(grant);
         var unavailable = Project(root.ToString(SaveOptions.DisableFormatting));
-        Assert.AreEqual(1, unavailable.OmittedSkillGroupCount);
-        Assert.IsEmpty(unavailable.SkillGroups);
+        Assert.AreEqual(0, unavailable.OmittedSkillGroupCount);
+        var quote = unavailable.SkillGroups.Single();
+        Assert.AreEqual(5, quote.GroupRating);
+        Assert.AreEqual(5, quote.CostRating);
+        Assert.AreEqual(30, quote.KarmaCost);
+        Assert.AreEqual(2, quote.BasePoints);
+        Assert.AreEqual(1, quote.KarmaPoints);
         grant.SetElementValue("enabled", "0");
         Assert.HasCount(1, Project(root.ToString(SaveOptions.DisableFormatting)).SkillGroups);
     }

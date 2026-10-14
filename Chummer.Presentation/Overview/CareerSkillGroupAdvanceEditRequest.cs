@@ -185,59 +185,40 @@ internal static class CareerSkillGroupAdvanceEditorProjector
         int groupKarma = ReadRequiredNonNegativeInt(savedGroup, "karma");
         bool broken = ReadRequiredBool(savedGroup, "isbroken");
 
+        if (!CareerSkillRatingSourceProjection.TryReadGroup(savedGroup, groupName, savedSkills,
+            improvements, sourceContext, maximumRating, out var state)) return false;
+        // The existing atomic contract describes exactly one effective group
+        // increment. Do not offer a suppressed/clipped paid-point transition.
+        int freeRating = state.Points.FreeBase + state.Points.FreeLevels;
+        if (!state.Disabled && (!state.Rating.KarmaUnbroken
+            || state.Rating.Rating != groupBase + groupKarma + freeRating)) return false;
+        if (state.Disabled && freeRating != 0) return false;
+
         List<CharacterCareerSkillGroupMember> members = [];
         List<string> rawSources = [];
-        foreach (XElement savedSkill in savedSkills)
+        foreach (var member in state.Members)
         {
-            if (ReadRequiredBool(savedSkill, "isknowledge"))
-            {
-                return false;
-            }
-            Guid skillId = ReadRequiredGuid(savedSkill, "guid", "An active skill");
-            Guid sourceId = ReadRequiredGuid(savedSkill, "suid", "An active skill");
-            if (!sourceContext.TryResolveActiveSkillSource(
-                    sourceId.ToString("D"),
-                    out CharacterActiveSkillSource source)
-                || !Guid.TryParse(source.SourceSkillId, out Guid resolvedSourceId)
-                || resolvedSourceId != sourceId)
-            {
-                return false;
-            }
-            if (!string.Equals(source.SkillGroup, groupName, StringComparison.Ordinal))
-            {
-                continue;
-            }
-            string savedCategory = ReadRequiredText(savedSkill, "skillcategory", "An active skill");
-            if (!string.Equals(savedCategory, source.SkillCategory, StringComparison.Ordinal)
-                || source.IsExotic
-                || source.RequiresGroundMovement
+            CharacterActiveSkillSource source = member.Source;
+            if (source.RequiresGroundMovement
                 || source.RequiresSwimMovement
-                || source.RequiresFlyMovement
-                || HasUnsupportedRatingAuthority(improvements, source.Name, groupName))
+                || source.RequiresFlyMovement)
             {
                 return false;
             }
 
-            int skillBasePoints = ReadRequiredNonNegativeInt(savedSkill, "base");
-            int skillKarmaPoints = ReadRequiredNonNegativeInt(savedSkill, "karma");
-            int effectiveBase = groupBase > 0 && !usePointsOnBrokenGroups
-                ? groupBase
-                : checked(groupBase + skillBasePoints);
-            int effectiveKarma = checked(groupKarma + skillKarmaPoints);
-            int totalBaseRating = checked(
-                Math.Min(effectiveBase, maximumRating)
-                + Math.Min(effectiveKarma, maximumRating));
+            if (!CharacterCareerSkillRatingRules.TryProjectSkill(member.Points, state.Rating,
+                usePointsOnBrokenGroups, maximumRating, out var rating)) return false;
+            int totalBaseRating = rating.TotalBaseRating;
             if (totalBaseRating > maximumRating)
             {
                 return false;
             }
 
-            bool enabled = !IsSkillDisabled(improvements, source.Name, savedCategory);
             members.Add(new CharacterCareerSkillGroupMember(
-                skillId,
+                member.Id,
                 totalBaseRating,
-                enabled,
-                savedCategory));
+                member.Enabled,
+                source.SkillCategory));
             rawSources.Add(source.RawSourceXml);
         }
         if (members.Count == 0)
@@ -249,7 +230,7 @@ internal static class CareerSkillGroupAdvanceEditorProjector
             .Select(static member => member.SkillCategory)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        bool disabled = IsGroupDisabled(improvements, groupName, categories);
+        bool disabled = state.Disabled;
         if (!TryResolveCostModifiers(
                 improvements,
                 groupName,
@@ -276,26 +257,11 @@ internal static class CareerSkillGroupAdvanceEditorProjector
             Members: members,
             Modifiers: modifiers,
             RawSourceState: string.Join("\n", rawSources.OrderBy(static value => value, StringComparer.Ordinal)),
-            RawRuleState: rawRuleState);
+            RawRuleState: rawRuleState) { FreeRatingPoints = freeRating };
         return CharacterCareerSkillGroupAdvanceRules.TryCreateQuote(input, out quote);
     }
 
-    private static bool HasUnsupportedRatingAuthority(
-        XElement? improvements,
-        string skillName,
-        string groupName)
-        => (improvements?.Elements("improvement") ?? [])
-            .Any(improvement => IsEnabledInCareer(improvement)
-                && ReadOptionalText(improvement, "improvementttype", string.Empty) is
-                    "Skill" or "SkillBase" or "SkillLevel" or "SkillGroup" or "SkillGroupBase" or "SkillGroupLevel"
-                && (TargetMatches(
-                        ReadOptionalText(improvement, "improvedname", string.Empty),
-                        skillName)
-                    || TargetMatches(
-                        ReadOptionalText(improvement, "improvedname", string.Empty),
-                        groupName)));
-
-    private static bool IsSkillDisabled(
+    internal static bool IsSkillDisabled(
         XElement? improvements,
         string skillName,
         string category)
@@ -310,7 +276,7 @@ internal static class CareerSkillGroupAdvanceEditorProjector
                             ReadOptionalText(improvement, "improvedname", string.Empty),
                             category))));
 
-    private static bool IsGroupDisabled(
+    internal static bool IsGroupDisabled(
         XElement? improvements,
         string groupName,
         IReadOnlyCollection<string> categories)
