@@ -56,8 +56,6 @@ public sealed class CareerSkillSpecializationParityTests
 
     [TestMethod]
     [DataRow("SkillGroup")]
-    [DataRow("SkillGroupBase")]
-    [DataRow("SkillGroupLevel")]
     public void Unprojected_group_grants_do_not_invent_specialization_rating_authority(string type)
     {
         XElement root = XDocument.Parse(Xml).Root!;

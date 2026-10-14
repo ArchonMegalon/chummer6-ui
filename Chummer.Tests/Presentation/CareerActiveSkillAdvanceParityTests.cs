@@ -175,10 +175,10 @@ public sealed class CareerActiveSkillAdvanceParityTests
     }
 
     [TestMethod]
-    [DataRow("SkillGroup")]
-    [DataRow("SkillGroupBase")]
-    [DataRow("SkillGroupLevel")]
-    public void Unprojected_group_grants_cannot_produce_an_underpriced_member_quote(string type)
+    [DataRow("SkillGroup", false)]
+    [DataRow("SkillGroupBase", true)]
+    [DataRow("SkillGroupLevel", true)]
+    public void Group_grants_are_priced_exactly_or_omitted(string type, bool supported)
     {
         var resolver = new TestResolver("Stealth");
         CareerActiveSkillAdvanceEditorState Read(string value) => CareerActiveSkillAdvanceEditorProjector.Project(
@@ -187,9 +187,15 @@ public sealed class CareerActiveSkillAdvanceParityTests
         XElement grant = XElement.Parse($"<improvement><improvedname>Stealth</improvedname><improvementttype>{type}</improvementttype><val>2</val><enabled>1</enabled><addtorating>0</addtorating></improvement>");
         root.Element("improvements")!.Add(grant);
         var unavailable = Read(root.ToString(SaveOptions.DisableFormatting));
-        Assert.AreEqual(1, unavailable.OmittedSkillCount);
-        Assert.IsFalse(unavailable.Skills.Any(row => row.Identity.SkillId == Guid.Parse(SkillId)));
-        Assert.HasCount(1, unavailable.Skills);
+        Assert.AreEqual(supported ? 0 : 1, unavailable.OmittedSkillCount);
+        if (supported)
+        {
+            var quote = unavailable.Skills.Single(row => row.Identity.SkillId == Guid.Parse(SkillId));
+            Assert.AreEqual(type == "SkillGroupBase" ? 3 : 5, quote.TotalBaseRating);
+            Assert.AreEqual(type == "SkillGroupBase" ? 3 : 5, quote.KarmaCost);
+        }
+        else Assert.IsFalse(unavailable.Skills.Any(row => row.Identity.SkillId == Guid.Parse(SkillId)));
+        Assert.HasCount(supported ? 2 : 1, unavailable.Skills);
         grant.SetElementValue("enabled", "0");
         Assert.HasCount(2, Read(root.ToString(SaveOptions.DisableFormatting)).Skills);
         grant.SetElementValue("enabled", "1");

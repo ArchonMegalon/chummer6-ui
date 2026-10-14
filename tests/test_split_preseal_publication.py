@@ -207,6 +207,8 @@ def test_career_profile_recipe_membership_is_exact_and_non_authoritative(
 ) -> None:
     members = {
         "Chummer.Presentation/Overview/CareerSettingsProfileResolver.cs",
+        "Chummer.Presentation/Overview/CareerSkillRatingSourceProjection.cs",
+        "Chummer.Tests/Presentation/CareerFreeSkillRatingTests.cs",
         "Chummer.Presentation/Overview/WorkspaceXmlMutationCatalog.cs",
         "Chummer.Tests/Chummer.CareerKnowledge.Presentation.Tests.csproj",
         *{
