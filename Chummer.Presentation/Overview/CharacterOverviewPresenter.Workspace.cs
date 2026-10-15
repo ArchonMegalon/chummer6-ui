@@ -282,6 +282,7 @@ public sealed partial class CharacterOverviewPresenter
     private async Task LoadWorkspaceForOwnerAsync(CharacterWorkspaceId id, OwnerContextStamp? expectedOwner,
         CancellationToken ct, bool synchronizeShell = true)
     {
+        ct.ThrowIfCancellationRequested();
         if (expectedOwner is { } original
             && (State.DisplayOwnerContext != original
                 || _client is not IOwnerBoundWorkspaceProjectionClient boundClient
@@ -289,6 +290,7 @@ public sealed partial class CharacterOverviewPresenter
             return;
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        ct.ThrowIfCancellationRequested();
         long displayGeneration = BeginDisplayTransition();
         Publish(State with
         {
@@ -318,6 +320,25 @@ public sealed partial class CharacterOverviewPresenter
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
             if (synchronizeShell) await SyncShellWorkspaceContextAsync(ct);
+        }
+        catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
+        {
+            // Cancellation is not an owner transition. Retain only the already
+            // admitted display (possibly published above), never the canceled
+            // read's result or a newly captured replacement owner authority.
+            CharacterOverviewState displayed = State;
+            bool retainOwner = expectedOwner is { } admitted
+                && displayed.WorkspaceId == id
+                && displayed.DisplayOwnerContext == admitted
+                && displayed.Session.OwnerContext == admitted
+                && _client is IOwnerBoundWorkspaceProjectionClient current
+                && current.CaptureOwnerContext() == admitted;
+            TryPublishDisplayTransition(displayGeneration, displayed with
+            {
+                IsBusy = false,
+                Error = retainOwner ? null : ex.Message,
+                DisplayOwnerContext = retainOwner ? displayed.DisplayOwnerContext : null
+            }, expectedDisplay: displayed);
         }
         catch (Exception ex)
         {

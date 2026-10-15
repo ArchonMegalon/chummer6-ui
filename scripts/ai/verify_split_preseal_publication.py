@@ -120,6 +120,15 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs",
         "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs",
         "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs",
+        "Chummer.Presentation/Creation/CompletionAssistantModels.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Equipment.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Loadout.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Magic.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.ResourceAdvice.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Resources.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.cs",
+        "Chummer.Presentation/Overview/CharacterCreationLoadoutInteractionPresenter.cs",
     }
 )
 ALLOWED_RECIPE_PATHS = frozenset(
@@ -226,6 +235,10 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "scripts/ai/with-package-plane.sh",
         "scripts/generate-releases-manifest.sh",
         "scripts/build-unsigned-macos-native.sh",
+        "scripts/Chummer.KeyLockerSigner/Chummer.KeyLockerSigner.csproj",
+        "scripts/Chummer.KeyLockerSigner/packages.lock.json",
+        "tests/Chummer.KeyLockerSigner.FixtureTests/packages.lock.json",
+        "tests/Chummer.KeyLockerSigner.FixtureTests/Program.cs",
         "tests/test_current_owner_contract_feed.py",
         "tests/test_creation_projection_content.py",
         "tests/test_presentation_explicit_core_root.py",
@@ -248,6 +261,16 @@ ALLOWED_RECIPE_PATHS = frozenset(
     "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
     "Chummer.Tests/Presentation/DesktopThemeManagerTests.cs",
     "Chummer/chummer.ico",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationLoadoutInteractionPresenterTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionMagicRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationPlanningReuseTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationTestFixture.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionResourceRecommendationBuilderTests.cs",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these
@@ -265,15 +288,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "697e942580cea3afd65704c8a1e6f838f96dd969",
-        "commit": "e53f20c4e6ce17b22414bc2f5e89ec95ead8d458",
+        "blob": "00abea2faa7a09a938d5b25bad30427184fd7c67",
+        "commit": "b1574a1b529d9dec4b14a91ce1f9fabc1202ac30",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "775ee4a9e6a5ec8fda7b390ea57391496542248839d29c4678e51bcdc35a1131",
-        "rawSizeBytes": 66175,
-        "semanticCanonicalSha256": "775ee4a9e6a5ec8fda7b390ea57391496542248839d29c4678e51bcdc35a1131",
-        "semanticCanonicalSizeBytes": 66175,
-        "tree": "2f88f8e990fd44133e17bb73a080aecd6c7660ac"
+        "rawSha256": "8c06ef87dbaf9b7fa876d7024fe5fad563f401dd21dac0002351c78de37aec87",
+        "rawSizeBytes": 69186,
+        "semanticCanonicalSha256": "8c06ef87dbaf9b7fa876d7024fe5fad563f401dd21dac0002351c78de37aec87",
+        "semanticCanonicalSizeBytes": 69186,
+        "tree": "7fe47feeda10979fe69852c13d074c5129d86e79"
     },
     "producerLock": {
         "absentAtCommit": True,
