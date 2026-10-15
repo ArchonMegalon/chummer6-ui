@@ -63,6 +63,16 @@
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs" Link="CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/NewRunnerBuildMethodTests.cs" Link="CreationWizard/NewRunnerBuildMethodTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/OriginStoryDecisionTextTests.cs" Link="CreationWizard/OriginStoryDecisionTextTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationLoadoutInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationLoadoutInteractionPresenterTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs" Link="CreationWizard/CompletionKarmaRecommendationBuilderTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.Equipment.cs" Link="CreationWizard/CompletionLoadoutRecommendationBuilderTests.Equipment.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs" Link="CreationWizard/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.cs" Link="CreationWizard/CompletionLoadoutRecommendationBuilderTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionMagicRecommendationBuilderTests.cs" Link="CreationWizard/CompletionMagicRecommendationBuilderTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationBuilderTests.cs" Link="CreationWizard/CompletionRecommendationBuilderTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationPlanningReuseTests.cs" Link="CreationWizard/CompletionRecommendationPlanningReuseTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationTestFixture.cs" Link="CreationWizard/CompletionRecommendationTestFixture.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionResourceRecommendationBuilderTests.cs" Link="CreationWizard/CompletionResourceRecommendationBuilderTests.cs" />
     <Compile Include="CreationWizardCoreProjectionTests.cs" />
     <Compile Include="../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs" Link="CreationWizard/CoreCreationProjectionScenario.cs" />
   </ItemGroup>

@@ -120,6 +120,15 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs",
         "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs",
         "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs",
+        "Chummer.Presentation/Creation/CompletionAssistantModels.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Equipment.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Loadout.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Magic.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.ResourceAdvice.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Resources.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.cs",
+        "Chummer.Presentation/Overview/CharacterCreationLoadoutInteractionPresenter.cs",
     }
 )
 ALLOWED_RECIPE_PATHS = frozenset(
@@ -248,6 +257,16 @@ ALLOWED_RECIPE_PATHS = frozenset(
     "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
     "Chummer.Tests/Presentation/DesktopThemeManagerTests.cs",
     "Chummer/chummer.ico",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationLoadoutInteractionPresenterTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionMagicRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationPlanningReuseTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionRecommendationTestFixture.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionResourceRecommendationBuilderTests.cs",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these

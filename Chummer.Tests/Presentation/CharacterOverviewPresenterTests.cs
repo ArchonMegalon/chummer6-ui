@@ -499,6 +499,228 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Owner_bound_load_already_canceled_preserves_display_and_session_without_entering_busy(bool beforeShellSync)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        var session = new WorkspaceSessionPresenter(new WorkspaceSessionManager());
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, workspaceSessionPresenter: session);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        CharacterOverviewState originalDisplay = presenter.State;
+        WorkspaceSessionState originalSession = session.State;
+        OwnerContextStamp original = originalDisplay.DisplayOwnerContext!.Value;
+        int reads = client.BoundOverviewCalls;
+        int captures = client.OwnerCaptureCalls;
+        int notifications = 0;
+        presenter.StateChanged += (_, _) => notifications++;
+        using CancellationTokenSource canceled = new();
+        canceled.Cancel();
+        IOwnerBoundWorkspaceRefreshPresenter bound = presenter;
+
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => beforeShellSync
+            ? bound.LoadBeforeShellSyncAsync(original, id, canceled.Token)
+            : bound.LoadAsync(original, id, canceled.Token));
+
+        Assert.AreSame(originalDisplay, presenter.State);
+        Assert.AreSame(originalSession, session.State);
+        Assert.AreEqual(0, notifications, "A pre-canceled caller must not publish even a temporary busy state.");
+        Assert.AreEqual(reads, client.BoundOverviewCalls);
+        Assert.AreEqual(captures, client.OwnerCaptureCalls);
+        Assert.AreEqual(original, presenter.State.DisplayOwnerContext);
+        Assert.AreEqual(original, presenter.State.Session.OwnerContext);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Owner_bound_load_caller_cancellation_retains_exact_display_and_allows_same_owner_retry(bool beforeShellSync)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        var session = new WorkspaceSessionPresenter(new WorkspaceSessionManager());
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, workspaceSessionPresenter: session);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        CharacterOverviewState originalDisplay = presenter.State;
+        WorkspaceSessionState originalSession = session.State;
+        OwnerContextStamp original = originalDisplay.DisplayOwnerContext!.Value;
+        WorkspaceDocument document = client.GetDocument(id.Value);
+        int reads = client.BoundOverviewCalls;
+        using CancellationTokenSource canceled = new();
+        client.AfterBoundOverview = () =>
+        {
+            canceled.Cancel();
+            throw new OperationCanceledException(canceled.Token);
+        };
+        IOwnerBoundWorkspaceRefreshPresenter bound = presenter;
+
+        await (beforeShellSync ? bound.LoadBeforeShellSyncAsync(original, id, canceled.Token)
+            : bound.LoadAsync(original, id, canceled.Token));
+
+        Assert.AreEqual(reads + 1, client.BoundOverviewCalls, "The cancellation must occur after an actual owner-bound read.");
+        Assert.IsFalse(presenter.State.IsBusy);
+        Assert.IsNull(presenter.State.Error);
+        Assert.AreEqual(id, presenter.State.WorkspaceId);
+        Assert.AreEqual(originalDisplay.ContentRevision, presenter.State.ContentRevision);
+        Assert.AreEqual(originalDisplay.SavedRevision, presenter.State.SavedRevision);
+        Assert.AreSame(originalDisplay.Profile, presenter.State.Profile);
+        Assert.AreSame(originalDisplay.Session, presenter.State.Session);
+        Assert.AreSame(originalSession, session.State);
+        Assert.AreEqual(original, presenter.State.DisplayOwnerContext);
+        Assert.AreEqual(original, presenter.State.Session.OwnerContext);
+        Assert.AreSame(document, client.GetDocument(id.Value));
+
+        client.AfterBoundOverview = null;
+        await (beforeShellSync ? bound.LoadBeforeShellSyncAsync(original, id, CancellationToken.None)
+            : bound.LoadAsync(original, id, CancellationToken.None));
+
+        Assert.AreEqual(reads + 2, client.BoundOverviewCalls,
+            "The original still-live owner must be able to retry rather than silently returning at admission.");
+        Assert.AreEqual(original, presenter.State.DisplayOwnerContext);
+        Assert.AreEqual(original, session.State.OwnerContext);
+        Assert.IsFalse(presenter.State.IsBusy);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Owner_bound_load_cancellation_after_publication_retains_the_new_Career_state(bool beforeShellSync)
+    {
+        // Presenter publication seam only; the fixture does not perform Core finalization.
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        var session = new WorkspaceSessionPresenter(new WorkspaceSessionManager());
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, workspaceSessionPresenter: session);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        CharacterOverviewState originalDisplay = presenter.State;
+        OwnerContextStamp original = originalDisplay.DisplayOwnerContext!.Value;
+        client.SetOwnerBoundaryProfile("Published Career", "CAREER");
+        client.SeedWorkspace(id.Value, "Published Career", "CAREER", rulesetId: RulesetDefaults.Sr5,
+            contentRevision: 6, savedRevision: 6);
+        client.SeedDocument(id.Value, CanonicalizeRecoveryTestDocument(new WorkspaceDocument(
+            client.GetDocument(id.Value).Content.Replace("<name>Owner</name>", "<name>Published Career</name>", StringComparison.Ordinal),
+            RulesetDefaults.Sr5)));
+        using CancellationTokenSource canceled = new();
+        CharacterOverviewState? published = null;
+        presenter.StateChanged += (_, _) =>
+        {
+            if (published is not null || presenter.State.ContentRevision != 6) return;
+            published = presenter.State;
+            canceled.Cancel();
+            throw new OperationCanceledException(canceled.Token);
+        };
+        IOwnerBoundWorkspaceRefreshPresenter bound = presenter;
+
+        await (beforeShellSync ? bound.LoadBeforeShellSyncAsync(original, id, canceled.Token)
+            : bound.LoadAsync(original, id, canceled.Token));
+
+        Assert.IsNotNull(published, "Cancellation must be injected after the new revision is actually published.");
+        Assert.AreEqual(6L, presenter.State.ContentRevision);
+        Assert.AreEqual(6L, presenter.State.SavedRevision);
+        Assert.AreEqual("Published Career", presenter.State.Profile?.Name);
+        Assert.IsTrue(presenter.State.Profile?.Created == true);
+        Assert.AreSame(published.Profile, presenter.State.Profile);
+        Assert.AreSame(published.Session, presenter.State.Session);
+        Assert.AreSame(published.Session, session.State);
+        Assert.AreNotSame(originalDisplay.Profile, presenter.State.Profile, "Cancellation must not restore the pre-load display.");
+        Assert.AreEqual(original, presenter.State.DisplayOwnerContext);
+        Assert.AreEqual(original, presenter.State.Session.OwnerContext);
+        Assert.IsFalse(presenter.State.IsBusy);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Owner_bound_load_cancellation_does_not_retain_owner_after_switch_or_ABA(bool returnToOwnerA)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp original = presenter.State.DisplayOwnerContext!.Value;
+        using CancellationTokenSource canceled = new();
+        client.AfterBoundOverview = () =>
+        {
+            if (returnToOwnerA) client.TransitionAwayAndBack();
+            else client.TransitionToOwnerB();
+            canceled.Cancel();
+            throw new OperationCanceledException(canceled.Token);
+        };
+        IOwnerBoundWorkspaceRefreshPresenter bound = presenter;
+
+        await bound.LoadAsync(original, id, canceled.Token);
+
+        Assert.AreNotEqual(original, client.CaptureOwnerContext());
+        Assert.IsNull(presenter.State.DisplayOwnerContext, "Cancellation cannot reauthorize a departed owner epoch.");
+        Assert.IsFalse(presenter.State.IsBusy);
+        int reads = client.BoundOverviewCalls;
+        CharacterOverviewState rejected = presenter.State;
+        client.AfterBoundOverview = null;
+        await bound.LoadAsync(original, id, CancellationToken.None);
+        Assert.AreEqual(reads, client.BoundOverviewCalls, "A stale original-owner retry must not dispatch another read.");
+        Assert.AreSame(rejected, presenter.State);
+    }
+
+    [TestMethod]
+    public async Task Owner_bound_load_cancellation_never_republishes_over_a_newer_same_owner_display()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        var session = new WorkspaceSessionPresenter(new WorkspaceSessionManager());
+        PausingDisplayStateFactory factory = new();
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client,
+            workspaceSessionPresenter: session, workspaceOverviewStateFactory: factory);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp original = presenter.State.DisplayOwnerContext!.Value;
+        using CancellationTokenSource canceled = new();
+        TaskCompletionSource entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using ManualResetEventSlim release = new();
+        int pause = 1;
+        factory.AfterMaterialization = _ =>
+        {
+            if (Interlocked.Exchange(ref pause, 0) == 0) return;
+            entered.TrySetResult();
+            // The workspace read gate is already released here. Pausing inside
+            // AfterBoundOverview would queue the successor behind this read.
+            Assert.IsTrue(release.Wait(TimeSpan.FromSeconds(5)), "Canceled materialized display was not released.");
+            canceled.Token.ThrowIfCancellationRequested();
+        };
+        IOwnerBoundWorkspaceRefreshPresenter bound = presenter;
+        Task pending = Task.Run(() => bound.LoadAsync(original, id, canceled.Token));
+        CharacterOverviewState winner = presenter.State;
+        WorkspaceSessionState winningSession = session.State;
+        try
+        {
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await presenter.LoadAsync(id, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+            winner = presenter.State;
+            winningSession = session.State;
+            Assert.AreEqual(original, winner.DisplayOwnerContext);
+            Assert.IsFalse(winner.IsBusy);
+        }
+        finally
+        {
+            canceled.Cancel();
+            release.Set();
+            await pending.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        Assert.AreSame(winner, presenter.State,
+            "Even an equal workspace/revision/owner cannot authorize an old generation to republish after cancellation.");
+        Assert.AreSame(winningSession, session.State);
+        Assert.AreEqual(original, presenter.State.DisplayOwnerContext);
+        Assert.IsNull(presenter.State.Error);
+    }
+
+    [TestMethod]
     [DataRow("load")]
     [DataRow("close")]
     [DataRow("dispose")]
