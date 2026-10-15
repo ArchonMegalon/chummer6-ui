@@ -94,6 +94,31 @@ def test_generate_releases_manifest_has_exact_recipe_membership(tmp_path, monkey
             preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
 
 
+@pytest.mark.parametrize("path", [
+    "scripts/Chummer.KeyLockerSigner/Chummer.KeyLockerSigner.csproj",
+    "scripts/Chummer.KeyLockerSigner/packages.lock.json",
+    "tests/Chummer.KeyLockerSigner.FixtureTests/packages.lock.json",
+    "tests/Chummer.KeyLockerSigner.FixtureTests/Program.cs",
+])
+def test_keylocker_dependency_fix_has_exact_recipe_membership(tmp_path, monkeypatch, path) -> None:
+    assert path in preseal.ALLOWED_RECIPE_PATHS
+    monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"M\t{path}")
+    monkeypatch.setattr(preseal, "commit_bytes", lambda *args: b"reviewed signer dependency update")
+    monkeypatch.setattr(preseal, "commit_blob", lambda *args: "c" * 40)
+    assert preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)[0]["path"] == path
+    for status, candidate in (
+        ("D", path),
+        ("M", "scripts/Chummer.KeyLockerSigner/Program.cs"),
+        ("M", "scripts/Chummer.KeyLockerSigner/global.json"),
+        ("M", "tests/Chummer.KeyLockerSigner.FixtureTests/UnreviewedFixture.cs"),
+        ("M", preseal.MARKER_PATH),
+        *(("M", name) for name in preseal.CANONICAL_LOCK_PATHS),
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{candidate}")
+        with pytest.raises(preseal.PresealError, match="not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def test_windows_installer_gate_test_has_exact_recipe_membership(tmp_path, monkeypatch) -> None:
     path = "tests/test_windows_installer_payload_gate.py"
     assert path in preseal.ALLOWED_RECIPE_PATHS
