@@ -16,7 +16,7 @@ internal static class Program
     private const string SignerSpkiSha256 =
         "ece7f11e5ab439b81efac96d6db68eeaf01e7813dfdeed6395d1f7b68442c423";
     private const string SignerPackageLockSha256 =
-        "f1cf04d5f641bc62903122f700f9714cf693bf3f3b80eeb79810e741e07eb73d";
+        "ba99fa49fd305ef7e37801d1b3928e9882553cb5d635a3227f43b7b5c9e75f4d";
     private const string Rfc3161AttributeOid =
         "1.3.6.1.4.1.311.3.3.1";
 
