@@ -58,6 +58,10 @@ public static partial class CompletionRecommendationBuilder
     public static CompletionRecommendationPack? GetRecommendationPack(string archetypeId)
     {
         if (archetypeId == CompletionAssistantRules.GeneralSurvivor) return GeneralSurvivorPack;
+        // A distinct suggestion style for the supported magic slice plus the
+        // ordinary survivor foundation, not an authored complete adept role kit.
+        if (archetypeId == CharacterCreationMagicResonanceKinds.MysticAdept)
+            return GeneralSurvivorPack with { Id = "sr5.mystic-adept.foundation", ArchetypeId = archetypeId };
         var role = Roles.SingleOrDefault(row => row.Id == archetypeId);
         if (role is null) return null;
         var attributes = role.Attributes.Select((id, index) => new CompletionAttributeRecommendation(
@@ -145,15 +149,15 @@ public static partial class CompletionRecommendationBuilder
             }
             ranked.Add((role.Id, score, evidence));
         }
-        // These talent identities are meaningful but currently have no authored
-        // foundation pack. Do not mislabel a technomancer as a decker or adept as mage.
+        // These distinct talents have no authored role kit. A bounded fallback
+        // foundation does not turn a Mystic Adept into a Mage or another role.
         if (talentRole is not null && !Roles.Any(row => row.Id == talentRole))
             ranked.Add((talentRole, 6, [TalentEvidence()]));
         var ordered = ranked.OrderByDescending(row => row.Score).ThenBy(row => row.Id, StringComparer.Ordinal).ToArray();
         bool prefilled = string.IsNullOrWhiteSpace(selectedArchetypeId);
         // Preserve a known distinct talent identity even when ordinary role
         // skills score higher. A technomancer's Hacking is not proof of a decker.
-        string automatic = talentRole is not null && !HasPack(talentRole) ? talentRole
+        string automatic = talentRole is not null && !Roles.Any(row => row.Id == talentRole) ? talentRole
             : ordered.FirstOrDefault().Id ?? CompletionAssistantRules.GeneralSurvivor;
         string selected = prefilled ? automatic : selectedArchetypeId!;
         var matching = ordered.Where(row => row.Id == selected).ToArray();
@@ -181,7 +185,8 @@ public static partial class CompletionRecommendationBuilder
             && ordered[index].Evidence.Count(row => row.Kind != CompletionArchetypeEvidenceKind.Attribute) >= 2
             && (ordered.Length == 1 || ordered[0].Score - ordered[1].Score >= 2)
                 ? CompletionArchetypeConfidence.Supported : CompletionArchetypeConfidence.Tentative;
-        static bool HasPack(string id) => id == CompletionAssistantRules.GeneralSurvivor || Roles.Any(row => row.Id == id);
+        static bool HasPack(string id) => id is CompletionAssistantRules.GeneralSurvivor
+            or CharacterCreationMagicResonanceKinds.MysticAdept || Roles.Any(row => row.Id == id);
     }
 
     public static CharacterCreationFoundationResult<CompletionAssistantProposal> Build(
@@ -550,6 +555,10 @@ public static partial class CompletionRecommendationBuilder
                 plan.Magic.HasChanges ? "completion.coverage.proposed-magic"
                     : "completion.coverage.retained-magic", [])
             : Evaluated("magic", plan?.Magic?.Blockers);
+        if (inputs.Magic.SelectedTalent.Kind == CharacterCreationMagicResonanceKinds.MysticAdept)
+            // Core's complete free magic budget is not an authored adept build.
+            // Keep the unsupported power advice visible without inventing a blocker.
+            yield return new("adept-powers", CompletionCoverageState.Unsupported, "completion.remaining.magic-choices", []);
         yield return Evaluated("qualities", plan?.Review.UpstreamBudget?.Qualities.Blockers);
         yield return Evaluated("resources", plan?.Review.Lifestyles?.Gear.Resources.Blockers);
         yield return Evaluated("gear", plan?.Review.Lifestyles?.Gear.Blockers);

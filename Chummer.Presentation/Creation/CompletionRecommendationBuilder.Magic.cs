@@ -53,8 +53,8 @@ public static partial class CompletionRecommendationBuilder
         var magic = inputs.Magic;
         IReadOnlyList<CharacterCreationMagicResonanceCatalogOption> options = kind switch
         {
-            CharacterCreationMagicResonanceKinds.Tradition when magic.SelectedTalent.Kind
-                == CharacterCreationMagicResonanceKinds.Magician && magic.SelectedTalent.RequiresTradition
+            CharacterCreationMagicResonanceKinds.Tradition when SupportsSpellAdvice(magic.SelectedTalent.Kind)
+                && magic.SelectedTalent.RequiresTradition
                 && magic.Selections.Tradition is null => magic.Authority.Traditions,
             CharacterCreationMagicResonanceKinds.Stream when magic.SelectedTalent.Kind
                 == CharacterCreationMagicResonanceKinds.Technomancer && magic.SelectedTalent.RequiresStream
@@ -74,17 +74,18 @@ public static partial class CompletionRecommendationBuilder
         CharacterCreationMagicCompletionRequest request)
     {
         if (!SupportsMagicAdvice(inputs)) return request;
-        bool magician = inputs.Magic.SelectedTalent.Kind == CharacterCreationMagicResonanceKinds.Magician;
+        bool spellcaster = SupportsSpellAdvice(inputs.Magic.SelectedTalent.Kind);
         return request with
         {
             RankedTraditions = IdentityAdvice(CharacterCreationMagicResonanceKinds.Tradition, intent.PreferredTradition),
             RankedStreams = IdentityAdvice(CharacterCreationMagicResonanceKinds.Stream, intent.PreferredStream),
-            RankedSpells = magician && inputs.Magic.SelectedTalent.AllowsSpells
+            RankedSpells = spellcaster && inputs.Magic.SelectedTalent.AllowsSpells
                 ? RankAdmitted(inputs.Magic.Authority.Spells, CharacterCreationMagicResonanceKinds.Spell, SpellAdvice) : [],
-            RankedComplexForms = !magician && inputs.Magic.SelectedTalent.AllowsComplexForms
+            RankedComplexForms = inputs.Magic.SelectedTalent.Kind == CharacterCreationMagicResonanceKinds.Technomancer
+                && inputs.Magic.SelectedTalent.AllowsComplexForms
                 ? RankAdmitted(inputs.Magic.Authority.ComplexForms, CharacterCreationMagicResonanceKinds.ComplexForm, ComplexFormAdvice) : []
             // ManualSelections stays the exact original. No PP purchase or
-            // adept power allocation is inferred by this magician/technomancer slice.
+            // adept power allocation is inferred by this tradition/spell/stream/form slice.
         };
 
         CharacterCreationMagicResonanceOptionIdentity[] IdentityAdvice(string kind,
@@ -114,8 +115,11 @@ public static partial class CompletionRecommendationBuilder
         => inputs.Magic is { Authority: { IsAuthoritative: true, Blockers.Count: 0,
                 Traditions: not null, Streams: not null, Spells: not null, ComplexForms: not null },
             SelectedTalent: { IsEnabled: true, Blockers.Count: 0 }, Selections: not null }
-            && inputs.Magic.SelectedTalent.Kind is CharacterCreationMagicResonanceKinds.Magician
-                or CharacterCreationMagicResonanceKinds.Technomancer;
+            && (SupportsSpellAdvice(inputs.Magic.SelectedTalent.Kind)
+                || inputs.Magic.SelectedTalent.Kind == CharacterCreationMagicResonanceKinds.Technomancer);
+
+    private static bool SupportsSpellAdvice(string talentKind)
+        => talentKind is CharacterCreationMagicResonanceKinds.Magician or CharacterCreationMagicResonanceKinds.MysticAdept;
 
     private static bool ValidMagicPreferences(CharacterCreationCompletionReviewInputs inputs,
         CompletionAssistantIntent intent, bool fillRemainingResources)
