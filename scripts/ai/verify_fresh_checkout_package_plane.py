@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "8583378272ab56466959d44d82be36195ad99b85",
-        "commit": "52195a6c4f6394fbdbd754251afe4295781b373d",
+        "blob": "3582e56d55bcb01e2a013ca4c8bea80e21a6feea",
+        "commit": "ff915d1a486215b5f24dff47c373afd9119f6534",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "dd4e7ddcf14876beb5b30c2dcf827d0dba71b5f6a77de23eedc973aca33c44df",
+        "rawSha256": "dd83fdd3f87fbfd5512ff88524e936b02d6e56aa9dc99e05e8882e9ad0b4b43b",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "dd4e7ddcf14876beb5b30c2dcf827d0dba71b5f6a77de23eedc973aca33c44df",
+        "semanticCanonicalSha256": "dd83fdd3f87fbfd5512ff88524e936b02d6e56aa9dc99e05e8882e9ad0b4b43b",
         "semanticCanonicalSizeBytes": 69810,
-        "tree": "fa166295dab25a40bd801950709c4a8ebdda8256"
+        "tree": "156dbc562fadacc949f6b13c93de8c40491e1216"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -103,7 +103,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "505bc12ec78b5d35d355b17529cfd77031c56ae0",
+        "09e2cf6e7609b6c4fd5c281a42dfb4820a0bd11a",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -173,58 +173,58 @@ EXPECTED_HUB_CANONICAL_FEED = {'inventoryContract': 'chummer-hub.external-packag
                'sha256': '002dbe7ccf56cc306d9fecd048d6c3025481547b0bf082b94ceac5bc6d563f30',
                'sizeBytes': 1862480,
                'version': '0.1.1-packageplane.20260927.1'}]}
-CORE_RUNTIME_SOURCE_COMMIT = "fa951b99cc4ac232a8b483fbece72028a067c7e1"
-CORE_RUNTIME_RECIPE_COMMIT = "505bc12ec78b5d35d355b17529cfd77031c56ae0"
-CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac"
-CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = 'af63f0f446fde92e33ce8b0141a51a527afb4f8fca8cd32e24e77a7d615f7489'
-CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 6903349
+CORE_RUNTIME_SOURCE_COMMIT = "8d2b72ebf79140651fb0fb17245c28a21050fc2f"
+CORE_RUNTIME_RECIPE_COMMIT = "09e2cf6e7609b6c4fd5c281a42dfb4820a0bd11a"
+CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914"
+CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = '60c8991edddd5ffa4e12e3f70734a0d7dbf39ebaed93a4e588155e6625178c73'
+CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 6905576
 EXPECTED_CORE_RUNTIME_FEED_METADATA = {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "4cb63829fadb665a7620e5bbf7e3a6476df934926a842e8b7cdadc75be759a16",
+    "inventorySha256": "18a0fe559a132d5b917dbb3ab577dbc4ef1b86ce6ca74198ac03a1cc454ccc6d",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "4ee23486c42bffcd03d3896b3329fbbd2689b0d6c51f415415216d2d515b33e1",
+    "lockSha256": "d2b051f914e9b39ffb1a292b13d57b906a542c67c1d350a72a31f05c0f34d0ba",
     "packageRecipeCommit": CORE_RUNTIME_RECIPE_COMMIT,
     "packageVersion": CORE_RUNTIME_PACKAGE_VERSION,
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "e64e04f1213574fda51d03685a95446ca0223d1e2018c8c5cf46a438e509397a",
+    "receiptSha256": "4467550baa9d41de2215b3e2441f58cd3f14f0c149fa53484ac0fe4fce02b06f",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
     "runtimeSourceCommit": CORE_RUNTIME_SOURCE_COMMIT,
 }
 EXPECTED_CORE_RUNTIME_PACKAGES = {'Chummer.Engine.Contracts': ('Chummer.Contracts/Chummer.Contracts.csproj',
-                              'Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                              '6544feabb42cdaf92bc195907d2a0f7cf77fbdba4811620b1dcda9c83b155b17',
+                              'Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                              '2d082d576c45584b2d8d6857c6c2e0c0fa0ffe04216d1c0daac67421d06d422b',
                               2329064),
  'Chummer.Application': ('Chummer.Application/Chummer.Application.csproj',
-                         'Chummer.Application.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                         '1cc820fd80e59595bca2c06505d027a9d627897ab8bb955396bda7c0e2e29661',
-                         975544),
+                         'Chummer.Application.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                         '689eb10c1690716341f00eb23b9ac5e201e6ad034d27802c974cad6caab199a1',
+                         976658),
  'Chummer.Rulesets.Hosting': ('Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj',
-                              'Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                              'd92852506615020d218012f1a74471fbb94d628ed2f64372e0602ddf5fc75194',
-                              14382),
+                              'Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                              '2c468d1d500fe95ac6cab70e9889ca92766e50d4ba68bd7744f658f2ef8b4eed',
+                              14384),
  'Chummer.Rulesets.Sr5': ('Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj',
-                          'Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                          '886c92d2ca6a98063cb058500904676aadf4dda0487fc6a724f05a734c8febf7',
-                          31645),
+                          'Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                          '55e2db02e1ae7bfd8546ac424fd372f952f3dbdca9d20c007130346258221b69',
+                          31647),
  'Chummer.Rulesets.Sr6': ('Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj',
-                          'Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                          'ab0b3efea58cbf5f3d884ab624fc6fed91a80d7dd7d3355f0e75c02e564997e4',
-                          120371),
+                          'Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                          '160fd5f1712a4628b6b0120437b28f5c98701cebcd71de4ac03cd41d631a25b5',
+                          120369),
  'Chummer.Infrastructure': ('Chummer.Infrastructure/Chummer.Infrastructure.csproj',
-                            'Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                            '750cfa214298bd01629be61ebfe5e17dbb0f6939d2d783bfae606b279df520b9',
-                            1111686),
+                            'Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                            '82f4d77912a993ff82fdca0a9a27a952fc545a1a0f9ee29437a83616e6cc779f',
+                            1111687),
  'Chummer.Rulesets.Sr4': ('Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj',
-                          'Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                          '31ce7ea49c621a656f288986ea3b38947b5d40c4d45cf51bee46e0d7ac6a831d',
-                          34054),
+                          'Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                          '0554e5285ecc4fcdf16f0f684fb6781ee065c1fcab9886bfd5ab2d253b634057',
+                          34050),
  'Chummer.Engine.GmCharacterEdits': ('Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj',
-                                     'Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261015.8.shfa951b99cc4ac.nupkg',
-                                     'e4ce576e0af73d742f4fddd45cfc763205f7f6b9de477f7fcc38c65684481f06',
-                                     2249619)}
+                                     'Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261016.1.sh8d2b72ebf7914.nupkg',
+                                     '2fd4ce68e7d51b4ce4f05d9af1fd441918dbdd60125ce29de0c15a70183feb0e',
+                                     2250733)}
 EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
     "4c8e2fef141cbd1faf696a1d304bd4216bdd83f9273a82153858fe82518a7d2e"
 )
