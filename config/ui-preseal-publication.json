@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "2377180911beac308a9f8590b2e7dbed7596803c",
-  "baseTree": "91189c778b1f3574bbd7f31d023a3c8257c12a52",
+  "baseCommit": "9303315cbe2f96c805ed57b9c8bc638403f93985",
+  "baseTree": "df79d38eb0e0396ace2b6b0550bf85ce43bbb77f",
   "canonicalSealedLocks": [
     {
       "blob": "374f9ab6370e79896b881be1fa037ee184a62488",
@@ -44,111 +44,13 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "7325e7e58100fdeaece32f425ff0b796f3c686d3",
-      "path": "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Qualities.cs",
-      "sha256": "d40915e77f129455bf35868593797893e951fb62d808c95b7d85c9632cb4b7b4",
-      "sizeBytes": 15675,
-      "status": "A"
-    },
-    {
-      "blob": "a608f75878951e37fb0b177d76e6bafe2ec20fe3",
-      "path": "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs",
-      "sha256": "10b51c1f05f55fde2c27de887a92a88a19ae47f9179c7725a3c5ba223d1a5176",
-      "sizeBytes": 5128,
-      "status": "M"
-    },
-    {
-      "blob": "1cb5031770d7c1236957795f2872b2ca71a9c6e9",
-      "path": "Chummer.Presentation/Creation/CompletionAnalysisProgress.cs",
-      "sha256": "2b46799986751e81085a86ec56ef51d40cfbed87f12dd6cee2040e66a12861f6",
-      "sizeBytes": 1627,
-      "status": "A"
-    },
-    {
-      "blob": "4ebf1ad25a73c6232ed82a535d057d84ad0e4ded",
-      "path": "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Qualities.cs",
-      "sha256": "400e65167ea8276c8a92b4c4d4b89697c60b1f87aa142abbb2a702ba5ff0cfb2",
-      "sizeBytes": 6742,
-      "status": "A"
-    },
-    {
-      "blob": "9e9daf51d7e830b7161c54d51b5b3275e8a75384",
-      "path": "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Search.cs",
-      "sha256": "9a351db5a09fa7fee8111719b70fea6530e12be79812e3065909b4ad43ac6f3d",
-      "sizeBytes": 12320,
-      "status": "A"
-    },
-    {
-      "blob": "ca4b1df57cdfb0b2b0b9b0d0fe407749c688a5f5",
-      "path": "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.cs",
-      "sha256": "7b6c49f304d5cea7416a93473742d5c10d3eb77e8d5e7279876743cb505f0563",
-      "sizeBytes": 2258,
-      "status": "M"
-    },
-    {
-      "blob": "169bd35b54f163791197dbba312c7b03039e8f3f",
-      "path": "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Resources.cs",
-      "sha256": "0747174256b7d275677011b87d5d27fffa1766c979f11f226ce26d2139da1dab",
-      "sizeBytes": 14722,
-      "status": "M"
-    },
-    {
-      "blob": "bd9a8a898a327b2b7e07d760755789db5d0074dd",
-      "path": "Chummer.Presentation/Creation/CompletionRecommendationBuilder.cs",
-      "sha256": "6e1ebbc4dcdb191e28a1739ecfa38a8e98a369ec2f5e42f45cff26afb34472f3",
-      "sizeBytes": 53662,
-      "status": "M"
-    },
-    {
-      "blob": "262d6b4b39881856abfcfe01cecb5c1071a39795",
-      "path": "Chummer.Product.UnitTests/Chummer.Product.UnitTests.csproj",
-      "sha256": "518a4132ba70f23a46bc3f454f88ceaed699e709b00ea22fe2fca1071f1c2032",
-      "sizeBytes": 9327,
-      "status": "M"
-    },
-    {
-      "blob": "8583378272ab56466959d44d82be36195ad99b85",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "dd4e7ddcf14876beb5b30c2dcf827d0dba71b5f6a77de23eedc973aca33c44df",
-      "sizeBytes": 69810,
-      "status": "M"
-    },
-    {
-      "blob": "889181cef1a8624f56ff6142ce83047dcda707d8",
-      "path": "scripts/ai/verify.sh",
-      "sha256": "dc35fea4c122569c6136ec0d4c2123b8b4982d79feb943dbffca75c6f527f7bc",
-      "sizeBytes": 70272,
-      "status": "M"
-    },
-    {
-      "blob": "05334d69bc9ab0849c6ca41ec2c6b2b9c4e28a3b",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "3f133a37cb528385c86580cb4d2524cf0c9174f5a2b951d03d75ac9136ffd901",
-      "sizeBytes": 297158,
-      "status": "M"
-    },
-    {
-      "blob": "24f49dd106a181e64ae3b283d85f1ac2ea02edf2",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "30f6ad78fb4b9935346809610421e5449843e1808954d4d8c7d8c18a54adaada",
-      "sizeBytes": 54753,
-      "status": "M"
-    },
-    {
-      "blob": "d79f5f46e0a74305a1a8eee8e7cec67419d93d78",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "79a56bc993619563d1b4fb1bb11e339f99d5bf86437d5b59201f5d5aeaf29dd0",
-      "sizeBytes": 198080,
-      "status": "M"
-    },
-    {
-      "blob": "0f661363625528cc3f4182535c7400b2ff613a6a",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "2ba8a2381b2b018de11ad01b72fdad1456531ad657aec226c1a521cb37ab6a64",
-      "sizeBytes": 66327,
+      "blob": "c3536cd7022e3caeac9324d8441422c978dd0e73",
+      "path": "tests/test_verify_mode_controls.py",
+      "sha256": "c77346750e9dd68e7668c4ba099be5622d55d9e83f9a58c602751815f17b5a94",
+      "sizeBytes": 16948,
       "status": "M"
     }
   ],
-  "recipeTree": "fca64828fa0a628bc44e303c121b58fde41c7797",
+  "recipeTree": "5d1bc48d6b8f7c27a66ef60b34cf388f48142dcc",
   "releaseClaim": false
 }
