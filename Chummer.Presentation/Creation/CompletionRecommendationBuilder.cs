@@ -219,10 +219,17 @@ public static partial class CompletionRecommendationBuilder
     public static CharacterCreationFoundationResult<CompletionAssistantProposal> BuildMissingOnly(
         CharacterCreationCompletionReviewInputs inputs, CompletionAssistantIntent intent,
         CancellationToken cancellationToken = default)
+        => BuildMissingOnly(inputs, intent, cancellationToken, progress: null);
+
+    public static CharacterCreationFoundationResult<CompletionAssistantProposal> BuildMissingOnly(
+        CharacterCreationCompletionReviewInputs inputs, CompletionAssistantIntent intent,
+        CancellationToken cancellationToken, Action<CompletionAnalysisProgress>? progress)
     {
         ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(intent);
         cancellationToken.ThrowIfCancellationRequested();
+        var analysis = new CompletionAnalysisReporter(progress, CompletionAnalysisProgress.MissingOnlyStageCount, cancellationToken);
+        analysis.Start(CompletionAnalysisStage.PreparingChoices);
         CompletionArchetypeSuggestion? suggestion = null;
         if (string.IsNullOrWhiteSpace(intent.ArchetypeId))
         {
@@ -233,20 +240,41 @@ public static partial class CompletionRecommendationBuilder
         }
         var pack = GetRecommendationPack(intent.ArchetypeId);
         if (pack is null) return Reject(CharacterCreationFoundationOutcomes.Blocked, CompletionAssistantRules.ArchetypeUnsupported);
-        var result = BuildMissingOnlyCore(inputs, intent, pack, fillRemainingResources: true, cancellationToken);
-        if (result.Value is null || suggestion is null) return result;
-        var proposal = result.Value with { ArchetypeSuggestion = suggestion };
-        return result with { Value = proposal with { ProposalDigest = CompletionAssistantRules.ComputeProposalDigest(proposal) } };
+        var result = BuildMissingOnlyCore(inputs, intent, pack, fillRemainingResources: true, cancellationToken, analysis);
+        if (result.Value is null) return result;
+        if (suggestion is not null)
+        {
+            var proposal = result.Value with { ArchetypeSuggestion = suggestion };
+            result = result with { Value = proposal with { ProposalDigest = CompletionAssistantRules.ComputeProposalDigest(proposal) } };
+        }
+        analysis.Complete(); // includes final coverage, inferred identity and proposal digest
+        return result;
     }
 
     public static CharacterCreationFoundationResult<CompletionAssistantProposal> BuildMissingOnly(
         CharacterCreationCompletionReviewInputs inputs, CompletionAssistantIntent intent,
         CompletionRecommendationPack pack, CancellationToken cancellationToken = default)
-        => BuildMissingOnlyCore(inputs, intent, pack, fillRemainingResources: false, cancellationToken);
+        => BuildMissingOnly(inputs, intent, pack, cancellationToken, progress: null);
+
+    public static CharacterCreationFoundationResult<CompletionAssistantProposal> BuildMissingOnly(
+        CharacterCreationCompletionReviewInputs inputs, CompletionAssistantIntent intent,
+        CompletionRecommendationPack pack, CancellationToken cancellationToken,
+        Action<CompletionAnalysisProgress>? progress)
+    {
+        ArgumentNullException.ThrowIfNull(inputs);
+        ArgumentNullException.ThrowIfNull(intent);
+        ArgumentNullException.ThrowIfNull(pack);
+        var analysis = new CompletionAnalysisReporter(progress, 4, cancellationToken);
+        analysis.Start(CompletionAnalysisStage.PreparingChoices);
+        var result = BuildMissingOnlyCore(inputs, intent, pack, fillRemainingResources: false, cancellationToken, analysis);
+        if (result.Value is not null) analysis.Complete();
+        return result;
+    }
 
     private static CharacterCreationFoundationResult<CompletionAssistantProposal> BuildMissingOnlyCore(
         CharacterCreationCompletionReviewInputs inputs, CompletionAssistantIntent intent,
-        CompletionRecommendationPack pack, bool fillRemainingResources, CancellationToken cancellationToken)
+        CompletionRecommendationPack pack, bool fillRemainingResources, CancellationToken cancellationToken,
+        CompletionAnalysisReporter analysis)
     {
         ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(intent);
@@ -298,7 +326,11 @@ public static partial class CompletionRecommendationBuilder
         if (attributeDraft?.PlayerChosenAttributeIds is { } chosenAttributes)
             locked.UnionWith(chosenAttributes.Select(AttributeIdentity));
         if (fillRemainingResources)
+        {
+            analysis.Complete();
+            analysis.Start(CompletionAnalysisStage.Skills);
             pack = ExpandResourceAdvice(inputs, intent, pack, locked, cancellationToken);
+        }
         var attributes = knownAttributeIntent ? pack.Attributes.Where(row =>
                 !locked.Contains(AttributeIdentity(row.Target.AttributeId))
                 && inputs.Skills.Attributes.Attributes.Any(value =>
@@ -336,7 +368,8 @@ public static partial class CompletionRecommendationBuilder
         // These are already private, digest-admitted snapshots. The restricted
         // request is authored above; do not serialize the complete catalogs a
         // second time on this private continuation path.
-        var result = BuildFromSnapshot(inputs, restricted, pack, fillRemainingResources, cancellationToken);
+        analysis.Complete();
+        var result = BuildFromSnapshot(inputs, restricted, pack, fillRemainingResources, cancellationToken, analysis);
         if (result.Value is not { } proposal) return result;
         bool needsAttributeIntent = !knownAttributeIntent && (pack.Attributes.Any(row =>
                 !locked.Contains(AttributeIdentity(row.Target.AttributeId))
@@ -399,7 +432,8 @@ public static partial class CompletionRecommendationBuilder
     // accepted, and derived permissions still pass the ordinary shape checks.
     private static CharacterCreationFoundationResult<CompletionAssistantProposal> BuildFromSnapshot(
         CharacterCreationCompletionReviewInputs inputs, CompletionAssistantIntent intent,
-        CompletionRecommendationPack pack, bool fillRemainingResources, CancellationToken cancellationToken)
+        CompletionRecommendationPack pack, bool fillRemainingResources, CancellationToken cancellationToken,
+        CompletionAnalysisReporter? analysis = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!ValidIntent(intent) || !HasInputShape(inputs))
@@ -446,6 +480,7 @@ public static partial class CompletionRecommendationBuilder
         };
         // No negative quality, purchased power point, implant or starting-cash
         // roll is inferred from the remaining funds.
+        analysis?.Start(CompletionAnalysisStage.Magic);
         var magic = new CharacterCreationMagicCompletionRequest(inputs.Magic.SnapshotDigest,
             inputs.Lifestyles.Qualities.SnapshotDigest, inputs.Magic.Selections, [], [], [], [], [],
             KarmaToReserve: reserves.Karma);
@@ -457,19 +492,32 @@ public static partial class CompletionRecommendationBuilder
             intent.StartingLifestyleId, reserves.Karma, reserves.Nuyen,
             MaximumAdditionalPurchaseSpend: fillRemainingResources ? intent.MaximumAdditionalPurchaseSpend ?? 0m : 0m,
             PermitNegativeQualityAdditions: intent.PermitNegativeQualities);
+        analysis?.Complete();
         var completed = fillRemainingResources
-            ? CompleteResources(inputs, request, intent.ArchetypeId, cancellationToken) : new ResourceCompletion(request);
+            ? CompleteResources(inputs, request, intent.ArchetypeId, cancellationToken, analysis) : new ResourceCompletion(request);
+        if (fillRemainingResources) analysis?.Complete();
         request = completed.Request;
+        KarmaCompletion karma = new(completed, []);
         if (fillRemainingResources)
-            request = AddMissingAttributeKarmaAdvice(inputs, request, intent.ArchetypeId);
+        {
+            analysis?.Start(CompletionAnalysisStage.Karma);
+            karma = CompleteKarmaAdvice(inputs, intent, completed, cancellationToken);
+            completed = karma.Completed;
+            request = completed.Request;
+            analysis?.Complete();
+        }
         // A genuine whole Core plan can be reused only when optional resource
         // advice left its complete request unchanged. Changed purchases still
         // require the ordinary whole-plan evaluation, never a patched result.
+        analysis?.Start(CompletionAnalysisStage.FinalBudgets);
         var evaluated = (ReferenceEquals(request, completed.Request) ? completed.Evaluation : null)
             ?? CharacterCreationCompletionPlanner.Plan(inputs, request, cancellationToken);
+        analysis?.Complete();
+        analysis?.Start(CompletionAnalysisStage.PreparingReview);
         var loadout = BuildLoadoutSummary(inputs, evaluated.Value, cancellationToken);
         var suggestions = BuildSuggestions(inputs, intent, pack, evaluated.Value, fillRemainingResources).ToArray();
-        var coverage = BuildCoverage(inputs, intent, evaluated.Value).Concat(BuildLoadoutCoverage(inputs.Loadout, loadout)).ToArray();
+        var coverage = BuildCoverage(inputs, intent, evaluated.Value)
+            .Concat(BuildLoadoutCoverage(inputs.Loadout, loadout)).Concat(karma.Coverage).ToArray();
         var remaining = coverage.Where(row => row.State is CompletionCoverageState.NeedsChoice
                 or CompletionCoverageState.Unsupported or CompletionCoverageState.NotEvaluated)
             .Select(row => row.ExplanationKey)
