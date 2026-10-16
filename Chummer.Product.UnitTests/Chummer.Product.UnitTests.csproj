@@ -65,6 +65,7 @@
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/OriginStoryDecisionTextTests.cs" Link="CreationWizard/OriginStoryDecisionTextTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CharacterCreationLoadoutInteractionPresenterTests.cs" Link="CreationWizard/CharacterCreationLoadoutInteractionPresenterTests.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs" Link="CreationWizard/CompletionKarmaRecommendationBuilderTests.cs" />
+    <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Qualities.cs" Link="CreationWizard/CompletionKarmaRecommendationBuilderTests.Qualities.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.Equipment.cs" Link="CreationWizard/CompletionLoadoutRecommendationBuilderTests.Equipment.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs" Link="CreationWizard/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs" />
     <Compile Include="../Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.cs" Link="CreationWizard/CompletionLoadoutRecommendationBuilderTests.cs" />

@@ -120,9 +120,12 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs",
         "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs",
         "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs",
+        "Chummer.Presentation/Creation/CompletionAnalysisProgress.cs",
         "Chummer.Presentation/Creation/CompletionAssistantModels.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Equipment.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Qualities.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Search.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Loadout.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Magic.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.ResourceAdvice.cs",
@@ -263,6 +266,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
     "Chummer/chummer.ico",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationLoadoutInteractionPresenterTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Qualities.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.cs",
@@ -288,15 +292,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "e2183efe5bd3f82dde5c57a7f40f872c56698a8a",
-        "commit": "2d66b744532ca257fe69367fea21273b9fc8023b",
+        "blob": "885929a3a26d54da6be87ebd1a6e39eff202a25e",
+        "commit": "c1f7583c7aabf0ec18c999a728d16496a3e91027",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "1d1fa44d7e2c9994284616a95228279a90df467e3c377c182bf2e0fe119da5e0",
-        "rawSizeBytes": 69186,
-        "semanticCanonicalSha256": "1d1fa44d7e2c9994284616a95228279a90df467e3c377c182bf2e0fe119da5e0",
-        "semanticCanonicalSizeBytes": 69186,
-        "tree": "53f687d5c30b9a3364b70a4fe217146369b54363"
+        "rawSha256": "abf9d3bef9bbd73addcd19f559457303af18ae007447cec4325a798937748bac",
+        "rawSizeBytes": 69810,
+        "semanticCanonicalSha256": "abf9d3bef9bbd73addcd19f559457303af18ae007447cec4325a798937748bac",
+        "semanticCanonicalSizeBytes": 69810,
+        "tree": "20a7a9de930684f3fa1b7e2429eb8bcbd14b485a"
     },
     "producerLock": {
         "absentAtCommit": True,

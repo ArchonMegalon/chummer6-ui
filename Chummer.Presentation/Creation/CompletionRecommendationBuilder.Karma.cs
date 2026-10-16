@@ -11,6 +11,9 @@ public static partial class CompletionRecommendationBuilder
     {
         var pack = GetRecommendationPack(archetypeId);
         if (pack is null) return request;
+        // Candidate goals for the bounded quality/attribute search, not a request
+        // to greedily exhaust the wallet. Only reached, whole-reviewed targets
+        // are submitted by CompleteKarmaAdvice's final Core plan.
         // These are authored role goals, not rule maxima. The first three
         // foundations may benefit from a strong rating; the remaining ones
         // retain a well-rounded baseline. Core alone admits affordable levels.

@@ -25,9 +25,13 @@ public static partial class CompletionRecommendationBuilder
         CharacterCreationCompletionReviewInputs inputs,
         CharacterCreationCompletionPlanRequest request,
         string archetypeId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        CompletionAnalysisReporter? analysis = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        // These are details within ONE resource-analysis phase. Core's whole
+        // plan remains opaque; no separate skill/quality completions are claimed.
+        analysis?.Start(CompletionAnalysisStage.Attributes);
         // Do not repair, replace or silently discard a caller's existing choice.
         if (inputs.Contacts.Contacts.Any(original => !request.Contacts.Contains(original))) return new(request);
         var attributes = CharacterCreationAttributeCompletionPlanner.Plan(
@@ -36,6 +40,7 @@ public static partial class CompletionRecommendationBuilder
             CharacterCreationFoundationOutcomes.Invalid or CharacterCreationFoundationOutcomes.Conflict)
             return new(request);
 
+        analysis?.Start(CompletionAnalysisStage.Contacts);
         var contacts = request.Contacts.ToList();
         // These are bounded, authored relationship goals, not rule caps or costs.
         // Favor a useful primary relationship before broadening the network.
@@ -111,6 +116,7 @@ public static partial class CompletionRecommendationBuilder
 
         // Reuse Core's complete contact/investment/Karma reserve calculation to
         // obtain the actual proposed magic choices before pricing any purchase.
+        analysis?.Start(CompletionAnalysisStage.RulesAndBudgets);
         var upstream = CharacterCreationCompletionPlanner.Plan(inputs, request, cancellationToken);
         var unchanged = new ResourceCompletion(request, upstream);
         if (upstream.Value is not { Magic: { } magic, Purchases: { } originalPurchases }
@@ -120,6 +126,7 @@ public static partial class CompletionRecommendationBuilder
                  or CharacterCreationPurchaseCompletionTargetOutcomes.AlreadyPresent)))
             return unchanged;
 
+        analysis?.Start(CompletionAnalysisStage.Equipment);
         var accepted = request.Purchases.ToList();
         Guid? startingLifestyleId = request.StartingLifestyleId;
         var purchaseRequest = new CharacterCreationPurchaseCompletionRequest(

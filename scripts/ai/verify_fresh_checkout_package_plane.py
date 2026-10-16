@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "e2183efe5bd3f82dde5c57a7f40f872c56698a8a",
-        "commit": "2d66b744532ca257fe69367fea21273b9fc8023b",
+        "blob": "885929a3a26d54da6be87ebd1a6e39eff202a25e",
+        "commit": "c1f7583c7aabf0ec18c999a728d16496a3e91027",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "1d1fa44d7e2c9994284616a95228279a90df467e3c377c182bf2e0fe119da5e0",
-        "rawSizeBytes": 69186,
-        "semanticCanonicalSha256": "1d1fa44d7e2c9994284616a95228279a90df467e3c377c182bf2e0fe119da5e0",
-        "semanticCanonicalSizeBytes": 69186,
-        "tree": "53f687d5c30b9a3364b70a4fe217146369b54363"
+        "rawSha256": "abf9d3bef9bbd73addcd19f559457303af18ae007447cec4325a798937748bac",
+        "rawSizeBytes": 69810,
+        "semanticCanonicalSha256": "abf9d3bef9bbd73addcd19f559457303af18ae007447cec4325a798937748bac",
+        "semanticCanonicalSizeBytes": 69810,
+        "tree": "20a7a9de930684f3fa1b7e2429eb8bcbd14b485a"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -329,8 +329,8 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
 # thirteen Foundation shared-read/method-exclusion cases.
 # Local adoption adds three cache/roster cases and four same-ID overview cases.
 # Two Lifestyle admission regressions cover missing/changed runtime owner stamps.
-# Finish-character links 89 completion cases and adds nine overview cases.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 932
+# Finish-character links 102 completion cases and adds nine overview cases.
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 945
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
@@ -377,6 +377,7 @@ CREATION_WIZARD_TEST_FILES = (
     "WorkspaceOverviewPreparationTests.cs",
     "CharacterCreationLoadoutInteractionPresenterTests.cs",
     "CompletionKarmaRecommendationBuilderTests.cs",
+    "CompletionKarmaRecommendationBuilderTests.Qualities.cs",
     "CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
     "CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
     "CompletionLoadoutRecommendationBuilderTests.cs",
@@ -497,9 +498,12 @@ OWNER_CONTEXT_SOURCE_FILES = frozenset(
         "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs",
         "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs",
         "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs",
+        "Chummer.Presentation/Creation/CompletionAnalysisProgress.cs",
         "Chummer.Presentation/Creation/CompletionAssistantModels.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Equipment.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Qualities.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Search.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Loadout.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Magic.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.ResourceAdvice.cs",
