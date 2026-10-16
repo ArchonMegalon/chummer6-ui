@@ -75,6 +75,33 @@ def test_history_cache_preserves_depth_repository_and_failures(tmp_path) -> None
     assert len(calls) == 6
 
 
+@pytest.mark.parametrize("path", [
+    "Chummer.Presentation/Creation/CompletionAnalysisProgress.cs",
+    "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Qualities.cs",
+    "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Search.cs",
+    "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Qualities.cs",
+])
+@pytest.mark.parametrize("status", ["A", "M"])
+def test_completion_karma_progress_has_exact_recipe_membership(tmp_path, monkeypatch, path, status) -> None:
+    assert path in preseal.ALLOWED_RECIPE_PATHS
+    assert path not in preseal.RETIRED_SOURCE_LINKS
+    monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{path}")
+    monkeypatch.setattr(preseal, "commit_bytes", lambda *args: b"reviewed completion Karma progress source")
+    monkeypatch.setattr(preseal, "commit_blob", lambda *args: "c" * 40)
+    assert preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)[0]["path"] == path
+    for rejected_status, candidate in (
+        ("D", path),
+        ("A", "Chummer.Presentation/Creation/CompletionAnalysisProgress.Unreviewed.cs"),
+        ("A", "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Unreviewed.cs"),
+        ("A", "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Unreviewed.cs"),
+        ("M", preseal.MARKER_PATH),
+        *(("M", name) for name in preseal.CANONICAL_LOCK_PATHS),
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{rejected_status}\t{candidate}")
+        with pytest.raises(preseal.PresealError, match="not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def test_generate_releases_manifest_has_exact_recipe_membership(tmp_path, monkeypatch) -> None:
     path = "scripts/generate-releases-manifest.sh"
     assert path in preseal.ALLOWED_RECIPE_PATHS

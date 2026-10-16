@@ -2201,7 +2201,7 @@ def test_new_runner_method_regression_is_a_bound_package_consumer_input() -> Non
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == "CreationWizard/NewRunnerBuildMethodTests.cs"
     package_plane.validate_test_compile_items(REPO_ROOT)
     assert (REPO_ROOT / relative).read_text(encoding="utf-8").count("[DataRow(") == 9
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 932
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 945
 
 
 def test_checked_in_locks_are_exact_retained_bytes_or_current_sealed_authority() -> None:
@@ -2238,8 +2238,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
     # Attribute and knowledge Career regressions are now explicit consumer inputs.
-    assert len(oracle["consumer"]["sourceFiles"]) == 155
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 156
+    assert len(oracle["consumer"]["sourceFiles"]) == 159
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 160
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2304,6 +2304,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         "WorkspaceOverviewPreparationTests.cs",
         "CharacterCreationLoadoutInteractionPresenterTests.cs",
         "CompletionKarmaRecommendationBuilderTests.cs",
+        "CompletionKarmaRecommendationBuilderTests.Qualities.cs",
         "CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
         "CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
         "CompletionLoadoutRecommendationBuilderTests.cs",
@@ -2325,6 +2326,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
     completion_sources = {
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationLoadoutInteractionPresenterTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Qualities.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.cs",
@@ -2335,8 +2337,8 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
         "Chummer.CreationWizard.Presentation.Tests/CompletionResourceRecommendationBuilderTests.cs",
     }
     assert completion_sources <= preseal.ALLOWED_RECIPE_PATHS
-    assert sum(static_mstest_case_count(source) for source in completion_sources) == 89
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 932
+    assert sum(static_mstest_case_count(source) for source in completion_sources) == 102
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 945
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -2916,7 +2918,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 932' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 945' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
@@ -2998,11 +3000,16 @@ def test_continuation_tests_and_bridge_are_exact_consumer_members() -> None:
 def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> None:
     preseal = package_plane.load_split_preseal_verifier()
     members = package_plane.OWNER_CONTEXT_SOURCE_FILES
-    assert len(members) == 79
+    assert len(members) == 82
+    assert {
+        "Chummer.Presentation/Creation/CompletionAnalysisProgress.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Qualities.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Search.cs",
+    } <= members
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 156
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 160
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -3011,6 +3018,8 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
         "Chummer.Presentation/Overview/UnreviewedMutation.cs",
         "Chummer.Presentation/Shell/UnreviewedShell.cs",
         "Chummer.Tests/UnreviewedOwnerTests.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Unreviewed.cs",
+        "Chummer.Presentation/Creation/CompletionAnalysisProgress.Unreviewed.cs",
         "config/package-plane.lock.json", "config/ui-owner-package-plane.lock.json",
         "config/ui-preseal-publication.json",
     ):
@@ -3094,7 +3103,7 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
     assert sum(minimum for _, _, minimum in expected) == 216
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 60 + 4 + 2 + 8 + 10 + 89 + 9
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 60 + 4 + 2 + 8 + 10 + 102 + 9
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
         ("Chummer.Tests/Presentation/ShellPresenterTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
@@ -3138,8 +3147,8 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
     assert static_mstest_case_count(relative) == 60
     # Include all thirteen Foundation shared-read/method-exclusion cases while
     # retaining the previous 47 owner cases and seven adoption/roster cases.
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 60 + 7 + 2 + 8 + 10 + 89 + 9
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 156
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 60 + 7 + 2 + 8 + 10 + 102 + 9
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 160
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"

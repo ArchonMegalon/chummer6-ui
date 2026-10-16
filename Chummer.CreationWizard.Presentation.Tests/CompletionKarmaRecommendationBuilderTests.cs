@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Chummer.CreationWizard.Presentation.Tests;
 
 [TestClass]
-public sealed class CompletionKarmaRecommendationBuilderTests
+public sealed partial class CompletionKarmaRecommendationBuilderTests
 {
     public TestContext TestContext { get; set; } = null!;
 
@@ -20,10 +20,7 @@ public sealed class CompletionKarmaRecommendationBuilderTests
         var files = fixture.CaptureFiles();
         string original = JsonSerializer.Serialize(inputs);
         var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs, intent));
-        Assert.IsTrue(proposal.Request.AllocateRemainingAttributeKarma);
-        Assert.IsTrue(proposal.Request.Attributes.MaximumAdditionalKarmaSpend > 0);
-        Assert.IsTrue(proposal.Request.Attributes.KarmaTargets!.Count > 0);
-        foreach (var target in proposal.Request.Attributes.KarmaTargets)
+        foreach (var target in proposal.Request.Attributes.KarmaTargets ?? [])
         {
             Assert.IsTrue(proposal.Request.Attributes.PermittedAttributeOrder.Contains(target.AttributeId));
             Assert.AreEqual(CharacterCreationAttributeCategories.Normal,
@@ -31,9 +28,11 @@ public sealed class CompletionKarmaRecommendationBuilderTests
         }
         var plan = proposal.Evaluation.Value;
         Assert.IsNotNull(plan, string.Join(",", proposal.Evaluation.Blockers));
-        Assert.IsTrue(plan.Selections.AttributeAllocations.Any(row => row.KarmaLevels > 0),
+        Assert.AreSame(plan, ReviewedKarmaPlan(proposal));
+        Assert.IsTrue(plan.Selections.AttributeAllocations.Any(row => row.KarmaLevels > 0)
+            || plan.Selections.QualityOptionIds.Except(inputs.Lifestyles.Qualities.SelectedOptionIds).Any(),
             "A legal useful purchase must not be replaced by silent finalization loss.");
-        Assert.IsTrue(plan.Attributes!.Preview.CreationKarmaBudget.Used > 0);
+        Assert.IsTrue(proposal.Coverage.Any(row => row.Category == "karma-advice"));
         Assert.AreEqual(proposal.ProposalDigest,
             Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs, intent)).ProposalDigest);
         Assert.AreEqual(original, JsonSerializer.Serialize(inputs));
@@ -50,7 +49,8 @@ public sealed class CompletionKarmaRecommendationBuilderTests
         var files = fixture.CaptureFiles();
         var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs,
             Intent(fixture, inputs) with { Reserves = new(Karma: reserve) }));
-        Assert.IsFalse(proposal.Request.Attributes.KarmaTargets!.Any(row => row.AttributeId == "BOD"));
+        Assert.IsFalse(proposal.Request.Attributes.PermittedAttributeOrder.Contains("BOD"));
+        Assert.IsFalse(proposal.Request.Attributes.KarmaTargets?.Any(row => row.AttributeId == "BOD") == true);
         var plan = proposal.Evaluation.Value;
         Assert.IsNotNull(plan, string.Join(",", proposal.Evaluation.Blockers));
         Assert.AreEqual(inputs.Skills.Attributes.PendingDraft!.Allocations.Single(row => row.AttributeId == "BOD"),

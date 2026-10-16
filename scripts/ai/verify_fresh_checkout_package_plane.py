@@ -329,8 +329,8 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
 # thirteen Foundation shared-read/method-exclusion cases.
 # Local adoption adds three cache/roster cases and four same-ID overview cases.
 # Two Lifestyle admission regressions cover missing/changed runtime owner stamps.
-# Finish-character links 89 completion cases and adds nine overview cases.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 932
+# Finish-character links 102 completion cases and adds nine overview cases.
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 945
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
@@ -377,6 +377,7 @@ CREATION_WIZARD_TEST_FILES = (
     "WorkspaceOverviewPreparationTests.cs",
     "CharacterCreationLoadoutInteractionPresenterTests.cs",
     "CompletionKarmaRecommendationBuilderTests.cs",
+    "CompletionKarmaRecommendationBuilderTests.Qualities.cs",
     "CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
     "CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
     "CompletionLoadoutRecommendationBuilderTests.cs",
@@ -497,9 +498,12 @@ OWNER_CONTEXT_SOURCE_FILES = frozenset(
         "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs",
         "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs",
         "Chummer.Tests/WorkspaceRevisionHttpBoundaryTests.cs",
+        "Chummer.Presentation/Creation/CompletionAnalysisProgress.cs",
         "Chummer.Presentation/Creation/CompletionAssistantModels.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Equipment.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Qualities.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Search.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Loadout.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Magic.cs",
         "Chummer.Presentation/Creation/CompletionRecommendationBuilder.ResourceAdvice.cs",
