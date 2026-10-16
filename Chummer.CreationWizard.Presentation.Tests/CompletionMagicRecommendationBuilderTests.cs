@@ -1,7 +1,13 @@
 using System.Text.Json;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Rulesets;
+using Chummer.Contracts.Workspaces;
+using Chummer.Infrastructure.Files;
+using Chummer.Infrastructure.Xml;
 using Chummer.Presentation.Creation;
+using Chummer.Rulesets.Hosting;
+using Chummer.Rulesets.Sr5;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.CreationWizard.Presentation.Tests;
@@ -15,6 +21,7 @@ public sealed class CompletionMagicRecommendationBuilderTests
 
     [TestMethod]
     [DataRow("Magician", CharacterCreationMagicResonanceKinds.Tradition)]
+    [DataRow("Mystic Adept", CharacterCreationMagicResonanceKinds.Tradition)]
     [DataRow("Technomancer", CharacterCreationMagicResonanceKinds.Stream)]
     public void Missing_magic_uses_actual_talent_and_fills_free_slots_with_source_admitted_advice(
         string talent, string identityKind)
@@ -43,6 +50,8 @@ public sealed class CompletionMagicRecommendationBuilderTests
         Assert.IsNull(proposal.Request.Magic.DesiredTotalMysticAdeptPowerPoints);
         Assert.AreEqual(0, proposal.Request.Magic.MaximumAdditionalPowerPointKarmaSpend);
         Assert.AreEqual(0, proposal.Request.Magic.RankedAdeptPowers.Count);
+        Assert.AreEqual(inputs.Magic.Selections.MysticAdeptPowerPoints, magic.Selections.MysticAdeptPowerPoints);
+        CollectionAssert.AreEqual(inputs.Magic.Selections.AdeptPowers.ToArray(), magic.Selections.AdeptPowers.ToArray());
         Assert.AreEqual("completion.coverage.proposed-magic", proposal.Coverage.Single(row => row.Category == "magic").ExplanationKey);
         AssertAdmitted(proposal.Request.Magic.RankedSpells, inputs.Magic.Authority.Spells);
         AssertAdmitted(proposal.Request.Magic.RankedComplexForms, inputs.Magic.Authority.ComplexForms);
@@ -58,9 +67,11 @@ public sealed class CompletionMagicRecommendationBuilderTests
     }
 
     [TestMethod]
-    public void Editable_tradition_is_exact_digest_bound_and_never_silently_falls_back()
+    [DataRow("Magician")]
+    [DataRow("Mystic Adept")]
+    public void Editable_tradition_is_exact_digest_bound_and_never_silently_falls_back(string talent)
     {
-        using var fixture = CompletionRecommendationTestFixture.Create(TestContext, magicTalent: "Magician");
+        using var fixture = CompletionRecommendationTestFixture.Create(TestContext, magicTalent: talent);
         var inputs = fixture.ReadInputs();
         var files = fixture.CaptureFiles();
         var intent = Intent(fixture, inputs);
@@ -91,17 +102,39 @@ public sealed class CompletionMagicRecommendationBuilderTests
 
     [TestMethod]
     [DataRow("Magician", CharacterCreationMagicResonanceKinds.Tradition)]
+    [DataRow("Mystic Adept", CharacterCreationMagicResonanceKinds.Tradition)]
     [DataRow("Technomancer", CharacterCreationMagicResonanceKinds.Stream)]
     public void Real_saved_magic_choices_and_receipts_are_kept_exact(string talent, string identityKind)
     {
         using var fixture = CompletionRecommendationTestFixture.Create(TestContext, magicTalent: talent);
         var original = fixture.ReadInputs();
         var intent = Intent(fixture, original);
-        if (talent == "Magician")
+        if (identityKind == CharacterCreationMagicResonanceKinds.Tradition)
             intent = intent with { PreferredTradition = new(CharacterCreationMagicResonanceKinds.Tradition, Shamanic) };
+        if (talent == "Mystic Adept") intent = intent with { Reserves = new(Karma: 10) };
         var initial = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(original, intent));
         var chosen = Magic(initial).Selections;
         var attributes = initial.Evaluation.Value!.Selections.AttributeAllocations;
+        if (talent == "Mystic Adept")
+        {
+            // Only this explicit player request buys a point and allocates powers.
+            // The subsequent assistant must retain those admitted saved choices.
+            var manual = CharacterCreationMagicCompletionPlanner.Plan(original.Magic, original.Lifestyles.Qualities,
+                attributes, original.Lifestyles.Qualities.SelectedOptionIds, initial.Request.Magic with
+                {
+                    DesiredTotalMysticAdeptPowerPoints = 1, MaximumAdditionalPowerPointKarmaSpend = 10,
+                    KarmaToReserve = 0,
+                    RankedAdeptPowers = original.Magic.Authority.AdeptPowers
+                        .Where(row => row.IsEnabled && row.Blockers.Count == 0)
+                        .Take(CharacterCreationMagicCompletionPlanner.MaximumCandidatesPerKind)
+                        .Select(row => row.Identity).ToArray()
+                });
+            Assert.AreEqual(CharacterCreationFoundationOutcomes.Success, manual.Outcome, string.Join(",", manual.Blockers));
+            Assert.IsNotNull(manual.Value);
+            chosen = manual.Value.Selections;
+            Assert.AreEqual(1, chosen.MysticAdeptPowerPoints);
+            Assert.IsTrue(chosen.AdeptPowers.Count > 0);
+        }
         fixture.SaveAttributes(attributes, attributes.Select(row => row.AttributeId).ToArray());
         fixture.SaveMagic(chosen);
         var inputs = fixture.ReadInputs();
@@ -111,9 +144,12 @@ public sealed class CompletionMagicRecommendationBuilderTests
         var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs, Intent(fixture, inputs)));
         Assert.AreEqual(JsonSerializer.Serialize(inputs.Magic.Selections), JsonSerializer.Serialize(Magic(proposal).Selections));
         Assert.IsFalse(Magic(proposal).HasChanges);
+        Assert.IsNull(proposal.Request.Magic.DesiredTotalMysticAdeptPowerPoints);
+        Assert.AreEqual(0, proposal.Request.Magic.MaximumAdditionalPowerPointKarmaSpend);
+        Assert.AreEqual(0, proposal.Request.Magic.RankedAdeptPowers.Count);
         Assert.AreEqual(0, CompletionRecommendationBuilder.GetMagicIdentityChoices(inputs, identityKind).Count);
         Assert.AreEqual("completion.coverage.retained-magic", proposal.Coverage.Single(row => row.Category == "magic").ExplanationKey);
-        if (talent == "Magician")
+        if (identityKind == CharacterCreationMagicResonanceKinds.Tradition)
         {
             var replacement = CompletionRecommendationBuilder.BuildMissingOnly(inputs,
                 Intent(fixture, inputs) with { PreferredTradition = new(CharacterCreationMagicResonanceKinds.Tradition, Hermetic) });
@@ -125,9 +161,11 @@ public sealed class CompletionMagicRecommendationBuilderTests
     }
 
     [TestMethod]
-    public void Identity_advice_omits_disabled_blocked_and_ambiguous_source_rows()
+    [DataRow("Magician")]
+    [DataRow("Mystic Adept")]
+    public void Identity_advice_omits_disabled_blocked_and_ambiguous_source_rows(string talent)
     {
-        using var fixture = CompletionRecommendationTestFixture.Create(TestContext, magicTalent: "Magician");
+        using var fixture = CompletionRecommendationTestFixture.Create(TestContext, magicTalent: talent);
         var inputs = fixture.ReadInputs();
         var choices = CompletionRecommendationBuilder.GetMagicIdentityChoices(inputs, CharacterCreationMagicResonanceKinds.Tradition);
         var hermetic = choices.Single(row => row.Identity.SourceId == Hermetic);
@@ -149,7 +187,6 @@ public sealed class CompletionMagicRecommendationBuilderTests
 
     [TestMethod]
     [DataRow("Mundane")]
-    [DataRow("Mystic Adept")]
     [DataRow("Aspected Magician")]
     public void Unsupported_magic_advice_does_not_invent_entitlement_or_power_point_purchase(string talent)
     {
@@ -172,6 +209,111 @@ public sealed class CompletionMagicRecommendationBuilderTests
         if (talent != "Mundane")
             Assert.IsTrue(proposal.RemainingTasks.Contains("completion.remaining.magic-choices"));
         fixture.AssertFilesUnchanged(files);
+    }
+
+    [TestMethod]
+    public void Mystic_adept_magic_advice_cannot_hide_an_unavailable_Core_karma_reserve()
+    {
+        using var fixture = CompletionRecommendationTestFixture.Create(TestContext, magicTalent: "Mystic Adept");
+        var inputs = fixture.ReadInputs();
+        var files = fixture.CaptureFiles();
+        var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs,
+            Intent(fixture, inputs) with { Reserves = new(Karma: 1000) }));
+        Assert.AreEqual(CharacterCreationFoundationOutcomes.Blocked, proposal.Evaluation.Outcome);
+        CollectionAssert.Contains(Magic(proposal).Blockers.ToArray(), CharacterCreationMagicCompletionBlockers.KarmaReserveUnavailable);
+        Assert.AreEqual(1000, proposal.Request.Magic.KarmaToReserve);
+        Assert.AreEqual(0, Magic(proposal).Selections.MysticAdeptPowerPoints);
+        Assert.AreEqual(0, proposal.Request.Magic.MaximumAdditionalPowerPointKarmaSpend);
+        CollectionAssert.Contains(proposal.RemainingTasks.ToArray(), "completion.remaining.finalization-review");
+        fixture.AssertFilesUnchanged(files);
+    }
+
+    [TestMethod]
+    public void Sum_to_ten_actual_mystic_adept_gets_magic_advice_without_unlocking_legacy_attributes()
+    {
+        using var fixture = CompletionRecommendationTestFixture.Create(TestContext);
+        var workspace = CreateSumToTenMysticAdept(fixture);
+        var attributes = new CharacterCreationAttributesService(fixture.Store, fixture.Resolver);
+        var state = attributes.Load(new(workspace)).Value!;
+        // A genuine saved draft without recorded edit intent, including zeros.
+        var preview = attributes.Preview(new(state.Binding, [])).Value!;
+        var saved = attributes.Confirm(new(preview.Binding, [], preview.PreviewDigest, true));
+        Assert.AreEqual(CharacterCreationFoundationOutcomes.Success, saved.Outcome, string.Join(",", saved.Blockers));
+        IOwnerBoundCharacterCreationCompletionReader reader =
+            new OwnerBoundCharacterCreationCompletionReader(fixture.Store, fixture.Owners, fixture.Resolver, fixture.Queries);
+        var loaded = reader.LoadCompletionInputs(fixture.Owners.Capture(), new(workspace));
+        Assert.AreEqual(CharacterCreationFoundationOutcomes.Success, loaded.Outcome, string.Join(",", loaded.Blockers));
+        Assert.IsNotNull(loaded.Value);
+        var inputs = loaded.Value;
+        var files = fixture.CaptureFiles();
+        Assert.AreEqual(CharacterCreationBuildMethods.SumToTen, inputs.Skills.PrerequisiteDraft.BuildMethod);
+        Assert.AreEqual(CharacterCreationMagicResonanceKinds.MysticAdept, inputs.Magic.SelectedTalent.Kind);
+        Assert.IsNull(inputs.Skills.Attributes.PendingDraft!.PlayerChosenAttributeIds);
+        foreach (string style in new[] { CompletionAssistantRules.Mage, string.Empty })
+        {
+            var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs,
+                Intent(fixture, inputs) with { ArchetypeId = style }));
+            Assert.IsTrue(Magic(proposal).IsMagicComplete, string.Join(",", Magic(proposal).Blockers));
+            Assert.IsNotNull(Magic(proposal).Selections.Tradition);
+            Assert.IsTrue(Magic(proposal).Selections.Spells.Count > 0);
+            Assert.AreEqual(0m, Magic(proposal).Preview.SpellBudget.Remaining);
+            Assert.AreEqual(0, proposal.Request.Attributes.PermittedAttributeOrder.Count);
+            CollectionAssert.AreEqual(inputs.Skills.Attributes.PendingDraft.Allocations.ToArray(),
+                proposal.Evaluation.Value!.Selections.AttributeAllocations.ToArray());
+            Assert.AreEqual(0, Magic(proposal).Selections.MysticAdeptPowerPoints);
+            Assert.AreEqual(0, Magic(proposal).Selections.AdeptPowers.Count);
+            Assert.IsNull(proposal.Request.Magic.DesiredTotalMysticAdeptPowerPoints);
+            Assert.AreEqual(CompletionCoverageState.Unsupported,
+                proposal.Coverage.Single(row => row.Category == "adept-powers").State);
+            CollectionAssert.Contains(proposal.RemainingTasks.ToArray(), CompletionAssistantRules.AttributeChoiceIntentRequired);
+            CollectionAssert.Contains(proposal.RemainingTasks.ToArray(), "completion.remaining.magic-choices");
+            CollectionAssert.Contains(proposal.RemainingTasks.ToArray(), "completion.remaining.finalization-review");
+        }
+        fixture.AssertFilesUnchanged(files);
+    }
+
+    private static CharacterWorkspaceId CreateSumToTenMysticAdept(CompletionRecommendationTestFixture fixture)
+    {
+        var codec = new Sr5WorkspaceCodec(fixture.Queries,
+            new XmlCharacterSectionQueries(new CharacterSectionService(fixture.Resolver)),
+            new XmlCharacterMetadataCommands(new CharacterFileService()));
+        var bootstrap = new CharacterCreationBootstrapService(fixture.Store,
+            new RulesetWorkspaceCodecResolver([codec]), fixture.Queries, fixture.Resolver);
+        Assert.IsTrue(CharacterCreationBootstrapProfiles.TryResolveCanonicalSettingsProfileId(
+            CharacterCreationBuildMethods.SumToTen, out string profile));
+        var created = bootstrap.Create(new(CharacterCreationBootstrapSchemas.RequestV1,
+            CharacterCreationBootstrapStages.AwaitingFoundationSelection, RulesetDefaults.Sr5,
+            "Sum-to-Ten Mystic Adept", "Completion", CharacterCreationBuildMethods.SumToTen, profile));
+        Assert.AreEqual(CharacterCreationBootstrapOutcomes.Success, created.Outcome, string.Join(",", created.Blockers));
+        Assert.IsNotNull(created.Value);
+        var workspace = created.Value.WorkspaceId;
+        var service = new CharacterCreationPrerequisiteService(fixture.Store, fixture.Queries, fixture.Resolver);
+        var state = service.Load(new(workspace)).Value!;
+        var ranks = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [CharacterCreationPriorityCategoryIds.Heritage] = "E", [CharacterCreationPriorityCategoryIds.Talent] = "B",
+            [CharacterCreationPriorityCategoryIds.Attributes] = "A", [CharacterCreationPriorityCategoryIds.Skills] = "C",
+            [CharacterCreationPriorityCategoryIds.Resources] = "D"
+        };
+        var heritage = state.Authority.Options.Single(row => row.CategoryId == CharacterCreationPriorityCategoryIds.Heritage
+                && row.Rank == "E").HeritageOptions.First(row => row.IsEnabled
+                && row.MetavariantSourceId is null && row.MetatypeName == "Human");
+        var talent = state.Authority.Options.Single(row => row.CategoryId == CharacterCreationPriorityCategoryIds.Talent
+                && row.Rank == "B").TalentOptions.First(row => row.IsEnabled && row.Value == "Mystic Adept");
+        var grants = talent.ActiveSkillGrant!.Options.Where(row => row.IsEnabled)
+            .Take(talent.ActiveSkillGrant.Quantity).Select(row => row.SelectionId).ToArray();
+        var preview = service.Preview(new(state.Binding, ranks)
+        {
+            HeritageSelectionId = heritage.SelectionId, TalentSelectionId = talent.SelectionId,
+            TalentActiveSkillSelectionIds = grants, TalentSkillGroupSelectionIds = []
+        }).Value!;
+        var confirmed = service.Confirm(new(preview.Binding, ranks, preview.PreviewDigest, true)
+        {
+            HeritageSelectionId = heritage.SelectionId, TalentSelectionId = talent.SelectionId,
+            TalentActiveSkillSelectionIds = grants, TalentSkillGroupSelectionIds = []
+        });
+        Assert.AreEqual(CharacterCreationFoundationOutcomes.Success, confirmed.Outcome, string.Join(",", confirmed.Blockers));
+        return workspace;
     }
 
     private static CompletionAssistantIntent Intent(CompletionRecommendationTestFixture fixture,
