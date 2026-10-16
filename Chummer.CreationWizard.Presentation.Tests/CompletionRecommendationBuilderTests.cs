@@ -663,6 +663,47 @@ public sealed class CompletionRecommendationBuilderTests
     }
 
     [TestMethod]
+    public void Mystic_adept_inference_keeps_talent_identity_and_offers_only_a_bounded_foundation()
+    {
+        using var fixture = CompletionRecommendationTestFixture.Create(TestContext, magicTalent: "Mystic Adept");
+        fixture.SaveAttributes([]);
+        var prepared = fixture.ReadInputs();
+        var etiquette = prepared.Skills.Authority.ActiveSkills.Single(row => row.Name == "Etiquette");
+        var negotiation = prepared.Skills.Authority.ActiveSkills.Single(row => row.Name == "Negotiation");
+        var native = prepared.Skills.Authority.KnowledgeSkills.First(row => row.CanBeNativeLanguage);
+        fixture.SaveSkills([
+            new(etiquette.SourceSkillId, CharacterCreationSkillKinds.Active, 4, null, false),
+            new(negotiation.SourceSkillId, CharacterCreationSkillKinds.Active, 4, null, false),
+            new(native.SourceSkillId, CharacterCreationSkillKinds.Knowledge, null, null, true)
+        ], []);
+        var inputs = fixture.ReadInputs();
+        var files = fixture.CaptureFiles();
+        var suggested = Archetype(CompletionRecommendationBuilder.SuggestArchetype(inputs));
+        Assert.AreEqual(CharacterCreationMagicResonanceKinds.MysticAdept, suggested.ArchetypeId);
+        Assert.IsTrue(suggested.HasRecommendationPack);
+        Assert.IsTrue(suggested.WasPrefilled);
+        Assert.IsTrue(suggested.Evidence.Any(row => row.Kind == CompletionArchetypeEvidenceKind.Talent
+            && row.SourceId == inputs.Magic.SelectedTalent.Identity.TalentSelectionId));
+        Assert.IsTrue(suggested.Alternatives.Any(row => row.ArchetypeId == CompletionAssistantRules.Face));
+        CollectionAssert.Contains(suggested.Limitations.ToArray(), "completion.archetype.advisory-not-capability");
+        CollectionAssert.Contains(suggested.Limitations.ToArray(), "completion.remaining.practical-loadout");
+
+        var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs,
+            Intent(fixture, inputs, new([], [])) with { ArchetypeId = string.Empty }));
+        Assert.AreEqual(CharacterCreationMagicResonanceKinds.MysticAdept, proposal.Intent.ArchetypeId);
+        Assert.AreEqual(suggested.SuggestionDigest, proposal.ArchetypeSuggestion!.SuggestionDigest);
+        Assert.IsTrue(proposal.Request.Magic.RankedTraditions.Count > 0);
+        Assert.IsTrue(proposal.Request.Magic.RankedSpells.Count > 0);
+        Assert.AreEqual(CompletionCoverageState.Unsupported, Coverage(proposal, "adept-powers").State);
+        CollectionAssert.Contains(proposal.RemainingTasks.ToArray(), "completion.remaining.magic-choices");
+        CollectionAssert.Contains(proposal.RemainingTasks.ToArray(), "completion.remaining.practical-loadout");
+        Assert.AreEqual(CompletionAssistantRules.Mage,
+            Archetype(CompletionRecommendationBuilder.SuggestArchetype(inputs, CompletionAssistantRules.Mage)).ArchetypeId);
+        Assert.AreEqual(CharacterCreationMagicResonanceKinds.MysticAdept, inputs.Magic.SelectedTalent.Kind);
+        fixture.AssertFilesUnchanged(files);
+    }
+
+    [TestMethod]
     public void Archetype_uses_real_saved_social_skill_evidence_and_binds_changed_source_observations()
     {
         using var fixture = CompletionRecommendationTestFixture.Create(TestContext);
