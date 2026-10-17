@@ -490,7 +490,12 @@ public sealed partial class CompletionKarmaRecommendationBuilderTests
         Assert.IsNotNull(method);
         var resource = Activator.CreateInstance(method.GetParameters()[2].ParameterType,
             new object[] { baseline.Value!.Request, baseline });
-        var result = method.Invoke(null, [inputs, intent, resource, CancellationToken.None])!;
+        var prepared = CharacterCreationCompletionPlanner.CreateSession(inputs);
+        Assert.IsNotNull(prepared.Value, string.Join(",", prepared.Blockers));
+        Func<CharacterCreationCompletionPlanRequest, CharacterCreationFoundationResult<CharacterCreationCompletionPlan>> quote =
+            candidate => prepared.Value.Plan(candidate, CancellationToken.None);
+        var planQuote = Delegate.CreateDelegate(method.GetParameters()[4].ParameterType, quote.Target, quote.Method);
+        var result = method.Invoke(null, [inputs, intent, resource, CancellationToken.None, planQuote])!;
         var completed = result.GetType().GetProperty("Completed")!.GetValue(result)!;
         return ((CharacterCreationCompletionPlanRequest)completed.GetType().GetProperty("Request")!.GetValue(completed)!,
             (CharacterCreationFoundationResult<CharacterCreationCompletionPlan>)completed.GetType().GetProperty("Evaluation")!.GetValue(completed)!,

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
@@ -29,6 +30,16 @@ public sealed partial class CompletionLoadoutRecommendationBuilderTests
         Assert.AreEqual(intent.OwnerContext, proposal.Intent.OwnerContext);
         Assert.IsNotNull(proposal.Loadout, string.Join(",", proposal.Evaluation.Blockers));
         Assert.AreEqual(0, proposal.Loadout.Blockers.Count);
+        var finalPlan = proposal.Evaluation.Value!;
+        Assert.IsNotNull(finalPlan.Review.Loadout);
+        CollectionAssert.AreEqual(JsonSerializer.SerializeToUtf8Bytes(finalPlan.Review.Loadout),
+            JsonSerializer.SerializeToUtf8Bytes(proposal.Loadout));
+        // A display-only summary must not re-run the expensive catalog quote.
+        // Use a genuine Core plan, and require the exact final review projection.
+        var summary = typeof(CompletionRecommendationBuilder).GetMethod("BuildLoadoutSummary",
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+        Assert.AreSame(finalPlan.Review.Loadout,
+            summary.Invoke(null, [inputs, finalPlan, CancellationToken.None]));
         Assert.AreEqual(1, proposal.Request.Purchases.Count(row => row.Weapon is not null));
         Assert.AreEqual(1, proposal.Request.Purchases.Count(row => row.Armor is not null));
         Assert.AreEqual(2, proposal.Loadout.Lines.Count);

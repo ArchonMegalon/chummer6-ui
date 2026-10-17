@@ -21,12 +21,13 @@ public static partial class CompletionRecommendationBuilder
     }
 
     private static KarmaCompletion CompleteKarmaAdvice(CharacterCreationCompletionReviewInputs inputs,
-        CompletionAssistantIntent intent, ResourceCompletion completed, CancellationToken cancellationToken)
+        CompletionAssistantIntent intent, ResourceCompletion completed, CancellationToken cancellationToken,
+        CompletionPlanQuote quotePlan)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var request = completed.Request;
         KarmaSkillSearch? skillSearch = null;
-        var baselineResult = completed.Evaluation ?? CharacterCreationCompletionPlanner.Plan(inputs, request, cancellationToken);
+        var baselineResult = completed.Evaluation ?? quotePlan(request);
         completed = new(request, baselineResult);
         // Unallocated special points are a separate unfinished pool, not a
         // failed Karma purchase. Retain that exact Core blocker and outcome;
@@ -100,7 +101,7 @@ public static partial class CompletionRecommendationBuilder
             };
             // Recreate through Core using the original request/bindings. Never
             // assemble a fake plan from local previews or patch a failed result.
-            var evaluated = CharacterCreationCompletionPlanner.Plan(inputs, proposed, cancellationToken);
+            var evaluated = quotePlan(proposed);
             finalPlans++;
             if (addsSkills) skillFinalPlans++; else otherFinalPlans++;
             if (HasOnlyUnspentSpecialPoints(evaluated)

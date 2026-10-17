@@ -17,6 +17,8 @@ public static partial class CompletionRecommendationBuilder
 
     private sealed record ResourceCompletion(CharacterCreationCompletionPlanRequest Request,
         CharacterCreationFoundationResult<CharacterCreationCompletionPlan>? Evaluation = null);
+    private delegate CharacterCreationFoundationResult<CharacterCreationCompletionPlan> CompletionPlanQuote(
+        CharacterCreationCompletionPlanRequest request);
 
     private sealed record ResourceContactAdvice(string Key, string Role, int Connection, int Loyalty,
         params string[] Aliases);
@@ -26,6 +28,7 @@ public static partial class CompletionRecommendationBuilder
         CharacterCreationCompletionPlanRequest request,
         string archetypeId,
         CancellationToken cancellationToken,
+        CompletionPlanQuote quotePlan,
         CompletionAnalysisReporter? analysis = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -117,7 +120,7 @@ public static partial class CompletionRecommendationBuilder
         // Reuse Core's complete contact/investment/Karma reserve calculation to
         // obtain the actual proposed magic choices before pricing any purchase.
         analysis?.Start(CompletionAnalysisStage.RulesAndBudgets);
-        var upstream = CharacterCreationCompletionPlanner.Plan(inputs, request, cancellationToken);
+        var upstream = quotePlan(request);
         var unchanged = new ResourceCompletion(request, upstream);
         if (upstream.Value is not { Magic: { } magic, Purchases: { } originalPurchases }
             || upstream.Outcome is CharacterCreationFoundationOutcomes.Invalid or CharacterCreationFoundationOutcomes.Conflict
