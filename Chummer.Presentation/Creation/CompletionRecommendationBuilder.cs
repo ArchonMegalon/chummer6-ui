@@ -493,15 +493,31 @@ public static partial class CompletionRecommendationBuilder
             MaximumAdditionalPurchaseSpend: fillRemainingResources ? intent.MaximumAdditionalPurchaseSpend ?? 0m : 0m,
             PermitNegativeQualityAdditions: intent.PermitNegativeQualities);
         analysis?.Complete();
+        // One Core-owned detached observation per search. Reuse only original
+        // admission; every changed request still gets normal planning and final
+        // whole-proposal review. Nothing survives into a later user operation.
+        CharacterCreationCompletionPlanner.PlanningSession? planningSession = null;
+        CharacterCreationFoundationResult<CharacterCreationCompletionPlan> QuotePlan(CharacterCreationCompletionPlanRequest candidate)
+        {
+            if (!fillRemainingResources)
+                return CharacterCreationCompletionPlanner.Plan(inputs, candidate, cancellationToken);
+            if (planningSession is null)
+            {
+                var prepared = CharacterCreationCompletionPlanner.CreateSession(inputs, cancellationToken);
+                if (prepared.Value is null) return new(prepared.Outcome, null, prepared.Blockers);
+                planningSession = prepared.Value;
+            }
+            return planningSession.Plan(candidate, cancellationToken);
+        }
         var completed = fillRemainingResources
-            ? CompleteResources(inputs, request, intent.ArchetypeId, cancellationToken, analysis) : new ResourceCompletion(request);
+            ? CompleteResources(inputs, request, intent.ArchetypeId, cancellationToken, QuotePlan, analysis) : new ResourceCompletion(request);
         if (fillRemainingResources) analysis?.Complete();
         request = completed.Request;
         KarmaCompletion karma = new(completed, []);
         if (fillRemainingResources)
         {
             analysis?.Start(CompletionAnalysisStage.Karma);
-            karma = CompleteKarmaAdvice(inputs, intent, completed, cancellationToken);
+            karma = CompleteKarmaAdvice(inputs, intent, completed, cancellationToken, QuotePlan);
             completed = karma.Completed;
             request = completed.Request;
             analysis?.Complete();
@@ -511,7 +527,7 @@ public static partial class CompletionRecommendationBuilder
         // require the ordinary whole-plan evaluation, never a patched result.
         analysis?.Start(CompletionAnalysisStage.FinalBudgets);
         var evaluated = (ReferenceEquals(request, completed.Request) ? completed.Evaluation : null)
-            ?? CharacterCreationCompletionPlanner.Plan(inputs, request, cancellationToken);
+            ?? QuotePlan(request);
         analysis?.Complete();
         analysis?.Start(CompletionAnalysisStage.PreparingReview);
         var loadout = BuildLoadoutSummary(inputs, evaluated.Value, cancellationToken);

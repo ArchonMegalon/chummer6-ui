@@ -90,12 +90,12 @@ public static partial class CompletionRecommendationBuilder
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (inputs.Loadout is null || plan?.Purchases?.Loadout is not { } selections) return null;
-        // Project the genuine final selection, never an earlier candidate or a
-        // generic Gear substitute. This read-only Core call supplies display rows.
-        var result = CharacterCreationLoadoutCompletionService.Preview(inputs.Loadout, selections);
-        cancellationToken.ThrowIfCancellationRequested();
-        return result.Value;
+        if (inputs.Loadout is null || plan?.Purchases?.Loadout is null) return null;
+        // The final whole-plan Core review already projected these exact choices.
+        // Display that admitted projection, including its blockers, rather than
+        // admitting and pricing the same catalog again just to render the review.
+        // This is local to the returned plan; no earlier candidate is cached here.
+        return plan.Review.Loadout;
     }
 
     private static IEnumerable<CompletionCategoryCoverage> BuildLoadoutCoverage(
