@@ -79,7 +79,9 @@ def test_history_cache_preserves_depth_repository_and_failures(tmp_path) -> None
     "Chummer.Presentation/Creation/CompletionAnalysisProgress.cs",
     "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Qualities.cs",
     "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Search.cs",
+    "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Skills.cs",
     "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Qualities.cs",
+    "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Skills.cs",
 ])
 @pytest.mark.parametrize("status", ["A", "M"])
 def test_completion_karma_progress_has_exact_recipe_membership(tmp_path, monkeypatch, path, status) -> None:
