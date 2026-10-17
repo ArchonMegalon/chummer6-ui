@@ -9,16 +9,23 @@ public static partial class CompletionRecommendationBuilder
     // Local quotes are bounded independently of the expensive whole-graph work.
     private const int MaximumKarmaAttributeQuotes = 96;
     private const int MaximumKarmaCombinationReviews = 8;
+    private const int MaximumKarmaSkillCombinationReviews = 6;
     private const int MaximumKarmaFinalPlans = 2;
     private sealed record KarmaCompletion(ResourceCompletion Completed, IReadOnlyList<CompletionCategoryCoverage> Coverage);
     private sealed record KarmaAttributeBasket(CharacterCreationAttributeAllocation[] Allocations,
         CharacterCreationAttributeCompletionTarget[] Targets, int Cost, int Score, string Key);
+    private sealed record KarmaCombination(KarmaAttributeBasket Attribute, KarmaQualityBasket Quality, KarmaSkillBasket Skill)
+    {
+        public int Score => Attribute.Score + Quality.Score + Skill.Score;
+        public long Cost => (long)Attribute.Cost + Quality.Cost + Skill.Cost;
+    }
 
     private static KarmaCompletion CompleteKarmaAdvice(CharacterCreationCompletionReviewInputs inputs,
         CompletionAssistantIntent intent, ResourceCompletion completed, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var request = completed.Request;
+        KarmaSkillSearch? skillSearch = null;
         var baselineResult = completed.Evaluation ?? CharacterCreationCompletionPlanner.Plan(inputs, request, cancellationToken);
         completed = new(request, baselineResult);
         // Unallocated special points are a separate unfinished pool, not a
@@ -35,32 +42,55 @@ public static partial class CompletionRecommendationBuilder
         var advice = AddMissingAttributeKarmaAdvice(inputs, request, intent.ArchetypeId);
         var attributes = QuoteKarmaAttributeBaskets(inputs, baseline, advice, intent.ArchetypeId, remaining - reserve, cancellationToken);
         var qualities = QuoteKarmaQualityBaskets(inputs, baseline, intent.ArchetypeId, cancellationToken);
+        skillSearch = QuoteKarmaSkillBaskets(inputs, baseline, request, intent.ArchetypeId, remaining - reserve, cancellationToken);
         // These deltas come from Core quotes, and only rank/prune the bounded
         // search. Contact discounts/dependencies can change the final wallet;
         // only a successful whole review and plan can accept a candidate.
-        var combinations = attributes.SelectMany(attribute => qualities.Select(quality => new
-            { Attribute = attribute, Quality = quality, Score = attribute.Score + quality.Score,
-                Cost = (long)attribute.Cost + quality.Cost }))
-            .Where(row => row.Score > 0 && row.Cost <= remaining - reserve)
-            .OrderByDescending(row => row.Score).ThenByDescending(row => row.Cost)
-            .ThenBy(row => row.Attribute.Key, StringComparer.Ordinal).ThenBy(row => row.Quality.Key, StringComparer.Ordinal);
+        var ranked = RankKarmaCombinations(attributes, qualities, skillSearch.Baskets, remaining - reserve, cancellationToken);
+        // Keep review/plan room for existing advice when a whole-graph modifier
+        // or dependency rejects the independently priced skill candidates.
+        var combinations = ranked.ToList();
+        if (skillSearch.Baskets.Count > 1)
+        {
+            combinations = ranked.Take(MaximumKarmaSkillCombinationReviews).ToList();
+            foreach (var fallback in RankKarmaCombinations(attributes, qualities, [skillSearch.Baskets[0]], remaining - reserve, cancellationToken))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!combinations.Contains(fallback)) combinations.Add(fallback);
+                if (combinations.Count >= MaximumKarmaCombinationReviews) break;
+            }
+        }
+        bool splitFinalPlans = combinations.Any(row => row.Skill.Score > 0) && combinations.Any(row => row.Skill.Score == 0);
         int finalPlans = 0;
+        int skillFinalPlans = 0;
+        int otherFinalPlans = 0;
         foreach (var candidate in combinations.Take(MaximumKarmaCombinationReviews))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            bool addsSkills = candidate.Skill.Score > 0;
+            if (splitFinalPlans && (addsSkills ? skillFinalPlans : otherFinalPlans) > 0) continue;
             var selections = baseline.Selections with
-            { AttributeAllocations = candidate.Attribute.Allocations, QualityOptionIds = candidate.Quality.OptionIds };
+            {
+                AttributeAllocations = candidate.Attribute.Allocations, QualityOptionIds = candidate.Quality.OptionIds,
+                SkillKarmaPurchases = candidate.Skill.Purchases
+            };
             var reviewed = CharacterCreationCompletionReviewService.Review(inputs,
                 new(request.InputsSnapshotDigest, selections), cancellationToken);
             if (reviewed.Outcome != CharacterCreationFoundationOutcomes.Success
                 || reviewed.Value is not { Blockers.Count: 0 } review
                 || review.Balances.RemainingCreationKarma is not int wallet || wallet < reserve
                 || request.NuyenToReserve > 0 && (review.Balances.RemainingNuyen is not decimal nuyen || nuyen < request.NuyenToReserve))
+            {
+                if (addsSkills)
+                    skillSearch = skillSearch with { Blockers = skillSearch.Blockers.Concat(reviewed.Blockers)
+                        .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() };
                 continue;
+            }
             bool addsAttributes = candidate.Attribute.Targets.Length > 0;
             var proposed = request with
             {
                 QualityOptionIds = candidate.Quality.OptionIds,
+                SkillKarmaPurchases = candidate.Skill.Purchases,
                 AllocateRemainingAttributeKarma = addsAttributes,
                 Attributes = request.Attributes with
                 {
@@ -72,11 +102,13 @@ public static partial class CompletionRecommendationBuilder
             // assemble a fake plan from local previews or patch a failed result.
             var evaluated = CharacterCreationCompletionPlanner.Plan(inputs, proposed, cancellationToken);
             finalPlans++;
+            if (addsSkills) skillFinalPlans++; else otherFinalPlans++;
             if (HasOnlyUnspentSpecialPoints(evaluated)
                 && evaluated.Outcome == baselineResult.Outcome
                 && evaluated.Blockers.SequenceEqual(baselineResult.Blockers)
                 && evaluated.Value is { } plan
                 && plan.Review.Balances.RemainingCreationKarma is int finalWallet && finalWallet >= reserve
+                && plan.Review.ReviewDigest == review.ReviewDigest
                 && CharacterCreationFinalizationDigest.Compute(plan.Selections) == CharacterCreationFinalizationDigest.Compute(selections))
                 return Finish(new(proposed, evaluated), "completion.karma.bounded-authored-search");
             if (finalPlans >= MaximumKarmaFinalPlans) break;
@@ -90,18 +122,60 @@ public static partial class CompletionRecommendationBuilder
             {
                 new("karma-advice", CompletionCoverageState.OptionalManual, explanation, []),
                 new("karma-manual-domains", CompletionCoverageState.OptionalManual,
-                    "completion.karma.skills-specializations-manual", [])
+                    inputs.Skills.KarmaPurchasePolicy is null ? "completion.karma.skills-specializations-manual"
+                        : "completion.karma.groups-exotics-modifiers-ungrounded-specializations-manual", [])
             };
+            coverage.AddRange(BuildKarmaSkillCoverage(inputs, result, skillSearch, cancellationToken));
             if (result.Evaluation?.Value?.Review.Balances.RemainingCreationKarma is int left && left > 0)
                 coverage.Add(new("karma-remaining", CompletionCoverageState.OptionalManual,
                     left <= Math.Max(request.KarmaToReserve, request.Magic.KarmaToReserve)
                         ? "completion.karma.explicit-reserve" : "completion.karma.remaining-bounded-or-manual", []));
             var selected = result.Request.QualityOptionIds.Except(request.QualityOptionIds, StringComparer.Ordinal).ToHashSet();
             foreach (var row in KarmaQualityAdviceFor(intent.ArchetypeId))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (inputs.Lifestyles.Qualities.Authority.Options.Any(option => option.SourceId == row.SourceId && selected.Contains(option.OptionId)))
                     coverage.Add(new("karma-quality-" + row.SourceId, CompletionCoverageState.CoreValidated, row.Reason, []));
+            }
             return new(result, coverage);
         }
+    }
+
+    private static IReadOnlyList<KarmaCombination> RankKarmaCombinations(
+        IReadOnlyList<KarmaAttributeBasket> attributes, IReadOnlyList<KarmaQualityBasket> qualities,
+        IReadOnlyList<KarmaSkillBasket> skills, int spendable, CancellationToken cancellationToken)
+    {
+        // Stream the independently capped baskets (at most 97 * 64 * 49).
+        // Keep only eight candidates, never materialize/sort a Cartesian product.
+        // Costs only prune/settle usefulness ties; this is not an optimality claim.
+        var best = new List<KarmaCombination>(MaximumKarmaCombinationReviews + 1);
+        foreach (var attribute in attributes)
+        foreach (var quality in qualities)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if ((long)attribute.Cost + quality.Cost > spendable) continue;
+            foreach (var skill in skills)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var candidate = new KarmaCombination(attribute, quality, skill);
+                if (candidate.Score <= 0 || candidate.Cost > spendable) continue;
+                int at = best.FindIndex(other => CompareKarmaCombinations(candidate, other) < 0);
+                if (at < 0) at = best.Count;
+                if (at >= MaximumKarmaCombinationReviews) continue;
+                best.Insert(at, candidate);
+                if (best.Count > MaximumKarmaCombinationReviews) best.RemoveAt(MaximumKarmaCombinationReviews);
+            }
+        }
+        return best;
+    }
+
+    private static int CompareKarmaCombinations(KarmaCombination left, KarmaCombination right)
+    {
+        int order = right.Score.CompareTo(left.Score);
+        if (order == 0) order = right.Cost.CompareTo(left.Cost);
+        if (order == 0) order = StringComparer.Ordinal.Compare(left.Attribute.Key, right.Attribute.Key);
+        if (order == 0) order = StringComparer.Ordinal.Compare(left.Quality.Key, right.Quality.Key);
+        return order == 0 ? StringComparer.Ordinal.Compare(left.Skill.Key, right.Skill.Key) : order;
     }
 
     private static bool HasOnlyUnspentSpecialPoints(CharacterCreationFoundationResult<CharacterCreationCompletionPlan> result)
