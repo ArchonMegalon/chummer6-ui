@@ -267,6 +267,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationLoadoutInteractionPresenterTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Qualities.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CompletionKarmaRecommendationBuilderTests.Skills.cs",
+        "Chummer.Presentation/Creation/CompletionRecommendationBuilder.Karma.Skills.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.Equipment.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.SavedLoadout.cs",
         "Chummer.CreationWizard.Presentation.Tests/CompletionLoadoutRecommendationBuilderTests.cs",
@@ -292,15 +294,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "cd0c9f24e638b5321e56e21873bd3ce5ae9ccdc4",
-        "commit": "67e74e774846b38f5378e89168ba06d3b7f98737",
+        "blob": "807feaf314899f526ca63bd2e1164e06ea7c430f",
+        "commit": "46181b665c6288f82dd19c28ae3adb8fba71c7e0",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "43f3bde22a05f2e896e8d3db98a213c4ac17356c3a9992cf3d713f8d4e2d43de",
+        "rawSha256": "fc1162f0e254522a6c0bc7aaf834da47db756bc302f8e38d44506740037b35a9",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "43f3bde22a05f2e896e8d3db98a213c4ac17356c3a9992cf3d713f8d4e2d43de",
+        "semanticCanonicalSha256": "fc1162f0e254522a6c0bc7aaf834da47db756bc302f8e38d44506740037b35a9",
         "semanticCanonicalSizeBytes": 69810,
-        "tree": "a69fe368424166bc7354adf0d57d81ef4e5a15ba"
+        "tree": "f99fd1f02c908f6c921cf39f7a739884cfa409ad"
     },
     "producerLock": {
         "absentAtCommit": True,

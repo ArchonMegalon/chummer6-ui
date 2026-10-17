@@ -5,6 +5,7 @@ namespace Chummer.Presentation.Creation;
 
 public static partial class CompletionRecommendationBuilder
 {
+    private const int MaximumKarmaQualitySources = 6; // at most 63 additional quotes
     // Authored usefulness weights, NOT prices, legality, or an optimal-build claim.
     // Source identities deliberately exclude story commitments, negative qualities,
     // implants, cost modifiers, and choices needing a player-selected follow-up.
@@ -70,7 +71,7 @@ public static partial class CompletionRecommendationBuilder
                 .OrderBy(option => option.Rating).ThenBy(option => option.OptionId, StringComparer.Ordinal).ToArray()))
             .Where(row => row.Options.Length == 1) // ambiguous/rated choices stay manual
             .OrderByDescending(row => row.Advice.Weight).ThenBy(row => row.Advice.SourceId)
-            .Take(6).ToArray();
+            .Take(MaximumKarmaQualitySources).ToArray();
         foreach (var candidate in candidates)
         {
             foreach (var basket in baskets.ToArray())
