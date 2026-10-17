@@ -171,15 +171,15 @@ public sealed partial class CompletionKarmaRecommendationBuilderTests
     }
 
     [TestMethod]
-    public void Skill_karma_keeps_funded_groups_and_Core_rejects_the_individual_compensation_purchase()
+    public void Skill_karma_keeps_funded_groups_and_Core_rejects_a_group_breaking_purchase()
     {
         using var fixture = CompletionRecommendationTestFixture.Create(TestContext);
         LockPointFundedAttributes(fixture);
         var catalog = fixture.ReadInputs().Skills.Authority;
         var group = catalog.SkillGroups.Single(row => row.Name == "Athletics");
-        fixture.SaveSkills([], [new(group.GroupId, 1)]);
+        var native = catalog.KnowledgeSkills.Single(row => row.SourceSkillId == "907a3a8f-2c40-4543-a5a9-891bcde41f6b");
+        fixture.SaveSkills([new(native.SourceSkillId, native.Kind, null, null, true)], [new(group.GroupId, 1)]);
         var inputs = ReadSkillKarmaInputs(fixture);
-        Assert.IsTrue(inputs.Skills.KarmaPurchasePolicy!.CompensateSkillGroupKarmaDifference);
         var files = fixture.CaptureFiles();
         var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs, Intent(fixture, inputs)));
         var plan = ReviewedKarmaPlan(proposal);
@@ -191,7 +191,13 @@ public sealed partial class CompletionKarmaRecommendationBuilderTests
         var quote = CharacterCreationSkillsService.PreviewCompletionPurchases(inputs.Skills,
             plan.Selections.AttributeAllocations, plan.Selections.SkillAllocations, plan.Selections.GroupAllocations,
             [new(source.SourceSkillId, source.Kind, source.SourceNodeDigest, 2)]);
-        CollectionAssert.Contains(quote.Blockers.ToArray(), CharacterCreationSkillKarmaPurchaseBlockers.GroupCompensationUnsupported);
+        // The canonical profile does not necessarily enable group compensation.
+        // Respect its actual policy; neither path may silently break a funded group.
+        string expectedBlocker = inputs.Skills.KarmaPurchasePolicy!.CompensateSkillGroupKarmaDifference
+            ? CharacterCreationSkillKarmaPurchaseBlockers.GroupCompensationUnsupported
+            : CharacterCreationSkillsBlockers.GroupBroken;
+        Assert.AreNotEqual(CharacterCreationFoundationOutcomes.Success, quote.Outcome);
+        CollectionAssert.Contains(quote.Blockers.ToArray(), expectedBlocker);
         fixture.AssertFilesUnchanged(files);
     }
 
@@ -258,7 +264,6 @@ public sealed partial class CompletionKarmaRecommendationBuilderTests
         var native = catalog.KnowledgeSkills.Single(row => row.SourceSkillId == "907a3a8f-2c40-4543-a5a9-891bcde41f6b");
         var group = catalog.SkillGroups.Single(row => row.Name == "Athletics");
         fixture.SaveSkills([
-            new(KarmaPerception, CharacterCreationSkillKinds.Active, 0, null, false),
             new(pistols.SourceSkillId, pistols.Kind, 2, pistols.Specializations.Single(row => row.Name == "Tasers").OptionId, false),
             new(knowledge.SourceSkillId, knowledge.Kind, 1, knowledge.Specializations.Single(row => row.Name == "Street Rumors").OptionId, false),
             new(native.SourceSkillId, native.Kind, null, null, true)
@@ -268,12 +273,19 @@ public sealed partial class CompletionKarmaRecommendationBuilderTests
         {
             Reserves = new(Karma: 3, Nuyen: 500m, SkillGroupPoints: 1),
             ExcludedChoices = [new(CompletionChoiceDomain.ActiveSkill, "47cb1e8b-c285-4c54-9aaa-75305ad6dd4f")],
-            Provenance = [new(new(CompletionChoiceDomain.ActiveSkill, "ae91a8a6-80e7-4f52-b9eb-21725a5528a4"), CompletionChoiceOrigin.Unknown)]
+            // An explicit zero is an unselected skill with a player lock, not
+            // a persisted rating-zero allocation (Core rejects that record).
+            Provenance = [
+                new(new(CompletionChoiceDomain.ActiveSkill, KarmaPerception), CompletionChoiceOrigin.PlayerSet),
+                new(new(CompletionChoiceDomain.ActiveSkill, "ae91a8a6-80e7-4f52-b9eb-21725a5528a4"), CompletionChoiceOrigin.Unknown)
+            ]
         };
         var files = fixture.CaptureFiles();
         string original = JsonSerializer.Serialize(inputs);
         var proposal = Proposal(CompletionRecommendationBuilder.BuildMissingOnly(inputs, intent));
         var plan = ReviewedKarmaPlan(proposal);
+        Assert.IsFalse(plan.Selections.SkillAllocations.Any(row => row.Kind == CharacterCreationSkillKinds.Active
+            && row.SourceSkillId == KarmaPerception), "The player's explicit zero must not receive point allocations either.");
         foreach (var manual in inputs.Skills.Allocations)
         {
             Assert.AreEqual(manual, plan.Selections.SkillAllocations.Single(row => row.Kind == manual.Kind && row.SourceSkillId == manual.SourceSkillId));
