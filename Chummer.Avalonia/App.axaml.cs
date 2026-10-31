@@ -117,9 +117,21 @@ public partial class App : global::Avalonia.Application
                 serviceProvider.GetService<ICharacterCreationQualitiesService>(),
                 serviceProvider.GetService<ICharacterCreationMagicResonanceService>(),
                 serviceProvider.GetService<ICharacterCreationLifestylesService>(),
-                serviceProvider.GetService<ICharacterCreationFinalizationService>()));
+                serviceProvider.GetService<ICharacterCreationFinalizationService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationContactsService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationFinalizationService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationLifestylesReader>(),
+                // The desktop head runs under an install-bound owner context, so the
+                // overview projection must use the owner-bound creation readers; the
+                // local-single-user fallback never matches and would leave the wizard
+                // with no legal options (authority pending).
+                serviceProvider.GetService<IOwnerBoundCharacterCreationLifeModuleFinalizationService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationQualitiesService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationMagicResonanceService>()));
         services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
             CharacterCreationContactsInteractionPresenter>();
+        services.AddSingleton<ICharacterCreationFoundationInteractionPresenter,
+            CharacterCreationFoundationInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         services.AddSingleton<IShellPresenter, ShellPresenter>();
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();

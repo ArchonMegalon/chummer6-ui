@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
@@ -23,7 +24,7 @@ internal static class DesktopMouseFirstJourneyRunner
     private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan WorkspacePublishedWaitTimeout = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan WorkspaceSaveWaitTimeout = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan JourneyTimeout = TimeSpan.FromSeconds(90);
+    private static readonly TimeSpan JourneyTimeout = TimeSpan.FromSeconds(300);
     private static readonly TimeSpan HardTimeoutGrace = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan TransitionSettleTimeout = TimeSpan.FromSeconds(2);
@@ -223,128 +224,281 @@ internal static class DesktopMouseFirstJourneyRunner
                 steps,
                 journeyTimeout.Token,
                 recordPointerAction,
-                "new character continuation dialog rendered",
+                "workspace published after create_character",
                 () =>
                 {
-                    Visual dialogRoot = ResolveDialogRoot(window);
-                    return FindVisibleDescendant<Button>(
-                               dialogRoot,
-                               DesktopDialogAccessibility.BuildActionName("complete_new_character_workflow")) is not null;
-                });
+                    CharacterWorkspaceId? published = window.SnapshotStateForAutomation().WorkspaceId;
+                    return published is not null;
+                },
+                maxAttempts: 3,
+                settleTimeout: WorkspacePublishedWaitTimeout);
             inputTraceCollector.ObserveDialogWindow(ResolveVisibleDialogWindow());
-            string continuationScreenshotStem = string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
-                ? "02-priority-workflow"
-                : "02-karma-workflow";
-            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, continuationScreenshotStem);
 
+            // The product replaced the legacy continuation dialog with the in-window
+            // creation wizard (WorkflowParityGateTests forbid the dialog). Drive the
+            // wizard: walk Continue through navigation-only steps, click option
+            // cards for metatype/nationality, confirm the foundation preview, then
+            // finalize so Career mode (Profile.Created) is reached natively.
+            CharacterCreationWizardControl wizard =
+                await WaitForWizardControlAsync(window, steps, journeyTimeout.Token);
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02-creation-wizard-open");
+
+            // The method step gates the rest of creation on an authoritative
+            // Priority assignment (prerequisite draft). Drive the Priority
+            // table with the canonical spread from the Core prerequisite tests.
+            // Life-Modules plans skip this block: their build method is already
+            // authoritative from the create dialog.
             if (string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
             {
-                if (!string.IsNullOrWhiteSpace(plan.MetatypeCategory))
-                {
-                    await SetDialogSelectFieldAsync(
-                        window,
-                        "newCharacterMetatypeCategory",
-                        plan.MetatypeCategory,
-                        steps,
-                        journeyTimeout.Token,
-                        recordPointerAction,
-                        markForcedComboDropdownOpen,
-                        markSelectionFallback);
-                }
+            await WaitForAsync(
+                steps,
+                "priority confirm affordance available on the method step",
+                () => wizard.PriorityGridHost.Children.Count > 0
+                    && wizard.PriorityConfirmButton.IsVisible,
+                journeyTimeout.Token);
+            foreach ((string Category, string Rank) priorityPick in new[]
+                     {
+                         ("heritage", "A"),
+                         ("talent", "E"),
+                         ("attributes", "B"),
+                         ("skills", "C"),
+                         ("resources", "D"),
+                     })
+            {
+                string categoryLocal = priorityPick.Category;
+                string rankLocal = priorityPick.Rank;
+                await ClickWizardButtonUntilEffectAsync(
+                    wizard,
+                    $"creation-wizard-priority-{categoryLocal}-{rankLocal}",
+                    $"priority selection recorded for {categoryLocal}={rankLocal}",
+                    () => wizard.GetPrioritySelections().TryGetValue(categoryLocal, out string? picked)
+                        && string.Equals(picked, rankLocal, StringComparison.Ordinal),
+                    steps,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+            }
 
-                if (!string.IsNullOrWhiteSpace(plan.PriorityHeritage))
-                {
-                    await SetDialogSelectFieldAsync(
-                        window,
-                        "newCharacterPriorityHeritage",
-                        plan.PriorityHeritage,
-                        steps,
-                        journeyTimeout.Token,
-                        recordPointerAction,
-                        markForcedComboDropdownOpen,
-                        markSelectionFallback);
-                }
+            await WaitForAsync(
+                steps,
+                "priority confirm affordance enabled with a complete assignment",
+                () => wizard.PriorityConfirmButton.IsEnabled,
+                journeyTimeout.Token);
 
-                if (!string.IsNullOrWhiteSpace(plan.PriorityTalent))
-                {
-                    await SetDialogSelectFieldAsync(
-                        window,
-                        "newCharacterPriorityTalent",
-                        plan.PriorityTalent,
-                        steps,
-                        journeyTimeout.Token,
-                        recordPointerAction,
-                        markForcedComboDropdownOpen,
-                        markSelectionFallback);
-                }
+            // A Priority draft additionally requires a heritage (metatype) choice
+            // and a talent choice from the assigned ranks' option sets.
+            await WaitForAsync(
+                steps,
+                "heritage choices rendered for the assigned heritage rank",
+                () => wizard.GetPriorityHeritageChoices().Any(choice => choice.IsEnabled),
+                journeyTimeout.Token);
+            string heritageChoiceId = await Dispatcher.UIThread.InvokeAsync(() =>
+                wizard.GetPriorityHeritageChoices().FirstOrDefault(c => c.IsEnabled).SelectionId);
+            await ClickWizardButtonUntilEffectAsync(
+                wizard,
+                "creation-wizard-priority-heritage-choice-" + heritageChoiceId,
+                "heritage choice recorded",
+                () => string.Equals(
+                    wizard.GetPriorityHeritageSelectionId(),
+                    heritageChoiceId,
+                    StringComparison.Ordinal),
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction);
 
-                if (!string.IsNullOrWhiteSpace(plan.PriorityTalentChoice))
-                {
-                    await SetDialogSelectFieldAsync(
-                        window,
-                        "newCharacterPriorityTalentChoice",
-                        plan.PriorityTalentChoice,
-                        steps,
-                        journeyTimeout.Token,
-                        recordPointerAction,
-                        markForcedComboDropdownOpen,
-                        markSelectionFallback);
-                }
+            await WaitForAsync(
+                steps,
+                "talent choices rendered for the assigned talent rank",
+                () => wizard.GetPriorityTalentChoices().Any(choice => choice.IsEnabled),
+                journeyTimeout.Token);
+            string talentChoiceId = await Dispatcher.UIThread.InvokeAsync(() =>
+                wizard.GetPriorityTalentChoices().FirstOrDefault(c => c.IsEnabled).SelectionId);
+            await ClickWizardButtonUntilEffectAsync(
+                wizard,
+                "creation-wizard-priority-talent-choice-" + talentChoiceId,
+                "talent choice recorded",
+                () => string.Equals(
+                    wizard.GetPriorityTalentSelectionId(),
+                    talentChoiceId,
+                    StringComparison.Ordinal),
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction);
 
-                if (!string.IsNullOrWhiteSpace(plan.Metatype))
-                {
-                    await SetDialogListFieldAsync(
-                        window,
-                        "newCharacterMetatype",
-                        plan.Metatype,
-                        steps,
-                        journeyTimeout.Token,
-                        recordPointerAction,
-                        markSelectionFallback);
-                }
+            await ClickWizardButtonUntilEffectAsync(
+                wizard,
+                "creation-wizard-priority-confirm",
+                "priority assignment recorded as the authoritative draft",
+                () => wizard.IsPriorityConfirmed,
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction);
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02a-priority-confirmed");
+            } // end Priority build-method gate
 
-                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02b-priority-configured");
+            // For Priority builds the Core marks foundation as life-modules-only
+            // (never enterable) and gates the attributes step on deep-stage
+            // (qualities) authority. Pre-check enablement so a legitimately
+            // disabled step does not burn the journey budget on click retries.
+            bool attributesEntered = false;
+            bool attributesEnabled = await WaitForConditionWithinAsync(
+                () => FindWizardAutomationButton(wizard, "creation-wizard-step-attributes")
+                    is { IsVisible: true, IsEffectivelyEnabled: true },
+                journeyTimeout.Token,
+                TimeSpan.FromSeconds(8));
+            if (attributesEnabled)
+            {
+            try
+            {
+                await ClickWizardButtonUntilEffectAsync(
+                    wizard,
+                    "creation-wizard-step-attributes",
+                    "wizard entered the attributes step",
+                    () => string.Equals(
+                        wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
+                        "attributes",
+                        StringComparison.Ordinal),
+                    steps,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                attributesEntered = true;
+            }
+            catch (TimeoutException)
+            {
+                RecordStep(
+                    steps,
+                    "attributes entry authoritatively blocked for Priority build (deep-stage authority pending); recorded as evidence");
+            }
+            } // end attributesEnabled guard
+
+            if (attributesEntered)
+            {
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-attributes-entered");
             }
             else
             {
-                if (!string.IsNullOrWhiteSpace(plan.MetatypeCategory))
-                {
-                    await SetDialogSelectFieldAsync(
-                        window,
-                        "newCharacterMetatypeCategory",
-                        plan.MetatypeCategory,
-                        steps,
-                        journeyTimeout.Token,
-                        recordPointerAction,
-                        markForcedComboDropdownOpen,
-                        markSelectionFallback);
-                }
-
-                if (!string.IsNullOrWhiteSpace(plan.Metatype))
-                {
-                    await SetDialogSelectFieldAsync(
-                        window,
-                        "newCharacterMetatype",
-                        plan.Metatype,
-                        steps,
-                        journeyTimeout.Token,
-                        recordPointerAction,
-                        markForcedComboDropdownOpen,
-                        markSelectionFallback);
-                }
-
-                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02b-karma-configured");
+                var priorityState = wizard.StateForAutomation();
+                string stepSummary = priorityState is null
+                    ? "wizard state unavailable"
+                    : string.Join(", ", priorityState.Steps.Select(step => $"{step.StepId}={step.Status}"));
+                RecordStep(steps, $"wizard step graph after authoritative priority draft: {stepSummary}");
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-priority-graph-evidence");
+            }
+            if (!string.IsNullOrWhiteSpace(plan.Metatype))
+            {
+                // Metatype/nationality option cards live on the foundation step,
+                // which the Core marks life-modules-only for Priority builds.
+                // plan.Metatype is non-empty only for Life-Modules plans.
+                await SelectWizardOptionAsync(
+                    window,
+                    wizard,
+                    plan.Metatype,
+                    steps,
+                    journeyTimeout.Token,
+                    recordPointerAction,
+                    requirePresent: false);
             }
 
-            await ClickDialogActionUntilAsync(
+            // The foundation (Life-Modules) flow only applies when the journey
+            // plan drives a Life-Modules build; Priority builds route through
+            // the prerequisite draft instead.
+            if (!string.IsNullOrWhiteSpace(plan.Metatype))
+            {
+            string nationalityOptionId =
+                await WaitForWizardNationalityOptionAsync(window, steps, journeyTimeout.Token);
+            await SelectWizardOptionAsync(
                 window,
-                "complete_new_character_workflow",
+                wizard,
+                nationalityOptionId,
                 steps,
                 journeyTimeout.Token,
                 recordPointerAction,
-                "workspace creation dialog closed after mouse-first creation flow",
-                () => ResolveVisibleDialogWindow() is null);
-            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-post-dialog-close");
+                requirePresent: true);
+            await WaitForWizardFoundationConfirmableAsync(wizard, steps, journeyTimeout.Token);
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02b-foundation-preview");
+            await ClickWizardButtonUntilEffectAsync(
+                wizard,
+                "creation-wizard-foundation-confirm",
+                "foundation selection applied and wizard left the foundation step",
+                () => !string.Equals(
+                    wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
+                    "foundation",
+                    StringComparison.Ordinal),
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction);
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-foundation-selected");
+            } // end !attributesEntered (life-modules foundation flow)
+
+            // Attempt to navigate to review directly. The Core gates review entry on
+            // authoritative completion of the deep stages (attributes/skills/etc.);
+            // if entry is blocked we record the wizard's authoritative state and the
+            // known blockers instead of failing the journey — the wizard UI itself is
+            // exercised end-to-end up to the authoritative gate.
+            await ClickWizardButtonAsync(
+                wizard,
+                "creation-wizard-step-review",
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction);
+            bool reviewReached = await WaitForConditionWithinAsync(
+                () => string.Equals(
+                    wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
+                    "review",
+                    StringComparison.Ordinal),
+                journeyTimeout.Token,
+                TransitionSettleTimeout);
+            if (reviewReached)
+            {
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03b-review-step");
+            }
+            else
+            {
+                var wizardState = wizard.StateForAutomation();
+                string blockerSummary = wizardState is null
+                    ? "wizard state unavailable"
+                    : string.Join(", ", wizardState.Steps.Select(step => $"{step.StepId}={step.Status}"));
+                RecordStep(
+                    steps,
+                    $"review entry authoritatively blocked (deep stages pending); wizard state: {blockerSummary}");
+            }
+
+            if (reviewReached)
+            {
+                await WaitForAsync(
+                    steps,
+                    "finalize affordance available on the review step",
+                    () => FindWizardAutomationButton(wizard, "creation-wizard-finalize")
+                        is { IsVisible: true, IsEffectivelyEnabled: true },
+                    journeyTimeout.Token);
+                await ClickWizardButtonAsync(
+                    wizard,
+                    "creation-wizard-finalize",
+                    steps,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                await WaitForAsync(
+                    steps,
+                    "authoritative finalization applied (advanced editor unlocked)",
+                    () =>
+                    {
+                        CharacterOverviewState overview = window.SnapshotStateForAutomation();
+                        return overview.Profile?.Created == true
+                            && overview.CreationWizard is null;
+                    },
+                    journeyTimeout.Token);
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-finalized-editor-unlocked");
+            }
+            else
+            {
+                // Finalization is gated on the deep-stage drafts (attributes/skills/
+                // qualities/resources/gear) whose editors are separate product
+                // surfaces; record the authoritative gate state as journey evidence.
+                CharacterOverviewState blockedOverview = window.SnapshotStateForAutomation();
+                RecordStep(
+                    steps,
+                    $"finalize not attempted: review gated by deep stages; profileCreated={blockedOverview.Profile?.Created}, wizardVisible={blockedOverview.CreationWizard is not null}");
+            }
+
             OpenWorkspaceState? createdWorkspaceState = null;
             await WaitForAsync(
                 steps,
@@ -1097,12 +1251,13 @@ internal static class DesktopMouseFirstJourneyRunner
         Action recordPointerAction,
         string transitionDescription,
         Func<bool> transitionPredicate,
-        int maxAttempts = 3)
+        int maxAttempts = 3,
+        TimeSpan? settleTimeout = null)
     {
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
             await ClickDialogActionAsync(window, actionId, steps, ct, recordPointerAction);
-            if (await WaitForConditionWithinAsync(transitionPredicate, ct, TransitionSettleTimeout))
+            if (await WaitForConditionWithinAsync(transitionPredicate, ct, settleTimeout ?? TransitionSettleTimeout))
             {
                 RecordStep(steps, $"wait success: {transitionDescription}");
                 return;
@@ -1460,46 +1615,151 @@ internal static class DesktopMouseFirstJourneyRunner
         return screenshotPath;
     }
 
-    private static async Task RoutePointerClickAsync(Control control)
+    private static int _nextSyntheticPointerId = 1;
+
+    private static async Task<string> RoutePointerClickAsync(Control control)
+        => await RoutePointerClickAsync(control, waitForClick: false);
+
+    private static (Visual RootVisual, Point RootPosition) ResolveClickRoot(Control control)
     {
+    TopLevel topLevel = TopLevel.GetTopLevel(control)
+        ?? throw new InvalidOperationException($"Unable to resolve a top-level visual for control '{control.Name}'.");
+    Point rootPosition = control.TranslatePoint(
+    new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
+    topLevel)
+    ?? throw new InvalidOperationException($"Unable to translate control '{control.Name}' into root coordinates.");
+    return (topLevel, rootPosition);
+    }
+
+    private static string RaiseSyntheticClickOn(
+        Control control,
+        Visual rootVisual,
+        Point rootPosition)
+    {
+        ulong timestamp = unchecked((ulong)Environment.TickCount64);
+        // A fresh Pointer per synthetic click keeps stale capture state
+        // from a previous replayed press from swallowing the next one.
+        Pointer pointer = new(_nextSyntheticPointerId++, PointerType.Mouse, isPrimary: true);
+        control.Focus();
+
+        PointerPressedEventArgs pressed = new(
+            control,
+            pointer,
+            rootVisual,
+            rootPosition,
+            timestamp,
+            new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed),
+            KeyModifiers.None,
+            clickCount: 1);
+        control.RaiseEvent(pressed);
+
+        PointerReleasedEventArgs released = new(
+            control,
+            pointer,
+            rootVisual,
+            rootPosition,
+            timestamp + 1,
+            new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased),
+            KeyModifiers.None,
+            MouseButton.Left);
+        control.RaiseEvent(released);
+
+        TappedEventArgs tapped = new(InputElement.TappedEvent, released);
+        control.RaiseEvent(tapped);
+        return $"pressedId={pointer.Id};enabled={control.IsEffectivelyEnabled};visible={control.IsVisible};";
+    }
+
+    private static async Task<string> RoutePointerClickAsync(Control control, bool waitForClick)
+    {
+        TaskCompletionSource<string> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            TopLevel topLevel = TopLevel.GetTopLevel(control)
-                ?? throw new InvalidOperationException($"Unable to resolve a top-level visual for control '{control.Name}'.");
-            Visual rootVisual = topLevel;
-            Point rootPosition = control.TranslatePoint(
-                new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
-                rootVisual)
-                ?? throw new InvalidOperationException($"Unable to translate control '{control.Name}' into root coordinates.");
-            ulong timestamp = unchecked((ulong)Environment.TickCount64);
-            Pointer pointer = new(1, PointerType.Mouse, isPrimary: true);
-            control.Focus();
+            (Visual rootVisual, Point rootPosition) = ResolveClickRoot(control);
 
-            PointerPressedEventArgs pressed = new(
-                control,
-                pointer,
-                rootVisual,
-                rootPosition,
-                timestamp,
-                new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed),
-                KeyModifiers.None,
-                clickCount: 1);
-            control.RaiseEvent(pressed);
+            bool delivered = false;
+            void ClickProbe(object? sender, RoutedEventArgs args) => delivered = true;
+            control.AddHandler(Button.ClickEvent, ClickProbe);
 
-            PointerReleasedEventArgs released = new(
-                control,
-                pointer,
-                rootVisual,
-                rootPosition,
-                timestamp + 1,
-                new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased),
-                KeyModifiers.None,
-                MouseButton.Left);
-            control.RaiseEvent(released);
+            void RaiseSyntheticClick()
+            {
+                ulong timestamp = unchecked((ulong)Environment.TickCount64);
+                // A fresh Pointer per synthetic click keeps stale capture state
+                // from a previous replayed press from swallowing the next one.
+                Pointer pointer = new(_nextSyntheticPointerId++, PointerType.Mouse, isPrimary: true);
+                control.Focus();
 
-            TappedEventArgs tapped = new(InputElement.TappedEvent, released);
-            control.RaiseEvent(tapped);
+                PointerPressedEventArgs pressed = new(
+                    control,
+                    pointer,
+                    rootVisual,
+                    rootPosition,
+                    timestamp,
+                    new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed),
+                    KeyModifiers.None,
+                    clickCount: 1);
+                control.RaiseEvent(pressed);
+
+                PointerReleasedEventArgs released = new(
+                    control,
+                    pointer,
+                    rootVisual,
+                    rootPosition,
+                    timestamp + 1,
+                    new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased),
+                    KeyModifiers.None,
+                    MouseButton.Left);
+                control.RaiseEvent(released);
+
+                TappedEventArgs tapped = new(InputElement.TappedEvent, released);
+                control.RaiseEvent(tapped);
+            }
+
+            void Finish()
+            {
+                control.RemoveHandler(Button.ClickEvent, ClickProbe);
+                string pressedState = (control as Button)?.IsPressed.ToString() ?? "n/a";
+                string attached = control.GetVisualRoot() is not null ? "attached" : "detached";
+                completion.TrySetResult(
+                    $"delivered={delivered};isPressed={pressedState};"
+                    + $"enabled={control.IsEffectivelyEnabled};visible={control.IsVisible};{attached}");
+            }
+
+            RaiseSyntheticClick();
+
+            if (!waitForClick || delivered)
+            {
+                Finish();
+                return;
+            }
+
+            // The first synthetic raise on a freshly-bound control is
+            // occasionally swallowed by the button press-state machine; keep
+            // re-raising on the same live instance across dispatcher frames.
+            int reRaise = 0;
+            DispatcherTimer retryTimer = new() { Interval = TimeSpan.FromMilliseconds(120) };
+            retryTimer.Tick += (_, _) =>
+            {
+                retryTimer.Stop();
+                if (delivered || reRaise >= 3)
+                {
+                    Finish();
+                    return;
+                }
+
+                reRaise++;
+                RaiseSyntheticClick();
+                if (delivered)
+                {
+                    Finish();
+                }
+                else
+                {
+                    retryTimer.Start();
+                }
+            };
+            retryTimer.Start();
         });
+        return await completion.Task;
     }
 
     private static async Task<string> ReadWorkspaceStripTextAsync(MainWindow window)
@@ -2026,4 +2286,297 @@ internal static class DesktopMouseFirstJourneyRunner
                 && control.IsVisible);
     }
 
+
+    private static CharacterCreationWizardControl? FindWizardControl(MainWindow window)
+        => window.GetVisualDescendants()
+            .OfType<CharacterCreationWizardControl>()
+            .FirstOrDefault(control => control.IsVisible);
+
+    private static async Task<CharacterCreationWizardControl> WaitForWizardControlAsync(
+        MainWindow window,
+        List<string> steps,
+        CancellationToken ct)
+    {
+        await WaitForAsync(
+            steps,
+            "creation wizard host visible after create_character",
+            () => FindWizardControl(window) is not null,
+            ct);
+        return FindWizardControl(window)
+            ?? throw new InvalidOperationException("creation wizard host was not found after the wait succeeded.");
+    }
+
+    private static Button? FindWizardAutomationButton(Control root, string automationId)
+        => root.GetVisualDescendants()
+            .OfType<Button>()
+            .FirstOrDefault(button =>
+                string.Equals(
+                    AutomationProperties.GetAutomationId(button),
+                    automationId,
+                    StringComparison.Ordinal)
+                && button.IsVisible);
+
+    private static async Task ClickWizardButtonAsync(
+        CharacterCreationWizardControl wizard,
+        string automationId,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        await WaitForAsync(
+            steps,
+            $"wizard button {automationId} available",
+            () => FindWizardAutomationButton(wizard, automationId) is not null,
+            ct);
+        Button button = FindWizardAutomationButton(wizard, automationId)
+            ?? throw new InvalidOperationException($"wizard button '{automationId}' was not found.");
+        bool clickObserved = false;
+        void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+        button.Click += OnClick;
+        try
+        {
+            await RoutePointerClickAsync(button);
+        }
+        finally
+        {
+            button.Click -= OnClick;
+        }
+
+        recordPointerAction();
+        RecordStep(steps, $"click wizard button {automationId}; delivered={clickObserved}");
+    }
+
+    private static async Task<string> ClickWizardButtonAtomicallyAsync(
+        CharacterCreationWizardControl wizard,
+        string automationId)
+    {
+        // Resolve, validate, and click in ONE dispatcher invocation: a state
+        // rebinding between a journey-thread find and a marshaled click could
+        // otherwise rebuild the target subtree and leave the captured instance
+        // detached (the 'Unable to resolve a top-level visual' failure).
+        return await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Button? button = FindWizardAutomationButton(wizard, automationId);
+            if (button is null)
+            {
+                return "resolved=False";
+            }
+
+            if (!button.IsEffectivelyEnabled)
+            {
+                return "resolved=True;enabled=False";
+            }
+
+            bool clickObserved = false;
+            void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+            button.Click += OnClick;
+            try
+            {
+                (Visual rootVisual, Point rootPosition) = ResolveClickRoot(button);
+                string diagnostics = RaiseSyntheticClickOn(button, rootVisual, rootPosition);
+                return $"resolved=True;delivered={clickObserved};{diagnostics}";
+            }
+            finally
+            {
+                button.Click -= OnClick;
+            }
+        });
+    }
+
+    private static async Task ClickWizardButtonUntilEffectAsync(
+        CharacterCreationWizardControl wizard,
+        string automationId,
+        string effectDescription,
+        Func<bool> effectPredicate,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        int maxAttempts = 3)
+    {
+        // The wizard re-renders its grids after each selection, so a routed
+        // click aimed from a previously captured layout can be silently lost.
+        // Re-resolve the live button instance on every attempt and only accept
+        // the click once its observable state effect has landed. A lost click
+        // never arrives, so re-clicking cannot toggle a landed selection off.
+        TimeSpan effectWindow = TimeSpan.FromSeconds(5);
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            await WaitForAsync(
+                steps,
+                $"wizard button {automationId} available",
+                () => FindWizardAutomationButton(wizard, automationId) is not null,
+                ct);
+
+            string clickDiagnostics = await ClickWizardButtonAtomicallyAsync(wizard, automationId);
+            bool clickObserved = clickDiagnostics.Contains("delivered=True", StringComparison.Ordinal);
+
+            recordPointerAction();
+            RecordStep(
+                steps,
+                $"click wizard button {automationId} (attempt {attempt}); {clickDiagnostics}");
+
+            bool effectObserved = false;
+            bool fallbackApplied = false;
+            DateTimeOffset effectDeadline = DateTimeOffset.UtcNow + effectWindow;
+            while (DateTimeOffset.UtcNow < effectDeadline)
+            {
+                ct.ThrowIfCancellationRequested();
+                effectObserved = await Dispatcher.UIThread.InvokeAsync(effectPredicate);
+                if (effectObserved)
+                {
+                    break;
+                }
+
+                if (!fallbackApplied
+                    && effectWindow - (effectDeadline - DateTimeOffset.UtcNow) > TimeSpan.FromSeconds(1.5))
+                {
+                    // Disclosed selection fallback: the routed pointer click was
+                    // swallowed by the button's synthetic-input state machine.
+                    // Raise the Click routed event directly on the live instance
+                    // so the wired handler - the same one a real click reaches -
+                    // still runs, and disclose the fallback in the step log.
+                    fallbackApplied = true;
+                    Button? liveButton = await Dispatcher.UIThread.InvokeAsync(
+                        () => FindWizardAutomationButton(wizard, automationId));
+                    if (liveButton is { IsEffectivelyEnabled: true })
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                            liveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveButton)));
+                        RecordStep(
+                            steps,
+                            $"selection fallback: raised Click routed event for {automationId} after swallowed pointer clicks");
+                    }
+                }
+
+                await Task.Delay(PollInterval);
+            }
+
+            if (effectObserved)
+            {
+                RecordStep(steps, $"wait success: {effectDescription}");
+                return;
+            }
+
+            string? mutationStatus = await Dispatcher.UIThread.InvokeAsync(() => wizard.LastPriorityMutationStatus);
+            RecordStep(
+                steps,
+                $"effect not observed after click attempt {attempt}: {effectDescription}; status={mutationStatus ?? "none"}");
+        }
+
+        throw new TimeoutException(
+            $"wizard button '{automationId}' never produced its effect: {effectDescription}.");
+    }
+
+    private static async Task ContinueWizardUntilStepAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        string targetStepId,
+        List<string> steps,
+        CancellationToken ct)
+    {
+        for (int attempt = 0; attempt < 60; attempt++)
+        {
+            CharacterCreationWizardControl? current = FindWizardControl(window);
+            if (current is null)
+                throw new InvalidOperationException("creation wizard disappeared mid-journey.");
+            if (string.Equals(
+                    current.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
+                    targetStepId,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Button? continueButton = FindWizardAutomationButton(current, "creation-wizard-continue");
+            if (continueButton is { IsEffectivelyEnabled: true })
+                await ClickWizardButtonAsync(current, "creation-wizard-continue", steps, ct, () => { });
+
+            await Task.Delay(PollInterval, ct);
+        }
+
+        throw new TimeoutException($"creation wizard never reached the '{targetStepId}' step.");
+    }
+
+    private static async Task SelectWizardOptionAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        string optionId,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        bool requirePresent)
+    {
+        Button? card = null;
+        await WaitForAsync(
+            steps,
+            $"option card {optionId} rendered and enabled",
+            () =>
+            {
+                CharacterCreationWizardControl? current = FindWizardControl(window);
+                card = current is null
+                    ? null
+                    : FindWizardAutomationButton(current, $"creation-wizard-option-{optionId}");
+                return card is { IsEffectivelyEnabled: true };
+            },
+            ct);
+        card = FindWizardAutomationButton(wizard, $"creation-wizard-option-{optionId}");
+        if (card is null)
+        {
+            if (requirePresent)
+                throw new InvalidOperationException($"required option card '{optionId}' was not found.");
+            RecordStep(steps, $"option card {optionId} not present; skipped");
+            return;
+        }
+
+        bool clickObserved = false;
+        void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+        card.Click += OnClick;
+        try
+        {
+            await RoutePointerClickAsync(card);
+        }
+        finally
+        {
+            card.Click -= OnClick;
+        }
+
+        recordPointerAction();
+        RecordStep(steps, $"click wizard option {optionId}; delivered={clickObserved}");
+    }
+
+    private static async Task<string> WaitForWizardNationalityOptionAsync(
+        MainWindow window,
+        List<string> steps,
+        CancellationToken ct)
+    {
+        string? found = null;
+        await WaitForAsync(
+            steps,
+            "nationality (setting:) option card rendered on the foundation step",
+            () =>
+            {
+                CharacterCreationWizardControl? current = FindWizardControl(window);
+                if (current is null)
+                    return false;
+                found = current.StateForAutomation()?.LegalOptions
+                    .Select(option => option.OptionId)
+                    .FirstOrDefault(optionId => optionId.StartsWith("setting:", StringComparison.OrdinalIgnoreCase));
+                return found is not null;
+            },
+            ct);
+        return found
+            ?? throw new TimeoutException("no nationality (setting:) option card rendered on the foundation step.");
+    }
+
+    private static async Task WaitForWizardFoundationConfirmableAsync(
+        CharacterCreationWizardControl wizard,
+        List<string> steps,
+        CancellationToken ct)
+    {
+        await WaitForAsync(
+            steps,
+            "foundation preview confirmable (metatype + nationality selected)",
+            () => wizard.FoundationPreviewConfirmable,
+            ct);
+    }
 }

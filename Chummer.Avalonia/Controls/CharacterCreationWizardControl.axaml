@@ -5,33 +5,42 @@
              Focusable="True"
              KeyDown="WizardRoot_OnKeyDown"
              AutomationProperties.AutomationId="character-creation-wizard">
-  <Grid ColumnDefinitions="230,*,280" ColumnSpacing="10" RowDefinitions="*,Auto">
-    <Border Grid.Column="0" Classes="shell-card subtle" Padding="12">
-      <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
-        <StackPanel Spacing="4">
-          <TextBlock Classes="shell-section-title" Text="Character creation" />
-          <TextBlock x:Name="ResumeStatusText"
+  <!-- Classic Windows-desktop wizard chrome (Chummer5a feel):
+       header strip, left step pane, center content, right assistant,
+       and a footer with < Back / Next > / Finish. -->
+  <Grid ColumnDefinitions="230,*,280" ColumnSpacing="10" RowDefinitions="Auto,*,Auto,Auto">
+    <Border Grid.Row="0" Grid.ColumnSpan="3"
+            Classes="shell-card subtle" Padding="14,10" Margin="0,0,0,2">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Classes="shell-section-title" Text="Character Creation Wizard" />
+          <TextBlock x:Name="WizardStepCounter"
                      Classes="shell-caption"
-                     TextWrapping="Wrap" />
+                     VerticalAlignment="Center"
+                     AutomationProperties.AutomationId="creation-wizard-step-counter" />
+        </StackPanel>
+        <TextBlock x:Name="ResumeStatusText"
+                   Grid.Column="1"
+                   Classes="shell-caption"
+                   VerticalAlignment="Center"
+                   TextWrapping="Wrap"
+                   MaxWidth="520"
+                   TextAlignment="Right" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="0" Classes="shell-card subtle" Padding="12">
+      <Grid RowDefinitions="Auto,*" RowSpacing="10">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="shell-section-title" Text="Steps" />
         </StackPanel>
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
           <StackPanel x:Name="StepList" Spacing="6" />
         </ScrollViewer>
-        <StackPanel Grid.Row="2" Spacing="6">
-          <Button x:Name="ContinueButton"
-                  Classes="shell-action"
-                  Content="Continue"
-                  Click="ContinueButton_OnClick"
-                  AutomationProperties.AutomationId="creation-wizard-continue" />
-          <TextBlock x:Name="EditorLockText"
-                     Classes="shell-caption"
-                     Text="Advanced editor unlocks after authoritative finalization."
-                     TextWrapping="Wrap" />
-        </StackPanel>
       </Grid>
     </Border>
 
-    <Border Grid.Column="1" Classes="shell-card" Padding="14">
+    <Border Grid.Row="1" Grid.Column="1" Classes="shell-card" Padding="14">
       <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
         <StackPanel Spacing="4">
           <TextBlock x:Name="ActiveStepTitle" Classes="shell-section-title" />
@@ -43,24 +52,47 @@
                    Classes="shell-section-title" />
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
           <StackPanel Spacing="8">
+            <StackPanel x:Name="PriorityPanel" Spacing="8" IsVisible="False">
+              <TextBlock Classes="shell-section-title" Text="Creation method - Priority table" />
+              <TextBlock x:Name="PriorityStatusText"
+                         Classes="shell-caption"
+                         TextWrapping="Wrap"
+                         AutomationProperties.AutomationId="creation-wizard-priority-status" />
+              <StackPanel x:Name="PriorityGridHost" Spacing="10" />
+              <StackPanel x:Name="PriorityHeritageChoicesSection" Spacing="6" IsVisible="False">
+                <TextBlock x:Name="PriorityHeritageChoicesStatus"
+                           Classes="shell-caption"
+                           TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="creation-wizard-priority-heritage-choice-status" />
+                <StackPanel x:Name="PriorityHeritageChoicesHost" Spacing="6" />
+              </StackPanel>
+              <StackPanel x:Name="PriorityTalentChoicesSection" Spacing="6" IsVisible="False">
+                <TextBlock x:Name="PriorityTalentChoicesStatus"
+                           Classes="shell-caption"
+                           TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="creation-wizard-priority-talent-choice-status" />
+                <StackPanel x:Name="PriorityTalentChoicesHost" Spacing="6" />
+              </StackPanel>
+              <Button x:Name="PriorityConfirmButton"
+                      Classes="shell-action"
+                      Content="Confirm priority assignment"
+                      Click="PriorityConfirmButton_OnClick"
+                      IsEnabled="False"
+                      AutomationProperties.AutomationId="creation-wizard-priority-confirm" />
+            </StackPanel>
             <StackPanel x:Name="LegalOptionList" Spacing="8" />
             <StackPanel x:Name="ContactsList" Spacing="8" IsVisible="False" />
           </StackPanel>
         </ScrollViewer>
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
-          <Button Content="Recover navigation…"
-                  Classes="shell-action quiet"
-                  Click="RecoverButton_OnClick"
-                  AutomationProperties.AutomationId="creation-wizard-recover" />
-          <Button Content="Export checkpoint…"
-                  Classes="shell-action quiet"
-                  Click="ExportButton_OnClick"
-                  AutomationProperties.AutomationId="creation-wizard-export" />
-        </StackPanel>
+        <TextBlock x:Name="FinalizeStatusText"
+                   Grid.Row="3"
+                   Classes="shell-caption"
+                   TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="creation-wizard-finalize-status" />
       </Grid>
     </Border>
 
-    <Grid Grid.Column="2" RowDefinitions="Auto,*" RowSpacing="10">
+    <Grid Grid.Row="1" Grid.Column="2" RowDefinitions="Auto,*" RowSpacing="10">
       <Border Classes="shell-card subtle" Padding="12">
         <StackPanel Spacing="6">
           <TextBlock Classes="shell-section-title" Text="Budget &amp; status" />
@@ -87,7 +119,7 @@
           </ScrollViewer>
           <TextBox x:Name="GhostQuestionTextBox"
                    Grid.Row="2"
-                   Watermark="Ask about this step…"
+                   Watermark="Ask about this step."
                    AcceptsReturn="True"
                    MinHeight="60"
                    AutomationProperties.AutomationId="creation-wizard-build-ghost-question" />
@@ -101,10 +133,52 @@
       </Border>
     </Grid>
 
-    <TextBlock Grid.Row="1"
+    <Border Grid.Row="2" Grid.ColumnSpan="3"
+            Classes="shell-card subtle" Padding="14,10" Margin="0,2,0,0">
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Recover navigation"
+                  Classes="shell-action quiet"
+                  Click="RecoverButton_OnClick"
+                  AutomationProperties.AutomationId="creation-wizard-recover" />
+          <Button Content="Export checkpoint"
+                  Classes="shell-action quiet"
+                  Click="ExportButton_OnClick"
+                  AutomationProperties.AutomationId="creation-wizard-export" />
+        </StackPanel>
+        <TextBlock x:Name="EditorLockText"
+                   Grid.Column="1"
+                   Classes="shell-caption"
+                   VerticalAlignment="Center"
+                   Text="Advanced editor unlocks after authoritative finalization."
+                   TextWrapping="Wrap" />
+        <Button x:Name="BackButton"
+                Grid.Column="2"
+                Classes="shell-action"
+                Content="&lt; Back"
+                Click="BackButton_OnClick"
+                IsEnabled="False"
+                AutomationProperties.AutomationId="creation-wizard-back" />
+        <Button x:Name="ContinueButton"
+                Grid.Column="3"
+                Classes="shell-action"
+                Content="Next &gt;"
+                Click="ContinueButton_OnClick"
+                AutomationProperties.AutomationId="creation-wizard-continue" />
+        <Button x:Name="FinalizeButton"
+                Grid.Column="4"
+                Classes="shell-action"
+                Content="Finish"
+                Click="FinalizeButton_OnClick"
+                IsVisible="False"
+                AutomationProperties.AutomationId="creation-wizard-finalize" />
+      </Grid>
+    </Border>
+
+    <TextBlock Grid.Row="3"
                Grid.ColumnSpan="3"
                Classes="shell-caption"
-               Text="Keyboard: Alt+Left/Right moves through authoritative steps. Ctrl+Shift+G or ⌘+Shift+G focuses Build Ghost."
+               Text="Keyboard: Alt+Left/Right moves through authoritative steps. Ctrl+Shift+G focuses Build Ghost."
                Margin="4,2" />
   </Grid>
 </UserControl>
