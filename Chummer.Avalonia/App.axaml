@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls"
              x:Class="Chummer.Avalonia.App"
-             RequestedThemeVariant="Dark">
+             RequestedThemeVariant="Light">
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
@@ -325,9 +325,8 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Padding" Value="4" />
-      <Setter Property="BoxShadow" Value="0 1 2 0 #120F172A" />
     </Style>
     <Style Selector="Border.shell-panel.chrome">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
@@ -346,7 +345,6 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Padding" Value="2" />
-      <Setter Property="BoxShadow" Value="0 10 24 0 #120F172A" />
     </Style>
     <Style Selector="Border.shell-card.subtle">
       <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
@@ -356,9 +354,9 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="5,1" />
-      <Setter Property="MinHeight" Value="32" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="8,2" />
+      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Button:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
@@ -372,6 +370,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellMenuRootBorderBrush}" />
       <Setter Property="Padding" Value="9,4" />
       <Setter Property="MinHeight" Value="24" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Button.menu-button:pointerover">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
@@ -391,7 +390,8 @@
     </Style>
     <Style Selector="Button.tool-icon">
       <Setter Property="Padding" Value="6,2" />
-      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="StackPanel.tool-button-content">
       <Setter Property="Spacing" Value="5" />

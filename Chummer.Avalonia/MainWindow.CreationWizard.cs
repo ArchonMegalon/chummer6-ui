@@ -1,8 +1,10 @@
 using Avalonia.Controls;
+using Chummer.Application.Characters;
 using Avalonia.Platform.Storage;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.AI;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.LifeModules;
 using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
@@ -14,6 +16,9 @@ public partial class MainWindow
     private AvaloniaCreationWizardCheckpointStore? _creationWizardCheckpointStore;
     private CharacterCreationWizardSnapshot? _boundCreationWizardSnapshot;
     private CharacterCreationContactPreparedPreview? _creationContactPreparedPreview;
+    private CharacterCreationFoundationPreparedPreview? _creationFoundationPreparedPreview;
+    private string? _creationFoundationSelectedMetatype;
+    private (string ModuleId, string? versionId)? _creationFoundationSelectedNationality;
     private bool _creationWizardBuildGhostPreferenceEnabled;
 
     private void InitializeCreationWizard()
@@ -34,6 +39,10 @@ public partial class MainWindow
         CharacterCreationWizardControl.ExportCheckpointRequested += CreationWizard_OnExportCheckpointRequested;
         CharacterCreationWizardControl.ContactPreviewRequested += CreationWizard_OnContactPreviewRequested;
         CharacterCreationWizardControl.ContactConfirmRequested += CreationWizard_OnContactConfirmRequested;
+        CharacterCreationWizardControl.FoundationOptionClickRequested += CreationWizard_OnFoundationOptionClickRequested;
+        CharacterCreationWizardControl.FoundationConfirmRequested += CreationWizard_OnFoundationConfirmRequested;
+        CharacterCreationWizardControl.FinalizeRequested += CreationWizard_OnFinalizeRequested;
+        CharacterCreationWizardControl.PriorityConfirmRequested += CreationWizard_OnPriorityConfirmRequested;
     }
 
     private void DetachCreationWizard()
@@ -46,6 +55,10 @@ public partial class MainWindow
         CharacterCreationWizardControl.ExportCheckpointRequested -= CreationWizard_OnExportCheckpointRequested;
         CharacterCreationWizardControl.ContactPreviewRequested -= CreationWizard_OnContactPreviewRequested;
         CharacterCreationWizardControl.ContactConfirmRequested -= CreationWizard_OnContactConfirmRequested;
+        CharacterCreationWizardControl.FoundationOptionClickRequested -= CreationWizard_OnFoundationOptionClickRequested;
+        CharacterCreationWizardControl.FoundationConfirmRequested -= CreationWizard_OnFoundationConfirmRequested;
+        CharacterCreationWizardControl.FinalizeRequested -= CreationWizard_OnFinalizeRequested;
+        CharacterCreationWizardControl.PriorityConfirmRequested -= CreationWizard_OnPriorityConfirmRequested;
     }
 
     private void ApplyCreationWizardState(CharacterOverviewState overview)
@@ -94,10 +107,15 @@ public partial class MainWindow
             overview.CreationContacts);
         _boundCreationWizardSnapshot = snapshot;
         CharacterCreationWizardControl.SetState(state);
+        CharacterCreationWizardControl.SetFinalizeAvailability(
+            overview.CreationFinalization is { } finalization && finalization.CanReview,
+            overview.CreationFinalization?.Blockers ?? []);
         _creationWizardBuildGhostPreferenceEnabled = !overview.Preferences.DisableAiFeatures;
         CharacterCreationWizardControl.SetBuildGhostEnabled(_creationWizardBuildGhostPreferenceEnabled);
         TryPersistWizardCheckpoint();
-    }
+    
+        CharacterCreationWizardControl.SetPrerequisiteState(CreationWizard_LoadPrerequisiteState());
+}
 
     private void CreationWizard_OnContactPreviewRequested(
         object? sender,
@@ -188,12 +206,180 @@ public partial class MainWindow
         }
     }
 
+    private CharacterCreationFoundationInteractionLoadResult? CreationWizard_LoadFoundationState()
+    {
+        if (_creationFoundationInteractionPresenter is null)
+            return null;
+        return _creationFoundationInteractionPresenter.Load(_adapter.State);
+    }
+
+    private void CreationWizard_OnFoundationOptionClickRequested(
+        object? sender,
+        CharacterCreationFoundationOptionClickRequested request)
+    {
+        CharacterCreationFoundationInteractionLoadResult? load = CreationWizard_LoadFoundationState();
+        if (load?.State is not { } foundation)
+            return;
+
+        CharacterCreationWizardDesktopOption option = request.Option;
+        if (!option.IsEnabled)
+            return;
+
+        // Classify the clicked card against the projected authority lists.
+        string? metatypeId = foundation.MetatypeOptions
+            .FirstOrDefault(candidate => string.Equals(candidate.OptionId, option.OptionId, StringComparison.Ordinal))
+            ?.OptionId;
+        LifeModuleLegalOptionDto? nationality = foundation.NationalityOptions
+            .FirstOrDefault(candidate => string.Equals(candidate.ModuleId, option.OptionId, StringComparison.Ordinal));
+        if (metatypeId is null && nationality is null)
+            return;
+
+        if (metatypeId is not null)
+            _creationFoundationSelectedMetatype = metatypeId;
+        if (nationality is not null)
+            _creationFoundationSelectedNationality = (nationality.ModuleId, option.VersionId);
+
+        // Auto-prepare once both halves of the foundation selection are present.
+        if (_creationFoundationSelectedMetatype is null || _creationFoundationSelectedNationality is null)
+            return;
+
+        CharacterCreationWizardControl.SetFoundationMutationBusy(true);
+        try
+        {
+            CharacterCreationFoundationInteractionPrepareResult result =
+                _creationFoundationInteractionPresenter!.Prepare(
+                    _adapter.State,
+                    new CharacterCreationFoundationSelectionInput(
+                        _creationFoundationSelectedMetatype,
+                        _creationFoundationSelectedNationality.Value.ModuleId,
+                        _creationFoundationSelectedNationality.Value.versionId));
+            if (result.PreparedPreview is { } prepared)
+                _creationFoundationPreparedPreview = prepared;
+            CharacterCreationWizardControl.SetFoundationPrepareResult(result);
+        }
+        finally
+        {
+            CharacterCreationWizardControl.SetFoundationMutationBusy(false);
+        }
+    }
+
+    private async void CreationWizard_OnFoundationConfirmRequested(
+        object? sender,
+        CharacterCreationFoundationConfirmRequested request)
+    {
+        if (_creationFoundationInteractionPresenter is null
+            || _creationFoundationPreparedPreview is not { } prepared
+            || !string.Equals(request.PreviewDigest, prepared.PreviewDigest, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        CharacterCreationWizardControl.SetFoundationMutationBusy(true);
+        try
+        {
+            CharacterCreationFoundationInteractionConfirmResult result =
+                _creationFoundationInteractionPresenter.Confirm(
+                    _adapter.State,
+                    new CharacterCreationFoundationConfirmation(
+                        prepared,
+                        prepared.PreviewDigest,
+                        ExplicitlyConfirmed: true));
+            CharacterCreationWizardControl.SetFoundationConfirmResult(result);
+            if (result.Receipt is not null)
+            {
+                _creationFoundationPreparedPreview = null;
+                _creationFoundationSelectedMetatype = null;
+                _creationFoundationSelectedNationality = null;
+                if (_adapter.State.WorkspaceId is { } workspaceId)
+                {
+                    await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+                    ApplyCreationWizardState(_adapter.State);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            // Authority refresh on the next state application will reconcile.
+        }
+        finally
+        {
+            CharacterCreationWizardControl.SetFoundationMutationBusy(false);
+        }
+    }
+
+    private async void CreationWizard_OnFinalizeRequested(object? sender, EventArgs e)
+    {
+        if (_creationFinalizationService is null
+            || _adapter.State.WorkspaceId is not { } workspaceId
+            || _adapter.State.CreationFinalization is not { } finalizationState
+            || !finalizationState.CanReview)
+        {
+            return;
+        }
+
+        CharacterCreationWizardControl.SetFinalizeMutationBusy(true);
+        try
+        {
+            CharacterCreationFinalizationResult<CharacterCreationFinalizationReview> review =
+                _creationFinalizationService.Review(
+                    new CharacterCreationFinalizationReviewRequest(finalizationState.Binding));
+            if (!review.Success || review.Value is not { } reviewValue)
+            {
+                CharacterCreationWizardControl.SetFinalizeResult(review.Outcome, review.Blockers);
+                return;
+            }
+
+            if (!reviewValue.CanConfirm)
+            {
+                CharacterCreationWizardControl.SetFinalizeResult("blocked", reviewValue.Blockers);
+                return;
+            }
+
+            string idempotencyKey = $"win002-finalize:{workspaceId:D}:{reviewValue.PreviewDigest}";
+            CharacterCreationFinalizationResult<CharacterCreationFinalizationReceipt> confirm =
+                _creationFinalizationService.Confirm(
+                    new CharacterCreationFinalizationConfirmRequest(
+                        reviewValue.Binding,
+                        reviewValue.PreviewDigest,
+                        reviewValue.Plan?.PlanDigest
+                            ?? throw new InvalidOperationException(
+                                "Whole-build review returned no plan digest for a confirmable finalization."),
+                        idempotencyKey,
+                        ExplicitlyConfirmed: true));
+            if (confirm.Success)
+            {
+                CharacterCreationWizardControl.SetFinalizeResult(confirm.Outcome, confirm.Blockers);
+                await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+                ApplyCreationWizardState(_adapter.State);
+            }
+            else
+            {
+                CharacterCreationWizardControl.SetFinalizeResult(confirm.Outcome, confirm.Blockers);
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            CharacterCreationWizardControl.SetFinalizeResult("invalid", [ex.Message]);
+        }
+        finally
+        {
+            CharacterCreationWizardControl.SetFinalizeMutationBusy(false);
+        }
+    }
+
     private async Task RecoverAmbiguousCreationContactResultAsync(
         string idempotencyKey,
         CancellationToken ct)
     {
         if (_creationContactsInteractionPresenter is null)
             return;
+
         CharacterCreationContactsInteractionReceiptLookupResult lookup;
         try
         {
@@ -502,4 +688,98 @@ public partial class MainWindow
             Patterns = ["*.json"],
             MimeTypes = ["application/json"]
         };
+    private CharacterCreationPrerequisiteState? CreationWizard_LoadPrerequisiteState()
+    {
+        if (_creationPrerequisiteService is null
+            || _adapter.State.WorkspaceId is not { } workspaceId)
+        {
+            return null;
+        }
+
+        try
+        {
+            CharacterCreationFoundationResult<CharacterCreationPrerequisiteState> result =
+                _creationPrerequisiteService.Load(new CharacterCreationPrerequisiteLoadRequest(workspaceId));
+            return result.Value;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private bool _priorityMutationBusy;
+
+    private async void CreationWizard_OnPriorityConfirmRequested(object? sender, EventArgs e)
+    {
+        if (_priorityMutationBusy
+            || sender is not CharacterCreationWizardControl wizard
+            || _creationPrerequisiteService is null
+            || _adapter.State.WorkspaceId is not { } workspaceId)
+        {
+            return;
+        }
+
+        IReadOnlyDictionary<string, string> selections = wizard.GetPrioritySelections();
+        _priorityMutationBusy = true;
+        wizard.ReportPriorityMutationStatus("guard passed; selections=" + string.Join(",", selections.Select(kv => kv.Key + "=" + kv.Value).OrderBy(kv => kv, StringComparer.Ordinal)));
+        wizard.SetPriorityMutationBusy(true);
+        try
+        {
+            CharacterCreationPrerequisiteState? state = CreationWizard_LoadPrerequisiteState();
+            if (state is null)
+            {
+                wizard.ReportPriorityMutationStatus("exited: prerequisite load returned no state");
+                return;
+            }
+
+            var binding = state.Binding;
+            CharacterCreationFoundationResult<CharacterCreationPrerequisitePreview> preview =
+                _creationPrerequisiteService.Preview(
+                    new CharacterCreationPrerequisitePreviewRequest(binding, selections)
+                    {
+                        HeritageSelectionId = wizard.GetPriorityHeritageSelectionId(),
+                        TalentSelectionId = wizard.GetPriorityTalentSelectionId(),
+                    });
+            if (preview.Value is not { CanConfirm: true } previewState)
+            {
+                wizard.ReportPriorityMutationStatus(
+                    "exited: preview cannot confirm; resultBlockers=["
+                    + string.Join(", ", preview.Blockers) + "]");
+                return;
+            }
+
+            CharacterCreationFoundationResult<CharacterCreationPrerequisiteReceipt> confirm =
+                _creationPrerequisiteService.Confirm(
+                    new CharacterCreationPrerequisiteConfirmRequest(
+                        binding,
+                        selections,
+                        previewState.PreviewDigest,
+                        ExplicitlyConfirmed: true)
+                    {
+                        HeritageSelectionId = wizard.GetPriorityHeritageSelectionId(),
+                        TalentSelectionId = wizard.GetPriorityTalentSelectionId(),
+                    });
+            // Rebind the authoritative prerequisite state (PendingDraft) into the
+            // control: SetState alone does not refresh the Priority surface.
+            wizard.ReportPriorityMutationStatus(
+                "confirm accepted; resultBlockers=[" + string.Join(", ", confirm.Blockers) + "]");
+            await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+            ApplyCreationWizardState(_adapter.State);
+            wizard.ReportPriorityMutationStatus("rebound authoritative state after confirm");
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            wizard.ReportPriorityMutationStatus("exited: " + ex.GetType().Name + ": " + ex.Message);
+        }
+        finally
+        {
+            _priorityMutationBusy = false;
+            CharacterCreationWizardControl.SetPriorityMutationBusy(false);
+        }
+    }
+
 }
