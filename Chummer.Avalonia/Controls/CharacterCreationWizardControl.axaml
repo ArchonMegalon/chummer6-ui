@@ -44,12 +44,14 @@
       <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
         <StackPanel Spacing="4">
           <TextBlock x:Name="ActiveStepTitle" Classes="shell-section-title" />
-          <TextBlock x:Name="AuthorityStatusText" Classes="shell-caption" TextWrapping="Wrap" />
+          <TextBlock x:Name="AuthorityStatusText" Classes="shell-caption" TextWrapping="Wrap" MaxHeight="44" TextTrimming="CharacterEllipsis" />
         </StackPanel>
         <TextBlock x:Name="StepContentHeading"
                    Grid.Row="1"
-                   Text="Legal choices and prerequisites"
-                   Classes="shell-section-title" />
+                   Classes="shell-section-title"
+                   TextWrapping="Wrap"
+                   MaxHeight="40"
+                   TextTrimming="CharacterEllipsis" />
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
           <StackPanel Spacing="8">
             <StackPanel x:Name="PriorityPanel" Spacing="8" IsVisible="False">
@@ -58,7 +60,7 @@
                          Classes="shell-caption"
                          TextWrapping="Wrap"
                          AutomationProperties.AutomationId="creation-wizard-priority-status" />
-              <StackPanel x:Name="PriorityGridHost" Spacing="10" />
+              <StackPanel x:Name="PriorityGridHost" Spacing="6" />
               <StackPanel x:Name="PriorityHeritageChoicesSection" Spacing="6" IsVisible="False">
                 <TextBlock x:Name="PriorityHeritageChoicesStatus"
                            Classes="shell-caption"
@@ -134,7 +136,7 @@
     </Grid>
 
     <Border Grid.Row="2" Grid.ColumnSpan="3"
-            Classes="shell-card subtle" Padding="14,10" Margin="0,2,0,0">
+            Classes="shell-card subtle" Padding="10,6" Margin="0,4,0,2">
       <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Content="Recover navigation"

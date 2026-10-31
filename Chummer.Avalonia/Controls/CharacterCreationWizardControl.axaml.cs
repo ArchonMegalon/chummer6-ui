@@ -259,26 +259,49 @@ public partial class CharacterCreationWizardControl : UserControl
                 continue;
             }
 
-            var rowPanel = new StackPanel { Spacing = 4 };
-            rowPanel.Children.Add(new TextBlock { Text = options[0].CategoryName });
+            var rowPanel = new StackPanel { Spacing = 1 };
+            rowPanel.Children.Add(new TextBlock
+            {
+                Text = options[0].CategoryName,
+                FontWeight = global::Avalonia.Media.FontWeight.SemiBold,
+                FontSize = 12,
+            });
             var ranksPanel = new StackPanel
             {
                 Orientation = global::Avalonia.Layout.Orientation.Horizontal,
-                Spacing = 4,
+                Spacing = 3,
             };
             foreach (var option in options)
             {
+                var cellPanel = new StackPanel
+                {
+                    Width = 92,
+                    Spacing = 2,
+                };
                 var rankButton = new Button
                 {
-                    Content = option.Rank + " - " + option.Label,
+                    Content = option.Rank,
                     Tag = option,
+                    MinWidth = 92,
+                    HorizontalContentAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                    Padding = new global::Avalonia.Thickness(4, 1),
                 };
                 AutomationProperties.SetAutomationId(
                     rankButton,
                     "creation-wizard-priority-" + category + "-" + option.Rank);
                 rankButton.Click += PriorityRankButton_OnClick;
                 _priorityRankButtons.Add(rankButton);
-                ranksPanel.Children.Add(rankButton);
+                cellPanel.Children.Add(rankButton);
+                cellPanel.Children.Add(new TextBlock
+                {
+                    Text = option.Label,
+                    FontSize = 10.5,
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
+                    MaxHeight = 28,
+                    TextAlignment = global::Avalonia.Media.TextAlignment.Center,
+                    Opacity = 0.85,
+                });
+                ranksPanel.Children.Add(cellPanel);
             }
 
             rowPanel.Children.Add(ranksPanel);
