@@ -558,6 +558,17 @@ internal static class DesktopMouseFirstJourneyRunner
         }
         catch (Exception ex)
         {
+            CharacterOverviewState failureState = window.SnapshotStateForAutomation();
+            RecordStep(steps, $"failure dialog: {failureState.ActiveDialog?.Id ?? "none"}; presenter error: {failureState.Error ?? "none"}");
+            try
+            {
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "journey-failure");
+            }
+            catch (Exception captureException)
+            {
+                RecordStep(steps, $"failure screenshot unavailable: {captureException.GetType().Name}");
+            }
+
             DesktopMouseFirstJourneyVisibleShellState visibleState = ReadVisibleShellState(window, DesktopLocalizationCatalog.GetCurrentLanguage());
             DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
             DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
@@ -1062,9 +1073,20 @@ internal static class DesktopMouseFirstJourneyRunner
 
         Button button = FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName)
             ?? throw new InvalidOperationException($"Dialog action '{actionId}' was not found.");
-        await RoutePointerClickAsync(button);
+        bool clickObserved = false;
+        void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+        button.Click += OnClick;
+        try
+        {
+            await RoutePointerClickAsync(button);
+        }
+        finally
+        {
+            button.Click -= OnClick;
+        }
+
         recordPointerAction();
-        RecordStep(steps, $"click dialog action {actionId}");
+        RecordStep(steps, $"click dialog action {actionId}; delivered={clickObserved}; enabled={button.IsEffectivelyEnabled}");
     }
 
     private static async Task ClickDialogActionUntilAsync(
