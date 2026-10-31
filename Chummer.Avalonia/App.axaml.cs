@@ -86,7 +86,17 @@ public partial class App : global::Avalonia.Application
         string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
             AppContext.BaseDirectory,
             Directory.GetCurrentDirectory());
-        services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot, "avalonia");
+        if (DesktopCoreContentRootResolver.TryResolve(contentRoot, out string coreContentRoot))
+        {
+            // The pinned core only accepts a verified Core content checkout as its
+            // content root for authoritative creation; the API host passes the
+            // resolved content root as both directory parameters.
+            services.AddChummerLocalRuntimeClient(coreContentRoot, coreContentRoot, "avalonia");
+        }
+        else
+        {
+            services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot, "avalonia");
+        }
         services.AddSingleton(CreateApiHttpClient());
         if (UseHttpCoachSidecar())
         {
@@ -192,6 +202,12 @@ public partial class App : global::Avalonia.Application
                 StartupArguments);
             if (updateHandoffStarted)
             {
+                // The update handoff (installer launch) requires this process to exit:
+                // the helper waits for the parent process id before launching the staged
+                // installer. Mirror the Blazor head contract (exit the process) by closing
+                // the main window; with the default ShutdownMode this terminates the app.
+                Console.Error.WriteLine("Desktop update handoff started; closing the main window so the installer can take over.");
+                owner.Close();
                 return;
             }
         }
