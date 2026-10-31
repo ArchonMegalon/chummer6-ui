@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/ArchonMegalon/chummer6-ui.git",
+  "known_baseline": "2fec7c7ac3a7081d1b5f7a4a2a016045494f2ed0",
+  "python_minimum": [3, 10],
+  "sdk_version": "10.0.103",
+  "package_lock_sha256": "aa9927f51452a95e2a65b9df6e9979adfdf484c56c60d14a8e65a45148fb367f",
+  "required_paths": [
+    "AGENTS.md",
+    ".codex-design/product/README.md",
+    ".codex-design/repo/IMPLEMENTATION_SCOPE.md",
+    ".codex-design/review/REVIEW_CONTEXT.md",
+    "global.json",
+    "Directory.Build.props",
+    "config/package-plane.lock.json",
+    "scripts/agent-coordination.py",
+    "config/agent-coordination.schema.json",
+    "scripts/ai/restore.sh",
+    "scripts/ai/with-package-plane.sh",
+    "scripts/ai/verify_fresh_checkout_package_plane.py",
+    "Chummer.Avalonia/Chummer.Avalonia.csproj",
+    "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
+  ],
+  "package_properties": {
+    "ChummerContractsPackageVersion": "0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2",
+    "ChummerCoreRuntimePackageVersion": "0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2",
+    "ChummerCampaignContractsPackageVersion": "0.1.0-preview",
+    "ChummerRunContractsPackageVersion": "0.1.1-packageplane.20260927.1",
+    "ChummerHubRegistryContractsPackageVersion": "0.1.1-packageplane.20260927.1",
+    "ChummerUiKitPackageVersion": "0.1.0-preview"
+  },
+  "package_groups": {
+    "coreRuntimeFeed": "ChummerCoreRuntimePackageVersion",
+    "uiOwnerFeed": null,
+    "canonicalOwnerFeed": "ChummerRunContractsPackageVersion"
+  },
+  "desktop_heads": {
+    "primary": "Chummer.Avalonia/Chummer.Avalonia.csproj",
+    "compatibility": "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
+  },
+  "windows_package_setup": {
+    "available": false,
+    "reason": "This baseline has no native Windows public package-bundle fetch/bootstrap command. The existing Bash restore wrapper and Linux package-plane verifier are not a Windows bootstrap. Request an approved feed/bootstrap task from the controller; do not build sibling sources or rewrite pins."
+  }
+}
