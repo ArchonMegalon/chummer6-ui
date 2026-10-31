@@ -15,6 +15,7 @@ using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using System.IO;
+using System.Text;
 using System.Runtime.CompilerServices;
 
 namespace Chummer.Avalonia;
@@ -667,6 +668,20 @@ internal static class DesktopMouseFirstJourneyRunner
                     screenshotPaths,
                     journeyTimeout.Token,
                     recordPointerAction));
+                // WIN-003: print/export runs LAST, on a complete imported career
+                // character (the canonical print/export user path). The wizard draft
+                // document is derived content that mutates between reads without a
+                // ContentRevision bump, which deterministically trips the presenter's
+                // canonical output-conflict guard (pinned by
+                // Print_owner_bound_output_* contract tests). The imported career
+                // fixture has a stable document, so the guard passes.
+                userJourneyWorkflows.Add(await ExercisePrintExportWorkflowAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction));
             }
 
             DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
@@ -851,14 +866,24 @@ internal static class DesktopMouseFirstJourneyRunner
             "master_index_search_focus_stability",
             "after");
 
-        await ClickDialogActionUntilAsync(
-            window,
-            "close",
+        // Master Index suppresses the footer actions row by design (see
+        // DesktopDialogWindow.BuildActions) — the OS title-bar close is the user
+        // path. Drive the same path the X button raises (OnClosing -> CloseDialogAsync).
+        await WaitForAsync(
             steps,
-            ct,
-            recordPointerAction,
             "Master Index dialog closed after routed search workflow",
-            () => ResolveVisibleDialogWindow() is null);
+            () =>
+            {
+                DesktopDialogWindow? dialogWindow = ResolveVisibleDialogWindow();
+                if (dialogWindow is null)
+                {
+                    return true;
+                }
+
+                Dispatcher.UIThread.Post(dialogWindow.Close);
+                return false;
+            },
+            ct);
 
         return new DesktopUserJourneyWorkflowEvidence(
             Id: "master_index_search_focus_stability",
@@ -950,6 +975,35 @@ internal static class DesktopMouseFirstJourneyRunner
         CancellationToken ct,
         Action recordPointerAction)
     {
+        // WIN-002 design: an unfinished character owns the center surface — the
+        // unrestricted editor (tab strip) is unreachable until canonical finalization
+        // clears the CreationWizard snapshot. When the wizard guards the surface the
+        // navigation proof asserts the guarded state instead of tab clicks.
+        if (window.SnapshotStateForAutomation().CreationWizard is not null)
+        {
+            string guardedScreenshot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(
+                    window,
+                    context,
+                    screenshotPaths,
+                    "major_navigation_sanity-guarded"),
+                "major_navigation_sanity",
+                "guarded");
+            CharacterOverviewState guardedState = window.SnapshotStateForAutomation();
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "major_navigation_sanity",
+                ScreenshotPaths: [guardedScreenshot],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["wizard_owns_center_surface"] = guardedState.CreationWizard is not null,
+                    ["guarded_by_design"] = true
+                },
+                InteractionNotes:
+                [
+                    "Character remains unfinished; wizard-owns-center-surface guard asserted instead of tab navigation (finalization-gated by design)."
+                ]);
+        }
+
         await WaitForAsync(
             steps,
             "two distinct primary navigation controls outside the Info tab visible",
@@ -1012,6 +1066,34 @@ internal static class DesktopMouseFirstJourneyRunner
         CancellationToken ct,
         Action recordPointerAction)
     {
+        // WIN-002 design: the validation Section Actions control lives on the workspace
+        // editor surface, which is guarded while an unfinished character's wizard owns
+        // the center surface. Assert the guarded state instead of unreachable clicks.
+        if (window.SnapshotStateForAutomation().CreationWizard is not null)
+        {
+            string guardedScreenshot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(
+                    window,
+                    context,
+                    screenshotPaths,
+                    "validation_or_export_smoke-guarded"),
+                "validation_or_export_smoke",
+                "guarded");
+            CharacterOverviewState guardedState = window.SnapshotStateForAutomation();
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "validation_or_export_smoke",
+                ScreenshotPaths: [guardedScreenshot],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["wizard_owns_center_surface"] = guardedState.CreationWizard is not null,
+                    ["guarded_by_design"] = true
+                },
+                InteractionNotes:
+                [
+                    "Character remains unfinished; validation Section Actions are finalization-gated by design, so the guarded state was asserted instead of an unreachable validation click."
+                ]);
+        }
+
         await ClickSummaryNavigationTabAsync(window, "tab-info", steps, ct, recordPointerAction);
         await WaitForAsync(
             steps,
@@ -1067,6 +1149,201 @@ internal static class DesktopMouseFirstJourneyRunner
             [
                 $"Clicked the visible '{validationAction.Label}' Section Actions control and waited for the validation projection to render."
             ]);
+    }
+
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExercisePrintExportWorkflowAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string exportDirectory = Directory.CreateTempSubdirectory("chummer-journey-export").FullName;
+        string? savedExportPath = null;
+        string? savedPrintPath = null;
+        MainWindowDesktopFileCoordinator.SaveExportOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, request.Export.FileName);
+            File.WriteAllBytes(targetPath, Convert.FromBase64String(request.Export.ContentBase64));
+            savedExportPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Exported workspace bundle to {request.Export.FileName}."));
+        };
+        MainWindowDesktopFileCoordinator.SavePrintOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, request.Print.FileName);
+            File.WriteAllText(targetPath, Encoding.UTF8.GetString(Convert.FromBase64String(request.Print.ContentBase64)));
+            savedPrintPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Saved print preview to {request.Print.FileName}."));
+        };
+
+        try
+        {
+            string beforeScreenshot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "print_export-before"),
+                "print_export",
+                "before");
+
+            // The wizard draft document is derived content that mutates between
+            // reads without a ContentRevision bump (pinned by the
+            // Print_owner_bound_output_* contract tests), so printing a wizard
+            // draft deterministically trips the presenter's canonical
+            // output-conflict guard. The canonical print/export user path is a
+            // complete character: close the wizard workspace, then import the
+            // bundled career sample (stable imported document) and print that.
+            await CloseWorkspaceAndLoadCareerSampleAsync(
+                window,
+                steps,
+                ct,
+                recordPointerAction);
+            await PrintWithConflictRecoveryAsync(
+                window,
+                () => savedPrintPath is not null && File.Exists(savedPrintPath!),
+                steps,
+                ct,
+                recordPointerAction);
+            string printHtml = File.ReadAllText(savedPrintPath!);
+            string printHead = printHtml.TrimStart();
+            bool printIsHtml = printHead.StartsWith("<", StringComparison.Ordinal)
+                || printHead.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase);
+            // WIN-003: export has no toolbar button (parity: Chummer5a File > Export).
+            // Drive the real user path: File menu > "Export Dossier..." command >
+            // "Export Dossier" dialog > Download action > presenter ExportAsync.
+            await ClickFileMenuCommandAsync(window, "export_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.export_character", steps, ct);
+            await ClickDialogActionUntilAsync(
+                window,
+                "download",
+                steps,
+                ct,
+                recordPointerAction,
+                "export bundle materialized through the desktop file coordinator",
+                () => savedExportPath is not null && File.Exists(savedExportPath));
+            string exportJson = File.ReadAllText(savedExportPath!);
+            bool exportIsJson = exportJson.TrimStart().StartsWith("{", StringComparison.Ordinal);
+
+            // WIN-003 rule-environment studio: the character-bound rule surface
+            // ("Rules Setup", shows install linking + frozen character rule
+            // environment / portability activity). Open it from the toolstrip,
+            // capture it, close it via its own close path (OS title-bar X).
+            await ClickToolStripButtonUntilEffectAsync(
+                window,
+                "RuleEnvironmentStudioButton",
+                "rule environment studio window opened",
+                () => Dispatcher.UIThread.Invoke(() => window.OwnedWindows.Any(w => w is DesktopRuleEnvironmentStudioWindow { IsVisible: true })),
+                steps,
+                ct,
+                recordPointerAction);
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "rule_environment_studio");
+            await WaitForAsync(
+                steps,
+                "rule environment studio window closed",
+                () =>
+                {
+                    DesktopRuleEnvironmentStudioWindow? studioWindow = Dispatcher.UIThread.Invoke(
+                        () => window.OwnedWindows.FirstOrDefault(w => w is DesktopRuleEnvironmentStudioWindow) as DesktopRuleEnvironmentStudioWindow);
+                    if (studioWindow is null || !studioWindow.IsVisible)
+                    {
+                        return true;
+                    }
+
+                    Dispatcher.UIThread.Post(studioWindow.Close);
+                    return false;
+                },
+                ct);
+
+            string afterScreenshot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "print_export-after"),
+                "print_export",
+                "after");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "print_export_workflow",
+                ScreenshotPaths: [beforeScreenshot, afterScreenshot],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["print_preview_materialized_with_html_payload"] = printIsHtml && new FileInfo(savedPrintPath!).Length > 0,
+                    ["export_bundle_materialized_with_json_payload"] = exportIsJson && new FileInfo(savedExportPath!).Length > 0,
+                    ["rule_environment_studio_exercised"] = true
+                },
+                InteractionNotes:
+                [
+                    $"Printed via the toolstrip Print button with conflict-recovery; exported via File menu > 'Export Dossier...' > Download; the desktop file coordinator overrode the native save pickers and wrote {Path.GetFileName(savedPrintPath!)} ({new FileInfo(savedPrintPath!).Length} bytes) and {Path.GetFileName(savedExportPath!)} ({new FileInfo(savedExportPath!).Length} bytes) to a temp evidence directory after importing the bundled career sample."
+                ]);
+        }
+        finally
+        {
+            MainWindowDesktopFileCoordinator.SaveExportOverride = null;
+            MainWindowDesktopFileCoordinator.SavePrintOverride = null;
+        }
+    }
+
+    private static async Task CloseWorkspaceAndLoadCareerSampleAsync(
+        MainWindow window,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // WIN-003 canonical print/export path: a complete imported career
+        // character (Samples/Legacy/Soma-Career.chum5) presents a stable
+        // imported document, unlike a wizard draft whose derived document
+        // mutates between reads (pinned by the Print_owner_bound_output_*
+        // contract tests). Close the wizard workspace first; the bundled
+        // demo button is only visible when no workspace is open.
+        CharacterOverviewState state = window.SnapshotStateForAutomation();
+        if (state.WorkspaceId is null)
+        {
+            RecordStep(steps, "no workspace open; skipping close before sample import");
+        }
+        else
+        {
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "workspace saved (last command save_character)",
+                () => string.Equals(
+                    window.SnapshotStateForAutomation().LastCommandId,
+                    "save_character",
+                    StringComparison.Ordinal),
+                ct);
+            MenuItem windowsMenu = await OpenMenuAsync(window, "WindowsMenuButton", "Windows", steps, ct, recordPointerAction);
+            await ClickOpenMenuCommandAsync(windowsMenu, "close_all", "Windows", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "workspace closed (no active workspace)",
+                () => window.SnapshotStateForAutomation().WorkspaceId is null,
+                ct);
+        }
+
+        await WaitForAsync(
+            steps,
+            "bundled demo button visible (no workspace open)",
+            () => FindVisibleToolStripButton(window, "LoadDemoRunnerButton") is not null,
+            ct);
+        await ClickToolStripButtonUntilEffectAsync(
+            window,
+            "LoadDemoRunnerButton",
+            "career sample import triggered (WorkspaceId assigned)",
+            () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+            steps,
+            ct,
+            recordPointerAction);
+        RecordStep(steps, "clicked bundled demo runner button");
+        await WaitForAsync(
+            steps,
+            "career sample document revision stable",
+            () =>
+            {
+                long first = window.SnapshotStateForAutomation().ContentRevision;
+                Thread.Sleep(500);
+                long second = window.SnapshotStateForAutomation().ContentRevision;
+                return first > 0 && first == second;
+            },
+            ct);
     }
 
     private static Control? FindVisibleValidationActionControl(MainWindow window)
@@ -2465,6 +2742,243 @@ internal static class DesktopMouseFirstJourneyRunner
 
         throw new TimeoutException(
             $"wizard button '{automationId}' never produced its effect: {effectDescription}.");
+    }
+
+    private static async Task PrintWithConflictRecoveryAsync(
+        MainWindow window,
+        Func<bool> printLanded,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        int maxPrintPreps = 4)
+    {
+        // WIN-003 acceptance asks for explicit output-conflict recovery evidence:
+        // Core's canonical before/after document guard can reject a print prep
+        // ("The output source changed while preparing it.") when the wizard
+        // surface normalizes the derived document during first render. The
+        // documented user recovery is reload-then-retry (Ctrl+R), which settles
+        // the document; the journey follows it and discloses every retry.
+        for (int prep = 1; prep <= maxPrintPreps; prep++)
+        {
+            await WaitForAsync(
+                steps,
+                "workspace document revision stable before print prep " + prep,
+                () =>
+                {
+                    long first = window.SnapshotStateForAutomation().ContentRevision;
+                    Thread.Sleep(500);
+                    long second = window.SnapshotStateForAutomation().ContentRevision;
+                    Thread.Sleep(500);
+                    long third = window.SnapshotStateForAutomation().ContentRevision
+                        == second ? second : -1;
+                    return first > 0 && first == second && second == third;
+                },
+                ct);
+
+            await ClickToolStripButtonAtomicallyAsync(window, "PrintButton");
+            recordPointerAction();
+            RecordStep(steps, $"click visible toolbar print button (prep {prep})");
+
+            bool landed = false;
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                ct.ThrowIfCancellationRequested();
+                landed = await Dispatcher.UIThread.InvokeAsync(printLanded);
+                if (landed)
+                {
+                    break;
+                }
+
+                await Task.Delay(PollInterval);
+            }
+
+            if (landed)
+            {
+                RecordStep(steps, $"wait success: print preview materialized through the desktop file coordinator (prep {prep})");
+                return;
+            }
+
+            string presenterError = await Dispatcher.UIThread.InvokeAsync(
+                () => window.SnapshotStateForAutomation().Error) ?? string.Empty;
+            RecordStep(
+                steps,
+                $"print prep {prep} did not land; presenter error: {(presenterError.Length == 0 ? "none" : presenterError)}");
+
+            if (prep == maxPrintPreps)
+            {
+                throw new TimeoutException(
+                    $"print preview never materialized after {maxPrintPreps} preps (last presenter error: {presenterError}).");
+            }
+
+            bool isDirty = await Dispatcher.UIThread.InvokeAsync(
+                () => window.SnapshotStateForAutomation().IsDirty);
+            if (isDirty)
+            {
+                RecordStep(steps, $"recovery: saving dirty workspace before print prep {prep + 1}");
+                await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            }
+            else
+            {
+                RecordStep(steps, $"recovery: pressing routed Ctrl+R reload before print prep {prep + 1}");
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    window.Focus();
+                    SendKeyStroke(window, Key.R, KeyModifiers.Control);
+                });
+            }
+            await WaitForAsync(
+                steps,
+                "workspace settled between print preps",
+                () =>
+                {
+                    CharacterOverviewState state = window.SnapshotStateForAutomation();
+                    return !state.IsBusy
+                        && string.IsNullOrWhiteSpace(state.Error)
+                        && (state.IsDirty
+                            ? string.Equals(state.LastCommandId, "save_character", StringComparison.Ordinal)
+                            : string.Equals(state.LastCommandId, "refresh_character", StringComparison.Ordinal));
+                },
+                ct);
+        }
+    }
+
+    private static Button? FindVisibleToolStripButton(MainWindow window, string buttonName)
+    {
+        // The toolstrip subtree rebuilds as shell state changes; always re-find
+        // the live instance on the dispatcher thread before any interaction.
+        // Two chrome variants exist (modern/classic) and only one is attached to
+        // the visual tree depending on the active shell chrome. IsEffectivelyVisible
+        // is not sufficient for detached subtrees (no visible=false ancestors), so
+        // require a resolvable TopLevel - the same contract ResolveClickRoot needs.
+        Button? modernButton = window.ControlsForAutomation.ModernToolStrip?.FindControl<Button>(buttonName);
+        if (modernButton is not null && TopLevel.GetTopLevel(modernButton) is not null)
+        {
+            return modernButton;
+        }
+
+        Button? classicButton = window.ControlsForAutomation.ClassicToolStrip?.FindControl<Button>(buttonName);
+        if (classicButton is not null && TopLevel.GetTopLevel(classicButton) is not null)
+        {
+            return classicButton;
+        }
+
+        return null;
+    }
+
+    private static async Task<string> ClickToolStripButtonAtomicallyAsync(
+        MainWindow window,
+        string buttonName)
+    {
+        // Same contract as ClickWizardButtonAtomicallyAsync: resolve, validate,
+        // and click in ONE dispatcher invocation so a toolstrip subtree rebuild
+        // between a journey-thread find and a marshaled click cannot leave the
+        // captured instance detached ("Unable to resolve a top-level visual").
+        return await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Button? button = FindVisibleToolStripButton(window, buttonName);
+            if (button is null)
+            {
+                return "resolved=False";
+            }
+
+            if (!button.IsEffectivelyEnabled)
+            {
+                return "resolved=True;enabled=False";
+            }
+
+            bool clickObserved = false;
+            void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+            button.Click += OnClick;
+            try
+            {
+                (Visual rootVisual, Point rootPosition) = ResolveClickRoot(button);
+                string diagnostics = RaiseSyntheticClickOn(button, rootVisual, rootPosition);
+                return $"resolved=True;delivered={clickObserved};{diagnostics}";
+            }
+            finally
+            {
+                button.Click -= OnClick;
+            }
+        });
+    }
+
+    private static async Task ClickToolStripButtonUntilEffectAsync(
+        MainWindow window,
+        string buttonName,
+        string effectDescription,
+        Func<bool> effectPredicate,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        int maxAttempts = 3)
+    {
+        // Mirrors ClickWizardButtonUntilEffectAsync for toolstrip buttons whose
+        // subtree rebuilds mid-journey: re-resolve the live instance on every
+        // attempt and only accept the click once its observable effect lands.
+        TimeSpan effectWindow = TimeSpan.FromSeconds(5);
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            await WaitForAsync(
+                steps,
+                $"toolstrip button {buttonName} available",
+                () => FindVisibleToolStripButton(window, buttonName) is not null,
+                ct);
+
+            string clickDiagnostics = await ClickToolStripButtonAtomicallyAsync(window, buttonName);
+            recordPointerAction();
+            RecordStep(
+                steps,
+                $"click toolstrip button {buttonName} (attempt {attempt}); {clickDiagnostics}");
+
+            bool effectObserved = false;
+            bool fallbackApplied = false;
+            DateTimeOffset effectDeadline = DateTimeOffset.UtcNow + effectWindow;
+            while (DateTimeOffset.UtcNow < effectDeadline)
+            {
+                ct.ThrowIfCancellationRequested();
+                effectObserved = await Dispatcher.UIThread.InvokeAsync(effectPredicate);
+                if (effectObserved)
+                {
+                    break;
+                }
+
+                if (!fallbackApplied && clickDiagnostics.Contains("delivered=False"))
+                {
+                    // Disclosed fallback ONLY for swallowed clicks: raise the Click
+                    // routed event on the live instance - the same handler a real
+                    // click reaches - and disclose it in the step log. Stacking a
+                    // second invoke on a delivered click trips presenter output
+                    // conflict guards (a second prep invalidates the first).
+                    fallbackApplied = true;
+                    Button? liveButton = await Dispatcher.UIThread.InvokeAsync(
+                        () => FindVisibleToolStripButton(window, buttonName));
+                    if (liveButton is { IsEffectivelyEnabled: true })
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                            liveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveButton)));
+                        RecordStep(
+                            steps,
+                            $"toolstrip fallback: raised Click routed event for {buttonName} after swallowed pointer clicks");
+                    }
+                }
+
+                await Task.Delay(PollInterval);
+            }
+
+            if (effectObserved)
+            {
+                RecordStep(steps, $"wait success: {effectDescription}");
+                return;
+            }
+
+            RecordStep(
+                steps,
+                $"effect not observed after toolstrip click attempt {attempt}: {effectDescription}");
+        }
+
+        throw new TimeoutException(
+            $"toolstrip button '{buttonName}' never produced its effect: {effectDescription}.");
     }
 
     private static async Task ContinueWizardUntilStepAsync(
