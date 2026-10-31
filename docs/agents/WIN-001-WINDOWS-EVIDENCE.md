@@ -46,7 +46,7 @@ The runner then timed out waiting for `complete_new_character_workflow`. Read-on
 
 Final evidence directory: `<external-cache>\native-final-diagnostic\`, containing `receipt.json`, `failure.json`, `stdout.log`, `stderr.log` and screenshots including `journey-failure.png`. Earlier runs are retained in sibling diagnostic directories.
 
-**Not verified:** successful character creation/import, save, process-close/reopen persistence, installer behavior, or complete native acceptance. The failed journey process exited; this is not a successful save/reopen result. No user character data was deleted or overwritten by cleanup.
+The initial New Runner journey did not verify save/reopen. The subsequent import-based check below does verify that acceptance route. New Runner creation and installer behavior remain unverified; neither is implied by the import result. No user character data was deleted or overwritten by cleanup.
 
 ## Scoped diagnostic improvement
 
@@ -60,4 +60,32 @@ Final evidence directory: `<external-cache>\native-final-diagnostic\`, containin
 
 ## Controller dependency
 
-Teable request operation `win001-request-source-context-20261031-01` was recorded successfully. It asks the controller for approved authoritative source context/import input or owner-routed shared bootstrap/journey repair. Shared paths named in that request are not authorization to edit them. WIN-001's full save/reopen acceptance remains blocked pending that response.
+Teable request operation `win001-request-source-context-20261031-01` was recorded successfully. It asks the controller for approved authoritative source context/import input or owner-routed shared bootstrap/journey repair. Shared paths named in that request are not authorization to edit them. The request remains relevant to New Runner creation, but no longer blocks WIN-001's alternative open/import acceptance route, which passed below.
+
+## Subsequent native import/save/process-reopen verification
+
+Added an explicit `--windows-persistence-probe` startup route in the Avalonia head and `scripts/test-windows-persistence.ps1`. Normal startup remains unchanged. The probe awaits the normal initialization task, uses the production `ICharacterOverviewPresenter` import/save/load services, requires an explicit isolated `CHUMMER_DESKTOP_STATE_ROOT`, and does not substitute a store or modify shared code.
+
+Executed after another successful official wrapper build:
+
+```powershell
+$env:DOTNET_ROOT = Join-Path $cache 'sdk'
+.\scripts\test-windows-persistence.ps1 -CacheRoot $cache
+```
+
+The script used the existing `Chummer.Tests/TestFiles/Apex Predator.chum5` sample (`sr5`, `NativeXml`). Process one imported it and called production Save, then exited with code 0. Only after that exit did process two launch, with the fixture variable removed, and load the persisted workspace ID. It also exited with code 0. Both native Avalonia windows used the production desktop workspace store under a fresh isolated state root.
+
+Verified result:
+
+- Save PID: `15448`; reopen PID: `18372`.
+- Workspace: `dc0293776a9c496bb43a007bf4234c0e`.
+- Full profile SHA-256 (save and reopen): `39B11D5F517B1520C2C7E8F97DCA05CA16E1EC59CDD40D5B5418200EA7917300`.
+- Persisted workspace file SHA-256 (unchanged by reopen): `A3224029AEF25D91A24A6057B539647A02F1BC3C1DEA4F95230712F722BE1C8C`.
+- Both receipts confirmed `saved=true`, `dirty=false` and matching identity.
+- Evidence: `<external-cache>\persistence-ab52a8cc4fd84849a760e0d027196bc4`, including `save.json`, `reopen.json` and separate process logs. State and character data are retained there.
+- Negative check: changed only the copy of the save receipt's expected profile hash. Reopen exited `1`, reported the profile mismatch and emitted no success receipt. The production saved file was not altered.
+
+This is native application integration automation through the production presenter, not manual toolbar/mouse validation. It establishes the assigned open/import → save → close process → reopen persistence path on Windows. New Runner's independent authoritative-source-context failure remains accurately documented above. Nonfatal telemetry HTTP 400 messages appeared in the process logs and did not prevent persistence.
+
+The PowerShell script retains child process handles before timed waits, checks nonzero exits, verifies receipts, compares the saved file hash, uses a unique evidence directory per run, and restores all probe environment variables. No SDK, binaries, credentials or workspace data are committed.
+`nRepeat verification also passed in persistence-69e70a7636e743c5bf0aa0cde79dfcaa (save PID 16204, reopen PID 17452, workspace f73f18e0e8274526ae37c1ded241dafa). The full-profile hash matched the earlier run. All 25 bootstrap tests passed again after the final source changes.

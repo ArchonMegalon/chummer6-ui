@@ -178,6 +178,12 @@ public partial class App : global::Avalonia.Application
 
         owner.Opened -= MainWindow_OnOpened;
 
+        if (Environment.GetCommandLineArgs().Contains(DesktopPersistenceProbe.Argument, StringComparer.Ordinal))
+        {
+            await DesktopPersistenceProbe.RunAsync(owner);
+            return;
+        }
+
         if (DesktopMouseFirstJourneyRuntime.ShouldRun(Environment.GetCommandLineArgs()))
         {
             await DesktopMouseFirstJourneyRunner.RunAsync(owner, "avalonia");
