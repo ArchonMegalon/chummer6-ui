@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Offline workspace checks and a read-only Teable handoff to user-started Friday Code."""
+"""Portable Windows package setup, scoped builds and Friday Code assignment handoff."""
 
 import argparse
+from contextlib import contextmanager
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path, PureWindowsPath
@@ -12,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+import zipfile
 
 
 class SetupError(Exception):
@@ -114,23 +117,55 @@ def package_pins(root, manifest):
 def inspect_feed(root, packages, feed):
     if feed is None:
         return {"supplied": False, "locked_shared_packages_verified": False}
-    feed = feed.expanduser().resolve()
-    if not feed.is_dir():
-        raise SetupError("The supplied package feed directory does not exist.")
-    for row in packages:
-        path = relative_path(feed, row["fileName"])
-        if not path.is_file():
-            raise SetupError("The supplied feed is missing a locked shared package: " + row["packageId"])
-        digest = hashlib.sha256()
-        with path.open("rb") as source:
-            for block in iter(lambda: source.read(1024 * 1024), b""):
-                digest.update(block)
-        if digest.hexdigest() != row["sha256"]:
-            raise SetupError("A supplied shared package does not match the repository lock: " + row["packageId"])
+    try:
+        package_intake(root).verify_feed(feed.expanduser(), {row["fileName"]: row for row in packages})
+    except (OSError, ValueError, KeyError, ET.ParseError, zipfile.BadZipFile):
+        raise SetupError("The supplied feed does not match the repository lock or contains incomplete/extra files. Use a new feed path; existing files were preserved.") from None
     return {"supplied": True, "locked_shared_packages_verified": True, "verified_count": len(packages)}
 
 
-def check_workspace(root, manifest, feed=None):
+def package_intake(root):
+    spec = importlib.util.spec_from_file_location("windows_package_intake", root / "scripts/fetch-windows-package-feed.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def native_windows():
+    return os.name == "nt"
+
+
+def default_cache_root(root):
+    # One checkout normally corresponds to one assigned task. Never share its caches.
+    identity = hashlib.sha256(os.path.normcase(str(root.resolve())).encode()).hexdigest()[:16]
+    return default_prompt_path().parent / "workspaces" / identity
+
+
+def local_paths(root, cache_root=None, feed=None):
+    intake = package_intake(root)
+    cache_root = intake.physical((cache_root or default_cache_root(root)).expanduser())
+    if cache_root.resolve().is_relative_to(root.resolve()):
+        raise SetupError("Choose a task cache outside the repository.")
+    feed = feed.expanduser().absolute() if feed else cache_root / "feed"
+    return cache_root, feed, intake.physical(cache_root / "NuGet.Config")
+
+
+def nuget_config(cache_root, feed):
+    config = ET.Element("configuration")
+    sources = ET.SubElement(config, "packageSources")
+    ET.SubElement(sources, "clear")
+    ET.SubElement(sources, "add", key="chummer-exact", value=str(feed))
+    ET.SubElement(sources, "add", key="nuget.org", value="https://api.nuget.org/v3/index.json")
+    mapping = ET.SubElement(config, "packageSourceMapping")
+    for key, pattern in (("chummer-exact", "Chummer.*"), ("nuget.org", "*")):
+        ET.SubElement(ET.SubElement(mapping, "packageSource", key=key), "package", pattern=pattern)
+    ET.SubElement(ET.SubElement(config, "fallbackPackageFolders"), "clear")
+    ET.SubElement(ET.SubElement(config, "config"), "add", key="globalPackagesFolder",
+                  value=str(cache_root / "nuget-packages"))
+    return ET.tostring(config, encoding="utf-8", xml_declaration=True)
+
+
+def check_workspace(root, manifest, feed=None, cache_root=None, *, strict_feed=True):
     if sys.version_info < tuple(manifest["python_minimum"]):
         raise SetupError("Python 3.10 or later is required.")
     if not shutil.which("git"):
@@ -148,22 +183,170 @@ def check_workspace(root, manifest, feed=None):
         if not relative_path(root, name).is_file():
             raise SetupError("The checkout is missing a required path: " + name)
     packages = package_pins(root, manifest)
+    intake = package_intake(root)
+    downloads = intake.read_json(root / manifest["windows_package_setup"]["download_manifest"])
+    intake.load_manifest(downloads, intake.load_packages(intake.read_json(root / "config/package-plane.lock.json")))
+    cache_root, selected_feed, config_path = local_paths(root, cache_root, feed)
+    try:
+        package_report = inspect_feed(root, packages, selected_feed if feed is not None or selected_feed.exists() else None)
+    except SetupError as exc:
+        if strict_feed and feed is not None:
+            raise
+        package_report = {"supplied": True, "locked_shared_packages_verified": False,
+                          "verification_error": str(exc)}
+    config_ready = config_path.is_file() and config_path.read_bytes() == nuget_config(cache_root, selected_feed)
     sdk_installed = False
+    sdk_selected = False
     if shutil.which("dotnet"):
-        sdk_installed = any(line.split(" ", 1)[0] == manifest["sdk_version"]
-                            for line in run(["dotnet", "--list-sdks"], root).splitlines())
+        try:
+            sdk_installed = any(line.split(" ", 1)[0] == manifest["sdk_version"]
+                                for line in run(["dotnet", "--list-sdks"], root).splitlines())
+            if sdk_installed:
+                sdk_selected = run(["dotnet", "--version"], root) == manifest["sdk_version"]
+        except SetupError:
+            pass
+    blockers = []
+    if not native_windows():
+        blockers.append("A native Windows host is required for this build lane.")
+    if not sdk_installed or not sdk_selected:
+        blockers.append("Install/select the exact Windows .NET SDK " + manifest["sdk_version"] + "; no SDK is installed automatically.")
+    if not package_report["locked_shared_packages_verified"]:
+        blockers.append("Run setup to materialize the complete exact Chummer package feed.")
+    if not config_ready:
+        blockers.append("Run setup with this cache/feed to write the isolated NuGet configuration.")
     dirty = bool(run(["git", "status", "--porcelain", "--untracked-files=normal"], root))
     configured = all(os.environ.get(k) for k in ("TEABLE_BASE_URL", "TEABLE_BASE_ID", "TEABLE_API_KEY"))
     return {
         "workspace_valid": True, "head": run(["git", "rev-parse", "HEAD"], root),
         "baseline_is_ancestor": True, "worktree_dirty": dirty,
         "sdk_version": manifest["sdk_version"], "sdk_installed": sdk_installed,
+        "sdk_selected": sdk_selected, "native_windows": native_windows(),
         "coordination_configured": configured,
-        "packages": inspect_feed(root, packages, feed),
-        "build_ready": False, "build_executed": False,
-        "package_setup": manifest["windows_package_setup"],
-        "note": "Assignment handoff can proceed without build prerequisites. Missing SDK/packages block assigned builds; ask the controller."
+        "packages": package_report,
+        "cache_root": str(cache_root), "package_feed": str(selected_feed), "nuget_config": str(config_path),
+        "nuget_config_verified": config_ready,
+        "build_ready": not blockers, "prerequisites_ready": not blockers, "build_blockers": blockers,
+        "restore_executed": False, "restore_succeeded": False,
+        "build_executed": False, "build_succeeded": False, "native_runtime_validated": False,
+        "package_setup": {**manifest["windows_package_setup"],
+                          "download_manifest_complete": not downloads["unavailablePackages"],
+                          "unavailable_package_count": len(downloads["unavailablePackages"])},
+        "note": "Assignment next works before build readiness. Readiness verifies local prerequisites; third-party restore, compilation and native runtime acceptance require separate execution."
     }
+
+
+@contextmanager
+def local_build_lock(root):
+    # Per checkout, even when callers select different task cache paths.
+    path = package_intake(root).physical(default_cache_root(root) / "build.lock")
+    if path.resolve().is_relative_to(root.resolve()):
+        raise SetupError("The local workspace lock must be outside the repository; check local application state settings.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        handle = path.open("x", encoding="utf-8")
+    except FileExistsError:
+        raise SetupError("A local setup/build lock exists. Reconcile the active or interrupted Windows operation before retrying; no lock was removed.") from None
+    operation = {"retain_lock": False}
+    try:
+        with handle:
+            handle.write(str(os.getpid()))
+            handle.flush()
+            yield operation
+    finally:
+        if not operation["retain_lock"]:
+            path.unlink()
+
+
+def setup_workspace(root, manifest, cache_root=None, feed=None, *, download=False, input_dir=None):
+    cache_root, feed, config_path = local_paths(root, cache_root, feed)
+    if feed.resolve().is_relative_to(root.resolve()):
+        raise SetupError("Choose a package feed outside the repository for setup.")
+    intake = package_intake(root)
+    with local_build_lock(root):
+        cache_root.mkdir(parents=True, exist_ok=True)
+        intake.physical(feed).parent.mkdir(parents=True, exist_ok=True)
+        try:
+            intake.materialize(root / "config/package-plane.lock.json",
+                               root / manifest["windows_package_setup"]["download_manifest"],
+                               feed, cache_root / "downloads", allow_download=download, input_dir=input_dir)
+        except (OSError, ValueError, KeyError, RuntimeError, ET.ParseError, zipfile.BadZipFile) as exc:
+            raise SetupError("Windows package intake failed: " + str(exc)) from None
+        for name in ("nuget-packages", "nuget-http", "nuget-plugins", "dotnet-home"):
+            intake.physical(cache_root / name).mkdir(exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=".nuget-", dir=cache_root)
+        try:
+            with os.fdopen(fd, "wb") as target:
+                target.write(nuget_config(cache_root, feed))
+            os.replace(temporary, config_path)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+    return check_workspace(root, manifest, feed, cache_root)
+
+
+def build_desktop(root, manifest, cache_root=None, feed=None, project="primary"):
+    if project not in manifest["desktop_heads"]:
+        raise SetupError("Select the primary or explicitly assigned compatibility desktop head.")
+    if not native_windows():
+        raise SetupError("Windows build prerequisites are not ready: a native Windows host is required.")
+    with local_build_lock(root) as operation:
+        report = check_workspace(root, manifest, feed, cache_root)
+        if not report["build_ready"]:
+            raise SetupError("Windows build prerequisites are not ready: " + " ".join(report["build_blockers"]))
+        cache_root = Path(report["cache_root"])
+        intake = package_intake(root)
+        env = os.environ.copy()
+        # Build tools do not need the coordination credential.
+        ignored = {"TEABLE_API_KEY", "NUGET_FALLBACK_PACKAGES", "NUGET_CREDENTIALPROVIDERS_PATH",
+                   "RESTORESOURCES", "RESTOREADDITIONALPROJECTSOURCES", "RESTOREFALLBACKFOLDERS",
+                   "RESTOREADDITIONALPROJECTFALLBACKFOLDERS", "RESTOREPACKAGESPATH"}
+        env = {key: value for key, value in env.items() if key.upper() not in ignored}
+        for key, folder in (("NUGET_PACKAGES", "nuget-packages"), ("NUGET_HTTP_CACHE_PATH", "nuget-http"),
+                            ("NUGET_PLUGINS_CACHE_PATH", "nuget-plugins"), ("DOTNET_CLI_HOME", "dotnet-home")):
+            env[key] = str(intake.physical(cache_root / folder))
+        env.update(DOTNET_CLI_TELEMETRY_OPTOUT="1", DOTNET_SKIP_FIRST_TIME_EXPERIENCE="1")
+        properties = ["-p:ChummerUseLocalCompatibilityTree=false", "-p:RestoreFallbackFolders=",
+                      "-p:RestoreAdditionalProjectFallbackFolders="]
+        properties += ["-p:" + name + "=" + value for name, value in manifest["package_properties"].items()]
+        target = manifest["desktop_heads"][project]
+        report.update(project=target, runtime="win-x64")
+        commands = (
+            ("restore", ["dotnet", "restore", target, "--configfile", report["nuget_config"], "--packages", env["NUGET_PACKAGES"],
+                         "--runtime", "win-x64", "--disable-parallel", *properties]),
+            ("build", ["dotnet", "build", target, "--no-restore", "--configuration", "Debug", "--runtime", "win-x64",
+                       "--disable-build-servers", "-m:1", *properties]),
+        )
+        for stage, command in commands:
+            log = intake.physical(cache_root / (stage + ".log"))
+            report[stage + "_log"] = str(log)
+            try:
+                result = subprocess.run(command, cwd=root, env=env, capture_output=True, text=True,
+                                        encoding="utf-8", errors="replace", timeout=900, check=False)
+            except OSError:
+                log.write_text("Command could not start; no execution success was verified.\n", encoding="utf-8")
+                report["failed_stage"] = stage
+                report["failure_reason"] = "process_launch_failed"
+                break
+            except subprocess.TimeoutExpired:
+                # Killing dotnet does not prove that every MSBuild child exited.
+                operation["retain_lock"] = True
+                log.write_text("Command timed out; success was not verified.\n", encoding="utf-8")
+                report[stage + "_executed"] = True
+                report[stage + "_timed_out"] = True
+                report["failed_stage"] = stage
+                report["operation_requires_reconciliation"] = True
+                break
+            except KeyboardInterrupt:
+                operation["retain_lock"] = True
+                raise
+            report[stage + "_executed"] = True
+            report[stage + "_exit_code"] = result.returncode
+            log.write_text(safe_text(result.stdout + "\n" + result.stderr), encoding="utf-8")
+            report[stage + "_succeeded"] = result.returncode == 0
+            if result.returncode:
+                report["failed_stage"] = stage
+                break
+        return report
 
 
 def default_prompt_path():
@@ -251,13 +434,19 @@ def next_prompt(root, worker_id, report):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("prepare", "check", "next"), default="check")
+    parser.add_argument("--mode", choices=("prepare", "check", "next", "setup", "build"), default="check")
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--package-feed", type=Path)
+    parser.add_argument("--cache-root", type=Path, help="private task cache outside Git; default is per checkout under local application state")
+    parser.add_argument("--download", action="store_true", help="setup only: allow exact public package downloads")
+    parser.add_argument("--input-dir", type=Path, help="setup only: optional exact local package inputs")
+    parser.add_argument("--project", choices=("primary", "compatibility"), default="primary", help="build only; compatibility requires an explicit assignment")
     parser.add_argument("--worker-id", default=os.environ.get("CHUMMER_WORKER_ID"))
     parser.add_argument("--prompt-path", type=Path, default=default_prompt_path())
     args = parser.parse_args(argv)
+    if (args.download or args.input_dir) and args.mode != "setup":
+        parser.error("--download and --input-dir apply only to --mode setup")
     try:
         root = args.repo_root.resolve()
         args.prompt_path = args.prompt_path.expanduser().absolute()
@@ -265,7 +454,14 @@ def main(argv=None):
             # Expire the previous handoff even if workspace checks or the next read fail.
             save_prompt(root, args.prompt_path, "Assignment must be refreshed with -Mode next before work.\n")
         manifest = json.loads((args.manifest or root / "config/agent-workspace.windows.json").read_text(encoding="utf-8"))
-        report = check_workspace(root, manifest, args.package_feed)
+        # Keep prepare/check/next offline and independent of build readiness.
+        report = check_workspace(root, manifest, args.package_feed, args.cache_root,
+                                 strict_feed=args.mode in ("prepare", "check"))
+        if args.mode == "setup":
+            report = setup_workspace(root, manifest, args.cache_root, args.package_feed,
+                                     download=args.download, input_dir=args.input_dir)
+        if args.mode == "build":
+            report = build_desktop(root, manifest, args.cache_root, args.package_feed, args.project)
         if args.mode == "prepare":
             # Prepare only local handoff storage; no installs, restore, network or model process.
             if args.prompt_path.resolve().is_relative_to(root):
@@ -280,10 +476,10 @@ def main(argv=None):
                 print("Start Friday Code yourself in this checkout and paste that prompt.")
         else:
             print(safe_text(json.dumps(report, indent=2)))
-        return 0
+        return 2 if args.mode == "build" and not report["build_succeeded"] else 0
     except SetupError as exc:
         print(safe_text(str(exc)), file=sys.stderr)
-    except (OSError, ValueError, KeyError, TypeError, AttributeError, ET.ParseError):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, RuntimeError, ET.ParseError, zipfile.BadZipFile):
         print("Workspace input is missing or invalid; check the manifest and documented prerequisites.", file=sys.stderr)
     return 2
 

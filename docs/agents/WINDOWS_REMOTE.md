@@ -8,8 +8,27 @@ The helper checks setup and writes a prompt. It never starts a model process.
 Install Git for Windows and Python 3.10+ with `git` and `python` (or `py`) on PATH.
 Use Windows PowerShell 5.1 or PowerShell 7. From the directory where you keep code:
 
+For an assignment that permits pushing a branch, install GitHub CLI and check
+`gh auth status --hostname github.com`. If the intended account is not already
+signed in, run `gh auth login --hostname github.com --git-protocol https --web`
+and let the operator complete the browser sign-in. Then run:
+
 ```powershell
-git clone https://github.com/ArchonMegalon/chummer6-ui.git
+gh auth setup-git --hostname github.com
+gh api user --jq .login
+gh api repos/ArchonMegalon/chummer6-ui --jq .permissions.push
+```
+
+Confirm the intended account and push permission before publishing assigned work.
+Use the OS credential store; do not copy the controller's GitHub credentials,
+print tokens, or use `--insecure-storage`. Push your own assigned branch and open
+a draft PR against the assigned integration branch. Protected merges and releases
+remain controller-owned. See the [GitHub CLI login documentation](https://cli.github.com/manual/gh_auth_login).
+
+Clone the handoff branch:
+
+```powershell
+git clone --branch feat/remote-windows-coordination-20261031 --single-branch https://github.com/ArchonMegalon/chummer6-ui.git
 Set-Location chummer6-ui
 .\scripts\start-windows-worker.ps1 -Mode prepare
 ```
@@ -25,12 +44,12 @@ Configure these once in the environment available to Friday Code and PowerShell:
 
 | Variable | Value |
 | --- | --- |
-| `TEABLE_BASE_URL` | Controller-provided Teable origin |
-| `TEABLE_BASE_ID` | Controller-provided base ID |
+| `TEABLE_BASE_URL` | `https://app.teable.ai` |
+| `TEABLE_BASE_ID` | `bseYIXFCaMHdzOben0f` |
 | `TEABLE_API_KEY` | Token injected from an OS secret store into the process environment |
 | `TEABLE_TASK_TABLE_ID` | Optional; otherwise discover the schema's task table by name |
 | `TEABLE_EVENT_TABLE_ID` | Optional; otherwise discover the schema's event table by name |
-| `CHUMMER_WORKER_ID` | Stable Windows worker ID assigned by the controller |
+| `CHUMMER_WORKER_ID` | `friday-windows` (controller default; override with your assigned ID) |
 
 Keep the token in environment/OS secret storage only. Do not put it in commands,
 PowerShell history, scripts, JSON, Git, logs or task reports. For example, when
@@ -41,6 +60,9 @@ Nonsecret binding values may be persistent user environment variables; restart
 the terminal and Friday Code after changing those values.
 
 ```powershell
+$env:TEABLE_BASE_URL = 'https://app.teable.ai'
+$env:TEABLE_BASE_ID = 'bseYIXFCaMHdzOben0f'
+$env:CHUMMER_WORKER_ID = 'friday-windows'
 .\scripts\start-windows-worker.ps1 -Mode check
 .\scripts\start-windows-worker.ps1 -Mode next
 ```
@@ -80,19 +102,42 @@ against `config/package-plane.lock.json` and validates its canonical JSON digest
 false and remove conflicting package-version overrides. Shared packages must
 come from the approved package authority, without sibling source fallback.
 
-This GitHub baseline does **not** include a native Windows public package-bundle
-fetch/bootstrap command. `scripts/ai/restore.sh` calls a Bash wrapper;
-`verify_fresh_checkout_package_plane.py` also has Linux SDK and POSIX filesystem
-requirements. The manifest reports that concrete gap. Existing package setup is
-not proven by the presence of source or an installed SDK. Request a controller
-assignment for a Windows-compatible approved feed/bootstrap before attempting
-an assigned build; do not guess download URLs/hashes, build sibling packages or
-rewrite restore pins. If you already have an approved flat feed, `-PackageFeed`
-checks its shared `.nupkg` bytes against the repository lock; it does not configure
-NuGet, verify all third-party dependencies or claim build readiness.
+For an assigned build, install the matching Windows SDK yourself, then use the
+portable setup with a private cache for that task. The download manifest accounts
+for all 14 byte-pinned Chummer packages. Downloads require the explicit switch:
 
-Windows builds and native tests run locally on Windows when assigned and ready,
-independently of the Linux heavy-build lock. This helper performs none of them.
-Only work within controller-assigned paths, and report missing prerequisites as
-blockers. Android overlays and other changes outside the published GitHub clone
-are not supplied by this onboarding.
+```powershell
+$cache = Join-Path $env:LOCALAPPDATA 'Chummer\friday\tasks\windows-desktop-001'
+.\scripts\start-windows-worker.ps1 -Mode setup -CacheRoot $cache -Download
+if ($LASTEXITCODE -ne 0) { throw 'Package setup failed; inspect the readiness error.' }
+.\scripts\start-windows-worker.ps1 -Mode check -CacheRoot $cache
+.\scripts\build-windows-desktop.ps1 -CacheRoot $cache
+if ($LASTEXITCODE -ne 0) { throw 'Windows restore/build failed; inspect the reported local log.' }
+```
+
+`setup` without `-Download` uses verified cached assets or `-InputDir` exact local
+packages. It verifies existing feeds and creates a task-local NuGet configuration
+with Chummer-only local source mapping and official nuget.org for third-party
+packages. `-PackageFeed` selects a different flat feed; pass the same cache/feed
+to setup, check, next and build. The default cache is per checkout under
+`%LOCALAPPDATA%\Chummer\friday\workspaces\<checkout-hash>`, outside Git.
+Use a fresh task cache after a source-policy change; preserve old data until any
+active operation is reconciled. No global NuGet configuration or SDK is changed.
+
+The build helper defaults to `Chummer.Avalonia`, `win-x64`, Debug. Only an explicit
+controller assignment should use `-Project compatibility` for
+`Chummer.Blazor.Desktop`. It checks Windows, exact SDK selection, verified feed
+and local NuGet configuration before restoring/building one project at a time.
+It uses a per-checkout Windows lock and needs no Bash, Linux paths, flock,
+Headroom setup or Linux build capacity. Friday Code keeps its existing provider.
+See [WINDOWS_PACKAGE_INTAKE.md](WINDOWS_PACKAGE_INTAKE.md) for commands, logs,
+cache isolation, interruption recovery and offline limits.
+
+`prerequisites_ready` / `build_ready` describe verified local inputs. They do not
+prove restore, compilation, application startup or runtime data. `next` still
+works when prerequisites are missing. Build reports record attempted/succeeded
+restore and build stages separately; native runtime acceptance requires Friday
+Code on Windows to launch, open/import, save, close and reopen a character.
+Only work within controller-assigned paths and report actual Windows evidence.
+Android overlays and other changes outside this GitHub clone are not supplied
+by this onboarding.

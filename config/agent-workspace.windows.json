@@ -15,9 +15,11 @@
     "config/package-plane.lock.json",
     "scripts/agent-coordination.py",
     "config/agent-coordination.schema.json",
-    "scripts/ai/restore.sh",
-    "scripts/ai/with-package-plane.sh",
-    "scripts/ai/verify_fresh_checkout_package_plane.py",
+    "scripts/prepare-agent-workspace.py",
+    "scripts/start-windows-worker.ps1",
+    "scripts/build-windows-desktop.ps1",
+    "scripts/fetch-windows-package-feed.py",
+    "config/windows-package-downloads.json",
     "Chummer.Avalonia/Chummer.Avalonia.csproj",
     "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
   ],
@@ -39,7 +41,8 @@
     "compatibility": "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
   },
   "windows_package_setup": {
-    "available": false,
-    "reason": "This baseline has no native Windows public package-bundle fetch/bootstrap command. The existing Bash restore wrapper and Linux package-plane verifier are not a Windows bootstrap. Request an approved feed/bootstrap task from the controller; do not build sibling sources or rewrite pins."
+    "available": true,
+    "download_manifest": "config/windows-package-downloads.json",
+    "reason": "Run start-windows-worker.ps1 -Mode setup with an external task cache. Downloads require -Download; cached assets or exact local inputs work offline. Build readiness is checked separately from actual restore/build and native runtime acceptance."
   }
 }

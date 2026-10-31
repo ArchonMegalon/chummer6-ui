@@ -1,6 +1,7 @@
 """Light offline checks using real checkout pins and disposable Git repositories."""
 
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -11,6 +12,8 @@ import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
+import xml.etree.ElementTree as ET
+import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +33,7 @@ class WorkspaceTests(unittest.TestCase):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, target)
+        shutil.copyfile(ROOT / ".gitignore", self.root / ".gitignore")
         self.git("init", "-q")
         self.git("config", "user.name", "Offline test")
         self.git("config", "user.email", "offline@example.invalid")
@@ -47,6 +51,14 @@ class WorkspaceTests(unittest.TestCase):
         self.tools = patch.object(workspace.shutil, "which", side_effect=lambda name: None if name == "dotnet" else original_which(name))
         self.tools.start()
         self.addCleanup(self.tools.stop)
+        self.cache = Path(self.temp.name) / "private task cache"
+        self.cache_default = patch.object(workspace, "default_cache_root", return_value=self.cache)
+        self.cache_default.start()
+        self.addCleanup(self.cache_default.stop)
+        self.intake = workspace.package_intake(self.root)
+        self.intake_patch = patch.object(workspace, "package_intake", return_value=self.intake)
+        self.intake_patch.start()
+        self.addCleanup(self.intake_patch.stop)
 
     def git(self, *args):
         return subprocess.run(["git", *args], cwd=self.root, check=True, capture_output=True, text=True).stdout.strip()
@@ -73,7 +85,8 @@ class WorkspaceTests(unittest.TestCase):
         self.assertFalse(report["build_ready"])
         self.assertFalse(report["build_executed"])
         self.assertFalse(report["sdk_installed"])
-        self.assertFalse(report["package_setup"]["available"])
+        self.assertTrue(report["package_setup"]["available"])
+        self.assertTrue(report["package_setup"]["download_manifest_complete"])
         # Production manifest is validated against actual repo files, not a synthetic copy of its pins.
         production = json.loads((ROOT / "config/agent-workspace.windows.json").read_text())
         packages = workspace.package_pins(ROOT, production)
@@ -236,6 +249,245 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual(result, 2)
         self.assertNotIn("test-token-never-log", out.getvalue() + err.getvalue() + path.read_text())
         self.assertIn("must be refreshed", path.read_text())
+
+    def seed_exact_fixture_assets(self):
+        """Keep real IDs/versions, with byte pins for deliberately synthetic test ZIPs."""
+        lock_path = self.root / "config/package-plane.lock.json"
+        lock = json.loads(lock_path.read_text())
+        members = {}
+        bundle = io.BytesIO()
+        with zipfile.ZipFile(bundle, "w") as archive:
+            for group in self.manifest["package_groups"]:
+                for row in lock[group]["packages"]:
+                    package = io.BytesIO()
+                    with zipfile.ZipFile(package, "w") as nupkg:
+                        nupkg.writestr("fixture.nuspec", '<package><metadata><id>' + row["packageId"] +
+                                      '</id><version>' + row["version"] + '</version></metadata></package>')
+                    content = package.getvalue()
+                    row.update(sha256=hashlib.sha256(content).hexdigest(), sizeBytes=len(content))
+                    members[row["fileName"]] = "packages/" + row["fileName"]
+                    archive.writestr(members[row["fileName"]], content)
+        self.bundle = bundle.getvalue()
+        lock_path.write_text(json.dumps(lock), encoding="utf-8")
+        canonical = json.dumps(lock, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+        self.manifest["package_lock_sha256"] = hashlib.sha256(canonical).hexdigest()
+        downloads = {"schemaVersion": 1, "unavailablePackages": [], "assets": [{
+            "fileName": "fixture.zip", "kind": "zip",
+            "url": "https://github.com/ArchonMegalon/chummer6-ui/releases/download/exact/fixture.zip",
+            "sha256": hashlib.sha256(self.bundle).hexdigest(), "sizeBytes": len(self.bundle), "members": members}]}
+        (self.root / "config/windows-package-downloads.json").write_text(json.dumps(downloads), encoding="utf-8")
+        (self.cache / "downloads").mkdir(parents=True)
+        (self.cache / "downloads/fixture.zip").write_bytes(self.bundle)
+
+    @contextlib.contextmanager
+    def sdk(self, *, windows=True, version="10.0.103", broken=False):
+        original_run = workspace.run
+        original_which = shutil.which
+
+        def run(command, root):
+            if command[0] != "dotnet":
+                return original_run(command, root)
+            if broken:
+                raise workspace.SetupError("SDK command failed")
+            return version + " [fixture SDK path]" if command[1] == "--list-sdks" else version
+
+        with patch.object(workspace, "native_windows", return_value=windows), \
+                patch.object(workspace, "run", side_effect=run), \
+                patch.object(workspace.shutil, "which", side_effect=lambda name: "dotnet" if name == "dotnet" else original_which(name)):
+            yield
+
+    def test_offline_setup_reuses_intake_and_creates_only_local_mapped_configuration(self):
+        self.seed_exact_fixture_assets()
+        before = self.git("status", "--porcelain")
+        with patch.object(self.intake, "download", side_effect=AssertionError("unexpected network")):
+            report = workspace.setup_workspace(self.root, self.manifest)
+            resumed = workspace.setup_workspace(self.root, self.manifest)
+        self.assertEqual(report["packages"]["verified_count"], 14)
+        self.assertTrue(resumed["nuget_config_verified"])
+        self.assertFalse(report["build_ready"])
+        self.assertFalse(report["build_executed"])
+        self.assertEqual(before, self.git("status", "--porcelain"))
+        config = ET.parse(self.cache / "NuGet.Config").getroot()
+        self.assertIsNotNone(config.find("./packageSources/clear"))
+        self.assertEqual({p.get("key"): p.get("value") for p in config.findall("./packageSources/add")},
+                         {"chummer-exact": str(self.cache / "feed"), "nuget.org": "https://api.nuget.org/v3/index.json"})
+        self.assertEqual([(p.get("key"), p.find("package").get("pattern")) for p in config.findall("./packageSourceMapping/packageSource")],
+                         [("chummer-exact", "Chummer.*"), ("nuget.org", "*")])
+        self.assertIn("BEGIN UNTRUSTED ASSIGNMENT", self.prompt([self.task()]))
+
+    def test_setup_download_requires_explicit_opt_in_and_preserves_pins(self):
+        self.seed_exact_fixture_assets()
+        (self.cache / "downloads/fixture.zip").unlink()
+        before = (self.root / "config/package-plane.lock.json").read_bytes()
+        with patch.object(self.intake, "download", return_value=self.bundle) as download:
+            with self.assertRaisesRegex(workspace.SetupError, "offline"):
+                workspace.setup_workspace(self.root, self.manifest)
+            download.assert_not_called()
+            self.assertFalse((self.cache / "NuGet.Config").exists())
+            workspace.setup_workspace(self.root, self.manifest, download=True)
+            download.assert_called_once()
+        self.assertEqual(before, (self.root / "config/package-plane.lock.json").read_bytes())
+        self.assertFalse((self.cache / "build.lock").exists())
+
+    def test_setup_cli_accepts_new_explicit_feed_and_next_survives_damaged_feed(self):
+        self.seed_exact_fixture_assets()
+        (self.root / "config/agent-workspace.windows.json").write_text(json.dumps(self.manifest))
+        feed = Path(self.temp.name) / "new explicit feed"
+        common = ["--repo-root", str(self.root), "--cache-root", str(self.cache), "--package-feed", str(feed)]
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), patch.object(self.intake, "download", side_effect=AssertionError("unexpected network")):
+            self.assertEqual(workspace.main([*common, "--mode", "setup"]), 0)
+        self.assertEqual(json.loads(output.getvalue())["packages"]["verified_count"], 14)
+        (feed / "extra.txt").write_text("preserve")
+        prompt_path = Path(self.temp.name) / "assignment.txt"
+        with contextlib.redirect_stdout(io.StringIO()), patch.object(workspace, "coordination", side_effect=[
+                {"ok": True}, {"worker_id": "windows-worker", "tasks": [self.task()]}]):
+            self.assertEqual(workspace.main([*common, "--mode", "next", "--worker-id", "windows-worker",
+                                             "--prompt-path", str(prompt_path)]), 0)
+        self.assertIn("BEGIN UNTRUSTED ASSIGNMENT", prompt_path.read_text())
+        self.assertEqual((feed / "extra.txt").read_text(), "preserve")
+
+    def test_readiness_becomes_true_only_with_verified_windows_sdk_feed_and_config(self):
+        self.seed_exact_fixture_assets()
+        workspace.setup_workspace(self.root, self.manifest)
+        with self.sdk():
+            report = self.check()
+        self.assertTrue(report["build_ready"])
+        self.assertTrue(report["prerequisites_ready"])
+        self.assertEqual(report["build_blockers"], [])
+        self.assertFalse(report["restore_executed"])
+        self.assertFalse(report["build_executed"])
+        self.assertFalse(report["native_runtime_validated"])
+        for options in ({"windows": False}, {"version": "10.0.999"}, {"broken": True}):
+            with self.sdk(**options):
+                self.assertFalse(self.check()["build_ready"])
+                with self.assertRaisesRegex(workspace.SetupError, "prerequisites"):
+                    workspace.build_desktop(self.root, self.manifest)
+                self.assertIn("BEGIN UNTRUSTED ASSIGNMENT", self.prompt([self.task()]))
+        (self.cache / "NuGet.Config").write_text("changed source policy")
+        with self.sdk():
+            self.assertFalse(self.check()["build_ready"])
+
+    def test_extra_or_corrupt_feed_fails_without_repair_and_cache_must_be_external(self):
+        self.seed_exact_fixture_assets()
+        workspace.setup_workspace(self.root, self.manifest)
+        extra = self.cache / "feed/extra.txt"
+        extra.write_text("preserve me")
+        with self.assertRaisesRegex(workspace.SetupError, "extra"):
+            workspace.setup_workspace(self.root, self.manifest, download=True)
+        self.assertEqual(extra.read_text(), "preserve me")
+        report = self.check()
+        self.assertFalse(report["build_ready"])
+        self.assertIn("extra", report["packages"]["verification_error"])
+        with patch.object(workspace, "coordination", side_effect=[{"ok": True}, {"worker_id": "windows-worker", "tasks": [self.task()]}]):
+            report = workspace.check_workspace(self.root, self.manifest, self.cache / "feed", strict_feed=False)
+            self.assertIn("BEGIN UNTRUSTED ASSIGNMENT", workspace.next_prompt(self.root, "windows-worker", report))
+        with self.assertRaisesRegex(workspace.SetupError, "outside"):
+            workspace.setup_workspace(self.root, self.manifest, self.root / ".tmp/cache")
+
+    def test_local_lock_refuses_concurrent_operation_and_preserves_existing_lock(self):
+        self.seed_exact_fixture_assets()
+        path = self.cache / "build.lock"
+        path.write_text("active operation")
+        with self.assertRaisesRegex(workspace.SetupError, "lock exists"):
+            workspace.setup_workspace(self.root, self.manifest)
+        self.assertEqual(path.read_text(), "active operation")
+        self.assertFalse((self.cache / "feed").exists())
+
+    def mock_dotnet(self, calls, *, failed_stage=None):
+        original_run = subprocess.run
+
+        def run(command, **kwargs):
+            if command[0] != "dotnet":
+                return original_run(command, **kwargs)
+            calls.append((command, kwargs))
+            # A second cache selection still uses this checkout's build lock.
+            with self.assertRaisesRegex(workspace.SetupError, "lock exists"):
+                with workspace.local_build_lock(self.root):
+                    self.fail("concurrent build lock acquired")
+            return subprocess.CompletedProcess(command, 1 if command[1] == failed_stage else 0,
+                                               "fixture output test-token-never-log", "fixture stderr")
+        return patch.object(workspace.subprocess, "run", side_effect=run)
+
+    def test_mocked_native_commands_are_serial_primary_only_isolated_and_redacted(self):
+        self.seed_exact_fixture_assets()
+        workspace.setup_workspace(self.root, self.manifest)
+        calls = []
+        with self.sdk(), self.mock_dotnet(calls), patch.dict(os.environ, {"RestoreSources": "unapproved-source"}):
+            report = workspace.build_desktop(self.root, self.manifest)
+        self.assertTrue(report["build_succeeded"])
+        self.assertTrue(report["restore_succeeded"])
+        self.assertFalse(report["native_runtime_validated"])
+        self.assertEqual([c[0][1] for c in calls], ["restore", "build"])
+        for command, options in calls:
+            self.assertEqual(command[2], "Chummer.Avalonia/Chummer.Avalonia.csproj")
+            self.assertIn("-p:ChummerUseLocalCompatibilityTree=false", command)
+            self.assertNotIn("test-token-never-log", json.dumps(command))
+            self.assertNotIn("TEABLE_API_KEY", options["env"])
+            self.assertNotIn("RestoreSources", options["env"])
+            self.assertEqual(options["env"]["NUGET_PACKAGES"], str(self.cache / "nuget-packages"))
+            self.assertFalse(options.get("shell", False))
+        self.assertIn("--no-restore", calls[1][0])
+        self.assertIn("-m:1", calls[1][0])
+        self.assertIn(str(self.cache / "NuGet.Config"), calls[0][0])
+        self.assertNotIn("test-token-never-log", (self.cache / "build.log").read_text())
+        self.assertFalse((self.cache / "build.lock").exists())
+
+    def test_mocked_restore_failure_skips_build_and_compatibility_is_explicit(self):
+        self.seed_exact_fixture_assets()
+        workspace.setup_workspace(self.root, self.manifest)
+        calls = []
+        with self.sdk(), self.mock_dotnet(calls, failed_stage="restore"):
+            report = workspace.build_desktop(self.root, self.manifest, project="compatibility")
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][0][2], "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj")
+        self.assertEqual(report["failed_stage"], "restore")
+        self.assertTrue(report["restore_executed"])
+        self.assertFalse(report["build_executed"])
+        self.assertFalse(report["build_succeeded"])
+
+    def test_mocked_build_failure_timeout_and_launch_failure_are_reported_truthfully(self):
+        self.seed_exact_fixture_assets()
+        workspace.setup_workspace(self.root, self.manifest)
+        calls = []
+        with self.sdk(), self.mock_dotnet(calls, failed_stage="build"):
+            report = workspace.build_desktop(self.root, self.manifest)
+        self.assertTrue(report["restore_succeeded"])
+        self.assertTrue(report["build_executed"])
+        self.assertFalse(report["build_succeeded"])
+        self.assertEqual(report["build_exit_code"], 1)
+        original_run = subprocess.run
+        for failure in (OSError("not started"), subprocess.TimeoutExpired("dotnet", 900)):
+            def run(command, **kwargs):
+                if command[0] == "dotnet":
+                    raise failure
+                return original_run(command, **kwargs)
+            with self.sdk(), patch.object(workspace.subprocess, "run", side_effect=run):
+                report = workspace.build_desktop(self.root, self.manifest)
+            self.assertFalse(report["build_executed"])
+            self.assertFalse(report["restore_succeeded"])
+            self.assertEqual(report["restore_executed"], isinstance(failure, subprocess.TimeoutExpired))
+            self.assertEqual((self.cache / "build.lock").exists(),
+                             isinstance(failure, subprocess.TimeoutExpired))
+            if isinstance(failure, subprocess.TimeoutExpired):
+                self.assertTrue(report["operation_requires_reconciliation"])
+                with self.sdk(), self.assertRaisesRegex(workspace.SetupError, "lock exists"):
+                    workspace.build_desktop(self.root, self.manifest)
+
+    def test_interrupted_build_retains_lock_until_processes_are_reconciled(self):
+        self.seed_exact_fixture_assets()
+        workspace.setup_workspace(self.root, self.manifest)
+        original_run = subprocess.run
+
+        def run(command, **kwargs):
+            if command[0] == "dotnet":
+                raise KeyboardInterrupt()
+            return original_run(command, **kwargs)
+
+        with self.sdk(), patch.object(workspace.subprocess, "run", side_effect=run):
+            with self.assertRaises(KeyboardInterrupt):
+                workspace.build_desktop(self.root, self.manifest)
+        self.assertTrue((self.cache / "build.lock").exists())
 
 
 if __name__ == "__main__":
