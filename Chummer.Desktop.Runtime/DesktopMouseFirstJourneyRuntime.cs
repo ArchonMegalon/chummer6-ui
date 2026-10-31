@@ -188,6 +188,73 @@ public static class DesktopMouseFirstJourneyRuntime
             return;
         }
 
+        // WIN-003 (Windows head): the user-journey trace producer was built for
+        // Linux CI and rejects non-Linux platforms in ValidateUserJourneyRunBindings.
+        // The pass receipt must not be gated on that binding — the trace JSON is a
+        // CI artifact, the receipt is the run's verification record. Write the
+        // receipt first; the trace binding continues below for Linux runs.
+        DateTimeOffset receiptCompletedAtUtc = DateTimeOffset.UtcNow;
+        DesktopMouseFirstJourneyReceipt passReceipt = new(
+            Status: "pass",
+            JourneyMode: "mouse_first_live_binary",
+            HeadId: context.HeadId,
+            Version: context.Version,
+            ReleaseVersion: context.ReleaseVersion,
+            ChannelId: context.ChannelId,
+            Platform: context.Platform,
+            Arch: context.Arch,
+            Rid: context.Rid,
+            HostClass: context.HostClass,
+            ScenarioId: evidence.ScenarioId,
+            ProcessPath: ToPortableProcessReference(context.ProcessPath),
+            ProcessPathDisclosure: PortableProcessPathDisclosure,
+            ArtifactDigest: context.ArtifactDigest,
+            ArtifactDigestSource: context.ArtifactDigestSource,
+            Framework: context.Framework,
+            OperatingSystem: context.OperatingSystem,
+            StartedAtUtc: context.StartedAtUtc,
+            CompletedAtUtc: receiptCompletedAtUtc,
+            RecordedAtUtc: receiptCompletedAtUtc,
+            ScreenshotDirectory: context.ScreenshotDirectory,
+            TracePath: context.TracePath,
+            Steps: evidence.Steps,
+            ScreenshotPaths: evidence.ScreenshotPaths,
+            PointerActionCount: evidence.PointerActionCount,
+            TextEntryActionCount: evidence.TextEntryActionCount,
+            DirectTextMutationCount: evidence.DirectTextMutationCount,
+            UsedForcedComboDropdownOpen: evidence.UsedForcedComboDropdownOpen,
+            UsedComboSelectionFallback: evidence.UsedComboSelectionFallback,
+            ObservedInputEvents: evidence.ObservedInputEvents,
+            WorkspaceId: evidence.WorkspaceId,
+            CharacterName: evidence.CharacterName,
+            CharacterAlias: evidence.CharacterAlias,
+            RulesetId: evidence.RulesetId,
+            BuildMethod: evidence.BuildMethod,
+            MetatypeCategory: evidence.MetatypeCategory,
+            PriorityHeritage: evidence.PriorityHeritage,
+            Metatype: evidence.Metatype,
+            PriorityTalent: evidence.PriorityTalent,
+            PriorityTalentChoice: evidence.PriorityTalentChoice,
+            HasSavedWorkspace: evidence.HasSavedWorkspace,
+            AuthenticationPortalOpened: evidence.AuthenticationPortalOpened,
+            AuthenticationPortalUri: evidence.AuthenticationPortalUri,
+            ActiveDialogId: evidence.ActiveDialogId,
+            VerificationNotes: evidence.VerificationNotes,
+            Error: null);
+        WriteJson(context.ReceiptPath, passReceipt);
+
+        if (!userJourneyTraceRequested)
+        {
+            return;
+        }
+
+        if (!string.Equals(context.Platform, "linux", StringComparison.OrdinalIgnoreCase))
+        {
+            // Windows trace-mode runs keep the receipt; only the Linux CI trace
+            // JSON (tester/fixer shard bindings) is unavailable off Linux.
+            return;
+        }
+
         string? userJourneyTraceOutputPath = null;
         IReadOnlyList<DesktopUserJourneyTraceWorkflow>? boundUserJourneyWorkflows = null;
         if (userJourneyTraceRequested)

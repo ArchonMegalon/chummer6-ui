@@ -51,9 +51,17 @@ public partial class MainWindow
             "open bundled sample character");
     }
 
+    internal Task InitializationForAutomation { get; private set; } = Task.CompletedTask;
+
     private async void OnOpened(object? sender, EventArgs e)
     {
-        await RunUiActionAsync(
+        InitializationForAutomation = InitializeWindowAsync();
+        await InitializationForAutomation;
+    }
+
+    private Task InitializeWindowAsync()
+    {
+        return RunUiActionAsync(
             async () =>
             {
                 await _shellPresenter.InitializeAsync(CancellationToken.None);

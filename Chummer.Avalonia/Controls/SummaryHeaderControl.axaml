@@ -29,7 +29,7 @@
               Background="{DynamicResource ChummerShellSurfaceAltBrush}"
               BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
-              CornerRadius="8"
+              CornerRadius="0"
               Padding="8,6"
               IsVisible="False">
         <StackPanel Spacing="4">

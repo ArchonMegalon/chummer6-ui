@@ -1,0 +1,255 @@
+{
+  "kind": "requirement-reference-snapshot",
+  "captured_at_utc": "2026-10-31T07:03:01.149539+00:00",
+  "scope": "Original Android SR5, complete AI Finish, SR6 and later Linux requirements; applicability to Windows is explicit in the assigned task. No completion or verification status is inferred.",
+  "requirements": [
+    {
+      "id": "finish-character-link-action",
+      "requirement": "Finish Character offers Link account directly at its account-link blocker, using the existing flow without automatic AI dispatch or lost draft choices"
+    },
+    {
+      "id": "sr5-entry",
+      "requirement": "Created SR5 runner enters Career"
+    },
+    {
+      "id": "sr5-active-skills",
+      "requirement": "Active skill advancement and Karma ledger"
+    },
+    {
+      "id": "sr5-attributes",
+      "requirement": "Attribute advancement and burned Edge repair"
+    },
+    {
+      "id": "sr5-knowledge",
+      "requirement": "Knowledge and language advancement"
+    },
+    {
+      "id": "sr5-skill-groups",
+      "requirement": "Skill-group advancement"
+    },
+    {
+      "id": "sr5-specializations",
+      "requirement": "Specialization acquisition"
+    },
+    {
+      "id": "sr5-qualities",
+      "requirement": "Quality acquisition/removal"
+    },
+    {
+      "id": "sr5-economy",
+      "requirement": "Manual Karma/Nuyen and expense maintenance"
+    },
+    {
+      "id": "sr5-cyberware",
+      "requirement": "Cyberware purchase including supported rated entries"
+    },
+    {
+      "id": "sr5-bioware",
+      "requirement": "Bioware purchase"
+    },
+    {
+      "id": "sr5-gear",
+      "requirement": "General gear purchase"
+    },
+    {
+      "id": "sr5-installed-equipment",
+      "requirement": "Supported installed equipment/implant maintenance, sale and upgrade"
+    },
+    {
+      "id": "sr5-custom-drugs",
+      "requirement": "Custom-drug creation and subsequent quantity purchases"
+    },
+    {
+      "id": "sr5-vehicles",
+      "requirement": "Vehicle/drone workshop purchases and supported changes"
+    },
+    {
+      "id": "sr5-adept-initiation",
+      "requirement": "Adept powers and initiation, including implanted awakened characters"
+    },
+    {
+      "id": "sr5-grade-effects",
+      "requirement": "Grade-dependent metamagic effect recompilation"
+    },
+    {
+      "id": "sr5-spells",
+      "requirement": "Spell/ritual learning and applicable magic progression"
+    },
+    {
+      "id": "sr5-resonance",
+      "requirement": "Complex-form learning, submersion and echo progression"
+    },
+    {
+      "id": "sr5-specialists",
+      "requirement": "Other supported specialist progression (including foci, spirits/sprites and martial progression)"
+    },
+    {
+      "id": "sr5-contacts",
+      "requirement": "Career contacts maintenance"
+    },
+    {
+      "id": "sr5-lifestyles",
+      "requirement": "Career lifestyle payment and supported maintenance"
+    },
+    {
+      "id": "sr5-reputation",
+      "requirement": "Direct reputation entry and supported reputation maintenance"
+    },
+    {
+      "id": "sr5-before-run",
+      "requirement": "Before-run preparation, loadout and applicable commitments"
+    },
+    {
+      "id": "sr5-play",
+      "requirement": "Supported local/session play events and derived state"
+    },
+    {
+      "id": "sr5-after-run",
+      "requirement": "Local rewards and recorded run settlement"
+    },
+    {
+      "id": "sr5-downtime",
+      "requirement": "Calendar, training and lifestyle-related downtime"
+    },
+    {
+      "id": "sr5-persistence",
+      "requirement": "Save/reopen/process restart and uncertain-outcome recovery for all changed Career routes"
+    },
+    {
+      "id": "sr5-responsive",
+      "requirement": "Responsive native Career routes and stale gesture/owner invalidation"
+    },
+    {
+      "id": "pdf-content",
+      "requirement": "Full current character sheet from authoritative projections"
+    },
+    {
+      "id": "pdf-render",
+      "requirement": "Actual readable paginated PDF bytes"
+    },
+    {
+      "id": "pdf-share",
+      "requirement": "Android native Sharesheet with readable PDF attachment"
+    },
+    {
+      "id": "pdf-lifecycle",
+      "requirement": "Bounded temporary storage, cancellation/retry and context safety"
+    },
+    {
+      "id": "sr6-rules",
+      "requirement": "Edition-isolated SR6 rules/content"
+    },
+    {
+      "id": "sr6-creation",
+      "requirement": "SR6 creation, supported methods and finalization"
+    },
+    {
+      "id": "sr6-career-play",
+      "requirement": "SR6 Career and play workflows"
+    },
+    {
+      "id": "sr6-persistence-export",
+      "requirement": "SR6 persistence/import/export/PDF sharing"
+    },
+    {
+      "id": "sr6-origin",
+      "requirement": "Applicable SR6 Origin integration"
+    },
+    {
+      "id": "delivery",
+      "requirement": "Local verified isolated signing and Play Internal delivery"
+    },
+    {
+      "id": "physical-evidence",
+      "requirement": "Physical ARM64 Play-installed verification of supported Android flows and update/data preservation before declaring the Android stage complete"
+    },
+    {
+      "id": "account-link-return",
+      "requirement": "Return to Chummer reopens Android and resumes the existing account-link attempt safely"
+    },
+    {
+      "id": "linux-client-delivery",
+      "requirement": "After completed Android SR5/PDF/SR6 delivery, finish, locally package, verify and deliver the Linux client"
+    },
+    {
+      "id": "rules-chummer5a-compatibility",
+      "requirement": "Import unchanged supported Chummer5a custom_/override_/amend_ files under a pinned compatibility profile; preserve original bytes and actual semantics, order and explicit loss diagnostics"
+    },
+    {
+      "id": "rules-character-environment",
+      "requirement": "Bind each character revision, projection, PDF and mutation quote/commit to an immutable edition/settings/base-data/package environment fingerprint"
+    },
+    {
+      "id": "rules-account-sync",
+      "requirement": "Transfer the complete required rule-source bundle through account-authorized workspace sync and atomically adopt character plus verified environment"
+    },
+    {
+      "id": "rules-offline-recovery",
+      "requirement": "Pin offline dependencies, retain last complete state on interruption, and block wrong computations when rules are missing or unsupported"
+    },
+    {
+      "id": "rules-update-conflicts",
+      "requirement": "Preserve per-character package versions, preview explicit updates, resolve concurrent edits, and recover original operations without replay across environment changes"
+    },
+    {
+      "id": "rules-desktop-roundtrip",
+      "requirement": "Apply a custom pack on Linux desktop and verify the selected Android character has equal effective rules after sync/save/reopen/restart/offline, while a second character stays pinned"
+    },
+    {
+      "id": "rules-portable-roundtrip",
+      "requirement": "Round-trip original XML/settings and portable character bundles; report legacy export loss, prevent unsafe imports/account leakage, and keep SR5 and SR6 separate"
+    },
+    {
+      "id": "sr5-rule-variant-coverage",
+      "requirement": "Close each declared Career family with explicit supported variants and unresolved exclusions, including equipment maintenance/sale/upgrades, lifestyle payments, submersion/echoes and specialist progression"
+    },
+    {
+      "id": "lifecycle-upgrade-restore",
+      "requirement": "Preserve identity, balances, history and complete rules through application update, migration, backup/restore and interrupted import/save/sync"
+    },
+    {
+      "id": "lifecycle-uncertain-recovery",
+      "requirement": "Recover the original durable operation after process death, later saves and uncertain outcomes before retry; never automatically replay purchases or AI"
+    },
+    {
+      "id": "account-switch-isolation",
+      "requirement": "Retire prior-account requests and reject late responses without leaking private characters/rule assets or losing local drafts"
+    },
+    {
+      "id": "native-route-usability",
+      "requirement": "Changed phone routes remain readable and responsive with large text, accessible controls, Back/cancel and durable save/reopen/restart behavior"
+    },
+    {
+      "id": "cross-device-consistency",
+      "requirement": "Android and Linux agree on character revision, effective rules, previews, balances and PDF content, with explicit conflicts and a second character remaining pinned"
+    },
+    {
+      "id": "linux-install-update",
+      "requirement": "Deliver a local Linux package with usable install/startup, update preservation, file import/export and native PDF behavior for the supported editions"
+    },
+    {
+      "id": "finish-character-build-quality",
+      "requirement": "Finish Character produces coherent, Core-validated builds across all currently offered supported SR5 archetypes and requested hybrids, preserving locks and budgets; role-specific completeness/effectiveness findings drive bounded OODA repair, with unsupported evidence explicit"
+    },
+    {
+      "id": "review-qualities-remove-selected",
+      "requirement": "After account linking, Review qualities lets the user delete selected qualities directly from that step."
+    },
+    {
+      "id": "review-wizard-horizontal-swipe-navigation",
+      "requirement": "The qualities, skills and other supported review steps are accessible with left/right swipes between previous and next steps."
+    },
+    {
+      "id": "finish-character-qualities-preview-contacts",
+      "requirement": "Finish this character considers fitting positive qualities within leftover Karma and rule limits, lists qualities in the preview, and honors preselected Friends in High Places in contact proposals."
+    },
+    {
+      "id": "owner-change-loading-recovery",
+      "requirement": "Recover safely from stale owner state before dispatch and show immediate feedback throughout Try loading again."
+    },
+    {
+      "id": "budget-attributes-review-tap",
+      "requirement": "Tapping the Budget panel Attributes not exact row opens the relevant review or explains the required action, with visible feedback."
+    }
+  ]
+}
