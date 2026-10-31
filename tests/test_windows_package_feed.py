@@ -5,6 +5,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import stat
 import tempfile
 import unittest
@@ -27,6 +28,15 @@ def zip_bytes(entries):
             warnings.simplefilter("ignore", UserWarning)
             for name, content in entries:
                 archive.writestr(name, content)
+    with zipfile.ZipFile(buffer) as archive:
+        stored = [info.orig_filename for info in archive.infolist()]
+    for name, seen in zip([name for name, _ in entries], stored):
+        wanted = name.filename if isinstance(name, zipfile.ZipInfo) else name
+        if wanted != seen:
+            raise AssertionError(
+                f"fixture fidelity: requested member {wanted!r} but zipfile stored {seen!r}; "
+                "zipfile normalized the name. Hostile names must be built with a raw ZipInfo "
+                "whose .filename is assigned directly.")
     return buffer.getvalue()
 
 
@@ -204,12 +214,16 @@ class IntakeTests(unittest.TestCase):
         link = zipfile.ZipInfo("link")
         link.create_system = 3
         link.external_attr = (stat.S_IFLNK | 0o777) << 16
+        backslash = zipfile.ZipInfo("placeholder")  # the constructor normalizes separators
+        backslash.filename = "nested\\escape"       # raw assignment stores the name verbatim
         cases = [[("../escape", b"x")], [("/absolute", b"x")], [("C:/escape", b"x")],
-                 [("nested\\escape", b"x")], [("NUL.txt", b"x")], [("bad. ", b"x")],
+                 [(backslash, b"x")], [("NUL.txt", b"x")], [("bad. ", b"x")],
                  [("duplicate", b"1"), ("DUPLICATE", b"2")], [(link, b"destination")],
                  [("parent", b"x"), ("parent/child", b"x")]]
         for extras in cases:
             with self.subTest(extras=extras):
+                shutil.rmtree(self.output, ignore_errors=True)  # each subtest starts pristine
+                self.assertFalse(self.output.exists())
                 self.replace_bundle(entries + extras)
                 with self.assertRaises(feed.IntakeError):
                     self.run_intake()
