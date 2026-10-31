@@ -3,7 +3,7 @@
         xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
         x:Class="Chummer.Avalonia.MainWindow"
         Width="1280"
-        Height="800"
+        Height="880"
         MinWidth="960"
         MinHeight="560"
         Title="Chummer Desktop"
@@ -16,13 +16,13 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </Window.Styles>
-  <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="6">
+  <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
     <Border x:Name="MenuBarRegion"
             Grid.Row="0"
             Classes="shell-panel chrome"
             Background="{DynamicResource ChummerShellMenuBarBrush}"
             Padding="6,5,6,3"
-            Margin="8,8,8,0">
+            Margin="0,0,0,0">
       <Grid>
         <controls:ClassicMenuBar x:Name="ClassicMenuBarControl"
                                  IsVisible="False" />
@@ -35,7 +35,7 @@
             Classes="shell-panel chrome"
             Background="{DynamicResource ChummerShellChromeSubtleBrush}"
             Padding="6,4"
-            Margin="8,0,8,0">
+            Margin="0,0,0,0">
       <Grid>
         <controls:ClassicToolStrip x:Name="ClassicToolStripControl"
                                    IsVisible="False" />
@@ -43,11 +43,11 @@
       </Grid>
     </Border>
 
-    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0" Margin="8,0,8,0">
+    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0" Margin="0,0,0,0">
       <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
     </Border>
 
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="0,*,0" ColumnSpacing="8" Margin="8,2,8,0">
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="0,*,0" ColumnSpacing="0" Margin="0,0,0,0">
       <!-- Character Roster Pane (left) - Chummer5a treCharacterList equivalent -->
       <Border x:Name="RosterPaneRegion"
               Grid.Column="0"
@@ -99,7 +99,7 @@
       </Border>
     </Grid>
 
-    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="8,4" Margin="8,0,8,8">
+    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="8,4" Margin="0,0,0,0">
       <Grid>
         <controls:ClassicStatusStrip x:Name="ClassicStatusStripControl"
                                      IsVisible="False" />

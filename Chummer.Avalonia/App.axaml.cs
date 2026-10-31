@@ -86,7 +86,17 @@ public partial class App : global::Avalonia.Application
         string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
             AppContext.BaseDirectory,
             Directory.GetCurrentDirectory());
-        services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot, "avalonia");
+        if (DesktopCoreContentRootResolver.TryResolve(contentRoot, out string coreContentRoot))
+        {
+            // The pinned core only accepts a verified Core content checkout as its
+            // content root for authoritative creation; the API host passes the
+            // resolved content root as both directory parameters.
+            services.AddChummerLocalRuntimeClient(coreContentRoot, coreContentRoot, "avalonia");
+        }
+        else
+        {
+            services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot, "avalonia");
+        }
         services.AddSingleton(CreateApiHttpClient());
         if (UseHttpCoachSidecar())
         {
@@ -107,9 +117,21 @@ public partial class App : global::Avalonia.Application
                 serviceProvider.GetService<ICharacterCreationQualitiesService>(),
                 serviceProvider.GetService<ICharacterCreationMagicResonanceService>(),
                 serviceProvider.GetService<ICharacterCreationLifestylesService>(),
-                serviceProvider.GetService<ICharacterCreationFinalizationService>()));
+                serviceProvider.GetService<ICharacterCreationFinalizationService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationContactsService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationFinalizationService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationLifestylesReader>(),
+                // The desktop head runs under an install-bound owner context, so the
+                // overview projection must use the owner-bound creation readers; the
+                // local-single-user fallback never matches and would leave the wizard
+                // with no legal options (authority pending).
+                serviceProvider.GetService<IOwnerBoundCharacterCreationLifeModuleFinalizationService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationQualitiesService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationMagicResonanceService>()));
         services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
             CharacterCreationContactsInteractionPresenter>();
+        services.AddSingleton<ICharacterCreationFoundationInteractionPresenter,
+            CharacterCreationFoundationInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         services.AddSingleton<IShellPresenter, ShellPresenter>();
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
@@ -178,6 +200,12 @@ public partial class App : global::Avalonia.Application
 
         owner.Opened -= MainWindow_OnOpened;
 
+        if (Environment.GetCommandLineArgs().Contains(DesktopPersistenceProbe.Argument, StringComparer.Ordinal))
+        {
+            await DesktopPersistenceProbe.RunAsync(owner);
+            return;
+        }
+
         if (DesktopMouseFirstJourneyRuntime.ShouldRun(Environment.GetCommandLineArgs()))
         {
             await DesktopMouseFirstJourneyRunner.RunAsync(owner, "avalonia");
@@ -192,6 +220,12 @@ public partial class App : global::Avalonia.Application
                 StartupArguments);
             if (updateHandoffStarted)
             {
+                // The update handoff (installer launch) requires this process to exit:
+                // the helper waits for the parent process id before launching the staged
+                // installer. Mirror the Blazor head contract (exit the process) by closing
+                // the main window; with the default ShutdownMode this terminates the app.
+                Console.Error.WriteLine("Desktop update handoff started; closing the main window so the installer can take over.");
+                owner.Close();
                 return;
             }
         }

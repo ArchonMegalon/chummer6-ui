@@ -1607,6 +1607,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public int GetWorkspaceCallCount { get; private set; }
 
+        public int PrintCallCount { get; private set; }
+
         public Exception? ReplaceException { get; init; }
 
         public CommandResult<WorkspaceRevisionReceipt> ReplaceResult { get; init; }
@@ -1836,10 +1838,30 @@ public sealed class InProcessChummerClientRulesetPluginTests
             return ReplaceResult;
         }
 
+        public Func<string>? SnapshotDocumentFactory { get; set; }
+
         public CommandResult<WorkspaceDocumentSnapshot> GetWorkspace(OwnerScope owner, CharacterWorkspaceId id)
         {
             GetWorkspaceCallCount++;
-            return new(false, null, "Workspace read not configured.", WorkspaceOperationOutcome.Unavailable);
+            if (SnapshotDocumentFactory is null)
+            {
+                return new(false, null, "Workspace read not configured.", WorkspaceOperationOutcome.Unavailable);
+            }
+
+            return new(
+                true,
+                new WorkspaceDocumentSnapshot(
+                    id,
+                    new WorkspaceDocument(new WorkspacePayloadEnvelope(
+                        "sr5",
+                        SchemaVersion: 1,
+                        PayloadKind: "output-guard",
+                        Payload: SnapshotDocumentFactory())),
+                    DateTimeOffset.UtcNow,
+                    ContentRevision: 7,
+                    SavedRevision: 7),
+                null,
+                WorkspaceOperationOutcome.Unavailable);
         }
 
         public CommandResult<WorkspaceSaveReceipt> Save(OwnerScope owner, CharacterWorkspaceId id)
@@ -1876,7 +1898,22 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public CommandResult<WorkspaceExportReceipt> Export(OwnerScope owner, CharacterWorkspaceId id) => Export(id);
 
-        public CommandResult<WorkspacePrintReceipt> Print(CharacterWorkspaceId id) => throw new NotSupportedException();
+        public CommandResult<WorkspacePrintReceipt> Print(CharacterWorkspaceId id)
+        {
+            PrintCallCount++;
+            return new(
+                true,
+                new WorkspacePrintReceipt(
+                    Id: id,
+                    FileName: "output-guard.html",
+                    ContentBase64: Convert.ToBase64String(new byte[] { 1 }),
+                    MimeType: "text/html",
+                    DocumentLength: 1,
+                    Title: "Output guard",
+                    RulesetId: "sr5"),
+                null,
+                WorkspaceOperationOutcome.Unavailable);
+        }
 
         public CommandResult<WorkspacePrintReceipt> Print(OwnerScope owner, CharacterWorkspaceId id) => Print(id);
 
@@ -2135,5 +2172,68 @@ public sealed class InProcessChummerClientRulesetPluginTests
             RulesetId: rulesetId,
             ContentRevision: contentRevision,
             SavedRevision: savedRevision);
+    }
+
+    [TestMethod]
+    public async Task Print_owner_bound_output_accepts_equal_documents_across_snapshot_reads()
+    {
+        // WIN-003 regression pin: the runtime before/after output guard must
+        // compare document CONTENT, not instances - two GetWorkspace reads that
+        // hand back equal documents as distinct instances must not reject.
+        NoOpWorkspaceService service = new()
+        {
+            SnapshotDocumentFactory = () => "<character name=\"stable\" />",
+        };
+        InProcessChummerClient client = new(
+            service,
+            CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: new StubOwnerContextAccessor(new OwnerScope("owner-a")));
+
+        CommandResult<WorkspacePrintReceipt> result = await client.PrintAsync(
+            client.CaptureOwnerContext(),
+            new CharacterWorkspaceId("ws-output-guard"),
+            expectedContentRevision: 7,
+            CancellationToken.None);
+
+        Assert.IsTrue(result.Success, $"equal documents must print; error: {result.Error}");
+        Assert.AreEqual(2, service.GetWorkspaceCallCount);
+        Assert.AreEqual(1, service.PrintCallCount);
+    }
+
+    [TestMethod]
+    public async Task Print_owner_bound_output_rejects_mutated_document_with_canonical_conflict()
+    {
+        // WIN-003: the same guard must still reject a genuinely mutated document
+        // with the canonical conflict message after exactly one print invocation.
+        bool mutated = false;
+        NoOpWorkspaceService service = new()
+        {
+            SnapshotDocumentFactory = () =>
+            {
+                if (mutated)
+                {
+                    return "<character name=\"changed\" />";
+                }
+
+                mutated = true;
+                return "<character name=\"stable\" />";
+            },
+        };
+        InProcessChummerClient client = new(
+            service,
+            CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: new StubOwnerContextAccessor(new OwnerScope("owner-a")));
+
+        CommandResult<WorkspacePrintReceipt> result = await client.PrintAsync(
+            client.CaptureOwnerContext(),
+            new CharacterWorkspaceId("ws-output-guard"),
+            expectedContentRevision: 7,
+            CancellationToken.None);
+
+        Assert.IsFalse(result.Success, "mutated document must be rejected");
+        Assert.IsTrue((result.Error ?? string.Empty).Contains(
+            "output source changed", StringComparison.OrdinalIgnoreCase),
+            $"expected canonical conflict message, got: {result.Error}");
+        Assert.AreEqual(1, service.PrintCallCount);
     }
 }

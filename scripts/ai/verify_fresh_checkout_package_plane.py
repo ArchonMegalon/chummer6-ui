@@ -48,13 +48,13 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "695d810062d9fa5335535225b5837c58389c9fee",
+        "blob": "713fb8540ee1098824b4c4b21b3343f5c420482c",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "52a6454d2f73484eb996b54f89f01241323b54173d3ab38bad0a0b1df04d471c",
+        "rawSha256": "909c16c8da2c8657791a4972da3022efea3fb62144d473272f790db22bfa98de",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "52a6454d2f73484eb996b54f89f01241323b54173d3ab38bad0a0b1df04d471c",
+        "semanticCanonicalSha256": "909c16c8da2c8657791a4972da3022efea3fb62144d473272f790db22bfa98de",
         "semanticCanonicalSizeBytes": 69810,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },
@@ -310,7 +310,7 @@ FOCUSED_OWNER_SHELL_MINIMUM_TESTS = 26
 # Owner-regression classes require separate minimum gates: a missing class
 # must not be hidden by another class's data rows or the full-suite total.
 FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
-    ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 74),
+    ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 76),
     ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 27),
     ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
     ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),

@@ -199,7 +199,7 @@
       "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs": "481991b506a5b6ba045d9fc289e9f59ddaf00bbd163c155215b21c563456b029",
       "Chummer.Tests/DesktopUpdateRuntimeTests.cs": "cef31c4c63c1fec626425d8bd93a7d43dc450b5bf00aa83a518c788a747616cf",
       "Chummer.Tests/InProcessCareerQualityTests.cs": "8cc473747399b792337dd62a0402238278effdc179ccb7be3dc2155998fe9210",
-      "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs": "d25c921308d09f229d15762a770b6f44584e86f1cf56000f21d0cc96c2be377c",
+      "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs": "f2a9563f2de5090d36d6138c625939bee8d7e11bff55a2527f6f16e8d0a15ccf",
       "Chummer.Tests/InProcessShellOwnerContextTests.cs": "1d77c3fec66d68af663b6db0443c6884468b34abb83ee275909e8603ef034bd0",
       "Chummer.Tests/InProcessWorkspaceContinuationTests.cs": "2989ade3bd0cf625c73f5110da1ff8e41270355750e60658c00b3af163ba1a43",
       "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs": "44827dc0ddaaecd0f0a26d46a1024dd9611a032154520ab423be24527c697b59",

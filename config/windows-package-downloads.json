@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "fileName": "chummer-core-runtime-package-plane-c29b27f3f6791189cade6c37621773ddd7339ecd.zip",
+      "kind": "zip",
+      "url": "https://github.com/ArchonMegalon/chummer6-core/releases/download/core-runtime-package-plane-c29b27f3f6791189cade6c37621773ddd7339ecd/chummer-core-runtime-package-plane-c29b27f3f6791189cade6c37621773ddd7339ecd.zip",
+      "sha256": "f8cb90c8bd32cf9cb849660ac7ccb49eb040b096b3fb2336215e936e31f13b0b",
+      "sizeBytes": 6924361,
+      "members": {
+        "Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg",
+        "Chummer.Application.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Application.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg",
+        "Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg",
+        "Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg",
+        "Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg",
+        "Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg",
+        "Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg",
+        "Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg": "packages/Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261017.2.sh8706f38a7b5c2.nupkg"
+      }
+    },
+    {
+      "fileName": "chummer-windows-owner-packages-20261031.zip",
+      "kind": "zip",
+      "url": "https://github.com/ArchonMegalon/chummer6-ui/releases/download/windows-package-bootstrap-20261031/chummer-windows-owner-packages-20261031.zip",
+      "sha256": "a73266735a1239decaf5fec49c729309beb341a930bc6559e424f6ed47035169",
+      "sizeBytes": 3629612,
+      "members": {
+        "Chummer.Campaign.Contracts.0.1.0-preview.nupkg": "packages/Chummer.Campaign.Contracts.0.1.0-preview.nupkg",
+        "Chummer.Hub.Registry.Contracts.0.1.1-packageplane.20260927.1.nupkg": "packages/Chummer.Hub.Registry.Contracts.0.1.1-packageplane.20260927.1.nupkg",
+        "Chummer.Play.Contracts.0.1.1-packageplane.20260927.1.nupkg": "packages/Chummer.Play.Contracts.0.1.1-packageplane.20260927.1.nupkg",
+        "Chummer.Run.Contracts.0.1.1-packageplane.20260927.1.nupkg": "packages/Chummer.Run.Contracts.0.1.1-packageplane.20260927.1.nupkg",
+        "Chummer.Run.Registry.0.1.1-packageplane.20260927.1.nupkg": "packages/Chummer.Run.Registry.0.1.1-packageplane.20260927.1.nupkg",
+        "Chummer.Ui.Kit.0.1.0-preview.nupkg": "packages/Chummer.Ui.Kit.0.1.0-preview.nupkg"
+      }
+    }
+  ],
+  "unavailablePackages": []
+}
