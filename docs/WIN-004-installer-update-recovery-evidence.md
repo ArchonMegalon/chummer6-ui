@@ -108,3 +108,29 @@ are part of the evidence). No machine-wide or admin-scope changes were made.
   captured in the receipt (`progressTraceTail` fields)
 - The failing-update (recovery) leg's journaled runtime state is included in the
   receipt's `recovery.stateAfter` snapshot
+
+## Handoff integration outcome (2026-10-31, post-PR-merge)
+
+The authorized merge sequence landed on `feat/remote-windows-coordination-20261031`:
+
+- #490 (WIN-002) → merge `4ff8cc5a2`
+- #491 (WIN-003) → merge `fe07488de`
+- #492 (WIN-004, this work) → merge `316e2593f`
+
+Post-merge guards CI surfaced **6 new failures, 0 pre-existing** (guards green at `c857c39ef`):
+
+1. **Product regression (fixed):** the WIN-002 branch content carried a divergent
+   `Chummer.Avalonia/App.axaml` (`RequestedThemeVariant="Light"`, no BoxShadows, square
+   corners, compact metrics) that overwrote the WIN-001 sealed visual contract. Restored
+   via PR **#493** (`windows/fix-restore-win001-visual-contract`, head `8541ec1bba`) to
+   the exact pre-merge blob `178bcf47e` (verified by hash). Attribution: the guards and
+   fresh-checkout checks were already failing on the #490/#491 branch heads themselves,
+   so the regression rode in on branch content, not merge mechanics.
+2. **Package-plane topology failures (5):** pre-existing class — the fresh-checkout
+   verifier fails identically at pre-merge `c857c39ef` (10:59Z run). These resolve only
+   through the controller-owned sealed-preseal publication for handoff→main (#486):
+   the split-preseal recipe whitelist (`ALLOWED_RECIPE_PATHS`, test-pinned) rejects 37
+   of the handoff's 40 changed paths, so neither a preseal transaction nor a whitelist
+   extension is a worker action.
+
+Handoff→main publication (#486) remains **open/blocked for the controller**, unchanged.
