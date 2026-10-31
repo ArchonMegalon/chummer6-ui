@@ -31,8 +31,7 @@ public sealed class DesktopOriginWizardDialogSourceTests
         Assert.Contains("RememberOriginWizardTransientState();", source, StringComparison.Ordinal);
         Assert.Contains("CaptureDialogScrollForFieldInteractionAsync", source, StringComparison.Ordinal);
         Assert.Contains("RestorePendingDialogScrollAsync", source, StringComparison.Ordinal);
-        Assert.Contains("builder.SetKey($\"dialog-select:{field.Id}\");", source, StringComparison.Ordinal);
-        Assert.Contains("builder.SetKey($\"dialog-origin-field:{field.Id}\");", source, StringComparison.Ordinal);
+        Assert.Contains("builder.SetKey($\"dialog-select:{field.Id}\");", source, StringComparison.Ordinal); // origin fields route through the shared select key path
     }
 
     [TestMethod]
@@ -60,14 +59,15 @@ public sealed class DesktopOriginWizardDialogSourceTests
         Assert.Contains("OriginWizardAdvancedStoryControlsExpanderName", codeSource, StringComparison.Ordinal);
         Assert.Contains("_dialogScrollViewer = this.FindControl<ScrollViewer>(\"DialogScrollViewer\")!;", codeSource, StringComparison.Ordinal);
         Assert.Contains("PrepareComboBoxForDialogStatePreservation(comboBox, comboBoxBindVersion);", codeSource, StringComparison.Ordinal);
-        Assert.Contains("_preferredDialogScrollAnchor ??= _dialogScrollViewer.Offset;", codeSource, StringComparison.Ordinal);
+        Assert.Contains("_preferredDialogScrollAnchor = _dialogScrollViewer.Offset;", codeSource, StringComparison.Ordinal);
+        Assert.Contains("_preferredDialogScrollAnchorVersion++;", codeSource, StringComparison.Ordinal);
         Assert.Contains("CapturePreferredDialogViewportAnchor();", codeSource, StringComparison.Ordinal);
         Assert.Contains("CapturePreferredDialogInteractionAnchor(", codeSource, StringComparison.Ordinal);
         Assert.Contains("RestorePreferredScrollAnchorDuringOriginWizardComboInteraction();", codeSource, StringComparison.Ordinal);
         Assert.Contains("RestorePreferredScrollOffset(dialog.Id, preservedScrollOffset, preservedViewportAnchor, preservedInteractionAnchor);", codeSource, StringComparison.Ordinal);
         Assert.Contains("bool hasPreferredInteractionAnchor = preservedInteractionAnchor is not null", codeSource, StringComparison.Ordinal);
         Assert.Contains("if (hasPreferredInteractionAnchor", codeSource, StringComparison.Ordinal);
-        Assert.Contains("if (preservedInteractionAnchor is null && preservedViewportAnchor is { } viewportAnchor)", codeSource, StringComparison.Ordinal);
+        Assert.Contains("if ((preservedViewportAnchor is null && preservedInteractionAnchor is null)", codeSource, StringComparison.Ordinal);
         Assert.Contains("ShouldPreserveOriginWizardComboInteractionScroll()", codeSource, StringComparison.Ordinal);
         Assert.Contains("bool hasPreferredAnchor = (preservedViewportAnchor is not null || preservedInteractionAnchor is not null)", codeSource, StringComparison.Ordinal);
         Assert.Contains("bool hasPreferredAnchor = _preferredDialogViewportAnchor is { } || _preferredDialogInteractionAnchor is { };", codeSource, StringComparison.Ordinal);
@@ -83,8 +83,8 @@ public sealed class DesktopOriginWizardDialogSourceTests
         Assert.Contains("window.chummerDialogs._originSameDialogAnchorGraceWindowMs", appSource, StringComparison.Ordinal);
         Assert.Contains("return !!window.chummerDialogs._pendingOriginFieldAnchor", appSource, StringComparison.Ordinal);
         Assert.Contains("const restore = function()", appSource, StringComparison.Ordinal);
-        Assert.Contains("const needsOriginAnchorFallback = hasOriginAnchor()", appSource, StringComparison.Ordinal);
-        Assert.Contains("if (needsOriginAnchorFallback && !restoreOriginFieldAnchor())", appSource, StringComparison.Ordinal);
+        Assert.Contains("const anchoredRestorePending = hasOriginAnchor();", appSource, StringComparison.Ordinal);
+        Assert.Contains("if (anchoredRestorePending && !restoreOriginFieldAnchor())", appSource, StringComparison.Ordinal);
         Assert.Contains("restoreOriginAdvancedAnchor();", appSource, StringComparison.Ordinal);
         Assert.Contains("window.chummerDialogs.hasPendingOriginAnchor(window.chummerDialogs._lastRevealedDialogId || null)", appSource, StringComparison.Ordinal);
         Assert.Contains("window.chummerDialogs.hasPendingOriginAnchor(dialogId)", appSource, StringComparison.Ordinal);
