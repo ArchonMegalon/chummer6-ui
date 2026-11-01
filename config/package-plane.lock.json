@@ -199,7 +199,7 @@
       "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs": "481991b506a5b6ba045d9fc289e9f59ddaf00bbd163c155215b21c563456b029",
       "Chummer.Tests/DesktopUpdateRuntimeTests.cs": "cef31c4c63c1fec626425d8bd93a7d43dc450b5bf00aa83a518c788a747616cf",
       "Chummer.Tests/InProcessCareerQualityTests.cs": "8cc473747399b792337dd62a0402238278effdc179ccb7be3dc2155998fe9210",
-      "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs": "d25c921308d09f229d15762a770b6f44584e86f1cf56000f21d0cc96c2be377c",
+      "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs": "f2a9563f2de5090d36d6138c625939bee8d7e11bff55a2527f6f16e8d0a15ccf",
       "Chummer.Tests/InProcessShellOwnerContextTests.cs": "1d77c3fec66d68af663b6db0443c6884468b34abb83ee275909e8603ef034bd0",
       "Chummer.Tests/InProcessWorkspaceContinuationTests.cs": "2989ade3bd0cf625c73f5110da1ff8e41270355750e60658c00b3af163ba1a43",
       "Chummer.Tests/Presentation/CareerActiveSkillAdvanceParityTests.cs": "44827dc0ddaaecd0f0a26d46a1024dd9611a032154520ab423be24527c697b59",
@@ -226,7 +226,7 @@
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20",
       "Directory.Build.props": "b5b2ae82b34c0aa04b84ee170d7f895264ddb5b9611e448242b79868b7849140",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "c3cebfc5588fbc97b9d6a5082c8d051a6d4672a2c43667d9f8ea33b239753c38",
+      "config/ui-owner-package-plane.lock.json": "44d6c9f55aa7f5326426b5cecfc69f7006458936efbce200669baf5b411bc953",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/verify.sh": "dc35fea4c122569c6136ec0d4c2123b8b4982d79feb943dbffca75c6f527f7bc",
       "scripts/ai/with-package-plane.sh": "7ed5943a5dd6f57427b1c67997bad363fc0ce6ed7ea3eff10810f3628acc14f3"
@@ -1055,9 +1055,9 @@
     "dependencyAuthorityCacheKey": "9ac6e47219b086726150b2218e10118265c41fab70d9a7859a73cd4d26b0b1f7",
     "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
     "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "5f35853f1e1a65afb90bab0430fd18ea320a8b39a111a5afdacb3cb369c64921",
-    "packageRecipeCommit": "75477124fa1619ce2a03cf68ea7afbc97b589617",
-    "packageRecipeSha256": "eb3ae423ea4af268b062d1a6691ce729b4dadbf28dcb8ecaa12c5a21e0e20a1f",
+    "inventorySha256": "4130494dc3d735bbab8020cae0680d852868346edf99f53585a958397d259c7f",
+    "packageRecipeCommit": "6e60ce16ba893868068d2c63b9497e04f3f53074",
+    "packageRecipeSha256": "4fea5289daa13cd0628c0e551c3556e17664a7a23610d8139a052c4318c8d930",
     "packages": [
       {
         "commit": "c77395de9f733427ef952c851f4a95b063cb5573",
@@ -1088,10 +1088,10 @@
     ],
     "producerLockFileName": "ui-owner-package-plane.lock.json",
     "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "c3cebfc5588fbc97b9d6a5082c8d051a6d4672a2c43667d9f8ea33b239753c38",
+    "producerLockSha256": "44d6c9f55aa7f5326426b5cecfc69f7006458936efbce200669baf5b411bc953",
     "receiptContract": "chummer6-ui.owner-package-production/v1",
     "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "a15ddeaa7cecec277cb4071fbc0a589312d37bf0d6a081906b3bcdf58b5e0432",
+    "receiptSha256": "02dcc3345d9843684c529ca5cf5e95e75801a7f406f780925f12e57f202eb2e6",
     "sdkVersion": "10.0.103"
   }
 }
