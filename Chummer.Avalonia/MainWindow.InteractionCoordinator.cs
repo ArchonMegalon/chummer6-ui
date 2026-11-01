@@ -39,6 +39,19 @@ internal sealed class MainWindowInteractionCoordinator
         return _presenter.ApplyCareerAttributeAdvanceAsync(request, ct);
     }
 
+    public Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
+        => _presenter.PrepareCareerManualKarmaEditAsync(ct);
+
+    public Task ApplyCareerManualKarmaEditAsync(CareerManualKarmaEditRequest request, CancellationToken ct)
+        => _presenter.ApplyCareerManualKarmaEditAsync(request, ct);
+
+    public Task<CareerManualNuyenEditorState?> PrepareCareerManualNuyenEditAsync(CancellationToken ct)
+        => _presenter.PrepareCareerManualNuyenEditAsync(ct);
+
+    public Task ApplyCareerManualNuyenEditAsync(CareerManualNuyenEditRequest request, CancellationToken ct)
+        => _presenter.ApplyCareerManualNuyenEditAsync(request, ct);
+
+    public CharacterOverviewState PeekState() => _presenter.State;
     public Task<CharacterCareerAttributeCorrectionPlan?> CorrectCareerAttributeAdvanceAsync(
         CareerAttributeCorrectionRequest request,
         CancellationToken ct)

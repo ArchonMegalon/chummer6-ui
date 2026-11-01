@@ -33,6 +33,8 @@ public partial class SectionHostControl : UserControl
     public event EventHandler<string>? QuickActionRequested;
     public event EventHandler<AttributeEditRequest>? AttributeEditRequested;
     public event EventHandler<string>? CareerAttributeAdvanceRequested;
+    public event EventHandler<object?>? CareerKarmaAwardRequested;
+    public event EventHandler<object?>? CareerNuyenAdjustRequested;
 
     public SectionHostControl()
     {
@@ -199,6 +201,7 @@ public partial class SectionHostControl : UserControl
         SectionContextSummaryText.Text = showContext ? BuildSectionSummary(sectionId, previewJson, rowArray, quickActions, _activeRulesetId) : string.Empty;
         SectionContextTitleText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextTitleText.Text);
         SectionContextSummaryText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextSummaryText.Text);
+        UpdateCareerRewardsStrip(previewJson);
         UpdateSectionRowsHeight();
     }
 
@@ -2984,6 +2987,133 @@ public partial class SectionHostControl : UserControl
     private static string BuildJoinedLines(params string[] lines)
         => string.Join(Environment.NewLine, lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
 
+    // Career rewards strip: after a run the player records karma and nuyen
+    // awards (Chummer5a career mode). Career mode is detected from the root
+    // preview JSON ("created": true); the strip renders on every section for
+    // career runners, independent of the context area's visibility.
+    private void UpdateCareerRewardsStrip(string previewJson)
+    {
+        CareerRewardsState rewards = default;
+        bool careerRewardsVisible = TryReadCareerRewardsState(previewJson, out rewards);
+        CareerRewardsBorder.IsVisible = careerRewardsVisible;
+        if (!careerRewardsVisible)
+        {
+            CareerRewardsHost.Children.Clear();
+            return;
+        }
+
+        CareerRewardsHost.Children.Clear();
+        IBrush fg = DesktopShellTheme.ResolveForegroundBrush();
+        IBrush muted = DesktopShellTheme.ResolveTextMutedBrush();
+        IBrush surface = DesktopShellTheme.ResolveSurfaceAltBrush();
+        IBrush border = DesktopShellTheme.ResolveBorderBrush();
+
+        StackPanel stack = new() { Orientation = global::Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Run rewards:",
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = muted,
+            FontSize = 11
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Karma " + rewards.AvailableKarma.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                + " \u00B7 \u00A5" + rewards.AvailableNuyen.ToString("N0", System.Globalization.CultureInfo.InvariantCulture),
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = fg,
+            FontSize = 11
+        });
+
+        Button karmaButton = CreateRewardsButton("CareerAwardKarma", "Award Karma\u2026", fg, surface, border);
+        karmaButton.Click += (_, _) => CareerKarmaAwardRequested?.Invoke(this, EventArgs.Empty);
+        stack.Children.Add(karmaButton);
+
+        Button nuyenButton = CreateRewardsButton("CareerAdjustNuyen", "Adjust Nuyen\u2026", fg, surface, border);
+        nuyenButton.Click += (_, _) => CareerNuyenAdjustRequested?.Invoke(this, EventArgs.Empty);
+        stack.Children.Add(nuyenButton);
+
+        CareerRewardsHost.Children.Add(stack);
+    }
+
+    private static Button CreateRewardsButton(string name, string content, IBrush fg, IBrush surface, IBrush border)
+    {
+        return new Button
+        {
+            Name = name,
+            Content = content,
+            MinWidth = 96,
+            Height = 22,
+            Padding = new Thickness(8d, 1d),
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = fg,
+            Background = surface,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            FontSize = 11
+        };
+    }
+
+    internal readonly record struct CareerRewardsState(bool Created, decimal AvailableKarma, decimal AvailableNuyen);
+
+    internal static bool TryReadCareerRewardsState(string previewJson, out CareerRewardsState state)
+    {
+        state = default;
+        if (string.IsNullOrWhiteSpace(previewJson))
+        {
+            return false;
+        }
+
+        try
+        {
+            using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(previewJson);
+            System.Text.Json.JsonElement root = document.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            bool created = root.TryGetProperty("created", out System.Text.Json.JsonElement createdEl)
+                && createdEl.ValueKind == System.Text.Json.JsonValueKind.True;
+            if (!created)
+            {
+                return false;
+            }
+
+            decimal karma = 0m;
+            if (root.TryGetProperty("karma", out System.Text.Json.JsonElement karmaEl)
+                && karmaEl.ValueKind == System.Text.Json.JsonValueKind.Number)
+            {
+                karma = karmaEl.GetDecimal();
+            }
+
+            decimal nuyen = 0m;
+            if (root.TryGetProperty("nuyen", out System.Text.Json.JsonElement nuyenEl))
+            {
+                if (nuyenEl.ValueKind == System.Text.Json.JsonValueKind.Number)
+                {
+                    nuyen = nuyenEl.GetDecimal();
+                }
+                else if (nuyenEl.ValueKind == System.Text.Json.JsonValueKind.String
+                    && decimal.TryParse(
+                        nuyenEl.GetString(),
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out decimal parsedNuyen))
+                {
+                    nuyen = parsedNuyen;
+                }
+            }
+
+            state = new CareerRewardsState(true, karma, nuyen);
+            return true;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
     private void UpdateSectionRowsHeight()
     {
         if (AttributeParityEditorBorder.IsVisible)
