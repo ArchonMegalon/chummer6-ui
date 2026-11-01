@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using Avalonia.Controls.ApplicationLifetimes;
 using Chummer.Contracts.Workspaces;
+using Chummer.Desktop.Runtime;
+using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,7 +28,43 @@ internal static class DesktopPersistenceProbe
                 throw new InvalidOperationException("An absolute isolated state root is required.");
             string receipt = Required("CHUMMER_PERSISTENCE_RECEIPT");
             string phase = Required("CHUMMER_PERSISTENCE_PHASE");
+            // Negative gate + acceptance assertion. The guard call in App's ConfigureServices
+            // already cleared any hostile inherited variables (before this head's DI host was
+            // built) and recorded them in LastScopedVariables; if that record is non-empty the
+            // environment was hostile and the evidence would not be trustworthy, so the probe
+            // refuses rather than reporting.
+            IReadOnlyList<string> scopedHostile = DesktopProbeEnvironmentGuard.LastScopedVariables;
+            if (scopedHostile.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"Refusing to run the persistence probe: the invoking environment leaked "
+                    + $"store-steering variables [{string.Join(", ", scopedHostile)}] that had to be "
+                    + "cleared; evidence from a contaminated environment is not trustworthy.");
+            }
             await window.InitializationForAutomation.WaitAsync(timeout.Token);
+            RequireHealthy(window);
+            // Acceptance: verify the ACTUAL resolved client is the local in-process one before
+            // Import/Save, so the evidence cannot come from an HTTP-redirected head.
+            IChummerClient resolvedClient = App.Services!.GetRequiredService<IChummerClient>();
+            if (resolvedClient is not InProcessChummerClient)
+            {
+                throw new InvalidOperationException(
+                    $"The probe head must run the local in-process client; resolved "
+                    + $"{resolvedClient.GetType().FullName} instead.");
+            }
+            // Acceptance: verify the ACTUAL local store location before Import/Save — the resolved
+            // CHUMMER_STATE_PATH must point inside the isolated state root, not anywhere else.
+            string resolvedStatePath = Environment.GetEnvironmentVariable("CHUMMER_STATE_PATH")
+                ?? throw new InvalidOperationException(
+                    "CHUMMER_STATE_PATH was not resolved; the workspace store location cannot be verified.");
+            string expectedStatePath = Path.Combine(Path.GetFullPath(root), "Chummer6", "state");
+            if (!string.Equals(Path.GetFullPath(resolvedStatePath), expectedStatePath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    $"The resolved workspace store '{resolvedStatePath}' is not the expected isolated store "
+                    + $"'{expectedStatePath}'.");
+            }
+
             var presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
             string? expectedName = null;
             string? expectedHash = null;

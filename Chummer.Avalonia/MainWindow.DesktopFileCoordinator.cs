@@ -1,8 +1,11 @@
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Avalonia.Platform.Storage;
 using Chummer.Desktop.Runtime;
 using Chummer.Contracts.Workspaces;
+using Chummer.Presentation.Printing;
 
 namespace Chummer.Avalonia;
 
@@ -236,20 +239,12 @@ internal static class MainWindowDesktopFileCoordinator
             return await SavePrintOverride(storageProvider, request, ct);
         }
 
-        return await SaveBase64PayloadAsync(
+        return await SavePrintPayloadAsync(
             storageProvider,
             pickerTitle: "Save Print Preview",
             suggestedFileName: request.Print.FileName,
             contentBase64: request.Print.ContentBase64,
             noticePrefix: "saved print preview",
-            fileTypes:
-            [
-                new FilePickerFileType("HTML Files")
-                {
-                    Patterns = ["*.html", "*.htm"],
-                    MimeTypes = ["text/html"]
-                }
-            ],
             ct);
     }
 
@@ -292,6 +287,87 @@ internal static class MainWindowDesktopFileCoordinator
         return new DesktopDownloadSaveResult(
             DesktopFileOperationOutcome.Completed,
             BuildSavedFileNotice(CapitalizeNoticePrefix(noticePrefix), suggestedFileName, targetFile.Name));
+    }
+
+    /// <summary>Saves a print receipt as a real PDF document composed from the print
+    /// HTML; HTML remains selectable in the picker. PDF compose failure falls back to
+    /// HTML-only with a notice instead of blocking the save.</summary>
+    private static async Task<DesktopDownloadSaveResult> SavePrintPayloadAsync(
+        IStorageProvider storageProvider,
+        string pickerTitle,
+        string suggestedFileName,
+        string contentBase64,
+        string noticePrefix,
+        CancellationToken ct)
+    {
+        if (!storageProvider.CanSave)
+        {
+            return new DesktopDownloadSaveResult(DesktopFileOperationOutcome.Unavailable, Notice: null);
+        }
+
+        string html = Encoding.UTF8.GetString(Convert.FromBase64String(contentBase64));
+        bool pdfReady = WorkspacePrintPdfComposer.TryCompose(html, out byte[] pdfBytes, out string? composeError);
+
+        string baseName = suggestedFileName;
+        if (baseName.EndsWith(".html", StringComparison.OrdinalIgnoreCase)
+            || baseName.EndsWith(".htm", StringComparison.OrdinalIgnoreCase))
+        {
+            baseName = Path.GetFileNameWithoutExtension(baseName);
+        }
+
+        List<FilePickerFileType> choices = [];
+        if (pdfReady)
+        {
+            choices.Add(new FilePickerFileType("PDF Files")
+            {
+                Patterns = ["*.pdf"],
+                MimeTypes = ["application/pdf"]
+            });
+        }
+
+        choices.Add(new FilePickerFileType("HTML Files")
+        {
+            Patterns = ["*.html", "*.htm"],
+            MimeTypes = ["text/html"]
+        });
+
+        IStorageFile? targetFile = await storageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = pickerTitle,
+            SuggestedFileName = pdfReady ? baseName + WorkspacePrintPdfComposer.PdfFileExtension : suggestedFileName,
+            FileTypeChoices = choices,
+            ShowOverwritePrompt = true
+        });
+
+        if (targetFile is null)
+        {
+            return new DesktopDownloadSaveResult(DesktopFileOperationOutcome.Cancelled, Notice: null);
+        }
+
+        string targetName = targetFile.Name;
+        bool targetIsPdf = targetName.EndsWith(WorkspacePrintPdfComposer.PdfFileExtension, StringComparison.OrdinalIgnoreCase);
+        byte[] payloadBytes = targetIsPdf && pdfReady
+            ? pdfBytes
+            : Convert.FromBase64String(contentBase64);
+
+        await using Stream output = await targetFile.OpenWriteAsync();
+        if (output.CanSeek)
+        {
+            output.SetLength(0);
+        }
+
+        await output.WriteAsync(payloadBytes, ct);
+        await output.FlushAsync(ct);
+
+        string notice = targetIsPdf && pdfReady
+            ? $"{CapitalizeNoticePrefix(noticePrefix)} as PDF document {targetName}."
+            : BuildSavedFileNotice(CapitalizeNoticePrefix(noticePrefix), suggestedFileName, targetName);
+        if (targetIsPdf && !pdfReady)
+        {
+            notice += $" (PDF composition unavailable: {composeError}; wrote HTML instead.)";
+        }
+
+        return new DesktopDownloadSaveResult(DesktopFileOperationOutcome.Completed, notice);
     }
 
     private static string BuildSavedFileNotice(string action, string sourceName, string targetName)

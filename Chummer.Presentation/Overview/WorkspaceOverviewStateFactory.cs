@@ -21,6 +21,8 @@ public sealed class WorkspaceOverviewStateFactory :
     private readonly IOwnerBoundCharacterCreationLifestylesReader? _ownerBoundCreationLifestylesReader;
     private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
     private readonly IOwnerBoundCharacterCreationFinalizationService? _ownerBoundCreationFinalizationService;
+    private readonly IOwnerBoundCharacterCreationSkillsService? _ownerBoundCreationSkillsService;
+    private readonly IOwnerBoundCharacterCreationResourcesService? _ownerBoundCreationResourcesService;
 
     public WorkspaceOverviewStateFactory(
         ICharacterCreationFoundationService? creationFoundationService = null,
@@ -34,7 +36,9 @@ public sealed class WorkspaceOverviewStateFactory :
         IOwnerBoundCharacterCreationLifestylesReader? ownerBoundCreationLifestylesReader = null,
         IOwnerBoundCharacterCreationLifeModuleFinalizationService? ownerBoundFoundationReader = null,
         IOwnerBoundCharacterCreationQualitiesService? ownerBoundCreationQualitiesService = null,
-        IOwnerBoundCharacterCreationMagicResonanceService? ownerBoundCreationMagicResonanceService = null)
+        IOwnerBoundCharacterCreationMagicResonanceService? ownerBoundCreationMagicResonanceService = null,
+        IOwnerBoundCharacterCreationSkillsService? ownerBoundCreationSkillsService = null,
+        IOwnerBoundCharacterCreationResourcesService? ownerBoundCreationResourcesService = null)
     {
         _creationFoundationService = creationFoundationService;
         _ownerBoundFoundationReader = ownerBoundFoundationReader;
@@ -48,6 +52,8 @@ public sealed class WorkspaceOverviewStateFactory :
         _ownerBoundCreationLifestylesReader = ownerBoundCreationLifestylesReader;
         _creationFinalizationService = creationFinalizationService;
         _ownerBoundCreationFinalizationService = ownerBoundCreationFinalizationService;
+        _ownerBoundCreationSkillsService = ownerBoundCreationSkillsService;
+        _ownerBoundCreationResourcesService = ownerBoundCreationResourcesService;
     }
 
     public CharacterOverviewState CreateLoadedState(
@@ -115,6 +121,12 @@ public sealed class WorkspaceOverviewStateFactory :
                 ? null
                 : useSharedRead ? SelectFinalization(workspaceId, loadedOverview, shared?.Finalization)
                 : LoadFinalization(workspaceId, loadedOverview);
+        CharacterCreationSkillsState? skills = loadedOverview.Profile.Created || unrelatedPriorityDraft
+            ? null
+            : LoadSkills(workspaceId, loadedOverview);
+        CharacterCreationResourcesState? resources = loadedOverview.Profile.Created || unrelatedPriorityDraft
+            ? null
+            : LoadResources(workspaceId, loadedOverview);
         CharacterCreationMagicResonanceEditorState? magicResonanceEditor =
             CharacterCreationMagicResonanceWorkflow.TryProject(
                 magicResonance,
@@ -131,7 +143,9 @@ public sealed class WorkspaceOverviewStateFactory :
             magicResonance,
             magicResonanceEditor,
             lifestyles,
-            finalization);
+            finalization,
+            skills,
+            resources);
     }
 
     public CharacterOverviewState CreateActivatedState(
@@ -175,6 +189,8 @@ public sealed class WorkspaceOverviewStateFactory :
             loadedOverview,
             initialCreation.MagicResonance);
         CharacterCreationLifestylesState? lifestyles = LoadLifestyles(workspaceId, loadedOverview);
+        CharacterCreationSkillsState? skills = LoadSkills(workspaceId, loadedOverview);
+        CharacterCreationResourcesState? resources = LoadResources(workspaceId, loadedOverview);
         CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization =
             LoadFinalization(workspaceId, loadedOverview);
         RequireSupportingInitialProjection(initialCreation);
@@ -194,7 +210,9 @@ public sealed class WorkspaceOverviewStateFactory :
             magicResonance,
             magicResonanceEditor,
             lifestyles,
-            finalization);
+            finalization,
+            skills,
+            resources);
     }
 
     private static PreparedWorkspaceOverviewState PrepareState(
@@ -207,13 +225,15 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterCreationMagicResonanceState? magicResonance,
         CharacterCreationMagicResonanceEditorState? magicResonanceEditor,
         CharacterCreationLifestylesState? lifestyles,
-        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization)
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization,
+        CharacterCreationSkillsState? skills,
+        CharacterCreationResourcesState? resources)
     {
         CharacterCreationWizardSnapshot? wizard = loadedOverview.Profile.Created
             ? null
             : CharacterCreationWizardProjector.Project(
                 workspaceId, loadedOverview, foundation, contacts, qualities,
-                magicResonance, lifestyles, finalization);
+                magicResonance, lifestyles, finalization, skills, resources);
         return new PreparedWorkspaceOverviewState((session, restoredView) => new CharacterOverviewState(
             IsBusy: false,
             Error: null,
@@ -254,6 +274,8 @@ public sealed class WorkspaceOverviewStateFactory :
             CreationContacts = contacts,
             CreationQualities = qualities,
             CreationMagicResonance = magicResonance,
+            CreationSkills = skills,
+            CreationResources = resources,
             CreationMagicResonanceEditor = magicResonanceEditor,
             CreationLifestyles = lifestyles,
             CreationFinalization = finalization?.Value
@@ -456,6 +478,54 @@ public sealed class WorkspaceOverviewStateFactory :
                    loadedOverview,
                    state)
             ? state
+            : null;
+    }
+
+    /// <summary>Loads the Core skills creation authority for the workspace, when the
+    /// runtime registered the owner-bound service. Returns null on absence, denial or
+    /// mismatch — never fabricates a state.</summary>
+    private CharacterCreationSkillsState? LoadSkills(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_ownerBoundCreationSkillsService is null)
+            return null;
+
+        var request = new CharacterCreationSkillsLoadRequest(workspaceId);
+        CharacterCreationFoundationResult<CharacterCreationSkillsState>? result =
+            loadedOverview.DisplayOwnerContext is { IsValid: true } original
+                ? _ownerBoundCreationSkillsService.Load(original, request)
+                : null;
+        return result is not null
+            && result.Outcome == CharacterCreationFoundationOutcomes.Success
+            && result.Value is CharacterCreationSkillsState skillsState
+            && BlockersMatch(result.Blockers, skillsState.Blockers)
+            ? skillsState
+            : null;
+    }
+
+    /// <summary>Loads the Core resources creation authority for the workspace, when the
+    /// runtime registered the owner-bound service. Returns null on absence, denial or
+    /// mismatch — never fabricates a state.</summary>
+    private CharacterCreationResourcesState? LoadResources(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview)
+    {
+        if (_ownerBoundCreationResourcesService is null)
+            return null;
+
+        var request = new CharacterCreationResourcesLoadRequest(workspaceId);
+        CharacterCreationResourcesResult<CharacterCreationResourcesState>? result =
+            loadedOverview.DisplayOwnerContext is { IsValid: true } original
+                ? _ownerBoundCreationResourcesService.Load(original, request)
+                : null;
+        return result is not null
+            && (result.Outcome == CharacterCreationResourcesOutcomes.Available
+                || result.Outcome == CharacterCreationResourcesOutcomes.Applied
+                || result.Outcome == CharacterCreationResourcesOutcomes.Replayed)
+            && result.Value is CharacterCreationResourcesState resourcesState
+            && BlockersMatch(result.Blockers, resourcesState.Blockers)
+            ? resourcesState
             : null;
     }
 

@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly DesktopAnalyticsClient _desktopAnalyticsClient;
     private readonly ICharacterCreationContactsInteractionPresenter? _creationContactsInteractionPresenter;
     private readonly ICharacterCreationFoundationInteractionPresenter? _creationFoundationInteractionPresenter;
+    private readonly ICharacterCreationResourcesInteractionPresenter? _creationResourcesInteractionPresenter;
     private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
     private readonly ICharacterCreationPrerequisiteService? _creationPrerequisiteService;
     private readonly CharacterOverviewViewModelAdapter _adapter;
@@ -49,6 +50,7 @@ public partial class MainWindow : Window
             ResolveService<CharacterOverviewViewModelAdapter>(),
             ResolveService<ICharacterCreationContactsInteractionPresenter>(),
             ResolveService<ICharacterCreationFoundationInteractionPresenter>(),
+            ResolveService<ICharacterCreationResourcesInteractionPresenter>(),
             ResolveService<ICharacterCreationFinalizationService>(),
             ResolveService<ICharacterCreationPrerequisiteService>())
     {
@@ -92,6 +94,7 @@ public partial class MainWindow : Window
             adapter,
             creationContactsInteractionPresenter: null,
             creationFoundationInteractionPresenter: null,
+            creationResourcesInteractionPresenter: null,
             creationFinalizationService: null)
     {
     }
@@ -106,6 +109,7 @@ public partial class MainWindow : Window
         CharacterOverviewViewModelAdapter adapter,
         ICharacterCreationContactsInteractionPresenter? creationContactsInteractionPresenter,
         ICharacterCreationFoundationInteractionPresenter? creationFoundationInteractionPresenter,
+        ICharacterCreationResourcesInteractionPresenter? creationResourcesInteractionPresenter,
         ICharacterCreationFinalizationService? creationFinalizationService,
         ICharacterCreationPrerequisiteService? creationPrerequisiteService = null)
     {
@@ -125,6 +129,7 @@ public partial class MainWindow : Window
         _desktopAnalyticsClient = desktopAnalyticsClient;
         _creationContactsInteractionPresenter = creationContactsInteractionPresenter;
         _creationFoundationInteractionPresenter = creationFoundationInteractionPresenter;
+        _creationResourcesInteractionPresenter = creationResourcesInteractionPresenter;
         _creationFinalizationService = creationFinalizationService;
         _creationPrerequisiteService = creationPrerequisiteService;
         _adapter = adapter;

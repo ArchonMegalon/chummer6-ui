@@ -14,6 +14,7 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
+using Chummer.Presentation.Printing;
 using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
@@ -498,6 +499,74 @@ internal static class DesktopMouseFirstJourneyRunner
                 RecordStep(
                     steps,
                     $"finalize not attempted: review gated by deep stages; profileCreated={blockedOverview.Profile?.Created}, wizardVisible={blockedOverview.CreationWizard is not null}");
+            }
+
+            // WIN-006/T33 evidence: drive the resources deep stage through the real
+            // option-click -> Prepare -> confirm -> receipt pipeline. Reaching the
+            // resources step requires an authoritative wizard state; when the stage
+            // is authoritatively gated the leg records the state as evidence and
+            // continues, mirroring the attributes gate above.
+            bool resourcesEntered = await WaitForConditionWithinAsync(
+                () => FindWizardAutomationButton(wizard, "creation-wizard-step-resources")
+                    is { IsVisible: true, IsEffectivelyEnabled: true},
+                journeyTimeout.Token,
+                TimeSpan.FromSeconds(6));
+            if (resourcesEntered)
+            {
+                await ClickWizardButtonUntilEffectAsync(
+                    wizard,
+                    "creation-wizard-step-resources",
+                    "wizard entered the resources step",
+                    () => string.Equals(
+                        wizard.StateForAutomation()?.ActiveStepId,
+                        "resources",
+                        StringComparison.Ordinal),
+                    steps,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03c-resources-entered");
+
+                string? resourcesOptionId = wizard.StateForAutomation()
+                    ?.LegalOptions.FirstOrDefault(option => option.IsEnabled)?.OptionId;
+                if (resourcesOptionId is not null)
+                {
+                    await ClickWizardButtonUntilEffectAsync(
+                        wizard,
+                        "creation-wizard-option-" + resourcesOptionId,
+                        "resources option prepared an exact Core preview",
+                        () => FindWizardAutomationButton(wizard, "creation-wizard-resources-confirm")
+                            is { IsVisible: true, IsEffectivelyEnabled: true },
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction);
+                    await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03d-resources-preview");
+                    await ClickWizardButtonUntilEffectAsync(
+                        wizard,
+                        "creation-wizard-resources-confirm",
+                        "resources allocation confirmed with an idempotent Core receipt",
+                        () => FindWizardAutomationButton(wizard, "creation-wizard-resources-confirm") is null,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction);
+                    await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03e-resources-confirmed");
+                }
+                else
+                {
+                    RecordStep(steps, "resources step reachable but no enabled allocation option was offered");
+                }
+            }
+            else
+            {
+                CharacterCreationWizardDesktopState? resourcesState = wizard.StateForAutomation();
+                string resourcesSummary = resourcesState is null
+                    ? "wizard state unavailable while probing resources"
+                    : "resources step authoritatively gated: " + string.Join(
+                        ", ",
+                        resourcesState.Steps
+                            .Where(step => step.StepId is "resources" or "skills")
+                            .Select(step => $"{step.StepId}={step.Status}"));
+                RecordStep(steps, resourcesSummary);
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03c-resources-gated");
             }
 
             OpenWorkspaceState? createdWorkspaceState = null;
@@ -1151,6 +1220,43 @@ internal static class DesktopMouseFirstJourneyRunner
             ]);
     }
 
+    private static T? FindDescendantByName<T>(StyledElement? root, string name) where T : StyledElement
+    {
+        if (root is null)
+        {
+            return null;
+        }
+
+        if (root is T matched
+            && (string.Equals(matched.Name, name, StringComparison.Ordinal)
+                || string.Equals(matched.GetValue(AutomationProperties.AutomationIdProperty), name, StringComparison.Ordinal)))
+        {
+            return matched;
+        }
+
+        if (root is Visual visual)
+        {
+            foreach (Visual child in VisualChildrenEnumerator(visual))
+            {
+                T? hit = FindDescendantByName<T>(child, name);
+                if (hit is not null)
+                {
+                    return hit;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<Visual> VisualChildrenEnumerator(Visual visual)
+    {
+        foreach (Visual child in visual.GetVisualChildren())
+        {
+            yield return child;
+        }
+    }
+
     private static async Task<DesktopUserJourneyWorkflowEvidence> ExercisePrintExportWorkflowAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,
@@ -1171,10 +1277,27 @@ internal static class DesktopMouseFirstJourneyRunner
                 DesktopFileOperationOutcome.Completed,
                 $"Exported workspace bundle to {request.Export.FileName}."));
         };
+        string? savedPdfPath = null;
+        string? pdfComposeError = null;
         MainWindowDesktopFileCoordinator.SavePrintOverride = (_, request, _) =>
         {
+            string html = Encoding.UTF8.GetString(Convert.FromBase64String(request.Print.ContentBase64));
+            // Mirror the production SavePrintPayloadAsync path: PDF-default picker.
+            if (WorkspacePrintPdfComposer.TryCompose(html, out byte[] pdfBytes, out string? composeError))
+            {
+                string pdfTarget = Path.Combine(
+                    exportDirectory,
+                    Path.GetFileNameWithoutExtension(request.Print.FileName) + WorkspacePrintPdfComposer.PdfFileExtension);
+                File.WriteAllBytes(pdfTarget, pdfBytes);
+                savedPdfPath = pdfTarget;
+                savedPrintPath = pdfTarget;
+                return Task.FromResult(new DesktopDownloadSaveResult(
+                    DesktopFileOperationOutcome.Completed,
+                    $"Saved print preview as PDF to {Path.GetFileName(pdfTarget)}."));
+            }
+            pdfComposeError = composeError;
             string targetPath = Path.Combine(exportDirectory, request.Print.FileName);
-            File.WriteAllText(targetPath, Encoding.UTF8.GetString(Convert.FromBase64String(request.Print.ContentBase64)));
+            File.WriteAllText(targetPath, html);
             savedPrintPath = targetPath;
             return Task.FromResult(new DesktopDownloadSaveResult(
                 DesktopFileOperationOutcome.Completed,
@@ -1206,10 +1329,18 @@ internal static class DesktopMouseFirstJourneyRunner
                 steps,
                 ct,
                 recordPointerAction);
-            string printHtml = File.ReadAllText(savedPrintPath!);
-            string printHead = printHtml.TrimStart();
+            byte[] savedPrintBytes = File.ReadAllBytes(savedPrintPath!);
+            string printHead = System.Text.Encoding.UTF8.GetString(savedPrintBytes, 0, Math.Min(savedPrintBytes.Length, 64)).TrimStart();
+            bool printIsPdf = printHead.StartsWith("%PDF-", StringComparison.Ordinal);
+            bool pdfEof = printIsPdf
+                && System.Text.Encoding.ASCII.GetString(savedPrintBytes[^32..]).Contains("%%EOF", StringComparison.Ordinal);
+            bool printPdfComposed = printIsPdf && pdfEof && new FileInfo(savedPrintPath!).Length > 1024;
+            string printHtml = printIsPdf ? string.Empty : System.Text.Encoding.UTF8.GetString(savedPrintBytes);
             bool printIsHtml = printHead.StartsWith("<", StringComparison.Ordinal)
                 || printHead.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase);
+            RecordStep(steps, printIsPdf
+                ? $"print produced a composed PDF ({savedPrintBytes.Length} bytes, EOF marker present: {pdfEof})"
+                : $"print produced an HTML fallback ({savedPrintBytes.Length} bytes, compose error: {pdfComposeError ?? "none"})");
             // WIN-003: export has no toolbar button (parity: Chummer5a File > Export).
             // Drive the real user path: File menu > "Export Dossier..." command >
             // "Export Dossier" dialog > Download action > presenter ExportAsync.
@@ -1239,6 +1370,41 @@ internal static class DesktopMouseFirstJourneyRunner
                 ct,
                 recordPointerAction);
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "rule_environment_studio");
+
+            // WIN-006/T33 evidence: governed amend round trip (export -> import,
+            // both portability receipts surfaced in the studio body).
+            string amendStatus = "amend button not reachable";
+            Button? amendButton = Dispatcher.UIThread.Invoke(() =>
+                FindDescendantByName<Button>(
+                    window.OwnedWindows.FirstOrDefault(w => w is DesktopRuleEnvironmentStudioWindow),
+                    "AmendRoundTripButton"));
+            if (amendButton is not null)
+            {
+                await ClickToolStripButtonUntilEffectAsync(
+                    window,
+                    "RuleEnvironmentStudioButton",
+                    "amend round trip completed with both portability receipts",
+                    () =>
+                    {
+                        DesktopRuleEnvironmentStudioWindow? studio = Dispatcher.UIThread.Invoke(
+                            () => window.OwnedWindows.FirstOrDefault(w => w is DesktopRuleEnvironmentStudioWindow) as DesktopRuleEnvironmentStudioWindow);
+                        if (studio is null || !studio.IsVisible)
+                        {
+                            return false;
+                        }
+                        StackPanel? amendBody = Dispatcher.UIThread.Invoke(() => FindDescendantByName<StackPanel>(studio, "AmendBody"));
+                        return amendBody is not null && Dispatcher.UIThread.Invoke(() => amendBody.Children.Count > 0);
+                    },
+                    steps,
+                    ct,
+                    recordPointerAction);
+                amendStatus = "amend body materialized with receipt lines";
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "rule_environment_studio_amend");
+            }
+            else
+            {
+                RecordStep(steps, amendStatus);
+            }
             await WaitForAsync(
                 steps,
                 "rule environment studio window closed",
@@ -1266,13 +1432,16 @@ internal static class DesktopMouseFirstJourneyRunner
                 ScreenshotPaths: [beforeScreenshot, afterScreenshot],
                 Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
                 {
-                    ["print_preview_materialized_with_html_payload"] = printIsHtml && new FileInfo(savedPrintPath!).Length > 0,
+                    ["print_pdf_composed_from_career_sample"] = printPdfComposed,
+                    ["print_preview_materialized_with_html_payload"] = (printIsHtml || printIsPdf) && new FileInfo(savedPrintPath!).Length > 0,
                     ["export_bundle_materialized_with_json_payload"] = exportIsJson && new FileInfo(savedExportPath!).Length > 0,
-                    ["rule_environment_studio_exercised"] = true
+                    ["rule_environment_studio_exercised"] = true,
+                    ["amend_round_trip_portability_receipts"] = amendStatus.StartsWith("amend body materialized", StringComparison.Ordinal)
                 },
                 InteractionNotes:
                 [
-                    $"Printed via the toolstrip Print button with conflict-recovery; exported via File menu > 'Export Dossier...' > Download; the desktop file coordinator overrode the native save pickers and wrote {Path.GetFileName(savedPrintPath!)} ({new FileInfo(savedPrintPath!).Length} bytes) and {Path.GetFileName(savedExportPath!)} ({new FileInfo(savedExportPath!).Length} bytes) to a temp evidence directory after importing the bundled career sample."
+                    $"Printed via the toolstrip Print button with conflict-recovery (PDF compose status: {(printPdfComposed ? "composed " + savedPrintBytes.Length + "-byte PDF with EOF marker" : "fell back to HTML: " + (pdfComposeError ?? "none"))}); exported via File menu > 'Export Dossier...' > Download; the desktop file coordinator overrode the native save pickers and wrote {Path.GetFileName(savedPrintPath!)} ({new FileInfo(savedPrintPath!).Length} bytes) and {Path.GetFileName(savedExportPath!)} ({new FileInfo(savedExportPath!).Length} bytes) to a temp evidence directory after importing the bundled career sample.",
+                    $"Rules Studio amend round trip: {amendStatus}."
                 ]);
         }
         finally

@@ -44,7 +44,9 @@ public static class CharacterCreationWizardProjector
         CharacterCreationQualitiesState? qualities = null,
         CharacterCreationMagicResonanceState? magicResonance = null,
         CharacterCreationLifestylesState? lifestyles = null,
-        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization = null)
+        CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization = null,
+        CharacterCreationSkillsState? skills = null,
+        CharacterCreationResourcesState? resources = null)
     {
         ArgumentNullException.ThrowIfNull(loadedOverview);
         if (foundation is not null
@@ -71,6 +73,16 @@ public static class CharacterCreationWizardProjector
             && !MatchesLoadedOverview(workspaceId, loadedOverview, lifestyles))
         {
             lifestyles = null;
+        }
+        if (skills is not null
+            && !MatchesLoadedOverview(workspaceId, loadedOverview, skills))
+        {
+            skills = null;
+        }
+        if (resources is not null
+            && !MatchesLoadedOverview(workspaceId, loadedOverview, resources))
+        {
+            resources = null;
         }
 
         FinalizationProjectionAuthority finalizationAuthority =
@@ -112,6 +124,9 @@ public static class CharacterCreationWizardProjector
         QualitiesProjectionAuthority qualitiesAuthority = EvaluateQualitiesAuthority(qualities);
         MagicResonanceProjectionAuthority magicResonanceAuthority =
             EvaluateMagicResonanceAuthority(magicResonance);
+        SkillsProjectionAuthority skillsAuthority = EvaluateSkillsAuthority(skills);
+        ResourcesProjectionAuthority resourcesAuthority =
+            EvaluateResourcesAuthority(resources);
         // Only the current, validated Core talent can make this step inapplicable.
         // A profile label or missing/unsupported authority must not imply Mundane.
         bool magicResonanceRequired = !magicResonanceAuthority.IsReady
@@ -162,7 +177,9 @@ public static class CharacterCreationWizardProjector
             hasFoundationSourceAuthority ? foundation : null,
             contacts,
             qualities,
-            magicResonanceAuthority.Editor);
+            magicResonanceAuthority.Editor,
+            skills,
+            resources);
         if (finalizationAuthority.State is null)
             completionBlockers.AddRange(budgets.SelectMany(static budget => budget.Blockers));
         IReadOnlyList<CharacterCreationWizardStageState> steps = BuildSteps(
@@ -178,6 +195,8 @@ public static class CharacterCreationWizardProjector
             contactProjection,
             lifestyleProjection,
             identityStoryProjection,
+            skillsAuthority,
+            resourcesAuthority,
             completionBlockers);
         bool canFinalize = finalizationAuthority.State?.CanReview == true
                            && contactProjection.IsSafeForFinalization
@@ -218,6 +237,24 @@ public static class CharacterCreationWizardProjector
         {
             legalOptions[CharacterCreationWizardStepIds.MagicResonance] =
                 magicResonanceAuthority.Options;
+        }
+        if (resourcesAuthority.IsReady && resourcesAuthority.State is not null)
+        {
+            legalOptions[CharacterCreationWizardStepIds.Resources] = resourcesAuthority.State.Options
+                .Select(static option => new CharacterCreationLegalOption(
+                    OptionId: option.OptionId,
+                    Label: option.KarmaInvestment == 0
+                        ? $"{option.TotalStartingNuyen:0}¥ from priority"
+                        : $"{option.TotalStartingNuyen:0}¥ ({option.KarmaInvestment} karma invested, +{option.NuyenFromKarma:0}¥)",
+                    IsEnabled: option.IsEnabled,
+                    DisableReasonKey: option.Blockers.Count > 0
+                        ? "creation-resources-option-blocked"
+                    : null,
+                    DisableReasonArguments: new Dictionary<string, string>(),
+                    Costs: [],
+                    Consequences: [],
+                    SourceAnchorIds: option.SourceAnchorIds))
+                .ToArray();
         }
 
         CharacterCreationWizardSnapshot snapshot = new(
@@ -264,6 +301,8 @@ public static class CharacterCreationWizardProjector
         OptionalDomainProjection contactProjection,
         OptionalDomainProjection lifestyleProjection,
         IdentityStoryProjection identityStoryProjection,
+        SkillsProjectionAuthority skillsAuthority,
+        ResourcesProjectionAuthority resourcesAuthority,
         IReadOnlyList<string> completionBlockers)
     {
         // Foundation is the Life Modules draft, not a second Priority metatype
@@ -385,19 +424,26 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.Skills,
                 "Skills",
-                CharacterCreationWizardStepStatuses.Blocked,
+                skillsAuthority.State is { CanEdit: true }
+                    ? CharacterCreationWizardStepStatuses.Available
+                    : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: false,
-                isComplete: false,
+                isAvailable: skillsAuthority.State is { CanEdit: true },
+                isComplete: skillsAuthority.State is { CanEdit: true }
+                            && skillsAuthority.Editor is not null
+                            && skillsAuthority.Editor.PendingDraft is not null
+                            && skillsAuthority.Editor.Blockers.Count == 0,
                 budgetIds:
                 [
                     CharacterCreationBudgetIds.ActiveSkills,
                     CharacterCreationBudgetIds.SkillGroups,
                     CharacterCreationBudgetIds.KnowledgeSkills
                 ],
-                blockers: [LegalOptionsAuthorityUnavailable],
-                legalNextStepIds: magicResonanceRequired
-                    ? [CharacterCreationWizardStepIds.MagicResonance]
+                blockers: skillsAuthority.Blockers,
+                legalNextStepIds: skillsAuthority.State is { CanEdit: true }
+                    ? (magicResonanceRequired
+                        ? [CharacterCreationWizardStepIds.MagicResonance]
+                        : [CharacterCreationWizardStepIds.ContactsLifestyles])
                     : []),
             Stage(
                 CharacterCreationWizardStepIds.MagicResonance,
@@ -433,13 +479,19 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.Resources,
                 "Resources",
-                CharacterCreationWizardStepStatuses.Blocked,
+                resourcesAuthority.HasConfirmedDraft
+                    ? CharacterCreationWizardStepStatuses.Complete
+                    : resourcesAuthority.State is { CanEdit: true }
+                        ? CharacterCreationWizardStepStatuses.Available
+                        : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: false,
-                isComplete: false,
+                isAvailable: resourcesAuthority.State is { CanEdit: true },
+                isComplete: resourcesAuthority.HasConfirmedDraft,
                 budgetIds: [CharacterCreationBudgetIds.Resources],
-                blockers: [LegalOptionsAuthorityUnavailable],
-                legalNextStepIds: [CharacterCreationWizardStepIds.ContactsLifestyles]),
+                blockers: resourcesAuthority.Blockers,
+                legalNextStepIds: resourcesAuthority.State is { CanEdit: true }
+                    ? [CharacterCreationWizardStepIds.ContactsLifestyles]
+                    : [CharacterCreationWizardStepIds.ContactsLifestyles]),
             Stage(
                 CharacterCreationWizardStepIds.ContactsLifestyles,
                 "Contacts and lifestyles",
@@ -581,7 +633,9 @@ public static class CharacterCreationWizardProjector
         CharacterCreationFoundationState? foundation,
         CharacterCreationContactsState? contacts,
         CharacterCreationQualitiesState? qualities,
-        CharacterCreationMagicResonanceEditorState? magicResonance)
+        CharacterCreationMagicResonanceEditorState? magicResonance,
+        CharacterCreationSkillsState? skills,
+        CharacterCreationResourcesState? resources)
     {
         List<CharacterCreationBudgetState> budgets =
         [
@@ -620,13 +674,21 @@ public static class CharacterCreationWizardProjector
                     Unit: "karma"),
             UnknownBudget(CharacterCreationBudgetIds.NormalAttributes, "Normal attributes", "points"),
             UnknownBudget(CharacterCreationBudgetIds.SpecialAttributes, "Special attributes", "points"),
-            UnknownBudget(CharacterCreationBudgetIds.ActiveSkills, "Active skills", "points"),
-            UnknownBudget(CharacterCreationBudgetIds.SkillGroups, "Skill groups", "points"),
-            UnknownBudget(CharacterCreationBudgetIds.KnowledgeSkills, "Knowledge skills", "points"),
+            skills is null
+                ? UnknownBudget(CharacterCreationBudgetIds.ActiveSkills, "Active skills", "points")
+                : skills.ActiveSkillPointBudget,
+            skills is null
+                ? UnknownBudget(CharacterCreationBudgetIds.SkillGroups, "Skill groups", "points")
+                : skills.SkillGroupPointBudget,
+            skills is null
+                ? UnknownBudget(CharacterCreationBudgetIds.KnowledgeSkills, "Knowledge skills", "points")
+                : skills.KnowledgeSkillPointBudget,
             contacts is null
                 ? ContactBudget(build)
                 : ProjectBudget(contacts.ContactBudget, "Contacts", "points"),
-            UnknownBudget(CharacterCreationBudgetIds.Resources, "Resources", "nuyen"),
+            resources is null
+                ? UnknownBudget(CharacterCreationBudgetIds.Resources, "Resources", "nuyen")
+                : ProjectBudget(resources.Budget, "Resources", "nuyen"),
             ProjectCombinedMagicChoicesBudget(magicResonance),
             ProjectMagicBudget(
                 magicResonance,
@@ -745,6 +807,20 @@ public static class CharacterCreationWizardProjector
             Total: budget.Total,
             Used: budget.Used,
             Remaining: budget.Remaining,
+            IsExact: budget.IsExact,
+            Blockers: budget.Blockers,
+            Unit: unit);
+
+    private static CharacterCreationBudgetState ProjectBudget(
+        CharacterCreationResourcesBudget budget,
+        string label,
+        string unit)
+        => new(
+            BudgetId: CharacterCreationBudgetIds.Resources,
+            Label: label,
+            Total: budget.TotalStartingNuyen,
+            Used: budget.KnownPurchaseCost + budget.CarryoverExcess,
+            Remaining: budget.RemainingNuyen,
             IsExact: budget.IsExact,
             Blockers: budget.Blockers,
             Unit: unit);
@@ -1273,6 +1349,61 @@ public static class CharacterCreationWizardProjector
                    out _);
     }
 
+    /// <summary>Determines whether a loaded skills state is bound to the loaded overview document.
+    /// A mismatched binding silently drops the state so the projector falls back to the unavailable
+    /// authority rather than rendering allocation surfaces from a foreign document.</summary>
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationSkillsState skills)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(skills);
+        string rawDigest = ComputeContentDigest(loadedOverview.Document);
+        return loadedOverview.Document is not null
+               && !loadedOverview.Profile.Created
+               && skills.Binding.WorkspaceId == workspaceId
+               && skills.Binding.ContentRevision == loadedOverview.ContentRevision
+               && skills.Binding.SavedRevision == loadedOverview.SavedRevision
+               && CharacterCreationSkillsDigest.EqualsFixedTime(
+                   skills.Binding.RawCharacterXmlDigest,
+                   rawDigest)
+               && CharacterCreationSkillsDigest.EqualsFixedTime(
+                   skills.Binding.SkillsAuthorityDigest,
+                   skills.Authority.EffectiveSkillsInputsDigest)
+               && CharacterCreationSkillsDigest.EqualsFixedTime(
+                   skills.SnapshotDigest,
+                   CharacterCreationSkillsDigest.Compute(skills with { SnapshotDigest = string.Empty }));
+    }
+
+    /// <summary>Determines whether a loaded resources state is bound to the loaded overview document.
+    /// A mismatched binding silently drops the state so the projector falls back to the unavailable
+    /// authority rather than rendering priority options from a foreign document.</summary>
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationResourcesState resources)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(resources);
+        string rawDigest = ComputeContentDigest(loadedOverview.Document);
+        return loadedOverview.Document is not null
+               && !loadedOverview.Profile.Created
+               && resources.Binding.WorkspaceId == workspaceId
+               && resources.Binding.ContentRevision == loadedOverview.ContentRevision
+               && resources.Binding.SavedRevision == loadedOverview.SavedRevision
+               && CharacterCreationResourcesRules.DigestsEqual(
+                   resources.Binding.RawCharacterXmlDigest,
+                   rawDigest)
+               && CharacterCreationResourcesRules.DigestsEqual(
+                   resources.Binding.AuthorityDigest,
+                   resources.Authority.AuthorityDigest)
+               && CharacterCreationResourcesRules.IsValidAuthority(resources.Authority)
+               && CharacterCreationResourcesRules.DigestsEqual(
+                   resources.SnapshotDigest,
+                   CharacterCreationResourcesRules.ComputeStateDigest(resources));
+    }
+
     private static bool QualitiesProjectionShapeIsValid(
         CharacterCreationQualitiesState qualities)
     {
@@ -1451,6 +1582,69 @@ public static class CharacterCreationWizardProjector
             ready && qualities.PendingDraft is not null,
             options,
             blockers);
+    }
+
+    /// <summary>
+    /// Projects Core's loaded skills authority into the wizard. A null state
+    /// (authority unavailable or binding mismatch) keeps the step blocked with
+    /// the precise Core blocker surfaced — the placeholder is never masked.
+    /// </summary>
+    private static SkillsProjectionAuthority EvaluateSkillsAuthority(
+        CharacterCreationSkillsState? skills)
+    {
+        if (skills is null)
+        {
+            return new SkillsProjectionAuthority(
+                State: null,
+                Editor: null,
+                IsReady: false,
+                Blockers: [LegalOptionsAuthorityUnavailable]);
+        }
+
+        List<string> blockers = [.. skills.Blockers];
+        if (!skills.CanEdit && blockers.Count == 0)
+        {
+            blockers.Add(LegalOptionsAuthorityUnavailable);
+        }
+
+        return new SkillsProjectionAuthority(
+            State: skills,
+            Editor: skills,
+            IsReady: true,
+            Blockers: blockers);
+    }
+
+    /// <summary>
+    /// Projects Core's loaded resources authority into the wizard. A null state
+    /// (authority unavailable or binding mismatch) keeps the step blocked with
+    /// the precise Core blocker surfaced. A confirmed pending draft means the
+    /// priority choice is committed for finalization review.
+    /// </summary>
+    private static ResourcesProjectionAuthority EvaluateResourcesAuthority(
+        CharacterCreationResourcesState? resources)
+    {
+        if (resources is null)
+        {
+            return new ResourcesProjectionAuthority(
+                State: null,
+                HasConfirmedDraft: false,
+                IsReady: false,
+                Blockers: [LegalOptionsAuthorityUnavailable]);
+        }
+
+        List<string> blockers = [.. resources.Blockers];
+        bool hasConfirmedDraft = resources.PendingDraft is not null
+                                 && blockers.Count == 0;
+        if (!resources.CanEdit && blockers.Count == 0)
+        {
+            blockers.Add(LegalOptionsAuthorityUnavailable);
+        }
+
+        return new ResourcesProjectionAuthority(
+            State: resources,
+            HasConfirmedDraft: hasConfirmedDraft,
+            IsReady: true,
+            Blockers: blockers);
     }
 
     private static MagicResonanceProjectionAuthority EvaluateMagicResonanceAuthority(
@@ -2390,6 +2584,18 @@ public static class CharacterCreationWizardProjector
         bool IsReady,
         bool HasPendingDraft,
         IReadOnlyList<CharacterCreationLegalOption> Options,
+        IReadOnlyList<string> Blockers);
+
+    private sealed record SkillsProjectionAuthority(
+        CharacterCreationSkillsState? State,
+        CharacterCreationSkillsState? Editor,
+        bool IsReady,
+        IReadOnlyList<string> Blockers);
+
+    private sealed record ResourcesProjectionAuthority(
+        CharacterCreationResourcesState? State,
+        bool HasConfirmedDraft,
+        bool IsReady,
         IReadOnlyList<string> Blockers);
 
     private sealed record MagicResonanceProjectionAuthority(

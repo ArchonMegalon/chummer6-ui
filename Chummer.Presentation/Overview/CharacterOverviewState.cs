@@ -93,6 +93,18 @@ public sealed record CharacterOverviewState(
     /// </summary>
     public CharacterCreationMagicResonanceState? CreationMagicResonance { get; init; }
 
+    /// <summary>Core-owned skills creation authority loaded for the active creation
+    /// session, when the consuming runtime registered the service. Null when the
+    /// profile is created, an unrelated priority draft blocks it, or the runtime
+    /// did not register skills authority.</summary>
+    public CharacterCreationSkillsState? CreationSkills { get; init; }
+
+    /// <summary>Core-owned resources creation authority loaded for the active creation
+    /// session, when the consuming runtime registered the service. Null when the
+    /// profile is created, an unrelated priority draft blocks it, or the runtime
+    /// did not register resources authority.</summary>
+    public CharacterCreationResourcesState? CreationResources { get; init; }
+
     /// <summary>
     /// Renderer-neutral, rule-free projection of <see cref="CreationMagicResonance"/>. It
     /// exposes the exact Talent, legal typed identities, Core budgets, blockers and sources
