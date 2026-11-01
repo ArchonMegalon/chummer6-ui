@@ -478,7 +478,7 @@ internal static class DesktopMouseFirstJourneyRunner
             // Attempt to navigate to review directly. The Core gates review entry on
             // authoritative completion of the deep stages (attributes/skills/etc.);
             // if entry is blocked we record the wizard's authoritative state and the
-            // known blockers instead of failing the journey — the wizard UI itself is
+            // known blockers instead of failing the journey ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the wizard UI itself is
             // exercised end-to-end up to the authoritative gate.
             await ClickWizardButtonAsync(
                 wizard,
@@ -722,7 +722,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     },
                     InteractionNotes:
                     [
-                        "File → New used visible dialog fields and completion actions; the loaded profile, active status, workspace identity, and deterministic starter attributes were then verified."
+                        "File ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ New used visible dialog fields and completion actions; the loaded profile, active status, workspace identity, and deterministic starter attributes were then verified."
                     ]));
             }
 
@@ -804,6 +804,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     journeyTimeout.Token,
                     recordPointerAction));
             }
+
+            // T67: the career leg runs unconditionally and loads the bundled
+            // career sample itself (Profile.Created=true), so evidence is
+            // produced even when the creation leg never reaches career mode
+            // (Priority deep stages stay blocked in this scenario).
+            userJourneyWorkflows.Add(await ExerciseCareerRewardsWorkflowAsync(
+                window,
+                context,
+                steps,
+                screenshotPaths,
+                journeyTimeout.Token,
+                recordPointerAction));
 
             DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
             DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
@@ -988,7 +1000,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             "after");
 
         // Master Index suppresses the footer actions row by design (see
-        // DesktopDialogWindow.BuildActions) — the OS title-bar close is the user
+        // DesktopDialogWindow.BuildActions) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the OS title-bar close is the user
         // path. Drive the same path the X button raises (OnClosing -> CloseDialogAsync).
         await WaitForAsync(
             steps,
@@ -1019,6 +1031,311 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 "Opened Master Index through the visible Tools menu, clicked its visible search box, and entered 'ade' then 'pt' as routed text input."
             ]);
     }
+
+        // ----- T67: native career rewards evidence leg -----
+        // Navigates the primary tabs until the career rewards strip renders
+        // (profile section for created runners, or the karma summary), awards
+        // +5 karma through the real CareerRewardsWindow modal, waits for the
+        // authoritative apply receipt (karma balance increases), and records
+        // screenshot + assertion evidence.
+        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseCareerRewardsWorkflowAsync(
+            MainWindow window,
+            DesktopMouseFirstJourneyContext context,
+            List<string> steps,
+            List<string> screenshotPaths,
+            CancellationToken ct,
+            Action recordPointerAction)
+        {
+            await CloseWorkspaceAndLoadCareerSampleAsync(window, steps, ct, recordPointerAction);
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-career-sample-loaded");
+
+            var sectionHost = window.ControlsForAutomation.SectionHost;
+
+            Button? awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+            if (awardKarmaButton is null)
+            {
+                // The strip renders on the profile tab (Profile.Created career
+                // gate) and on the karma summary tab (root karma/nuyen JSON).
+                foreach (string candidateTabId in CareerRewardsTabCandidates)
+                {
+                    try
+                    {
+                        await ClickSummaryNavigationTabAsync(window, candidateTabId, steps, ct, recordPointerAction);
+                    }
+                    catch (TimeoutException timeout)
+                    {
+                        RecordStep(
+                            steps,
+                            $"career rewards tab walk: {candidateTabId} not reachable ({timeout.Message}); navigation surface: {DescribePrimaryNavigationSurface(window)}");
+                        continue;
+                    }
+
+                    awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+                    if (awardKarmaButton is not null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (awardKarmaButton is null)
+            {
+                RecordStep(
+                    steps,
+                    "career rewards leg skipped: no tab rendered the career rewards strip (career affordance absent for this journey plan)");
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-career-rewards-absent");
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: "career_rewards_roundtrip",
+                    ScreenshotPaths: [],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["career_rewards_strip_visible"] = false
+                    },
+                    InteractionNotes:
+                    [
+                        "Skipped: no tab rendered the career rewards strip."
+                    ]);
+            }
+
+            decimal karmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
+            string stripShot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-career-rewards-strip"),
+                "career_rewards_roundtrip", "strip");
+
+            // State publications rebuild the strip (Clear + re-add children), which
+            // detaches previously found buttons. Re-find a fresh, TopLevel-rooted
+            // reference for every attempt. Success is gated on the observable effect
+            // (the CareerRewardsWindow modal opening), not the local Click flag: a
+            // routed click can land on the freshly rebuilt button instance even when
+            // the subscription was attached to the detached one.
+            bool clickObserved = false;
+            void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                Button? freshButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+                if (freshButton is null)
+                {
+                    await Task.Delay(250, ct);
+                    continue;
+                }
+
+                freshButton.Click += OnClick;
+                try
+                {
+                    await RoutePointerClickAsync(freshButton);
+                }
+                catch (InvalidOperationException routingFailure)
+                {
+                    RecordStep(steps, $"career Award Karma attempt {attempt} routing failed: {routingFailure.Message}");
+                }
+                finally
+                {
+                    freshButton.Click -= OnClick;
+                }
+
+                bool dialogOpened = await WaitForConditionWithinAsync(
+                    () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
+                    ct,
+                    TimeSpan.FromSeconds(8));
+                if (dialogOpened)
+                {
+                    break;
+                }
+            }
+
+            recordPointerAction();
+            RecordStep(steps, $"click career Award Karma button; clickEventObserved={clickObserved}; success gated on modal opening");
+
+            bool applyAvailable = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
+                ct,
+                TimeSpan.FromSeconds(8));
+            Button? applyButton = applyAvailable ? FindCareerRewardsDialogButton("career-rewards-apply") : null;
+            if (applyButton is null)
+            {
+                CharacterOverviewState skipState = window.SnapshotStateForAutomation();
+                string openWindows = string.Join(
+                    ",",
+                    global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime skipDesktop
+                        ? skipDesktop.Windows.Select(w => $"{w.Title}[visible={w.IsVisible}]")
+                        : Array.Empty<string>());
+                RecordStep(
+                    steps,
+                    $"career rewards leg skipped: Award Karma click did not open the CareerRewardsWindow modal; notice={skipState.Notice ?? "none"}; presenterError={skipState.Error ?? "none"}; windows={openWindows}");
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06b-career-rewards-dialog-missing");
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: "career_rewards_roundtrip",
+                    ScreenshotPaths: [],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["career_rewards_strip_visible"] = true,
+                        ["career_rewards_dialog_opened"] = false
+                    },
+                    InteractionNotes:
+                    [
+                        "Skipped: Award Karma click did not open the modal."
+                    ]);
+            }
+
+            string dialogShot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06b-career-rewards-dialog"),
+                "career_rewards_roundtrip", "dialog");
+
+            TextBox? amountBox = FindCareerRewardsDialogTextBox("career-rewards-amount");
+            if (amountBox is null)
+            {
+                RecordStep(steps, "career rewards leg skipped: rewards dialog amount field not found");
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: "career_rewards_roundtrip",
+                    ScreenshotPaths: [],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["career_rewards_strip_visible"] = true,
+                        ["career_rewards_dialog_opened"] = true,
+                        ["career_rewards_apply_accepted"] = false
+                    },
+                    InteractionNotes:
+                    [
+                        "Skipped: rewards dialog amount field not found."
+                    ]);
+            }
+
+            amountBox.Text = "5";
+            Dispatcher.UIThread.RunJobs();
+            TextBox? reasonBox = FindCareerRewardsDialogTextBox("career-rewards-reason");
+            if (reasonBox is not null)
+            {
+                reasonBox.Text = "Journey evidence award";
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            await RoutePointerClickAsync(applyButton);
+            recordPointerAction();
+            RecordStep(steps, "click career rewards Apply");
+
+            bool dialogClosed = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply") is null,
+                ct,
+                TimeSpan.FromSeconds(8));
+            RecordStep(steps, $"career rewards dialog closed={dialogClosed}");
+
+            decimal karmaAfter = 0m;
+            bool karmaIncreased = await WaitForConditionWithinAsync(
+                () =>
+                {
+                    karmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
+                    return karmaAfter > karmaBefore;
+                },
+                ct,
+                TimeSpan.FromSeconds(8));
+            RecordStep(
+                steps,
+                $"career rewards apply receipt: karma {karmaBefore} -> {karmaAfter} (increased={karmaIncreased})");
+            string appliedShot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06c-career-rewards-applied"),
+                "career_rewards_roundtrip", "applied");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "career_rewards_roundtrip",
+                ScreenshotPaths: [stripShot, dialogShot, appliedShot],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["career_rewards_strip_visible"] = awardKarmaButton is not null,
+                    ["career_rewards_dialog_opened"] = applyButton is not null,
+                    ["career_rewards_apply_accepted"] = dialogClosed,
+                    ["career_rewards_karma_increased"] = karmaIncreased
+                },
+                InteractionNotes:
+                [
+                    "Career rewards strip Award Karma clicked on the live career workspace; the CareerRewardsWindow modal collected amount and reason, Apply committed through the authoritative career manual-karma authority, and the visible karma balance was verified to increase."
+                ]);
+        }
+
+        private static readonly string[] CareerRewardsTabCandidates = ["tab-info", "tab-karma"];
+
+        private static string DescribePrimaryNavigationSurface(MainWindow window)
+        {
+            TabStrip? tabStrip = window.ControlsForAutomation.SectionHost.FindControl<TabStrip>("LoadedRunnerTabStrip");
+            string stripDescription = tabStrip is null
+                ? "tab-strip=absent"
+                : $"tab-strip items={tabStrip.Items.Count} " + string.Join(
+                    ",",
+                    tabStrip.Items.OfType<NavigatorTabItem>().Select(item =>
+                    {
+                        int index = tabStrip.Items.IndexOf(item);
+                        return tabStrip.ContainerFromIndex(index) is Control container
+                            ? $"{item.Id}[visible={container.IsVisible} enabled={container.IsEnabled}]"
+                            : $"{item.Id}[unrealized]";
+                    }));
+
+            string headerDescription = string.Join(
+                ",",
+                window.ControlsForAutomation.SummaryHeader
+                    .GetVisualDescendants()
+                    .OfType<Button>()
+                    .Where(button => button.Tag is not null)
+                    .Select(button => $"{button.Tag}[visible={button.IsVisible} enabled={button.IsEnabled}]"));
+
+            return stripDescription + "; header=" + headerDescription;
+        }
+
+        private static Button? FindVisibleCareerRewardsButton(MainWindow window, string buttonName)
+        {
+            return window.GetVisualDescendants()
+                .OfType<Button>()
+                .FirstOrDefault(button => string.Equals(button.Name, buttonName, StringComparison.Ordinal) && button.IsVisible);
+        }
+
+        private static Button? FindCareerRewardsDialogButton(string automationId)
+        {
+            return global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows
+                    .OfType<Window>()
+                    .SelectMany(child => child.GetVisualDescendants().OfType<Button>())
+                    .FirstOrDefault(button =>
+                        string.Equals(
+                            AutomationProperties.GetAutomationId(button),
+                            automationId,
+                            StringComparison.Ordinal)
+                        && button.IsVisible)
+                : null;
+        }
+
+        private static TextBox? FindCareerRewardsDialogTextBox(string automationId)
+        {
+            return global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows
+                    .OfType<Window>()
+                    .SelectMany(child => child.GetVisualDescendants().OfType<TextBox>())
+                    .FirstOrDefault(textBox =>
+                        string.Equals(
+                            AutomationProperties.GetAutomationId(textBox),
+                            automationId,
+                            StringComparison.Ordinal)
+                        && textBox.IsVisible)
+                : null;
+        }
+
+        private static decimal ReadCareerRewardsKarmaBalance(SectionHostControl sectionHost)
+        {
+            TextBlock? balance = sectionHost.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .FirstOrDefault(textBlock => textBlock.Text?.StartsWith("Karma ", StringComparison.Ordinal) == true);
+            if (balance?.Text is not string text)
+            {
+                return 0m;
+            }
+
+            // "Karma 32.5 \u00B7 \u00A51,234"
+            string[] segments = text.Split('\u00B7');
+            string karmaToken = segments[0].Substring("Karma ".Length).Trim();
+            return decimal.TryParse(karmaToken, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal value)
+                ? value
+                : 0m;
+        }
 
     private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSaveReloadWorkflowAsync(
         MainWindow window,
@@ -1096,7 +1413,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         CancellationToken ct,
         Action recordPointerAction)
     {
-        // WIN-002 design: an unfinished character owns the center surface — the
+        // WIN-002 design: an unfinished character owns the center surface ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the
         // unrestricted editor (tab strip) is unreachable until canonical finalization
         // clears the CreationWizard snapshot. When the wizard guards the surface the
         // navigation proof asserts the guarded state instead of tab clicks.
