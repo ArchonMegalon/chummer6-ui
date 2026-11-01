@@ -32,6 +32,7 @@ public partial class SectionHostControl : UserControl
     public event EventHandler<string>? SectionActionSelected;
     public event EventHandler<string>? QuickActionRequested;
     public event EventHandler<AttributeEditRequest>? AttributeEditRequested;
+    public event EventHandler<string>? CareerAttributeAdvanceRequested;
 
     public SectionHostControl()
     {
@@ -318,6 +319,7 @@ public partial class SectionHostControl : UserControl
         bool careerMode = row.CareerMode;
         bool showImproveButton = isSr6 && careerMode;
         bool showBurnEdgeButton = isSr6 && careerMode && isEdgeAttribute;
+        bool showAdvanceButton = !isSr6 && careerMode;
         int metatypeMin = row.MetatypeMin;
         int metatypeMax = row.MetatypeMax;
         int metatypeAugMax = row.MetatypeAugMax;
@@ -341,13 +343,13 @@ public partial class SectionHostControl : UserControl
         ToolTip.SetTip(nameLabel, row.AttributeName);
         Grid nameCell = new()
         {
-            ColumnDefinitions = showImproveButton || showBurnEdgeButton ? new ColumnDefinitions("*,Auto") : new ColumnDefinitions("*"),
+            ColumnDefinitions = showImproveButton || showBurnEdgeButton || showAdvanceButton ? new ColumnDefinitions("*,Auto") : new ColumnDefinitions("*"),
             ColumnSpacing = 6d,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
         nameCell.Children.Add(nameLabel);
         StackPanel? actionHost = null;
-        if (showImproveButton || showBurnEdgeButton)
+        if (showImproveButton || showBurnEdgeButton || showAdvanceButton)
         {
             actionHost = new StackPanel
             {
@@ -448,6 +450,26 @@ public partial class SectionHostControl : UserControl
                 BorderThickness = new Thickness(1)
             };
             actionHost?.Children.Add(burnEdgeButton);
+        }
+
+        Button? advanceButton = null;
+        if (showAdvanceButton)
+        {
+            advanceButton = new Button
+            {
+                Name = $"AttributeAdvance_{ShortAttributeLabel(row.AttributeName)}",
+                Content = "Advance…",
+                MinWidth = 86,
+                Height = 24,
+                Padding = new Thickness(8d, 1d),
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = rowForeground,
+                Background = rowSurfaceAlt,
+                BorderBrush = rowBorder,
+                BorderThickness = new Thickness(1)
+            };
+            actionHost?.Children.Add(advanceButton);
         }
 
         grid.Children.Add(nameCell);
@@ -730,6 +752,20 @@ public partial class SectionHostControl : UserControl
                 pendingKarmaValue = karmaValue;
                 RefreshLiveValue();
                 AttributeEditRequested?.Invoke(this, new AttributeEditRequest(row.AttributeName, "improve", Math.Max(0, baseValue + karmaValue)));
+            };
+        }
+
+        if (advanceButton is not null)
+        {
+            advanceButton.Click += (_, _) =>
+            {
+                if (!advanceButton.IsEnabled)
+                {
+                    return;
+                }
+
+                CancelPendingAttributeCommits();
+                CareerAttributeAdvanceRequested?.Invoke(this, row.AttributeName);
             };
         }
 

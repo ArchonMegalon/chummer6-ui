@@ -192,6 +192,7 @@ public partial class MainWindow : Window
             onWorkflowSurfaceSelected: NavigatorPane_OnWorkflowSurfaceSelected,
             onSectionQuickActionRequested: SectionHost_OnQuickActionRequested,
             onSectionAttributeEditRequested: SectionHost_OnAttributeEditRequested,
+            onSectionCareerAttributeAdvanceRequested: SectionHost_OnCareerAttributeAdvanceRequested,
             onCoachLaunchOpenRequested: CoachSidecar_OnOpenLaunchRequested,
             onCoachLaunchCopyRequested: CoachSidecar_OnCopyLaunchRequested,
             onCommandSelected: CommandDialogPane_OnCommandSelected,

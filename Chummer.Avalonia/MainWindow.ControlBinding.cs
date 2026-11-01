@@ -54,6 +54,7 @@ internal static class MainWindowControlBinder
         EventHandler<string> onWorkflowSurfaceSelected,
         EventHandler<string> onSectionQuickActionRequested,
         EventHandler<AttributeEditRequest> onSectionAttributeEditRequested,
+        EventHandler<string> onSectionCareerAttributeAdvanceRequested,
         EventHandler onCoachLaunchOpenRequested,
         EventHandler onCoachLaunchCopyRequested,
         EventHandler<string> onCommandSelected,
@@ -81,6 +82,7 @@ internal static class MainWindowControlBinder
         sectionHost.SectionActionSelected += onSectionActionSelected;
         sectionHost.QuickActionRequested += onSectionQuickActionRequested;
         sectionHost.AttributeEditRequested += onSectionAttributeEditRequested;
+        sectionHost.CareerAttributeAdvanceRequested += onSectionCareerAttributeAdvanceRequested;
         coachSidecar.OpenLaunchRequested += onCoachLaunchOpenRequested;
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;
