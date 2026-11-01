@@ -83,6 +83,18 @@ public partial class App : global::Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
+        if (DesktopProbeEnvironmentGuard.IsProbeCommandLine(Environment.GetCommandLineArgs()))
+        {
+            // Probe-scoped environment isolation: a head launched under the two-process Windows
+            // persistence probe must not inherit store-steering variables from the invoking shell
+            // (CHUMMER_STATE_PATH would redirect the workspace store, CHUMMER_CLIENT_MODE /
+            // CHUMMER_DESKTOP_CLIENT_MODE would flip the head off the local in-process client).
+            IReadOnlyList<string> scopedVariables =
+                DesktopProbeEnvironmentGuard.Scope(DesktopProbeEnvironmentGuard.HostileVariables);
+            Console.WriteLine(
+                $"persistence-probe env-scope: cleared [{string.Join(", ", scopedVariables)}]");
+        }
+
         string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
             AppContext.BaseDirectory,
             Directory.GetCurrentDirectory());
@@ -127,11 +139,15 @@ public partial class App : global::Avalonia.Application
                 // with no legal options (authority pending).
                 serviceProvider.GetService<IOwnerBoundCharacterCreationLifeModuleFinalizationService>(),
                 serviceProvider.GetService<IOwnerBoundCharacterCreationQualitiesService>(),
-                serviceProvider.GetService<IOwnerBoundCharacterCreationMagicResonanceService>()));
+                serviceProvider.GetService<IOwnerBoundCharacterCreationMagicResonanceService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationSkillsService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationResourcesService>()));
         services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
             CharacterCreationContactsInteractionPresenter>();
         services.AddSingleton<ICharacterCreationFoundationInteractionPresenter,
             CharacterCreationFoundationInteractionPresenter>();
+        services.AddSingleton<ICharacterCreationResourcesInteractionPresenter,
+            CharacterCreationResourcesInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         services.AddSingleton<IShellPresenter, ShellPresenter>();
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();

@@ -33,6 +33,12 @@ public sealed record CharacterCreationFoundationPreviewApplied(
 public sealed record CharacterCreationFoundationConfirmRequested(
     string PreviewDigest);
 
+public sealed record CharacterCreationResourcesOptionClickRequested(
+    CharacterCreationWizardDesktopOption Option);
+
+public sealed record CharacterCreationResourcesConfirmRequested(
+    string PreviewDigest);
+
 public partial class CharacterCreationWizardControl : UserControl
 {
     private static readonly string[] s_IdentityFieldIds =
@@ -58,6 +64,9 @@ public partial class CharacterCreationWizardControl : UserControl
     private string? _boundContactsSnapshotDigest;
     private string? _contactMutationStatus;
     private CharacterCreationFoundationPreparedPreview? _foundationPreview;
+    private CharacterCreationResourcesPreparedPreview? _resourcesPreview;
+    private string? _resourcesMutationStatus;
+    private bool _resourcesMutationBusy;
     private string? _foundationStatus;
     private bool _foundationMutationBusy;
     private bool _contactMutationBusy;
@@ -79,6 +88,8 @@ public partial class CharacterCreationWizardControl : UserControl
     public event EventHandler<CharacterCreationContactPreviewRequested>? ContactPreviewRequested;
     public event EventHandler<CharacterCreationContactConfirmRequested>? ContactConfirmRequested;
     public event EventHandler<CharacterCreationFoundationOptionClickRequested>? FoundationOptionClickRequested;
+    public event EventHandler<CharacterCreationResourcesOptionClickRequested>? ResourcesOptionClickRequested;
+    public event EventHandler<CharacterCreationResourcesConfirmRequested>? ResourcesConfirmRequested;
 
     /// <summary>Raised whenever the traveler adjusts a Priority rank selection.</summary>
     public sealed record CharacterCreationPrioritySelectionChanged(
@@ -670,6 +681,35 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
+    public void SetResourcesPrepareResult(CharacterCreationResourcesInteractionPrepareResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _resourcesPreview = result.PreparedPreview;
+        _resourcesMutationStatus = BuildResourcesResultStatus(result.Outcome, result.Blockers);
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetResourcesConfirmResult(CharacterCreationResourcesInteractionConfirmResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _resourcesMutationStatus = BuildResourcesResultStatus(result.Outcome, result.Blockers);
+        if (result.Receipt is not null)
+            _resourcesPreview = null;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetResourcesMutationBusy(bool busy)
+    {
+        _resourcesMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    private static string BuildResourcesResultStatus(string outcome, IReadOnlyList<string> blockers)
+    {
+        string suffix = blockers.Count == 0 ? string.Empty : $" (blocked: {string.Join(", ", blockers)})";
+        return $"Resources interaction: {outcome}{suffix}";
+    }
+
     private static string BuildFoundationResultStatus(string outcome, IReadOnlyList<string> blockers)
     {
         string suffix = blockers.Count == 0 ? string.Empty : $" (blocked: {string.Join(", ", blockers)})";
@@ -678,8 +718,23 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void FoundationOptionButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is Button { Tag: CharacterCreationWizardDesktopOption option })
-            FoundationOptionClickRequested?.Invoke(this, new CharacterCreationFoundationOptionClickRequested(option));
+        if (sender is not Button { Tag: CharacterCreationWizardDesktopOption option })
+            return;
+        if (string.Equals(
+                _state?.ActiveStepId,
+                CharacterCreationWizardStepIds.Resources,
+                StringComparison.Ordinal))
+        {
+            ResourcesOptionClickRequested?.Invoke(this, new CharacterCreationResourcesOptionClickRequested(option));
+            return;
+        }
+        FoundationOptionClickRequested?.Invoke(this, new CharacterCreationFoundationOptionClickRequested(option));
+    }
+
+    private void ResourcesConfirmButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_resourcesPreview is { } preview)
+            ResourcesConfirmRequested?.Invoke(this, new CharacterCreationResourcesConfirmRequested(preview.PreviewDigest));
     }
 
     private void FoundationConfirmButton_OnClick(object? sender, RoutedEventArgs e)
@@ -870,6 +925,43 @@ public partial class CharacterCreationWizardControl : UserControl
         }
 
         RenderFoundationPreview(options);
+        RenderResourcesPreview();
+    }
+
+    private void RenderResourcesPreview()
+    {
+        if (_state?.ActiveStepId != CharacterCreationWizardStepIds.Resources)
+            return;
+        if (!string.IsNullOrWhiteSpace(_resourcesMutationStatus))
+            LegalOptionList.Children.Add(Caption(_resourcesMutationStatus));
+        if (_resourcesPreview is null)
+            return;
+        CharacterCreationResourcesPreparedPreview prepared = _resourcesPreview;
+        CharacterCreationResourcesBudget after = prepared.BudgetAfter;
+        Border panel = new() { Classes = { "shell-card", "subtle" }, Padding = new global::Avalonia.Thickness(9) };
+        panel.Child = new StackPanel
+        {
+            Spacing = 4,
+            Children =
+            {
+                new TextBlock { Text = "Exact Core resources preview", Classes = { "shell-section-title" } },
+                Caption($"Total starting nuyen: {after.TotalStartingNuyen:0}¥ · remaining: {after.RemainingNuyen:0}¥"),
+                prepared.Blockers.Count == 0
+                    ? Caption("Preview is legal; confirm to commit against this exact revision.")
+                    : Caption($"Blocked: {string.Join(", ", prepared.Blockers)}"),
+            }
+        };
+        Button confirmButton = new()
+        {
+            Content = "Confirm resources",
+            IsEnabled = prepared.CanConfirm && !_resourcesMutationBusy,
+        };
+        AutomationProperties.SetAutomationId(confirmButton, "creation-wizard-resources-confirm");
+        confirmButton.Classes.Add("shell-action");
+        confirmButton.Click += ResourcesConfirmButton_OnClick;
+
+        LegalOptionList.Children.Add(panel);
+        LegalOptionList.Children.Add(confirmButton);
     }
 
     private void RenderContacts(CharacterCreationWizardDesktopContactsStep? contacts)

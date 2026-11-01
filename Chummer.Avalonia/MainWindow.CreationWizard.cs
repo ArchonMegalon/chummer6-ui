@@ -17,6 +17,7 @@ public partial class MainWindow
     private CharacterCreationWizardSnapshot? _boundCreationWizardSnapshot;
     private CharacterCreationContactPreparedPreview? _creationContactPreparedPreview;
     private CharacterCreationFoundationPreparedPreview? _creationFoundationPreparedPreview;
+    private CharacterCreationResourcesPreparedPreview? _creationResourcesPreparedPreview;
     private string? _creationFoundationSelectedMetatype;
     private (string ModuleId, string? versionId)? _creationFoundationSelectedNationality;
     private bool _creationWizardBuildGhostPreferenceEnabled;
@@ -41,6 +42,8 @@ public partial class MainWindow
         CharacterCreationWizardControl.ContactConfirmRequested += CreationWizard_OnContactConfirmRequested;
         CharacterCreationWizardControl.FoundationOptionClickRequested += CreationWizard_OnFoundationOptionClickRequested;
         CharacterCreationWizardControl.FoundationConfirmRequested += CreationWizard_OnFoundationConfirmRequested;
+        CharacterCreationWizardControl.ResourcesOptionClickRequested += CreationWizard_OnResourcesOptionClickRequested;
+        CharacterCreationWizardControl.ResourcesConfirmRequested += CreationWizard_OnResourcesConfirmRequested;
         CharacterCreationWizardControl.FinalizeRequested += CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested += CreationWizard_OnPriorityConfirmRequested;
     }
@@ -307,6 +310,79 @@ public partial class MainWindow
         finally
         {
             CharacterCreationWizardControl.SetFoundationMutationBusy(false);
+        }
+    }
+
+    private void CreationWizard_OnResourcesOptionClickRequested(
+        object? sender,
+        CharacterCreationResourcesOptionClickRequested request)
+    {
+        if (_creationResourcesInteractionPresenter is null)
+            return;
+        CharacterCreationWizardDesktopOption option = request.Option;
+        if (!option.IsEnabled)
+            return;
+
+        CharacterCreationWizardControl.SetResourcesMutationBusy(true);
+        try
+        {
+            CharacterCreationResourcesInteractionPrepareResult result =
+                _creationResourcesInteractionPresenter.Prepare(
+                    _adapter.State,
+                    option.OptionId);
+            if (result.PreparedPreview is { } prepared)
+                _creationResourcesPreparedPreview = prepared;
+            CharacterCreationWizardControl.SetResourcesPrepareResult(result);
+        }
+        finally
+        {
+            CharacterCreationWizardControl.SetResourcesMutationBusy(false);
+        }
+    }
+
+    private async void CreationWizard_OnResourcesConfirmRequested(
+        object? sender,
+        CharacterCreationResourcesConfirmRequested request)
+    {
+        if (_creationResourcesInteractionPresenter is null
+            || _creationResourcesPreparedPreview is not { } prepared
+            || !string.Equals(request.PreviewDigest, prepared.PreviewDigest, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        CharacterCreationWizardControl.SetResourcesMutationBusy(true);
+        try
+        {
+            CharacterCreationResourcesInteractionConfirmResult result =
+                _creationResourcesInteractionPresenter.Confirm(
+                    _adapter.State,
+                    new CharacterCreationResourcesConfirmation(
+                        prepared,
+                        prepared.PreviewDigest,
+                        prepared.IdempotencyKey,
+                        ExplicitlyConfirmed: true));
+            CharacterCreationWizardControl.SetResourcesConfirmResult(result);
+            if (result.Receipt is not null)
+            {
+                _creationResourcesPreparedPreview = null;
+                if (_adapter.State.WorkspaceId is { } workspaceId)
+                {
+                    await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+                    ApplyCreationWizardState(_adapter.State);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            // Authority refresh on the next state application will reconcile.
+        }
+        finally
+        {
+            CharacterCreationWizardControl.SetResourcesMutationBusy(false);
         }
     }
 

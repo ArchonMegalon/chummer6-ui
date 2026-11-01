@@ -51,6 +51,14 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                         CreateSection("Rules package changes", BuildLifecycleBody()),
                         CreateSection("Changes", BuildDiffBody()),
                         CreateSection("Notes", BuildReceiptBody()),
+                        DesktopShellTheme.CreateSection(
+                            "Portable amend round trip",
+                            BuildAmendSection(),
+                            actionContent: null,
+                            padding: 8,
+                            cornerRadius: 4,
+                            includeHeading: true,
+                            spacing: 0),
                         CreateActionRow(CreatePrimaryActions(owner)),
                         new StackPanel
                         {
@@ -257,6 +265,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         if (!string.IsNullOrWhiteSpace(_projection.WorkspaceId))
         {
             actions.Add(CreateButton("Open current workspace", () => OpenWorkspaceInDesktopShellAsync(owner, _projection.WorkspaceId!)));
+            Button amendButton = CreateButton("Amend from portable export", () => RunAmendRoundTripAsync(owner));
+            amendButton.Name = "AmendRoundTripButton";
+            actions.Add(amendButton);
         }
 
         return actions;
@@ -281,6 +292,186 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         }
 
         DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: "portable-exchange");
+    }
+
+    private WorkspaceAmendRoundTripRecord? _lastAmendRoundTrip;
+
+    private async Task RunAmendRoundTripAsync(Window owner)
+    {
+        Button? amendButton = this.FindControl<Button>("AmendRoundTripButton");
+        if (amendButton is not null)
+        {
+            amendButton.IsEnabled = false;
+        }
+
+        try
+        {
+            IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
+                ?? throw new InvalidOperationException("Desktop rule environment studio requires an IChummerClient instance."));
+
+            if (string.IsNullOrWhiteSpace(_projection.WorkspaceId))
+            {
+                _lastAmendRoundTrip = WorkspaceAmendRoundTripRecord.Failure(
+                    "No workspace is attached to the rules environment yet, so there is nothing to amend.");
+                RefreshAmendBody();
+                return;
+            }
+
+            var workspaceId = new CharacterWorkspaceId(_projection.WorkspaceId);
+
+            WorkspaceExportResult exportResult = await new WorkspacePersistenceService()
+                .ExportAsync(client, workspaceId, CancellationToken.None)
+                .ConfigureAwait(true);
+            if (!exportResult.Success || exportResult.Receipt is null)
+            {
+                _lastAmendRoundTrip = WorkspaceAmendRoundTripRecord.Failure(
+                    $"Amend aborted at export: {exportResult.Error ?? "unknown error"}");
+                RefreshAmendBody();
+                return;
+            }
+
+            byte[] exportedBytes = Convert.FromBase64String(exportResult.Receipt.ContentBase64);
+            string exportedContent = System.Text.Encoding.UTF8.GetString(exportedBytes);
+
+            WorkspaceImportResult importResult = await client.ImportAsync(
+                new WorkspaceImportDocument(
+                    exportedContent,
+                    exportResult.Receipt.RulesetId,
+                    exportResult.Receipt.Format),
+                CancellationToken.None).ConfigureAwait(true);
+
+            _lastAmendRoundTrip = WorkspaceAmendRoundTripRecord.CreateSuccess(
+                exportResult.Receipt,
+                importResult);
+            RefreshAmendBody();
+        }
+        catch (Exception ex)
+        {
+            _lastAmendRoundTrip = WorkspaceAmendRoundTripRecord.Failure(
+                $"Amend round trip failed: {ex.Message}");
+            RefreshAmendBody();
+        }
+        finally
+        {
+            if (amendButton is not null)
+            {
+                amendButton.IsEnabled = true;
+            }
+        }
+    }
+
+    private void RefreshAmendBody()
+    {
+        StackPanel? body = this.FindControl<StackPanel>("AmendBody");
+        if (body is null || _lastAmendRoundTrip is null)
+        {
+            return;
+        }
+
+        body.Children.Clear();
+        foreach (TextBlock line in BuildAmendBodyLines(_lastAmendRoundTrip))
+        {
+            body.Children.Add(line);
+        }
+    }
+
+    private static IReadOnlyList<TextBlock> BuildAmendBodyLines(WorkspaceAmendRoundTripRecord roundTrip)
+    {
+        if (!roundTrip.Success)
+        {
+            return
+            [
+                new TextBlock
+                {
+                    Text = $"Amend round trip failed: {roundTrip.Summary}",
+                    TextWrapping = TextWrapping.Wrap
+                }
+            ];
+        }
+
+        var lines = new List<TextBlock>
+        {
+            new TextBlock
+            {
+                Text = $"Amend completed: portable export re-imported as workspace {roundTrip.ImportedWorkspaceId}.",
+                TextWrapping = TextWrapping.Wrap
+            }
+        };
+
+        if (roundTrip.ExportReceipt is not null)
+        {
+            WorkspacePortabilityReceipt portability = roundTrip.ExportReceipt.Portability;
+            lines.Add(new TextBlock
+            {
+                Text = $"Export receipt: {roundTrip.ExportReceipt.Portability.ReceiptSummary} ({roundTrip.ExportReceipt.Format})",
+                TextWrapping = TextWrapping.Wrap
+            });
+            lines.Add(new TextBlock
+            {
+                Text = $"Portability: {portability.CompatibilityState}; next safe action: {portability.NextSafeAction}",
+                TextWrapping = TextWrapping.Wrap
+            });
+            foreach (string mode in portability.SupportedExchangeModes)
+            {
+                lines.Add(new TextBlock
+                {
+                    Text = $"Supported exchange mode: {mode}",
+                    TextWrapping = TextWrapping.Wrap
+                });
+            }
+        }
+
+        if (roundTrip.ImportResult is not null)
+        {
+            lines.Add(new TextBlock
+            {
+                Text = $"Import receipt: {roundTrip.ImportResult.ImportReceiptId}",
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+
+        return lines;
+    }
+
+    private sealed record WorkspaceAmendRoundTripRecord(
+        bool Success,
+        string Summary,
+        WorkspaceExportReceipt? ExportReceipt = null,
+        WorkspaceImportResult? ImportResult = null,
+        string? ImportedWorkspaceId = null)
+    {
+        public static WorkspaceAmendRoundTripRecord CreateSuccess(
+            WorkspaceExportReceipt exportReceipt,
+            WorkspaceImportResult importResult)
+            => new(
+                Success: true,
+                Summary: importResult.ImportReceiptId,
+                ExportReceipt: exportReceipt,
+                ImportResult: importResult,
+                ImportedWorkspaceId: importResult.Id.Value);
+
+        public static WorkspaceAmendRoundTripRecord Failure(string summary)
+            => new(Success: false, Summary: summary);
+    }
+
+    private StackPanel BuildAmendSection()
+    {
+        var body = new StackPanel { Spacing = 4 };
+        body.Name = "AmendBody";
+        body.Children.Add(new TextBlock
+        {
+            Text = "Run a governed amend: export the current workspace as a portable dossier, re-import it, and record both receipts.",
+            TextWrapping = TextWrapping.Wrap
+        });
+        if (_lastAmendRoundTrip is not null)
+        {
+            foreach (TextBlock line in BuildAmendBodyLines(_lastAmendRoundTrip))
+            {
+                body.Children.Add(line);
+            }
+        }
+
+        return body;
     }
 
     private static Border CreateSection(string title, string body)

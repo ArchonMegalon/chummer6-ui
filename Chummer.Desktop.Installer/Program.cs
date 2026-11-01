@@ -185,7 +185,7 @@ internal static class Program
         string? requestedLaunchHeadId,
         IReadOnlyList<string> relaunchArgs)
     {
-        using InstallSplashForm splash = new(metadata.DisplayName);
+        InstallSplashForm splash = new(metadata.DisplayName);
         splash.Show();
         Application.DoEvents();
 
@@ -233,11 +233,12 @@ internal static class Program
 
         if (autoUpdate)
         {
-            splash.Show();
-            splash.ApplyProgress(new InstallProgressUpdate("Starting updated Chummer"));
-            Application.DoEvents();
+            // The splash was closed (and disposed) in the finally above, so it must never be
+            // shown again here — that is the ObjectDisposedException every post-v1 auto-update
+            // relaunch hit (WIN-006). InstallSplashForm instances are single-use; the relaunch
+            // phase creates its own fresh splash via LaunchInstalledApp, which owns the
+            // "Starting updated Chummer" progress for exactly this flow.
             LaunchInstalledApp(metadata, claimCode, requestedLaunchHeadId, relaunchArgs, null);
-            PumpLaunchSplash(splash, TimeSpan.FromSeconds(2));
             return 0;
         }
 
@@ -2758,7 +2759,13 @@ internal static class Program
             string elapsedText = elapsed.TotalMinutes >= 1
                 ? $"Elapsed: {(int)elapsed.TotalMinutes}m {elapsed.Seconds:00}s"
                 : $"Elapsed: {Math.Max(0, (int)elapsed.TotalSeconds)}s";
-            _elapsedLabel.Text = elapsedText;
+            TryBeginInvoke(() =>
+            {
+                if (CanUpdateControls())
+                {
+                    _elapsedLabel.Text = elapsedText;
+                }
+            });
         }
 
         public void ApplyProgress(InstallProgressUpdate update)
@@ -2776,23 +2783,31 @@ internal static class Program
                 statusText = $"{statusText} ({Math.Min(completed.Value, total.Value)}/{total.Value})";
             }
 
-            _statusLabel.Text = statusText;
-
-            if (total.HasValue)
+            TryBeginInvoke(() =>
             {
-                int boundedTotal = Math.Max(1, total.Value);
-                int boundedCompleted = Math.Max(0, Math.Min(completed ?? 0, boundedTotal));
-                int percent = (int)Math.Round((double)boundedCompleted / boundedTotal * 100d, MidpointRounding.AwayFromZero);
-                int trackWidth = Math.Max(1, _progressTrack.ClientSize.Width);
-                _progressFill.Width = Math.Max(8, (int)Math.Round(trackWidth * percent / 100d, MidpointRounding.AwayFromZero));
-                _progressValueLabel.Text = $"{percent}%";
-                return;
-            }
+                if (!CanUpdateControls())
+                {
+                    return;
+                }
 
-            int pulse = 96 + Math.Abs((int)(Environment.TickCount64 % 180) - 90) * 2;
-            int pulsingTrackWidth = Math.Max(1, _progressTrack.ClientSize.Width);
-            _progressFill.Width = Math.Min(pulsingTrackWidth, pulse);
-            _progressValueLabel.Text = "Preparing…";
+                _statusLabel.Text = statusText;
+
+                if (total.HasValue)
+                {
+                    int boundedTotal = Math.Max(1, total.Value);
+                    int boundedCompleted = Math.Max(0, Math.Min(completed ?? 0, boundedTotal));
+                    int percent = (int)Math.Round((double)boundedCompleted / boundedTotal * 100d, MidpointRounding.AwayFromZero);
+                    int trackWidth = Math.Max(1, _progressTrack.ClientSize.Width);
+                    _progressFill.Width = Math.Max(8, (int)Math.Round(trackWidth * percent / 100d, MidpointRounding.AwayFromZero));
+                    _progressValueLabel.Text = $"{percent}%";
+                    return;
+                }
+
+                int pulse = 96 + Math.Abs((int)(Environment.TickCount64 % 180) - 90) * 2;
+                int pulsingTrackWidth = Math.Max(1, _progressTrack.ClientSize.Width);
+                _progressFill.Width = Math.Min(pulsingTrackWidth, pulse);
+                _progressValueLabel.Text = "Preparing" + '\u2026';
+            });
         }
 
         private bool CanUpdateControls()
@@ -2803,6 +2818,33 @@ internal static class Program
                 && !_statusLabel.IsDisposed
                 && !_progressFill.IsDisposed
                 && !_progressValueLabel.IsDisposed;
+
+        /// <summary>
+        /// Marshals a splash update onto the UI thread. Progress callbacks arrive on worker
+        /// threads (Progress&lt;T&gt; without a captured sync context), and the splash can close
+        /// concurrently with the last queued update; touching Control properties from a worker
+        /// thread races the WinForms PropertyStore (InvalidCastException) and BeginInvoke can
+        /// race handle teardown (ObjectDisposedException). Both failures are cosmetic for an
+        /// install that is already finishing, so they are swallowed here.
+        /// </summary>
+        private void TryBeginInvoke(Action update)
+        {
+            if (!CanUpdateControls())
+            {
+                return;
+            }
+
+            try
+            {
+                BeginInvoke(update);
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+        }
 
         private static string BuildProgressDisplayStage(string stage)
         {

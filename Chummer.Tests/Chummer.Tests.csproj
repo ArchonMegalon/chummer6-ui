@@ -70,12 +70,16 @@
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="DesktopCrashRuntimeTests.cs" />
     <Compile Include="DesktopMouseFirstJourneyRuntimeTests.cs" />
+    <Compile Include="DesktopProbeEnvironmentGuardTests.cs" />
     <Compile Include="DesktopPreferenceRuntimeTests.cs" />
     <Compile Include="DesktopRepoRootLocatorTests.cs" />
     <Compile Include="DesktopStartupSmokeRuntimeTests.cs" />
     <Compile Include="DesktopUpdateManifestParserTests.cs" />
     <Compile Include="DesktopUpdateRuntimeTests.cs" />
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
+    <Compile Include="Presentation\CharacterCreationWizardProjectorAuthorityTests.cs" />
+    <Compile Include="Presentation\CharacterCreationWizardProjectorAuthorityFixtures.cs" />
+    <Compile Include="Presentation\WorkspacePrintPdfComposerTests.cs" />
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
 	  <ItemGroup Condition="'$(ResolvedFocusedTestCompileFiles)' != ''">
@@ -212,6 +216,7 @@
     <Compile Include="SettingsStoreTests.cs" />
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
     <Compile Include="DesktopAnalyticsClientTests.cs" />
+    <Compile Include="DesktopProbeEnvironmentGuardTests.cs" />
     <Compile Include="DesktopCrashRuntimeTests.cs" />
     <Compile Include="DesktopMouseFirstJourneyRuntimeTests.cs" />
     <Compile Include="DesktopRepoRootLocatorTests.cs" />
