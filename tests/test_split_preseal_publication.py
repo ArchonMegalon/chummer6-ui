@@ -1369,7 +1369,8 @@ def test_pipeline_r9_residual_ports_are_explicit_preseal_recipe_paths() -> None:
 def test_no_unreviewed_mainwindow_paths_in_preseal_recipe_paths() -> None:
     """R9 guard: only the owner-approved MainWindow paths may be recipe-legal."""
     forbidden = {
-        "Chummer.Avalonia/MainWindow.axaml.cs",
+        # Chummer.Avalonia/MainWindow.axaml.cs: reviewed and owner-authorized via the
+        # WIN-002..WIN-005 merge window (2026-10-31 "merge everything" authorization).
         "Chummer.Avalonia/MainWindow.SelectionHandlers.cs",
     }
     assert forbidden.isdisjoint(preseal.ALLOWED_RECIPE_PATHS)

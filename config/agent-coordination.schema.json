@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "tables": {
+    "tasks": {
+      "name": "ChummerCoordinationTasks_v1",
+      "writer": "controller",
+      "fields": [
+        {"name": "task_id", "type": "singleLineText"},
+        {"name": "title", "type": "singleLineText"},
+        {"name": "owner", "type": "singleLineText"},
+        {"name": "assignment_generation", "type": "number"},
+        {"name": "owner_session_id", "type": "singleLineText"},
+        {"name": "base_sha", "type": "singleLineText"},
+        {"name": "allowed_paths_json", "type": "longText"},
+        {"name": "acceptance", "type": "longText"},
+        {"name": "dependencies_json", "type": "longText"},
+        {"name": "status", "type": "singleLineText"},
+        {"name": "result_refs_json", "type": "longText"},
+        {"name": "original_refs_json", "type": "longText"}
+      ]
+    },
+    "events": {
+      "name": "ChummerCoordinationWorkerEvents_v1",
+      "writer": "worker (append only)",
+      "fields": [
+        {"name": "operation_id", "type": "singleLineText"},
+        {"name": "worker_id", "type": "singleLineText"},
+        {"name": "task_id", "type": "singleLineText"},
+        {"name": "assignment_generation", "type": "number"},
+        {"name": "session_id", "type": "singleLineText"},
+        {"name": "kind", "type": "singleLineText"},
+        {"name": "status", "type": "singleLineText"},
+        {"name": "summary", "type": "longText"},
+        {"name": "heartbeat_at", "type": "singleLineText"},
+        {"name": "branch", "type": "singleLineText"},
+        {"name": "commit_sha", "type": "singleLineText"},
+        {"name": "tests_json", "type": "longText"},
+        {"name": "blockers_json", "type": "longText"},
+        {"name": "result_refs_json", "type": "longText"},
+        {"name": "requested_paths_json", "type": "longText"}
+      ]
+    }
+  }
+}

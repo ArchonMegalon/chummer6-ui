@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Chummer.Application.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
@@ -24,6 +25,9 @@ public partial class MainWindow : Window
     private readonly IAvaloniaCoachSidecarClient _coachSidecarClient;
     private readonly DesktopAnalyticsClient _desktopAnalyticsClient;
     private readonly ICharacterCreationContactsInteractionPresenter? _creationContactsInteractionPresenter;
+    private readonly ICharacterCreationFoundationInteractionPresenter? _creationFoundationInteractionPresenter;
+    private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
+    private readonly ICharacterCreationPrerequisiteService? _creationPrerequisiteService;
     private readonly CharacterOverviewViewModelAdapter _adapter;
     private readonly MainWindowActionExecutionCoordinator _actionExecutionCoordinator;
     private readonly MainWindowInteractionCoordinator _interactionCoordinator;
@@ -43,7 +47,10 @@ public partial class MainWindow : Window
             ResolveService<IAvaloniaCoachSidecarClient>(),
             ResolveService<DesktopAnalyticsClient>(),
             ResolveService<CharacterOverviewViewModelAdapter>(),
-            ResolveService<ICharacterCreationContactsInteractionPresenter>())
+            ResolveService<ICharacterCreationContactsInteractionPresenter>(),
+            ResolveService<ICharacterCreationFoundationInteractionPresenter>(),
+            ResolveService<ICharacterCreationFinalizationService>(),
+            ResolveService<ICharacterCreationPrerequisiteService>())
     {
     }
 
@@ -83,7 +90,9 @@ public partial class MainWindow : Window
             coachSidecarClient,
             desktopAnalyticsClient,
             adapter,
-            creationContactsInteractionPresenter: null)
+            creationContactsInteractionPresenter: null,
+            creationFoundationInteractionPresenter: null,
+            creationFinalizationService: null)
     {
     }
 
@@ -95,7 +104,10 @@ public partial class MainWindow : Window
         IAvaloniaCoachSidecarClient coachSidecarClient,
         DesktopAnalyticsClient desktopAnalyticsClient,
         CharacterOverviewViewModelAdapter adapter,
-        ICharacterCreationContactsInteractionPresenter? creationContactsInteractionPresenter)
+        ICharacterCreationContactsInteractionPresenter? creationContactsInteractionPresenter,
+        ICharacterCreationFoundationInteractionPresenter? creationFoundationInteractionPresenter,
+        ICharacterCreationFinalizationService? creationFinalizationService,
+        ICharacterCreationPrerequisiteService? creationPrerequisiteService = null)
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
@@ -112,6 +124,9 @@ public partial class MainWindow : Window
         _coachSidecarClient = coachSidecarClient;
         _desktopAnalyticsClient = desktopAnalyticsClient;
         _creationContactsInteractionPresenter = creationContactsInteractionPresenter;
+        _creationFoundationInteractionPresenter = creationFoundationInteractionPresenter;
+        _creationFinalizationService = creationFinalizationService;
+        _creationPrerequisiteService = creationPrerequisiteService;
         _adapter = adapter;
         _actionExecutionCoordinator = new MainWindowActionExecutionCoordinator(
             adapter,

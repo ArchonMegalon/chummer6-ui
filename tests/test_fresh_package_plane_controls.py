@@ -429,13 +429,13 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "695d810062d9fa5335535225b5837c58389c9fee",
+            "blob": "713fb8540ee1098824b4c4b21b3343f5c420482c",
             "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "52a6454d2f73484eb996b54f89f01241323b54173d3ab38bad0a0b1df04d471c",
+            "rawSha256": "909c16c8da2c8657791a4972da3022efea3fb62144d473272f790db22bfa98de",
             "rawSizeBytes": 69810,
-            "semanticCanonicalSha256": "52a6454d2f73484eb996b54f89f01241323b54173d3ab38bad0a0b1df04d471c",
+            "semanticCanonicalSha256": "909c16c8da2c8657791a4972da3022efea3fb62144d473272f790db22bfa98de",
             "semanticCanonicalSizeBytes": 69810,
             "tree": "8ad074d568e7766ecde60718e004dafefa4de297",
         },
@@ -446,7 +446,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 69810
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "52a6454d2f73484eb996b54f89f01241323b54173d3ab38bad0a0b1df04d471c"
+        "909c16c8da2c8657791a4972da3022efea3fb62144d473272f790db22bfa98de"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -3085,7 +3085,7 @@ def test_new_owner_test_links_and_minimums_bind_actual_mstest_cases() -> None:
 
 def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependencies() -> None:
     expected = (
-        ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 74),
+        ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 76),
         ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 27),
         ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
         ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),
@@ -3102,7 +3102,7 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == relative.removeprefix("Chummer.Tests/")
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
-    assert sum(minimum for _, _, minimum in expected) == 216
+    assert sum(minimum for _, _, minimum in expected) == 218
     assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 60 + 4 + 2 + 8 + 10 + 102 + 9
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
