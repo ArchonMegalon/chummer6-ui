@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using Avalonia.Controls;
 using Chummer.Application.Characters;
 using Avalonia.Platform.Storage;
+using Chummer.Avalonia.Creation;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.AI;
 using Chummer.Contracts.Characters;
@@ -46,6 +48,7 @@ public partial class MainWindow
         CharacterCreationWizardControl.ResourcesConfirmRequested += CreationWizard_OnResourcesConfirmRequested;
         CharacterCreationWizardControl.FinalizeRequested += CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested += CreationWizard_OnPriorityConfirmRequested;
+        CharacterCreationWizardControl.FinishWithAiRequested += CreationWizard_OnFinishWithAiRequested;
     }
 
     private void DetachCreationWizard()
@@ -62,6 +65,7 @@ public partial class MainWindow
         CharacterCreationWizardControl.FoundationConfirmRequested -= CreationWizard_OnFoundationConfirmRequested;
         CharacterCreationWizardControl.FinalizeRequested -= CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested -= CreationWizard_OnPriorityConfirmRequested;
+        CharacterCreationWizardControl.FinishWithAiRequested -= CreationWizard_OnFinishWithAiRequested;
     }
 
     private void ApplyCreationWizardState(CharacterOverviewState overview)
@@ -110,11 +114,18 @@ public partial class MainWindow
             overview.CreationContacts);
         _boundCreationWizardSnapshot = snapshot;
         CharacterCreationWizardControl.SetState(state);
+        CharacterCreationWizardControl.SetStartingCashState(overview.CreationFinalization?.StartingCashSource);
         CharacterCreationWizardControl.SetFinalizeAvailability(
             overview.CreationFinalization is { } finalization && finalization.CanReview,
             overview.CreationFinalization?.Blockers ?? []);
         _creationWizardBuildGhostPreferenceEnabled = !overview.Preferences.DisableAiFeatures;
         CharacterCreationWizardControl.SetBuildGhostEnabled(_creationWizardBuildGhostPreferenceEnabled);
+        CharacterCreationWizardControl.SetFinishWithAiAvailability(
+            // Finish-with-AI fills missing deep stages BEFORE review, so availability
+        // follows the wizard being open (same gate as the Build Ghost chat), not
+        // the authoritatively-gated review step.
+        overview.CreationWizard is not null
+            && _creationWizardBuildGhostPreferenceEnabled);
         TryPersistWizardCheckpoint();
     
         CharacterCreationWizardControl.SetPrerequisiteState(CreationWizard_LoadPrerequisiteState());
@@ -401,7 +412,10 @@ public partial class MainWindow
         {
             CharacterCreationFinalizationResult<CharacterCreationFinalizationReview> review =
                 _creationFinalizationService.Review(
-                    new CharacterCreationFinalizationReviewRequest(finalizationState.Binding));
+                    new CharacterCreationFinalizationReviewRequest(finalizationState.Binding)
+                {
+                    StartingCash = CharacterCreationWizardControl.GetStartingCashChoice(),
+                });
             if (!review.Success || review.Value is not { } reviewValue)
             {
                 CharacterCreationWizardControl.SetFinalizeResult(review.Outcome, review.Blockers);
@@ -424,7 +438,10 @@ public partial class MainWindow
                             ?? throw new InvalidOperationException(
                                 "Whole-build review returned no plan digest for a confirmable finalization."),
                         idempotencyKey,
-                        ExplicitlyConfirmed: true));
+                        ExplicitlyConfirmed: true)
+                    {
+                        StartingCash = CharacterCreationWizardControl.GetStartingCashChoice()
+                    });
             if (confirm.Success)
             {
                 CharacterCreationWizardControl.SetFinalizeResult(confirm.Outcome, confirm.Blockers);
@@ -446,6 +463,80 @@ public partial class MainWindow
         finally
         {
             CharacterCreationWizardControl.SetFinalizeMutationBusy(false);
+        }
+    }
+    private async void CreationWizard_OnFinishWithAiRequested(object? sender, EventArgs e)
+    {
+        if (_aiFinishService is null
+            || !_creationWizardBuildGhostPreferenceEnabled
+            || _adapter.State.WorkspaceId is not { } workspaceId)
+        {
+            return;
+        }
+
+        CharacterCreationWizardControl.SetFinishWithAiBusy(true);
+        try
+        {
+            var proposal = await Task.Run(
+                () => _aiFinishService.BuildProposal(workspaceId.Value),
+                _creationWizardLifetime.Token).ConfigureAwait(true);
+
+            if (!proposal.NeedsChanges)
+            {
+                CharacterCreationWizardControl.SetFinishWithAiResult(
+                    true,
+                    "Build Ghost: character already complete - nothing to fill.");
+                return;
+            }
+
+            var dialog = new CreationAiFinishReviewWindow(proposal);
+            var approved = await dialog.ShowDialog<bool>(this).ConfigureAwait(true);
+            if (!approved)
+            {
+                CharacterCreationWizardControl.SetFinishWithAiResult(
+                    false, "Build Ghost proposal dismissed.");
+                return;
+            }
+
+            var results = await Task.Run(
+                () => _aiFinishService.Apply(workspaceId.Value, proposal),
+                _creationWizardLifetime.Token).ConfigureAwait(true);
+
+            var failed = results.Where(row => !row.Success).ToImmutableArray();
+            if (failed.Length > 0)
+            {
+                CharacterCreationWizardControl.SetFinishWithAiResult(
+                    false,
+                    "Build Ghost applied with " + failed.Length + " failed domain(s): " +
+                    string.Join(", ", failed.Select(row => row.Domain + " (" + row.Outcome + ")")));
+            }
+            else
+            {
+                CharacterCreationWizardControl.SetFinishWithAiResult(
+                    true,
+                    "Build Ghost applied the plan across " + results.Count + " domain(s).");
+            }
+
+            if (_adapter.State.WorkspaceId is { } reloadWorkspaceId)
+            {
+                await _adapter.LoadAsync(reloadWorkspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+                ApplyCreationWizardState(_adapter.State);
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (CreationAiFinishService.CreationAiFinishException ex)
+        {
+            CharacterCreationWizardControl.SetFinishWithAiResult(false, ex.Message);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            CharacterCreationWizardControl.SetFinishWithAiResult(false, ex.Message);
+        }
+        finally
+        {
+            CharacterCreationWizardControl.SetFinishWithAiBusy(false);
         }
     }
 

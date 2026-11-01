@@ -5,6 +5,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using Chummer.Application.Characters;
+using Chummer.Avalonia.Creation;
 using Chummer.Contracts.Presentation;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
@@ -29,6 +30,7 @@ public partial class MainWindow : Window
     private readonly ICharacterCreationResourcesInteractionPresenter? _creationResourcesInteractionPresenter;
     private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
     private readonly ICharacterCreationPrerequisiteService? _creationPrerequisiteService;
+    private readonly CreationAiFinishService? _aiFinishService;
     private readonly CharacterOverviewViewModelAdapter _adapter;
     private readonly MainWindowActionExecutionCoordinator _actionExecutionCoordinator;
     private readonly MainWindowInteractionCoordinator _interactionCoordinator;
@@ -52,7 +54,8 @@ public partial class MainWindow : Window
             ResolveService<ICharacterCreationFoundationInteractionPresenter>(),
             ResolveService<ICharacterCreationResourcesInteractionPresenter>(),
             ResolveService<ICharacterCreationFinalizationService>(),
-            ResolveService<ICharacterCreationPrerequisiteService>())
+            ResolveService<ICharacterCreationPrerequisiteService>(),
+            ResolveService<CreationAiFinishService>())
     {
     }
 
@@ -95,7 +98,8 @@ public partial class MainWindow : Window
             creationContactsInteractionPresenter: null,
             creationFoundationInteractionPresenter: null,
             creationResourcesInteractionPresenter: null,
-            creationFinalizationService: null)
+            creationFinalizationService: null,
+            creationAiFinishService: null)
     {
     }
 
@@ -111,7 +115,8 @@ public partial class MainWindow : Window
         ICharacterCreationFoundationInteractionPresenter? creationFoundationInteractionPresenter,
         ICharacterCreationResourcesInteractionPresenter? creationResourcesInteractionPresenter,
         ICharacterCreationFinalizationService? creationFinalizationService,
-        ICharacterCreationPrerequisiteService? creationPrerequisiteService = null)
+        ICharacterCreationPrerequisiteService? creationPrerequisiteService = null,
+        CreationAiFinishService? creationAiFinishService = null)
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
@@ -132,6 +137,7 @@ public partial class MainWindow : Window
         _creationResourcesInteractionPresenter = creationResourcesInteractionPresenter;
         _creationFinalizationService = creationFinalizationService;
         _creationPrerequisiteService = creationPrerequisiteService;
+        _aiFinishService = creationAiFinishService;
         _adapter = adapter;
         _actionExecutionCoordinator = new MainWindowActionExecutionCoordinator(
             adapter,

@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Chummer.Contracts.Characters;
 using Chummer.Presentation.Overview;
+using Chummer.Contracts.Presentation;
 using System.Globalization;
 
 namespace Chummer.Avalonia.Controls;
@@ -516,6 +517,46 @@ public partial class CharacterCreationWizardControl : UserControl
     public event EventHandler<CharacterCreationFoundationConfirmRequested>? FoundationConfirmRequested;
     public event EventHandler? FinalizeRequested;
 
+    /// <summary>Raised when the user asks the Build Ghost to finish the character.</summary>
+    public event EventHandler? FinishWithAiRequested;
+
+    private bool _aiFinishBusy;
+
+    /// <summary>
+    /// Projects overview finalization availability onto the Finish-with-AI
+    /// affordance: it lives on the same finalization-read authority as Finish,
+    /// and is hidden while any wizard mutation is in flight.
+    /// </summary>
+    public void SetFinishWithAiAvailability(bool canReview)
+    {
+        FinishWithAiButton.IsVisible = canReview && !_finalizeBusy && !_aiFinishBusy;
+        FinishWithAiButton.IsEnabled = canReview && !_finalizeBusy && !_aiFinishBusy;
+    }
+
+    /// <summary>Shows the AI-finish surface as busy (button hidden while working).</summary>
+    public void SetFinishWithAiBusy(bool busy)
+    {
+        _aiFinishBusy = busy;
+        FinishWithAiButton.IsVisible = !busy;
+        SetFinishWithAiAvailability(_state is not null);
+        if (busy)
+        {
+            FinalizeStatusText.Text = "Build Ghost is preparing a missing-only proposal...";
+        }
+    }
+
+    /// <summary>Reports the AI-finish outcome in the finalize status line.</summary>
+    public bool IsFinishWithAiBusy => _aiFinishBusy;
+
+    public void SetFinishWithAiResult(bool success, string message)
+    {
+        _finalizeStatus = message;
+        FinalizeStatusText.Text = message;
+        FinishWithAiButton.IsVisible = !success;
+        FinishWithAiButton.IsEnabled = true;
+    }
+
+
     /// <summary>
     /// Projects the overview state's finalization read into the wizard surface.
     /// The wizard snapshot itself is navigation/read-only (Core authority); the
@@ -617,9 +658,82 @@ public partial class CharacterCreationWizardControl : UserControl
         RefreshBuildGhostAvailability();
     }
 
+
+    private CharacterCreationStartingNuyenSource? _startingCashSource;
+    private int _startingCashTotal;
+    private bool _startingCashRolled;
+
+    /// <summary>
+    /// Projects the authoritative starting-cash source and rolls the player's
+    /// dice for them once per source binding (Chummer5a parity). The result is
+    /// displayed on the finalize surface; Re-roll re-rolls fairly.
+    /// </summary>
+    public void SetStartingCashState(CharacterCreationStartingNuyenSource? source)
+    {
+        bool sourceChanged = !string.Equals(
+            _startingCashSource?.AuthorityDigest,
+            source?.AuthorityDigest,
+            StringComparison.Ordinal);
+        _startingCashSource = source;
+        if (source is null)
+        {
+            _startingCashRolled = false;
+            _startingCashTotal = 0;
+            StartingCashPanel.IsVisible = false;
+            return;
+        }
+        if (sourceChanged || !_startingCashRolled)
+        {
+            _startingCashTotal = RollStartingCash(source);
+            _startingCashRolled = true;
+        }
+        StartingCashPanel.IsVisible = true;
+        StartingCashText.Text = string.Format(
+            CultureInfo.InvariantCulture,
+            "{0}: rolled {1}d6 x{2} = {3} nuyen. Re-roll if you prefer another roll.",
+            source.Name,
+            source.Dice,
+            source.Multiplier,
+            _startingCashTotal);
+    }
+
+    /// <summary>The rolled starting-cash choice, or null before the first roll.</summary>
+    public CharacterCreationStartingCashChoice? GetStartingCashChoice()
+    {
+        if (_startingCashSource is null || !_startingCashRolled)
+            return null;
+        int max = _startingCashSource.Dice * 6;
+        int total = Math.Clamp(_startingCashTotal, _startingCashSource.Dice, max);
+        return new CharacterCreationStartingCashChoice(_startingCashSource.AuthorityDigest, total);
+    }
+
+    private static int RollStartingCash(CharacterCreationStartingNuyenSource source)
+    {
+        if (source.Dice <= 0)
+            return 0;
+        int total = 0;
+        for (int i = 0; i < source.Dice; i++)
+        {
+            total += System.Random.Shared.Next(1, 7);
+        }
+        return total;
+    }
+
+    private void StartingCashRerollButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_startingCashSource is null)
+            return;
+        _startingCashTotal = RollStartingCash(_startingCashSource);
+        SetStartingCashState(_startingCashSource);
+    }
     private void FinalizeButton_OnClick(object? sender, RoutedEventArgs e)
     {
         FinalizeRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void FinishWithAiButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        FinishWithAiRequested?.Invoke(this, EventArgs.Empty);
     }
 
     public void SetContactPrepareResult(CharacterCreationContactsInteractionPrepareResult result)
@@ -758,9 +872,9 @@ public partial class CharacterCreationWizardControl : UserControl
         if (preview.Nationality is { } nationality)
             body.Children.Add(Caption($"Nationality: {nationality.Name}"));
         body.Children.Add(Caption(
-            $"Life modules: {preview.LifeModuleBudgetBefore.Remaining} → {preview.LifeModuleBudgetAfter.Remaining} remaining"));
+            $"Life modules: {preview.LifeModuleBudgetBefore.Remaining} â†’ {preview.LifeModuleBudgetAfter.Remaining} remaining"));
         foreach (CharacterCreationFoundationDiffEntry diff in preview.Diff)
-            body.Children.Add(Caption($"{diff.DiffId} [{diff.Domain}]: {diff.BeforeValue ?? "-"} → {diff.AfterValue ?? "-"}"));
+            body.Children.Add(Caption($"{diff.DiffId} [{diff.Domain}]: {diff.BeforeValue ?? "-"} â†’ {diff.AfterValue ?? "-"}"));
         if (preview.AuthorityBlockers.Count > 0)
             body.Children.Add(Caption($"Blocked: {string.Join(", ", preview.AuthorityBlockers)}"));
         if (!string.IsNullOrWhiteSpace(_foundationStatus))
@@ -867,7 +981,7 @@ public partial class CharacterCreationWizardControl : UserControl
         {
             string exactness = budget.IsExact ? "exact" : "authority pending";
             BudgetList.Children.Add(Caption(
-                $"{budget.Label}: {budget.Remaining} / {budget.Total} {budget.Unit} remaining · {exactness}"));
+                $"{budget.Label}: {budget.Remaining} / {budget.Total} {budget.Unit} remaining Â· {exactness}"));
         }
     }
 
@@ -912,7 +1026,7 @@ public partial class CharacterCreationWizardControl : UserControl
                     Children =
                     {
                         new TextBlock { Text = option.Label, Classes = { "shell-section-title" } },
-                    Caption($"{prerequisite} · {costs}"),
+                    Caption($"{prerequisite} Â· {costs}"),
                     Caption($"Source: {source}")
                 }
             }
@@ -945,7 +1059,7 @@ public partial class CharacterCreationWizardControl : UserControl
             Children =
             {
                 new TextBlock { Text = "Exact Core resources preview", Classes = { "shell-section-title" } },
-                Caption($"Total starting nuyen: {after.TotalStartingNuyen:0}¥ · remaining: {after.RemainingNuyen:0}¥"),
+                Caption($"Total starting nuyen: {after.TotalStartingNuyen:0}Â¥ Â· remaining: {after.RemainingNuyen:0}Â¥"),
                 prepared.Blockers.Count == 0
                     ? Caption("Preview is legal; confirm to commit against this exact revision.")
                     : Caption($"Blocked: {string.Join(", ", prepared.Blockers)}"),
@@ -999,13 +1113,13 @@ public partial class CharacterCreationWizardControl : UserControl
                 Classes = { "shell-section-title" }
             });
             fields.Children.Add(Caption(
-                $"{contact.Role} · {contact.ContactPointCost} contact points"));
+                $"{contact.Role} Â· {contact.ContactPointCost} contact points"));
             foreach (CharacterCreationWizardDesktopContactField field in contact.Fields)
             {
                 StackPanel row = new() { Spacing = 2 };
                 row.Children.Add(Caption(field.IsEditable
                     ? field.Label
-                    : $"{field.Label} · locked"));
+                    : $"{field.Label} Â· locked"));
                 Control editor = BuildContactEditor(contact.ContactId, field);
                 row.Children.Add(editor);
                 fields.Children.Add(row);
@@ -1100,14 +1214,14 @@ public partial class CharacterCreationWizardControl : UserControl
             Classes = { "shell-section-title" }
         });
         body.Children.Add(Caption(
-            $"Contacts: {preview.ContactBudgetBefore.Remaining} → {preview.ContactBudgetAfter.Remaining} remaining"));
+            $"Contacts: {preview.ContactBudgetBefore.Remaining} â†’ {preview.ContactBudgetAfter.Remaining} remaining"));
         body.Children.Add(Caption(
-            $"Friends in High Places: {preview.HighPlacesBudgetBefore.Remaining} → {preview.HighPlacesBudgetAfter.Remaining} remaining"));
+            $"Friends in High Places: {preview.HighPlacesBudgetBefore.Remaining} â†’ {preview.HighPlacesBudgetAfter.Remaining} remaining"));
         foreach (CharacterCreationContactWriteOperation operation in preview.WritePlan.Operations
                      .OrderBy(static operation => operation.Order))
         {
             body.Children.Add(Caption(
-                $"{operation.Order}. {operation.FieldId}: {operation.BeforeValue} → {operation.AfterValue}"));
+                $"{operation.Order}. {operation.FieldId}: {operation.BeforeValue} â†’ {operation.AfterValue}"));
         }
         if (preview.Blockers.Count > 0)
             body.Children.Add(Caption($"Blocked: {string.Join(", ", preview.Blockers)}"));
@@ -1235,7 +1349,7 @@ public partial class CharacterCreationWizardControl : UserControl
         IReadOnlyList<string> blockers)
         => blockers.Count == 0
             ? $"Contact operation: {outcome}."
-            : $"Contact operation: {outcome} · {string.Join(", ", blockers)}";
+            : $"Contact operation: {outcome} Â· {string.Join(", ", blockers)}";
 
     private void ContactPreviewButton_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -1289,7 +1403,7 @@ public partial class CharacterCreationWizardControl : UserControl
             status.Add($"Blockers: {string.Join(", ", step.Blockers)}");
         if (step.Warnings.Count > 0)
             status.Add($"Warnings: {string.Join(", ", step.Warnings)}");
-        return string.Join(" · ", status);
+        return string.Join(" Â· ", status);
     }
 
     private void StepButton_OnClick(object? sender, RoutedEventArgs e)

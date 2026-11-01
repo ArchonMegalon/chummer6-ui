@@ -154,6 +154,9 @@ public partial class App : global::Avalonia.Application
         services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
         services.AddSingleton<CharacterOverviewViewModelAdapter>();
         services.AddSingleton<DesktopAnalyticsClient>();
+        services.AddSingleton<Chummer.Avalonia.Creation.CreationAiFinishService>();
+        services.AddSingleton<Chummer.Application.Owners.IOwnerContextLeaseAccessor>(static sp =>
+            (Chummer.Application.Owners.IOwnerContextLeaseAccessor)sp.GetRequiredService<Chummer.Application.Owners.IOwnerContextAccessor>());
         services.AddSingleton<MainWindow>();
     }
 

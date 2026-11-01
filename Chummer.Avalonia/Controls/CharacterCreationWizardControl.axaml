@@ -86,7 +86,22 @@
             <StackPanel x:Name="ContactsList" Spacing="8" IsVisible="False" />
           </StackPanel>
         </ScrollViewer>
-        <TextBlock x:Name="FinalizeStatusText"
+        <StackPanel x:Name="StartingCashPanel" Spacing="4" IsVisible="False">
+          <TextBlock x:Name="StartingCashHeading"
+                     Classes="shell-section-title"
+                     Text="Starting cash"
+                     AutomationProperties.AutomationId="creation-wizard-starting-cash-heading" />
+          <TextBlock x:Name="StartingCashText"
+                     Classes="shell-caption"
+                     TextWrapping="Wrap"
+                     Text="Starting cash has not been rolled yet."
+                     AutomationProperties.AutomationId="creation-wizard-starting-cash-text" />
+          <Button x:Name="StartingCashRerollButton"
+                  Classes="shell-action"
+                  Content="Re-roll starting cash"
+                  Click="StartingCashRerollButton_OnClick"
+                  AutomationProperties.AutomationId="creation-wizard-starting-cash-reroll" />
+        </StackPanel>        <TextBlock x:Name="FinalizeStatusText"
                    Grid.Row="3"
                    Classes="shell-caption"
                    TextWrapping="Wrap"
@@ -108,7 +123,7 @@
       <Border Grid.Row="1" Classes="shell-card subtle" Padding="12">
         <Grid RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8">
           <StackPanel Spacing="3">
-            <TextBlock Classes="shell-section-title" Text="Rook · Build Ghost" />
+            <TextBlock Classes="shell-section-title" Text="Rook Â· Build Ghost" />
             <TextBlock Classes="shell-caption"
                        Text="When authoritative runtime context is available, ask at any step. Rook can advise but cannot apply or confirm changes."
                        TextWrapping="Wrap" />
@@ -167,6 +182,12 @@
                 Content="Next &gt;"
                 Click="ContinueButton_OnClick"
                 AutomationProperties.AutomationId="creation-wizard-continue" />
+        <Button x:Name="FinishWithAiButton"
+                Classes="shell-action quiet"
+                Content="Finish with AI"
+                Click="FinishWithAiButton_OnClick"
+                IsVisible="False"
+                AutomationProperties.AutomationId="creation-wizard-finish-with-ai" />
         <Button x:Name="FinalizeButton"
                 Grid.Column="4"
                 Classes="shell-action"

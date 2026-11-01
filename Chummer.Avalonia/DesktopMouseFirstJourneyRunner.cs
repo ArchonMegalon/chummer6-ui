@@ -122,7 +122,10 @@ internal static class DesktopMouseFirstJourneyRunner
     {
         try
         {
-            using CancellationTokenSource journeyTimeout = new(JourneyTimeout);
+            using CancellationTokenSource journeyTimeout = new(
+            string.Equals(Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH"), "1", StringComparison.OrdinalIgnoreCase)
+                ? TimeSpan.FromSeconds(480)
+                : JourneyTimeout);
             DesktopMouseFirstJourneyRuntime.PrepareUserJourneyTraceOutput(context);
             bool produceUserJourneyTrace = !string.IsNullOrWhiteSpace(context.UserJourneyTraceOutputPath);
             string language = DesktopLocalizationCatalog.GetCurrentLanguage();
@@ -431,6 +434,47 @@ internal static class DesktopMouseFirstJourneyRunner
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-foundation-selected");
             } // end !attributesEntered (life-modules foundation flow)
 
+            // AI-finish leg (Build Ghost finishing flow). Env-gated so the
+            // canonical sr5-priority scenario is untouched; when enabled the
+            // journey clicks Finish with AI, approves the review dialog, and
+            // requires every domain plan to apply before finalizing. The leg
+            // runs BEFORE the review attempt because the AI-finish fills the
+            // authoritatively-blocked deep stages (attributes/skills/qualities)
+            // that gate review entry.
+            string aiFinishGate = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH") ?? string.Empty;
+            if (string.Equals(aiFinishGate, "1", StringComparison.OrdinalIgnoreCase))
+            {
+                await ClickWizardButtonAsync(
+                    wizard,
+                    "creation-wizard-finish-with-ai",
+                    steps,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                await WaitForAsync(
+                    steps,
+                    "build ghost review dialog shown",
+                    () => wizard.IsFinishWithAiBusy,
+                    journeyTimeout.Token);
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03f-ai-finish-review");
+                await ClickDialogButtonAsync(
+                    window,
+                    "creation-ai-finish-apply",
+                    steps,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                await WaitForAsync(
+                    steps,
+                    "build ghost plan applied across domains",
+                    () => !wizard.IsFinishWithAiBusy,
+                    journeyTimeout.Token,
+                    TimeSpan.FromMinutes(2.5));
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03g-ai-finish-applied");
+            }
+            else
+            {
+                RecordStep(steps, "ai-finish leg skipped (env gate off)");
+            }
+            bool finalizationApplied = false;
             // Attempt to navigate to review directly. The Core gates review entry on
             // authoritative completion of the deep stages (attributes/skills/etc.);
             // if entry is blocked we record the wizard's authoritative state and the
@@ -472,6 +516,8 @@ internal static class DesktopMouseFirstJourneyRunner
                     () => FindWizardAutomationButton(wizard, "creation-wizard-finalize")
                         is { IsVisible: true, IsEffectivelyEnabled: true },
                     journeyTimeout.Token);
+            
+                RecordStep(steps, $"starting-cash rolled: " + (wizard.GetStartingCashChoice()?.DiceTotal.ToString() ?? "none") + " dice total (displayed on finalize step)");
                 await ClickWizardButtonAsync(
                     wizard,
                     "creation-wizard-finalize",
@@ -487,8 +533,10 @@ internal static class DesktopMouseFirstJourneyRunner
                         return overview.Profile?.Created == true
                             && overview.CreationWizard is null;
                     },
-                    journeyTimeout.Token);
-                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-finalized-editor-unlocked");
+                    journeyTimeout.Token,
+                    TimeSpan.FromMinutes(2.5));
+                                finalizationApplied = true;
+await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-finalized-editor-unlocked");
             }
             else
             {
@@ -511,7 +559,11 @@ internal static class DesktopMouseFirstJourneyRunner
                     is { IsVisible: true, IsEffectivelyEnabled: true},
                 journeyTimeout.Token,
                 TimeSpan.FromSeconds(6));
-            if (resourcesEntered)
+            if (finalizationApplied)
+            {
+                RecordStep(steps, "resources deep-stage leg skipped: character already authoritatively finalized by the AI-finish leg (T33 preview pipeline no longer mutable post-finalization)");
+            }
+            else if (resourcesEntered)
             {
                 await ClickWizardButtonUntilEffectAsync(
                     wizard,
@@ -2762,6 +2814,52 @@ internal static class DesktopMouseFirstJourneyRunner
                     StringComparison.Ordinal)
                 && button.IsVisible);
 
+    private static async Task ClickDialogButtonAsync(
+        Window owner,
+        string automationId,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // The review dialog is a separate top-level Window, not a wizard
+        // descendant, so resolve it through the application's window set.
+        await WaitForAsync(
+            steps,
+            $"dialog button {automationId} available",
+            () => FindDialogAutomationButton(owner, automationId) is not null,
+            ct);
+        Button button = FindDialogAutomationButton(owner, automationId)
+            ?? throw new InvalidOperationException($"dialog button '{automationId}' was not found.");
+        bool clickObserved = false;
+        void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+        button.Click += OnClick;
+        try
+        {
+            await RoutePointerClickAsync(button);
+        }
+        finally
+        {
+            button.Click -= OnClick;
+        }
+
+        recordPointerAction();
+        RecordStep(steps, $"click dialog button {automationId}; delivered={clickObserved}");
+    }
+
+    private static Button? FindDialogAutomationButton(Window owner, string automationId)
+        => global::Avalonia.Application.Current?.ApplicationLifetime
+            is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+            ? desktop.Windows
+                .OfType<Window>()
+                .Where(window => !ReferenceEquals(window, owner))
+                .SelectMany(window => window.GetVisualDescendants().OfType<Button>())
+                .FirstOrDefault(button =>
+                    string.Equals(
+                        AutomationProperties.GetAutomationId(button),
+                        automationId,
+                        StringComparison.Ordinal)
+                    && button.IsVisible)
+            : null;
     private static async Task ClickWizardButtonAsync(
         CharacterCreationWizardControl wizard,
         string automationId,
