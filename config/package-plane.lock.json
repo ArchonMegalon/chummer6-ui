@@ -136,7 +136,7 @@
       "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs": "d03f56617b9e613dae458c23edb6ff762453d107555b9b5c759162a4dafa4172",
       "Chummer.Presentation/Overview/CharacterCreationLifestylesInteractionPresenter.cs": "a40bda2b5b83f8c1d633faf0080ec9101ba3d2731a116a0ee484b6e7944be257",
       "Chummer.Presentation/Overview/CharacterCreationLoadoutInteractionPresenter.cs": "5387a457a2d5cf74d3d7fd1e97c2aac7d9a012e1723515accfe8e06169fa5c94",
-      "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs": "aafb8502dc190bfcb53baa1c1f29080b065376592446f82360ec9b5629eba77b",
+      "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs": "7fc0853d95a617c5fe6b41b11971b233ec622a2a7587b93f790cb197b0fcc50d",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.Commands.cs": "bc4f6f47120adf62fd36a139e7f251e024e4bacbcc0e3f83d6acf9ef3cedfb26",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs": "ea9d7b6f04a3f897907d4ca112bca6e9602ab3adff73bc17c90cfe91714fa57a",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs": "827fcbd0e3fe619fa68df816d309d5a371c01bbaf11289e073b76eae91928aef",
@@ -147,7 +147,7 @@
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceMutations.cs": "29bfaeafef6976768921400312b1701ea48a3f254f7f8ecae6d40de4f46c10ff",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceRendering.cs": "d0890a911c48f0ef27059a9cbab0582bf5930cc0cb91ea0d816822dd8477c0e9",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs": "d7350286bb639023df09d0d7754ee28f102c2e572b87c93cf250b29c0f583230",
-      "Chummer.Presentation/Overview/CharacterOverviewState.cs": "258d9d210dfb74f95fbb25d3b23fe472673ee509439292d5cd2a6c3e903b508f",
+      "Chummer.Presentation/Overview/CharacterOverviewState.cs": "ace8e9fe23179512ed106ee765140a0b58d9427f351a8093fbf03bdf4e16d568",
       "Chummer.Presentation/Overview/DesktopDialogFactory.cs": "e6dd1fdca9036f3dd05907b3082025c04313348102ee212ec743e2e617a58a46",
       "Chummer.Presentation/Overview/DesktopDialogModels.cs": "18f4f428c396423d09adce918683305e90f14154843d53ca7c2666a1fdbd83ab",
       "Chummer.Presentation/Overview/DialogCoordinator.cs": "08101a6a3731de5feb6ae454fdfd35e77030365d0f32220b26f8c4b2334a2768",
@@ -170,7 +170,7 @@
       "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.StoredDeletion.cs": "bf6ecfd922236cd000fa254bd9f44f0386453138388e2713decc64d0c73d806f",
       "Chummer.Presentation/Overview/WorkspaceOverviewLifecycleCoordinator.cs": "9af6afcf395d0320b9b1f5d24a1739c305158f37122deb2ef25824280fb04a28",
       "Chummer.Presentation/Overview/WorkspaceOverviewLoader.cs": "3a467e322cc7cbe25e10012f64e0bdd05215f8489c165aa58c1c28447a9f82ec",
-      "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs": "805bfdef6b45047f147914ffa83da06e607b9fa242bd9ae3bf2beef2dc3cf6ce",
+      "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs": "635d519c63b60eb03cd55e4c9dad136e22f9f1d65afff2cdb11c7e2ac3fb74e2",
       "Chummer.Presentation/Overview/WorkspacePersistenceService.cs": "7c90dcb4d9b38fb9a9c3aa0e99a6b51989379430114739dcd11edacba99c9073",
       "Chummer.Presentation/Overview/WorkspaceRecoveryComposition.cs": "be89199aa0db63dd87d444ffeefa30f4eaa651703f8da897a4e835eb552fd9e1",
       "Chummer.Presentation/Overview/WorkspaceRecoveryPayloadStore.OwnerContext.cs": "7e7cec78be7e1edc0af1189b8426699ddfb582423c071efbf56973f202a0e2d2",
@@ -226,7 +226,7 @@
       "Chummer.Workspaces.Postgres/Chummer.Workspaces.Postgres.csproj": "09a87e9e0d5b42bf168d4ff3749d8d33e93b1af1a3e0620f791aa33e27d41a20",
       "Directory.Build.props": "b5b2ae82b34c0aa04b84ee170d7f895264ddb5b9611e448242b79868b7849140",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
-      "config/ui-owner-package-plane.lock.json": "44d6c9f55aa7f5326426b5cecfc69f7006458936efbce200669baf5b411bc953",
+      "config/ui-owner-package-plane.lock.json": "7b88a9e2540038a3c16306484e13772e6c663940d4cb7694656a3044925077af",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/verify.sh": "dc35fea4c122569c6136ec0d4c2123b8b4982d79feb943dbffca75c6f527f7bc",
       "scripts/ai/with-package-plane.sh": "7ed5943a5dd6f57427b1c67997bad363fc0ce6ed7ea3eff10810f3628acc14f3"
@@ -1055,9 +1055,9 @@
     "dependencyAuthorityCacheKey": "9ac6e47219b086726150b2218e10118265c41fab70d9a7859a73cd4d26b0b1f7",
     "inventoryContract": "chummer6-ui.owner-package-inventory/v1",
     "inventoryFileName": "ui-owner-packages.inventory.json",
-    "inventorySha256": "4130494dc3d735bbab8020cae0680d852868346edf99f53585a958397d259c7f",
-    "packageRecipeCommit": "6e60ce16ba893868068d2c63b9497e04f3f53074",
-    "packageRecipeSha256": "4fea5289daa13cd0628c0e551c3556e17664a7a23610d8139a052c4318c8d930",
+    "inventorySha256": "936bdf9c241b47f99f48bf1f68229b5ffea1f8c6f86dfdb0e94306c91d0e715c",
+    "packageRecipeCommit": "8cd963a3469012420952716ab50cd3e0517fbd82",
+    "packageRecipeSha256": "b6330d06940aab875b12ffe5a88d5d1baeafa99c0028d8570dbf18e016f6d291",
     "packages": [
       {
         "commit": "c77395de9f733427ef952c851f4a95b063cb5573",
@@ -1088,10 +1088,10 @@
     ],
     "producerLockFileName": "ui-owner-package-plane.lock.json",
     "producerLockPath": "config/ui-owner-package-plane.lock.json",
-    "producerLockSha256": "44d6c9f55aa7f5326426b5cecfc69f7006458936efbce200669baf5b411bc953",
+    "producerLockSha256": "7b88a9e2540038a3c16306484e13772e6c663940d4cb7694656a3044925077af",
     "receiptContract": "chummer6-ui.owner-package-production/v1",
     "receiptFileName": "ui-owner-packages.receipt.json",
-    "receiptSha256": "02dcc3345d9843684c529ca5cf5e95e75801a7f406f780925f12e57f202eb2e6",
+    "receiptSha256": "4e72c5d72b9f705d7ef0fddf6a837ecacf6aabb9e0f92e0c4d2743250d8cb6d1",
     "sdkVersion": "10.0.103"
   }
 }
