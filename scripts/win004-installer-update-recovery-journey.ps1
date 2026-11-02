@@ -425,9 +425,12 @@ try {
         $errOut = ''; $stdOut = ''
         try { $errOut = $p.StandardError.ReadToEnd(); $stdOut = $p.StandardOutput.ReadToEnd() } catch {}
         try {
-            $envDump = ($psi.EnvironmentVariables.GetEnumerator() | Sort-Object Name |
-                ForEach-Object { "$($_.Name)=$($_.Value)" }) -join "`r`n"
-            Set-Content -Path (Join-Path $WorkRoot 'start-failure-env.txt') -Value $envDump
+            # Privacy-safe diagnostics (re-audit item 1, 2026-11-02): never persist
+            # the child environment. The collector records allowlisted values and
+            # presence-only machine paths; credential names/values cannot appear.
+            . (Join-Path $PSScriptRoot 'win004-start-failure-diagnostics.ps1')
+            Write-StartFailureEnvironmentReport -Environment $psi.EnvironmentVariables `
+                -Path (Join-Path $WorkRoot 'start-failure-environment.json')
         } catch {}
         throw "app exited during start leg (code $($p.ExitCode)) stderr: $errOut stdout: $stdOut"
     }

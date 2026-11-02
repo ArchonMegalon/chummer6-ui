@@ -201,6 +201,8 @@ jobs:
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
             tests/test_split_preseal_publication.py
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
+            tests/test_win004_start_failure_diag_privacy.py
+          "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
             tests/test_unsigned_macos_native_build.py
           "$RUNNER_TEMP/ui-ci-python/bin/python" -m pytest -q \
             tests/test_fresh_package_plane_controls.py \
