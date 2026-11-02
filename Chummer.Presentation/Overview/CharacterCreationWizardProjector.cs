@@ -308,9 +308,27 @@ public static class CharacterCreationWizardProjector
         // Foundation is the Life Modules draft, not a second Priority metatype
         // choice. Unknown methods stay blocked until Core supplies authority.
         bool foundationRequired = usesLifeModules || !methodAuthoritative;
+        // After the method step the route follows Core prerequisite state: an
+        // authoritative Life Modules method continues into the Foundation draft,
+        // an authoritative direct method (Priority, Sum-to-Ten) skips the not-
+        // required Foundation stage and continues into Attributes, and a non-
+        // authoritative method stays blocked until Core supplies authority.
         IReadOnlyList<string> methodNext = methodAuthoritative && usesLifeModules
             ? [CharacterCreationWizardStepIds.Foundation]
-            : [];
+            : methodAuthoritative
+                ? [CharacterCreationWizardStepIds.Attributes]
+                : [];
+        // Attributes completion comes from Core's own finalization step, not
+        // from a cross-domain authority. The qualities readiness only gates
+        // entry (its binding proves the Core prerequisite data attributes need
+        // is loaded); it must never fabricate completion. When Core's
+        // finalization state is absent the stage honestly reads InProgress.
+        bool attributesConfirmed = finalizationAuthority.State?.Steps.Any(
+            static step => step.IsComplete
+                && string.Equals(
+                    step.StepId,
+                    CharacterCreationWizardStepIds.Attributes,
+                    StringComparison.Ordinal)) == true;
 
         CharacterCreationWizardStageState[] stages =
         [
@@ -387,12 +405,14 @@ public static class CharacterCreationWizardProjector
             Stage(
                 CharacterCreationWizardStepIds.Attributes,
                 "Attributes",
-                qualitiesAuthority.IsReady
+                attributesConfirmed
                     ? CharacterCreationWizardStepStatuses.Complete
-                    : CharacterCreationWizardStepStatuses.Blocked,
+                    : qualitiesAuthority.IsReady
+                        ? CharacterCreationWizardStepStatuses.InProgress
+                        : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
                 isAvailable: qualitiesAuthority.IsReady,
-                isComplete: qualitiesAuthority.IsReady,
+                isComplete: attributesConfirmed,
                 budgetIds: [CharacterCreationBudgetIds.NormalAttributes, CharacterCreationBudgetIds.SpecialAttributes],
                 blockers: qualitiesAuthority.IsReady ? [] : [LegalOptionsAuthorityUnavailable],
                 legalNextStepIds: qualitiesAuthority.IsReady
@@ -443,7 +463,7 @@ public static class CharacterCreationWizardProjector
                 legalNextStepIds: skillsAuthority.State is { CanEdit: true }
                     ? (magicResonanceRequired
                         ? [CharacterCreationWizardStepIds.MagicResonance]
-                        : [CharacterCreationWizardStepIds.ContactsLifestyles])
+                        : [CharacterCreationWizardStepIds.Resources])
                     : []),
             Stage(
                 CharacterCreationWizardStepIds.MagicResonance,

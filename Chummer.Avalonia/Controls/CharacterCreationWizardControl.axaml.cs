@@ -724,13 +724,17 @@ public partial class CharacterCreationWizardControl : UserControl
             _startingCashRolled = true;
         }
         StartingCashPanel.IsVisible = true;
+        // Display shows the payable amount (dice sum x multiplier); the
+        // choice payload in GetStartingCashChoice keeps submitting the raw
+        // dice sum to Core, which applies the multiplier itself.
         StartingCashText.Text = string.Format(
             CultureInfo.InvariantCulture,
-            "{0}: rolled {1}d6 x{2} = {3} nuyen. Re-roll if you prefer another roll.",
+            "{0}: rolled {1}d6 x{2} = {3}, {4} nuyen. Re-roll if you prefer another roll.",
             source.Name,
             source.Dice,
             source.Multiplier,
-            _startingCashTotal);
+            _startingCashTotal,
+            (long)_startingCashTotal * source.Multiplier);
     }
 
     /// <summary>The rolled starting-cash choice, or null before the first roll.</summary>
