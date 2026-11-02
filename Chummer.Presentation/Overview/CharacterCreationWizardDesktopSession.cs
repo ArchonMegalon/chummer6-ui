@@ -156,6 +156,30 @@ public static class CharacterCreationWizardBuildGhostPolicy
 }
 
 /// <summary>
+/// Feature gate for the creation wizard's Finish-with-AI affordance. The flow is
+/// still under active qualification (WINDOWS_HANDOFF 2026-11-02, item 2), so it
+/// ships dark by default: neither the wizard control nor the desktop window may
+/// surface or actuate it until an explicit operator/journey opt-in enables it
+/// for the session. The window and the mouse-first journey honor the same
+/// environment switch, so one override drives every entry point.
+/// </summary>
+public static class CharacterCreationAiFinishGatePolicy
+{
+    /// <summary>
+    /// Environment switch shared by the desktop window gate and the mouse-first
+    /// journey runner; set to "1" to opt the current session in.
+    /// </summary>
+    public const string SessionEnvVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH";
+
+    /// <summary>True only for an explicit operator/journey opt-in.</summary>
+    public static bool IsSessionEnabled()
+        => string.Equals(
+            Environment.GetEnvironmentVariable(SessionEnvVariable),
+            "1",
+            StringComparison.OrdinalIgnoreCase);
+}
+
+/// <summary>
 /// Platform-neutral desktop session for the source-driven creation wizard. Navigation consumes
 /// the typed route graph projected by Presentation; it never invents legal choices or budgets.
 /// </summary>

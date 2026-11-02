@@ -444,6 +444,9 @@ internal static class DesktopMouseFirstJourneyRunner
             string aiFinishGate = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH") ?? string.Empty;
             if (string.Equals(aiFinishGate, "1", StringComparison.OrdinalIgnoreCase))
             {
+                // Operator opted into the AI-finish leg: flip the wizard's
+                // feature gate before projecting the click target.
+                wizard.SetFinishWithAiFeatureEnabled(true);
                 await ClickWizardButtonAsync(
                     wizard,
                     "creation-wizard-finish-with-ai",

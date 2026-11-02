@@ -326,6 +326,9 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityFixtures.cs",
         "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityTests.cs",
         "Chummer.Tests/Presentation/WorkspacePrintPdfComposerTests.cs",
+        "Chummer.Presentation/Overview/CharacterCreationWizardDesktopSession.cs",
+        "Chummer.Tests/Presentation/CharacterCreationAiFinishGateAvaloniaTests.cs",
+        "docs/agents/WIN-006-CONTROLLER-FOLLOWUP-EVIDENCE.md",
 
         "Chummer.Avalonia/Controls/CareerAttributeAdvanceWindow.cs",
         "Chummer.Avalonia/Controls/CareerRewardsWindow.cs",

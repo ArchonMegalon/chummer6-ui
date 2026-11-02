@@ -23,6 +23,7 @@ public partial class MainWindow
     private string? _creationFoundationSelectedMetatype;
     private (string ModuleId, string? versionId)? _creationFoundationSelectedNationality;
     private bool _creationWizardBuildGhostPreferenceEnabled;
+    private bool _creationWizardAiFinishFeatureEnabled;
 
     private void InitializeCreationWizard()
     {
@@ -34,6 +35,11 @@ public partial class MainWindow
         {
             _creationWizardCheckpointStore = null;
         }
+
+        // Finish-with-AI ships dark (WINDOWS_HANDOFF 2026-11-02 item 2): the
+        // affordance and its handler unlock only for an explicit session opt-in.
+        _creationWizardAiFinishFeatureEnabled = CharacterCreationAiFinishGatePolicy.IsSessionEnabled();
+        CharacterCreationWizardControl.SetFinishWithAiFeatureEnabled(_creationWizardAiFinishFeatureEnabled);
 
         CharacterCreationWizardControl.StepRequested += CreationWizard_OnStepRequested;
         CharacterCreationWizardControl.ContinueRequested += CreationWizard_OnContinueRequested;
@@ -468,6 +474,7 @@ public partial class MainWindow
     private async void CreationWizard_OnFinishWithAiRequested(object? sender, EventArgs e)
     {
         if (_aiFinishService is null
+            || !_creationWizardAiFinishFeatureEnabled
             || !_creationWizardBuildGhostPreferenceEnabled
             || _adapter.State.WorkspaceId is not { } workspaceId)
         {
