@@ -1,5 +1,8 @@
 # Windows with Friday Code
 
+Read [the current Windows handoff](WINDOWS_SCOPE.md) before resuming. Preserve
+existing work; fetch current `main` and reconcile the assigned base/session.
+
 Clone `https://github.com/ArchonMegalon/chummer6-ui.git` on Windows. Start Friday
 Code yourself with its existing provider setup. GitHub carries code and Teable
 carries assignments; Windows does not need a connection to the Linux controller.
@@ -25,10 +28,10 @@ print tokens, or use `--insecure-storage`. Push your own assigned branch and ope
 a draft PR against the assigned integration branch. Protected merges and releases
 remain controller-owned. See the [GitHub CLI login documentation](https://cli.github.com/manual/gh_auth_login).
 
-Clone the handoff branch:
+For a new checkout, clone the current integration branch:
 
 ```powershell
-git clone --branch feat/remote-windows-coordination-20261031 --single-branch https://github.com/ArchonMegalon/chummer6-ui.git
+git clone --branch main --single-branch https://github.com/ArchonMegalon/chummer6-ui.git
 Set-Location chummer6-ui
 .\scripts\start-windows-worker.ps1 -Mode prepare
 ```
