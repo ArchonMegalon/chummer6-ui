@@ -2,6 +2,8 @@
 
 Read [the current Windows handoff](WINDOWS_SCOPE.md) before resuming. Preserve
 existing work; fetch current `main` and reconcile the assigned base/session.
+The current re-audit starts with removing the startup diagnostic environment
+dump, then PDF and manual-route repairs. Keep AI Finish gated.
 
 Clone `https://github.com/ArchonMegalon/chummer6-ui.git` on Windows. Start Friday
 Code yourself with its existing provider setup. GitHub carries code and Teable
