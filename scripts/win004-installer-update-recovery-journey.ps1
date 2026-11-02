@@ -489,15 +489,18 @@ try {
     }
     if (-not $updated) { throw "update apply did not land within 8 minutes (registry still '$((Get-InstallInfo).DisplayVersion)')" }
 
-    # Relaunch: the apply chain should bring the head back up under v2.
-    # KNOWN BASE DEFECT (disclosed in evidence; Chummer.Desktop.Installer is outside
-    # WIN-004's allowed paths): the installer's --auto-update --launch-head path
-    # completes the install, then crashes ~250ms later with ObjectDisposedException
-    # in InstallSplashForm (Show-after-dispose), so the automatic relaunch never
-    # happens. The harness detects that trace signature, reaps the dead installer
-    # process, and verifies the relaunch natively itself with Start-Menu semantics
-    # (updated exe, WorkingDirectory = install dir). relaunchMode in the receipt
-    # records which path came up.
+    # Relaunch: the apply chain brings the head back up under v2.
+    # FIXED 2026-11-02 (WINDOWS_HANDOFF item 7; native evidence 9/9 pass,
+    # relaunchMode='installer-auto', defect=false on audited main 0d224e7a7):
+    # this path historically crashed ~250ms after completing with
+    # ObjectDisposedException in InstallSplashForm (Show-after-dispose), so the
+    # automatic relaunch never happened and WIN-004's harness detected that
+    # trace signature, reaped the dead installer, and relaunched natively itself
+    # with Start-Menu semantics (relaunchMode='harness-fallback'). The
+    # detection/reap/relaunch logic below retains the historical diagnostic
+    # fallback. It records harness-fallback as a passing leg, so that result
+    # does not establish autonomous-update acceptance. A strict rejection of
+    # fallback relaunch remains follow-up work under WINDOWS_HANDOFF item 7.
     $infoUpd = Get-InstallInfo
     if (-not $infoUpd.ExePath) { throw 'post-update install info unusable (registry missing ExePath)' }
     $relaunched = $false

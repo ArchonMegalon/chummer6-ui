@@ -523,22 +523,59 @@ public partial class CharacterCreationWizardControl : UserControl
     private bool _aiFinishBusy;
 
     /// <summary>
+    /// Session-scoped feature gate for the Finish-with-AI affordance. Dark by
+    /// default: the flow is still under active qualification, so every
+    /// visibility write funnels through <see cref="RefreshFinishWithAiAvailability"/>
+    /// and no setter can resurface the button while the gate is closed.
+    /// </summary>
+    private bool _finishWithAiFeatureEnabled;
+
+    /// <summary>Last overview-projected finalization-read availability.</summary>
+    private bool _finishWithAiReviewAvailable;
+
+    /// <summary>
+    /// Single projection choke point for the Finish-with-AI button. The feature
+    /// gate is evaluated here and only here, so the busy/result writers cannot
+    /// bypass it by writing visibility directly.
+    /// </summary>
+    private void RefreshFinishWithAiAvailability()
+    {
+        bool canActuate = _finishWithAiFeatureEnabled
+            && _finishWithAiReviewAvailable
+            && !_finalizeBusy
+            && !_aiFinishBusy;
+        FinishWithAiButton.IsVisible = canActuate;
+        FinishWithAiButton.IsEnabled = canActuate;
+    }
+
+    /// <summary>
+    /// Enables or disables the Finish-with-AI affordance for this session.
+    /// Deliberately separate from <see cref="SetFinishWithAiAvailability"/>:
+    /// the overview projection says when the wizard could offer the action,
+    /// this gate says whether the still-qualifying flow may be offered at all.
+    /// </summary>
+    public void SetFinishWithAiFeatureEnabled(bool enabled)
+    {
+        _finishWithAiFeatureEnabled = enabled;
+        RefreshFinishWithAiAvailability();
+    }
+
+    /// <summary>
     /// Projects overview finalization availability onto the Finish-with-AI
     /// affordance: it lives on the same finalization-read authority as Finish,
     /// and is hidden while any wizard mutation is in flight.
     /// </summary>
     public void SetFinishWithAiAvailability(bool canReview)
     {
-        FinishWithAiButton.IsVisible = canReview && !_finalizeBusy && !_aiFinishBusy;
-        FinishWithAiButton.IsEnabled = canReview && !_finalizeBusy && !_aiFinishBusy;
+        _finishWithAiReviewAvailable = canReview;
+        RefreshFinishWithAiAvailability();
     }
 
     /// <summary>Shows the AI-finish surface as busy (button hidden while working).</summary>
     public void SetFinishWithAiBusy(bool busy)
     {
         _aiFinishBusy = busy;
-        FinishWithAiButton.IsVisible = !busy;
-        SetFinishWithAiAvailability(_state is not null);
+        RefreshFinishWithAiAvailability();
         if (busy)
         {
             FinalizeStatusText.Text = "Build Ghost is preparing a missing-only proposal...";
@@ -552,8 +589,7 @@ public partial class CharacterCreationWizardControl : UserControl
     {
         _finalizeStatus = message;
         FinalizeStatusText.Text = message;
-        FinishWithAiButton.IsVisible = !success;
-        FinishWithAiButton.IsEnabled = true;
+        RefreshFinishWithAiAvailability();
     }
 
 
@@ -733,6 +769,11 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void FinishWithAiButton_OnClick(object? sender, RoutedEventArgs e)
     {
+        if (!_finishWithAiFeatureEnabled)
+        {
+            return;
+        }
+
         FinishWithAiRequested?.Invoke(this, EventArgs.Empty);
     }
 
