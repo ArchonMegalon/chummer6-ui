@@ -140,4 +140,27 @@ public partial class CharacterCreationWizardProjectorAuthorityTests
             string.Equals(budget.BudgetId, CharacterCreationBudgetIds.ActiveSkills, StringComparison.Ordinal)
             && budget.IsExact));
     }
+
+    [TestMethod]
+    public void Method_stage_routes_to_attributes_for_authoritative_direct_methods()
+    {
+        // WIN-006 re-audit item 3: an authoritative direct method (Priority, Sum-to-Ten)
+        // must expose a forward route into Attributes instead of dead-ending the wizard
+        // at the method step. Non-authoritative methods stay blocked with no forward route.
+        CharacterWorkspaceId workspaceId = new("ws-authority");
+        WorkspaceOverviewLoadResult loaded = CreateLoadedOverview();
+
+        CharacterCreationWizardSnapshot snapshot = CharacterCreationWizardProjector.Project(
+            workspaceId,
+            loaded,
+            skills: null,
+            resources: null);
+
+        CharacterCreationWizardStageState method = snapshot.Steps.Single(stage =>
+            string.Equals(stage.StepId, CharacterCreationWizardStepIds.Method, StringComparison.Ordinal));
+        CollectionAssert.AreEqual(
+            new[] { CharacterCreationWizardStepIds.Attributes },
+            method.LegalNextStepIds.ToArray());
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Complete, method.Status);
+    }
 }

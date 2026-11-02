@@ -18,6 +18,8 @@ using Chummer.Presentation.Printing;
 using System.IO;
 using System.Text;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Chummer.Avalonia;
 
@@ -147,6 +149,119 @@ internal static class DesktopMouseFirstJourneyRunner
                     && window.ControlsForAutomation.MenuBar is not null
                     && window.ControlsForAutomation.CommandDialogPane is not null,
                 journeyTimeout.Token);
+
+            // Item-3 reopen leg (re-audit): when this process is the fresh second
+            // launch of the two-phase journey (CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY=1),
+            // load the workspace the first process finalized and saved through the
+            // production presenter (the same load path the persistence probe uses),
+            // then assert the finalized character restored: created profile, clean
+            // and persisted workspace row, creation wizard closed. The ordinary
+            // receipt machinery completes the process exit.
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY"),
+                    "1",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                string savedReceiptPath = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_RECEIPT")
+                    ?? throw new InvalidOperationException(
+                        "The reopen-verify leg requires CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_RECEIPT to point at the first process's pass receipt.");
+                using JsonDocument saved = JsonDocument.Parse(File.ReadAllText(savedReceiptPath));
+                if (!string.Equals(saved.RootElement.GetProperty("status").GetString(), "pass", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("The saved receipt must record a passing first journey.");
+                }
+
+                string? savedWorkspaceId = saved.RootElement.GetProperty("workspaceId").GetString();
+                if (string.IsNullOrWhiteSpace(savedWorkspaceId))
+                {
+                    throw new InvalidOperationException("The saved receipt does not carry a workspaceId.");
+                }
+
+                string? savedCharacterName = saved.RootElement.GetProperty("characterName").GetString();
+                await window.InitializationForAutomation.WaitAsync(journeyTimeout.Token);
+                ICharacterOverviewPresenter presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+                await presenter.LoadAsync(new CharacterWorkspaceId(savedWorkspaceId), journeyTimeout.Token);
+                await WaitForAsync(
+                    steps,
+                    "reopen: loaded workspace visible in the automation snapshot",
+                    () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+                    journeyTimeout.Token,
+                    TimeSpan.FromMinutes(1));
+
+                CharacterOverviewState restoredOverview = window.SnapshotStateForAutomation();
+                var restoredWorkspaceId = restoredOverview.WorkspaceId
+                    ?? throw new InvalidOperationException("Reopen did not leave a workspace loaded.");
+                if (!string.Equals(restoredWorkspaceId.Value, savedWorkspaceId, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("Reopen loaded a different workspace than the saved receipt.");
+                }
+
+                OpenWorkspaceState? restoredWorkspace = restoredOverview.Session.FindWorkspace(restoredWorkspaceId);
+                if (restoredWorkspace is null || !restoredWorkspace.HasSavedWorkspace || restoredWorkspace.IsDirty)
+                {
+                    throw new InvalidOperationException("The reopened workspace is not clean and persisted.");
+                }
+
+                string restoredName = restoredOverview.Profile?.Name
+                    ?? throw new InvalidOperationException("Reopen did not restore a profile.");
+                if (!string.IsNullOrWhiteSpace(savedCharacterName)
+                    && !string.Equals(restoredName, savedCharacterName, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"The reopened profile '{restoredName}' does not match the saved character '{savedCharacterName}'.");
+                }
+
+                bool restoredCreated = restoredOverview.Profile?.Created == true;
+                if (!restoredCreated)
+                {
+                    throw new InvalidOperationException("The reopened profile is not marked created; finalization did not persist.");
+                }
+
+                if (restoredOverview.CreationWizard is not null)
+                {
+                    throw new InvalidOperationException("The creation wizard is still visible after reopening a finalized character.");
+                }
+
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-restored");
+                RecordStep(steps, $"reopen verified: workspaceId={restoredWorkspaceId}, name={restoredName}, profileCreated={restoredCreated}, wizardVisible={restoredOverview.CreationWizard is not null}");
+
+                // The reopen process must also leave the ordinary pass receipt so the
+                // two-phase harness can gate on a written receipt, not just exit code.
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: restoredWorkspaceId.Value,
+                        CharacterName: restoredName,
+                        CharacterAlias: savedCharacterName,
+                        RulesetId: null,
+                        BuildMethod: plan.BuildMethod,
+                        MetatypeCategory: plan.MetatypeCategory,
+                        PriorityHeritage: plan.PriorityHeritage,
+                        Metatype: plan.Metatype,
+                        PriorityTalent: plan.PriorityTalent,
+                        PriorityTalentChoice: plan.PriorityTalentChoice,
+                        HasSavedWorkspace: true,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "Item-3 reopen verification: the finalized character was reloaded in a fresh process through the production presenter load path; profile Created, workspace clean and persisted, creation wizard closed."
+                        ],
+                        UserJourneyWorkflows: null));
+                Environment.ExitCode = 0;
+                return;
+            }
 
             try
             {
@@ -478,24 +593,25 @@ internal static class DesktopMouseFirstJourneyRunner
                 RecordStep(steps, "ai-finish leg skipped (env gate off)");
             }
             bool finalizationApplied = false;
-            // Attempt to navigate to review directly. The Core gates review entry on
-            // authoritative completion of the deep stages (attributes/skills/etc.);
-            // if entry is blocked we record the wizard's authoritative state and the
-            // known blockers instead of failing the journey — the wizard UI itself is
-            // exercised end-to-end up to the authoritative gate.
-            await ClickWizardButtonAsync(
-                wizard,
-                "creation-wizard-step-review",
-                steps,
-                journeyTimeout.Token,
-                recordPointerAction);
-            bool reviewReached = await WaitForConditionWithinAsync(
-                () => string.Equals(
-                    wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
-                    "review",
-                    StringComparison.Ordinal),
-                journeyTimeout.Token,
-                TransitionSettleTimeout);
+            // Ordinary-route walk (re-audit item 3): the route to review must be
+            // walkable with ORDINARY Next buttons only — the re-audit forbids
+            // jumping straight to review via creation-wizard-step-* buttons. The
+            // walker clicks creation-wizard-continue until the observable active
+            // step is review. When the AI-finish leg is off, the deep-stage drafts
+            // are absent and review is authoritatively gated; the timeout then
+            // records evidence and the journey continues (finalize recorded as
+            // gated below). With the leg on, review must be reachable — the
+            // timeout propagates and fails the run.
+            bool reviewReached = false;
+            try
+            {
+                await ContinueWizardUntilStepAsync(window, wizard, "review", steps, journeyTimeout.Token);
+                reviewReached = true;
+            }
+            catch (TimeoutException) when (!string.Equals(aiFinishGate, "1", StringComparison.OrdinalIgnoreCase))
+            {
+                RecordStep(steps, "ordinary Next walk timed out before review (deep stages pending; ai-finish leg off)");
+            }
             if (reviewReached)
             {
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03b-review-step");
@@ -3160,6 +3276,25 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         finally
         {
             button.Click -= OnClick;
+        }
+
+        if (!clickObserved)
+        {
+            // Disclosed selection fallback (same hazard as wizard buttons): the
+            // synthetic pointer click can be swallowed by the dialog button's
+            // input state machine. Raise the Click routed event directly on the
+            // live instance so the wired handler still runs, and disclose it.
+            Button? liveButton = await Dispatcher.UIThread.InvokeAsync(
+                () => FindDialogAutomationButton(owner, automationId));
+            if (liveButton is { IsEffectivelyEnabled: true })
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                    liveButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveButton)));
+                clickObserved = true;
+                RecordStep(
+                    steps,
+                    $"selection fallback: raised Click routed event for dialog button {automationId} after swallowed pointer click");
+            }
         }
 
         recordPointerAction();

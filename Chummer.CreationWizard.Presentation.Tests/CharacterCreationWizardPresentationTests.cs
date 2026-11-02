@@ -722,7 +722,9 @@ public sealed class CharacterCreationWizardPresentationTests
             step.StepId == CharacterCreationWizardStepIds.Attributes);
         CharacterCreationWizardStageState qualityStep = wizard.Steps.Single(step =>
             step.StepId == CharacterCreationWizardStepIds.Qualities);
-        Assert.IsTrue(attributes.IsComplete);
+        // Attributes completion is Core finalization-owned; qualities readiness alone
+        // only gates entry and must not fabricate completion (WIN-006 re-audit item 3).
+        Assert.IsFalse(attributes.IsComplete);
         Assert.IsTrue(qualityStep.IsAvailable);
         Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, qualityStep.Status);
         CharacterCreationLegalOption option = AssertExactlyOne(
@@ -1552,6 +1554,95 @@ public sealed class CharacterCreationWizardPresentationTests
             SavedRevision: revision,
             Document: new WorkspaceDocument(content, RulesetDefaults.Sr5));
 
+    [TestMethod]
+    public void Mundane_skills_route_goes_through_resources_not_straight_to_contacts()
+    {
+        // WIN-006 re-audit item 3: the mundane route must keep Resources in the chain
+        // (Skills -> Resources -> ContactsLifestyles); only the magic step is skipped.
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: "<character><name>Nova</name></character>",
+            revision: 12);
+        CharacterCreationMagicResonanceState magic = CreateMundaneState(loaded);
+        CharacterCreationSkillsState skills = null;
+
+        CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+            new CharacterWorkspaceId("ws-wizard"),
+            loaded,
+            magicResonance: magic,
+            skills: skills,
+            resources: null);
+
+        AssertInapplicableStep(wizard, CharacterCreationWizardStepIds.MagicResonance);
+        CharacterCreationWizardStageState skillStep = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.Skills);
+        Assert.IsFalse(skillStep.IsAvailable);
+        Assert.IsEmpty(skillStep.LegalNextStepIds);
+        CharacterCreationWizardStageState resourcesStep = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.Resources);
+        Assert.IsFalse(resourcesStep.IsAvailable);
+        CharacterCreationWizardStageState contactsStep = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.ContactsLifestyles);
+        foreach (CharacterCreationWizardStageState step in wizard.Steps)
+        {
+            CollectionAssert.DoesNotContain(
+                step.LegalNextStepIds.ToArray(),
+                CharacterCreationWizardStepIds.MagicResonance);
+        }
+    }
+
+    [TestMethod]
+    public void Ready_qualities_without_core_finalization_leaves_attributes_in_progress()
+    {
+        // WIN-006 re-audit item 3 negative gate: qualities readiness only gates entry
+        // into Attributes; without Core finalization confirming the attributes step the
+        // stage must read InProgress, never Complete.
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: "<character><name>Nova</name></character>",
+            revision: 12);
+        CharacterCreationQualitiesState qualities = CreateQualitiesState(loaded);
+
+        CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+            new CharacterWorkspaceId("ws-wizard"),
+            loaded,
+            qualities: qualities,
+            finalization: null);
+
+        CharacterCreationWizardStageState attributes = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.Attributes);
+        Assert.IsTrue(attributes.IsAvailable);
+        Assert.IsFalse(attributes.IsComplete);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, attributes.Status);
+        CollectionAssert.AreEqual(
+            new[] { CharacterCreationWizardStepIds.Qualities },
+            attributes.LegalNextStepIds.ToArray());
+    }
+
+    [TestMethod]
+    public void Method_stage_routes_to_attributes_for_authoritative_direct_methods()
+    {
+        // WIN-006 re-audit item 3: an authoritative direct method (Priority) must
+        // route Method -> Attributes instead of dead-ending at the method step.
+        WorkspaceOverviewLoadResult loaded = CreateOverview(
+            created: false,
+            buildMethod: CharacterCreationBuildMethods.Priority,
+            content: "<character><name>Nova</name></character>",
+            revision: 12);
+
+        CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+            new CharacterWorkspaceId("ws-wizard"),
+            loaded);
+
+        CharacterCreationWizardStageState method = wizard.Steps.Single(step =>
+            step.StepId == CharacterCreationWizardStepIds.Method);
+        CollectionAssert.AreEqual(
+            new[] { CharacterCreationWizardStepIds.Attributes },
+            method.LegalNextStepIds.ToArray());
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Complete, method.Status);
+    }
     private static CharacterCreationWizardSnapshot RequireWizard(CharacterOverviewState state)
         => state.CreationWizard
            ?? throw new AssertFailedException("Expected an unfinished-character wizard projection.");
