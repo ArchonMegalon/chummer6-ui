@@ -327,6 +327,32 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityTests.cs",
         "Chummer.Tests/Presentation/WorkspacePrintPdfComposerTests.cs",
 
+        "Chummer.Avalonia/Controls/CareerAttributeAdvanceWindow.cs",
+        "Chummer.Avalonia/Controls/CareerRewardsWindow.cs",
+        "Chummer.Avalonia/Controls/CreationAiFinishReviewWindow.cs",
+        "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+        "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+        "Chummer.Avalonia/Creation/CreationAiFinishService.cs",
+        "Chummer.Avalonia/MainWindow.CareerEdit.cs",
+        "Chummer.Avalonia/MainWindow.ControlBinding.cs",
+        "Chummer.Avalonia/MainWindow.InteractionCoordinator.cs",
+        "Chummer.Avalonia/MainWindow.ShellFrameProjector.cs",
+        "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
+        "Chummer.Tests/Presentation/CareerRewardsUiTests.cs",
+        "Chummer.Tests/TestFiles/Soma (Career).chum5",
+        "docs/creation-ai-finish-evidence-artifacts/receipt.json",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/01-new-character-dialog.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/02-creation-wizard-open.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/02a-priority-confirmed.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/03-priority-graph-evidence.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/03b-review-step.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/03f-ai-finish-review.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/03g-ai-finish-applied.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/04-finalized-editor-unlocked.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/04-workspace-opened.png",
+        "docs/creation-ai-finish-evidence-artifacts/screenshots/05-workspace-saved.png",
+        "docs/creation-ai-finish-evidence-artifacts/trace.json",
+        "docs/creation-ai-finish-evidence.md",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these
@@ -344,13 +370,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "5ea0dfa12331024eebec229c90aace3663fcddd0",
+        "blob": "79e9a90c815156a6b78b6462d4e0d4dfd8da4ffa",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "9f03c9972e2d75d3839d08cd21ac2e35828a2b9d7c1c71a93edb895668605e38",
+        "rawSha256": "2eeea3d36254a95b70a8411755e8a3ff124b6351f62e87828a0c536b7554dfc2",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "9f03c9972e2d75d3839d08cd21ac2e35828a2b9d7c1c71a93edb895668605e38",
+        "semanticCanonicalSha256": "2eeea3d36254a95b70a8411755e8a3ff124b6351f62e87828a0c536b7554dfc2",
         "semanticCanonicalSizeBytes": 69810,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

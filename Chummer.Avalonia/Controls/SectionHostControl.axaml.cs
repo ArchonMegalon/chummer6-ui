@@ -32,6 +32,9 @@ public partial class SectionHostControl : UserControl
     public event EventHandler<string>? SectionActionSelected;
     public event EventHandler<string>? QuickActionRequested;
     public event EventHandler<AttributeEditRequest>? AttributeEditRequested;
+    public event EventHandler<string>? CareerAttributeAdvanceRequested;
+    public event EventHandler<object?>? CareerKarmaAwardRequested;
+    public event EventHandler<object?>? CareerNuyenAdjustRequested;
 
     public SectionHostControl()
     {
@@ -50,6 +53,9 @@ public partial class SectionHostControl : UserControl
     public void SetState(SectionHostState state)
     {
         _activeRulesetId = RulesetDefaults.NormalizeOptional(state.RulesetId);
+        _profileCreated = state.ProfileCreated;
+        _presenterKarma = state.PresenterKarma;
+        _presenterNuyen = state.PresenterNuyen;
         SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
         SetSectionActions(state.SectionActions, state.ActiveActionId);
         SetNotice(state.Notice);
@@ -198,6 +204,7 @@ public partial class SectionHostControl : UserControl
         SectionContextSummaryText.Text = showContext ? BuildSectionSummary(sectionId, previewJson, rowArray, quickActions, _activeRulesetId) : string.Empty;
         SectionContextTitleText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextTitleText.Text);
         SectionContextSummaryText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextSummaryText.Text);
+        UpdateCareerRewardsStrip(previewJson);
         UpdateSectionRowsHeight();
     }
 
@@ -318,6 +325,7 @@ public partial class SectionHostControl : UserControl
         bool careerMode = row.CareerMode;
         bool showImproveButton = isSr6 && careerMode;
         bool showBurnEdgeButton = isSr6 && careerMode && isEdgeAttribute;
+        bool showAdvanceButton = !isSr6 && careerMode;
         int metatypeMin = row.MetatypeMin;
         int metatypeMax = row.MetatypeMax;
         int metatypeAugMax = row.MetatypeAugMax;
@@ -341,13 +349,13 @@ public partial class SectionHostControl : UserControl
         ToolTip.SetTip(nameLabel, row.AttributeName);
         Grid nameCell = new()
         {
-            ColumnDefinitions = showImproveButton || showBurnEdgeButton ? new ColumnDefinitions("*,Auto") : new ColumnDefinitions("*"),
+            ColumnDefinitions = showImproveButton || showBurnEdgeButton || showAdvanceButton ? new ColumnDefinitions("*,Auto") : new ColumnDefinitions("*"),
             ColumnSpacing = 6d,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
         nameCell.Children.Add(nameLabel);
         StackPanel? actionHost = null;
-        if (showImproveButton || showBurnEdgeButton)
+        if (showImproveButton || showBurnEdgeButton || showAdvanceButton)
         {
             actionHost = new StackPanel
             {
@@ -448,6 +456,26 @@ public partial class SectionHostControl : UserControl
                 BorderThickness = new Thickness(1)
             };
             actionHost?.Children.Add(burnEdgeButton);
+        }
+
+        Button? advanceButton = null;
+        if (showAdvanceButton)
+        {
+            advanceButton = new Button
+            {
+                Name = $"AttributeAdvance_{ShortAttributeLabel(row.AttributeName)}",
+                Content = "Advanceâ€¦",
+                MinWidth = 86,
+                Height = 24,
+                Padding = new Thickness(8d, 1d),
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = rowForeground,
+                Background = rowSurfaceAlt,
+                BorderBrush = rowBorder,
+                BorderThickness = new Thickness(1)
+            };
+            actionHost?.Children.Add(advanceButton);
         }
 
         grid.Children.Add(nameCell);
@@ -730,6 +758,20 @@ public partial class SectionHostControl : UserControl
                 pendingKarmaValue = karmaValue;
                 RefreshLiveValue();
                 AttributeEditRequested?.Invoke(this, new AttributeEditRequest(row.AttributeName, "improve", Math.Max(0, baseValue + karmaValue)));
+            };
+        }
+
+        if (advanceButton is not null)
+        {
+            advanceButton.Click += (_, _) =>
+            {
+                if (!advanceButton.IsEnabled)
+                {
+                    return;
+                }
+
+                CancelPendingAttributeCommits();
+                CareerAttributeAdvanceRequested?.Invoke(this, row.AttributeName);
             };
         }
 
@@ -1094,7 +1136,7 @@ public partial class SectionHostControl : UserControl
             return;
         }
 
-        BuildLabSummaryText.Text = $"{buildLab.Title} · {buildLab.RulesetId}/{buildLab.BuildMethod}";
+        BuildLabSummaryText.Text = $"{buildLab.Title} Â· {buildLab.RulesetId}/{buildLab.BuildMethod}";
         BuildLabSummaryText.IsVisible = true;
         SetBuildLabTrustReceiptSections(DesktopTrustReceiptText.BuildBuildLabSections(buildLab));
         UpdateSectionRowsHeight();
@@ -1112,7 +1154,7 @@ public partial class SectionHostControl : UserControl
             return;
         }
 
-        SectionContextSummaryText.Text = $"{contactGraph.Nodes.Count} contacts · {contactGraph.EdgeCount} links · {contactGraph.Obligations.Count} obligations";
+        SectionContextSummaryText.Text = $"{contactGraph.Nodes.Count} contacts Â· {contactGraph.EdgeCount} links Â· {contactGraph.Obligations.Count} obligations";
         SectionContextSummaryText.IsVisible = true;
         SectionPreviewBox.Text = string.Join(
             Environment.NewLine + Environment.NewLine,
@@ -1144,7 +1186,7 @@ public partial class SectionHostControl : UserControl
     private static string BuildBrowseSummary(BrowseWorkspaceState browseWorkspace)
     {
         string title = string.IsNullOrWhiteSpace(browseWorkspace.DialogTitle) ? "Browse workspace" : browseWorkspace.DialogTitle!;
-        return $"{title} · {browseWorkspace.TotalCount} results · {browseWorkspace.SortId}/{browseWorkspace.SortDirection}";
+        return $"{title} Â· {browseWorkspace.TotalCount} results Â· {browseWorkspace.SortId}/{browseWorkspace.SortDirection}";
     }
 
     private static string BuildPresetLine(BrowseWorkspacePresetState preset)
@@ -1166,9 +1208,9 @@ public partial class SectionHostControl : UserControl
     {
         string columns = result.ColumnValues.Count == 0
             ? string.Empty
-            : $" · {string.Join(" · ", result.ColumnValues.Select(pair => $"{pair.Key}: {pair.Value}"))}";
+            : $" Â· {string.Join(" Â· ", result.ColumnValues.Select(pair => $"{pair.Key}: {pair.Value}"))}";
         string active = result.IsActive ? "[active] " : string.Empty;
-        string selectable = result.IsSelectable ? string.Empty : " · unavailable";
+        string selectable = result.IsSelectable ? string.Empty : " Â· unavailable";
         return $"{active}{result.Title}{columns}{selectable}";
     }
 
@@ -1192,7 +1234,7 @@ public partial class SectionHostControl : UserControl
         List<string> lines = [];
         if (buildLab.ProvenanceBadges.Count > 0)
         {
-            lines.Add(string.Join(" · ", buildLab.ProvenanceBadges.Select(badge => badge.Label)));
+            lines.Add(string.Join(" Â· ", buildLab.ProvenanceBadges.Select(badge => badge.Label)));
         }
 
         if (!string.IsNullOrWhiteSpace(buildLab.ExplainEntryId))
@@ -1378,10 +1420,10 @@ public partial class SectionHostControl : UserControl
     {
         string metrics = variant.Metrics.Count == 0
             ? string.Empty
-            : $" · {string.Join(" · ", variant.Metrics.Select(metric => $"{metric.Label}: {metric.Value}"))}";
+            : $" Â· {string.Join(" Â· ", variant.Metrics.Select(metric => $"{metric.Label}: {metric.Value}"))}";
         string warnings = variant.Warnings.Count == 0
             ? string.Empty
-            : $" · {string.Join(" · ", variant.Warnings.Select(warning => warning.Label))}";
+            : $" Â· {string.Join(" Â· ", variant.Warnings.Select(warning => warning.Label))}";
         return $"{variant.Label} ({variant.TableFit}){metrics}{warnings}";
     }
 
@@ -1396,7 +1438,7 @@ public partial class SectionHostControl : UserControl
             List<string> signals = [];
 
             string coverageMetrics = string.Join(
-                " · ",
+                " Â· ",
                 variant.Metrics
                     .Where(IsCoverageMetric)
                     .Select(metric => $"{metric.Label}: {metric.Value}"));
@@ -1416,7 +1458,7 @@ public partial class SectionHostControl : UserControl
             }
 
             optimizerReadyVariants++;
-            lines.Add($"{variant.Label}: {string.Join(" · ", signals)}");
+            lines.Add($"{variant.Label}: {string.Join(" Â· ", signals)}");
         }
 
         foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
@@ -1441,7 +1483,7 @@ public partial class SectionHostControl : UserControl
                 strongestCoverageStep.Outcomes
                     .Where(IsCoverageMetric)
                     .Select(metric => $"{metric.Label}: {metric.Value}"));
-            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma · {coverageOutcomes}");
+            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma Â· {coverageOutcomes}");
         }
 
         if (lines.Count == 0)
@@ -1449,7 +1491,7 @@ public partial class SectionHostControl : UserControl
             return string.Empty;
         }
 
-        lines.Insert(0, $"Planner + team coverage · {optimizerReadyVariants} optimizer-ready variant(s) · {buildLab.ProgressionTimelines.Count} progression timeline(s)");
+        lines.Insert(0, $"Planner + team coverage Â· {optimizerReadyVariants} optimizer-ready variant(s) Â· {buildLab.ProgressionTimelines.Count} progression timeline(s)");
         return string.Join(Environment.NewLine, lines);
     }
 
@@ -1501,13 +1543,13 @@ public partial class SectionHostControl : UserControl
         List<string> lines = [];
         foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
         {
-            lines.Add($"{timeline.Title} · {timeline.Summary}");
+            lines.Add($"{timeline.Title} Â· {timeline.Summary}");
             foreach (BuildLabProgressionStep step in timeline.Steps)
             {
                 string outcomes = step.Outcomes.Count == 0
                     ? string.Empty
-                    : $" · {string.Join(" · ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))}";
-                lines.Add($"  {step.KarmaTarget} Karma: {step.Label} · {step.Summary}{outcomes}");
+                    : $" Â· {string.Join(" Â· ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))}";
+                lines.Add($"  {step.KarmaTarget} Karma: {step.Label} Â· {step.Summary}{outcomes}");
             }
 
             if (!string.IsNullOrWhiteSpace(timeline.SourceDocumentId))
@@ -1546,7 +1588,7 @@ public partial class SectionHostControl : UserControl
         List<string> lines = [];
         foreach (BuildLabExportPayload payload in buildLab.ExportPayloads)
         {
-            lines.Add($"{payload.Title} · {payload.PayloadKind}");
+            lines.Add($"{payload.Title} Â· {payload.PayloadKind}");
             foreach (BuildLabExportField field in payload.Fields)
             {
                 lines.Add($"  {field.Label}: {field.Value}");
@@ -1570,8 +1612,8 @@ public partial class SectionHostControl : UserControl
     {
         BuildLabExportPayload? payload = buildLab.ExportPayloads
             .FirstOrDefault(candidate => string.Equals(candidate.PayloadId, target.PayloadId, StringComparison.Ordinal));
-        string payloadLine = payload is null ? string.Empty : $" · Payload: {payload.Title}";
-        return $"{target.Label} ({target.TargetKind}) · {target.WorkflowId}{payloadLine}";
+        string payloadLine = payload is null ? string.Empty : $" Â· Payload: {payload.Title}";
+        return $"{target.Label} ({target.TargetKind}) Â· {target.WorkflowId}{payloadLine}";
     }
 
     private static string BuildActionLine(BuildLabConceptIntakeState buildLab, BuildLabActionDescriptor action)
@@ -1634,14 +1676,14 @@ public partial class SectionHostControl : UserControl
         string defaultPersona = string.IsNullOrWhiteSpace(personaStudio.DefaultPersonaId)
             ? "none"
             : personaStudio.DefaultPersonaId;
-        return $"NPC Persona Studio · default {defaultPersona} · selected {personaStudio.SelectedPersonaId}";
+        return $"NPC Persona Studio Â· default {defaultPersona} Â· selected {personaStudio.SelectedPersonaId}";
     }
 
     private static string BuildPersonaLine(NpcPersonaDescriptorState persona, string selectedPersonaId)
     {
         string selectedTag = string.Equals(persona.PersonaId, selectedPersonaId, StringComparison.Ordinal) ? "[selected] " : string.Empty;
         string evidenceTag = persona.EvidenceFirst ? "evidence-first" : "balanced";
-        return $"{selectedTag}{persona.Label} ({persona.PersonaId}) · {evidenceTag} · {persona.ApprovalState}";
+        return $"{selectedTag}{persona.Label} ({persona.PersonaId}) Â· {evidenceTag} Â· {persona.ApprovalState}";
     }
 
     private static string BuildPolicyLine(NpcPersonaRoutePolicyState policy)
@@ -1650,7 +1692,7 @@ public partial class SectionHostControl : UserControl
         string routeClass = string.IsNullOrWhiteSpace(policy.RouteClassId) ? "class:none" : $"class:{policy.RouteClassId}";
         string tools = policy.AllowedToolIds.Count == 0 ? "tools:none" : $"tools:{string.Join(",", policy.AllowedToolIds)}";
         string persona = string.IsNullOrWhiteSpace(policy.PersonaId) ? "persona:none" : $"persona:{policy.PersonaId}";
-        return $"{policy.RouteType} · {routeClass} · {provider} · {persona} · {policy.ApprovalState} · {tools}";
+        return $"{policy.RouteType} Â· {routeClass} Â· {provider} Â· {persona} Â· {policy.ApprovalState} Â· {tools}";
     }
 
     private static string BuildApprovalSummary(NpcPersonaStudioState personaStudio)
@@ -1662,7 +1704,7 @@ public partial class SectionHostControl : UserControl
 
     private static string BuildDowntimePlannerSummary(DowntimePlannerState downtimePlanner)
     {
-        return $"Downtime planner · {downtimePlanner.PlannerLanes.Count} lanes · {downtimePlanner.ScheduleItems.Count} scheduled items";
+        return $"Downtime planner Â· {downtimePlanner.PlannerLanes.Count} lanes Â· {downtimePlanner.ScheduleItems.Count} scheduled items";
     }
 
     private static string BuildDowntimeCalendarText(DowntimePlannerState downtimePlanner)
@@ -1673,7 +1715,7 @@ public partial class SectionHostControl : UserControl
         }
 
         IEnumerable<string> lines = downtimePlanner.CalendarDays
-            .Select(day => $"{day.Date}: {day.ItemCount} items · {day.Summary}");
+            .Select(day => $"{day.Date}: {day.ItemCount} items Â· {day.Summary}");
         return "Calendar view" + Environment.NewLine + string.Join(Environment.NewLine, lines);
     }
 
@@ -1898,7 +1940,7 @@ public partial class SectionHostControl : UserControl
                 1 => "1 validation issue",
                 _ => $"{issueCount} validation issues"
             });
-            return string.Join("  •  ", parts);
+            return string.Join("  â€¢  ", parts);
         }
 
         if (IsSr6Ruleset(rulesetId) && AttributeWorkbenchProjector.IsAttributeSection(sectionId))
@@ -1926,7 +1968,7 @@ public partial class SectionHostControl : UserControl
                     parts.Add(sr6ExplainSummary);
                 }
 
-                return string.Join("  •  ", parts);
+                return string.Join("  â€¢  ", parts);
             }
         }
 
@@ -1967,7 +2009,7 @@ public partial class SectionHostControl : UserControl
 
         return parts.Count == 0
             ? BuildEmptySectionSummary(sectionId, title, quickActions)
-            : string.Join("  •  ", parts);
+            : string.Join("  â€¢  ", parts);
     }
 
     private static string FormatSectionName(string sectionName)
@@ -2366,7 +2408,7 @@ public partial class SectionHostControl : UserControl
             parts.Add($"Follow-up: {explainContext.FollowUp}");
         }
 
-        return string.Join(" · ", parts);
+        return string.Join(" Â· ", parts);
     }
 
     private static ExplainDrawerContext? ReadExplainDrawerContext(JsonObject? root)
@@ -2534,7 +2576,7 @@ public partial class SectionHostControl : UserControl
             parts.Add(section);
         }
 
-        return parts.Count == 0 ? null : string.Join(" · ", parts);
+        return parts.Count == 0 ? null : string.Join(" Â· ", parts);
     }
 
     private static string? TryBuildSourceLaunchSummary(JsonObject explainNode)
@@ -2943,11 +2985,153 @@ public partial class SectionHostControl : UserControl
         => string.IsNullOrWhiteSpace(value) ? string.Empty : $"{label}: {value}";
 
     private static string BuildJoinedSummary(params string[] segments)
-        => string.Join(" · ", segments.Where(static segment => !string.IsNullOrWhiteSpace(segment)));
+        => string.Join(" Â· ", segments.Where(static segment => !string.IsNullOrWhiteSpace(segment)));
 
     private static string BuildJoinedLines(params string[] lines)
         => string.Join(Environment.NewLine, lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
 
+    // Career rewards strip: after a run the player records karma and nuyen
+    // awards (Chummer5a career mode). Career mode is detected from the root
+    // preview JSON ("created": true); the strip renders on every section for
+    // career runners, independent of the context area's visibility.
+    private bool _profileCreated;
+    private decimal? _presenterKarma;
+    private decimal? _presenterNuyen;
+
+    private void UpdateCareerRewardsStrip(string previewJson)
+    {
+        CareerRewardsState rewards = default;
+        bool hasBalances = TryReadCareerRewardBalances(previewJson, out rewards);
+        bool careerMode = rewards.Created || _profileCreated;
+        bool careerRewardsVisible = careerMode;
+        CareerRewardsBorder.IsVisible = careerRewardsVisible;
+        if (!careerRewardsVisible)
+        {
+            CareerRewardsHost.Children.Clear();
+            return;
+        }
+
+        CareerRewardsHost.Children.Clear();
+        IBrush fg = DesktopShellTheme.ResolveForegroundBrush();
+        IBrush muted = DesktopShellTheme.ResolveTextMutedBrush();
+        IBrush surface = DesktopShellTheme.ResolveSurfaceAltBrush();
+        IBrush border = DesktopShellTheme.ResolveBorderBrush();
+
+        StackPanel stack = new() { Orientation = global::Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Run rewards:",
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = muted,
+            FontSize = 11
+        });
+        decimal displayKarma = hasBalances ? rewards.AvailableKarma : _presenterKarma ?? 0m;
+        decimal displayNuyen = hasBalances ? rewards.AvailableNuyen : _presenterNuyen ?? 0m;
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Karma " + displayKarma.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+                + " \u00B7 \u00A5" + displayNuyen.ToString("N0", System.Globalization.CultureInfo.InvariantCulture),
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = fg,
+            FontSize = 11
+        });
+
+        Button karmaButton = CreateRewardsButton("CareerAwardKarma", "Award Karma\u2026", fg, surface, border);
+        karmaButton.Click += (_, _) => CareerKarmaAwardRequested?.Invoke(this, EventArgs.Empty);
+        stack.Children.Add(karmaButton);
+
+        Button nuyenButton = CreateRewardsButton("CareerAdjustNuyen", "Adjust Nuyen\u2026", fg, surface, border);
+        nuyenButton.Click += (_, _) => CareerNuyenAdjustRequested?.Invoke(this, EventArgs.Empty);
+        stack.Children.Add(nuyenButton);
+
+        CareerRewardsHost.Children.Add(stack);
+    }
+
+    private static Button CreateRewardsButton(string name, string content, IBrush fg, IBrush surface, IBrush border)
+    {
+        return new Button
+        {
+            Name = name,
+            Content = content,
+            MinWidth = 96,
+            Height = 22,
+            Padding = new Thickness(8d, 1d),
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = fg,
+            Background = surface,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            FontSize = 11
+        };
+    }
+
+    internal readonly record struct CareerRewardsState(bool Created, decimal AvailableKarma, decimal AvailableNuyen);
+
+    internal static bool TryReadCareerRewardsState(string previewJson, out CareerRewardsState state)
+        => TryReadCareerRewardBalances(previewJson, out state) && state.Created;
+
+    internal static bool TryReadCareerRewardBalances(string previewJson, out CareerRewardsState state)
+    {
+        state = default;
+        if (string.IsNullOrWhiteSpace(previewJson))
+        {
+            return false;
+        }
+
+        try
+        {
+            using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(previewJson);
+            System.Text.Json.JsonElement root = document.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            bool created = root.TryGetProperty("created", out System.Text.Json.JsonElement createdEl)
+                && createdEl.ValueKind == System.Text.Json.JsonValueKind.True;
+
+            decimal karma = 0m;
+            bool karmaPresent = root.TryGetProperty("karma", out System.Text.Json.JsonElement karmaEl)
+                && karmaEl.ValueKind == System.Text.Json.JsonValueKind.Number;
+            if (karmaPresent)
+            {
+                karma = karmaEl.GetDecimal();
+            }
+
+            decimal nuyen = 0m;
+            bool nuyenPresent = root.TryGetProperty("nuyen", out System.Text.Json.JsonElement nuyenEl);
+            if (nuyenPresent && nuyenEl.ValueKind == System.Text.Json.JsonValueKind.Number)
+            {
+                nuyen = nuyenEl.GetDecimal();
+            }
+            else if (nuyenPresent && nuyenEl.ValueKind == System.Text.Json.JsonValueKind.String
+                && decimal.TryParse(
+                    nuyenEl.GetString(),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out decimal parsedNuyen))
+            {
+                nuyen = parsedNuyen;
+            }
+            else
+            {
+                nuyenPresent = false;
+            }
+
+            if (!karmaPresent && !nuyenPresent)
+            {
+                return false;
+            }
+
+            state = new CareerRewardsState(created, karma, nuyen);
+            return true;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
     private void UpdateSectionRowsHeight()
     {
         if (AttributeParityEditorBorder.IsVisible)
@@ -2993,7 +3177,10 @@ public sealed record SectionHostState(
     ContactRelationshipGraphState? ContactGraph,
     DowntimePlannerState? DowntimePlanner,
     NpcPersonaStudioState? NpcPersonaStudio,
-    string? RulesetId = null);
+    string? RulesetId = null,
+    bool ProfileCreated = false,
+    decimal? PresenterKarma = null,
+    decimal? PresenterNuyen = null);
 
 internal sealed record SectionRowDisplayViewItem(string DisplayPath, string DisplayValue, string Path, string Value)
 {

@@ -98,7 +98,10 @@ internal static class MainWindowShellFrameProjector
                 ContactGraph: BuildContactGraph(state),
                 DowntimePlanner: BuildDowntimePlanner(state),
                 NpcPersonaStudio: state.ActiveNpcPersonaStudio,
-                RulesetId: shellSurface.ActiveRulesetId),
+                RulesetId: shellSurface.ActiveRulesetId,
+                ProfileCreated: state.Profile?.Created ?? false,
+                PresenterKarma: state.Progress?.Karma,
+                PresenterNuyen: state.Progress?.Nuyen),
             RosterPaneState: new RosterPaneState(
                 Items: CharacterRosterDataBinder.CreateRosterNodes(resolvedOpenWorkspaces).ToArray(),
                 SelectedWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value),

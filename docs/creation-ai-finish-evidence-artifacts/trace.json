@@ -1,0 +1,795 @@
+{
+  "headId": "avalonia",
+  "platform": "windows",
+  "rid": "win-x64",
+  "hostClass": "NUC",
+  "processPath": "Chummer.Avalonia.exe",
+  "processPathDisclosure": "file_name_only",
+  "recordedAtUtc": "2026-11-01T15:29:11.4196102+00:00",
+  "observedInputEvents": [
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.3511703+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.4945713+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.4953293+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.4967532+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.4974793+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.4975144+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.6264168+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.6301955+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.6302549+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:27:18.8195521+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:27:24.0348122+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:27:24.0389921+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:27:24.039018+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:27:24.0420169+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:27:24.0420359+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:27:24.0420393+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:28:24.0560749+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:28:24.0571454+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:28:24.0571847+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:28:24.0766077+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:28:24.0766321+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-01T15:28:24.0766354+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.0198555+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.0200001+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.020017+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.0359413+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.0359655+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.0359695+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.1242361+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.1243698+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.1243848+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.1523518+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.1523739+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.1523787+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2088152+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2089096+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2089204+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2295494+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2295712+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2295754+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2847749+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2848787+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.2848904+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.3557661+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.3557876+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.3557915+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.4239636+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.4240784+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.4240902+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.4241285+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.424137+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:33.4241409+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:35.1209203+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:35.1211207+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:35.12114+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:35.121206+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:35.121219+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:35.1212244+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:36.7714167+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:36.7720885+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:36.772112+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:36.7721951+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:36.7722092+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:36.7722147+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:38.403065+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:38.4033013+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:38.4033448+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:38.4034587+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:38.4034803+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:38.4034892+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "FinishWithAiButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:49.7730318+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "FinishWithAiButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:49.7731502+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "FinishWithAiButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:49.7731613+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "FinishWithAiButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:49.7754708+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "FinishWithAiButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:49.7754879+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "FinishWithAiButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:28:49.7754908+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "review",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.2629908+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "review",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.2631887+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "review",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.2631993+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "review",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.2635593+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "review",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.2635741+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "review",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.2635782+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "FinalizeButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.3280515+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "FinalizeButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.3283398+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "FinalizeButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:06.3283513+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "FinalizeButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:09.9324744+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "FinalizeButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:09.9324988+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "FinalizeButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:09.9325004+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.7955556+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.8117945+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.8118543+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.8118829+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.8118912+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.8118935+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.950499+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.9516594+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.9516936+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-01T15:29:10.9909811+00:00"
+    }
+  ]
+}

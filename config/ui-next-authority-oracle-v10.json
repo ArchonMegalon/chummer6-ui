@@ -148,7 +148,7 @@
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceRendering.cs": "d0890a911c48f0ef27059a9cbab0582bf5930cc0cb91ea0d816822dd8477c0e9",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs": "d7350286bb639023df09d0d7754ee28f102c2e572b87c93cf250b29c0f583230",
       "Chummer.Presentation/Overview/CharacterOverviewState.cs": "ace8e9fe23179512ed106ee765140a0b58d9427f351a8093fbf03bdf4e16d568",
-      "Chummer.Presentation/Overview/DesktopDialogFactory.cs": "e6dd1fdca9036f3dd05907b3082025c04313348102ee212ec743e2e617a58a46",
+      "Chummer.Presentation/Overview/DesktopDialogFactory.cs": "2ad9a772337c38f654061ddf491378d46dc40c5a56bc6b739b43623d5f334e9c",
       "Chummer.Presentation/Overview/DesktopDialogModels.cs": "18f4f428c396423d09adce918683305e90f14154843d53ca7c2666a1fdbd83ab",
       "Chummer.Presentation/Overview/DialogCoordinator.cs": "08101a6a3731de5feb6ae454fdfd35e77030365d0f32220b26f8c4b2334a2768",
       "Chummer.Presentation/Overview/IDialogCoordinator.cs": "15a3a7a9c875030ed56dd0501173cfa8d21749a0ec36ef1e014592a623cb3fa4",
