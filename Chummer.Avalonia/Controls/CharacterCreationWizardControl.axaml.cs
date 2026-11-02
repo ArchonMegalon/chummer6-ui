@@ -872,9 +872,9 @@ public partial class CharacterCreationWizardControl : UserControl
         if (preview.Nationality is { } nationality)
             body.Children.Add(Caption($"Nationality: {nationality.Name}"));
         body.Children.Add(Caption(
-            $"Life modules: {preview.LifeModuleBudgetBefore.Remaining} â†’ {preview.LifeModuleBudgetAfter.Remaining} remaining"));
+            $"Life modules: {preview.LifeModuleBudgetBefore.Remaining} → {preview.LifeModuleBudgetAfter.Remaining} remaining"));
         foreach (CharacterCreationFoundationDiffEntry diff in preview.Diff)
-            body.Children.Add(Caption($"{diff.DiffId} [{diff.Domain}]: {diff.BeforeValue ?? "-"} â†’ {diff.AfterValue ?? "-"}"));
+            body.Children.Add(Caption($"{diff.DiffId} [{diff.Domain}]: {diff.BeforeValue ?? "-"} → {diff.AfterValue ?? "-"}"));
         if (preview.AuthorityBlockers.Count > 0)
             body.Children.Add(Caption($"Blocked: {string.Join(", ", preview.AuthorityBlockers)}"));
         if (!string.IsNullOrWhiteSpace(_foundationStatus))
@@ -981,7 +981,7 @@ public partial class CharacterCreationWizardControl : UserControl
         {
             string exactness = budget.IsExact ? "exact" : "authority pending";
             BudgetList.Children.Add(Caption(
-                $"{budget.Label}: {budget.Remaining} / {budget.Total} {budget.Unit} remaining Â· {exactness}"));
+                $"{budget.Label}: {budget.Remaining} / {budget.Total} {budget.Unit} remaining · {exactness}"));
         }
     }
 
@@ -1026,7 +1026,7 @@ public partial class CharacterCreationWizardControl : UserControl
                     Children =
                     {
                         new TextBlock { Text = option.Label, Classes = { "shell-section-title" } },
-                    Caption($"{prerequisite} Â· {costs}"),
+                    Caption($"{prerequisite} · {costs}"),
                     Caption($"Source: {source}")
                 }
             }
@@ -1059,7 +1059,7 @@ public partial class CharacterCreationWizardControl : UserControl
             Children =
             {
                 new TextBlock { Text = "Exact Core resources preview", Classes = { "shell-section-title" } },
-                Caption($"Total starting nuyen: {after.TotalStartingNuyen:0}Â¥ Â· remaining: {after.RemainingNuyen:0}Â¥"),
+                Caption($"Total starting nuyen: {after.TotalStartingNuyen:0}¥ · remaining: {after.RemainingNuyen:0}¥"),
                 prepared.Blockers.Count == 0
                     ? Caption("Preview is legal; confirm to commit against this exact revision.")
                     : Caption($"Blocked: {string.Join(", ", prepared.Blockers)}"),
@@ -1113,13 +1113,13 @@ public partial class CharacterCreationWizardControl : UserControl
                 Classes = { "shell-section-title" }
             });
             fields.Children.Add(Caption(
-                $"{contact.Role} Â· {contact.ContactPointCost} contact points"));
+                $"{contact.Role} · {contact.ContactPointCost} contact points"));
             foreach (CharacterCreationWizardDesktopContactField field in contact.Fields)
             {
                 StackPanel row = new() { Spacing = 2 };
                 row.Children.Add(Caption(field.IsEditable
                     ? field.Label
-                    : $"{field.Label} Â· locked"));
+                    : $"{field.Label} · locked"));
                 Control editor = BuildContactEditor(contact.ContactId, field);
                 row.Children.Add(editor);
                 fields.Children.Add(row);
@@ -1214,14 +1214,14 @@ public partial class CharacterCreationWizardControl : UserControl
             Classes = { "shell-section-title" }
         });
         body.Children.Add(Caption(
-            $"Contacts: {preview.ContactBudgetBefore.Remaining} â†’ {preview.ContactBudgetAfter.Remaining} remaining"));
+            $"Contacts: {preview.ContactBudgetBefore.Remaining} → {preview.ContactBudgetAfter.Remaining} remaining"));
         body.Children.Add(Caption(
-            $"Friends in High Places: {preview.HighPlacesBudgetBefore.Remaining} â†’ {preview.HighPlacesBudgetAfter.Remaining} remaining"));
+            $"Friends in High Places: {preview.HighPlacesBudgetBefore.Remaining} → {preview.HighPlacesBudgetAfter.Remaining} remaining"));
         foreach (CharacterCreationContactWriteOperation operation in preview.WritePlan.Operations
                      .OrderBy(static operation => operation.Order))
         {
             body.Children.Add(Caption(
-                $"{operation.Order}. {operation.FieldId}: {operation.BeforeValue} â†’ {operation.AfterValue}"));
+                $"{operation.Order}. {operation.FieldId}: {operation.BeforeValue} → {operation.AfterValue}"));
         }
         if (preview.Blockers.Count > 0)
             body.Children.Add(Caption($"Blocked: {string.Join(", ", preview.Blockers)}"));
@@ -1349,7 +1349,7 @@ public partial class CharacterCreationWizardControl : UserControl
         IReadOnlyList<string> blockers)
         => blockers.Count == 0
             ? $"Contact operation: {outcome}."
-            : $"Contact operation: {outcome} Â· {string.Join(", ", blockers)}";
+            : $"Contact operation: {outcome} · {string.Join(", ", blockers)}";
 
     private void ContactPreviewButton_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -1403,7 +1403,7 @@ public partial class CharacterCreationWizardControl : UserControl
             status.Add($"Blockers: {string.Join(", ", step.Blockers)}");
         if (step.Warnings.Count > 0)
             status.Add($"Warnings: {string.Join(", ", step.Warnings)}");
-        return string.Join(" Â· ", status);
+        return string.Join(" · ", status);
     }
 
     private void StepButton_OnClick(object? sender, RoutedEventArgs e)

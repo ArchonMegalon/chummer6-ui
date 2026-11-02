@@ -478,7 +478,7 @@ internal static class DesktopMouseFirstJourneyRunner
             // Attempt to navigate to review directly. The Core gates review entry on
             // authoritative completion of the deep stages (attributes/skills/etc.);
             // if entry is blocked we record the wizard's authoritative state and the
-            // known blockers instead of failing the journey ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the wizard UI itself is
+            // known blockers instead of failing the journey — the wizard UI itself is
             // exercised end-to-end up to the authoritative gate.
             await ClickWizardButtonAsync(
                 wizard,
@@ -722,7 +722,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     },
                     InteractionNotes:
                     [
-                        "File ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ New used visible dialog fields and completion actions; the loaded profile, active status, workspace identity, and deterministic starter attributes were then verified."
+                        "File → New used visible dialog fields and completion actions; the loaded profile, active status, workspace identity, and deterministic starter attributes were then verified."
                     ]));
             }
 
@@ -1000,7 +1000,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             "after");
 
         // Master Index suppresses the footer actions row by design (see
-        // DesktopDialogWindow.BuildActions) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the OS title-bar close is the user
+        // DesktopDialogWindow.BuildActions) — the OS title-bar close is the user
         // path. Drive the same path the X button raises (OnClosing -> CloseDialogAsync).
         await WaitForAsync(
             steps,
@@ -1413,7 +1413,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         CancellationToken ct,
         Action recordPointerAction)
     {
-        // WIN-002 design: an unfinished character owns the center surface ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the
+        // WIN-002 design: an unfinished character owns the center surface — the
         // unrestricted editor (tab strip) is unreachable until canonical finalization
         // clears the CreationWizard snapshot. When the wizard guards the surface the
         // navigation proof asserts the guarded state instead of tab clicks.

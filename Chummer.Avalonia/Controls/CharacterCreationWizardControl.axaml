@@ -101,7 +101,8 @@
                   Content="Re-roll starting cash"
                   Click="StartingCashRerollButton_OnClick"
                   AutomationProperties.AutomationId="creation-wizard-starting-cash-reroll" />
-        </StackPanel>        <TextBlock x:Name="FinalizeStatusText"
+        </StackPanel>
+        <TextBlock x:Name="FinalizeStatusText"
                    Grid.Row="3"
                    Classes="shell-caption"
                    TextWrapping="Wrap"
