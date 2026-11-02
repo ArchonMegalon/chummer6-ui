@@ -1,9 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <character>
   <createdversion>5.201.0</createdversion>
   <appversion>5.202.0</appversion>
   <gameedition>SR5</gameedition>
-  <settings>default.xml</settings>
+  <settings>497f868a-962a-45d6-8e1f-571088607fd7</settings>
   <metatype>Human</metatype>
   <metatypebp>0</metatypebp>
   <metavariant />

@@ -15,6 +15,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
     private const string NewCharacterLifeModulesWizardBlockedDialogId = "dialog.new_character.life_modules_wizard_blocked";
+    private const string NewCharacterSr6WizardUnavailableDialogId = "dialog.new_character.sr6_wizard_unavailable";
     private const string NewCharacterOriginWizardDialogId = "dialog.new_character.origin_wizard";
     private const string NewCharacterOriginBuildDialogId = "dialog.new_character.origin_build";
     private const string OriginDossierOnlineRoute = "/app";
@@ -1298,6 +1299,19 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
     private static bool IsOriginWorkflowSource(string? workflowOriginSource)
         => string.Equals(workflowOriginSource?.Trim(), "approved_origin_story", StringComparison.Ordinal);
 
+    private static class DesktopDialogBuildMethodLabels
+    {
+        public static string Label(string method) => method switch
+        {
+            "SumToTen" => "Sum-to-Ten",
+            "SumtoTen" => "Sum-to-Ten (SR6)",
+            "PointBuy" => "Point Buy",
+            "LifePath" => "Life Path",
+            "LifeModule" => "Life Modules",
+            var other => other
+        };
+    }
+
     private static DesktopDialogField CreateBuildMethodField(string fieldId, string? rulesetId, string? preferredBuildMethod = null)
     {
         DesktopDialogFieldOption[] options = BuildBuildMethodOptions(rulesetId).ToArray();
@@ -1317,6 +1331,13 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogFieldOption> BuildBuildMethodOptions(string? rulesetId)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        if (string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
+        {
+            // SR6 wire identities are exactly the contract values; never substitute SR5 options.
+            return Sr6CharacterCreationBuildMethods.All
+                .Select(method => new DesktopDialogFieldOption(method, DesktopDialogBuildMethodLabels.Label(method)))
+                .ToArray();
+        }
         return normalizedRulesetId switch
         {
             var id when string.Equals(id, RulesetDefaults.Sr4, StringComparison.Ordinal) =>
@@ -1382,6 +1403,21 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string normalizedCharacterSetting = string.IsNullOrWhiteSpace(characterSetting)
             ? "Core Rulebook"
             : characterSetting.Trim();
+        if (string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+            && Sr6CharacterCreationBuildMethods.IsKnown(resolvedBuildMethod)
+            && !string.Equals(resolvedBuildMethod, Sr6CharacterCreationBuildMethods.Priority, StringComparison.Ordinal)
+            && !string.Equals(resolvedBuildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal))
+        {
+            // SR6 Point Buy / Life Path / Karma have no typed wizard surface yet. Never
+            // substitute SR5 Karma or Life Modules mechanics for them (contract note in
+            // Sr6CharacterCreationBuildMethods): disclose and stop.
+            return BuildNewCharacterSr6WizardUnavailableDialog(
+                normalizedRulesetId,
+                resolvedBuildMethod,
+                normalizedWorkflowName,
+                normalizedWorkflowAlias,
+                normalizedCharacterSetting);
+        }
         if (string.Equals(resolvedBuildMethod, CharacterCreationBuildMethods.LifeModules, StringComparison.Ordinal))
         {
             // The generic setup has no typed Life Modules journey. Do not let
@@ -1397,6 +1433,33 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules)
             : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, normalizedWorkflowName, normalizedWorkflowAlias, preferences, workflowOriginSource, normalizedCharacterSetting, ignoreRules);
     }
+
+    private static DesktopDialogState BuildNewCharacterSr6WizardUnavailableDialog(
+        string rulesetId,
+        string buildMethod,
+        string name,
+        string alias,
+        string characterSetting)
+        => new(
+            NewCharacterSr6WizardUnavailableDialogId,
+            "SR6 character creation",
+            "SR6 draft created. The remaining SR6 wizard steps are not available yet.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", name),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", alias),
+                BuildNewCharacterContextField("newCharacterWorkflowSetting", "Workflow Character Setting", characterSetting),
+                new DesktopDialogField(
+                    "newCharacterSr6WizardBlocker",
+                    "Resume status",
+                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
+                    CharacterCreationWizardProjector.LifeModuleAuthorityUnavailable,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            ],
+            [new DesktopDialogAction("cancel", "Back", true)]);
 
     private static DesktopDialogState BuildNewCharacterLifeModulesWizardBlockedDialog(
         string rulesetId,
@@ -1821,11 +1884,13 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
 
         string inferredBuildMethod = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
             ? string.Equals(archetype, "street_sam", StringComparison.Ordinal) || string.Equals(archetype, "rigger", StringComparison.Ordinal) ? "BP" : "Karma"
-            : string.Equals(archetype, "decker", StringComparison.Ordinal)
-                || string.Equals(archetype, "face", StringComparison.Ordinal)
-                || string.Equals(archetype, "technomancer", StringComparison.Ordinal)
-                    ? "Karma"
-                    : "Priority";
+            : string.Equals(normalizedRulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+                ? "Priority"
+                : string.Equals(archetype, "decker", StringComparison.Ordinal)
+                    || string.Equals(archetype, "face", StringComparison.Ordinal)
+                    || string.Equals(archetype, "technomancer", StringComparison.Ordinal)
+                        ? "Karma"
+                        : "Priority";
         string buildMethod = string.Equals(normalizedBuildPreference, "auto", StringComparison.Ordinal)
             ? inferredBuildMethod
             : normalizedBuildPreference;
@@ -2850,6 +2915,10 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             "bp" => "BP",
             "lifemodule" => "LifeModule",
             "life modules" => "LifeModule",
+            "sumtototen" => "SumtoTen",
+            "sum-to-ten (sr6)" => "SumtoTen",
+            "pointbuy" => "PointBuy",
+            "lifepath" => "LifePath",
             "sumtoten" => "SumToTen",
             "sum-to-ten" => "SumToTen",
             _ => normalized
@@ -2858,7 +2927,8 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
 
     private static bool UsesPriorityWorkflow(string buildMethod)
         => string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
-            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal);
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
+            || string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal);
 
     private static string BuildNewCharacterMessage(
         string rulesetId,
@@ -2871,7 +2941,10 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string houseRules = houseRulesEnabled
             ? " House rules are enabled in Character Settings."
             : " House rules are currently disabled.";
-        return $"Choose the ruleset and build method for {rulesetId.ToUpperInvariant()}. {route}{houseRules}";
+        string sr6Disclosure = string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+            ? " SR6 draft: the remaining SR6 wizard steps are not available yet."
+            : string.Empty;
+        return $"Choose the ruleset and build method for {rulesetId.ToUpperInvariant()}. {route}{houseRules}{sr6Disclosure}";
     }
 
     private static string BuildNewCharacterPriorityWorkflowSummary(
@@ -2895,7 +2968,8 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             $"Talent Choice | {talentChoice}",
             $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
         ];
-        if (string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
+            || string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal))
         {
             int total = GetPriorityLetterValue(heritagePriority)
                 + GetPriorityLetterValue(attributesPriority)

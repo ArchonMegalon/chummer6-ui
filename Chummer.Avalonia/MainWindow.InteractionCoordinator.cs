@@ -1,3 +1,4 @@
+using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
@@ -24,6 +25,38 @@ internal sealed class MainWindowInteractionCoordinator
     public Task SaveAsync(CancellationToken ct)
     {
         return _presenter.SaveAsync(ct);
+    }
+
+    public Task<CareerAttributeAdvanceEditorState?> PrepareCareerAttributeAdvanceAsync(CancellationToken ct)
+    {
+        return _presenter.PrepareCareerAttributeAdvanceAsync(ct);
+    }
+
+    public Task<CharacterCareerAttributeAdvanceReceipt?> ApplyCareerAttributeAdvanceAsync(
+        CareerAttributeAdvanceRequest request,
+        CancellationToken ct)
+    {
+        return _presenter.ApplyCareerAttributeAdvanceAsync(request, ct);
+    }
+
+    public Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
+        => _presenter.PrepareCareerManualKarmaEditAsync(ct);
+
+    public Task ApplyCareerManualKarmaEditAsync(CareerManualKarmaEditRequest request, CancellationToken ct)
+        => _presenter.ApplyCareerManualKarmaEditAsync(request, ct);
+
+    public Task<CareerManualNuyenEditorState?> PrepareCareerManualNuyenEditAsync(CancellationToken ct)
+        => _presenter.PrepareCareerManualNuyenEditAsync(ct);
+
+    public Task ApplyCareerManualNuyenEditAsync(CareerManualNuyenEditRequest request, CancellationToken ct)
+        => _presenter.ApplyCareerManualNuyenEditAsync(request, ct);
+
+    public CharacterOverviewState PeekState() => _presenter.State;
+    public Task<CharacterCareerAttributeCorrectionPlan?> CorrectCareerAttributeAdvanceAsync(
+        CareerAttributeCorrectionRequest request,
+        CancellationToken ct)
+    {
+        return _presenter.CorrectCareerAttributeAdvanceAsync(request, ct);
     }
 
     public Task ImportAsync(byte[] documentBytes, CancellationToken ct)

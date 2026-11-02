@@ -56,8 +56,8 @@
                  TextTrimming="CharacterEllipsis" />
     </Border>
 
-        <Border Grid.Row="0"
-                x:Name="SectionContextBorder"
+        <StackPanel Grid.Row="0" Spacing="0">
+        <Border x:Name="SectionContextBorder"
                 Classes="shell-panel subtle"
                 Padding="3,2">
           <StackPanel Spacing="0">
@@ -72,6 +72,12 @@
                        IsVisible="False" />
           </StackPanel>
         </Border>
+        <Border x:Name="CareerRewardsBorder"
+                IsVisible="False"
+                Margin="0,2,0,0">
+          <StackPanel x:Name="CareerRewardsHost" Spacing="4" />
+        </Border>
+        </StackPanel>
         <Border Grid.Row="1"
                 x:Name="GearWorkbenchBorder"
                 Classes="shell-panel"
