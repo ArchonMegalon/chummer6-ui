@@ -1,4 +1,4 @@
-# WIN-006 Controller-Followup Evidence — AI-Finish Gate (Handoff Item 2)
+# WIN-006 Controller-Followup Evidence (Re-Audit Handoff Items 1 and 2)
 
 - **Date:** 2026-11-02
 - **Worker:** friday-windows (single active session per `WINDOWS_REMOTE.md`)
@@ -65,3 +65,65 @@
 
 - `Chummer.Tests` Windows full-compile: 1230 errors (CS9006/CS9007 raw strings, CS0535 stub drift vs `IChummerClient`, missing `Chummer.Infrastructure.Browser`).
 - `Chummer.Desktop.Runtime.Tests` on Windows: the 2 update-runtime tests stage a Linux `.deb` and try to execute it on Windows; CI is Linux-only for this project — environmental, files predate the handoff.
+
+
+## Re-audit handoff item 1 - "Remove the full diagnostic environment dump" (immediate P1)
+
+Implemented 2026-11-02 against main `6f2135211`.
+
+### Defect and fix
+
+`scripts/win004-installer-update-recovery-journey.ps1` leg 5 (native start)
+enumerated `$psi.EnvironmentVariables` name/value pairs into
+`start-failure-env.txt` on app-exit - the child inherits the harness
+environment, so workspace credentials could reach plaintext diagnostic
+evidence. Replaced with `scripts/win004-start-failure-diagnostics.ps1`
+(`Write-StartFailureEnvironmentReport`): an allowlist-only collector writing
+`start-failure-environment.json`. Values are recorded only for non-secret
+update-mode keys (`CHUMMER_DESKTOP_UPDATE_ENABLED/_MODE/_AUTO_APPLY`);
+machine-specific paths (`CHUMMER_CORE_CONTENT_ROOT`,
+`CHUMMER_DESKTOP_UPDATE_MANIFEST`, `DOTNET_ROOT` - the SDK/Core overrides the
+handoff names) record presence/absence only; every other key, credential names
+included, contributes solely to `unlistedEnvironmentKeyCount`. Diagnostics
+remain fail-soft (never mask the startup error).
+
+### Indirect-path audit (complete)
+
+- C# surface (`Chummer.Desktop.Installer`, `Chummer.Desktop.Runtime`,
+  `Chummer.Avalonia`): no environment enumeration anywhere (only
+  `ExpandEnvironmentVariables` path expansion).
+- Other scripts: no `GetEnvironmentVariables` / `Get-ChildItem env:` usage.
+- Receipt paths (`Write-Leg`/`Fail-Leg`): record only leg status and exception
+  text (child stderr/stdout) - no environment material.
+
+### Existing-artifact exposure disposition
+
+Searched: repo tree, full git history (`git log --all -- '*start-failure-env*'`),
+and local evidence roots (`artifacts/`, Friday task directories).
+**No `start-failure-env.txt` exists anywhere** - the start leg never failed
+natively, so the dump never executed. Disposition: zero artifacts, zero
+exposure, **no credential rotation required**.
+
+### Focused tests (all passing)
+
+`tests/test_win004_start_failure_diag_privacy.py` (11 tests, pytest; dynamic
+class runs the collector through a real PowerShell host, static class pins the
+journey failure path):
+
+1. Sentinel credential (`GH_TOKEN=<harmless value>`) supplied to the collector:
+   its **value appears in no generated artifact** and its name appears in no
+   report.
+2. Safe update-mode values recorded; machine paths recorded as presence-only
+   (values asserted absent from the report bytes).
+3. Unlisted keys collapse to a count; absent allowlist keys render null/false.
+4. Static pins: the journey script contains no
+   `EnvironmentVariables.GetEnumerator` / `Get-ChildItem env:` /
+   `GetEnvironmentVariables` primitive and no `start-failure-env.txt` path;
+   it must call the collector; the collector has no flat name=value dump and
+   no wildcard allowlist entries.
+
+Wired into CI: `pull-request-ci.yml` split-preseal contract-test step runs the
+suite (pwsh is preinstalled on ubuntu runners, so the dynamic class executes
+there). Recipe allowlist extended by 2 paths
+(`scripts/win004-start-failure-diagnostics.ps1`,
+`tests/test_win004_start_failure_diag_privacy.py`) under this provenance block.
