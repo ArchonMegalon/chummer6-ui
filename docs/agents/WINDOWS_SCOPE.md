@@ -1,5 +1,8 @@
 # Windows delivery scope
 
+The [current Windows handoff](WINDOWS_HANDOFF.md) defines the active audit work
+order and first clean-machine SR5 beta milestone. Full parity remains in scope.
+
 The user starts Friday Code on a separate Windows host. Continue the existing
 `Chummer.Avalonia` desktop client, with `Chummer.Blazor.Desktop` as its documented
 compatibility head. The controller retains Android, shared Core integration,
