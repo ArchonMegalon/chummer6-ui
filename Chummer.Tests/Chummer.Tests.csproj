@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debuggable Release|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -297,6 +297,7 @@
     <Compile Include="Presentation\DesktopSupportDiagnosticsTextTests.cs" />
     <Compile Include="Presentation\DesktopTrustPanelFactoryTests.cs" />
     <Compile Include="Presentation\CharacterCreationContactsAvaloniaTests.cs" />
+    <Compile Include="Presentation\CharacterCreationAiFinishGateAvaloniaTests.cs" />
     <Compile Include="Presentation\CharacterCreationLifestylesOwnerTests.cs" />
     <Compile Include="Presentation\DowntimePlannerProjectorTests.cs" />
     <Compile Include="Presentation\DualHeadAcceptanceTests.cs" />
@@ -400,7 +401,7 @@
     <None Update="TestFiles\Ocelot2.0.chum5">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestFiles\Pañcama.chum5">
+    <None Update="TestFiles\PaÃ±cama.chum5">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestFiles\Popstar.chum5">
