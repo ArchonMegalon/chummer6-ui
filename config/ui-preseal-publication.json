@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "a6741129bdcbc6cd7f3f0caa9c6b7fb5b20d53f9",
-  "baseTree": "04c85b1c49cd022d72c44448f8bb83b948841d98",
+  "baseCommit": "a3cdfe9b94f3edc4d0af37bde4fe0c8e9334a80e",
+  "baseTree": "66ddf7206532bf84cb25fffd73ed2495fb4e0977",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,69 +44,27 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "5af67a1055201a1d4c27baebaf83fffce6201a46",
-      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
-      "sha256": "cb075f245c4731a723c9d6508d02c71e7e5a1a23fdf16691fc342719c85cbdbd",
-      "sizeBytes": 62392,
+      "blob": "5dbd90af6a959c995c38beb80008ec913fcce62f",
+      "path": "AGENTS.md",
+      "sha256": "28e4462286f23c6c9c68c3a3e558c2a5fe0b91f5291a1ad105d6663283969af2",
+      "sizeBytes": 6796,
       "status": "M"
     },
     {
-      "blob": "0d9a37e909dacc7b1fde55bfda82cf76a6a8d045",
-      "path": "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs",
-      "sha256": "1da222d17e85aebc9a7d68ac93ef480b75f279dca63ad8d6ba74ec92ca1f9c7c",
-      "sizeBytes": 169224,
+      "blob": "9a1089efea004d2152dd378494991c56413cbedb",
+      "path": "docs/agents/WINDOWS_REMOTE.md",
+      "sha256": "f39fd95433d74c5a403e151ca11c310a83c09030f0ca5789cc2959ffdfe7d0ec",
+      "sizeBytes": 8683,
       "status": "M"
     },
     {
-      "blob": "f810188913701ae4444f7f2ed0d31aa4027aab24",
-      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
-      "sha256": "4b168db4993f8ea1cc7c4595d5b7ce7cf040e68b9afbf24d33fb32b156ad74b6",
-      "sizeBytes": 41421,
-      "status": "M"
-    },
-    {
-      "blob": "c1ad0ae22570d8f20fa82b0c7663c689b885e257",
-      "path": "Chummer.Presentation/Overview/CharacterCreationWizardDesktopSession.cs",
-      "sha256": "357bb56b71fe77a2a77d41e782e28d3335d3eee4f47131c193bdb9c34639dcda",
-      "sizeBytes": 21822,
-      "status": "M"
-    },
-    {
-      "blob": "b2847ab4aae154cd7a8a73e7bef8920e29d9a2c5",
-      "path": "Chummer.Tests/Chummer.Tests.csproj",
-      "sha256": "7c5d56b5435ef4c94d74632c3ff3feb2a3046a5f5c39f1f772b4376f290c7a89",
-      "sizeBytes": 35273,
-      "status": "M"
-    },
-    {
-      "blob": "9077841a6238b8b6fb859aefbb89cd8bbb126d3c",
-      "path": "Chummer.Tests/Presentation/CharacterCreationAiFinishGateAvaloniaTests.cs",
-      "sha256": "d56c3e4b0952da73f75ee4433abe9175211844048cbbdc073be87c6a7343866a",
-      "sizeBytes": 6482,
-      "status": "A"
-    },
-    {
-      "blob": "30b9a331af9e4cd7d064c4b3f22710a8b37cb495",
-      "path": "docs/agents/WIN-006-CONTROLLER-FOLLOWUP-EVIDENCE.md",
-      "sha256": "2e218373a34bcee9f7779f3195400954285647ccb52ec1dde1a1baf5f1a13065",
-      "sizeBytes": 4830,
-      "status": "A"
-    },
-    {
-      "blob": "df99e53a8d54165feb30fad1d66464caddee4643",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "14ca64cf29696ee83c78283b19ea85cf14f6ddcf0933652ecc96fc62e0f593b1",
-      "sizeBytes": 59856,
-      "status": "M"
-    },
-    {
-      "blob": "9efe669b360af0b7bf67b68b5b63f2d6e36947ff",
-      "path": "scripts/win004-installer-update-recovery-journey.ps1",
-      "sha256": "f470e673100236f28bf9831c8906ff5eefcb782e42abd437c30db31d50ba8be0",
-      "sizeBytes": 32630,
+      "blob": "790aaddd2453af95d21926ea278e0953b093833c",
+      "path": "docs/agents/WINDOWS_SCOPE.md",
+      "sha256": "b815bd3e5cead9a96856d2fbf173954c1222e3cce87c81678938cf68c6bc3b81",
+      "sizeBytes": 23282,
       "status": "M"
     }
   ],
-  "recipeTree": "2b4b5a570d2e0aa90ecedd97132dd39911cfe0d8",
+  "recipeTree": "be2e8582af8c77556da8200871adb6fcf5bbf37b",
   "releaseClaim": false
 }
