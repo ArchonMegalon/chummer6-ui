@@ -46,7 +46,8 @@ public static class CharacterCreationWizardProjector
         CharacterCreationLifestylesState? lifestyles = null,
         CharacterCreationFinalizationResult<CharacterCreationFinalizationState>? finalization = null,
         CharacterCreationSkillsState? skills = null,
-        CharacterCreationResourcesState? resources = null)
+        CharacterCreationResourcesState? resources = null,
+        CharacterCreationAttributesState? attributes = null)
     {
         ArgumentNullException.ThrowIfNull(loadedOverview);
         if (foundation is not null
@@ -127,6 +128,8 @@ public static class CharacterCreationWizardProjector
         SkillsProjectionAuthority skillsAuthority = EvaluateSkillsAuthority(skills);
         ResourcesProjectionAuthority resourcesAuthority =
             EvaluateResourcesAuthority(resources);
+        AttributesProjectionAuthority attributesAuthority =
+            EvaluateAttributesAuthority(workspaceId, loadedOverview, attributes);
         // Only the current, validated Core talent can make this step inapplicable.
         // A profile label or missing/unsupported authority must not imply Mundane.
         bool magicResonanceRequired = !magicResonanceAuthority.IsReady
@@ -197,6 +200,7 @@ public static class CharacterCreationWizardProjector
             identityStoryProjection,
             skillsAuthority,
             resourcesAuthority,
+            attributesAuthority,
             completionBlockers);
         bool canFinalize = finalizationAuthority.State?.CanReview == true
                            && contactProjection.IsSafeForFinalization
@@ -303,6 +307,7 @@ public static class CharacterCreationWizardProjector
         IdentityStoryProjection identityStoryProjection,
         SkillsProjectionAuthority skillsAuthority,
         ResourcesProjectionAuthority resourcesAuthority,
+        AttributesProjectionAuthority attributesAuthority,
         IReadOnlyList<string> completionBlockers)
     {
         // Foundation is the Life Modules draft, not a second Priority metatype
@@ -407,15 +412,15 @@ public static class CharacterCreationWizardProjector
                 "Attributes",
                 attributesConfirmed
                     ? CharacterCreationWizardStepStatuses.Complete
-                    : qualitiesAuthority.IsReady
+                    : attributesAuthority.IsReady
                         ? CharacterCreationWizardStepStatuses.InProgress
                         : CharacterCreationWizardStepStatuses.Blocked,
                 isRequired: true,
-                isAvailable: qualitiesAuthority.IsReady,
+                isAvailable: attributesAuthority.IsReady,
                 isComplete: attributesConfirmed,
                 budgetIds: [CharacterCreationBudgetIds.NormalAttributes, CharacterCreationBudgetIds.SpecialAttributes],
-                blockers: qualitiesAuthority.IsReady ? [] : [LegalOptionsAuthorityUnavailable],
-                legalNextStepIds: qualitiesAuthority.IsReady
+                blockers: attributesAuthority.IsReady ? [] : CombineBlockers([LegalOptionsAuthorityUnavailable], attributesAuthority.Blockers),
+                legalNextStepIds: attributesConfirmed || attributesAuthority.IsReady
                     ? [CharacterCreationWizardStepIds.Qualities]
                     : []),
             Stage(
@@ -1424,6 +1429,32 @@ public static class CharacterCreationWizardProjector
                    CharacterCreationResourcesRules.ComputeStateDigest(resources));
     }
 
+    /// <summary>The fresh Attributes-entry route projects authority only from a
+    /// state bound to THIS workspace document; a foreign or stale state falls back
+    /// to the unavailable authority rather than opening the stage.</summary>
+    internal static bool MatchesLoadedOverview(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationAttributesState attributes)
+    {
+        ArgumentNullException.ThrowIfNull(loadedOverview);
+        ArgumentNullException.ThrowIfNull(attributes);
+        string rawDigest = ComputeContentDigest(loadedOverview.Document);
+        return loadedOverview.Document is not null
+               && !loadedOverview.Profile.Created
+               && attributes.Binding.WorkspaceId == workspaceId
+               && attributes.Binding.ContentRevision == loadedOverview.ContentRevision
+               && attributes.Binding.SavedRevision == loadedOverview.SavedRevision
+               && string.Equals(
+                   attributes.Binding.RawCharacterXmlDigest,
+                   rawDigest,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   attributes.Binding.AuxiliaryStateDigest,
+                   loadedOverview.Document.AuxiliaryStateDigest,
+                   StringComparison.Ordinal);
+    }
+
     private static bool QualitiesProjectionShapeIsValid(
         CharacterCreationQualitiesState qualities)
     {
@@ -1545,6 +1576,33 @@ public static class CharacterCreationWizardProjector
             Blockers: blockers.Distinct(StringComparer.Ordinal)
                 .OrderBy(static blocker => blocker, StringComparer.Ordinal)
                 .ToArray());
+    }
+
+    private sealed record AttributesProjectionAuthority(
+        bool IsReady,
+        bool HasPendingDraft,
+        string[] Blockers,
+        CharacterCreationLegalOption[] Options);
+
+    private static AttributesProjectionAuthority EvaluateAttributesAuthority(
+        CharacterWorkspaceId workspaceId,
+        WorkspaceOverviewLoadResult loadedOverview,
+        CharacterCreationAttributesState? attributes)
+    {
+        if (attributes is null || !MatchesLoadedOverview(workspaceId, loadedOverview, attributes))
+            return new AttributesProjectionAuthority(false, false, [], []);
+
+        string[] blockers = attributes.Blockers
+            .Where(static blocker => !string.IsNullOrWhiteSpace(blocker))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+            .ToArray();
+        bool ready = attributes.CanEdit && blockers.Length == 0;
+        return new AttributesProjectionAuthority(
+            ready,
+            attributes.PendingDraft is not null,
+            blockers,
+            []);
     }
 
     private static QualitiesProjectionAuthority EvaluateQualitiesAuthority(

@@ -1593,11 +1593,13 @@ public sealed class CharacterCreationWizardPresentationTests
     }
 
     [TestMethod]
-    public void Ready_qualities_without_core_finalization_leaves_attributes_in_progress()
+    public void Ready_qualities_without_attributes_authority_leaves_attributes_blocked()
     {
-        // WIN-006 re-audit item 3 negative gate: qualities readiness only gates entry
-        // into Attributes; without Core finalization confirming the attributes step the
-        // stage must read InProgress, never Complete.
+        // friday-handoff4320 P1 item 1 negative gate: qualities readiness must NOT
+        // open Attributes (the circular dependency is removed). Without a
+        // workspace-bound Core attributes state the stage honestly reads Blocked,
+        // and without Core finalization confirming the attributes step it must
+        // never read Complete.
         WorkspaceOverviewLoadResult loaded = CreateOverview(
             created: false,
             buildMethod: CharacterCreationBuildMethods.Priority,
@@ -1613,12 +1615,9 @@ public sealed class CharacterCreationWizardPresentationTests
 
         CharacterCreationWizardStageState attributes = wizard.Steps.Single(step =>
             step.StepId == CharacterCreationWizardStepIds.Attributes);
-        Assert.IsTrue(attributes.IsAvailable);
+        Assert.IsFalse(attributes.IsAvailable);
+        Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, attributes.Status);
         Assert.IsFalse(attributes.IsComplete);
-        Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, attributes.Status);
-        CollectionAssert.AreEqual(
-            new[] { CharacterCreationWizardStepIds.Qualities },
-            attributes.LegalNextStepIds.ToArray());
     }
 
     [TestMethod]
@@ -1659,4 +1658,184 @@ public sealed class CharacterCreationWizardPresentationTests
             [RulesetDefaults.Sr5, buildMethod, false, "Wizard", "W"])
             ?? throw new AssertFailedException("Continuation dialog returned null."));
     }
+
+    // ---- Folded: CharacterCreationWizardProjectorAuthorityTests (P1 item 1, handoff 4320) ----
+
+private static WorkspaceOverviewLoadResult Overview() => CharacterCreationWizardPresentationTests
+    .CreateOverview(
+        created: false,
+        CharacterCreationBuildMethods.Priority,
+        "<character><created>False</created></character>",
+        revision: 1);
+
+[TestMethod]
+public void Attributes_stage_is_available_when_core_attributes_state_is_ready()
+{
+    WorkspaceOverviewLoadResult loaded = Overview();
+
+    CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+        new CharacterWorkspaceId("ws-attr-ready"),
+        loaded,
+        attributes: CreateAttributesState(
+            loaded,
+            new CharacterWorkspaceId("ws-attr-ready"),
+            canEdit: true,
+            blockers: []));
+
+    CharacterCreationWizardStageState stage = GetStage(wizard, CharacterCreationWizardStepIds.Attributes);
+    Assert.IsTrue(stage.IsAvailable, "A ready, workspace-bound Core attributes state must open the Attributes stage.");
+    Assert.AreEqual(CharacterCreationWizardStepStatuses.InProgress, stage.Status);
+    Assert.IsFalse(stage.Blockers.Any(), "A ready state carries no blockers.");
+}
+
+[TestMethod]
+public void Attributes_stage_is_blocked_when_core_state_carries_blockers_even_if_qualities_would_be_ready()
+{
+    WorkspaceOverviewLoadResult loaded = Overview();
+
+    CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+        new CharacterWorkspaceId("ws-attr-blocked"),
+        loaded,
+        attributes: CreateAttributesState(
+            loaded,
+            new CharacterWorkspaceId("ws-attr-blocked"),
+            canEdit: false,
+            blockers: ["attributes-authority-blocked"]));
+
+    CharacterCreationWizardStageState stage = GetStage(wizard, CharacterCreationWizardStepIds.Attributes);
+    Assert.IsFalse(stage.IsAvailable, "Core blockers must gate Attributes entry regardless of qualities readiness.");
+    Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, stage.Status);
+    Assert.IsTrue(
+        stage.Blockers.Any(blocker => string.Equals(
+            blocker, "attributes-authority-blocked", StringComparison.Ordinal)),
+        "Core-owned blockers must surface verbatim on the stage.");
+}
+
+[TestMethod]
+public void Attributes_stage_degrades_honestly_when_core_state_is_unavailable()
+{
+    WorkspaceOverviewLoadResult loaded = Overview();
+
+    CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+        new CharacterWorkspaceId("ws-attr-null"),
+        loaded,
+        attributes: null);
+
+    CharacterCreationWizardStageState stage = GetStage(wizard, CharacterCreationWizardStepIds.Attributes);
+    Assert.IsFalse(stage.IsAvailable, "A missing Core attributes state must not fake readiness.");
+    Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, stage.Status);
+}
+
+[TestMethod]
+public void Attributes_stage_is_blocked_for_foreign_workspace_binding()
+{
+    WorkspaceOverviewLoadResult loaded = Overview();
+
+    // The state is READY on its own (CanEdit, no blockers) but bound to a
+    // different workspace — the projector must reject it as foreign authority.
+    CharacterCreationWizardSnapshot wizard = CharacterCreationWizardProjector.Project(
+        new CharacterWorkspaceId("ws-attr-foreign"),
+        loaded,
+        attributes: CreateAttributesState(
+            loaded,
+            new CharacterWorkspaceId("ws-attr-somewhere-else"),
+            canEdit: true,
+            blockers: []));
+
+    CharacterCreationWizardStageState stage = GetStage(wizard, CharacterCreationWizardStepIds.Attributes);
+    Assert.IsFalse(stage.IsAvailable, "A foreign-binding state must not open the stage.");
+    Assert.AreEqual(CharacterCreationWizardStepStatuses.Blocked, stage.Status);
+}
+
+[TestMethod]
+public void Attributes_stage_completes_only_on_core_confirmed_flag()
+{
+    WorkspaceOverviewLoadResult loaded = Overview();
+
+    var workspaceId = new CharacterWorkspaceId("ws-attr-complete");
+    CharacterCreationAttributesState ready = CreateAttributesState(
+        loaded, workspaceId, canEdit: true, blockers: []);
+    CharacterCreationWizardSnapshot pending = CharacterCreationWizardProjector.Project(
+        workspaceId,
+        loaded,
+        attributes: ready);
+    CharacterCreationWizardStageState pendingStage = GetStage(pending, CharacterCreationWizardStepIds.Attributes);
+    Assert.AreEqual(
+        CharacterCreationWizardStepStatuses.InProgress, pendingStage.Status,
+        "Readiness alone must not complete the stage.");
+    Assert.IsFalse(pendingStage.IsComplete, "Readiness must not fabricate completion.");
+
+    // Honest semantics: with Core's finalization flag absent, CanEdit=false
+    // reads Blocked. Only Core's confirmed step flag can complete the stage.
+    CharacterCreationWizardSnapshot confirmed = CharacterCreationWizardProjector.Project(
+        workspaceId,
+        loaded,
+        attributes: ready with { CanEdit = false });
+    CharacterCreationWizardStageState confirmedStage = GetStage(confirmed, CharacterCreationWizardStepIds.Attributes);
+    Assert.AreEqual(
+        CharacterCreationWizardStepStatuses.Blocked, confirmedStage.Status,
+        "CanEdit loss without Core confirmation must read Blocked, never fake completion.");
+    Assert.IsFalse(confirmedStage.IsComplete);
+}
+
+private static CharacterCreationWizardStageState GetStage(
+    CharacterCreationWizardSnapshot wizard, string stepId)
+    => wizard.Steps.Single(item => item.StepId == stepId);
+
+private static CharacterCreationAttributesState CreateAttributesState(
+    WorkspaceOverviewLoadResult loaded,
+    CharacterWorkspaceId workspaceId,
+    bool canEdit,
+    string[] blockers)
+{
+    string rawDigest = $"sha256:{Convert.ToHexString(
+        System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(loaded.Document!.Content))).ToLowerInvariant()}";
+    var binding = new CharacterCreationAttributesBinding(
+        workspaceId,
+        ContentRevision: loaded.ContentRevision,
+        SavedRevision: loaded.SavedRevision,
+        RawCharacterXmlDigest: rawDigest,
+        AuxiliaryStateDigest: loaded.Document.AuxiliaryStateDigest,
+        PrerequisiteDraftRevision: 0,
+        PrerequisiteDraftDigest: string.Empty,
+        PrerequisiteAuthorityDigest: string.Empty);
+    return new CharacterCreationAttributesState(
+        Schema: CharacterCreationAttributesSchemas.SnapshotV1,
+        Binding: binding,
+        PrerequisiteDraft: null,
+        PendingDraft: null,
+        Attributes: [],
+        NormalPointBudget: new CharacterCreationBudgetState(
+            BudgetId: CharacterCreationBudgetIds.NormalAttributes,
+            Label: "Normal Attribute Points",
+            Total: 0m,
+            Used: 0m,
+            Remaining: 0m,
+            IsExact: true,
+            Blockers: [],
+            Unit: "points"),
+        SpecialPointBudget: new CharacterCreationBudgetState(
+            BudgetId: CharacterCreationBudgetIds.SpecialAttributes,
+            Label: "Special Attribute Points",
+            Total: 0m,
+            Used: 0m,
+            Remaining: 0m,
+            IsExact: true,
+            Blockers: [],
+            Unit: "points"),
+        CreationKarmaBudget: new CharacterCreationBudgetState(
+            BudgetId: CharacterCreationBudgetIds.Karma,
+            Label: "Creation Karma",
+            Total: 0m,
+            Used: 0m,
+            Remaining: 0m,
+            IsExact: true,
+            Blockers: [],
+            Unit: "karma"),
+        MaxNumberMaxAttributesCreate: 0,
+        Blockers: blockers,
+        CanEdit: canEdit,
+        SnapshotDigest: "probe-snapshot-digest");
+}
 }

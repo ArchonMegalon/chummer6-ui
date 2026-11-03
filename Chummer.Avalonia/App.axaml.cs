@@ -141,7 +141,9 @@ public partial class App : global::Avalonia.Application
                 serviceProvider.GetService<IOwnerBoundCharacterCreationQualitiesService>(),
                 serviceProvider.GetService<IOwnerBoundCharacterCreationMagicResonanceService>(),
                 serviceProvider.GetService<IOwnerBoundCharacterCreationSkillsService>(),
-                serviceProvider.GetService<IOwnerBoundCharacterCreationResourcesService>()));
+                serviceProvider.GetService<IOwnerBoundCharacterCreationResourcesService>(),
+                serviceProvider.GetService<ICharacterCreationAttributesService>(),
+                serviceProvider.GetService<IOwnerBoundCharacterCreationAttributesService>()));
         services.AddSingleton<ICharacterCreationContactsInteractionPresenter,
             CharacterCreationContactsInteractionPresenter>();
         services.AddSingleton<ICharacterCreationFoundationInteractionPresenter,
