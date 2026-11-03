@@ -24,6 +24,13 @@ param(
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $WorkRoot) { $WorkRoot = Join-Path $RepoRoot 'artifacts\win004-journey' }
+$WorkRoot = [IO.Path]::GetFullPath($WorkRoot)
+. (Join-Path $PSScriptRoot 'win004-acceptance.ps1')
+# Fresh per-run state survives through save, update, recovery and uninstall.
+$JourneyStateRoot = Join-Path $WorkRoot ('app-state-' + [guid]::NewGuid().ToString('N'))
+$CharacterDataRoot = Join-Path $JourneyStateRoot 'Chummer6\state'
+$UpdateStateRoot = Join-Path $JourneyStateRoot 'Chummer6\desktop-update\avalonia\windows\x64'
+$PersistenceRoot = Join-Path $JourneyStateRoot 'probe-receipts'
 $DistDir = Join-Path $WorkRoot 'dist'
 $PubV1 = Join-Path $WorkRoot 'publish\v1'
 $PubV2 = Join-Path $WorkRoot 'publish\v2'
@@ -131,6 +138,59 @@ function Get-InstallInfo {
         }
     }
     return $info
+}
+
+
+function Invoke-InstalledCharacterProbe {
+    param([string]$Exe, [string]$Phase, [string]$Label)
+    New-Item -ItemType Directory -Force -Path $PersistenceRoot | Out-Null
+    $receiptPath = Join-Path $PersistenceRoot ($Label + '.json')
+    if (Test-Path -LiteralPath $receiptPath) { throw 'Persistence receipt already exists; do not reuse a previous result.' }
+    $probeInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $probeInfo.FileName = $Exe
+    $probeInfo.Arguments = '--windows-persistence-probe'
+    $probeInfo.WorkingDirectory = Split-Path -Parent $Exe
+    $probeInfo.UseShellExecute = $false
+    Set-JourneyAppEnvironment -StartInfo $probeInfo -StateRoot $JourneyStateRoot
+    $probeInfo.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
+    $probeInfo.EnvironmentVariables['CHUMMER_PERSISTENCE_PHASE'] = $Phase
+    $probeInfo.EnvironmentVariables['CHUMMER_PERSISTENCE_RECEIPT'] = $receiptPath
+    $probeInfo.EnvironmentVariables['CHUMMER_PERSISTENCE_SAVED_RECEIPT'] = Join-Path $PersistenceRoot 'save.json'
+    if ($Phase -eq 'save') {
+        # Repository fixture only: no operator character or personal store is used.
+        $probeInfo.EnvironmentVariables['CHUMMER_PERSISTENCE_FIXTURE'] = Join-Path $RepoRoot 'Chummer.Tests\TestFiles\Apex Predator.chum5'
+    }
+    $probeInfo.RedirectStandardOutput = $true
+    $probeInfo.RedirectStandardError = $true
+    $probe = [System.Diagnostics.Process]::Start($probeInfo)
+    $outTask = $probe.StandardOutput.ReadToEndAsync()
+    $errTask = $probe.StandardError.ReadToEndAsync()
+    try {
+        if (-not $probe.WaitForExit(110000)) { throw "Installed character $Label probe timed out." }
+        $probe.WaitForExit()
+        $outTask.GetAwaiter().GetResult() | Set-Content -Encoding UTF8 (Join-Path $PersistenceRoot ($Label + '.stdout.log'))
+        $errTask.GetAwaiter().GetResult() | Set-Content -Encoding UTF8 (Join-Path $PersistenceRoot ($Label + '.stderr.log'))
+        if ($probe.ExitCode -ne 0) { throw "Installed character $Label probe failed; see its private logs." }
+        $result = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+        if ($result.workspaceId -notmatch '^[a-fA-F0-9]{32}$') { throw 'Unexpected workspace ID in persistence receipt.' }
+        $workspaceFile = Join-Path $CharacterDataRoot ('workspaces\' + $result.workspaceId + '.json')
+        $fileSha = Get-FileSha256 $workspaceFile
+        Assert-JourneyPersistenceReceipt -Receipt $result -Phase $Phase -ProcessId $probe.Id `
+            -StateRoot $JourneyStateRoot -Saved $script:SavedRunner `
+            -WorkspaceFileSha256 $fileSha -SavedFileSha256 $script:SavedRunnerFileSha
+        if ($Phase -eq 'save') {
+            $script:SavedRunner = $result
+            $script:SavedRunnerFileSha = $fileSha
+        }
+        Write-Leg ('character-' + $Label) @{
+            status = 'pass'; executable = $Exe; processId = $result.processId
+            workspaceId = $result.workspaceId; profileSha256 = $result.profileSha256
+            workspaceFileSha256 = $fileSha; isolatedStateRoot = $JourneyStateRoot
+        }
+    } finally {
+        if (-not $probe.HasExited) { $probe.Kill(); $probe.WaitForExit(10000) | Out-Null }
+        $probe.Dispose()
+    }
 }
 
 function Stop-HeadProcesses {
@@ -410,6 +470,7 @@ try {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $InstalledExe
     $psi.UseShellExecute = $false
+    Set-JourneyAppEnvironment -StartInfo $psi -StateRoot $JourneyStateRoot
     # Core content is pinned explicitly (WIN-001 contract): the resolver validates
     # the checkout against the pinned Core commit, so CWD is irrelevant to startup.
     foreach ($kv in @(@('CHUMMER_CORE_CONTENT_ROOT', $CoreContentRoot))) {
@@ -437,6 +498,11 @@ try {
     $alive = $true
     try { $p.Kill(); $p.WaitForExit(10000) | Out-Null } catch {}
     Write-Leg 'start' @{ status = 'pass'; exe = $InstalledExe; stayedAliveSeconds = 15 }
+
+    # Character-data preservation: snapshot the persistent store before the update legs.
+    Invoke-InstalledCharacterProbe -Exe $InstalledExe -Phase save -Label save
+    $script:CharacterDataBefore = Get-CharacterDataSnapshot -Root $CharacterDataRoot
+    Write-Leg 'character-data-snapshot' @{ status = 'pass'; root = $CharacterDataRoot; files = @($script:CharacterDataBefore.Keys).Count }
 } catch {
     Stop-HeadProcesses
     Fail-Leg 'start' $_.Exception.Message
@@ -447,26 +513,57 @@ try {
 # ---------------------------------------------------------------------------
 try {
     # Reset update state so the runtime evaluates the channel fresh.
-    $stateRoot = Join-Path $env:LOCALAPPDATA 'Chummer6\desktop-update\avalonia\windows\x64'
+    $stateRoot = $UpdateStateRoot
     if (Test-Path $stateRoot) { Remove-Item -Recurse -Force $stateRoot }
     Stop-HeadProcesses
 
-    # Pre-clean shortcuts: the v2 installer recreates them during the update. Overwriting
-    # a .lnk created moments earlier can hang WScript.Shell's Save() past the installer's
-    # 15s timeout (observed: 'Timed out while creating shortcut ... Chummer6.lnk'), killing
-    # an otherwise complete update. Removing them first makes the update a fresh create.
-    foreach ($lnkDir in @(
-        (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'),
-        ([Environment]::GetFolderPath('Desktop'))
-    )) {
-        Get-ChildItem -Path $lnkDir -Filter 'Chummer6*.lnk' -ErrorAction SilentlyContinue |
-            Remove-Item -Force -ErrorAction SilentlyContinue
+    # Existing shortcuts are RETAINED through the update (WINDOWS_SCOPE re-audit
+    # item 5.2): the acceptance case must exercise shortcut overwrite, and the
+    # overwrite hang is resolved in the installer (delete-before-create in
+    # CreateShortcutCore), not by pre-cleaning here. Cleanup belongs after the
+    # tested behavior, not before it. Snapshot the pre-update shortcuts so the
+    # update-relaunch leg can assert retention with real evidence.
+    $ShortcutPaths = @(
+        (Join-Path (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs') 'Chummer6.lnk'),
+        (Join-Path ([Environment]::GetFolderPath('DesktopDirectory')) 'Chummer6.lnk')
+    )
+    function Get-LnkSnapshot {
+        $snap = @{}
+        $shell = New-Object -ComObject WScript.Shell
+        foreach ($lnk in $ShortcutPaths) {
+            if (Test-Path $lnk) {
+                $target = ''
+                try { $target = [string]$shell.CreateShortcut($lnk).TargetPath } catch { $target = '' }
+                $snap[$lnk] = (Get-FileSha256 $lnk) + '|' + (Get-Item $lnk).LastWriteTimeUtc.Ticks + '|' + $target
+            }
+        }
+        return $snap
     }
+    # Retention comparator (PR #513 followup P2): EVERY pre-update shortcut
+    # must survive AND resolve to the expected installed executable - a nonzero
+    # post-update count alone can hide the loss of one of two.
+    function Test-LnkRetention {
+        param($Before, $After, $ExpectedExe)
+        foreach ($lnk in $Before.Keys) {
+            if (-not $After.ContainsKey($lnk)) { return "shortcut lost by update: $lnk" }
+        }
+        foreach ($lnk in $After.Keys) {
+            $parts = @($After[$lnk] -split '\|')
+            $target = if ($parts.Count -ge 3) { $parts[2] } else { '' }
+            if (-not $target) { return "shortcut does not resolve to a target: $lnk" }
+            if ($target -ine $ExpectedExe) { return "shortcut does not resolve to the expected executable: $lnk -> $target" }
+        }
+        return $null
+    }
+    $ShortcutsBefore = Get-LnkSnapshot
+    if ($ShortcutsBefore.Count -eq 0) { throw 'pre-update shortcut snapshot found no Chummer6 shortcuts (the acceptance case requires existing shortcuts to retain through the update)' }
 
+    $PreUpdateVersion = [string]((Get-InstallInfo).DisplayVersion)
     $ApplyStartedUtc = (Get-Date).ToUniversalTime()
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $InstalledExe
     $psi.UseShellExecute = $false
+    Set-JourneyAppEnvironment -StartInfo $psi -StateRoot $JourneyStateRoot
     $psi.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_ENABLED'] = '1'
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MODE'] = 'full'
@@ -479,12 +576,14 @@ try {
     # installed stamp after an update is whatever the v2 payload baked at its own
     # build time, which cached-build runs cannot know exactly (run-stamp vs binary
     # mtime skew). A change from the v1 value is the update landing, however named.
-    $PreUpdateVersion = [string]((Get-InstallInfo).DisplayVersion)
+    $PreviousProcessId = $p.Id
+    $PreviousStartUtc = $p.StartTime.ToUniversalTime()
     $updated = $false
+    $updateObservedAtUtc = Get-Date
     while ((Get-Date) -lt $deadline) {
         Start-Sleep -Seconds 10
         $info = Get-InstallInfo
-        if ($info.DisplayVersion -and $info.DisplayVersion -ne $PreUpdateVersion) { $updated = $true; break }
+        if ($info.DisplayVersion -and $info.DisplayVersion -ne $PreUpdateVersion) { $updated = $true; $updateObservedAtUtc = (Get-Date); break }
         if ($p.HasExited -and -not $updated) {
             # Expected mid-leg: the app exits so the apply helper can run. Keep polling
             # for the installer to finish; only fail if the registry never moves.
@@ -493,17 +592,15 @@ try {
     if (-not $updated) { throw "update apply did not land within 8 minutes (registry still '$((Get-InstallInfo).DisplayVersion)')" }
 
     # Relaunch: the apply chain brings the head back up under v2.
-    # FIXED 2026-11-02 (WINDOWS_HANDOFF item 7; native evidence 9/9 pass,
-    # relaunchMode='installer-auto', defect=false on audited main 0d224e7a7):
-    # this path historically crashed ~250ms after completing with
+    # History (WINDOWS_HANDOFF item 7, source-corrected on audited main
+    # 0d224e7a7): this path used to crash ~250ms after completing with
     # ObjectDisposedException in InstallSplashForm (Show-after-dispose), so the
-    # automatic relaunch never happened and WIN-004's harness detected that
-    # trace signature, reaped the dead installer, and relaunched natively itself
-    # with Start-Menu semantics (relaunchMode='harness-fallback'). The
-    # detection/reap/relaunch logic below retains the historical diagnostic
-    # fallback. It records harness-fallback as a passing leg, so that result
-    # does not establish autonomous-update acceptance. A strict rejection of
-    # fallback relaunch remains follow-up work under WINDOWS_HANDOFF item 7.
+    # automatic relaunch never happened and the harness relaunched natively
+    # itself (relaunchMode='harness-fallback').
+    # WINDOWS_SCOPE re-audit item 5.1: diagnostic recovery and acceptance are
+    # now separated. An installer-auto relaunch is REQUIRED for this leg to
+    # pass; a harness relaunch survives only as diagnostic recovery (recorded
+    # in a separate diagnostic leg) and update-relaunch FAILS when it is used.
     $infoUpd = Get-InstallInfo
     if (-not $infoUpd.ExePath) { throw 'post-update install info unusable (registry missing ExePath)' }
     $relaunched = $false
@@ -511,9 +608,41 @@ try {
     $defectDetected = $false
     $relaunchDeadline = (Get-Date).AddMinutes(3)
     $newProc = $null
+    $newProcPath = ''
+    $newProcVersion = ''
+    $newProcStart = $null
+    # Bound detection (WINDOWS_SCOPE re-audit item 5.3): the relaunched head
+    # must be the EXPECTED executable at the EXPECTED install location - not
+    # merely any process named 'Chummer.Avalonia'.
     while ((Get-Date) -lt $relaunchDeadline) {
-        $newProc = Get-Process -Name 'Chummer.Avalonia' -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($newProc) { $relaunched = $true; break }
+        $candidate = Get-Process -Name 'Chummer.Avalonia' -ErrorAction SilentlyContinue | Where-Object {
+            # v1 and v2 share one install path: the pre-update head ($p) would
+            # match a pure path filter, so exclude it by Id and require birth
+            # AFTER it started (immune to the poll skew between the registry
+            # flip and $updateObservedAtUtc). A version-stamp cascade (manifest newer
+            # than the relaunched binary) produces a head that immediately
+            # chains ANOTHER update and exits - the post-relaunch liveness
+            # window below rejects it; the acceptance requirement is a STABLE
+            # relaunched head, and full builds (no -Skip) prevent the cascade.
+            try {
+                return ((Test-UpdatedProcessBirth -ProcessId $_.Id -StartTimeUtc $_.StartTime.ToUniversalTime() `
+                            -PreviousProcessId $PreviousProcessId -PreviousStartUtc $PreviousStartUtc -ApplyStartedUtc $ApplyStartedUtc) -and
+                        $null -ne $_.MainModule -and
+                        $null -ne $_.MainModule.FileName -and
+                        ($_.MainModule.FileName -ieq $infoUpd.ExePath))
+            } catch { return $false }
+        } | Select-Object -First 1
+        if ($candidate) {
+            $newProc = $candidate
+            $newProcStart = $null
+            try {
+                $newProcPath = $candidate.MainModule.FileName
+                $newProcVersion = $candidate.MainModule.FileVersionInfo.ProductVersion
+                $newProcStart = $candidate.StartTime.ToUniversalTime()
+            } catch { $newProcPath = ''; $newProcVersion = ''; $newProcStart = $null }
+            if ($newProcPath) { $relaunched = $true; break }
+            $newProc = $null
+        }
         if (Test-Path $ProgressLog) {
             # Match only THIS run's crash signature: the trace is appended across
             # runs, so a stale tail from an earlier run would false-positive here.
@@ -531,12 +660,16 @@ try {
     }
     if (-not $relaunched -and -not $defectDetected) { throw 'updated install did not relaunch the head within 3 minutes' }
     if (-not $relaunched) {
-        # Native fallback relaunch with Start-Menu semantics: still the real updated
-        # install; only the launcher differs from the (crashed) installer splash path.
+        # Diagnostic-only recovery relaunch (WINDOWS_SCOPE re-audit item 5.1):
+        # the harness may still bring the updated install up to observe it, but
+        # a harness-launched app can never pass the autonomous-update leg. The
+        # diagnostic evidence goes to its own leg and update-relaunch FAILS.
+        $relaunchMode = 'harness-fallback'
         $psiR = New-Object System.Diagnostics.ProcessStartInfo
         $psiR.FileName = $infoUpd.ExePath
         $psiR.WorkingDirectory = $infoUpd.InstallDir
         $psiR.UseShellExecute = $false
+        Set-JourneyAppEnvironment -StartInfo $psiR -StateRoot $JourneyStateRoot
         $psiR.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
         $newProc = $null
         try { $newProc = [System.Diagnostics.Process]::Start($psiR) }
@@ -548,12 +681,75 @@ try {
             Start-Sleep -Seconds 3
             $newProc = [System.Diagnostics.Process]::Start($psiR)
         }
-        $relaunchMode = 'harness-fallback'
+        Start-Sleep -Seconds 15
+        $diagAlive = -not $newProc.HasExited
+        $diagPath = ''; $diagVersion = ''
+        try {
+            $diagPath = $newProc.MainModule.FileName
+            $diagVersion = $newProc.MainModule.FileVersionInfo.ProductVersion
+        } catch {}
+        if ($diagAlive) { try { $newProc.Kill(); $newProc.WaitForExit(10000) | Out-Null } catch {} }
+        Write-Leg 'update-relaunch-diagnostic' @{
+            status = 'diagnostic (harness fallback used; installer-auto relaunch missing)'
+            defectSignature = 'ObjectDisposedException in installer splash'
+            harnessLaunchedExe = $diagPath
+            harnessLaunchedProductVersion = $diagVersion
+            harnessLaunchedStayedAlive = $diagAlive
+        }
+        Fail-Leg 'update-relaunch' 'installer crash prevented autonomous relaunch; harness fallback is diagnostic-only and cannot pass the autonomous-update leg (defectSignature=ObjectDisposedException)'
     }
     Start-Sleep -Seconds 15
     $stillAlive = -not $newProc.HasExited
-    if ($stillAlive) { try { $newProc.Kill(); $newProc.WaitForExit(10000) | Out-Null } catch {} }
-    if (-not $stillAlive) { throw "relaunched head exited within 15s (relaunchMode: $relaunchMode)" }
+    if (-not $stillAlive) {
+        $diagId = '?'
+        $diagStart = '?'
+        try { $diagId = $newProc.Id; $diagStart = $newProc.StartTime.ToString('o') } catch {}
+        $diagState = ''
+        try {
+            $sfDiag = Join-Path $UpdateStateRoot 'state.json'
+            if (Test-Path $sfDiag) {
+                $jDiag = (Get-Content $sfDiag -Raw) | ConvertFrom-Json
+                $diagState = " state.lastError='$([string]$jDiag.LastError)' state.failureReason='$([string]$jDiag.LastFailureReason)'"
+            }
+        } catch {}
+        throw "relaunched head (pid $diagId, started $diagStart) exited within 15s (relaunchMode: $relaunchMode)$diagState"
+    }
+    # Bind to the pre-apply boundary and old process, not the later registry
+    # observation. The expected v2 payload hash below supplies version identity.
+    if (-not $newProcPath -or ($newProcPath -ine $infoUpd.ExePath)) { throw "relaunched head is not the expected executable: $newProcPath" }
+    if (-not $newProcStart -or -not (Test-UpdatedProcessBirth -ProcessId $newProc.Id -StartTimeUtc $newProcStart `
+        -PreviousProcessId $PreviousProcessId -PreviousStartUtc $PreviousStartUtc -ApplyStartedUtc $ApplyStartedUtc)) {
+        throw 'Relaunched head is not a new process from this apply attempt.'
+    }
+    if (-not $p.HasExited) { throw 'Pre-update application is still running.' }
+    # Payload-byte binding (PR #513 followup P2): the accepted head must BE the
+    # v2 build bytes. Registry transition + path + birth order alone would
+    # accept an old payload whose registry metadata was rewritten; the running
+    # executable must hash identically to the published v2 payload exe.
+    $ExpectedV2ExeSha = Get-FileSha256 (Join-Path $PubV2 $LaunchTarget)
+    $newProcExeSha = ''
+    try { $newProcExeSha = Get-FileSha256 $newProcPath } catch { $newProcExeSha = '' }
+    if (-not $newProcExeSha -or ($newProcExeSha -ine $ExpectedV2ExeSha)) { throw "relaunched head bytes are not the expected v2 payload exe (expected $ExpectedV2ExeSha, observed $newProcExeSha)" }
+    $newProc.Kill(); $newProc.WaitForExit(10000) | Out-Null
+    Invoke-InstalledCharacterProbe -Exe $infoUpd.ExePath -Phase reopen -Label reopen-after-update
+    # Shortcut retention evidence (WINDOWS_SCOPE re-audit item 5.2): the
+    # shortcuts present before the update must survive it.
+    $ShortcutsAfter = Get-LnkSnapshot
+    $retentionError = Test-LnkRetention $ShortcutsBefore $ShortcutsAfter $infoUpd.ExePath
+    if ($retentionError) { throw $retentionError }
+    # Negative controls (PR #513 followup P2): the comparator must reject the
+    # loss of exactly one shortcut and a retargeted shortcut, otherwise the
+    # positive assertion above is vacuous.
+    $allKeys = @($ShortcutsAfter.Keys)
+    $probeKey = $allKeys[0]
+    $lostOne = @{}
+    foreach ($k in $allKeys) { $lostOne[$k] = $ShortcutsAfter[$k] }
+    $lostOne.Remove($probeKey)
+    if (-not (Test-LnkRetention $ShortcutsBefore $lostOne $infoUpd.ExePath)) { throw 'retention comparator failed to reject a lost shortcut (negative control)' }
+    $retargeted = @{}
+    foreach ($k in $allKeys) { $retargeted[$k] = $ShortcutsAfter[$k] }
+    $retargeted[$probeKey] = ($ShortcutsAfter[$probeKey] -split '\|')[0] + '|' + ($ShortcutsAfter[$probeKey] -split '\|')[1] + '|C:\definitely-not-chummer.exe'
+    if (-not (Test-LnkRetention $ShortcutsBefore $retargeted $infoUpd.ExePath)) { throw 'retention comparator failed to reject a retargeted shortcut (negative control)' }
 
     $stateFile = Join-Path $stateRoot 'state.json'
     $stateSnap = ''
@@ -564,19 +760,37 @@ try {
         registryVersionAfter = $infoUpd.DisplayVersion
         headRelaunched = $true; relaunchedStayedAlive = $stillAlive
         relaunchMode = $relaunchMode
+        relaunchedProcessPath = $newProcPath
+        relaunchedProcessProductVersion = $newProcVersion
+        processBoundToExpectedExecutable = ($newProcPath -ieq $infoUpd.ExePath)
+        processBoundToUpdatedVersion = ($newProcExeSha -ieq $ExpectedV2ExeSha)
+        applyStartedUtc = $ApplyStartedUtc.ToString('o')
+        updateObservedAtUtc = $updateObservedAtUtc.ToUniversalTime().ToString('o')
+        relaunchedProcessStartedUtc = $newProcStart.ToString('o')
+        expectedV2ExeSha256 = $ExpectedV2ExeSha
+        relaunchedProcessExeSha256 = $newProcExeSha
+        processBoundToV2PayloadBytes = ($newProcExeSha -ieq $ExpectedV2ExeSha)
+        shortcutsRetainedAll = ($null -eq $retentionError)
         installerAutoRelaunchDefectDetected = $defectDetected
+        retainedShortcuts = $ShortcutsAfter.Count
+        shortcutsBefore = ($ShortcutsBefore | ConvertTo-Json -Depth 3)
+        shortcutsAfter = ($ShortcutsAfter | ConvertTo-Json -Depth 3)
         updateStateSnapshot = $stateSnap
         installerUsed = $V2Installer
     }
 } catch {
     Stop-HeadProcesses
-    # Attach the installer's own progress trace tail so failures carry their cause.
+    # Attach the installer's own progress trace tail and the exact failure
+    # position so failures carry their cause (harness diagnosability contract).
     $instTrace = Join-Path $env:TEMP 'chummer-desktop-installer-progress.log'
     $why = $_.Exception.Message
+    $pos = $_.InvocationInfo.PositionMessage
+    $stack = $_.ScriptStackTrace
     if (Test-Path $instTrace) {
         $tail = (Get-Content $instTrace -Tail 3) -join ' | '
         $why = "$why [installer-trace] $tail"
     }
+    $why = "$why [at] $pos [stack] $stack"
     Fail-Leg 'update-relaunch' $why
 }
 
@@ -584,14 +798,49 @@ try {
 # Leg 7: recovery (sha-mismatched artifact must fail safely and journal)
 # ---------------------------------------------------------------------------
 try {
-    $stateRoot = Join-Path $env:LOCALAPPDATA 'Chummer6\desktop-update\avalonia\windows\x64'
+    $stateRoot = $UpdateStateRoot
     $stateFile = Join-Path $stateRoot 'state.json'
     if (Test-Path $stateFile) { Remove-Item -Force $stateFile }
     Stop-HeadProcesses
 
+    # Identity/content snapshot BEFORE the attempt (WINDOWS_SCOPE re-audit item
+    # 5.3): a checksum-mismatch attempt must leave the installed identity and
+    # content byte-identical. Compare this AFTER the rejection.
+    function Get-InstallFingerprint {
+        $info = Get-InstallInfo
+        $exe = Join-Path $info.InstallDir $LaunchTarget
+        # PR #513 followup P1: hash every file's CONTENTS, not paths+lengths -
+        # a same-length DLL swap left the old digest unchanged. Enumeration and
+        # read failures abort the leg (fail-closed inventory).
+        $files = @(Get-ChildItem -Path $info.InstallDir -Recurse -File -Force -ErrorAction Stop | Sort-Object FullName)
+        $h = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $ms = New-Object System.IO.MemoryStream
+            $sw = New-Object System.IO.StreamWriter($ms, (New-Object System.Text.UTF8Encoding($false)))
+            foreach ($f in $files) {
+                $rel = $f.FullName.Substring($info.InstallDir.Length).TrimStart('\').ToLowerInvariant()
+                $fs = [System.IO.File]::OpenRead($f.FullName)
+                try { $fsha = [BitConverter]::ToString($h.ComputeHash($fs)).Replace('-', '').ToLowerInvariant() } finally { $fs.Dispose() }
+                $sw.Write("$rel`0$fsha")
+            }
+            $sw.Flush()
+            $digest = [BitConverter]::ToString($h.ComputeHash($ms.ToArray())).Replace('-', '').ToLowerInvariant()
+        } finally { $h.Dispose() }
+        return @{
+            exeSha256 = if (Test-Path $exe) { Get-FileSha256 $exe } else { '' }
+            exeBytes = if (Test-Path $exe) { (Get-Item $exe).Length } else { -1 }
+            fileCount = $files.Count
+            contentDigest = $digest
+            registryVersion = $info.DisplayVersion
+        }
+    }
+    $before = Get-InstallFingerprint
+    if (-not $before.exeSha256) { throw 'pre-check snapshot: installed exe missing' }
+
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $InstalledExe
     $psi.UseShellExecute = $false
+    Set-JourneyAppEnvironment -StartInfo $psi -StateRoot $JourneyStateRoot
     $psi.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_ENABLED'] = '1'
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MODE'] = 'full'
@@ -599,42 +848,155 @@ try {
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MANIFEST'] = $BadManifest
     $p = [System.Diagnostics.Process]::Start($psi)
 
-    # The runtime must refuse the artifact (sha mismatch), journal the failure,
-    # and keep the app alive (backoff, no crash, no partial install).
-    Start-Sleep -Seconds 45
-    $stillUp = -not $p.HasExited
+    # Positive evidence loop (WINDOWS_SCOPE re-audit item 5.3): liveness alone
+    # proves nothing. The runtime must JOURNAL the attempted checksum check and
+    # its rejection in desktop-update state.json: LastFailureReason =
+    # 'update_apply_failed' and LastError naming the failed checksum validation
+    # with the manifest's CLAIMED sha256 and the artifact's OBSERVED sha256.
+    # A check that never journals fails this leg (no-op checks are not passes).
+    $claimedSha = '0' * 64
+    $observedSha = $v2InstallerSha
+    $rejectionSeen = $false
     $stateSnap = ''
-    if (Test-Path $stateFile) { $stateSnap = Get-Content $stateFile -Raw }
-    $installDir = (Get-InstallInfo).InstallDir
-    $exeIntact = Test-Path (Join-Path $installDir $LaunchTarget)
-    if (-not $stillUp) { throw 'app exited during failed-update leg (expected backoff, not exit)' }
-    if (-not $exeIntact) { throw 'install directory damaged by failed update' }
+    $installerObservedByPolling = $false
+    $traceLinesBefore = if (Test-Path $ProgressLog) { @(Get-Content $ProgressLog -ErrorAction SilentlyContinue).Count } else { 0 }
+    $deadline = (Get-Date).AddMinutes(4)
+    while ((Get-Date) -lt $deadline) {
+        Start-Sleep -Seconds 10
+        if (Test-Path $stateFile) {
+            try { $stateSnap = Get-Content $stateFile -Raw } catch {}
+            if ($stateSnap) {
+                $failReason = ''
+                $lastError = ''
+                try {
+                    $j = $stateSnap | ConvertFrom-Json
+                    $failReason = [string]$j.LastFailureReason
+                    $lastError = [string]$j.LastError
+                } catch {}
+                if ($failReason -eq 'update_apply_failed' -and
+                    $lastError -like '*failed checksum validation*' -and
+                    $lastError -like "*Expected '$claimedSha'*" -and
+                    $lastError -like "*observed '$observedSha'*") {
+                    $rejectionSeen = $true
+                    break
+                }
+            }
+        }
+        if (Get-Process | Where-Object { $_.ProcessName -like 'chummer-avalonia-win-x64-installer*' }) { $installerObservedByPolling = $true }
+        if ($p.HasExited) { break }
+    }
+    # Bind the surviving app process to the expected executable and version.
+    $observedAppPath = ''; $observedAppVersion = ''
+    try {
+        $observedAppPath = $p.MainModule.FileName
+        $observedAppVersion = $p.MainModule.FileVersionInfo.ProductVersion
+    } catch {}
+    $stillUp = -not $p.HasExited
     try { $p.Kill(); $p.WaitForExit(10000) | Out-Null } catch {}
 
-    # Post-failure recovery: the same install starts cleanly with the channel off.
+    if (-not $rejectionSeen) {
+        $snapHead = if ($stateSnap) { $stateSnap.Substring(0, [Math]::Min(400, $stateSnap.Length)) } else { 'no state.json' }
+        throw "checksum-mismatch rejection not journaled within 4 minutes (attempted-check evidence absent; state: $snapHead)"
+    }
+    if (-not $stillUp) { throw 'app exited during failed-update leg (expected backoff, not exit)' }
+    # No-installer-invocation evidence (PR #513 followup P2, honesty): the old
+    # check polled process names every 10s AFTER the initial sleep, so a
+    # short-lived installer could exit unobserved and the rejection branch
+    # typically broke before the first poll. Polling observations are recorded
+    # but never asserted. The check is grounded in apply evidence: the runtime
+    # journaled the rejection at checksum VALIDATION (a stage that precedes any
+    # installer handoff) and the installer's own progress trace appended
+    # nothing during this leg.
+    $traceLinesAfter = if (Test-Path $ProgressLog) { @(Get-Content $ProgressLog -ErrorAction SilentlyContinue).Count } else { 0 }
+    $traceLinesDuringLeg = [Math]::Max(0, $traceLinesAfter - $traceLinesBefore)
+    if ($traceLinesDuringLeg -gt 0) { throw "installer progress trace gained $traceLinesDuringLeg lines during the rejected update (installer activity during a rejection leg)" }
+
+    # Unchanged installed identity/content after the rejected update.
+    $after = Get-InstallFingerprint
+    if ($after.exeSha256 -ne $before.exeSha256) { throw "installed exe changed after rejected update (before=$($before.exeSha256) after=$($after.exeSha256))" }
+    if ($after.registryVersion -ne $before.registryVersion) { throw "registry version changed after rejected update ($($before.registryVersion) -> $($after.registryVersion))" }
+    if ($after.contentDigest -ne $before.contentDigest) { throw 'install directory content changed after rejected update' }
+    # Fingerprint negative control (PR #513 followup P1): flipping a non-exe
+    # byte WITHOUT changing the filename or the length must change the content
+    # digest - the old path+length scheme was blind to exactly this mutation -
+    # and restoring the bytes must return the digest to the pre-leg value.
+    $victim = @(Get-ChildItem -Path ((Get-InstallInfo).InstallDir) -Recurse -File -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -ine $LaunchTarget -and $_.Length -gt 0 } |
+        Sort-Object Length | Select-Object -First 1)
+    if (-not $victim) { throw 'fingerprint negative control: no mutable non-exe file found in install dir' }
+    $victimPath = $victim[0].FullName
+    $victimOriginal = [System.IO.File]::ReadAllBytes($victimPath)
+    $victimMutated = [byte[]]::new($victimOriginal.Length)
+    [Array]::Copy($victimOriginal, $victimMutated, $victimOriginal.Length)
+    try {
+        $victimMutated[$victimMutated.Length - 1] = $victimMutated[$victimMutated.Length - 1] -bxor 0xFF
+        [System.IO.File]::WriteAllBytes($victimPath, $victimMutated)
+        $mutatedFp = Get-InstallFingerprint
+        if ($mutatedFp.contentDigest -eq $before.contentDigest) { throw 'fingerprint did not detect a same-length non-exe mutation (negative control failed)' }
+    } finally {
+        [System.IO.File]::WriteAllBytes($victimPath, $victimOriginal)
+    }
+    $restoredFp = Get-InstallFingerprint
+    if ($restoredFp.contentDigest -ne $before.contentDigest) { throw 'fingerprint did not return to baseline after restoring the mutated file' }
+    if ($observedAppPath -and ($observedAppPath -ine $InstalledExe)) { throw "surviving app is not the installed executable: $observedAppPath" }
+
+    # Post-failure recovery: the same install starts cleanly with the channel
+    # off. The recovery process is bound to the expected executable AND the
+    # installed version - not a process name alone (re-audit item 5.3).
     $psi2 = New-Object System.Diagnostics.ProcessStartInfo
     $psi2.FileName = $InstalledExe
     $psi2.UseShellExecute = $false
+    Set-JourneyAppEnvironment -StartInfo $psi2 -StateRoot $JourneyStateRoot
     $psi2.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
     $psi2.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_ENABLED'] = '0'
     $psi2.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MODE'] = 'off'
     $p2 = [System.Diagnostics.Process]::Start($psi2)
     Start-Sleep -Seconds 12
     $recovered = -not $p2.HasExited
+    $recoveredPath = ''; $recoveredVersion = ''
+    try {
+        $recoveredPath = $p2.MainModule.FileName
+        $recoveredVersion = $p2.MainModule.FileVersionInfo.ProductVersion
+    } catch {}
     if ($recovered) { try { $p2.Kill(); $p2.WaitForExit(10000) | Out-Null } catch {} }
     if (-not $recovered) { throw 'app failed to start after failed-update leg' }
+    if (-not $recoveredPath -or ($recoveredPath -ine $InstalledExe)) { throw "recovery process is not the expected executable: $recoveredPath" }
+    # Version identity is bound via the unchanged exe bytes + unchanged registry
+    # DisplayVersion above (the run stamp is AssemblyMetadata, not Win32
+    # ProductVersion); the recovered process runs exactly that bound executable.
 
+    Invoke-InstalledCharacterProbe -Exe $InstalledExe -Phase reopen -Label reopen-after-recovery
+    $finalStateSnap = ''
+    try {
+        $finalStateSnap = [System.IO.File]::ReadAllText($stateFile)
+    } catch {}
     Write-Leg 'recovery' @{
         status = 'pass'
         badManifest = $BadManifest
-        appSurvivedFailedUpdate = $true
-        installIntact = $exeIntact
-        failureStateSnapshot = $stateSnap
+        attemptedCheckEvidence = 'journaled checksum-mismatch rejection in desktop-update state.json'
+        claimedSha256 = $claimedSha
+        observedSha256 = $observedSha
+        rejectionJournaled = $rejectionSeen
+        installerObservedByPolling = $installerObservedByPolling
+        installerTraceLinesDuringLeg = $traceLinesDuringLeg
+        installerInvocationEvidence = 'rejection journaled at checksum validation (pre-handoff stage); installer progress trace appended nothing during this leg; name-polling recorded as observation, not absence proof'
+        appSurvivedFailedUpdate = $stillUp
+        survivingAppPath = $observedAppPath
+        survivingAppProductVersion = $observedAppVersion
+        identityBefore = $before.registryVersion
+        identityAfter = $after.registryVersion
+        exeSha256Unchanged = ($after.exeSha256 -eq $before.exeSha256)
+        contentDigestUnchanged = ($after.contentDigest -eq $before.contentDigest)
+        fingerprintNegativeControl = 'same-length non-exe byte flip detected; restore returned baseline'
+        failureStateSnapshot = $finalStateSnap
         restartedAfterFailure = $recovered
+        recoveryProcessPath = $recoveredPath
+        recoveryProcessProductVersion = $recoveredVersion
     }
 } catch {
     Stop-HeadProcesses
-    Fail-Leg 'recovery' $_.Exception.Message
+    $why = "$($_.Exception.Message) [at] $($_.InvocationInfo.PositionMessage) [stack] $($_.ScriptStackTrace)"
+    Fail-Leg 'recovery' $why
 }
 
 # ---------------------------------------------------------------------------
@@ -662,6 +1024,16 @@ try {
 # Receipt
 # ---------------------------------------------------------------------------
 $script:Receipt.completedUtc = (Get-Date).ToUniversalTime().ToString('o')
+# ---------------------------------------------------------------------------
+# Character-data preservation (spans update + recovery legs)
+# ---------------------------------------------------------------------------
+$CharacterDataRoot2 = $CharacterDataRoot
+$CharacterDataAfter = Get-CharacterDataSnapshot -Root $CharacterDataRoot2
+$characterDataReport = Test-CharacterDataPreservation -Before $script:CharacterDataBefore -After $CharacterDataAfter -Root $CharacterDataRoot2
+Write-Leg 'character-data' @{ status = $characterDataReport.status; before = $characterDataReport.beforeCount; after = $characterDataReport.afterCount; lost = @($characterDataReport.lost).Count; modified = @($characterDataReport.modified).Count; added = @($characterDataReport.added).Count }
+if ($characterDataReport.status -eq 'fail') { Fail-Leg 'character-data' "character data modified or lost across the update; lost=$(@($characterDataReport.lost).Count) modified=$(@($characterDataReport.modified).Count)" (ConvertTo-Json $characterDataReport -Depth 4) }
+if ($characterDataReport.status -ne 'pass') { Fail-Leg 'character-data' "character-data snapshot inconclusive: before-count was $($characterDataReport.beforeCount)" (ConvertTo-Json $characterDataReport -Depth 4) }
+
 $script:Receipt.status = 'pass'
 $script:Receipt.claimBoundary = 'Local unsigned artifacts built from this working tree; no signed-release or published-channel claims.'
 ($Receipt | ConvertTo-Json -Depth 8) | Set-Content -Encoding UTF8 $ReceiptPath

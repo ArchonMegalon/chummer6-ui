@@ -331,6 +331,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "docs/agents/WIN-006-CONTROLLER-FOLLOWUP-EVIDENCE.md",
         "scripts/win004-start-failure-diagnostics.ps1",
         "tests/test_win004_start_failure_diag_privacy.py",
+        "scripts/win004-acceptance.ps1",
 
         "Chummer.Avalonia/Controls/CareerAttributeAdvanceWindow.cs",
         "Chummer.Avalonia/Controls/CareerRewardsWindow.cs",

@@ -15,6 +15,33 @@ The user requested review and merge of good work, followed by this handoff.
 Continue the existing Friday session and assignment; do not start a duplicate
 Windows worker or change provider, credentials or task identity.
 
+### Controller corrections for PR #512 — 3 November follow-up
+
+The installer candidate now also fixes the two findings from reviewed head
+`9854beec8c50df36d58615026cb10eb9a28195da`:
+
+- Relaunch birth is compared with the pre-apply boundary and the original process,
+  not the later registry poll. Exact v2 executable bytes and original-process exit
+  remain mandatory. ProductVersion is diagnostic, not version proof.
+- Every journey app launch uses one fresh isolated desktop state root and removes
+  inherited store/client overrides. Update-state inspection follows that same root.
+  The installed v1 application imports and saves the repository fixture through the
+  existing production presenter probe; installed v2 reopens the exact runner after
+  update and after failed-update recovery. Process, workspace, profile and saved-file
+  identities must match. The operator's existing character store is not inspected.
+
+Controller verification on Linux: 24 PowerShell acceptance/privacy tests passed,
+including delayed registry observation, conflicting environment, modified/lost
+runner data and invalid reopen receipts. Another 139 installer/preseal checks
+passed. These are source/helper checks, not a native Windows installer pass.
+
+Friday's next action is the exact merged candidate's full native journey (T91):
+retain existing shortcuts, require autonomous relaunch, exercise checksum rejection,
+and inspect the new save/reopen legs. Do not substitute old receipts or treat this
+merge as self-contained installation, signed distribution or beta acceptance.
+The Core-content checkout dependency and the remaining PDF/manual Creation work
+below remain separate delivery work. Keep AI Finish gated.
+
 ### Accepted and merged
 
 [PR #509](https://github.com/ArchonMegalon/chummer6-ui/pull/509), diagnostic privacy,
