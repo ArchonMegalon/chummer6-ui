@@ -302,6 +302,8 @@ public partial class MainWindow
     private async void CreationWizard_OnQualitiesEditRequested(object? sender, EventArgs args)
         => await CreationWizard_EditQualitiesAsync(null, false);
 
+    private bool IsCreationWizardWindowUsable() => IsVisible && !_creationWizardLifetime.IsCancellationRequested;
+
     private async Task CreationWizard_EditQualitiesAsync(string? optionId, bool remove)
     {
         if (_creationQualitiesBusy || _creationWizardLifetime.IsCancellationRequested)
@@ -323,6 +325,20 @@ public partial class MainWindow
             CharacterCreationQualitiesState qualities = pending
                 ? interaction.PendingReview!.Before
                 : await Task.Run(interaction.Load);
+            // Revalidation gap guard: the await above yields the UI thread, so the captured
+            // overview can go stale (character switch, account transition, revision bump).
+            // Discard the loaded state instead of presenting it (scope item 2, 3 Nov handoff).
+            if (_creationWizardLifetime.IsCancellationRequested || !IsCreationWizardWindowUsable())
+            {
+                CharacterCreationWizardControl.QualitiesStatus(
+                    "Qualities loading was cancelled. The loaded view was discarded.");
+                return;
+            }
+            interaction.ValidateContext(_adapter.State);
+            if (pending)
+                interaction.RequireReconciliationDisplayContext(_adapter.State);
+            else
+                interaction.RequireDisplayContext(_adapter.State);
             var dialog = new CreationQualitiesReviewWindow(interaction, qualities, () => _adapter.State,
                 pending ? null : optionId, remove);
             await dialog.ShowDialog<bool>(this);
