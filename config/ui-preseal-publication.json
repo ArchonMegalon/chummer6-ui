@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "c034f1750774bab45a90cfac91afb850e6d30d8f",
-  "baseTree": "af620aa81c2992e0b307cd17228c88982fab0fdf",
+  "baseCommit": "3f0985ec380a64c7635020ea1085a53b43bf13e2",
+  "baseTree": "ce5fe46baa2b0d7e669b9142fc02272d9b1d037b",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,62 +44,34 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "e197817a7d58325d895598beb2dc4761a8858f35",
-      "path": "Chummer.Avalonia/App.axaml.cs",
-      "sha256": "7072b1e85c840b10d54ad7bf0f60762b68bbbc60f70b2d1a960c86411c9f304b",
-      "sizeBytes": 23094,
+      "blob": "a91a3b397a0928ec82f6a9cb5cc78c141a43437d",
+      "path": "Chummer.Avalonia/Creation/CreationQualitiesReviewWindow.cs",
+      "sha256": "91a500d5f1429833f711bde316c556b2e8db41aec5965228dbf1623bd4c083a6",
+      "sizeBytes": 9887,
       "status": "M"
     },
     {
-      "blob": "76cafcf4a37d8bf58a96eb002e312fa81faecc28",
-      "path": "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardPresentationTests.cs",
-      "sha256": "92e24f4077c50a2ee4a1f845f01cebf50f93a7af5010d1f66aeb4ee50ecc0a5e",
-      "sizeBytes": 85544,
+      "blob": "5fecfb9e748b7142cd75c026ad2c95aa26e8f779",
+      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
+      "sha256": "f45e1167f35042c012a8b766df93e20c4f583981a5a7b7d99e53d9a278efbb9b",
+      "sizeBytes": 47065,
       "status": "M"
     },
     {
-      "blob": "1c184f902ee19248a7f288a0bec8b39c5f4dedb5",
-      "path": "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
-      "sha256": "3acb27d0bed600fa69532a47a1b96279b9ee3635877f5a688f49471fb2059407",
-      "sizeBytes": 128997,
+      "blob": "c93b53e40cde65a3956e56e3f1e75cfc4bdea306",
+      "path": "Chummer.CreationWizard.Presentation.Tests/CharacterCreationQualitiesInteractionTests.cs",
+      "sha256": "8546c415dd4f09a8d9175994d6c6d59b5f12943bd348bfdf99301e92764f1d51",
+      "sizeBytes": 23585,
       "status": "M"
     },
     {
-      "blob": "65e3a8b50c4484ca2d5194b1eeafb19167d39893",
-      "path": "Chummer.Presentation/Overview/WorkspaceOverviewStateFactory.cs",
-      "sha256": "bd6b793415c301a2db1f97fed1fae6c9be61e3c343aa1341d7fcc9541f36045f",
-      "sizeBytes": 35050,
-      "status": "M"
-    },
-    {
-      "blob": "c1208abbfa369c26607ef60264383b4a0d5ba29c",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "d699d3bcc47968705f34f8a7fbf1426473dd393c2cc9dbc94deb1ea9ad8a1723",
-      "sizeBytes": 69810,
-      "status": "M"
-    },
-    {
-      "blob": "02251cb68399235564993f1a81f012399d6a8de8",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "7c257987312e1f94830bf3c9ea42e01e9261c23ca804787f0f227440ffd305d8",
-      "sizeBytes": 297158,
-      "status": "M"
-    },
-    {
-      "blob": "cedb580d607c8f226174c4111aca631e62f6056e",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "766c4afae69f8fb03115c96f90c78e50d261551e42631cac58c7caab6fe41323",
-      "sizeBytes": 60778,
-      "status": "M"
-    },
-    {
-      "blob": "681a449f8484e867fce66d15cacb4de01d4174a0",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "45d10eaaae1542558bde698ce85bc830b5fa285de58260fca6ff19479ecca17b",
-      "sizeBytes": 198080,
+      "blob": "759a8e09eb8c605554c3ea758e11fe796e6a73b5",
+      "path": "Chummer.Presentation/Overview/CharacterCreationQualitiesInteraction.cs",
+      "sha256": "89c8a0cde7522ab2904338ac126b51bfb1aeda52c92d8582d012736634c181b7",
+      "sizeBytes": 11766,
       "status": "M"
     }
   ],
-  "recipeTree": "3d22b325401deea9125e456f8535e01bd99c0818",
+  "recipeTree": "ba5e1b80315fcf52e25ab2d13d0e1bb60dd7c98f",
   "releaseClaim": false
 }
