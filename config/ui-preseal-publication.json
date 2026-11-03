@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "6f2135211ac8a40b1268d59144dce5abaed42cf7",
-  "baseTree": "45830dedb5fab695d8a74057fac167fdeca915ec",
+  "baseCommit": "01315833f51e0f40bee9144225fb518f4f52917b",
+  "baseTree": "71a5a5571f323ea2a30ef4e5334193e364026250",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,55 +44,13 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "e153ef09bc35fcaa002842ba1892f0f0c258aa9f",
-      "path": ".github/workflows/pull-request-ci.yml",
-      "sha256": "4c5937d3ffe321eb26472ddf031dc41ad0f9fc5d35d6e0847e6fc9f38c4406ca",
-      "sizeBytes": 14150,
+      "blob": "08935c1691d9703840a36d93afe5000c4cdbe038",
+      "path": "docs/agents/WINDOWS_SCOPE.md",
+      "sha256": "15b75b0c4ff311ca6e40bbbccb0da33012159f2f2ec1fb24866015e291281658",
+      "sizeBytes": 30399,
       "status": "M"
-    },
-    {
-      "blob": "0529fe566e060e161d7b8e03143a223ba42dc24c",
-      "path": "docs/agents/WIN-006-CONTROLLER-FOLLOWUP-EVIDENCE.md",
-      "sha256": "20fa8110090ad65e047bf1986e045aee2193b936c9dde13d43306469e9a0adc4",
-      "sizeBytes": 7932,
-      "status": "M"
-    },
-    {
-      "blob": "5eff99e7e92fc67c84e9420ff0f440679d4f4593",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "b3b321523c096a54bf28a0026c9037e6c92fc27e5b454b612b3b5ec4237726cb",
-      "sizeBytes": 59971,
-      "status": "M"
-    },
-    {
-      "blob": "9e628bc88df2c7e521a39fc03be10a2536f19e85",
-      "path": "scripts/win004-installer-update-recovery-journey.ps1",
-      "sha256": "8e0728ddf0a921349d692630f9641d99b923462d93a9347e4e6c74c57a1d45f0",
-      "sizeBytes": 32870,
-      "status": "M"
-    },
-    {
-      "blob": "4a9a560fde1ec51da7bb48670c21882ece247c78",
-      "path": "scripts/win004-start-failure-diagnostics.ps1",
-      "sha256": "4f6ca988680315ee9643fb9890de549a8442d60afef4c6a9b58398905bae78d7",
-      "sizeBytes": 4231,
-      "status": "A"
-    },
-    {
-      "blob": "b890cee0e3ca37cbfab28d02c3825d908b9bc69a",
-      "path": "tests/fixtures/keylocker-signer-v1/MANIFEST.json",
-      "sha256": "4e247814d0108c4bd738877ceabbd93ccdc966baeb18889cf93d074224cf5715",
-      "sizeBytes": 2885,
-      "status": "M"
-    },
-    {
-      "blob": "6674259e15e1964e145657810156efba7d6d81b3",
-      "path": "tests/test_win004_start_failure_diag_privacy.py",
-      "sha256": "d34b99dcdde66e91cfcbf10c9b92f59c804f7920a188b4096d4cf71ef76af7d1",
-      "sizeBytes": 7690,
-      "status": "A"
     }
   ],
-  "recipeTree": "35f4c1d00c8912dbe4cb56c5dc35cd6645e90eed",
+  "recipeTree": "a584c364634fbb6ec30a8a45b1880e0633c6d934",
   "releaseClaim": false
 }
