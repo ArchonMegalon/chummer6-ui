@@ -52,11 +52,11 @@ public sealed class GearAttackSwapParityTests
             xml.Replace($"</gears>", $"<gear><guid>{RootId:D}</guid></gear></gears>"), RootId));
     }
 
-    private static string Fixture(bool created) => $"""
-        <character><created>{created}</created><gears><gear>
-          <guid>{RootId:D}</guid><name>Carrier</name><canswapattributes>False</canswapattributes>
-          <children><gear><guid>{ChildId:D}</guid><name>Raw Deck</name><category>Cyberdecks</category>
-            <attack>7</attack><sleaze>{{Rating}}</sleaze><dataprocessing>5</dataprocessing><firewall>4</firewall>
+    private static string Fixture(bool created) => $$"""
+        <character><created>{{created}}</created><gears><gear>
+          <guid>{{RootId:D}}</guid><name>Carrier</name><canswapattributes>False</canswapattributes>
+          <children><gear><guid>{{ChildId:D}}</guid><name>Raw Deck</name><category>Cyberdecks</category>
+            <attack>7</attack><sleaze>{Rating}</sleaze><dataprocessing>5</dataprocessing><firewall>4</firewall>
             <attributearray>7,6,5,4</attributearray><canswapattributes>True</canswapattributes>
             <modattack>2</modattack><modsleaze>3</modsleaze><moddataprocessing>4</moddataprocessing><modfirewall>5</modfirewall>
             <cost>12345</cost><active>True</active><homenode>False</homenode><equipped>True</equipped>

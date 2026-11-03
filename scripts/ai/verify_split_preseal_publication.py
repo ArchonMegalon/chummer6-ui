@@ -345,6 +345,12 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
         "Chummer.Tests/Presentation/CareerRewardsUiTests.cs",
         "Chummer.Tests/TestFiles/Soma (Career).chum5",
+        # 2026-11-02 (WIN-006 followup, re-audit item 2): PDF-composer
+        # regression-test landing repairs pre-existing raw-string-literal rot
+        # in three parity test files so the curated compile lane builds again.
+        "Chummer.Tests/Presentation/GearSleazeSwapParityTests.cs",
+        "Chummer.Tests/Presentation/GearAttackSwapParityTests.cs",
+        "Chummer.Tests/Presentation/PrototypeTranshumanParityTests.cs",
         "docs/creation-ai-finish-evidence-artifacts/receipt.json",
         "docs/creation-ai-finish-evidence-artifacts/screenshots/01-new-character-dialog.png",
         "docs/creation-ai-finish-evidence-artifacts/screenshots/02-creation-wizard-open.png",
