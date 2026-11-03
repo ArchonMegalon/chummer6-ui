@@ -1,12 +1,125 @@
 # Windows delivery scope and Friday handoff
 
-Updated 2 November 2026 by the controller from the user's **Windows client
-re-audit** of `a3cdfe9b94f3edc4d0af37bde4fe0c8e9334a80e`.
+Updated 3 November 2026 after the controller reviewed Friday's new PRs and
+merged the diagnostic privacy fix. The 2 November re-audit of
+`a3cdfe9b94f3edc4d0af37bde4fe0c8e9334a80e` remains the historical baseline.
 
 This is the current Friday work order. Read it before
 [WINDOWS_REMOTE.md](WINDOWS_REMOTE.md) and [COORDINATION.md](COORDINATION.md).
 It supersedes the earlier audit's priorities and any conflicting completion
 claims. Existing account, data, package, ownership and release boundaries remain.
+
+## 3 November controller handoff — resume here
+
+The user requested review and merge of good work, followed by this handoff.
+Continue the existing Friday session and assignment; do not start a duplicate
+Windows worker or change provider, credentials or task identity.
+
+### Accepted and merged
+
+[PR #509](https://github.com/ArchonMegalon/chummer6-ui/pull/509), diagnostic privacy,
+merged as `01315833f51e0f40bee9144225fb518f4f52917b` on 3 November. Its tree
+matches reviewed head `95c42d9fa001385aa02fbc82c99122c61d240aaf`. Preserve the
+allowlist/presence-only report when integrating other branches. Do not restore
+the environment dump to resolve a conflict or repeat the completed fix.
+
+Controller verification: 110 local privacy/preseal tests passed, six dynamic
+PowerShell tests skipped locally because PowerShell is absent. Exact-head CI
+run `41515136116` records all 11 privacy tests passing, including the dynamic
+sentinel cases. The fixture-source and split-preseal validators passed.
+This accepts the source correction, not a new Windows build, package seal or
+public release. Friday's private-artifact exposure inventory remains
+Friday-reported evidence.
+
+### Open branches and integration order
+
+Preserve local work, fetch current `origin/main`, and reconcile existing
+assignments before editing. PRs #510, #511 and #512 were based on
+`6f2135211ac8a40b1268d59144dce5abaed42cf7`; all now have merge conflicts after
+#509, including publication-marker changes. Their previous green checks do
+not qualify a new integration. Resolve one increment at a time through the
+existing recipe/marker process, preserve the privacy fix, and generate the
+marker from the actual new base and recipe tree. Do not copy an old marker,
+relabel package provenance, or force-push main. Submit updated reviewable PRs
+with the normal required checks.
+
+1. **PDF, PR #510**, reviewed head
+   `7704cef2a02bc7df58946a1a71ae829d5801bc15`: the source fixes parenthesized
+   `Tj` operands and independent placement of each text run. Integrate the
+   bounded fix first. Complete item 2 below using the compiled production
+   composer and an independent parser/renderer: actual values, page bounds,
+   page breaks, long text and multilingual names. Exercise native Save PDF.
+   Correct the page-count assertion that also counts `/Type /Pages`. The
+   current WinAnsi fallback does not establish Unicode support. A source-only
+   increment may land as such; do not label the whole PDF workflow complete.
+2. **Creation, PR #511**, reviewed head
+   `b3c527f3a287148391fc78f0e3df53ffa3f7358d`: integrate the Method-to-Attributes,
+   mundane Skills-to-Resources, Attributes completion and cash-display fixes.
+   Preserve the raw dice sum sent to Core and rerun the affected tests.
+   Then manually complete a supported character with AI Finish off, using
+   ordinary Next navigation and real input; enter Career, save and reopen
+   in a new process. The reported journey used AI-filled drafts and disclosed
+   routed-click fallbacks. Retain that evidence with those limits; it does
+   not establish the required fully manual user journey.
+3. **Installer, PR #512**: do not resubmit unchanged. Correct the findings
+   below. Preserve the earlier parent-process exit and disposed-splash fixes;
+   those implementation defects are not still open.
+4. **Self-contained installation**: continue item 4 below alongside independent
+   source work. A developer Core checkout or inherited content override still
+   does not qualify an ordinary-user installation.
+
+The controller did not compile or execute Windows for #510, #511 or #512 in
+this review and did not accept those PRs or their complete workflows. Do not
+turn these source observations into a fresh native pass.
+
+### PR #512 corrections required before merge
+
+Reviewed head: `88f59dd74d65e7272352adfbc869ee7fba808919`. Locations refer to
+`scripts/win004-installer-update-recovery-journey.ps1` at that head.
+
+- **P1, line 698: hash the file contents.** `Get-InstallFingerprint` hashes
+  only relative paths and lengths. The separate executable hash does not
+  cover DLLs or content. Independently reproducing that exact algorithm left
+  the digest unchanged after a same-length DLL replacement. Include every
+  file's SHA-256 in the complete deterministic inventory; fail if enumeration
+  or reading is incomplete. Add a negative case changing non-executable bytes
+  without changing the filename or length. This reproduction was not a
+  Windows/PowerShell execution.
+- **P2, line 638: retain every existing shortcut.** A nonzero post-update count
+  can pass after losing one of two shortcuts. Require every pre-update path
+  to remain and resolve to the expected installed executable. Test loss of
+  exactly one shortcut. Keep shortcuts present in the native update case;
+  recreation belongs to the installer, not harness pre-cleaning.
+- **P2, line 652: bind the expected updated version.** Comparing Win32
+  `ProductVersion` to a `run-...` stamp with `-ne` does not prove the process
+  runs v2. Bind the accepted process and managed payload to the expected v2
+  build identity/bytes. An old payload with changed registry metadata must
+  fail. Process name, path or a registry transition alone are insufficient.
+
+Retain the useful change that harness-assisted relaunch fails autonomous
+update acceptance. After fixing the assertions, rerun the existing native
+journey on the exact integrated candidate, retain shortcuts, positively
+observe checksum rejection and verify unchanged character data. Report
+installer-invocation observations honestly: periodic process-name polling
+cannot prove no short-lived installer ran, and the current rejection branch
+exits before that iteration's process poll. Use existing update/apply evidence
+to support the required no-installer-invocation check. No new release or
+receipt framework is requested.
+
+### Completion and reporting
+
+The next milestone remains clean install → fully manual SR5 Creation →
+Career → save/new-process reopen → readable PDF → autonomous update with
+character data preserved. Keep AI Finish gated. Complete its transaction and
+recovery work after the manual beta, then remaining Origin, amend and
+Chummer5a/app parity work. Android, Linux, SR6 and live Rook do not block this
+Windows milestone. Continue independent authorized work while reviews run.
+
+Report the exact source commit, changed behavior, actual focused tests,
+native actions, remaining defect and next step. Separate source merge, package
+qualification, native acceptance and signed delivery. This handoff updates
+the repository work order only; no Teable assignment or session record was
+changed by the controller during this review.
 
 ## Mission and first milestone
 
@@ -54,7 +167,10 @@ requirement identities. Keep SR6 a distinct later delivery stage.
    checks. Push assigned branches and request review; protected integration and
    signing/publication remain controller-owned.
 
-## Re-audit baseline and evidence limits
+## Historical 2 November re-audit baseline and evidence limits
+
+The following is the retained audit baseline. The 3 November handoff above
+supersedes its current-status statements and orders the next work.
 
 The user inspected `chummer6-ui` at
 `a3cdfe9b94f3edc4d0af37bde4fe0c8e9334a80e`, newer than the earlier audit's
@@ -98,10 +214,14 @@ reproduce the defects using actual compiled output; do not block on the zip.
 
 ## Ordered work and acceptance
 
-### 1. Remove the full diagnostic environment dump — immediate P1
+### 1. Diagnostic environment dump — source fix merged in PR #509
 
-In `scripts/win004-installer-update-recovery-journey.ps1`, native-start failure
-handling currently enumerates `$psi.EnvironmentVariables` and writes complete
+Implementation and focused privacy verification are accepted as recorded
+above. Preserve the following requirements; do not repeat the completed fix.
+
+At the audited 2 November baseline, native-start failure handling in
+`scripts/win004-installer-update-recovery-journey.ps1` enumerated
+`$psi.EnvironmentVariables` and wrote complete
 name/value pairs to `start-failure-env.txt`. This can place credentials in
 plaintext diagnostic material later shared as evidence.
 
