@@ -2,9 +2,10 @@
 
 ## Remote Windows work with Friday Code
 
-Read [the current Windows handoff](docs/agents/WINDOWS_SCOPE.md) first. It contains
-the 2 November 2026 re-audit: diagnostic confidentiality first, AI Finish kept
-gated, and the clean-machine manual SR5 beta acceptance.
+Read [the current Windows handoff](docs/agents/WINDOWS_SCOPE.md) first. The latest
+3 November 2026 audit prioritizes fresh Attributes entry and preservation of the
+complete Quality selection in PR #517. Keep AI Finish gated and qualify the
+clean-machine manual SR5 beta; preserve the fixes already merged.
 
 For a user-started Friday Code session on another Windows host, read
 `docs/agents/WINDOWS_REMOTE.md`, `docs/agents/WINDOWS_SCOPE.md` and
