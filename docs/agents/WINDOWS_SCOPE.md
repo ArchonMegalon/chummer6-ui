@@ -1,528 +1,281 @@
 # Windows delivery scope and Friday handoff
 
-Updated 3 November 2026 after the controller reviewed Friday's new PRs and
-merged the diagnostic privacy fix. The 2 November re-audit of
-`a3cdfe9b94f3edc4d0af37bde4fe0c8e9334a80e` remains the historical baseline.
+Updated 3 November 2026 from the user's Windows client audit. This is the current
+Friday work order; it replaces earlier priority and completion statements in this
+file. Read it before [WINDOWS_REMOTE.md](WINDOWS_REMOTE.md) and
+[COORDINATION.md](COORDINATION.md). Preserve existing assignments, account/data
+boundaries, Core authority, package controls and release permissions.
 
-This is the current Friday work order. Read it before
-[WINDOWS_REMOTE.md](WINDOWS_REMOTE.md) and [COORDINATION.md](COORDINATION.md).
-It supersedes the earlier audit's priorities and any conflicting completion
-claims. Existing account, data, package, ownership and release boundaries remain.
+## Resume here
 
-## 3 November controller handoff — resume here
+Continue the existing user-started Friday Code session until the assigned Windows
+product is complete. Do not start a duplicate Windows worker. Fetch current main,
+preserve local work and reconcile existing branches and Teable assignment before
+editing. Use Friday Code's existing provider/authentication; this remote lane does
+not require Ubuntu or Headroom. Report actual progress through the existing
+coordination client at least every 15 minutes while active and at milestones.
+Never put tokens, private character data or full environment dumps in reports.
 
-The user requested review and merge of good work, followed by this handoff.
-Continue the existing Friday session and assignment; do not start a duplicate
-Windows worker or change provider, credentials or task identity.
+The first credible Windows beta is:
 
-### Controller corrections for PR #512 — 3 November follow-up
+> A normal user installs on a clean Windows PC, manually creates a supported SR5
+> runner, enters Career, saves and reopens it in a new process, makes a Career
+> change, exports a readable character sheet, and updates without losing that
+> character or installing development tools.
 
-The installer candidate now also fixes the two findings from reviewed head
-`9854beec8c50df36d58615026cb10eb9a28195da`:
+Keep incomplete AI Finish default-off and guarded at every entry point. Do not
+use it to compensate for missing manual editors. Android, Linux, SR6 and live
+Rook do not block this Windows milestone. Full Origin, genuine amend-package
+compatibility, broader supported methods/archetypes and Chummer5a/app parity
+remain required before claiming a complete replacement. The beta milestone does
+not reduce those requirements or close the original 62 requirement identities.
 
-- Relaunch birth is compared with the pre-apply boundary and the original process,
-  not the later registry poll. Exact v2 executable bytes and original-process exit
-  remain mandatory. ProductVersion is diagnostic, not version proof.
-- Every journey app launch uses one fresh isolated desktop state root and removes
-  inherited store/client overrides. Update-state inspection follows that same root.
-  The installed v1 application imports and saves the repository fixture through the
-  existing production presenter probe; installed v2 reopens the exact runner after
-  update and after failed-update recovery. Process, workspace, profile and saved-file
-  identities must match. The operator's existing character store is not inspected.
+## Audit basis and current dispositions
 
-Controller verification on Linux: 24 PowerShell acceptance/privacy tests passed,
-including delayed registry observation, conflicting environment, modified/lost
-runner data and invalid reopen receipts. Another 139 installer/preseal checks
-passed. These are source/helper checks, not a native Windows installer pass.
+The user audited `chummer6-ui` at commit
+`37938f3accb75e04aeb8028a67b24452a5220538`, tree
+`05f5ffed3e7041634be693c3348781fce8d9c90a`. The controller independently confirmed
+that main, both parents and the failed publication job before preparing this
+handoff. Later source generations must be identified separately.
 
-Friday's next action is the exact merged candidate's full native journey (T91):
-retain existing shortcuts, require autonomous relaunch, exercise checksum rejection,
-and inspect the new save/reopen legs. Do not substitute old receipts or treat this
-merge as self-contained installation, signed distribution or beta acceptance.
-The Core-content checkout dependency and the remaining PDF/manual Creation work
-below remain separate delivery work. Keep AI Finish gated.
-
-### Accepted and merged
-
-[PR #509](https://github.com/ArchonMegalon/chummer6-ui/pull/509), diagnostic privacy,
-merged as `01315833f51e0f40bee9144225fb518f4f52917b` on 3 November. Its tree
-matches reviewed head `95c42d9fa001385aa02fbc82c99122c61d240aaf`. Preserve the
-allowlist/presence-only report when integrating other branches. Do not restore
-the environment dump to resolve a conflict or repeat the completed fix.
-
-Controller verification: 110 local privacy/preseal tests passed, six dynamic
-PowerShell tests skipped locally because PowerShell is absent. Exact-head CI
-run `41515136116` records all 11 privacy tests passing, including the dynamic
-sentinel cases. The fixture-source and split-preseal validators passed.
-This accepts the source correction, not a new Windows build, package seal or
-public release. Friday's private-artifact exposure inventory remains
-Friday-reported evidence.
-
-### Open branches and integration order
-
-Preserve local work, fetch current `origin/main`, and reconcile existing
-assignments before editing. PRs #510, #511 and #512 were based on
-`6f2135211ac8a40b1268d59144dce5abaed42cf7`; all now have merge conflicts after
-#509, including publication-marker changes. Their previous green checks do
-not qualify a new integration. Resolve one increment at a time through the
-existing recipe/marker process, preserve the privacy fix, and generate the
-marker from the actual new base and recipe tree. Do not copy an old marker,
-relabel package provenance, or force-push main. Submit updated reviewable PRs
-with the normal required checks.
-
-1. **PDF, PR #510**, reviewed head
-   `7704cef2a02bc7df58946a1a71ae829d5801bc15`: the source fixes parenthesized
-   `Tj` operands and independent placement of each text run. Integrate the
-   bounded fix first. Complete item 2 below using the compiled production
-   composer and an independent parser/renderer: actual values, page bounds,
-   page breaks, long text and multilingual names. Exercise native Save PDF.
-   Correct the page-count assertion that also counts `/Type /Pages`. The
-   current WinAnsi fallback does not establish Unicode support. A source-only
-   increment may land as such; do not label the whole PDF workflow complete.
-2. **Creation, PR #511**, reviewed head
-   `b3c527f3a287148391fc78f0e3df53ffa3f7358d`: integrate the Method-to-Attributes,
-   mundane Skills-to-Resources, Attributes completion and cash-display fixes.
-   Preserve the raw dice sum sent to Core and rerun the affected tests.
-   Then manually complete a supported character with AI Finish off, using
-   ordinary Next navigation and real input; enter Career, save and reopen
-   in a new process. The reported journey used AI-filled drafts and disclosed
-   routed-click fallbacks. Retain that evidence with those limits; it does
-   not establish the required fully manual user journey.
-3. **Installer, PR #512**: do not resubmit unchanged. Correct the findings
-   below. Preserve the earlier parent-process exit and disposed-splash fixes;
-   those implementation defects are not still open.
-4. **Self-contained installation**: continue item 4 below alongside independent
-   source work. A developer Core checkout or inherited content override still
-   does not qualify an ordinary-user installation.
-
-The controller did not compile or execute Windows for #510, #511 or #512 in
-this review and did not accept those PRs or their complete workflows. Do not
-turn these source observations into a fresh native pass.
-
-### PR #512 corrections required before merge
-
-Reviewed head: `88f59dd74d65e7272352adfbc869ee7fba808919`. Locations refer to
-`scripts/win004-installer-update-recovery-journey.ps1` at that head.
-
-- **P1, line 698: hash the file contents.** `Get-InstallFingerprint` hashes
-  only relative paths and lengths. The separate executable hash does not
-  cover DLLs or content. Independently reproducing that exact algorithm left
-  the digest unchanged after a same-length DLL replacement. Include every
-  file's SHA-256 in the complete deterministic inventory; fail if enumeration
-  or reading is incomplete. Add a negative case changing non-executable bytes
-  without changing the filename or length. This reproduction was not a
-  Windows/PowerShell execution.
-- **P2, line 638: retain every existing shortcut.** A nonzero post-update count
-  can pass after losing one of two shortcuts. Require every pre-update path
-  to remain and resolve to the expected installed executable. Test loss of
-  exactly one shortcut. Keep shortcuts present in the native update case;
-  recreation belongs to the installer, not harness pre-cleaning.
-- **P2, line 652: bind the expected updated version.** Comparing Win32
-  `ProductVersion` to a `run-...` stamp with `-ne` does not prove the process
-  runs v2. Bind the accepted process and managed payload to the expected v2
-  build identity/bytes. An old payload with changed registry metadata must
-  fail. Process name, path or a registry transition alone are insufficient.
-
-Retain the useful change that harness-assisted relaunch fails autonomous
-update acceptance. After fixing the assertions, rerun the existing native
-journey on the exact integrated candidate, retain shortcuts, positively
-observe checksum rejection and verify unchanged character data. Report
-installer-invocation observations honestly: periodic process-name polling
-cannot prove no short-lived installer ran, and the current rejection branch
-exits before that iteration's process poll. Use existing update/apply evidence
-to support the required no-installer-invocation check. No new release or
-receipt framework is requested.
-
-### Completion and reporting
-
-The next milestone remains clean install → fully manual SR5 Creation →
-Career → save/new-process reopen → readable PDF → autonomous update with
-character data preserved. Keep AI Finish gated. Complete its transaction and
-recovery work after the manual beta, then remaining Origin, amend and
-Chummer5a/app parity work. Android, Linux, SR6 and live Rook do not block this
-Windows milestone. Continue independent authorized work while reviews run.
-
-Report the exact source commit, changed behavior, actual focused tests,
-native actions, remaining defect and next step. Separate source merge, package
-qualification, native acceptance and signed delivery. This handoff updates
-the repository work order only; no Teable assignment or session record was
-changed by the controller during this review.
-
-## Mission and first milestone
-
-Continue implementation, focused verification and reviewable increments until
-the assigned Windows work is complete. Do not stop at a package seal, source
-patch, audit report or assisted happy path.
-
-The first credible Windows beta milestone is:
-
-> A normal user can install Chummer on a clean Windows PC, manually create a
-> supported SR5 runner, enter Career, save and reopen in a new process, make a
-> Career change, produce a readable PDF character sheet, and update the
-> application autonomously with character data preserved and no development tools.
-
-Do not wait for Android, Linux, SR6 or live Rook to complete this milestone.
-Windows uses its own host and build capacity. Full Origin, genuine amend
-compatibility, the remaining supported methods and archetypes, and broader
-Chummer5a/app feature parity remain required before a replacement/gold claim.
-This beta milestone does not reduce the full scope or close the original 62
-requirement identities. Keep SR6 a distinct later delivery stage.
-
-## Resume from real state
-
-1. Preserve current edits, commits, installed test data and uncertain operations.
-   Inspect the branch and working tree before fetching; never reset or clean a
-   dirty checkout to match this handoff.
-2. Fetch `origin/main` and inspect changes since the audited commit. Start or
-   update an isolated `windows/...` task branch from the current integration base
-   after reconciling existing work. Do not resume blindly from the old remote
-   coordination branch or merge an older AI draft wholesale.
-3. Read the current Teable assignment, session and generation through the existing
-   coordination client. Retain identity and report actual progress at least every
-   15 minutes while active and after each milestone. This document changes the
-   work order; it does not claim that Teable assignments were edited. If a stale
-   assignment excludes the current base or necessary shared paths, request the
-   precise controller update and continue independent assigned work.
-4. Use Friday Code's existing provider and authentication on Windows. No Headroom
-   or Ubuntu connection is required for this remote lane. Keep one active session
-   for the assigned identity. Use the existing GitHub CLI login and OS credential
-   store; never put Teable/GitHub tokens in source, diagnostics or reports.
-5. Keep rules and mutation authority in Core. Desktop/UI adapters, packaging and
-   tests belong here. Shared Core/API/new package changes require controller
-   coordination; already assigned desktop/Presentation work does not need
-   repeated approval. Preserve the normal package graph and required merge
-   checks. Push assigned branches and request review; protected integration and
-   signing/publication remain controller-owned.
-
-## Historical 2 November re-audit baseline and evidence limits
-
-The following is the retained audit baseline. The 3 November handoff above
-supersedes its current-status statements and orders the next work.
-
-The user inspected `chummer6-ui` at
-`a3cdfe9b94f3edc4d0af37bde4fe0c8e9334a80e`, newer than the earlier audit's
-`0d224e7a796b1058d68ce73a384eccf5ea861dce`
-(tree `01ec53cc46b4ef890d7af87d31d175d802094f53`). The intervening changes
-primarily published the work order, gated AI Finish, added gate tests and
-clarified installer-test commentary. They do not establish broad product repair.
-
-| Area | Current disposition |
+| Area | Disposition at the audited main |
 | --- | --- |
-| Incomplete AI Finish exposed to ordinary users | Closed in source by the default-off gate and guarded entry points |
-| AI completion transaction/recovery | Open, contained behind that gate |
-| Startup diagnostic confidentiality | New immediate P1: full child environment written on startup failure |
-| PDF text serialization/placement | Open; composer unchanged and synthetic reproduction fails again |
-| Self-contained installed content | Open; resolver and installer override remain checkout-based |
-| Manual Creation | Open; concrete Method and Mundane forward-route gaps identified |
-| Starting-cash display | Open; displays the dice sum rather than sum times multiplier |
-| Installer implementation | Earlier parent-exit/disposed-splash source fixes remain present |
-| Autonomous-update acceptance | Open; harness can still admit misleading passes |
-| Origin manuscript and amend portability | Not closed by this update |
-| Current green CI | Split-preseal validation, not a fresh build or sealed package-consumer result |
+| Raw startup environment dump | Source-fixed by merged PR #509; preserve the constrained collector |
+| Incomplete AI Finish | Remains gated; transaction/recovery qualification still open |
+| Installer acceptance harness | Substantially source-fixed in merged PR #512; corrected native run pending |
+| Current-main publication | Failed before build/consumer verification; recover through the existing verifier |
+| PDF text instructions | Still broken on audited main; bounded repair in draft #510 |
+| Creation routes and cash display | Corrections in draft #511, not audited main |
+| Manual Quality/Magic editing | Source-confirmed wrong-handler dispatch; separate from forward navigation |
+| Installed rules/content | Still checkout-based; clean-machine installation unproven |
+| Ordinary-user beta | Not established |
 
-Retain useful historical evidence without presenting it as a test of changed
-bytes: native import/save/new-process reopen with matching file/profile hashes;
-bounded AI-assisted Priority completion; Career controls including the observed
-Karma 11 to 16 award; and the source fixes for installer parent exit and
-disposed-splash reuse. A newer worker report claims an `installer-auto` run on
-the earlier main; attribute that claim to its exact candidate and report.
+The audit inspected pinned source, pending diffs, PR state, the failed job log and
+installer/privacy helpers. It did not execute Windows, compile the C# application,
+run the PowerShell journey, inspect private release binaries or test a signed
+channel. Worker-reported tests, source findings and native acceptance stay distinct.
+The controller's Linux helper tests are not a native Windows result either.
 
-The re-auditor inspected pinned source, changes, tests, installer harness and CI,
-and reran and visually checked a synthetic PDF operator reproduction with
-MuPDF/Poppler. They did **not** execute Windows, the PowerShell journey, the C#
-application, a signed installer or private provider operations. They found a
-source-confirmed diagnostic disclosure path, not an actual leaked credential;
-no customer corruption or ownership exploit was demonstrated.
+## 1. Restore valid publication before candidate qualification
 
-The user referenced `chummer_windows_reaudit_2026-11-02.zip`. This handoff does
-not assert that the packet was uploaded to this repository or is present on
-Friday's host. Do not publish a sandbox-only download link. If unavailable,
-reproduce the defects using actual compiled output; do not block on the zip.
+[Current-main run 41599758851](https://github.com/ArchonMegalon/chummer6-ui/actions/runs/41599758851)
+failed with `split-preseal:error: preseal marker commit must have one recipe parent`.
+It skipped the locked SDK and sealed package-consumer steps. This is a publication
+contract failure, not evidence that the installer C# failed to compile.
 
-## Ordered work and acceptance
+PR #512 was published as a two-parent merge of prior main
+`66c814cf874a271df24e21e9fbfe9af028707a2b` and reviewed marker
+`bacb73fda94e5c8cd3e609bd28dc53c0cc933f60`. Its tree matches the reviewed marker.
+The controller owns this integration correction. A passing PR check did not
+qualify the resulting two-parent main commit.
 
-### 1. Diagnostic environment dump — source fix merged in PR #509
+The existing `verify_split_preseal_publication.py` already has the bounded
+`unwrap_published_marker` / `validate_existing_unsealed_marker` recovery path.
+It authenticates an unchanged merge wrapper against its exact recipe base,
+marker-only commit, retained locks and prior history. Use that existing path:
 
-Implementation and focused privacy verification are accepted as recorded
-above. Preserve the following requirements; do not repeat the completed fix.
+1. Make a reviewed recovery recipe P as the sole child of the actual published
+   main, preserving both canonical locks and the retained marker byte-for-byte.
+2. Generate marker-only Q from that actual base and recipe. Validate the exact
+   P/Q transaction locally before pushing.
+3. Publish P/Q using **rebase merge**, as required by README. Do not use merge
+   or squash merge. Verify the resulting current-main job and history afterward.
+4. Complete the existing owner-package/seal/consumer process for the resulting
+   generation before claiming package or release qualification.
 
-At the audited 2 November baseline, native-start failure handling in
-`scripts/win004-installer-update-recovery-journey.ps1` enumerated
-`$psi.EnvironmentVariables` and wrote complete
-name/value pairs to `start-failure-env.txt`. This can place credentials in
-plaintext diagnostic material later shared as evidence.
+This handoff is the documentation change in that recovery recipe. It does not
+invent a seal or grant package-consumer authority. Never force-push shared main,
+weaken the single-parent rule, copy an old marker, fabricate a receipt or rerun
+unchanged failure as a substitute for repair. The failed job remains historical
+failure. Do not rebuild an unrelated product merely to publish this work order.
+Friday may continue independent manual-editor and content-packaging work while
+the controller completes integration; the publication failure is not a work freeze.
 
-Replace it with a small explicit allowlist. Retain safe values only where needed;
-for sensitive configuration record presence/absence, not values. Suitable
-diagnostics include whether a Core-content override or SDK override is configured
-and the safe update mode. Omit credential variables. Audit related error/report
-paths so the replacement does not leak the same values indirectly.
+## 2. Integrate the bounded PDF and route repairs
 
-Add a focused test supplying a harmless sentinel credential and exercise the
-startup-failure path. Assert that the sentinel never appears in **any generated
-diagnostic artifact**, not only the replacement environment report.
+Use the existing PR branches, preserve their work, and rebase against the repaired
+integration base. Resolve conflicts without reverting privacy, installer or AI-gate
+fixes. Generate the publication marker for the new actual recipe, run the affected
+checks and request review. Earlier green checks do not test rebased bytes.
 
-Privately inspect existing `start-failure-env.txt` files in owned evidence and
-remove them from shareable evidence. Do not copy suspected secrets into commits,
-issues, Teable or remediation reports. Report only affected artifact identity
-and exposure disposition. Coordinate credential rotation with the account owner
-only where actual exposure is established; this finding does not authorize
-unrelated account/security changes or a speculative wholesale rotation.
+### PDF — PR #510
 
-### 2. Repair real PDF output — P1
+[PR #510](https://github.com/ArchonMegalon/chummer6-ui/pull/510) was still draft,
+open and conflicting at controller readback, head
+`f937a3125d19d71cf9e72afbe2f3e4a2d533ee32`.
 
-`Chummer.Presentation/Printing/WorkspacePrintPdfComposer.cs` remains at Git blob
-`d3f9f9b7ff4a02cb1b7adbb7006cadc6df88be67` in the audited head.
-`AppendTextOp` has two independent defects: escaped text is passed to `Tj`
-without PDF string delimiters, and absolute-looking coordinates are repeatedly
-passed to relative `Td` positioning.
+`Chummer.Presentation/Printing/WorkspacePrintPdfComposer.cs` on audited main still
+emits escaped text without PDF string delimiters and compounds absolute-looking
+coordinates through relative `Td`. The draft's parenthesized `Tj` operand and
+separate `BT...ET` per run are the bounded correction. Land that reviewed repair
+without waiting for a complete printing redesign. It closes those two defects,
+not unrestricted PDF export.
 
-Fix serialization and positioning together. The synthetic reproduction yields
-syntax errors, no sample text and a blank page with the current construction.
-Adding only delimiters leaves values displaced; adding correct absolute
-placement also fixes the demonstrated field layout. **Poppler returned exit code
-zero for the malformed sample**, so exit-code-only checks are insufficient.
+Then close the remaining layout/content limits: width-based wrapping, page bounds,
+page breaks and preservation of names beyond Latin-1 plus the small WinAnsi map.
+Use an explicit Unicode strategy; silently substituting user text is unacceptable.
+Test the compiled production output with an independent parser and renderer.
+Verify actual title/labels/values, parentheses/backslashes, long fields, multilingual
+names and native Save PDF. Count real page objects rather than matching `/Type /Pages`.
+A PDF header, deterministic bytes, HTML export or renderer exit code alone is not
+readability evidence; Poppler previously returned zero for a malformed sample.
+The draft's six composer tests are reported evidence, not a fresh controller run.
 
-Generate PDFs from the **compiled production composer**, independently extract
-and render them, and assert actual title, labels and character field values.
-Check parentheses/backslashes, long values, wrapping, page bounds and page breaks.
-Use a real parsed page count: `/Type /Page` substring counts also match
-`/Type /Pages`. Define and verify a Unicode/font embedding or mapping strategy
-that preserves multilingual names and dossier text; silently substituting
-unsupported characters is unacceptable. Account for glyph metrics in layout.
+### Creation navigation and cash — PR #511
 
-Exercise the native Save PDF dialog, open the exact saved file independently and
-retain readable output evidence. An HTML export, PDF header/EOF, deterministic
-bytes or object-name assertions do not close this task.
+[PR #511](https://github.com/ArchonMegalon/chummer6-ui/pull/511) was still draft,
+open and conflicting at readback, head
+`6468b130d5bd0de3d3c5afed8a74b327d979fda1`.
 
-### 3. Complete the ordinary manual Creation route and cash display — P1
+Retain its narrow corrections: authoritative non-Life-Modules Method proceeds
+to Attributes; mundane Skills proceeds to Resources; Attributes completion uses
+its applicable Core finalization signal rather than Quality readiness; starting
+cash displays dice sum times multiplier while submitting the raw dice sum to Core.
+For example, sum 14 at multiplier 100 displays 1,400 nuyen and still submits 14.
+Never apply the multiplier twice. Rerun the focused route/readiness/cash tests.
 
-Inspect `Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs` and
-`CharacterCreationWizardDesktopSession.cs`. The re-audit identified two existing
-route gaps, not regressions caused by the new AI gate:
+Its reported native journey AI-filled deep drafts before the ordinary Next walk,
+then finalized and reopened. That is useful navigation/persistence evidence with
+an AI prerequisite. It does not establish a complete manual editor. Retain any
+routed-click fallback disclosure; handler invocation does not prove ordinary mouse
+or keyboard interaction.
 
-* Method currently has a successor only for an authoritative Life Modules method
-  (`methodAuthoritative && usesLifeModules ? [Foundation] : []`). Authoritative
-  non-Life-Modules methods therefore have no ordinary Next target.
-  `CanContinue`/`TryContinue()` consume the same successor list; finalization
-  status projection does not repair it.
-* Mundane Skills proceeds directly to Contacts/lifestyles while Resources is
-  still required. Mundane characters should bypass Magic, not Resources.
+## 3. Fix actual manual choice dispatch and missing domain editors — P1
 
-Derive method-specific forward routes from actual Core prerequisite state.
-After prerequisite confirmation, supported Priority creation must reach the
-appropriate admitted stage. Verify each required applicable stage is reachable
-through ordinary Next and that Back works consistently with that route.
+This is distinct from PR #511. Inspect and correct the source chain in:
 
-Qualify the earlier Attributes finding correctly: an applicable Core finalization
-step **overwrites** the initial completion flag. `qualitiesAuthority.IsReady` is
-a questionable fallback dependency, not proof that every Attributes display is
-wrong. Use domain-appropriate Core readiness/budgets and add a negative test for
-the fallback case where Qualities is ready but Attributes is incomplete. Do not
-infer that Core accepts illegal characters from a UI projection defect.
+- `Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs`
+- `Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs`
+- `Chummer.Avalonia/MainWindow.CreationWizard.cs`
 
-Fix starting-cash display to show dice sum times multiplier: a result of 14 with
-multiplier 100 displays 1,400¥. Continue submitting the dice result **14** to Core;
-the existing choice payload is correct and must not receive a second multiplier.
+The projector supplies Quality and Magic/Resonance options for their stages.
+`RenderLegalOptions()` renders enabled buttons wired to
+`FoundationOptionButton_OnClick`. That handler special-cases Resources; other
+choices raise `FoundationOptionClickRequested`. The window's Foundation handler
+recognizes metatype/nationality IDs and otherwise returns without preparing or
+applying the advertised choice. Thus an enabled Quality or Magic card can do
+nothing. This is a source-confirmed event-route defect, not a claim that Core
+accepts an illegal character or that the auditor reproduced a native click.
 
-Run a native supported SR5 manual journey using the ordinary **Next buttons**:
+Route each supported editable domain through its existing Core-backed
+presenter/service:
 
-> Prerequisites → Attributes → Qualities → Skills → Resources → all remaining
-> applicable steps → Review → Career.
+`select/edit -> prepare preview -> show cost, changes and blockers -> explicit confirmation -> apply once -> reload authoritative state`
 
-Follow the approved design's precise order and prerequisites. No direct test
-jumps, sidebar shortcuts, routed-event substitutes or AI Finish may stand in for
-the normal forward route. Retain explicit player choices, finalize once, make a
-Career advancement, save, terminate and reopen in a fresh native process.
-Add bounded acceptance cases for other supported methods and archetypes without
-making SR6 a prerequisite for this first SR5 increment.
+Use domain identity, not a generic Foundation fallback for unrelated options.
+Do not implement a second rules engine in Avalonia. Preserve owner/revision
+binding and stable operation identity through uncertain outcomes. Unsupported
+editors must show an honest unavailable explanation instead of an enabled no-op.
+That containment does not complete an editor required for the supported journey.
+Inspect other rendered option types for the same dispatch mismatch as part of the
+focused fix; do not expand this into an unrelated codebase refactor.
 
-### 4. Deliver verified Core content with installed and portable apps — P1
+Acceptance requires AI Finish disabled throughout: start a new supported SR5
+runner; manually choose and confirm the required allocations; verify authoritative
+budgets and blockers; finalize once; enter Career; advance; save; exit; reopen in a
+new native process. Include a real Quality selection and, for an appropriate
+archetype, a real Magic/Resonance choice. Use ordinary controls and Next navigation,
+not direct stage jumps, prefilled AI drafts or routed-event fallbacks presented as
+real clicks. Visiting a stage is not evidence that its editor works.
 
-`Chummer.Avalonia/DesktopCoreContentRootResolver.cs` remains unchanged in the
-audited head. It discovers content via `CHUMMER_CORE_CONTENT_ROOT`, the repository
-or a sibling Core checkout and runs Git to validate pinned checkout identity.
-The installer journey still injects the Core-content environment override.
-Another pass with that workaround does not demonstrate a self-contained install.
+## 4. Execute the corrected installer journey on Windows
 
-Package the exact required rules/content alongside the app and resolve it relative
-to the installation with its expected content identity and integrity checks.
-Keep source-checkout overrides explicitly developmental. Do not remove integrity
-validation or silently fall back to different rules to make startup pass.
+PR #512 now rejects harness-assisted relaunch, retains and verifies every existing
+shortcut, binds process birth to the pre-apply/original-process boundaries, requires
+expected v2 executable bytes, positively checks checksum rejection and inventories
+installed file contents. Its isolated state root follows actual app launches.
+Installed v1 saves a repository fixture through the production presenter; v2 must
+reopen the same workspace/profile/file after update and recovery. Preserve these
+source fixes. The older parent-exit and disposed-splash fixes also remain closed
+as implementation findings.
 
-On a fresh Windows profile with **no Git, no .NET SDK, no Chummer repositories and
-no Core-content environment override**, install, launch from Start, manually
-create a supported runner, save, exit/reboot and reopen the same runner. Repeat
-for a portable build after moving its directory. Do not inherit a developer
-override through the launcher or update chain.
+After publication recovery and candidate qualification, run the exact candidate:
 
-### 5. Make installer acceptance enforce ordinary-user behavior
+`install v1 -> launch installed v1 -> save fixture -> app-triggered v2 update -> autonomous relaunch -> reopen same runner -> reject corrupt update -> reopen same runner again`
 
-The parent-process exit and disposed-splash source corrections remain present.
-Do not relabel those historical bugs as current implementation failures without
-new evidence. Repair these distinct checked-in harness weaknesses:
+Keep existing shortcuts in place. Fail autonomous-update acceptance if the harness
+starts the app. Require positive evidence that the bad artifact was evaluated and
+rejected for the expected checksum error, unchanged installed identity/content,
+and no installer invocation. Process-name polling alone cannot prove absence of a
+short-lived installer; use the existing update/apply evidence. Bind the reopened
+process, artifact/version and isolated saved workspace exactly. Keep the operator's
+ordinary character store outside this test.
 
-1. **Autonomous relaunch:** a recognized installer crash can still trigger a
-   harness launch, record `relaunchMode = harness-fallback`, and write
-   `update-relaunch.status = pass`. Separate diagnostic recovery from acceptance.
-   A harness-launched app must fail the autonomous-update leg.
-2. **Existing shortcuts:** the journey deletes Chummer shortcuts before updating
-   to avoid an overwrite timeout. Retain them in the acceptance case and resolve
-   any overwrite issue in the installer. Cleanup belongs after the tested
-   behavior, not before it.
-3. **Checksum rejection:** being alive, retaining an executable and restarting
-   does not prove that a bad artifact was evaluated. Require positive evidence
-   of the attempted check and the expected checksum-mismatch rejection, no
-   installer invocation, and unchanged installed identity/content. A no-op update
-   check must fail. Bind the relaunched process to the expected executable and
-   version, not a process name alone.
+Classify interruptions and uncertain outcomes before retrying. Do not blind-replay
+an update or reset its existing fence. Report native results on their exact candidate.
+Linux PowerShell/helper tests do not establish a Windows install/update. An unsigned
+local journey does not establish signed public delivery. No new receipt framework
+is requested.
 
-Run the exact current candidate through clean install → Start-menu launch →
-character save → application-triggered update → old process exit → installer
-completion → autonomous updated-app relaunch → unchanged character reopen.
-Retain interrupted-update and stored-data compatibility checks. Perform signed
-artifact and published-channel verification separately through the authorized
-release lane; unsigned local artifacts are not signed public delivery.
+## 5. Ship self-contained verified runtime content — P1
 
-### 6. Finish the existing package seal and affected native tests
+`DesktopCoreContentRootResolver.cs` still uses an override or repository/sibling
+Core checkout and invokes Git to check a pinned commit. The installer harness
+also assumes a Core checkout, SDK and local package cache and injects
+`CHUMMER_CORE_CONTENT_ROOT`. Success in that environment is not clean-machine
+acceptance.
 
-At the audited head, [run 41493313162](https://github.com/ArchonMegalon/chummer6-ui/actions/runs/41493313162)
-passed **Validate current main split-preseal without consumer or release claims**.
-It skipped locked .NET SDK setup, the sealed current-main package consumer and
-the sealed consumer receipt, and uploaded a non-authoritative preseal receipt.
-The controller independently read back those run steps when writing this handoff.
+Package required rules/content with the application and validate its expected
+identity from the installed or portable bundle. Preserve integrity checks; keep
+checkout overrides explicitly developmental. Missing/tampered content needs an
+actionable recovery state, never silent fallback to unrelated/default rules.
 
-This is an intentional intermediate state, not a fresh application build or a
-newly qualified package graph. Complete the existing seal/consumer process before
-candidate distribution so exact source, package graph and tested artifact agree.
-Do not invent a new receipt/release framework, bypass protected checks or describe
-preseal validation as release acceptance.
+Test a fresh normal Windows user profile with no Git, SDK, repositories or Chummer
+environment overrides: install, Start-menu launch, manually create a supported
+runner, save, close/reboot and reopen. Move the portable directory to a different
+path and repeat. Separate bundling implementation from the native clean-profile
+proof. Coordinate any shared Core/package API changes with the controller; assigned
+Windows adapters, packaging and Presentation work may continue independently.
 
-The gate report records four passing focused headless tests. The re-auditor
-inspected but did not rerun them. Other worker reports describe full-test-build
-debt and Windows-incompatible update tests; their counts belong to their recorded
-branches/environments, not a fresh count on main. Classify relevant failures as
-product defects, stale tests, unsupported scope or environment problems, and run
-the affected Windows suite on the final candidate. An unchanged failure baseline
-does not establish acceptance. Use normal-user filesystem permissions and actual
-mouse/keyboard interaction. Routed Click fallbacks establish handler behavior,
-not reliable ordinary input.
+## 6. Finish real output and remaining product acceptance
 
-### 7. Finish AI recovery, Origin and amend workflows after the manual beta
+After the manual beta works, complete intended Origin reading/manuscript export
+and saved-content reopening. A character JSON export is not manuscript export;
+basic retained-content acceptance needs no new paid generation. For rules/amends,
+import a real character-bound package, expose and explicitly resolve a conflict,
+freeze/save/export its environment and reopen in a clean profile. Missing or
+incompatible packages must produce actionable recovery. Legacy `.chum5` import
+alone does not prove Chummer5a amend-syntax compatibility.
 
-**Keep AI Finish gated.** The current default-off gate contains the incomplete
-action: one visibility path governs availability, busy and result updates; delayed
-results or `SetFinishWithAiBusy(false)` cannot reopen it; control and window
-handlers both check it. This closes ordinary-user exposure in source. Keep the
-operator qualification switch out of normal installer launchers, shortcuts and
-published configuration. Do not restore it to work around missing manual editors
-or navigation.
+Complete AI Finish's transaction/recovery and supported-archetype work behind the
+gate before exposure: stable operation identities, owner/revision binding, explicit
+partial/uncertain results, interruption recovery and no blind replay. Use Core's
+atomic or deliberately resumable completion contract; do not create a separate
+rules engine or restore AI as a manual-editor workaround.
 
-The underlying completion flow still needs its agreed transaction/recovery
-contract. Sequential Attributes/Skills/Qualities/Resources/Gear writes, fresh
-operation GUIDs and an initial input-digest check alone do not provide atomicity
-or durable retry identity. Use the Core-owned atomic completion path or a
-deliberately resumable staged transaction, with stable operation identities bound
-to owner, character revision and reviewed plan. Expose partial outcomes and
-reconcile uncertain writes; do not blindly replay or invent another rules engine
-in Avalonia. Test later-domain failure, process exit after an early commit, lost
-responses, concurrent character edits, owner/account change and retry recovery.
-Retain the successful native Priority case, then qualify legal all-archetype
-review/apply/save/recovery before enabling the ordinary action.
+Classify relevant failing tests on the exact candidate as product defects, stale
+tests, unsupported scope or environment problems. Run affected permission tests as
+a normal Windows user. An unchanged failed baseline is not acceptance. Finish
+keyboard/mouse behavior, 125–200% scaling, long/localized text and dense desktop
+layout. Do not delay an independent bounded fix for unrelated broad matrices.
 
-Execute the actual output and portability workflows:
+## Preserve completed privacy work
 
-* **Origin:** display complete retained prose, export the intended manuscript/book
-  format and reopen the same accepted content after process restart. Character
-  JSON and dialog-source tests do not prove book export. Basic acceptance needs
-  no new paid provider job.
-* **Portable rules/amend:** import a real character-bound package, expose and
-  explicitly resolve a conflict, save the frozen rule environment, export it and
-  reopen in a clean profile. Missing/incompatible packages must yield actionable
-  recovery without silently substituting default rules. Demonstrate applicable
-  Chummer5a `custom_`, `override_` and `amend_` compatibility/import behavior.
-  Opening Rules Setup or importing a `.chum5` character alone proves neither
-  amend compatibility nor a conflict/missing-package roundtrip.
+PR #509 removed the complete environment dump. Keep only the explicit safe-value
+allowlist, presence/absence for selected overrides and aggregate count for other
+variables. Omit unknown names and values. Preserve the sentinel tests and CI
+coverage. The reported private sweep found no old dump files; the auditor did not
+inspect that host. Do not claim blanket log confidentiality from this single fix.
+Privately remove any discovered old `start-failure-env.txt` from shareable evidence;
+never copy suspected credentials into reports. Coordinate rotation only for an
+established exposure, without unrelated account changes.
 
-Narrow the older WIN-003 PASS labels to their actual evidence: HTML was not PDF,
-character JSON was not Origin manuscript export, Rules Setup/legacy import was
-not amend-package portability, and contract/build-intake tests were not native
-missing-package recovery. Preserve the useful artifacts and correct their claims.
+## Ownership and reporting
 
-Finish with normal-user permissions, keyboard navigation, 125–200% scaling,
-long/localized text and consistent dense desktop layout. Do not substitute a
-larger evidence framework for executing the real workflows.
+The controller owns protected integration, shared package coordination and releases.
+Friday owns its assigned Windows implementation and native runs. Read the current
+Teable assignment/session/generation; request a precise scope update only when
+needed and continue independent work. This handoff does not claim that Teable
+records changed or that Friday was started by the controller.
 
-## Delivery report for each increment
+For each increment report the exact source and tested artifacts, concrete behavior,
+focused tests actually executed, native actions, remaining defect and next step.
+Keep these separate: source merged; preseal validated; package consumer qualified;
+native workflow verified; signed artifact published. Do not label an assisted
+navigation walkthrough, package seal or source-only repair as a completed product.
 
-Report the exact source/package/artifact identities, the concrete behavior fixed,
-tests actually executed and their environment, remaining failing/unrun cases,
-and whether the output is source-only, locally qualified, signed or published.
-Keep synthetic reproductions, compiled tests, native interactions and release
-acceptance distinct. State the next concrete blocker; give an ETA only when the
-remaining work supports it. Submit small reviewable PRs and continue independent
-assigned work while review or controller-owned integration is pending.
-
-## Standing scope retained from the previous handoff
-
-The user starts Friday Code on a separate Windows host. Continue the existing
-`Chummer.Avalonia` desktop client, with `Chummer.Blazor.Desktop` as its documented
-compatibility head. The controller retains Android, shared Core integration,
-hosted services and provider operations. Windows work can progress independently
-of Android releases and uses the Windows host's own build capacity.
-
-### Delivery order
-
-1. Build the pinned checkout on Windows. Launch the application, open or import
-   a character, save it, close the process and reopen the saved character. Fix
-   concrete Windows startup, interaction and persistence defects first.
-2. Complete supported SR5 manual Creation and Career routes on Windows. Cover
-   supported creation methods and archetypes, legal rules calculations, editing,
-   resource spending, training, equipment and state changes. Verify cancellation,
-   save/reopen and process restart for affected persistence routes. Shared rules
-   come from Core packages; request an explicit shared change when necessary.
-3. Complete Windows Origin reading/export and character-sheet PDF export, then
-   portable per-character rule environments and amend-package workflows. Keep
-   Chummer5a amend compatibility/import as the design target. Follow the existing
-   rule-environment and portability specifications for character-bound rules,
-   synchronization, missing-package recovery and conflict handling.
-4. Produce the existing Windows installer/update artifact and verify installation,
-   relaunch and recovery on Windows. Distinguish unsigned development artifacts,
-   signed artifacts and published releases. Ask the controller for any required
-   signing or release authority through the assigned task.
-
-The complete SR5 AI Finish redesign is developed in parallel by the controller.
-Its new-request action stays hidden until complete legal behavior across supported
-archetypes and native review/apply/save/recovery are verified. Do not expose an
-older partial implementation on Windows. SR6 and Linux retain their separate
-delivery stages; they are not prerequisites for the first Windows increment.
-
-Read `.codex-design/product/DESKTOP_CLIENT_PRODUCT_CUT.md`,
-`.codex-design/product/DESKTOP_PLATFORM_ACCEPTANCE_MATRIX.yaml`,
-`.codex-design/product/RULE_ENVIRONMENT_AND_AMEND_SYSTEM.md`, and
-`.codex-design/product/INTEROP_AND_PORTABILITY_MODEL.md` for the existing design.
-`config/product-requirements.reference.json` preserves the controller's 62
-requirement identities and wording as a reference snapshot. Some requirements
-are Android-specific or belong to later stages. The current Teable assignment
-defines the Windows task and acceptance scope; the reference contains no claim
-that an item is implemented, tested or delivered.
-
-### Ownership and integration
-
-Work on a dedicated `windows/...` branch from the assigned base. Preserve existing
-work when resuming. Windows-specific UI, adapters, packaging and tests belong to
-this lane within the exact assigned paths. Core rules, persistence authority,
-shared Presentation APIs, package versions and contract changes need a controller
-assignment. Submit the affected paths, problem, proposed change and Android
-impact with the coordination client's `request` command; continue independent
-assigned Windows work while the controller responds.
-
-Own-branch commits and pull requests for assigned work are authorized. The
-controller coordinates protected integration and shared package publication.
-Do not force-push, change accounts/providers, operate Android signing/Play, or
-restart hosted services as part of a Windows task.
-
-Report the actual commit, Windows OS/runtime, build command, relevant tests,
-artifact location and remaining blockers in Teable. A source patch, Linux
-cross-build or passing managed harness is not a Windows launch/installation
-result. Report incomplete routes explicitly and retain working user data.
+Priority: recover publication; integrate bounded #510/#511 repairs; fix manual
+Quality/Magic dispatch; run corrected native update/persistence; bundle content;
+complete the genuinely manual SR5 journey; qualify PDF/Origin output; then finish
+AI recovery, amends and remaining parity. Manual editors and content packaging can
+progress in parallel with controller integration, within existing task ownership.
