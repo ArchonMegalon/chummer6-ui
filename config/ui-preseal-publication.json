@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "66c814cf874a271df24e21e9fbfe9af028707a2b",
-  "baseTree": "43121edbba0b16604524b8e909d261042885969e",
+  "baseCommit": "37938f3accb75e04aeb8028a67b24452a5220538",
+  "baseTree": "05f5ffed3e7041634be693c3348781fce8d9c90a",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,55 +44,13 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "23d901f343265b49e33baf7e04effde031693a4f",
-      "path": "Chummer.Desktop.Installer/Program.cs",
-      "sha256": "464ce40604c5e5ed685d1ba5276ed821128e3c7d065ad14038c0bb708d637700",
-      "sizeBytes": 108545,
-      "status": "M"
-    },
-    {
-      "blob": "4aa710a22e7bb20df937cbbf1b1ef545b619735b",
+      "blob": "8490dfe5cb927c8d6f3bb0ea21a8082cf482567c",
       "path": "docs/agents/WINDOWS_SCOPE.md",
-      "sha256": "8a32ea56962e1d25e269b3bb15625f8e20f07e350a2d302592ff97aba13042b5",
-      "sizeBytes": 32104,
-      "status": "M"
-    },
-    {
-      "blob": "60e291765e026ce40446418c983bf02d4df1bfc7",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "48ba2fcfb5116c182c81a87287b2b0bd98fbd69077390985258739d6975a66c5",
-      "sizeBytes": 60012,
-      "status": "M"
-    },
-    {
-      "blob": "d9bfd5bdf1fc5d030a0e88794dcd56a739db442e",
-      "path": "scripts/win004-acceptance.ps1",
-      "sha256": "af90b985cec9f1f69d28b149de58f6b5015c6e00e684767ac2e66d5e4d5a1a52",
-      "sizeBytes": 4024,
-      "status": "A"
-    },
-    {
-      "blob": "82db1bcd72bceac3dbbdab3ed8978cb8589f0340",
-      "path": "scripts/win004-installer-update-recovery-journey.ps1",
-      "sha256": "f9d56687492fac3b4477e347caecaec1afec6f570ebe5d2878590e95ceefd8e0",
-      "sizeBytes": 56694,
-      "status": "M"
-    },
-    {
-      "blob": "3fb7e2c25f7075ab376fcd936361b1c38ad858bf",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "c9ab68fa8c94ee7730761a9bf0b4b537f4b71511a83fb4cc62f48162776b7212",
-      "sizeBytes": 67102,
-      "status": "M"
-    },
-    {
-      "blob": "ac3deb03d6211e1100fc23167fb0daa5c0459c94",
-      "path": "tests/test_win004_start_failure_diag_privacy.py",
-      "sha256": "8e48bc15cc2a1f953b3ff2a711e8e02ea554596bf93a9c98c7a7b9e6177bee1e",
-      "sizeBytes": 14228,
+      "sha256": "2d405f95414c757c8e37dd220e05fe38ea56b588f65d8616c0f7f6319402c0f4",
+      "sizeBytes": 16961,
       "status": "M"
     }
   ],
-  "recipeTree": "1834f56d18082f76ae66a97cee1886044f224e48",
+  "recipeTree": "8cd26948ea5131057cb7da0af44a9610685261fb",
   "releaseClaim": false
 }
