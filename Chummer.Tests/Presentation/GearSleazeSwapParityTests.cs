@@ -13,7 +13,7 @@ public sealed class GearSleazeSwapParityTests
     public void DataProcessingSwapPreservesNotificationConsumersAndRawProvenance()
     {
         Guid id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-        string xml = $"""<character><created>True</created><nuyen>50</nuyen><karma>2</karma><gears><gear><guid>{id:D}</guid><name>Deck</name><category>Cyberdecks</category><attack>7</attack><sleaze>{{Rating}}</sleaze><dataprocessing>5</dataprocessing><firewall>4</firewall><attributearray>7,6,5,4</attributearray><canswapattributes>True</canswapattributes><modsleaze>3</modsleaze><moddataprocessing>9</moddataprocessing><active>True</active><homenode>True</homenode><cost>99</cost></gear></gears></character>""";
+        string xml = $$"""<character><created>True</created><nuyen>50</nuyen><karma>2</karma><gears><gear><guid>{{id:D}}</guid><name>Deck</name><category>Cyberdecks</category><attack>7</attack><sleaze>{Rating}</sleaze><dataprocessing>5</dataprocessing><firewall>4</firewall><attributearray>7,6,5,4</attributearray><canswapattributes>True</canswapattributes><modsleaze>3</modsleaze><moddataprocessing>9</moddataprocessing><active>True</active><homenode>True</homenode><cost>99</cost></gear></gears></character>""";
         CharacterGearMatrixSwapState state = GearSleazeSwapEditorProjector.ProjectValue(xml, id).Single();
         string changed = WorkspaceXmlMutationCatalog.ApplyGearSleazeSwapEdit(xml, new(
             new CharacterWorkspaceId("runner"), 3, state.Identity, state.Revision,

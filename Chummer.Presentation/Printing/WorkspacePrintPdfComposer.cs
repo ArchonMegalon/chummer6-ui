@@ -398,7 +398,7 @@ public static class WorkspacePrintPdfComposer
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n"u8.ToArray());
         BeginObject(fontBoldId);
         raw.Write(
-            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\nendobj\n");
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\nendobj\n"u8.ToArray());
 
         BeginObject(infoId);
         raw.Write("<< /Producer (Chummer6 WorkspacePrintPdfComposer) >>\nendobj\n"u8.ToArray());
@@ -445,19 +445,22 @@ public static class WorkspacePrintPdfComposer
 
     private static void AppendTextOp(StringBuilder content, TextOp text)
     {
-        content.Append("BT\n");
-        float x = text.X;
+        // Td translates relative to the current text-line position and Tj
+        // auto-advances it by the painted string width, so compounding runs
+        // inside one BT/ET block accumulates viewer-dependent drift. Emit one
+        // text object per run instead: BT resets the line matrix to identity,
+        // making the single Td operand the run's absolute position, independent
+        // of any viewer's rendered-width metrics. Operands of Tj must be PDF
+        // string literals (parenthesized), never bare tokens.
+        float runX = text.X;
         foreach (TextRun run in text.Runs)
         {
             string font = run.Style == TextRunStyle.Bold ? "/F2" : "/F1";
             content.Append(CultureInfo.InvariantCulture,
-                $"{font} {Format(run.Size)} Tf {Format(x)} {Format(text.Baseline)} Td ");
-            content.Append(EscapeWinAnsi(run.Text));
-            content.Append(" Tj\n");
-            x += MeasureWidth(run.Text, run.Style, run.Size);
+                $"BT {font} {Format(run.Size)} Tf {Format(runX)} {Format(text.Baseline)} Td ");
+            content.Append('(').Append(EscapeWinAnsi(run.Text)).Append(") Tj ET\n");
+            runX += MeasureWidth(run.Text, run.Style, run.Size);
         }
-
-        content.Append("ET\n");
     }
 
     private static string Format(float value)

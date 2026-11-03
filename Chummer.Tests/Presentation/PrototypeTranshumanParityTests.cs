@@ -15,8 +15,8 @@ public sealed class PrototypeTranshumanParityTests
     [TestMethod]
     public void Projector_accepts_only_matching_top_level_cyberware_semantics()
     {
-        JsonNode section = JsonNode.Parse($$"""
-        {"count":1,"cyberwares":[{"guid":"{{ParentId:D}}","name":"Nephritic Screen","prototypeTranshumanSemantics":{"cyberwareId":"{{ParentId:D}}","prototypeTranshuman":false,"essenceAllowance":1.25,"hierarchy":[{"cyberwareId":"{{ParentId:D}}","prototypeTranshuman":false},{"cyberwareId":"{{ChildId:D}}","prototypeTranshuman":true}]}}]}
+        JsonNode section = JsonNode.Parse($$$"""
+        {"count":1,"cyberwares":[{"guid":"{{{ParentId:D}}}","name":"Nephritic Screen","prototypeTranshumanSemantics":{"cyberwareId":"{{{ParentId:D}}}","prototypeTranshuman":false,"essenceAllowance":1.25,"hierarchy":[{"cyberwareId":"{{{ParentId:D}}}","prototypeTranshuman":false},{"cyberwareId":"{{{ChildId:D}}}","prototypeTranshuman":true}]}}]}
         """)!;
 
         WorkspaceCollectionItemEditorState item = WorkspaceCollectionEditorProjector
