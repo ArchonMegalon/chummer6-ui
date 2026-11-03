@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "aff3be9d52819331f2084278e7b7a4962370372e",
-  "baseTree": "c9a9633660351ad4b73050c628ff5f4e26ab6132",
+  "baseCommit": "4bafdc282f94e887e11bb807ce27d019d07cae3b",
+  "baseTree": "ccaac94654853b9190f2ae1b52d92d390f84e980",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,69 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "65fcf17947268bdb3b889abfd19ad4d9d7b05623",
-      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
-      "sha256": "914b2b608ef1c977274342b96255aab837f67fef52d9af13049a7cf8db5a863d",
-      "sizeBytes": 62672,
+      "blob": "3f5ea0674ae9ae7ee52a6daeed1518d4d091744b",
+      "path": "AGENTS.md",
+      "sha256": "2491e8b469f3c049dd7cef79469c91cf27943da139b59f7ad5ced912bffedabe",
+      "sizeBytes": 6882,
       "status": "M"
     },
     {
-      "blob": "5353e9f8bce886e664e31729597dfa5589885b62",
-      "path": "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs",
-      "sha256": "36c603679f2655ebdd048f5df00a8179243c4386613fe9efe1b3f48ba8a67a52",
-      "sizeBytes": 177692,
-      "status": "M"
-    },
-    {
-      "blob": "298105556301e744dfcd75b4392c4a01baf1e94e",
-      "path": "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardPresentationTests.cs",
-      "sha256": "943bb72bced5759808ad14d9ac19526948c6be2bfd1e358caadca8f93e5240a9",
-      "sizeBytes": 77853,
-      "status": "M"
-    },
-    {
-      "blob": "15d21d90544e27855926da04b72e811173e4f0d0",
-      "path": "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
-      "sha256": "719ae4fc12a83b015aa1a87e951ff5d8f920a21eed8c8c3965268d404e8db066",
-      "sizeBytes": 126194,
-      "status": "M"
-    },
-    {
-      "blob": "6c40b7b06289cb51fe9ff1435cc778859299064f",
-      "path": "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityTests.cs",
-      "sha256": "1889b97e792f70e139f92d4d5f8a6d65b961b9842c7748fed5be4a16d89cc3c6",
-      "sizeBytes": 7852,
-      "status": "M"
-    },
-    {
-      "blob": "40fbd14b233d7a4e3872939c02f0c38814bb01ba",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "0dfe2f823f4871e387080b56ea004b49ed8023d178af197d3c8d4d815adeea46",
-      "sizeBytes": 69810,
-      "status": "M"
-    },
-    {
-      "blob": "065acd6eb014bb3ac008776eca77da1c932ee4de",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "6e122c4c4b1a83331eb2beffff942b37597bb9780c09f3f5e7907e43c41b74a6",
-      "sizeBytes": 297158,
-      "status": "M"
-    },
-    {
-      "blob": "eb1ad32e0a87f04b0bd7bca530cf1a9f869a89ee",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "aecf8d559c46ff6efaf912eb9c9779e5d4bdba1f09befbfc9b8a9f0fd9f3cf88",
-      "sizeBytes": 60446,
-      "status": "M"
-    },
-    {
-      "blob": "6e47cb7abad3b0f6ee6760d5fda3691300472600",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "d04a22ca3f4b4c4caafbb22fea2153d0ea82aef8be16b1ff9a1030e8ab9b6566",
-      "sizeBytes": 198080,
+      "blob": "5bf96d2fc4319490945cff46ed6723d5d37df726",
+      "path": "docs/agents/WINDOWS_SCOPE.md",
+      "sha256": "e5a9c6621dcf1e6e32978f5a6475739276c82b9f49073bb9b79afd5355467060",
+      "sizeBytes": 16747,
       "status": "M"
     }
   ],
-  "recipeTree": "e2333f7183fd9448b30f5a7fdb9384a0f32df794",
+  "recipeTree": "d2c2f2726a62ed33a40fbe0f7e4f93c9a7a2f30a",
   "releaseClaim": false
 }
