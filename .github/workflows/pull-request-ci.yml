@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+          filter: blob:limit=1048576
           persist-credentials: false
 
       - name: Resolve sealed or split-preseal validation mode
@@ -259,6 +260,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
+          filter: blob:limit=1048576
           persist-credentials: false
 
       - name: Resolve sealed or split-preseal validation mode

@@ -1,10 +1,10 @@
 # Windows delivery scope and Friday handoff
 
-Updated 3 November 2026 from the user's latest Windows client audit, after
-PRs #515 and #516 merged. This replaces the earlier work order in this file.
-Read it before [WINDOWS_REMOTE.md](WINDOWS_REMOTE.md) and
-[COORDINATION.md](COORDINATION.md). Preserve existing assignments, Core authority,
-account/data boundaries, package controls and release permissions.
+Updated 3 November 2026 from the user's re-audit of the corrected, merged
+Quality editor. This replaces the previous work order. Read it before
+[WINDOWS_REMOTE.md](WINDOWS_REMOTE.md) and [COORDINATION.md](COORDINATION.md).
+Preserve existing assignments, Core authority, account/data boundaries, package
+controls and release permissions.
 
 ## Resume here
 
@@ -16,10 +16,12 @@ progress through the existing coordination client at least every 15 minutes whil
 active and at milestones. Keep tokens, private character data and environment
 values out of reports.
 
-Start with **fresh Attributes entry**, then **repair #517's complete Quality
-selection contract before merge**. Continue independent domain-editor and content
-packaging work while controller reviews run. Keep AI Finish default-off and guarded
-at every entry point. Do not use AI-populated drafts to qualify manual Creation.
+**PR #517 is fixed and merged. Do not repair or resubmit the old singleton-selection
+head.** Start with fresh-character Attributes entry; fix the small asynchronous
+Quality-display race alongside it. Deliver verified bundled runtime content next.
+Continue the remaining manual editors and recovery acceptance within the assigned
+scope. Keep AI Finish default-off at every entry point. AI-populated drafts cannot
+qualify a manual Creation journey.
 
 The first Windows beta milestone remains:
 
@@ -28,254 +30,271 @@ The first Windows beta milestone remains:
 > change, exports a readable character sheet, and updates without losing the
 > character or installing development tools.
 
-Android, Linux, SR6 and live Rook do not block this Windows increment. The beta is
-not the complete replacement: full Origin, genuine amend-package compatibility,
-broader supported methods/archetypes and Chummer5a/app parity remain required.
-Preserve the original requirement identities and full assigned Windows scope.
+Android, Linux, SR6 and live Rook do not block this Windows increment. A declared
+Mundane-first candidate is an intermediate delivery scope, not permission to drop
+magical/resonance archetypes, broader methods, Origin, genuine amend compatibility
+or the full assigned Chummer5a/app parity mission. Preserve requirement identities.
 
 ## Current source and evidence
 
-The latest user audit inspected commit
-`4bafdc282f94e887e11bb807ce27d019d07cae3b`, tree
-`ccaac94654853b9190f2ae1b52d92d390f84e980`. The controller confirmed that exact
-main and the still-open #517 head before preparing this handoff. Newer generations
-must be identified separately.
+The user audited `chummer6-ui` at:
+
+```text
+Commit: b4d25bdb440f940aeaee80ccaacc8f25d843db53
+Tree:   bd9abdbb4d244dac10118ae376e7b4e8b41d3b12
+```
+
+The controller confirmed this main after rebase-merging the corrected
+[PR #517](https://github.com/ArchonMegalon/chummer6-ui/pull/517). All six PR checks
+passed. The merged tree exactly matches the reviewed tree. This publication updates
+the work order and CI checkout inputs; identify later product generations separately.
 
 | Finding | Current disposition |
 | --- | --- |
-| Red current-main publication after #512 | Resolved; current main passes preseal validation |
-| PDF text operands, compounded placement and bold-font string prefix | Fixed on main by #515 and controller corrections |
-| Method → Attributes and mundane Skills → Resources route edges | Fixed on main by #516; destination availability remains defective |
-| Attributes completion through Quality readiness | Fixed: completion follows Core finalization; entry availability still uses Qualities |
-| Starting-cash display | Fixed: display multiplies the dice sum; submitted choice remains the raw sum |
-| Raw startup environment dump | Source-fixed by #509; preserve the constrained collector and sentinel tests |
-| Incomplete AI Finish exposed by default | Contained by the default-off gate; underlying completion/recovery still open |
-| Installer acceptance harness | Source corrections retained; combined-candidate native acceptance still open |
-| Manual Creation and self-contained installation | Not complete; the work below is required |
+| Selecting Quality B replaces earlier A | Fixed in merged #517 |
+| Quality Add/Remove/empty-set review | Implemented with focused tests |
+| Quality stale-review/duplicate-confirmation protections | Improved; preserve the guards |
+| Quality dialog after asynchronous loading | New stale-context display race; targeted correction required |
+| Quality uncertain-result recovery | Same-session read-only reconciliation; restart/account-transition acceptance remains open |
+| Fresh Attributes entry | Still circular despite the corrected Method route |
+| Magic/Resonance option cards | Explicitly unavailable; misleading clicks contained, editor not implemented |
+| Installed Core content | Still checkout-dependent; clean-machine delivery unresolved |
+| PDF text/font serialization and positioning | Repaired; do not reopen these specific defects |
+| PDF wrapping/language/native Save | Remaining acceptance and implementation work |
+| Installer/update harness | Earlier source corrections retained; exact-candidate native run remains separate |
+| Current-main publication | Successful preseal validation, not a new application/package-consumer build |
+| Complete native Windows beta | Not established |
 
-Do not reopen the closed serialization, route-edge, cash or publication findings
-as unchanged defects. The user audit traced source and repository evidence; it did
-not compile/run the client, execute Windows/PowerShell, rerun MuPDF or operate an
-installer. The controller's retained Linux checks and renderer results remain
-separate from fresh native Windows acceptance.
+The controller ran the pinned-SDK Linux Avalonia build, ten Quality interaction
+tests and seven headless control/gate tests for #517. The user auditor inspected
+those reported results but did not rerun them. They are not native Windows
+save/new-process acceptance. Preserve the repaired route edges, independent
+Attributes completion flag, correct starting-cash display, diagnostic allowlist
+and AI gate from the earlier work.
 
-## 1. P1: remove the circular Attributes-entry condition
+## 1. P1: make fresh Attributes entry possible
 
 Affected source:
 
 - `Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs`
 - `Chummer.Presentation/Overview/CharacterCreationWizardDesktopSession.cs`
 
-The Attributes stage still uses `isAvailable: qualitiesAuthority.IsReady`.
-Qualities readiness requires an editable, blocker-free state. The pinned Core
-Qualities service adds `AttributesDraftRequired` when no Attributes draft exists;
-confirming Priority prerequisites creates their own draft, not an Attributes draft.
-Thus a new runner can need an Attributes draft before the wizard lets the player
-create it. The session correctly refuses an unavailable, incomplete, blocked stage;
-adding the forward edge alone cannot repair this dependency.
+The Method-to-Attributes route exists, but Attributes still uses
+`isAvailable: qualitiesAuthority.IsReady`. Its forward route to Qualities also
+uses Quality readiness. The pinned Core Qualities service adds
+`AttributesDraftRequired` when no Attributes draft exists. Confirming the
+Priority/Heritage/Talent prerequisites does not create that draft.
 
-Drive Attributes edit availability from its own authoritative state and admitted
-prerequisites. Keep these distinct: can enter/edit Attributes; Attributes is
-complete; the character can finalize. Do not mark Attributes complete, ignore Core
-blockers or relax the session's general entry checks merely to make it reachable.
-Use existing Core-backed Attributes state; coordinate any missing shared contract
-with the controller instead of deriving rules in Avalonia.
+This requires the draft before allowing the player to create it. Drive Attributes
+edit availability from its own authoritative state and admitted prerequisites,
+not a downstream stage. Keep these separate: can enter/edit; has completed; can
+finalize. Do not prepopulate Attributes, mark it complete, ignore Core blockers,
+or relax general session entry checks merely to make navigation work. Coordinate
+any missing shared Core contract with the controller; do not derive rules in UI.
 
-Acceptance, with AI Finish disabled throughout:
+Acceptance with AI Finish disabled:
 
-1. Create a genuinely fresh Priority runner.
-2. Confirm the required Priority/Heritage/Talent prerequisites.
-3. Assert that no Attributes draft exists and Attributes finalization is incomplete.
-4. Use the ordinary Next button to open the Attributes editor.
-5. Manually allocate, preview and confirm Attributes.
-6. Reload authoritative state and verify that Qualities now becomes available.
+1. Create a genuinely fresh Priority runner and confirm required prerequisites.
+2. Assert that no Attributes draft exists and Attributes finalization is incomplete.
+3. Use the ordinary Next button to enter the Attributes editor.
+4. Manually allocate, preview and confirm Attributes.
+5. Reload authoritative state and proceed to Qualities.
 
-Add a focused regression for this initial state and retain negative prerequisite
-cases. Test real controls on Windows. An AI-filled fixture or a direct test jump
-into Attributes cannot establish this route.
+Add a focused initial-state regression and retain negative prerequisite cases.
+Exercise real Windows controls. AI-filled fixtures and direct test jumps do not
+establish this route.
 
-## 2. P1: repair #517's Quality selection contract before merge
+## 2. P2: revalidate asynchronous Quality results before display
 
-[PR #517](https://github.com/ArchonMegalon/chummer6-ui/pull/517) remains unmerged at
-`f5fe32d66152ad0e09943a8b23f67edd62cc8196`. **Do not merge that head unchanged.**
-Rebase the corrected work onto current main, retaining the merged PDF, route,
-privacy, installer and AI-gate corrections.
+Affected method:
+`Chummer.Avalonia/MainWindow.CreationWizard.cs` /
+`CreationWizard_EditQualitiesAsync`.
 
-The proposed window handler calls both Preview and Confirm with
-`[option.OptionId]`. Core evaluates `SelectedOptionIds` as the complete proposed
-set and replaces the pending Creation Quality draft; it does not implicitly add
-to existing selections. Clicking B after A can therefore replace `[A]` with `[B]`.
-This finding concerns the pending Creation draft, not deletion of all saved or
-finalized Career qualities.
+The current method validates the captured overview, awaits
+`Task.Run(interaction.Load)`, then creates and opens the dialog without checking
+fresh `_adapter.State`. A user can switch from character A to B, or change account,
+while loading; A's data can then appear over the current window. The busy flag
+prevents duplicate Quality requests but is not a global navigation lock.
 
-Initialize an explicit proposed selection set from the current authoritative draft.
-Add changes that set; Remove must be explicit. Send the entire intended set to
-Core for both preview and confirmation. Provide a deliberate way to preview and
-confirm an empty selection when Core permits it. Item-click-only interaction is
-not a complete multi-selection editor.
+This is a source-level stale-dialog race, not demonstrated wrong-character
+mutation. Confirmation has further workspace/revision/owner guards; retain them.
 
-Show the authoritative before/after selection, retained/added/removed qualities,
-cost changes, resulting budgets and blockers. The clicked card's label and price
-alone do not explain replacement of another selection. Core owns legality,
-exclusions, pricing and final acceptance; the UI collects choices and presents
-Core's result.
+Immediately after loading and before constructing/showing the dialog:
 
-Minimum focused behavioral coverage:
+- Check that the captured workspace and owner context are still current.
+- Check that the displayed revision matches the loaded state.
+- Check cancellation and window lifetime.
+- Discard stale uncommitted display results instead of presenting them.
 
-| Action | Required result |
-| --- | --- |
-| Select A, then add independently legal B | A and B both remain selected |
-| Cancel B's review | A and the stored draft remain unchanged |
-| Explicitly remove A | Removal is shown before confirmation; only the intended set is accepted |
-| Confirm a permitted empty set | Empty intent is explicit, reviewed and retained |
-| Character/owner/revision changes during review | Stale review cannot mutate |
-| Duplicate click while preparing or confirming | One owned operation; no duplicate dispatch |
-| Save, exit and reopen in a new process | Exact accepted selection is retained |
+Apply the same rule after asynchronous review preparation, before publishing its
+result. Keep progress and busy-state cleanup correct when discarding a result;
+do not clear an uncertain operation merely to make the UI available. Reuse the
+existing interaction/context checks rather than adding an interaction framework.
 
-The draft's `_qualitiesMutationBusy` is not an effective guard while it is only
-written. Use the existing per-workspace interaction guard and disable conflicting
-controls while busy. Do not discard prior selections during reload or recovery.
+Regression coverage: pause loading, switch character, release loading, and assert
+that the old character's dialog is never shown. Repeat for owner transition,
+revision change and closed/cancelled window as applicable. Cover a stale prepared
+review too. Keep the existing confirmation protections and focused tests.
 
-## 3. P1: finish domain-specific editors and visible recovery
+## 3. Preserve the corrected Quality selection contract
 
-Inspect:
+Merged #517 initializes the editor from the entire authoritative selection,
+explicitly adds/removes the clicked choice, and previews/confirms the complete
+intended set. Review shows retained, added and removed qualities, the full result
+and Core-calculated budgets. Empty selection can be explicitly reviewed where
+Core permits it. Do not return to `[option.OptionId]` singleton writes.
 
-- `Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs`
-- `Chummer.Avalonia/MainWindow.CreationWizard.cs`
-- `Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs`
+The interaction binds workspace, revision and owner; copies proposed IDs; retains
+one stable idempotency key/transaction identity; rejects repeat confirmation;
+validates the receipt; and reconciles an uncertain write with read-only loading.
+Core owns legality, exclusions and pricing. The UI collects and displays choices.
 
-Current main special-cases Resources and routes the other option cards to the
-Foundation handler, which recognizes metatype/nationality but not the advertised
-Quality or Magic options. #517 distinguishes the domains but its Magic/Resonance
-branch still reports an unavailable structured editor. That is containment, not
-completion. Present unavailable editing before offering an enabled-looking card.
-Then implement the typed input surface required by the supported manual journey.
+Retain existing tests for A then B preserving both, cancellation, explicit removal,
+empty selection, stale character/revision/owner, duplicate confirmation, mutated
+input and lost response. The reopened-editor test uses controlled retained service
+state; it is not a new native process or a full persistence claim.
 
-A structured Magic editor does not require a second rules engine. Collect the
-applicable tradition, spell, power or other typed choices and pass them to the
-existing Core service. Use this sequence for each supported domain:
+## 4. Qualify uncertain results across restart and account transition
 
-`select/edit → prepare domain preview → show changes/costs/blockers → explicit confirmation → apply once → reload authoritative state`
+Current pending state in `_pendingQualitySelections`, the captured owner stamp,
+prepared review and dispatched flag is in memory. Describe the implemented path
+as **same-session read-only reconciliation** until stronger evidence exists.
 
-The Quality handler must not catch `IOException`/`InvalidOperationException` and
-silently return. Distinguish preview failure before mutation (visible recoverable
-error, draft unchanged) from uncertain confirmation (retain the stable operation
-identity and reconcile its outcome). Reuse existing owner-bound interactions and
-receipt recovery. Do not blindly resubmit, generate a new operation identity for
-an uncertain write, expose raw exceptions or build another recovery framework.
+A new process can load saved character data, but this does not itself establish
+recovery of the original uncertain operation. A pending session with an obsolete
+owner transition stamp is correctly rejected; retaining that dictionary entry
+does not establish that returning to the original account can recover it under a
+new stamp. These are recovery limitations, not evidence of corrupted data.
 
-Complete a manual SR5 Creation → Career → advancement → save/new-process reopen
-journey with AI disabled, ordinary Next/navigation and actual input controls.
-Include a real Quality selection and, for an applicable archetype, an actual
-Magic/Resonance choice. Verify budgets and blockers. Page visits, routed-event
-fallbacks or a walkthrough after AI fills drafts must be labelled accurately;
-they cannot stand in for manual editor acceptance.
+Use fresh authorization to inspect the original persisted operation through the
+existing Core-owned receipt/recovery contract. Do not weaken stamp equality,
+reuse stale authorization, silently discard pending state or blindly resubmit.
+Coordinate an actual missing shared contract; do not invent a second ledger.
 
-## 4. P1 delivery: bundle verified runtime content
+Required native acceptance:
 
-`DesktopCoreContentRootResolver.cs` still discovers content through an environment
-override, repository root or sibling Core checkout and invokes Git to check its
-pinned identity. Installer success with `CHUMMER_CORE_CONTENT_ROOT` does not prove
-self-contained delivery.
+```text
+Commit succeeds -> response is lost -> process terminates
+-> new process opens the original character with fresh authorization
+-> the saved outcome is identified without another write
+```
 
-Ship the required verified rules/content in the installed and portable bundles.
-Resolve it relative to the bundle and validate its expected identity. Keep checkout
-overrides explicitly developmental. Do not remove integrity checks or silently
-fall back to unrelated/default rules. Missing or tampered content needs an
-actionable recovery state.
+Separately transition accounts while a result is uncertain, then return under a
+fresh owner context and recover the original outcome. Verify no cross-account
+display, no extra mutation and exact accepted selection/budgets. Keep the original
+operation identity and distinguish saved result from unapplied proposal.
 
-On a fresh normal Windows profile with **no Git, SDK, source repositories or
-Chummer environment overrides**, install, launch from Start, manually create a
-supported runner, save, exit/reboot and reopen it. Move a portable directory to a
-different path and repeat. Separate the implementation, clean-machine native
-proof and signed public delivery claims. Shared Core/package changes still need
-controller coordination; assigned Windows packaging/adapters can proceed now.
+## 5. P1 delivery: package verified runtime rules/content
 
-## 5. PDF: finish layout, language coverage and native Save acceptance
+`Chummer.Avalonia/DesktopCoreContentRootResolver.cs` still discovers content through
+an environment override, repository root or sibling Core checkout, then invokes
+Git for the pinned identity. This remains a development path. An installed app
+launched with `CHUMMER_CORE_CONTENT_ROOT` does not prove self-contained delivery.
 
-Keep #515's parenthesized text operands, independent text objects and correct
-byte serialization of the bold-font dictionary. The retained controller record
-has seven compiled composer tests plus independent MuPDF rendering/extraction of
-one-page and nine-page samples. The latest auditor did not rerun those checks.
-These close the specific serialization defects, not the entire export feature.
+Ship the exact required verified content with installed and portable bundles.
+Resolve it relative to the bundle and validate the approved identity. Keep source
+checkout overrides explicitly developmental. Preserve integrity checks; missing
+or tampered content needs actionable recovery rather than unrelated/default rules.
 
-`DrawRuns()` still does not wrap to the available width. Add width-based wrapping,
-page bounds and sensible page breaks using actual long character values. Define
-and implement intended language/character coverage; the current Latin-1/WinAnsi
-path is insufficient for arbitrary Unicode names and prose. Unsupported user
-content must not be silently substituted. A bounded readable sheet can establish
-the first beta milestone; full book-quality formatting remains separate.
+On a fresh normal Windows profile with **no Git, .NET SDK, Core checkout or Chummer
+content override**: install, launch from Start, manually create a supported runner,
+save, exit/reboot and reopen it. Move the portable directory and repeat launch and
+reopen. Distinguish packaging implementation, clean-machine evidence and signed
+public delivery. Coordinate shared Core/package ownership; assigned Windows
+packaging/adapters can proceed now.
 
-Generate the compiled production output, inspect actual extracted values and
-independent renders, and save/open a real PDF through the native Windows Save
-route on the identified candidate. Cover labels, values, parentheses/backslashes,
-long fields, multiple pages and supported multilingual names. Header/EOF markers,
-HTML export, deterministic bytes or a renderer's zero exit alone do not establish
-readability.
+## 6. Finish the advertised manual editors
 
-## 6. Qualify the combined candidate using the existing publication process
+Magic/Resonance now shows an unavailable message before creating option buttons.
+The headless test verifies no enabled spell card. This closes misleading silent
+clicks but does not implement the structured editor.
 
-[Main run 41630899503](https://github.com/ArchonMegalon/chummer6-ui/actions/runs/41630899503)
-passes on the audited main. It executes “Validate current main split-preseal
-without consumer or release claims”; locked SDK setup and sealed package-consumer
-verification are skipped. Close the old red-publication finding, while keeping
-fresh application/package/native qualification open.
+Collect applicable tradition, spell, power and resonance choices as typed inputs;
+ask the existing Core service to preview and validate them. This needs a UI, not
+a second rules engine. Use the ordinary sequence:
 
-Follow README's existing recipe P → marker-only Q → lock-only seal S process.
-Publish P/Q through **rebase merge**, preserve the verifier's exact topology and
-lock checks, and complete the existing owner-package/seal/consumer qualification
-for the intended combined candidate. Do not force-push main, weaken checks,
-fabricate receipts, reuse an old marker for changed bytes or invent a new release
-framework. The controller owns protected integration. Green preseal alone is not
-a Windows build, install, native journey or release. Independent editor/content
-work should continue while review and package coordination proceed.
+`select/edit -> Core preview -> costs/changes/blockers -> explicit confirmation -> apply once -> authoritative reload`
 
-## 7. Execute the corrected installer journey on the identified candidate
+Every archetype advertised as supported needs a complete manual path. If the first
+candidate is explicitly Mundane-only, retain the magical/resonance work as open
+in the full mission. Do not unhide AI Finish to fill missing manual stages.
 
-Preserve the existing parent-exit/disposed-splash fixes and #512's stronger harness:
-autonomous relaunch, retained shortcuts and targets, exact executable/version and
-process-birth checks, positive checksum rejection, file-content comparison and the
-isolated real saved-runner store. They are not undone merely because main advanced.
-No new combined-candidate native result was established by this audit.
+Qualify manual Creation -> Career -> advancement -> save/new-process reopen with
+AI disabled, real Next/navigation and actual input controls. Include a real Quality
+selection, and an actual Magic/Resonance choice for each applicable supported
+acceptance case. Page visits and routed-click fallbacks must be labelled honestly.
 
-Run:
+## 7. Finish output and installer acceptance on the combined candidate
 
-`installed v1 saves a runner → app-triggered update → installer autonomously relaunches v2 → v2 reopens that exact runner → corrupt update is rejected → runner reopens unchanged`
+Keep #515's parenthesized PDF text operands, independent text objects and correct
+bold-font byte serialization. The serializer is repaired. The earlier seven
+compiled composer tests and independent MuPDF one-page/nine-page results retain
+their original scope; the latest auditor did not rerun them.
 
-Keep shortcuts in place. Fail autonomous-update acceptance if the harness launches
-the app. Prove the bad artifact was evaluated and rejected for checksum mismatch,
-no installer was invoked for it, and installed identity/content stayed unchanged.
-Bind the actual reopened workspace/profile/stored file and executable precisely.
-Keep the operator's ordinary store outside the test and reconcile interruptions
-before retrying. An unsigned local run is not signed public-channel delivery;
-this update test is also separate from clean-machine content acceptance.
+Add width-based wrapping, page bounds and sensible breaks for real long values.
+Implement intended language/character coverage; Latin-1/WinAnsi does not preserve
+arbitrary names/prose. Do not silently replace unsupported content. Verify actual
+extracted values and independent renders, then a real native Save PDF/open route.
+Headers, HTML, deterministic bytes or renderer exit code alone are insufficient.
 
-## Remaining scope and reporting
+Preserve installer parent-exit/disposed-splash fixes and the stronger harness:
+autonomous relaunch, retained shortcuts/targets, exact executable bytes/version
+and process birth, positively observed checksum rejection, file-content comparison
+and the isolated real saved-runner store. Run it on the actual combined candidate:
+
+`installed v1 saves runner -> app-triggered update -> autonomous v2 relaunch -> exact runner reopens -> corrupt update rejected -> runner still reopens unchanged`
+
+Fail autonomous-update acceptance if the harness launches the app. Prove the bad
+artifact was evaluated, no installer ran for it, and installed content stayed
+unchanged. Keep the operator's ordinary store outside the test. Reconcile
+interruptions before retrying. Do not rerun historical workflows just to refresh
+timestamps; use relevant tests for changed inputs and the selected delivery build.
+Unsigned local execution is separate from signed public-channel verification.
+
+## 8. Complete existing package qualification and report evidence accurately
+
+[Main run 41671733822](https://github.com/ArchonMegalon/chummer6-ui/actions/runs/41671733822)
+succeeded on the audited head. It ran current-main split-preseal validation without
+consumer/release claims. Locked SDK setup, sealed package-consumer verification
+and sealed receipt upload were skipped. This validates source publication, not a
+fresh Windows application build, native execution or release readiness. Retain
+#517's separately established Linux build and focused test evidence too.
+
+Follow the existing recipe P -> marker-only Q -> lock-only seal S process. Publish
+P/Q with **rebase merge**, preserve exact topology/lock checks, and complete the
+existing owner-package/seal/consumer qualification for the combined candidate.
+Do not force-push main, weaken checks, fabricate a seal, reuse a stale marker or
+add another release framework. Controller owns protected integration. Independent
+editor/content work should continue during review and package coordination.
+
+## Remaining mission and reporting
 
 After the manual beta works, finish retained Origin prose/manuscript export and
-reopen, genuine character-bound amend import/conflict resolution/frozen-environment
-export/clean-profile reopen, broader methods/archetypes, and the full assigned
-Chummer5a/app parity checklist. JSON character export is not manuscript export;
-legacy `.chum5` import alone is not amend-syntax compatibility. Missing/incompatible
-packages must produce actionable recovery. Basic retained Origin acceptance does
-not require a new paid generation.
+reopen; genuine character-bound amend import/conflict resolution, frozen-environment
+export and clean-profile reopen; broader methods/archetypes; and full assigned
+Chummer5a/app parity. Character JSON export is not manuscript export; `.chum5`
+import alone is not amend syntax compatibility. Missing/incompatible packages need
+actionable recovery. Basic retained Origin acceptance needs no new paid generation.
 
-Finish AI transaction/recovery and useful supported-archetype behavior behind the
-gate before exposing it. Use Core's atomic or deliberately resumable completion
-contract, stable identities, owner/revision binding and explicit uncertain results.
-Classify relevant failed tests on the exact candidate; unchanged failures are not
-passes. Verify ordinary-user permissions, real mouse/keyboard use, 125–200% scaling
-and long/localized text. Preserve #509's diagnostic allowlist and sentinel tests;
-never restore raw environment dumping or copy suspected secrets into reports.
+Complete AI transaction/recovery and useful supported-archetype behavior behind the
+gate before exposure. Use Core-owned atomic or deliberately resumable completion,
+stable identities, owner/revision binding and explicit uncertain results. Classify
+relevant failures on the exact candidate; unchanged failures are not passes. Check
+ordinary-user permissions, actual mouse/keyboard interaction, 125–200% scaling and
+long/localized text. Preserve the diagnostic allowlist and sentinel tests.
 
-Report exact source/artifact identities, behavior changed, focused tests actually
-run, native actions, remaining gaps and next steps. Keep source merged, preseal
-validated, package consumer qualified, native verified and published distinct.
+Report exact source/artifact identity, behavior changed, tests actually run, native
+actions, remaining gaps and next steps. Keep merged source, preseal validation,
+package-consumer qualification, native verification and publication distinct.
+
 This handoff changes no Teable assignment, provider, credentials or Friday-owned
-status and does not start Friday. Continue independent authorized work until the
-full assigned Windows product is complete; request precise coordination only for
-an actual shared-owner or permission boundary.
+status and does not start Friday. Continue authorized work until the full assigned
+Windows mission is complete; raise only actual shared-owner/permission boundaries.
+The user audit inspected source/diffs/tests/CI but did not compile or execute the
+client, Windows/PowerShell, PDF renderers or an installer. No runtime race, wrong-
+character write or corruption was demonstrated by that audit.
 
-Priority: fresh Attributes entry; safe full-set Quality editing; remaining manual
-domain editors/recovery; bundled content; PDF layout/languages/native Save; exact
-package/native Creation/Career/update acceptance; remaining Origin/amends/AI/parity.
+Priority: fresh Attributes entry; targeted asynchronous display guard; verified
+bundled content; restart/account-transition recovery; complete manual editors;
+exact-candidate package/native Creation/Career/PDF/update acceptance; remaining
+Origin/amend/AI/parity work.
