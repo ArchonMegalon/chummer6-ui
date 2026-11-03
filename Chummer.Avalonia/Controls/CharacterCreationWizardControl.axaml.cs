@@ -40,6 +40,12 @@ public sealed record CharacterCreationResourcesOptionClickRequested(
 public sealed record CharacterCreationResourcesConfirmRequested(
     string PreviewDigest);
 
+public sealed record CharacterCreationQualitiesOptionClickRequested(
+    CharacterCreationWizardDesktopOption Option, bool Remove);
+
+public sealed record CharacterCreationMagicResonanceOptionClickRequested(
+    CharacterCreationWizardDesktopOption Option);
+
 public partial class CharacterCreationWizardControl : UserControl
 {
     private static readonly string[] s_IdentityFieldIds =
@@ -67,6 +73,9 @@ public partial class CharacterCreationWizardControl : UserControl
     private CharacterCreationFoundationPreparedPreview? _foundationPreview;
     private CharacterCreationResourcesPreparedPreview? _resourcesPreview;
     private string? _resourcesMutationStatus;
+    private string? _qualitiesMutationStatus;
+    private bool _qualitiesMutationBusy;
+    private HashSet<string> _selectedQualityIds = new(StringComparer.Ordinal);
     private bool _resourcesMutationBusy;
     private string? _foundationStatus;
     private bool _foundationMutationBusy;
@@ -91,6 +100,9 @@ public partial class CharacterCreationWizardControl : UserControl
     public event EventHandler<CharacterCreationFoundationOptionClickRequested>? FoundationOptionClickRequested;
     public event EventHandler<CharacterCreationResourcesOptionClickRequested>? ResourcesOptionClickRequested;
     public event EventHandler<CharacterCreationResourcesConfirmRequested>? ResourcesConfirmRequested;
+    public event EventHandler<CharacterCreationQualitiesOptionClickRequested>? QualitiesOptionClickRequested;
+    public event EventHandler? QualitiesEditRequested;
+    public event EventHandler<CharacterCreationMagicResonanceOptionClickRequested>? MagicResonanceOptionClickRequested;
 
     /// <summary>Raised whenever the traveler adjusts a Priority rank selection.</summary>
     public sealed record CharacterCreationPrioritySelectionChanged(
@@ -863,6 +875,29 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
+    /// <summary>
+    /// Manual Qualities/Magic-Resonance status line (WINDOWS_SCOPE 2026-11-03
+    /// item P1): the manual option-card surfaces report through the same legal
+    /// option list as the other domains, so failures are visible instead of
+    /// silently swallowed.
+    /// </summary>
+    public void QualitiesStatus(string message)
+    {
+        _qualitiesMutationStatus = message;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetQualitiesSelection(IReadOnlyList<string> selectedOptionIds)
+    {
+        _selectedQualityIds = selectedOptionIds.ToHashSet(StringComparer.Ordinal);
+    }
+
+    public void QualitiesMutationBusy(bool busy)
+    {
+        _qualitiesMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
     private static string BuildResourcesResultStatus(string outcome, IReadOnlyList<string> blockers)
     {
         string suffix = blockers.Count == 0 ? string.Empty : $" (blocked: {string.Join(", ", blockers)})";
@@ -885,6 +920,23 @@ public partial class CharacterCreationWizardControl : UserControl
                 StringComparison.Ordinal))
         {
             ResourcesOptionClickRequested?.Invoke(this, new CharacterCreationResourcesOptionClickRequested(option));
+            return;
+        }
+        if (string.Equals(
+                _state?.ActiveStepId,
+                CharacterCreationWizardStepIds.Qualities,
+                StringComparison.Ordinal))
+        {
+            if (!_qualitiesMutationBusy)
+                QualitiesOptionClickRequested?.Invoke(this, new CharacterCreationQualitiesOptionClickRequested(option, _selectedQualityIds.Contains(option.OptionId)));
+            return;
+        }
+        if (string.Equals(
+                _state?.ActiveStepId,
+                CharacterCreationWizardStepIds.MagicResonance,
+                StringComparison.Ordinal))
+        {
+            MagicResonanceOptionClickRequested?.Invoke(this, new CharacterCreationMagicResonanceOptionClickRequested(option));
             return;
         }
         FoundationOptionClickRequested?.Invoke(this, new CharacterCreationFoundationOptionClickRequested(option));
@@ -1039,6 +1091,23 @@ public partial class CharacterCreationWizardControl : UserControl
             : "Contacts and field authority";
         if (!LegalOptionList.IsVisible)
             return;
+        bool qualities = _state?.ActiveStepId == CharacterCreationWizardStepIds.Qualities;
+        if (_state?.ActiveStepId == CharacterCreationWizardStepIds.MagicResonance)
+        {
+            LegalOptionList.Children.Add(Caption("Magic/Resonance editing is not available in this Windows build yet. These choices cannot be applied here."));
+            return;
+        }
+        if (qualities)
+        {
+            var edit = new Button { Content = "Edit selected qualities / confirm no qualities", IsEnabled = !_qualitiesMutationBusy };
+            AutomationProperties.SetAutomationId(edit, "creation-wizard-edit-qualities");
+            edit.Click += (_, _) => { if (!_qualitiesMutationBusy) QualitiesEditRequested?.Invoke(this, EventArgs.Empty); };
+            LegalOptionList.Children.Add(edit);
+            if (_qualitiesMutationBusy)
+                LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
+            if (!string.IsNullOrWhiteSpace(_qualitiesMutationStatus))
+                LegalOptionList.Children.Add(Caption(_qualitiesMutationStatus));
+        }
         if (options.Count == 0)
         {
             LegalOptionList.Children.Add(Caption(
@@ -1063,14 +1132,14 @@ public partial class CharacterCreationWizardControl : UserControl
             Button optionButton = new()
             {
                 Tag = option,
-                IsEnabled = option.IsEnabled,
+                IsEnabled = qualities ? !_qualitiesMutationBusy && (option.IsEnabled || _selectedQualityIds.Contains(option.OptionId)) : option.IsEnabled,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
                 Content = new StackPanel
                 {
                     Spacing = 3,
                     Children =
                     {
-                        new TextBlock { Text = option.Label, Classes = { "shell-section-title" } },
+                        new TextBlock { Text = qualities ? $"{(_selectedQualityIds.Contains(option.OptionId) ? "Remove" : "Add")}: {option.Label}" : option.Label, Classes = { "shell-section-title" } },
                     Caption($"{prerequisite} · {costs}"),
                     Caption($"Source: {source}")
                 }

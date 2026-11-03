@@ -24,6 +24,8 @@ public partial class MainWindow
     private (string ModuleId, string? versionId)? _creationFoundationSelectedNationality;
     private bool _creationWizardBuildGhostPreferenceEnabled;
     private bool _creationWizardAiFinishFeatureEnabled;
+    private bool _creationQualitiesBusy;
+    private readonly Dictionary<Chummer.Contracts.Workspaces.CharacterWorkspaceId, CharacterCreationQualitiesInteraction> _pendingQualitySelections = new();
 
     private void InitializeCreationWizard()
     {
@@ -52,6 +54,9 @@ public partial class MainWindow
         CharacterCreationWizardControl.FoundationConfirmRequested += CreationWizard_OnFoundationConfirmRequested;
         CharacterCreationWizardControl.ResourcesOptionClickRequested += CreationWizard_OnResourcesOptionClickRequested;
         CharacterCreationWizardControl.ResourcesConfirmRequested += CreationWizard_OnResourcesConfirmRequested;
+        CharacterCreationWizardControl.QualitiesOptionClickRequested += CreationWizard_OnQualitiesOptionClickRequested;
+        CharacterCreationWizardControl.QualitiesEditRequested += CreationWizard_OnQualitiesEditRequested;
+        CharacterCreationWizardControl.MagicResonanceOptionClickRequested += CreationWizard_OnMagicResonanceOptionClickRequested;
         CharacterCreationWizardControl.FinalizeRequested += CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested += CreationWizard_OnPriorityConfirmRequested;
         CharacterCreationWizardControl.FinishWithAiRequested += CreationWizard_OnFinishWithAiRequested;
@@ -69,6 +74,11 @@ public partial class MainWindow
         CharacterCreationWizardControl.ContactConfirmRequested -= CreationWizard_OnContactConfirmRequested;
         CharacterCreationWizardControl.FoundationOptionClickRequested -= CreationWizard_OnFoundationOptionClickRequested;
         CharacterCreationWizardControl.FoundationConfirmRequested -= CreationWizard_OnFoundationConfirmRequested;
+        CharacterCreationWizardControl.ResourcesOptionClickRequested -= CreationWizard_OnResourcesOptionClickRequested;
+        CharacterCreationWizardControl.ResourcesConfirmRequested -= CreationWizard_OnResourcesConfirmRequested;
+        CharacterCreationWizardControl.QualitiesOptionClickRequested -= CreationWizard_OnQualitiesOptionClickRequested;
+        CharacterCreationWizardControl.QualitiesEditRequested -= CreationWizard_OnQualitiesEditRequested;
+        CharacterCreationWizardControl.MagicResonanceOptionClickRequested -= CreationWizard_OnMagicResonanceOptionClickRequested;
         CharacterCreationWizardControl.FinalizeRequested -= CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested -= CreationWizard_OnPriorityConfirmRequested;
         CharacterCreationWizardControl.FinishWithAiRequested -= CreationWizard_OnFinishWithAiRequested;
@@ -119,6 +129,8 @@ public partial class MainWindow
             checkpoint,
             overview.CreationContacts);
         _boundCreationWizardSnapshot = snapshot;
+        CharacterCreationWizardControl.SetQualitiesSelection(overview.CreationQualities is { } qualities
+            ? CharacterCreationQualitiesInteraction.SelectedIds(qualities) : []);
         CharacterCreationWizardControl.SetState(state);
         CharacterCreationWizardControl.SetStartingCashState(overview.CreationFinalization?.StartingCashSource);
         CharacterCreationWizardControl.SetFinalizeAvailability(
@@ -282,6 +294,67 @@ public partial class MainWindow
             CharacterCreationWizardControl.SetFoundationMutationBusy(false);
         }
     }
+
+    private async void CreationWizard_OnQualitiesOptionClickRequested(
+        object? sender, CharacterCreationQualitiesOptionClickRequested request)
+        => await CreationWizard_EditQualitiesAsync(request.Option.OptionId, request.Remove);
+
+    private async void CreationWizard_OnQualitiesEditRequested(object? sender, EventArgs args)
+        => await CreationWizard_EditQualitiesAsync(null, false);
+
+    private async Task CreationWizard_EditQualitiesAsync(string? optionId, bool remove)
+    {
+        if (_creationQualitiesBusy || _creationWizardLifetime.IsCancellationRequested)
+            return;
+        _creationQualitiesBusy = true;
+        CharacterCreationWizardControl.QualitiesMutationBusy(true);
+        CharacterCreationWizardControl.QualitiesStatus("Loading your selected qualities…");
+        try
+        {
+            CharacterOverviewState overview = _adapter.State;
+            if (overview.WorkspaceId is not { } workspaceId)
+                return;
+            bool pending = _pendingQualitySelections.TryGetValue(workspaceId, out var interaction);
+            interaction ??= new CharacterCreationQualitiesInteraction(
+                ResolveService<ICharacterCreationQualitiesService>(),
+                App.Services?.GetService(typeof(IOwnerBoundCharacterCreationQualitiesService)) as IOwnerBoundCharacterCreationQualitiesService,
+                overview);
+            interaction.ValidateContext(overview);
+            CharacterCreationQualitiesState qualities = pending
+                ? interaction.PendingReview!.Before
+                : await Task.Run(interaction.Load);
+            var dialog = new CreationQualitiesReviewWindow(interaction, qualities, () => _adapter.State,
+                pending ? null : optionId, remove);
+            await dialog.ShowDialog<bool>(this);
+            if (interaction.OutcomeUncertain)
+                _pendingQualitySelections[workspaceId] = interaction;
+            else
+                _pendingQualitySelections.Remove(workspaceId);
+            CharacterCreationWizardControl.QualitiesStatus(interaction.Status);
+            if (interaction.Confirmed && _adapter.State.WorkspaceId == workspaceId
+                && _adapter.State.DisplayOwnerContext == overview.DisplayOwnerContext)
+            {
+                await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token);
+                ApplyCreationWizardState(_adapter.State);
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested) { }
+        catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            CharacterCreationWizardControl.QualitiesStatus(
+                "Qualities could not be loaded. Reload the character and check its prerequisites. Any pending confirmation must be checked before another change.");
+        }
+        finally
+        {
+            _creationQualitiesBusy = false;
+            CharacterCreationWizardControl.QualitiesMutationBusy(false);
+        }
+    }
+
+    private void CreationWizard_OnMagicResonanceOptionClickRequested(
+        object? sender, CharacterCreationMagicResonanceOptionClickRequested request)
+        => CharacterCreationWizardControl.QualitiesStatus(
+            "Magic/Resonance editing is not available in this Windows build yet.");
 
     private async void CreationWizard_OnFoundationConfirmRequested(
         object? sender,
