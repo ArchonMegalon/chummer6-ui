@@ -2190,6 +2190,16 @@ internal static class Program
     private static void CreateShortcutCore(string shortcutPath, string targetPath, string description)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath)!);
+        // Overwriting an existing .lnk in place can hang WScript.Shell's Save()
+        // past CreateShortcut's 15s STA join (observed when an update re-install
+        // recreated the shortcuts created by the previous install), aborting an
+        // otherwise complete update. Delete the stale shortcut first so every
+        // write is a fresh create. Shortcut retention through updates is
+        // asserted by the WIN-004 journey, not by pre-cleaning there.
+        if (File.Exists(shortcutPath))
+        {
+            File.Delete(shortcutPath);
+        }
         Type shellType = Type.GetTypeFromProgID("WScript.Shell")
             ?? throw new InvalidOperationException("WScript.Shell is unavailable on this Windows installation.");
         object shell = Activator.CreateInstance(shellType)

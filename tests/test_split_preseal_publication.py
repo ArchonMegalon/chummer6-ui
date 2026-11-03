@@ -26,6 +26,16 @@ def load_module() -> ModuleType:
 preseal = load_module()
 
 
+def test_installer_acceptance_helpers_have_exact_recipe_membership() -> None:
+    assert {
+        "scripts/win004-acceptance.ps1",
+        "tests/test_win004_start_failure_diag_privacy.py",
+    } <= preseal.ALLOWED_RECIPE_PATHS
+    assert "scripts/win004-unreviewed-helper.ps1" not in preseal.ALLOWED_RECIPE_PATHS
+    assert preseal.MARKER_PATH not in preseal.ALLOWED_RECIPE_PATHS
+    assert not set(preseal.CANONICAL_LOCK_PATHS) & preseal.ALLOWED_RECIPE_PATHS
+
+
 def test_history_validation_reuses_success_only_inside_one_call_tree(tmp_path) -> None:
     calls = []
 

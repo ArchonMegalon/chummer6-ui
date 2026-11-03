@@ -1,4 +1,4 @@
-"""Focused privacy tests for WIN-004 startup-failure diagnostics.
+"""Focused privacy and acceptance tests for the WIN-004 native journey.
 
 Re-audit handoff item 1 (2026-11-02, immediate P1): a failing native start
 must never persist the child process environment. The old handler enumerated
@@ -13,6 +13,7 @@ full-enumeration primitive cannot return.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -178,3 +179,124 @@ class TestJourneyFailurePathContract:
             assert f"'{key}'" in text
         # No wildcard allow entries.
         assert "*" not in text.split("$valueKeys")[1].split("$presenceKeys")[0]
+
+
+# Installer acceptance predicates share this existing CI suite so the signed
+# workflow/fixture binding remains unchanged. These are not a native journey.
+ROOT = REPO_ROOT
+HELPER = ROOT / "scripts/win004-acceptance.ps1"
+PWSH = shutil.which("pwsh") or shutil.which("powershell")
+
+def quote(value: object) -> str:
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def run_ps(body: str):
+    if not PWSH:
+        pytest.skip("requires PowerShell")
+    result = subprocess.run(
+        [PWSH, "-NoProfile", "-NonInteractive", "-Command",
+         "$ErrorActionPreference = 'Stop'\n. " + quote(HELPER) + "\n" + body],
+        text=True, capture_output=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    return json.loads(result.stdout.lstrip("\ufeff"))
+
+
+def test_relaunch_before_late_registry_observation_is_accepted_but_old_process_is_not():
+    # Apply at 0, old head starts at 1, new head at 2, registry observed at 10.
+    # The previous observation-minus-five predicate rejected this valid relaunch.
+    result = run_ps("""
+    $apply = [datetime]'2026-11-03T10:00:00Z'
+    $old = $apply.AddSeconds(1)
+    $new = $apply.AddSeconds(2)
+    $observed = $apply.AddSeconds(10)
+    @{
+        accepted = (Test-UpdatedProcessBirth 101 $new 100 $old $apply)
+        sameProcess = (Test-UpdatedProcessBirth 100 $new 100 $old $apply)
+        olderProcess = (Test-UpdatedProcessBirth 99 $apply.AddSeconds(-1) 100 $old $apply)
+        sameBirth = (Test-UpdatedProcessBirth 101 $old 100 $old $apply)
+        oldPredicate = ($new -ge $observed.AddSeconds(-5))
+    } | ConvertTo-Json
+    """)
+    assert result == dict(accepted=True, sameProcess=False, olderProcess=False,
+                          sameBirth=False, oldPredicate=False)
+
+
+def test_conflicting_environment_cannot_redirect_snapshot_or_hide_changed_runner(tmp_path):
+    result = run_ps(f"""
+    $root = {quote(tmp_path)}
+    $unrelated = Join-Path $root 'unrelated'
+    $chosen = Join-Path $root 'chosen'
+    New-Item -ItemType Directory -Path $unrelated, (Join-Path $chosen 'Chummer6/state/workspaces') | Out-Null
+    Set-Content -LiteralPath (Join-Path $unrelated 'personal.json') -Value 'unchanged'
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.EnvironmentVariables['CHUMMER_STATE_PATH'] = $unrelated
+    $psi.EnvironmentVariables['CHUMMER_DESKTOP_STATE_ROOT'] = $unrelated
+    $psi.EnvironmentVariables['CHUMMER_CLIENT_MODE'] = 'http'
+    $psi.EnvironmentVariables['CHUMMER_API_KEY'] = 'harmless-sentinel'
+    Set-JourneyAppEnvironment -StartInfo $psi -StateRoot $chosen
+    $actual = Join-Path $psi.EnvironmentVariables['CHUMMER_DESKTOP_STATE_ROOT'] 'Chummer6/state'
+    $runner = Join-Path $actual 'workspaces/runner.json'
+    Set-Content -LiteralPath $runner -Value 'saved-original'
+    $before = Get-CharacterDataSnapshot $actual
+    $unrelatedBefore = Get-CharacterDataSnapshot $unrelated
+    $same = Test-CharacterDataPreservation $before (Get-CharacterDataSnapshot $actual) $actual
+    Set-Content -LiteralPath $runner -Value 'saved-modified'
+    $changed = Test-CharacterDataPreservation $before (Get-CharacterDataSnapshot $actual) $actual
+    Remove-Item -LiteralPath $runner
+    $lost = Test-CharacterDataPreservation $before (Get-CharacterDataSnapshot $actual) $actual
+    $other = Test-CharacterDataPreservation $unrelatedBefore (Get-CharacterDataSnapshot $unrelated) $unrelated
+    @{{ same=$same.status; changed=$changed.status; lost=$lost.status; unrelated=$other.status;
+        correctRoot=($actual -eq (Join-Path $chosen 'Chummer6/state'));
+        storeOverride=$psi.EnvironmentVariables.ContainsKey('CHUMMER_STATE_PATH');
+        remoteClient=$psi.EnvironmentVariables.ContainsKey('CHUMMER_CLIENT_MODE');
+        apiKey=$psi.EnvironmentVariables.ContainsKey('CHUMMER_API_KEY') }} | ConvertTo-Json
+    """)
+    assert result == dict(same="pass", changed="fail", lost="fail", unrelated="pass",
+                          correctRoot=True, storeOverride=False, remoteClient=False, apiKey=False)
+
+
+@pytest.mark.parametrize("mutation", ["", "$receipt.processId=100", "$receipt.workspaceId='b'*32",
+    "$receipt.profileSha256='b'*64", "$receipt.name='Different runner'",
+    "$receipt.stateRoot=Join-Path $root 'wrong'", "$receipt.saved=$false",
+    "$receipt.dirty=$true", "$fileHash='changed'", "$receipt.succeeded=$false"])
+def test_reopen_requires_saved_identity_profile_bytes_and_actual_process(tmp_path, mutation):
+    result = run_ps(f"""
+    $root = {quote(tmp_path)}
+    $saved = @{{processId=100; workspaceId=('a'*32); profileSha256=('a'*64); name='Fixture'}}
+    $receipt = @{{succeeded=$true; saved=$true; dirty=$false; phase='reopen';
+        processId=101; workspaceId=$saved.workspaceId; profileSha256=$saved.profileSha256;
+        name=$saved.name; stateRoot=$root}}
+    $fileHash = 'original'
+    {mutation}
+    $accepted = $true
+    try {{ Assert-JourneyPersistenceReceipt $receipt reopen 101 $root $saved $fileHash original }}
+    catch {{ $accepted = $false }}
+    @{{accepted=$accepted}} | ConvertTo-Json
+    """)
+    assert result["accepted"] is (not mutation)
+
+
+def test_journey_parses_and_every_app_launch_is_scoped():
+    result = run_ps(f"""
+    $tokens=$null; $errors=$null
+    $null=[System.Management.Automation.Language.Parser]::ParseFile({quote(JOURNEY)}, [ref]$tokens, [ref]$errors)
+    @{{errors=@($errors | ForEach-Object {{ $_.Message }})}} | ConvertTo-Json -Depth 3
+    """)
+    assert result["errors"] == []
+    text = JOURNEY.read_text()
+    for variable in ("psi", "psiR", "psi2", "probeInfo"):
+        launches = re.findall(rf"\${variable}\.FileName = (\$InstalledExe|\$infoUpd.ExePath|\$Exe)\n(.*?)\[System.Diagnostics.Process\]::Start\(\${variable}\)", text, re.S)
+        if variable == "psi":
+            launches = [row for row in launches if row[0] != "$Exe"]  # generic build/installer helper
+        assert launches
+        assert all(f"Set-JourneyAppEnvironment -StartInfo ${variable} -StateRoot $JourneyStateRoot" in body for _, body in launches)
+    assert "GetFolderPath('LocalApplicationData')" not in text
+    assert "$updatedAtUtc.AddSeconds(-5)" not in text
+    assert "$newProcExeSha -ine $ExpectedV2ExeSha" in text  # wrong payload still rejected
+    assert "if (-not $p.HasExited)" in text
+    assert "-Phase save -Label save" in text
+    assert "-Phase reopen -Label reopen-after-update" in text
+    assert "-Phase reopen -Label reopen-after-recovery" in text
+    assert text.index("$PreUpdateVersion =") < text.index("$ApplyStartedUtc =")
