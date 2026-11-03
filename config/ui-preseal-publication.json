@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "37938f3accb75e04aeb8028a67b24452a5220538",
-  "baseTree": "05f5ffed3e7041634be693c3348781fce8d9c90a",
+  "baseCommit": "abf3e46381bd7caaca5e722f396e813c4eb6886b",
+  "baseTree": "0ff9736d400d96476927c2ace758ce10ce96c64c",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,13 +44,48 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "8490dfe5cb927c8d6f3bb0ea21a8082cf482567c",
-      "path": "docs/agents/WINDOWS_SCOPE.md",
-      "sha256": "2d405f95414c757c8e37dd220e05fe38ea56b588f65d8616c0f7f6319402c0f4",
-      "sizeBytes": 16961,
+      "blob": "314a0ffda19f95381da74cb42a6dbece3be98963",
+      "path": "Chummer.Presentation/Printing/WorkspacePrintPdfComposer.cs",
+      "sha256": "7897620c664bbfdbbbaba1d3aa9d645392103e0697038d676c2201aec39dfb4c",
+      "sizeBytes": 20703,
+      "status": "M"
+    },
+    {
+      "blob": "ef2fd48ed2cba7f119dfb88dbbe289c8792dc06d",
+      "path": "Chummer.Tests/Presentation/GearAttackSwapParityTests.cs",
+      "sha256": "aa0d59e4beb4d308d9fac88fa8f0944224a5afd699fd70cc0b7c0faa4ea0255f",
+      "sizeBytes": 4145,
+      "status": "M"
+    },
+    {
+      "blob": "12bf2cb8bc218dd383c460f395f4417ca15cd719",
+      "path": "Chummer.Tests/Presentation/GearSleazeSwapParityTests.cs",
+      "sha256": "6b86a8fbc31cb4406a80f0aa12c9b72de3ff045b687ae205226e8d009fd27115",
+      "sizeBytes": 1924,
+      "status": "M"
+    },
+    {
+      "blob": "b2e51ea63b3fbdf019e9e00e096e2226e087c8dd",
+      "path": "Chummer.Tests/Presentation/PrototypeTranshumanParityTests.cs",
+      "sha256": "dafbd3ff99eafbe2690dc576c1b67e3133b04700c54612c78d41d3ae62c35c92",
+      "sizeBytes": 5698,
+      "status": "M"
+    },
+    {
+      "blob": "2ab2c52b38e485bc3afd62211266e9deadec0b12",
+      "path": "Chummer.Tests/Presentation/WorkspacePrintPdfComposerTests.cs",
+      "sha256": "33abb5bc327e6d48afbe395c9ae5a15577450507aaf2e2792ead562a2f6c79c0",
+      "sizeBytes": 21965,
+      "status": "M"
+    },
+    {
+      "blob": "d96b863b72314dea192ff94751549265c1761d29",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "8ba21634cc00a0fe32eab98e5beae129c1adf29ab112f442f3273df44fd9675b",
+      "sizeBytes": 60446,
       "status": "M"
     }
   ],
-  "recipeTree": "8cd26948ea5131057cb7da0af44a9610685261fb",
+  "recipeTree": "9fa6ec4e471c9f8c14a7c2fe4294f4777b373269",
   "releaseClaim": false
 }
