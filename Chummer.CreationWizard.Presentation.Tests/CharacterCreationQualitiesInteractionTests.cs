@@ -157,6 +157,113 @@ public sealed class CharacterCreationQualitiesInteractionTests
         Assert.IsTrue(edit.OutcomeUncertain);
     }
 
+
+    [TestMethod]
+    public void Display_revalidation_accepts_the_current_bound_context()
+    {
+        var store = SeedA();
+        var edit = Editor(store);
+        edit.ValidateContext(Overview(store.State));
+        CharacterCreationQualitiesState loaded = edit.Load();
+        edit.ValidateContext(Overview(store.State));
+        edit.RequireDisplayContext(Overview(store.State));
+        Assert.AreSame(store.State, loaded);
+    }
+
+    [TestMethod]
+    public void Revision_bump_during_load_is_caught_by_display_revalidation_alone()
+    {
+        // Scope item 2: workspace/owner validation alone survives a revision bump in the await
+        // gap; the display gate must catch it so stale state is discarded, never presented.
+        var store = SeedA();
+        var edit = Editor(store);
+        edit.ValidateContext(Overview(store.State));
+        CharacterCreationQualitiesState loaded = edit.Load();
+        CharacterCreationQualitiesState bumped = store.State with { Binding = store.State.Binding with { ContentRevision = store.State.Binding.ContentRevision + 1 } };
+        store.State = bumped;
+        edit.ValidateContext(Overview(bumped));
+        Assert.Throws<InvalidOperationException>(() => edit.RequireDisplayContext(Overview(bumped)));
+        edit.RequireDisplayContext(Overview(loaded));
+    }
+
+    [TestMethod]
+    public void Character_switch_during_load_fails_revalidation_before_display()
+    {
+        var store = SeedA();
+        var edit = Editor(store);
+        edit.ValidateContext(Overview(store.State));
+        edit.Load();
+        CharacterOverviewState elsewhere = Overview(store.State) with { WorkspaceId = new("different") };
+        Assert.Throws<InvalidOperationException>(() => edit.ValidateContext(elsewhere));
+        Assert.Throws<InvalidOperationException>(() => edit.RequireDisplayContext(elsewhere));
+    }
+
+    [TestMethod]
+    public void Revision_change_after_preparing_a_review_rejects_its_display()
+    {
+        var store = SeedA();
+        var edit = Editor(store);
+        edit.Load();
+        var prepared = edit.Prepare(["quality-positive", "quality-second"]);
+        Assert.IsTrue(prepared.Preview.CanConfirm);
+
+        var current = store.State with
+        {
+            Binding = store.State.Binding with
+            {
+                ContentRevision = store.State.Binding.ContentRevision + 1
+            }
+        };
+        store.State = current;
+
+        edit.ValidateContext(Overview(current));
+        Assert.Throws<InvalidOperationException>(
+            () => edit.RequireDisplayContext(Overview(current)));
+        CollectionAssert.AreEquivalent(
+            new[] { "quality-positive" },
+            CharacterCreationQualitiesInteraction.SelectedIds(store.State).ToArray());
+    }
+
+    [TestMethod]
+    public void Uncertain_save_can_show_its_frozen_review_after_reload_without_replaying()
+    {
+        var store = new QualityService(CreateState()) { LoseResponse = true };
+        var edit = Editor(store);
+        var review = edit.Prepare(["quality-positive"]);
+        Assert.IsFalse(edit.Confirm(review, Overview(store.State)));
+        var reloaded = Overview(store.State);
+
+        Assert.Throws<InvalidOperationException>(() => edit.RequireDisplayContext(reloaded));
+        edit.RequireReconciliationDisplayContext(reloaded);
+        Assert.Throws<InvalidOperationException>(() => edit.Prepare(["quality-second"]));
+        Assert.IsTrue(edit.Reconcile(reloaded));
+        Assert.AreEqual(1, store.ConfirmCalls);
+        Assert.IsFalse(edit.OutcomeUncertain);
+    }
+
+    [TestMethod]
+    public void Reconciliation_display_requires_a_pending_operation_and_its_original_context()
+    {
+        var store = new QualityService(CreateState()) { LoseResponse = true };
+        var edit = Editor(store);
+        Assert.Throws<InvalidOperationException>(
+            () => edit.RequireReconciliationDisplayContext(Overview(store.State)));
+        var review = edit.Prepare(["quality-positive"]);
+        Assert.IsFalse(edit.Confirm(review, Overview(store.State)));
+        var current = Overview(store.State);
+        var otherCharacter = current with { WorkspaceId = new("different") };
+        var otherOwner = current with
+        {
+            DisplayOwnerContext = new(OwnerScope.LocalSingleUser, "different-owner-authority", 0)
+        };
+        Assert.Throws<InvalidOperationException>(
+            () => edit.RequireReconciliationDisplayContext(otherCharacter));
+        Assert.Throws<InvalidOperationException>(
+            () => edit.RequireReconciliationDisplayContext(otherOwner));
+        Assert.AreEqual(1, store.ConfirmCalls);
+        Assert.IsTrue(edit.OutcomeUncertain);
+    }
+
     private static CharacterCreationQualitiesInteraction Editor(QualityService store)
         => new(store, null, Overview(store.State));
     private static QualityService SeedA()

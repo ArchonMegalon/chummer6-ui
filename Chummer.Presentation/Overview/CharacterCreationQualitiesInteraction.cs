@@ -50,6 +50,19 @@ public sealed class CharacterCreationQualitiesInteraction
 
     public void ValidateContext(CharacterOverviewState overview) => RequireOwnerAndWorkspace(overview);
 
+    /// <summary>Post-await revalidation: workspace, owner and displayed revision must all
+    /// still match the session binding before a loaded result may be displayed.</summary>
+    public void RequireDisplayContext(CharacterOverviewState overview) => RequireDisplay(overview);
+
+    public void RequireReconciliationDisplayContext(CharacterOverviewState overview)
+    {
+        RequireOwnerAndWorkspace(overview);
+        if (!OutcomeUncertain || PendingReview is null)
+            throw new InvalidOperationException("There is no pending confirmation to check.");
+        // This view shows the frozen proposal, not current editable state. A
+        // committed write may have advanced the revision before its response was lost.
+    }
+
     public CharacterCreationQualitiesState Load()
     {
         CharacterCreationQualitiesState state = Read();

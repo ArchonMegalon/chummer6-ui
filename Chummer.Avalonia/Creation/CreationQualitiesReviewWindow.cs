@@ -95,7 +95,11 @@ public sealed class CreationQualitiesReviewWindow : Window
         string[] ids = _selected.ToArray();
         try
         {
-            _prepared = await Task.Run(() => _session.Prepare(ids));
+            CharacterCreationQualitiesSelectionReview prepared = await Task.Run(() => _session.Prepare(ids));
+            // Same rule as the load path: a review prepared across a character/account or
+            // revision transition is discarded, never presented (scope item 2, 3 Nov handoff).
+            _session.RequireDisplayContext(_current());
+            _prepared = prepared;
             _reviewText.Text = Describe(_prepared);
             _status.Text = _prepared.Preview.CanConfirm ? "Review the additions and removals, then confirm." : "These choices are blocked. Adjust the selection before confirming.";
         }
