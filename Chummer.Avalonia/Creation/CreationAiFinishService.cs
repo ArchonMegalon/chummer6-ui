@@ -306,7 +306,7 @@ public sealed class CreationAiFinishService
                 return string.Join(
                     ", ",
                     skills.Allocations.Take(6).Select(row => row.SourceSkillId + " " + (row.Rating?.ToString(CultureInfo.InvariantCulture) ?? "native")))
-                    + (skills.Allocations.Count > 6 ? " â€¦" : string.Empty);
+                    + (skills.Allocations.Count > 6 ? " …" : string.Empty);
             default:
                 return category;
         }
@@ -405,7 +405,7 @@ public sealed class CreationAiFinishService
 
         // The plan binds the resources slice in its review balances; pick the
         // enabled option whose karma investment matches the reviewed total. No
-        // match means the plan cannot be translated unambiguously â€” report, don't guess.
+        // match means the plan cannot be translated unambiguously — report, don't guess.
         var target = proposal.Plan.Selections.TotalKarmaInvestment;
         var option = state.Value.Options.FirstOrDefault(row => row.IsEnabled && row.KarmaInvestment == target);
         if (option is null)

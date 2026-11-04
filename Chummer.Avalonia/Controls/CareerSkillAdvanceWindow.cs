@@ -8,6 +8,12 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
+using TextAlignment = global::Avalonia.Media.TextAlignment;
+using TextWrapping = global::Avalonia.Media.TextWrapping;
+using ScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility;
+using SelectionMode = global::Avalonia.Controls.SelectionMode;
+using VAlign = global::Avalonia.Layout.VerticalAlignment;
+using HAlign = global::Avalonia.Layout.HorizontalAlignment;
 using Avalonia.Media;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
@@ -58,6 +64,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
 
     private readonly StackPanel _navPane;
     private readonly ContentControl _contentHost;
+    private ListBox? _skillList;
     private readonly TextBlock _statusLine;
     private readonly Button _applyButton;
     private CategoryId _selectedCategory = CategoryId.ActiveSkills;
@@ -105,9 +112,11 @@ internal sealed class CareerSkillAdvanceWindow : Window
         _applySpecialization = applySpecialization;
 
         Title = "Advance Skills";
-        Width = 780;
-        Height = 540;
-        CanResize = false;
+        Width = 900;
+        Height = 620;
+        MinWidth = 640;
+        MinHeight = 440;
+        CanResize = true;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         var root = new Grid
@@ -146,7 +155,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
         var footerPanel = new DockPanel();
         _statusLine = new TextBlock
         {
-            VerticalAlignment = VerticalAlignment.Center,
+            VerticalAlignment = VAlign.Center,
             TextWrapping = TextWrapping.Wrap,
         };
         DockPanel.SetDock(_statusLine, Dock.Left);
@@ -154,7 +163,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
         var footerButtons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
+            HorizontalAlignment = HAlign.Right,
             Spacing = 8,
         };
         var closeButton = new Button { Content = "Close", Name = "career-skill-advance-close", MinWidth = 88 };
@@ -188,7 +197,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
             _specializationState = await _prepareSpecialization(_lifetime.Token);
             if (InvalidateIfContextChanged() || !Matches(_specializationState?.WorkspaceId, _specializationState?.ContentRevision)) return;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             _statusLine.Text = "Skill advancement could not be loaded. Close this window and reload the character.";
             return;
@@ -232,8 +241,8 @@ internal sealed class CareerSkillAdvanceWindow : Window
         var item = new Button
         {
             Content = label,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
+            HorizontalAlignment = HAlign.Stretch,
+            HorizontalContentAlignment = HAlign.Left,
             Padding = new Thickness(8, 6, 8, 6),
             Margin = new Thickness(0, 0, 0, 2),
             IsEnabled = enabled,
@@ -252,7 +261,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
         _selectedRow = null;
         _applyButton.IsEnabled = false;
 
-        StackPanel list = BuildQuoteList(id);
+        Panel list = BuildQuoteList(id);
         _contentHost.Content = list;
         _statusLine.Text = DescribeCategory(id);
     }
@@ -266,7 +275,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
         _ => string.Empty,
     };
 
-    private StackPanel BuildQuoteList(CategoryId id)
+    private Panel BuildQuoteList(CategoryId id)
     {
         var panel = new StackPanel { Spacing = 4 };
 
@@ -287,15 +296,41 @@ internal sealed class CareerSkillAdvanceWindow : Window
                 FontStyle = FontStyle.Italic,
                 Opacity = 0.75,
             });
+            _skillList = null;
             return panel;
         }
 
+        // The list must take the REMAINING window height (never the StackPanel's
+        // unbounded measure): host it in a DockPanel so the ListBox is measured
+        // against the bounded viewport and scrolls instead of growing forever.
+        var list = new ListBox
+        {
+            SelectionMode = SelectionMode.Single,
+            Name = "career-skill-advance-list",
+        };
+        ScrollViewer.SetVerticalScrollBarVisibility(list, ScrollBarVisibility.Auto);
+        list.SelectionChanged += OnSkillListSelectionChanged;
         foreach (Row row in rows)
         {
-            panel.Children.Add(BuildRowControl(row));
+            list.Items.Add(new ListBoxItem
+            {
+                Content = BuildRowControl(row),
+                Tag = row,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 0, 4),
+                Focusable = true,
+            });
         }
 
-        return panel;
+        _skillList = list;
+        var listHost = new DockPanel { LastChildFill = true };
+        foreach (var child in panel.Children)
+        {
+            DockPanel.SetDock(child, Dock.Top);
+        }
+        listHost.Children.Add(panel);
+        listHost.Children.Add(list);
+        return listHost;
     }
 
     private StackPanel BuildRowControl(Row row)
@@ -335,25 +370,37 @@ internal sealed class CareerSkillAdvanceWindow : Window
             Tag = row,
         };
 
-        border.PointerPressed += (_, _) => SelectRow(row, border);
         return new StackPanel { Children = { border } };
     }
 
+    private void OnSkillListSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_skillList?.SelectedItem is ListBoxItem item
+            && item.Content is StackPanel wrapper
+            && wrapper.Children[0] is Border border
+            && border.Tag is Row row)
+        {
+            SelectRow(row, border);
+        }
+    }
+
     /// <summary>
-    /// Programmatic selection entry point (test + keyboard path). Falls back to
+    /// Programmatic selection entry point (test + accessibility path). Falls back to
     /// clearing the highlight when the row is not part of the rendered list.
     /// </summary>
     public bool SelectRowByKey(string identityKey)
     {
-        if (_contentHost.Content is not StackPanel list)
+        if (_contentHost.Content is not Panel list || _skillList is null)
         {
             return false;
         }
 
-        foreach (var child in list.Children)
+        foreach (var o in _skillList.Items)
         {
-            if (child is StackPanel wrapper && wrapper.Children[0] is Border b && b.Tag is Row r && r.IdentityKey == identityKey)
+            if (o is ListBoxItem item && item.Tag is Row r && r.IdentityKey == identityKey
+                && item.Content is StackPanel wrapper && wrapper.Children[0] is Border b)
             {
+                _skillList.SelectedItem = item;
                 SelectRow(r, b);
                 return true;
             }
@@ -367,11 +414,14 @@ internal sealed class CareerSkillAdvanceWindow : Window
         if (_busy || _dispatchStarted || InvalidateIfContextChanged()) return;
         _reviewedRow = null;
         _applyButton.Content = "Review advancement";
-        foreach (var child in ((StackPanel)_contentHost.Content!).Children)
+        if (_skillList is not null)
         {
-            if (child is StackPanel wrapper && wrapper.Children[0] is Border b)
+            foreach (var o in _skillList.Items)
             {
-                b.Background = Brushes.Transparent;
+                if (o is ListBoxItem it && it.Content is StackPanel w && w.Children[0] is Border b)
+                {
+                    b.Background = Brushes.Transparent;
+                }
             }
         }
 
@@ -661,7 +711,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
     {
         var request = new CareerSkillSpecializationRequest(
             _workspaceId,
-            _specializationState.ContentRevision,
+            _specializationState!.ContentRevision,
             quote,
             quote.CharacterRevision,
             quote.SourceRevision,

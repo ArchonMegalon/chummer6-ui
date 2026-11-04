@@ -1171,8 +1171,17 @@ public partial class CharacterCreationWizardControl : UserControl
                 LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
             if (!string.IsNullOrWhiteSpace(_attributesMutationStatus))
                 LegalOptionList.Children.Add(Caption(_attributesMutationStatus));
-            if (!attributesReady)
-                LegalOptionList.Children.Add(Caption("Attribute allocation opens once attributes are authoritative for this workspace."));
+            if (attributesReady)
+            {
+                if (string.IsNullOrWhiteSpace(_attributesMutationStatus))
+                    LegalOptionList.Children.Add(Caption(
+                        "Attributes are ready to allocate. Open the editor to spend your available points."));
+            }
+            else
+            {
+                LegalOptionList.Children.Add(Caption(
+                    "Attribute allocation opens once attributes are authoritative for this workspace."));
+            }
         }
         if (_state?.ActiveStepId == CharacterCreationWizardStepIds.Skills)
         {
@@ -1188,13 +1197,29 @@ public partial class CharacterCreationWizardControl : UserControl
                 LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
             if (!string.IsNullOrWhiteSpace(_skillsMutationStatus))
                 LegalOptionList.Children.Add(Caption(_skillsMutationStatus));
-            if (!skillsReady)
-                LegalOptionList.Children.Add(Caption("Attribute allocation opens once skills are authoritative for this workspace."));
+            if (skillsReady)
+            {
+                if (string.IsNullOrWhiteSpace(_skillsMutationStatus))
+                    LegalOptionList.Children.Add(Caption(
+                        "Skills are ready to allocate. Open the editor to spend your available points."));
+            }
+            else
+            {
+                LegalOptionList.Children.Add(Caption(
+                    "Skill allocation opens once skills are authoritative for this workspace."));
+            }
         }
         if (options.Count == 0)
         {
-            LegalOptionList.Children.Add(Caption(
-                "No authoritative choices are available for this step. Check the blockers rather than guessing."));
+            bool dedicatedEditorShown = _state?.ActiveStepId
+                is CharacterCreationWizardStepIds.Attributes
+                or CharacterCreationWizardStepIds.Skills
+                or CharacterCreationWizardStepIds.Qualities;
+            if (!dedicatedEditorShown)
+            {
+                LegalOptionList.Children.Add(Caption(
+                    "No authoritative choices are available for this step. Check the blockers rather than guessing."));
+            }
             return;
         }
 

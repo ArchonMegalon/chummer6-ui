@@ -86,7 +86,7 @@
             <StackPanel x:Name="ContactsList" Spacing="8" IsVisible="False" />
           </StackPanel>
         </ScrollViewer>
-        <StackPanel x:Name="StartingCashPanel" Spacing="4" IsVisible="False">
+        <StackPanel x:Name="StartingCashPanel" Grid.Row="3" Spacing="4" IsVisible="False">
           <TextBlock x:Name="StartingCashHeading"
                      Classes="shell-section-title"
                      Text="Starting cash"
@@ -124,7 +124,7 @@
       <Border Grid.Row="1" Classes="shell-card subtle" Padding="12">
         <Grid RowDefinitions="Auto,*,Auto,Auto" RowSpacing="8">
           <StackPanel Spacing="3">
-            <TextBlock Classes="shell-section-title" Text="Rook Â· Build Ghost" />
+            <TextBlock Classes="shell-section-title" Text="Rook · Build Ghost" />
             <TextBlock Classes="shell-caption"
                        Text="When authoritative runtime context is available, ask at any step. Rook can advise but cannot apply or confirm changes."
                        TextWrapping="Wrap" />
