@@ -16,6 +16,7 @@ public partial class MainWindow
     private readonly CharacterCreationWizardDesktopSession _creationWizardSession = new();
     private readonly CancellationTokenSource _creationWizardLifetime = new();
     private AvaloniaCreationWizardCheckpointStore? _creationWizardCheckpointStore;
+    private CreationAttributesAllocationWindow? _creationAttributesWindow;
     private CharacterCreationWizardSnapshot? _boundCreationWizardSnapshot;
     private CharacterCreationContactPreparedPreview? _creationContactPreparedPreview;
     private CharacterCreationFoundationPreparedPreview? _creationFoundationPreparedPreview;
@@ -25,6 +26,7 @@ public partial class MainWindow
     private bool _creationWizardBuildGhostPreferenceEnabled;
     private bool _creationWizardAiFinishFeatureEnabled;
     private bool _creationQualitiesBusy;
+    private bool _creationAttributesBusy;
     private readonly Dictionary<Chummer.Contracts.Workspaces.CharacterWorkspaceId, CharacterCreationQualitiesInteraction> _pendingQualitySelections = new();
 
     private void InitializeCreationWizard()
@@ -56,6 +58,7 @@ public partial class MainWindow
         CharacterCreationWizardControl.ResourcesConfirmRequested += CreationWizard_OnResourcesConfirmRequested;
         CharacterCreationWizardControl.QualitiesOptionClickRequested += CreationWizard_OnQualitiesOptionClickRequested;
         CharacterCreationWizardControl.QualitiesEditRequested += CreationWizard_OnQualitiesEditRequested;
+        CharacterCreationWizardControl.AttributesEditRequested += CreationWizard_OnAttributesEditRequested;
         CharacterCreationWizardControl.MagicResonanceOptionClickRequested += CreationWizard_OnMagicResonanceOptionClickRequested;
         CharacterCreationWizardControl.FinalizeRequested += CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested += CreationWizard_OnPriorityConfirmRequested;
@@ -65,6 +68,8 @@ public partial class MainWindow
     private void DetachCreationWizard()
     {
         _creationWizardLifetime.Cancel();
+        _creationAttributesWindow?.Close();
+        _creationAttributesWindow = null;
         CharacterCreationWizardControl.StepRequested -= CreationWizard_OnStepRequested;
         CharacterCreationWizardControl.ContinueRequested -= CreationWizard_OnContinueRequested;
         CharacterCreationWizardControl.BuildGhostQuestionSubmitted -= CreationWizard_OnBuildGhostQuestionSubmitted;
@@ -78,6 +83,7 @@ public partial class MainWindow
         CharacterCreationWizardControl.ResourcesConfirmRequested -= CreationWizard_OnResourcesConfirmRequested;
         CharacterCreationWizardControl.QualitiesOptionClickRequested -= CreationWizard_OnQualitiesOptionClickRequested;
         CharacterCreationWizardControl.QualitiesEditRequested -= CreationWizard_OnQualitiesEditRequested;
+        CharacterCreationWizardControl.AttributesEditRequested -= CreationWizard_OnAttributesEditRequested;
         CharacterCreationWizardControl.MagicResonanceOptionClickRequested -= CreationWizard_OnMagicResonanceOptionClickRequested;
         CharacterCreationWizardControl.FinalizeRequested -= CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested -= CreationWizard_OnPriorityConfirmRequested;
@@ -86,6 +92,7 @@ public partial class MainWindow
 
     private void ApplyCreationWizardState(CharacterOverviewState overview)
     {
+        _creationAttributesWindow?.InvalidateIfContextChanged();
         CharacterCreationWizardSnapshot? snapshot = overview.CreationWizard;
         CharacterCreationWizardControl.IsVisible = snapshot is not null;
         CharacterCreationWizardControl.IsHitTestVisible = snapshot is not null;
@@ -364,6 +371,85 @@ public partial class MainWindow
         {
             _creationQualitiesBusy = false;
             CharacterCreationWizardControl.QualitiesMutationBusy(false);
+        }
+    }
+
+    private async void CreationWizard_OnAttributesEditRequested(object? sender, EventArgs args)
+        => await CreationWizard_EditAttributesAsync();
+
+    /// <summary>
+    /// Opens the modal attributes-allocation editor. Load/Prepare/Confirm run through
+    /// the Core-bound presenter; the fresh overview is re-captured after every await
+    /// and the refreshed state is applied only when the workspace still matches
+    /// (Chain-B display-revalidation discipline).
+    /// </summary>
+    private async Task CreationWizard_EditAttributesAsync()
+    {
+        if (_creationAttributesBusy || _creationWizardLifetime.IsCancellationRequested)
+            return;
+        _creationAttributesBusy = true;
+        CharacterCreationWizardControl.AttributesMutationBusy(true);
+        CharacterCreationWizardControl.AttributesStatus("Loading authoritative attributes…");
+        try
+        {
+            CharacterOverviewState overview = _adapter.State;
+            if (overview.WorkspaceId is not { } workspaceId)
+                return;
+
+            var presenter = new CharacterCreationAttributesInteractionPresenter(
+                App.Services?.GetService(typeof(IOwnerBoundCharacterCreationAttributesService))
+                    as IOwnerBoundCharacterCreationAttributesService
+                ?? throw new InvalidOperationException(
+                    "attributes service unavailable — cannot allocate attributes honestly"));
+            CharacterCreationAttributesInteractionLoadResult loaded =
+                await Task.Run(() => presenter.Load(overview));
+            if (_creationWizardLifetime.IsCancellationRequested || !IsCreationWizardWindowUsable())
+            {
+                CharacterCreationWizardControl.AttributesStatus(
+                    "Attributes loading was cancelled. The loaded view was discarded.");
+                return;
+            }
+            if (loaded is not { Outcome: "ok", State: { } state })
+            {
+                CharacterCreationWizardControl.AttributesStatus(
+                    "Attributes could not be loaded: " + (loaded.Error ?? loaded.Outcome));
+                return;
+            }
+            if (!presenter.IsCurrentContext(_adapter.State))
+            {
+                CharacterCreationWizardControl.AttributesStatus(
+                    "The workspace changed while attributes were loading. The loaded view was discarded.");
+                return;
+            }
+
+            var dialog = new CreationAttributesAllocationWindow(presenter, state, () => _adapter.State);
+            _creationAttributesWindow = dialog;
+            await dialog.ShowDialog<bool>(this);
+            _creationAttributesWindow = null;
+            CharacterCreationWizardControl.AttributesStatus(dialog.Status);
+            if (dialog.Confirmed
+                && _adapter.State.WorkspaceId == workspaceId
+                && _adapter.State.DisplayOwnerContext == overview.DisplayOwnerContext)
+            {
+                await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token);
+                if (!_creationWizardLifetime.IsCancellationRequested && IsCreationWizardWindowUsable()
+                    && _adapter.State.WorkspaceId == workspaceId
+                    && _adapter.State.DisplayOwnerContext == overview.DisplayOwnerContext)
+                    ApplyCreationWizardState(_adapter.State);
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested) { }
+        catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            CharacterCreationWizardControl.AttributesStatus(
+                "Attributes could not be loaded. Reload the character and check its prerequisites.");
+        }
+        finally
+        {
+            _creationAttributesBusy = false;
+            _creationAttributesWindow?.Close();
+            _creationAttributesWindow = null;
+            CharacterCreationWizardControl.AttributesMutationBusy(false);
         }
     }
 
