@@ -152,7 +152,7 @@ function Invoke-InstalledCharacterProbe {
     $probeInfo.WorkingDirectory = Split-Path -Parent $Exe
     $probeInfo.UseShellExecute = $false
     Set-JourneyAppEnvironment -StartInfo $probeInfo -StateRoot $JourneyStateRoot
-    $probeInfo.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
+    $probeInfo.EnvironmentVariables.Remove('CHUMMER_CORE_CONTENT_ROOT')
     $probeInfo.EnvironmentVariables['CHUMMER_PERSISTENCE_PHASE'] = $Phase
     $probeInfo.EnvironmentVariables['CHUMMER_PERSISTENCE_RECEIPT'] = $receiptPath
     $probeInfo.EnvironmentVariables['CHUMMER_PERSISTENCE_SAVED_RECEIPT'] = Join-Path $PersistenceRoot 'save.json'
@@ -207,6 +207,7 @@ function Publish-App([string]$Stamp, [string]$OutDir) {
         '--self-contained', 'true',
         '-p:PublishSingleFile=true', '-p:PublishTrimmed=false', '-p:IncludeNativeLibrariesForSelfExtract=true',
         "-p:ChummerDesktopReleaseVersion=$Stamp",
+        "-p:ChummerCoreContentSource=$CoreContentRoot",
         '-p:ChummerDesktopReleaseChannel=preview',
         '-o', $OutDir
     ) 900 'app-publish'
@@ -471,11 +472,8 @@ try {
     $psi.FileName = $InstalledExe
     $psi.UseShellExecute = $false
     Set-JourneyAppEnvironment -StartInfo $psi -StateRoot $JourneyStateRoot
-    # Core content is pinned explicitly (WIN-001 contract): the resolver validates
-    # the checkout against the pinned Core commit, so CWD is irrelevant to startup.
-    foreach ($kv in @(@('CHUMMER_CORE_CONTENT_ROOT', $CoreContentRoot))) {
-        $psi.EnvironmentVariables[$kv[0]] = $kv[1]
-    }
+    # The installed executable must use its delivered, verified rules bundle.
+    $psi.EnvironmentVariables.Remove('CHUMMER_CORE_CONTENT_ROOT')
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_ENABLED'] = '0'
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MODE'] = 'off'
     $psi.RedirectStandardError = $true
@@ -564,7 +562,7 @@ try {
     $psi.FileName = $InstalledExe
     $psi.UseShellExecute = $false
     Set-JourneyAppEnvironment -StartInfo $psi -StateRoot $JourneyStateRoot
-    $psi.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
+    $psi.EnvironmentVariables.Remove('CHUMMER_CORE_CONTENT_ROOT')
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_ENABLED'] = '1'
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MODE'] = 'full'
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_AUTO_APPLY'] = 'true'
@@ -670,7 +668,7 @@ try {
         $psiR.WorkingDirectory = $infoUpd.InstallDir
         $psiR.UseShellExecute = $false
         Set-JourneyAppEnvironment -StartInfo $psiR -StateRoot $JourneyStateRoot
-        $psiR.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
+        $psiR.EnvironmentVariables.Remove('CHUMMER_CORE_CONTENT_ROOT')
         $newProc = $null
         try { $newProc = [System.Diagnostics.Process]::Start($psiR) }
         catch {
@@ -841,7 +839,7 @@ try {
     $psi.FileName = $InstalledExe
     $psi.UseShellExecute = $false
     Set-JourneyAppEnvironment -StartInfo $psi -StateRoot $JourneyStateRoot
-    $psi.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
+    $psi.EnvironmentVariables.Remove('CHUMMER_CORE_CONTENT_ROOT')
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_ENABLED'] = '1'
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MODE'] = 'full'
     $psi.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_AUTO_APPLY'] = 'true'
@@ -947,7 +945,7 @@ try {
     $psi2.FileName = $InstalledExe
     $psi2.UseShellExecute = $false
     Set-JourneyAppEnvironment -StartInfo $psi2 -StateRoot $JourneyStateRoot
-    $psi2.EnvironmentVariables['CHUMMER_CORE_CONTENT_ROOT'] = $CoreContentRoot
+    $psi2.EnvironmentVariables.Remove('CHUMMER_CORE_CONTENT_ROOT')
     $psi2.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_ENABLED'] = '0'
     $psi2.EnvironmentVariables['CHUMMER_DESKTOP_UPDATE_MODE'] = 'off'
     $p2 = [System.Diagnostics.Process]::Start($psi2)

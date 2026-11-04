@@ -92,4 +92,5 @@
       <_Parameter1>Chummer.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+  <Import Project="CoreContentBundle.targets" />
 </Project>

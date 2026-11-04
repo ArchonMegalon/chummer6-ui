@@ -70,7 +70,7 @@
       "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
     ],
     "sourceFiles": {
-      "Chummer.Avalonia/Chummer.Avalonia.csproj": "f6ab03cf681b4c10f5f788b21cabab4d0cfcb8fcb967d735b4e5cbc4a58f8468",
+      "Chummer.Avalonia/Chummer.Avalonia.csproj": "56228d9a98e8feda172b3d8e1f2b88de024d5dfa1bca93a8b837984e6f8008f6",
       "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj": "ef8462cc2b46abf80500cb3e87b67c137797b60c798359368f6f2b0d6fa5b38d",
       "Chummer.Blazor/Chummer.Blazor.csproj": "7bd5de646297d9a74a2f698b312284faad0e50a8fac7a16094b8095f316e2a1b",
       "Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs": "2b05365398c4362b8d2436fea268d3e2a293ae5e6cd06d96687d615c2d66bcb2",

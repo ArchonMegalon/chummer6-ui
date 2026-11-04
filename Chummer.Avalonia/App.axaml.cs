@@ -98,9 +98,12 @@ public partial class App : global::Avalonia.Application
         string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
             AppContext.BaseDirectory,
             Directory.GetCurrentDirectory());
-        if (DesktopCoreContentRootResolver.TryResolve(contentRoot, out string coreContentRoot))
+        if (DesktopCoreContentRootResolver.TryResolve(
+                contentRoot,
+                out string coreContentRoot,
+                appBaseDirectory: AppContext.BaseDirectory))
         {
-            // The pinned core only accepts a verified Core content checkout as its
+            // The pinned core requires verified Core rules/content as its
             // content root for authoritative creation; the API host passes the
             // resolved content root as both directory parameters.
             services.AddChummerLocalRuntimeClient(coreContentRoot, coreContentRoot, "avalonia");

@@ -1,0 +1,35 @@
+<Project>
+  <PropertyGroup>
+    <ChummerContentPython Condition="'$(ChummerContentPython)' == ''">python</ChummerContentPython>
+  </PropertyGroup>
+  <Target Name="PrepareVerifiedCoreContent" BeforeTargets="GetAssemblyAttributes;AssignTargetPaths"
+          Condition="'$(ChummerCoreContentSource)' != ''">
+    <PropertyGroup>
+      <ChummerCoreBundleRoot>$(IntermediateOutputPath)verified-core-content</ChummerCoreBundleRoot>
+      <ChummerCoreBundleDigestFile>$(IntermediateOutputPath)core-content-manifest.sha256</ChummerCoreBundleDigestFile>
+    </PropertyGroup>
+    <Exec Command="&quot;$(ChummerContentPython)&quot; &quot;$(MSBuildProjectDirectory)/../scripts/build-core-content-bundle.py&quot; --source &quot;$(ChummerCoreContentSource)&quot; --output &quot;$(ChummerCoreBundleRoot)&quot; --digest-output &quot;$(ChummerCoreBundleDigestFile)&quot;" />
+    <ReadLinesFromFile File="$(ChummerCoreBundleDigestFile)">
+      <Output TaskParameter="Lines" PropertyName="ChummerCoreContentManifestSha256" />
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>ChummerCoreContentManifestSha256</_Parameter1>
+        <_Parameter2>$(ChummerCoreContentManifestSha256)</_Parameter2>
+      </AssemblyAttribute>
+      <_VerifiedCoreFile Include="$(ChummerCoreBundleRoot)/**/*" />
+    </ItemGroup>
+    <ItemGroup>
+      <Content Include="@(_VerifiedCoreFile)">
+        <Link>core-content/%(_VerifiedCoreFile.RecursiveDir)%(_VerifiedCoreFile.Filename)%(_VerifiedCoreFile.Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </Content>
+    </ItemGroup>
+  </Target>
+  <Target Name="RequireVerifiedCoreContentForPublish" BeforeTargets="PrepareForPublish">
+    <Error Condition="'$(ChummerCoreContentSource)' == '' or '$(ChummerCoreContentManifestSha256)' == ''"
+           Text="Publishing requires -p:ChummerCoreContentSource pointing to the pinned Core checkout. The build packages verified rules alongside the application." />
+  </Target>
+</Project>
