@@ -1,6 +1,18 @@
 using System;
 using System.Linq;
 using System.Threading;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
+using Chummer.Application.Characters;
+using Chummer.Application.Owners;
+using Chummer.Application.Workspaces;
+using Chummer.Contracts.Owners;
+using Chummer.Avalonia.Creation;
+using Chummer.Contracts.Characters;
+using Chummer.Presentation;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -172,6 +184,144 @@ public sealed class CharacterCreationAiFinishGateAvaloniaTests
                 .ConfigureFonts(static manager => manager.AddFontCollection(new InterFontCollection()))
                 .With(new FontManagerOptions { DefaultFamilyName = "fonts:Inter#Inter" })
                 .WithInterFont();
+    }
+
+}
+
+[TestClass]
+public sealed class CharacterCreationAiFinishRecoveryTests
+{
+    private string _root = null!;
+    private CreationAiFinishRunStore _store = null!;
+    private static OwnerContextStamp Owner(string id = "alice", long revision = 1)
+        => new(new OwnerScope("install-account:" + id), "authority", revision);
+    private static CreationAiFinishService.AiFinishDomainResult Success(string domain)
+        => new(domain, true, CharacterCreationFoundationOutcomes.Success, []);
+
+    [TestInitialize] public void Setup()
+    {
+        _root = Path.Combine(Path.GetTempPath(), "chummer-ai-recovery-" + Guid.NewGuid().ToString("N"));
+        _store = new(_root);
+    }
+    [TestCleanup] public void Cleanup() { if (Directory.Exists(_root)) Directory.Delete(_root, true); }
+
+    [TestMethod]
+    public void A_failed_step_stops_all_later_writes_and_preserves_confirmed_results()
+    {
+        int later = 0;
+        var results = _store.Execute(Owner(), "runner", "op1", "{\"reviewed\":true}",
+        [
+            ("attributes", () => Success("attributes")),
+            ("skills", () => new("skills", false, "blocked", ["Core rejected this selection"])),
+            ("qualities", () => { later++; return Success("qualities"); })
+        ]);
+        Assert.HasCount(2, results); Assert.IsTrue(results[0].Success); Assert.IsFalse(results[1].Success);
+        Assert.AreEqual(0, later);
+        var recorded = new CreationAiFinishRunStore(_root).Read(Owner(), "runner")!;
+        Assert.AreEqual("{\"reviewed\":true}", recorded[0].PlanJson);
+        Assert.IsFalse(recorded.Any(e => e.Domain == "qualities"));
+    }
+
+    [TestMethod]
+    public void Commit_then_lost_response_survives_restart_and_never_dispatches_again()
+    {
+        int writes = 0;
+        _store.Execute(Owner(), "runner", "original", "{}",
+            [("skills", () => { writes++; throw new IOException("response lost after commit"); })]);
+        var restarted = new CreationAiFinishRunStore(_root);
+        var record = restarted.Read(Owner(revision: 3), "runner")!;
+        Assert.AreEqual("original", record[0].OperationId);
+        Assert.IsFalse(record.Last().Result!.Success);
+        Assert.ThrowsExactly<IOException>(() => restarted.Execute(Owner(revision: 3), "runner", "replacement", "{}",
+            [("skills", () => { writes++; return Success("skills"); })]));
+        Assert.AreEqual(1, writes, "A changed operation id or fresh process cannot bypass the workspace fence.");
+    }
+
+    [TestMethod]
+    public void Interrupted_and_malformed_records_cannot_authorize_replay()
+    {
+        _store.Execute(Owner(), "runner", "op1", "{}", [("attributes", () => Success("attributes"))]);
+        string path = Directory.GetFiles(_root).Single();
+        string[] lines = File.ReadAllLines(path);
+        File.WriteAllLines(path, lines.Take(2)); // crash after durable dispatch marker
+        var restarted = new CreationAiFinishRunStore(_root);
+        Assert.AreEqual("dispatching", restarted.Read(Owner(), "runner")!.Last().Kind);
+        int calls = 0;
+        Assert.ThrowsExactly<IOException>(() => restarted.Execute(Owner(), "runner", "op2", "{}",
+            [("attributes", () => { calls++; return Success("attributes"); })]));
+        File.WriteAllText(path, "partial-json");
+        Assert.ThrowsExactly<InvalidOperationException>(() => restarted.Read(Owner(), "runner"));
+        File.WriteAllText(path, "");
+        Assert.ThrowsExactly<InvalidOperationException>(() => restarted.Read(Owner(), "runner"));
+        Assert.AreEqual(0, calls);
+    }
+
+    [TestMethod]
+    public void Recovery_records_are_partitioned_by_owner_and_workspace()
+    {
+        _store.Execute(Owner(), "runner", "op1", "{}", [("attributes", () => Success("attributes"))]);
+        Assert.IsNull(_store.Read(Owner("bob"), "runner"));
+        Assert.IsNull(_store.Read(Owner(), "another"));
+        Assert.IsNotNull(_store.Read(Owner(revision: 7), "runner"), "Fresh authorization may inspect the same owner's original record.");
+    }
+
+    [TestMethod]
+    public void Guest_or_invalid_owner_cannot_start_even_an_operator_qualification_run()
+    {
+        foreach (var owner in new[] { default(OwnerContextStamp), new(OwnerScope.LocalSingleUser, "authority", 1),
+            new(new OwnerScope("local-single-user"), "authority", 1), new(new OwnerScope("install-account:"), "authority", 1) })
+        {
+            Assert.IsFalse(CreationAiFinishRunStore.IsLinkedOwner(owner));
+            Assert.ThrowsExactly<InvalidOperationException>(() => _store.Execute(owner, "runner", "op", "{}", []));
+        }
+        Assert.IsFalse(Directory.Exists(_root));
+    }
+
+    [TestMethod]
+    public void Service_rejects_guest_and_stale_owner_before_any_character_read()
+    {
+        var authority = new TestOwnerAuthority { Stamp = Owner() };
+        var service = new CreationAiFinishService(
+            DispatchProxy.Create<IWorkspaceStore, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterSourceDataResolver, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterFileQueries, UnusedDependency>(), authority, _store);
+        var original = authority.Stamp;
+        Assert.IsTrue(service.IsCurrentOwner(original));
+        authority.Stamp = Owner("bob", 2);
+        Assert.IsFalse(service.IsCurrentOwner(original));
+        authority.Stamp = Owner(revision: 3);
+        Assert.IsFalse(service.IsCurrentOwner(original), "Returning to an account does not revive its old authority stamp.");
+        Assert.IsTrue(service.IsCurrentOwner(authority.Stamp));
+        authority.Stamp = new(OwnerScope.LocalSingleUser, "authority", 4);
+        Assert.ThrowsExactly<InvalidOperationException>(() => service.BuildProposal("runner"));
+        Assert.ThrowsExactly<InvalidOperationException>(() => service.InspectSavedResult("runner", original));
+        Assert.IsFalse(Directory.Exists(_root));
+    }
+
+    public class UnusedDependency : DispatchProxy
+    {
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+            => throw new AssertFailedException("Unauthorized character read: " + targetMethod?.Name);
+    }
+
+    private sealed class TestOwnerAuthority : IOwnerContextLeaseAccessor
+    {
+        public OwnerContextStamp Stamp { get; set; }
+        public OwnerScope Current => Stamp.Owner;
+        public OwnerContextStamp Capture() => Stamp;
+        public bool TryAcquire(OwnerContextStamp expected, out IOwnerContextLease? lease)
+        { lease = null; return false; }
+    }
+
+    [TestMethod]
+    public void Successful_steps_are_recorded_in_order_and_completed_only_after_all_confirm()
+    {
+        var results = _store.Execute(Owner(), "runner", "op1", "{}",
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        Assert.IsTrue(results.All(r => r.Success));
+        var record = new CreationAiFinishRunStore(_root).Read(Owner(), "runner")!;
+        CollectionAssert.AreEqual(new[] { "attributes", "skills" }, record.Where(e => e.Kind == "observed").Select(e => e.Domain).ToArray());
+        Assert.AreEqual("completed", record.Last().Kind);
     }
 }
 

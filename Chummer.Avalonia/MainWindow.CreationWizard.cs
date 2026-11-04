@@ -5,6 +5,7 @@ using Avalonia.Platform.Storage;
 using Chummer.Avalonia.Creation;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.AI;
+using Chummer.Desktop.Runtime;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.LifeModules;
 using Chummer.Presentation.Overview;
@@ -25,6 +26,7 @@ public partial class MainWindow
     private (string ModuleId, string? versionId)? _creationFoundationSelectedNationality;
     private bool _creationWizardBuildGhostPreferenceEnabled;
     private bool _creationWizardAiFinishFeatureEnabled;
+    private bool _creationAiFinishBusy;
     private bool _creationQualitiesBusy;
     private bool _creationAttributesBusy;
     private bool _creationSkillsBusy;
@@ -152,11 +154,10 @@ public partial class MainWindow
         _creationWizardBuildGhostPreferenceEnabled = !overview.Preferences.DisableAiFeatures;
         CharacterCreationWizardControl.SetBuildGhostEnabled(_creationWizardBuildGhostPreferenceEnabled);
         CharacterCreationWizardControl.SetFinishWithAiAvailability(
-            // Finish-with-AI fills missing deep stages BEFORE review, so availability
-        // follows the wizard being open (same gate as the Build Ghost chat), not
-        // the authoritatively-gated review step.
+            // Qualification gate remains separate; a live linked owner is also required.
         overview.CreationWizard is not null
-            && _creationWizardBuildGhostPreferenceEnabled);
+            && _creationWizardBuildGhostPreferenceEnabled
+            && CreationWizard_HasLinkedAiOwner(overview));
         TryPersistWizardCheckpoint();
     
         CharacterCreationWizardControl.SetPrerequisiteState(CreationWizard_LoadPrerequisiteState());
@@ -731,78 +732,83 @@ public partial class MainWindow
             CharacterCreationWizardControl.SetFinalizeMutationBusy(false);
         }
     }
+    private bool CreationWizard_HasLinkedAiOwner(CharacterOverviewState state) =>
+        DesktopInstallLinkingRuntime.IsClaimed(_installLinkingState)
+        && state.DisplayOwnerContext is { } owner
+        && owner.Owner == DesktopInstallLinkingRuntime.ResolveOwnerScope(_installLinkingState)
+        && _aiFinishService?.IsCurrentOwner(owner) == true;
+
     private async void CreationWizard_OnFinishWithAiRequested(object? sender, EventArgs e)
     {
-        if (_aiFinishService is null
-            || !_creationWizardAiFinishFeatureEnabled
-            || !_creationWizardBuildGhostPreferenceEnabled
-            || _adapter.State.WorkspaceId is not { } workspaceId)
+        CharacterOverviewState original = _adapter.State;
+        if (_aiFinishService is null || _creationAiFinishBusy
+            || !_creationWizardAiFinishFeatureEnabled || !_creationWizardBuildGhostPreferenceEnabled
+            || !CreationWizard_HasLinkedAiOwner(original)
+            || original.DisplayOwnerContext is not { } owner
+            || original.WorkspaceId is not { } workspaceId) return;
+
+        bool Current(bool revision = true) => !_creationWizardLifetime.IsCancellationRequested
+            && IsCreationWizardWindowUsable() && CreationWizard_HasLinkedAiOwner(_adapter.State)
+            && _adapter.State.DisplayOwnerContext == owner
+            && _adapter.State.WorkspaceId == workspaceId
+            && (!revision || (_adapter.State.ContentRevision == original.ContentRevision
+                && _adapter.State.SavedRevision == original.SavedRevision));
+        void ShowResults(IReadOnlyList<CreationAiFinishService.AiFinishDomainResult> results, bool recovered)
         {
-            return;
+            if (!Current(false)) return;
+            bool success = results.Count > 0 && results.All(row => row.Success);
+            CharacterCreationWizardControl.SetFinishWithAiResult(success,
+                (recovered ? "Saved AI operation (read-only inspection): " : "AI completion: ")
+                + string.Join("; ", results.Select(row => row.Domain + ": "
+                    + (row.Success ? "confirmed" : string.Join(" ", row.Blockers)))));
         }
 
+        _creationAiFinishBusy = true;
         CharacterCreationWizardControl.SetFinishWithAiBusy(true);
         try
         {
-            var proposal = await Task.Run(
-                () => _aiFinishService.BuildProposal(workspaceId.Value),
-                _creationWizardLifetime.Token).ConfigureAwait(true);
-
+            var saved = await Task.Run(() => _aiFinishService.InspectSavedResult(workspaceId.Value, owner),
+                _creationWizardLifetime.Token);
+            if (!Current()) return;
+            if (saved is not null) { ShowResults(saved, true); return; }
+            var proposal = await Task.Run(() => _aiFinishService.BuildProposal(workspaceId.Value),
+                _creationWizardLifetime.Token);
+            if (!Current() || proposal.ExpectedOwner != owner) return;
             if (!proposal.NeedsChanges)
             {
-                CharacterCreationWizardControl.SetFinishWithAiResult(
-                    true,
-                    "Build Ghost: character already complete - nothing to fill.");
+                CharacterCreationWizardControl.SetFinishWithAiResult(true,
+                    "No additional supported recommendations. Review any remaining manual steps.");
                 return;
             }
-
             var dialog = new CreationAiFinishReviewWindow(proposal);
-            var approved = await dialog.ShowDialog<bool>(this).ConfigureAwait(true);
-            if (!approved)
+            void ContextChanged(object? sender, EventArgs args) { if (!Current()) dialog.Close(false); }
+            _adapter.Updated += ContextChanged;
+            bool approved;
+            try { approved = await dialog.ShowDialog<bool>(this); }
+            finally { _adapter.Updated -= ContextChanged; }
+            if (!approved || !Current()) return;
+            var results = await Task.Run(() => _aiFinishService.Apply(workspaceId.Value, proposal),
+                _creationWizardLifetime.Token);
+            ShowResults(results, false);
+            if (Current(false))
             {
-                CharacterCreationWizardControl.SetFinishWithAiResult(
-                    false, "Build Ghost proposal dismissed.");
-                return;
-            }
-
-            var results = await Task.Run(
-                () => _aiFinishService.Apply(workspaceId.Value, proposal),
-                _creationWizardLifetime.Token).ConfigureAwait(true);
-
-            var failed = results.Where(row => !row.Success).ToImmutableArray();
-            if (failed.Length > 0)
-            {
-                CharacterCreationWizardControl.SetFinishWithAiResult(
-                    false,
-                    "Build Ghost applied with " + failed.Length + " failed domain(s): " +
-                    string.Join(", ", failed.Select(row => row.Domain + " (" + row.Outcome + ")")));
-            }
-            else
-            {
-                CharacterCreationWizardControl.SetFinishWithAiResult(
-                    true,
-                    "Build Ghost applied the plan across " + results.Count + " domain(s).");
-            }
-
-            if (_adapter.State.WorkspaceId is { } reloadWorkspaceId)
-            {
-                await _adapter.LoadAsync(reloadWorkspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
-                ApplyCreationWizardState(_adapter.State);
+                await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token);
+                if (Current(false)) ApplyCreationWizardState(_adapter.State);
             }
         }
-        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
-        {
-        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested) { }
         catch (CreationAiFinishService.CreationAiFinishException ex)
         {
-            CharacterCreationWizardControl.SetFinishWithAiResult(false, ex.Message);
+            if (Current(false)) CharacterCreationWizardControl.SetFinishWithAiResult(false, ex.Message);
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException)
         {
-            CharacterCreationWizardControl.SetFinishWithAiResult(false, ex.Message);
+            if (Current(false)) CharacterCreationWizardControl.SetFinishWithAiResult(false,
+                "AI completion could not finish. Reload the character to inspect the saved outcome. No automatic retry was sent.");
         }
         finally
         {
+            _creationAiFinishBusy = false;
             CharacterCreationWizardControl.SetFinishWithAiBusy(false);
         }
     }

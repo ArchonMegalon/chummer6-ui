@@ -33,6 +33,12 @@ public sealed class CreationAiFinishReviewWindow : Window
             (proposal.Archetype.HasRecommendationPack ? "pack available" : "no pack — generic advice only");
 
         var rowsPanel = new StackPanel { Spacing = 6 };
+        rowsPanel.Children.Add(new TextBlock
+        {
+            Text = "This preview applies changes one stage at a time. If a stage fails, earlier changes remain saved. Later stages stop, and the saved outcome can be inspected without retrying the operation.",
+            TextWrapping = TextWrapping.Wrap,
+            Classes = { "shell-caption" },
+        });
         foreach (var row in proposal.Recommendations)
         {
             rowsPanel.Children.Add(new Border
