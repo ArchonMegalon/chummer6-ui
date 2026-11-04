@@ -83,6 +83,7 @@
     <Compile Include="Presentation\HttpChummerClientBuildPathTests.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(ResolvedFocusedTestCompileFiles)' == '' and '$(RunDesktopUpdateTestsOnly)' != 'true'">
+    <Compile Include="..\Chummer.CreationWizard.Presentation.Tests\CharacterCreationSkillsInteractionPresenterTests.cs" Link="Presentation\CharacterCreationSkillsInteractionPresenterTests.cs" />
     <Compile Include="..\Chummer.CreationWizard.Presentation.Tests\CharacterCreationAttributesInteractionPresenterTests.cs"
              Link="Presentation\CharacterCreationAttributesInteractionPresenterTests.cs" />
   </ItemGroup>
@@ -304,6 +305,7 @@
     <Compile Include="Presentation\CharacterCreationContactsAvaloniaTests.cs" />
     <Compile Include="Presentation\CharacterCreationAiFinishGateAvaloniaTests.cs" />
     <Compile Include="Presentation\CharacterCreationAttributesAllocationAvaloniaTests.cs" />
+    <Compile Include="Presentation\CharacterCreationSkillsAllocationAvaloniaTests.cs" />
     <Compile Include="Presentation\CharacterCreationLifestylesOwnerTests.cs" />
     <Compile Include="Presentation\DowntimePlannerProjectorTests.cs" />
     <Compile Include="Presentation\DualHeadAcceptanceTests.cs" />
