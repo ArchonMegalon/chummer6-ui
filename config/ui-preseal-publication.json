@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "17ffe63160648f6091a4d6c03bdff90a95a99efc",
-  "baseTree": "537f7e71036306b9327c75cfc368c924228c4be2",
+  "baseCommit": "288d03e0ee621eb4b7c54abd733f5874a38502a7",
+  "baseTree": "3789d3e767de31d55b7d4a0e9d46e807e081c926",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,62 +44,48 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "914beb3479811867570a664ffa4091c8b7394114",
-      "path": "Chummer.Avalonia/Controls/CreationAiFinishReviewWindow.cs",
-      "sha256": "8ea167bad313e8045d859f16c87a919b9f3be8c013f666aa645fa2987fcb1235",
-      "sizeBytes": 5593,
+      "blob": "bc5d5ad89cbffd541f18dc103ab56fba222dac51",
+      "path": "Chummer.Avalonia/Controls/CareerSkillAdvanceWindow.cs",
+      "sha256": "5007131c545d8dd925a3dc3a49a0ef63b83944abfce1f3cfc0a67a8a1f737302",
+      "sizeBytes": 28497,
       "status": "M"
     },
     {
-      "blob": "824aa0fd8a9fe7c146b51bfb148b6e5578f5e52e",
-      "path": "Chummer.Avalonia/Creation/CreationAiFinishRunStore.cs",
-      "sha256": "9bdcf525639a1a612c2da869d7c30332487111bc57d35574b0c8ab7bf68de37e",
-      "sizeBytes": 5742,
-      "status": "A"
+      "blob": "b38175d6eaa48131cfdde80e457e824baf481484",
+      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml",
+      "sha256": "b95152821bb8c4fa664b520a5a9efb7256a317831c8b0090c7f14a67fd38f955",
+      "sizeBytes": 10429,
+      "status": "M"
     },
     {
-      "blob": "34a415cc6cb2292c35529cfb917713987aee53f5",
+      "blob": "9fb7dfd7461fc61524d23bd896c62ca30e26495d",
+      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
+      "sha256": "254b124fab39a5bf10f6c27db2b27c5938ae8f24e5221ff37edebb1679cee5fe",
+      "sizeBytes": 71655,
+      "status": "M"
+    },
+    {
+      "blob": "9ab4e1d7eb84b912c3ade9d8dc3d090182f777b2",
+      "path": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+      "sha256": "e06ba03e8e061b04280cf2c901a061122dbdf9a099f6cb3ea625f71423ccfb98",
+      "sizeBytes": 140173,
+      "status": "M"
+    },
+    {
+      "blob": "4b2672998e425868782db3748156e8ba9c08ec4b",
       "path": "Chummer.Avalonia/Creation/CreationAiFinishService.cs",
-      "sha256": "29156e9f57115b1f6b5022dabbc5a0ae0b5f4c556bab821b19d11de6cb032a8c",
-      "sizeBytes": 22970,
+      "sha256": "58ab534a7e84762642e4ecb126015b9ff20986378c3743543736baf1b5a6bce2",
+      "sizeBytes": 22961,
       "status": "M"
     },
     {
-      "blob": "7695babf21321d9755ca92abc6b8bc204fac271d",
-      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
-      "sha256": "8956143f366dfffba0b5d724f0dfe23adfed0e10788d80b4754aaf9e23a464cb",
-      "sizeBytes": 57376,
-      "status": "M"
-    },
-    {
-      "blob": "d2b1bdca310218de55326548ea977e64f8f6a4cc",
-      "path": "Chummer.Avalonia/MainWindow.axaml.cs",
-      "sha256": "d8d00a923edde8efe26d58e0dac53a49d7afe526224663314ace778e300045c0",
-      "sizeBytes": 15475,
-      "status": "M"
-    },
-    {
-      "blob": "0a145df006d426f8f09dc4c133a4398293ed4aaf",
-      "path": "Chummer.Tests/Presentation/CharacterCreationAiFinishGateAvaloniaTests.cs",
-      "sha256": "39be8ad6c785654b9c11aa2e017e9162ed44d807e1d75563ae1f1ea4c3799f46",
-      "sizeBytes": 17804,
-      "status": "M"
-    },
-    {
-      "blob": "a55ac02453f0e205e10a41399d12fb5430e4ff0c",
-      "path": "docs/WINDOWS_AI_RECOVERY.md",
-      "sha256": "227bf7e956247cfcb41f847ab6f5b4c23e1ed27e6f9af569db09e00b0bd48793",
-      "sizeBytes": 2538,
-      "status": "A"
-    },
-    {
-      "blob": "9051bb8047233f357b3b04a5ac456186bd1a16e9",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "fc8a549bd9f8bd47e5ca7ab2b0faa4286278cc88176a87810593f93b7793e489",
-      "sizeBytes": 62445,
+      "blob": "219f71e3bc57f7fedc6feba3556e9009498f4dee",
+      "path": "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
+      "sha256": "63aab4fdce90504d7c0f9bbd3ce080e0b8ea6faeff3fcbe4e3130110601496b1",
+      "sizeBytes": 53639,
       "status": "M"
     }
   ],
-  "recipeTree": "3fefd06694362edaabbd30c0ce63a86fd2c4e855",
+  "recipeTree": "f32b821a8e4273b9174567c1cf69b6313b1735db",
   "releaseClaim": false
 }
