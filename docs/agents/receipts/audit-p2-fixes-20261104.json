@@ -1,0 +1,103 @@
+{
+  "authority": false,
+  "baseCommit": "288d03e0ee621eb4b7c54abd733f5874a38502a7",
+  "baseTree": "3789d3e767de31d55b7d4a0e9d46e807e081c926",
+  "canonicalSealedLocks": [
+    {
+      "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
+      "path": "config/package-plane.lock.json",
+      "sha256": "45e8daf237adf3acd11b6ac614854b36a53240c1cebfa970dca7a0641b7c2b9f",
+      "sizeBytes": 73117
+    },
+    {
+      "blob": "3d95e179ae1e22a6fd0a4e93e5ef6783dacbece6",
+      "path": "config/ui-owner-package-plane.lock.json",
+      "sha256": "8b4bc0be752e7596f34c7fad86231d2f88d744195493e0969eeb98f59eeda0d8",
+      "sizeBytes": 2031
+    }
+  ],
+  "consumerVerification": {
+    "performed": false,
+    "reason": "split-preseal-does-not-authorize-package-consumption",
+    "status": "not_run_preseal"
+  },
+  "contractName": "chummer6-ui.split-preseal-validation/v2",
+  "contractVersion": 2,
+  "generatedAt": "2026-11-04T16:19:46Z",
+  "nextAuthorityOracle": {
+    "canonicalLock": {
+      "blob": "fcf7925387150693a67a4b0c45e529d7d93911c1",
+      "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
+      "fixturePath": "config/ui-next-authority-oracle-v10.json",
+      "path": "config/package-plane.lock.json",
+      "rawSha256": "6414cd51d722686c5e5da93dbd9b97bcf622d325faa0c79b5e2568185c7ad687",
+      "rawSizeBytes": 69810,
+      "semanticCanonicalSha256": "6414cd51d722686c5e5da93dbd9b97bcf622d325faa0c79b5e2568185c7ad687",
+      "semanticCanonicalSizeBytes": 69810,
+      "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
+    },
+    "producerLock": {
+      "absentAtCommit": true,
+      "path": "config/ui-owner-package-plane.lock.json"
+    }
+  },
+  "packageConsumerClaim": false,
+  "presealHeadCommit": "71ae709eb9b691dd47f18069c160beae136faf1e",
+  "presealHeadTree": "c4792bca7bac5dcc089eebca1c605b26e465e3d4",
+  "presealMarker": {
+    "blob": "df15a8dc434ed6fb3b80edd553bdfe6e0489aabd",
+    "path": "config/ui-preseal-publication.json",
+    "sha256": "9883900d43bfbe26516004405026df1f265d61decba99ea2ae53d16b4b926cb5",
+    "sizeBytes": 3454
+  },
+  "publicationAuthorized": false,
+  "recipeCommitObserved": "479dac4803eb17afda07338667d6e253c7c0a9ef",
+  "recipeTree": "f32b821a8e4273b9174567c1cf69b6313b1735db",
+  "releaseClaim": false,
+  "reviewedChanges": [
+    {
+      "blob": "bc5d5ad89cbffd541f18dc103ab56fba222dac51",
+      "path": "Chummer.Avalonia/Controls/CareerSkillAdvanceWindow.cs",
+      "sha256": "5007131c545d8dd925a3dc3a49a0ef63b83944abfce1f3cfc0a67a8a1f737302",
+      "sizeBytes": 28497,
+      "status": "M"
+    },
+    {
+      "blob": "b38175d6eaa48131cfdde80e457e824baf481484",
+      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml",
+      "sha256": "b95152821bb8c4fa664b520a5a9efb7256a317831c8b0090c7f14a67fd38f955",
+      "sizeBytes": 10429,
+      "status": "M"
+    },
+    {
+      "blob": "9fb7dfd7461fc61524d23bd896c62ca30e26495d",
+      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
+      "sha256": "254b124fab39a5bf10f6c27db2b27c5938ae8f24e5221ff37edebb1679cee5fe",
+      "sizeBytes": 71655,
+      "status": "M"
+    },
+    {
+      "blob": "9ab4e1d7eb84b912c3ade9d8dc3d090182f777b2",
+      "path": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+      "sha256": "e06ba03e8e061b04280cf2c901a061122dbdf9a099f6cb3ea625f71423ccfb98",
+      "sizeBytes": 140173,
+      "status": "M"
+    },
+    {
+      "blob": "4b2672998e425868782db3748156e8ba9c08ec4b",
+      "path": "Chummer.Avalonia/Creation/CreationAiFinishService.cs",
+      "sha256": "58ab534a7e84762642e4ecb126015b9ff20986378c3743543736baf1b5a6bce2",
+      "sizeBytes": 22961,
+      "status": "M"
+    },
+    {
+      "blob": "219f71e3bc57f7fedc6feba3556e9009498f4dee",
+      "path": "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
+      "sha256": "63aab4fdce90504d7c0f9bbd3ce080e0b8ea6faeff3fcbe4e3130110601496b1",
+      "sizeBytes": 53639,
+      "status": "M"
+    }
+  ],
+  "status": "preseal_validated",
+  "syntheticPullRequestMerge": false
+}
