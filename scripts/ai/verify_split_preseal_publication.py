@@ -141,6 +141,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "tests/test_core_content_bundle_build.py",
         "scripts/build-core-content-bundle.py",
         "Chummer.Avalonia/CoreContentBundle.targets",
+        "docs/WINDOWS_AI_RECOVERY.md",
+        "Chummer.Avalonia/Creation/CreationAiFinishRunStore.cs",
         # R9 2026-10-10: pipeline-main residual ports (owner-authorized R26 merge).
         "Chummer.Avalonia/MainWindow.EventHandlers.cs",
         "Chummer.Avalonia/MainWindow.PostRefreshCoordinators.cs",

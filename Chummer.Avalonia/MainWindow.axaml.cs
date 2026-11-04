@@ -280,6 +280,9 @@ public partial class MainWindow : Window
             "desktop.install_link.title",
             _persistedPreferences.Language);
         Title = DesktopInstallLinkingRuntime.BuildShellWindowTitle(shellTitle, claimTitle, state);
+        if (_adapter is not null) CharacterCreationWizardControl.SetFinishWithAiAvailability(
+            _adapter.State.CreationWizard is not null && _creationWizardBuildGhostPreferenceEnabled
+            && CreationWizard_HasLinkedAiOwner(_adapter.State));
     }
 
     internal DesktopDialogWindow? PeekDialogWindowForTesting()

@@ -1,5 +1,9 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using System.Globalization;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Chummer.Application.Characters;
 using Chummer.Application.Owners;
 using Chummer.Application.Workspaces;
@@ -10,24 +14,9 @@ using Chummer.Presentation.Creation;
 namespace Chummer.Avalonia.Creation;
 
 /// <summary>
-/// Build Ghost AI-finish orchestrator for the creation wizard.
-///
-/// Builds a deterministic missing-only proposal (CompletionRecommendationBuilder)
-/// from the live completion inputs, presents it for review, and applies the
-/// user-confirmed plan through the creation services' own Loadâ†’Previewâ†’Confirm
-/// flows with snapshot guards (inputs digest re-verified before apply; each
-/// domain previews immediately before its confirm).
-///
-/// Contract notes honored:
-/// - Core's plan is "not an Apply capability": this orchestrator translates the
-///   reviewed plan into per-domain preview/confirm requests on the live session.
-///   The Finalize step remains the separate finalization review + explicit confirm.
-/// - Missing-only: the plan retains original player choices (magic is never
-///   re-selected â€” the builder requires magic to be already chosen and never
-///   proposes changes to it).
-/// - Permissions are exactly the built-in pack's additive permissions.
-/// - Domains that cannot be applied unambiguously (contacts, lifestyles) are
-///   reported as manual follow-ups instead of being applied.
+/// Gated, staged AI completion. Domain writes remain Core-owned and owner-bound.
+/// Stop at the first failed or uncertain result; retain a durable no-replay record.
+/// This is not the future atomic completion API or complete AI release qualification.
 /// </summary>
 public sealed class CreationAiFinishService
 {
@@ -36,18 +25,22 @@ public sealed class CreationAiFinishService
     private readonly ICharacterFileQueries _queries;
     private readonly IOwnerContextLeaseAccessor _ownerContextAccessor;
 
+    private readonly CreationAiFinishRunStore _runs;
+
     private const string KeyPrefix = "ai-finish:";
 
     public CreationAiFinishService(
         IWorkspaceStore store,
         ICharacterSourceDataResolver resolver,
         ICharacterFileQueries queries,
-        IOwnerContextLeaseAccessor ownerContextAccessor)
+        IOwnerContextLeaseAccessor ownerContextAccessor,
+        CreationAiFinishRunStore? runs = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
         _queries = queries ?? throw new ArgumentNullException(nameof(queries));
         _ownerContextAccessor = ownerContextAccessor ?? throw new ArgumentNullException(nameof(ownerContextAccessor));
+        _runs = runs ?? CreationAiFinishRunStore.ForCurrentProfile();
     }
 
     /// <summary>
@@ -65,11 +58,17 @@ public sealed class CreationAiFinishService
     /// the archetype suggestion, the review rows, and remaining manual tasks.
     /// </summary>
     public sealed record AiFinishProposal(
+        string OperationId,
         CharacterCreationCompletionPlan Plan,
         CompletionArchetypeSuggestion Archetype,
         ImmutableArray<AiFinishRecommendation> Recommendations,
         ImmutableArray<string> ManualFollowUps,
-        bool NeedsChanges);
+        bool NeedsChanges)
+    {
+        public OwnerContextStamp ExpectedOwner { get; init; }
+        public string WorkspaceId { get; init; } = string.Empty;
+        public string PreparedPlanDigest { get; init; } = string.Empty;
+    }
 
     /// <summary>
     /// Outcome of applying one domain of the plan through its creation service.
@@ -112,7 +111,13 @@ public sealed class CreationAiFinishService
             throw new ArgumentException("Workspace id required.", nameof(workspaceId));
         }
 
-        var inputs = LoadInputs(workspaceId);
+        var expectedOwner = _ownerContextAccessor.Capture();
+        RequireOwner(expectedOwner);
+        var inputs = LoadInputs(workspaceId, expectedOwner);
+        if (_runs.Read(expectedOwner, workspaceId) is not null)
+            throw new CreationAiFinishException("recovery", "saved-operation",
+                ["An AI completion operation already exists for this character. Inspect its saved result; another plan will not be dispatched over a partial result."]);
+
         var suggestionResult = CompletionRecommendationBuilder.SuggestArchetype(inputs);
         if (suggestionResult.Value is null)
         {
@@ -126,7 +131,7 @@ public sealed class CreationAiFinishService
                 "resolve-pack", CharacterCreationFoundationOutcomes.Blocked, [suggestion.ArchetypeId]);
 
         var intent = new CompletionAssistantIntent(
-            _ownerContextAccessor.Capture(),
+            expectedOwner,
             inputs.SnapshotDigest,
             suggestion.ArchetypeId,
             Permissions(pack),
@@ -176,65 +181,89 @@ public sealed class CreationAiFinishService
             manual.Add(task);
         }
 
+        RequireOwner(expectedOwner);
         return new AiFinishProposal(
+            DeriveOperationId(workspaceId, inputs.SnapshotDigest),
             plan,
             suggestion,
             recommendations.ToImmutableArray(),
             manual.ToImmutableArray(),
-            needsChanges);
+            needsChanges)
+        {
+            ExpectedOwner = expectedOwner,
+            WorkspaceId = workspaceId,
+            PreparedPlanDigest = PlanDigest(plan)
+        };
     }
 
-    /// <summary>
-    /// Applies the reviewed plan to the live session through each domain's own
-    /// Loadâ†’Previewâ†’Confirm flow, in dependency order (attributes â†’ skills â†’
-    /// qualities â†’ resources â†’ gear). Re-verifies the inputs digest first so any
-    /// concurrent edit aborts before the first mutation. Each domain reports
-    /// independently: a domain failure does not roll back earlier domains (the
-    /// wizard surfaces per-domain results and the user can review and retry).
-    /// </summary>
-    public IReadOnlyList<AiFinishDomainResult> Apply(string workspaceId, AiFinishProposal proposal)
+    public bool IsCurrentOwner(OwnerContextStamp expectedOwner) =>
+        CreationAiFinishRunStore.IsLinkedOwner(expectedOwner)
+        && _ownerContextAccessor.Capture() == expectedOwner;
+
+    private void RequireOwner(OwnerContextStamp expectedOwner)
     {
-        ArgumentNullException.ThrowIfNull(proposal);
+        if (!IsCurrentOwner(expectedOwner))
+            throw new InvalidOperationException("Link your account and reopen the character before using AI completion.");
+    }
 
-        // Snapshot guard: the live inputs must still digest to what was reviewed.
-        var current = LoadInputs(workspaceId);
-        if (!string.Equals(current.SnapshotDigest, proposal.Plan.Request.InputsSnapshotDigest, StringComparison.Ordinal))
-        {
-            return
-            [
-                new AiFinishDomainResult(
-                    "snapshot",
-                    false,
-                    CharacterCreationFoundationOutcomes.Conflict,
-                    ["ai-finish: inputs changed since the proposal was reviewed"]),
-            ];
-        }
+    private static string PlanDigest(CharacterCreationCompletionPlan plan) =>
+        Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(plan)));
 
-        var results = new List<AiFinishDomainResult>();
-        var selections = proposal.Plan.Selections;
-
-        results.Add(ApplyAttributes(workspaceId, selections.AttributeAllocations));
-        if (!results[^1].Success)
-        {
-            // Attribute state anchors downstream previews (prerequisites, karma);
-            // do not cascade confusing failures into skills/qualities.
-            return results;
-        }
-
-        results.Add(ApplySkills(workspaceId, selections.SkillAllocations, selections.GroupAllocations));
-        results.Add(ApplyQualities(workspaceId, selections.QualityOptionIds));
-        results.Add(ApplyResources(workspaceId, proposal));
-        results.Add(ApplyGear(workspaceId, selections.Gear));
-
+    /// <summary>Fresh authorization, read-only reload, and honest recorded outcomes.
+    /// A recorded success is not a new Core receipt; an unobserved write stays uncertain.
+    /// No pending record is cleared or converted into permission to replay.</summary>
+    public IReadOnlyList<AiFinishDomainResult>? InspectSavedResult(string workspaceId, OwnerContextStamp expectedOwner)
+    {
+        RequireOwner(expectedOwner);
+        _ = LoadInputs(workspaceId, expectedOwner);
+        var entries = _runs.Read(expectedOwner, workspaceId);
+        RequireOwner(expectedOwner);
+        if (entries is null) return null;
+        var results = entries.Where(e => e.Kind == "observed" && e.Result is not null).Select(e => e.Result!).ToList();
+        string? outstanding = entries.LastOrDefault(e => e.Kind == "dispatching")?.Domain;
+        if (outstanding is not null && !results.Any(r => r.Domain == outstanding))
+            results.Add(new(outstanding, false, CharacterCreationFoundationOutcomes.Invalid,
+                ["The process stopped before the saved outcome was observed. The current character was loaded read-only; no retry was sent."]));
+        if (entries[^1].Kind != "completed")
+            results.Add(new("recovery", false, CharacterCreationFoundationOutcomes.Blocked,
+                ["Partial operation retained. Inspect the current character manually; automatic continuation is unavailable in this gated version."]));
         return results;
     }
 
-    private CharacterCreationCompletionReviewInputs LoadInputs(string workspaceId)
+    public IReadOnlyList<AiFinishDomainResult> Apply(string workspaceId, AiFinishProposal proposal)
+    {
+        ArgumentNullException.ThrowIfNull(proposal);
+        RequireOwner(proposal.ExpectedOwner);
+        if (workspaceId != proposal.WorkspaceId
+            || proposal.OperationId != DeriveOperationId(workspaceId, proposal.Plan.Request.InputsSnapshotDigest)
+            || PlanDigest(proposal.Plan) != proposal.PreparedPlanDigest)
+            return [new("review", false, CharacterCreationFoundationOutcomes.Conflict, ["The reviewed character or plan changed. No changes were applied."])];
+        // Check the durable fence BEFORE the old inputs digest: partial commits
+        // change that digest and must not mint a replacement operation.
+        if (InspectSavedResult(workspaceId, proposal.ExpectedOwner) is { } saved) return saved;
+        var current = LoadInputs(workspaceId, proposal.ExpectedOwner);
+        if (current.SnapshotDigest != proposal.Plan.Request.InputsSnapshotDigest)
+            return [new("snapshot", false, CharacterCreationFoundationOutcomes.Conflict, ["The character changed after review. No changes were applied."])];
+
+        var selections = proposal.Plan.Selections;
+        var operationId = proposal.OperationId;
+        var owner = proposal.ExpectedOwner;
+        return _runs.Execute(owner, workspaceId, operationId, JsonSerializer.Serialize(proposal.Plan),
+        [
+            ("attributes", () => ApplyAttributes(owner, workspaceId, operationId, selections.AttributeAllocations)),
+            ("skills", () => ApplySkills(owner, workspaceId, operationId, selections.SkillAllocations, selections.GroupAllocations)),
+            ("qualities", () => ApplyQualities(owner, workspaceId, operationId, selections.QualityOptionIds)),
+            ("resources", () => ApplyResources(owner, workspaceId, operationId, proposal)),
+            ("gear", () => ApplyGear(owner, workspaceId, operationId, selections.Gear))
+        ]);
+    }
+
+    private CharacterCreationCompletionReviewInputs LoadInputs(string workspaceId, OwnerContextStamp expectedOwner)
     {
         var reader = new OwnerBoundCharacterCreationCompletionReader(
             _store, _ownerContextAccessor, _resolver, _queries);
         var loaded = reader.LoadCompletionInputs(
-            _ownerContextAccessor.Capture(),
+            expectedOwner,
             new CharacterCreationSkillsLoadRequest(new CharacterWorkspaceId(workspaceId)));
         if (loaded.Value is null)
         {
@@ -284,78 +313,91 @@ public sealed class CreationAiFinishService
     }
 
     private AiFinishDomainResult ApplyAttributes(
+        OwnerContextStamp expectedOwner,
         string workspaceId,
+        string operationId,
         IReadOnlyList<CharacterCreationAttributeAllocation> allocations)
     {
-        var service = new CharacterCreationAttributesService(_store, _resolver);
-        var state = service.Load(new CharacterCreationAttributesLoadRequest(new CharacterWorkspaceId(workspaceId)));
+
+        var service = new OwnerBoundCharacterCreationAttributesService(_store, _ownerContextAccessor, _resolver);
+        var state = service.Load(expectedOwner, new CharacterCreationAttributesLoadRequest(new CharacterWorkspaceId(workspaceId)));
         if (state.Value is null)
         {
             return new("attributes", false, state.Outcome, state.Blockers.ToImmutableArray());
         }
 
-        var preview = service.Preview(new(state.Value.Binding, allocations));
+        var preview = service.Preview(expectedOwner, new(state.Value.Binding, allocations));
         if (preview.Value is null || !preview.Value.CanConfirm)
         {
             return new("attributes", false, preview.Outcome, preview.Blockers.ToImmutableArray());
         }
 
-        var confirm = service.Confirm(new(
+        // The durable run fence prevents a second dispatch; a digest alone is not recovery.
+        var confirm = service.Confirm(expectedOwner, new(
             preview.Value.Binding, allocations, preview.Value.PreviewDigest, true));
         return new("attributes", confirm.Value is not null, confirm.Outcome, confirm.Blockers.ToImmutableArray());
     }
 
     private AiFinishDomainResult ApplySkills(
+        OwnerContextStamp expectedOwner,
         string workspaceId,
+        string operationId,
         IReadOnlyList<CharacterCreationSkillAllocation> allocations,
         IReadOnlyList<CharacterCreationSkillGroupAllocation> groups)
     {
-        var service = new CharacterCreationSkillsService(_store, _resolver);
-        var state = service.Load(new CharacterCreationSkillsLoadRequest(new CharacterWorkspaceId(workspaceId)));
+        var service = new OwnerBoundCharacterCreationSkillsService(_store, _ownerContextAccessor, _resolver);
+        var state = service.Load(expectedOwner, new CharacterCreationSkillsLoadRequest(new CharacterWorkspaceId(workspaceId)));
         if (state.Value is null)
         {
             return new("skills", false, state.Outcome, state.Blockers.ToImmutableArray());
         }
 
-        var preview = service.Preview(new(state.Value.Binding, allocations, groups));
+        var preview = service.Preview(expectedOwner, new(state.Value.Binding, allocations, groups));
         if (preview.Value is null || !preview.Value.CanConfirm)
         {
             return new("skills", false, preview.Outcome, preview.Blockers.ToImmutableArray());
         }
 
-        var confirm = service.Confirm(new(
+        var confirm = service.Confirm(expectedOwner, new(
             preview.Value.Binding, allocations, groups, preview.Value.PreviewDigest,
-            NewIdempotencyKey("skills"), true));
+            OperationKey(operationId, "skills"), true));
         return new("skills", confirm.Value is not null, confirm.Outcome, confirm.Blockers.ToImmutableArray());
     }
 
-    private AiFinishDomainResult ApplyQualities(string workspaceId, IReadOnlyList<string> qualityOptionIds)
+    private AiFinishDomainResult ApplyQualities(
+        OwnerContextStamp expectedOwner,
+        string workspaceId,
+        string operationId,
+        IReadOnlyList<string> qualityOptionIds)
     {
-        var prerequisites = new CharacterCreationPrerequisiteService(_store, _queries, _resolver);
-        var attributes = new CharacterCreationAttributesService(_store, _resolver);
-        var service = new CharacterCreationQualitiesService(_store, _resolver, prerequisites, attributes);
-        var state = service.Load(new CharacterCreationQualitiesLoadRequest(new CharacterWorkspaceId(workspaceId)));
+        var service = new OwnerBoundCharacterCreationQualitiesService(_store, _ownerContextAccessor, _queries, _resolver);
+        var state = service.Load(expectedOwner, new CharacterCreationQualitiesLoadRequest(new CharacterWorkspaceId(workspaceId)));
         if (state.Value is null)
         {
             return new("qualities", false, state.Outcome, state.Blockers.ToImmutableArray());
         }
 
-        var preview = service.Preview(new(state.Value.Binding, qualityOptionIds));
+        var preview = service.Preview(expectedOwner, new(state.Value.Binding, qualityOptionIds));
         if (preview.Value is null || !preview.Value.CanConfirm)
         {
             return new("qualities", false, preview.Outcome, preview.Blockers.ToImmutableArray());
         }
 
-        var confirm = service.Confirm(new(
+        // Stable operation identities supplement the durable fence; they do not authorize retries.
+        var confirm = service.Confirm(expectedOwner, new(
             preview.Value.Binding, qualityOptionIds, preview.Value.PreviewDigest,
-            NewIdempotencyKey("qualities"), Guid.NewGuid(), true));
+            OperationKey(operationId, "qualities"), OperationGuid(operationId, "qualities"), true));
         return new("qualities", confirm.Value is not null, confirm.Outcome, confirm.Blockers.ToImmutableArray());
     }
 
-    private AiFinishDomainResult ApplyResources(string workspaceId, AiFinishProposal proposal)
+    private AiFinishDomainResult ApplyResources(
+        OwnerContextStamp expectedOwner,
+        string workspaceId,
+        string operationId,
+        AiFinishProposal proposal)
     {
-        var service = new CharacterCreationResourcesService(_store, _resolver);
-        var state = service.Load(new CharacterCreationResourcesLoadRequest(new CharacterWorkspaceId(workspaceId)));
+        var service = new OwnerBoundCharacterCreationResourcesService(_store, _ownerContextAccessor, _resolver);
+        var state = service.Load(expectedOwner, new CharacterCreationResourcesLoadRequest(new CharacterWorkspaceId(workspaceId)));
         if (state.Value is null)
         {
             return new("resources", false, state.Outcome, state.Blockers.ToImmutableArray());
@@ -374,41 +416,81 @@ public sealed class CreationAiFinishService
             ]);
         }
 
-        var preview = service.Preview(new(state.Value.Binding, option.OptionId));
+        var preview = service.Preview(expectedOwner, new(state.Value.Binding, option.OptionId));
         if (preview.Value is null)
         {
             return new("resources", false, preview.Outcome, preview.Blockers.ToImmutableArray());
         }
 
-        var confirm = service.Confirm(new(
+        var confirm = service.Confirm(expectedOwner, new(
             preview.Value.Binding, option.OptionId, preview.Value.PreviewDigest,
-            NewIdempotencyKey("resources"), true));
+            OperationKey(operationId, "resources"), true));
         return new("resources", confirm.Value is not null, confirm.Outcome, confirm.Blockers.ToImmutableArray());
     }
 
     private AiFinishDomainResult ApplyGear(
+        OwnerContextStamp expectedOwner,
         string workspaceId,
+        string operationId,
         IReadOnlyList<CharacterCreationGearSelection> gear)
     {
-        var service = new CharacterCreationGearService(_store, _resolver);
-        var state = service.Load(new CharacterCreationGearLoadRequest(new CharacterWorkspaceId(workspaceId)));
+        var service = new OwnerBoundCharacterCreationGearService(_store, _ownerContextAccessor, _resolver);
+        var state = service.Load(expectedOwner, new CharacterCreationGearLoadRequest(new CharacterWorkspaceId(workspaceId)));
         if (state.Value is null)
         {
             return new("gear", false, state.Outcome, state.Blockers.ToImmutableArray());
         }
 
-        var preview = service.Preview(new(state.Value.Binding, gear));
+        var preview = service.Preview(expectedOwner, new(state.Value.Binding, gear));
         if (preview.Value is null || !preview.Value.CanConfirm)
         {
             return new("gear", false, preview.Outcome, preview.Blockers.ToImmutableArray());
         }
 
-        var confirm = service.Confirm(new(
+        var confirm = service.Confirm(expectedOwner, new(
             preview.Value.Binding, gear, preview.Value.PreviewDigest,
-            NewIdempotencyKey("gear"), true));
+            OperationKey(operationId, "gear"), true));
         return new("gear", confirm.Value is not null, confirm.Outcome, confirm.Blockers.ToImmutableArray());
     }
 
-    private static string NewIdempotencyKey(string domain) =>
-        KeyPrefix + domain + ":" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
+    // Stable command identities are retained for inspection, never blind replay.
+    private static string OperationKey(string operationId, string domain) =>
+        KeyPrefix + domain + ":" + operationId;
+
+    /// <summary>
+    /// Stable per-domain transaction Guid: same derivation contract as OperationKey.
+    /// Built from the first 16 bytes of SHA-256 over the operation id + domain, which
+    /// is collision-resistant for this use and deterministic across processes.
+    /// </summary>
+    private static Guid OperationGuid(string operationId, string domain)
+    {
+#if NET10_0_OR_GREATER
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(operationId + "|" + domain));
+#else
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(operationId + "|" + domain));
+#endif
+        return new Guid(hash.AsSpan(0, 16));
+    }
+
+    /// <summary>
+    /// Deterministic operation identity: SHA-256 over workspaceId + inputs snapshot
+    /// digest, hex-encoded. Same inputs + same workspace always derive the same
+    /// identity; any inputs change mints a new one.
+    /// </summary>
+    private static string DeriveOperationId(string workspaceId, string inputsSnapshotDigest)
+    {
+#if NET10_0_OR_GREATER
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(workspaceId + "|" + inputsSnapshotDigest));
+#else
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(workspaceId + "|" + inputsSnapshotDigest));
+#endif
+        var sb = new System.Text.StringBuilder(hash.Length * 2);
+        foreach (var b in hash)
+        {
+            sb.Append(b.ToString("x2", CultureInfo.InvariantCulture));
+        }
+        return sb.ToString();
+    }
 }
