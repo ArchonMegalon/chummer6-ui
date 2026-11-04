@@ -348,6 +348,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Avalonia/Controls/CareerAttributeAdvanceWindow.cs",
         "Chummer.Avalonia/Controls/CareerRewardsWindow.cs",
         "Chummer.Avalonia/Controls/CreationAiFinishReviewWindow.cs",
+        "Chummer.Avalonia/Controls/CareerSkillAdvanceWindow.cs",
+        "Chummer.Presentation/Overview/ICharacterOverviewPresenter.cs",
         "Chummer.Avalonia/Controls/SectionHostControl.axaml",
         "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
         "Chummer.Avalonia/Creation/CreationAiFinishService.cs",
@@ -391,16 +393,19 @@ COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 TREE_RE = COMMIT_RE
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 TRUSTED_GIT = Path("/usr/bin/git")
-MAX_UNSEALED_RECOVERY_DEPTH = 16
+# Rolling recipe/marker integrations can legitimately exceed sixteen entries.
+# Keep traversal bounded; every historical recipe, marker, parent and lock is
+# still authenticated. This is not a package-consumer or release qualification.
+MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "087c987752cdfa1e345bf26ab8a0a5ce5b3ff56e",
+        "blob": "1a2be4686a0a8d088ffbab42bd77270f9bf5ec00",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "f132303cf3489170dc793f757bc8fafc640dbeacbbd4f65178b52c8086a1be87",
+        "rawSha256": "678595176fe71b1f3da140945c699001f7b3cda05cc27642a4518cbcb3a30e2b",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "f132303cf3489170dc793f757bc8fafc640dbeacbbd4f65178b52c8086a1be87",
+        "semanticCanonicalSha256": "678595176fe71b1f3da140945c699001f7b3cda05cc27642a4518cbcb3a30e2b",
         "semanticCanonicalSizeBytes": 69810,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

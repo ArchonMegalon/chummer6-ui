@@ -55,6 +55,7 @@ internal static class MainWindowControlBinder
         EventHandler<string> onSectionQuickActionRequested,
         EventHandler<AttributeEditRequest> onSectionAttributeEditRequested,
         EventHandler<string> onSectionCareerAttributeAdvanceRequested,
+        EventHandler<object?> onSectionCareerSkillAdvanceRequested,
         EventHandler<object?> onSectionCareerKarmaAwardRequested,
         EventHandler<object?> onSectionCareerNuyenAdjustRequested,
         EventHandler onCoachLaunchOpenRequested,
@@ -85,6 +86,7 @@ internal static class MainWindowControlBinder
         sectionHost.QuickActionRequested += onSectionQuickActionRequested;
         sectionHost.AttributeEditRequested += onSectionAttributeEditRequested;
         sectionHost.CareerAttributeAdvanceRequested += onSectionCareerAttributeAdvanceRequested;
+        sectionHost.CareerSkillAdvanceRequested += onSectionCareerSkillAdvanceRequested;
         sectionHost.CareerKarmaAwardRequested += onSectionCareerKarmaAwardRequested;
         sectionHost.CareerNuyenAdjustRequested += onSectionCareerNuyenAdjustRequested;
         coachSidecar.OpenLaunchRequested += onCoachLaunchOpenRequested;

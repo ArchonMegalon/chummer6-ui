@@ -386,6 +386,9 @@ public interface ICharacterOverviewPresenter
     Task<CareerActiveSkillAdvanceEditorState?> PrepareCareerActiveSkillAdvanceAsync(CancellationToken ct)
         => Task.FromResult<CareerActiveSkillAdvanceEditorState?>(null);
 
+    Task<bool> TryApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
+        => Task.FromResult(false);
+
     Task ApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
@@ -414,6 +417,9 @@ public interface ICharacterOverviewPresenter
     Task<CareerSkillGroupAdvanceEditorState?> PrepareCareerSkillGroupAdvanceAsync(CancellationToken ct)
         => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null);
 
+    Task<bool> TryApplyCareerSkillGroupAdvanceAsync(CareerSkillGroupAdvanceRequest request, CancellationToken ct)
+        => Task.FromResult(false);
+
     Task ApplyCareerSkillGroupAdvanceAsync(CareerSkillGroupAdvanceRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
@@ -424,6 +430,9 @@ public interface ICharacterOverviewPresenter
         CareerSkillSpecializationQuoteRequest request,
         CancellationToken ct)
         => Task.FromResult<CharacterCareerSkillSpecializationQuote?>(null);
+
+    Task<bool> TryApplyCareerSkillSpecializationAsync(CareerSkillSpecializationRequest request, CancellationToken ct)
+        => Task.FromResult(false);
 
     Task ApplyCareerSkillSpecializationAsync(CareerSkillSpecializationRequest request, CancellationToken ct)
         => Task.CompletedTask;

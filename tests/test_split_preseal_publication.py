@@ -810,6 +810,25 @@ def test_unsealed_recovery_history_has_a_fail_closed_depth_bound(tmp_path: Path,
         preseal.validate_existing_unsealed_marker(repository, second_head)
 
 
+def test_seventeen_reviewed_integrations_keep_full_history_authentication(tmp_path: Path) -> None:
+    repository, _, _, head = fixture(tmp_path)
+    for number in range(17):
+        recipe_path = repository / "scripts/ai/verify_fresh_checkout_package_plane.py"
+        recipe_path.write_text(f"# reviewed integration {number}\n", encoding="utf-8")
+        recipe = commit(repository, f"reviewed integration {number}")
+        marker = preseal.expected_marker(repository, head, recipe)
+        (repository / preseal.MARKER_PATH).write_bytes(preseal.canonical_json_bytes(marker))
+        head = commit(repository, f"marker {number}")
+    assert preseal.validate_existing_unsealed_marker(repository, head) == head
+    # Extending the traversal budget must not bless a marker granting authority.
+    marker["authority"] = True
+    checkout(repository, recipe)
+    (repository / preseal.MARKER_PATH).write_bytes(preseal.canonical_json_bytes(marker))
+    tampered = commit(repository, "invalid authority marker")
+    with pytest.raises(preseal.PresealError):
+        preseal.validate_existing_unsealed_marker(repository, tampered)
+
+
 def test_retained_marker_can_start_one_later_exact_preseal_cycle(tmp_path: Path) -> None:
     repository, _, first_recipe, first_marker = fixture(tmp_path)
     write_seal_locks(repository, first_marker)

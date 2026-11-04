@@ -193,6 +193,7 @@ public partial class MainWindow : Window
             onSectionQuickActionRequested: SectionHost_OnQuickActionRequested,
             onSectionAttributeEditRequested: SectionHost_OnAttributeEditRequested,
             onSectionCareerAttributeAdvanceRequested: SectionHost_OnCareerAttributeAdvanceRequested,
+            onSectionCareerSkillAdvanceRequested: SectionHost_OnCareerSkillAdvanceRequested,
             onSectionCareerKarmaAwardRequested: SectionHost_OnCareerKarmaAwardRequested,
             onSectionCareerNuyenAdjustRequested: SectionHost_OnCareerNuyenAdjustRequested,
             onCoachLaunchOpenRequested: CoachSidecar_OnOpenLaunchRequested,

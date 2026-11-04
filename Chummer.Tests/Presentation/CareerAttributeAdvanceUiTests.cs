@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -368,7 +368,7 @@ namespace Chummer.Tests.Presentation;
     // Headless bootstrap (mirrors AvaloniaHeadlessSmokeTests).
     // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-    private static void WithHeadlessUi(Action action)
+    internal static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)
         {
@@ -460,7 +460,7 @@ namespace Chummer.Tests.Presentation;
         return result;
     }
 
-    private static Button? FindButtonByName(Visual root, string name)
+    internal static Button? FindButtonByName(Visual root, string name)
         => root.GetVisualDescendants().OfType<Button>().FirstOrDefault(button => string.Equals(button.Name, name, StringComparison.Ordinal));
 
     private static Button? FindButtonByAutomationId(Visual root, string automationId)
@@ -475,14 +475,14 @@ namespace Chummer.Tests.Presentation;
     // Runs the layout pass synchronously inside the live session: headless
     // RunJobs never executes queued layout, and a layout left pending explodes
     // at ResetForUnitTests when the font collections are already disposed.
-    private static void PumpLayout(Layoutable root)
+    internal static void PumpLayout(Layoutable root)
     {
         root.InvalidateMeasure();
         root.Measure(new Size(880, 560));
         root.Arrange(new Rect(0, 0, 880, 560));
         Dispatcher.UIThread.RunJobs();
     }
-    private static Window ShowHost(SectionHostControl host)
+    internal static Window ShowHost(SectionHostControl host)
     {
         // Local-value pin beats the App.axaml Window/UserControl style composite
         // ("Segoe UI,Verdana,Arial"), which cannot resolve in a headless session.
@@ -498,7 +498,7 @@ namespace Chummer.Tests.Presentation;
         return window;
     }
 
-    private static SectionHostState BuildHostState(
+    internal static SectionHostState BuildHostState(
         string rulesetId,
         bool careerMode,
         bool includeEdgeRow = false,
@@ -624,4 +624,349 @@ namespace Chummer.Tests.Presentation;
 
     private static string Hex64(char digit)
         => new string(digit, 64);
+}
+
+/// <summary>
+/// Headless UI-consumption tests for the SR5 career skill-advance affordance:
+/// (1) the Advance Skills quick-action renders on SR5 career mode and raises
+/// CareerSkillAdvanceRequested, (2) the dialog Apply emits Confirmed=true
+/// revision-bound requests, (3) blocked quotes keep Advance disabled.
+/// </summary>
+
+[TestClass]
+[DoNotParallelize]
+public sealed class CareerSkillAdvanceUiTests
+{
+    private static string Hex64(char digit) => new string(digit, 64);
+
+    [TestMethod]
+    public void Advance_skills_button_renders_and_raises_event_on_sr5_career_mode()
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            Window careerWindow = CareerAttributeAdvanceUiTests.ShowHost(new SectionHostControl());
+            var careerHost = (SectionHostControl)careerWindow.Content!;
+            careerHost.SetState(CareerHostState("sr5", profileCreated: true));
+            CareerAttributeAdvanceUiTests.PumpLayout(careerHost);
+
+            bool requested = false;
+            careerHost.CareerSkillAdvanceRequested += (_, _) => requested = true;
+
+            Button? btn = CareerAttributeAdvanceUiTests.FindButtonByName(careerHost, "CareerAdvanceSkills");
+            Assert.IsNotNull(btn, "SR5 career mode must expose the Advance Skills quick action.");
+            btn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.IsTrue(requested, "The click must raise CareerSkillAdvanceRequested.");
+
+            Window creationWindow = CareerAttributeAdvanceUiTests.ShowHost(new SectionHostControl());
+            var creationHost = (SectionHostControl)creationWindow.Content!;
+            creationHost.SetState(CareerHostState("sr5", profileCreated: false));
+            CareerAttributeAdvanceUiTests.PumpLayout(creationHost);
+            Assert.IsNull(CareerAttributeAdvanceUiTests.FindButtonByName(creationHost, "CareerAdvanceSkills"),
+                "Creation mode must not expose the Advance Skills quick action.");
+
+            Window sr6Window = CareerAttributeAdvanceUiTests.ShowHost(new SectionHostControl());
+            var sr6Host = (SectionHostControl)sr6Window.Content!;
+            sr6Host.SetState(CareerHostState("sr6", profileCreated: true));
+            CareerAttributeAdvanceUiTests.PumpLayout(sr6Host);
+            Assert.IsNotNull(CareerAttributeAdvanceUiTests.FindButtonByName(sr6Host, "CareerAdvanceSkills"),
+                "Career skill advance quick action is ruleset-agnostic and must render on SR6 too.");
+
+            careerWindow.Close();
+            creationWindow.Close();
+            sr6Window.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+    [TestMethod]
+    public void Skill_advance_dialog_blocked_quote_keeps_apply_disabled()
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            var workspaceId = new CharacterWorkspaceId("ws-career-skill-advance-blocked");
+            var activeState = new CareerActiveSkillAdvanceEditorState(
+                workspaceId,
+                ContentRevision: 9,
+                Skills: new List<CharacterCareerActiveSkillAdvanceQuote>
+                {
+                    new(
+                        new CharacterCareerActiveSkillIdentity(
+                            Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                            Guid.Parse("22222222-2222-2222-2222-222222222222")),
+                        Name: "Sneaking",
+                        SkillCategory: "Stealth",
+                        BasePoints: 6,
+                        KarmaPoints: 30,
+                        TotalBaseRating: 6,
+                        RatingMaximum: 6,
+                        AvailableKarma: 5,
+                        KarmaCost: 0,
+                        CanAdvance: false,
+                        Blocker: CharacterCareerActiveSkillAdvanceBlocker.AtMaximum,
+                        LogicalRevision: Hex64('a'),
+                        SourceRevision: Hex64('b'),
+                        RuleDigest: Hex64('c')),
+                },
+                OmittedSkillCount: 0);
+
+            bool applied = false;
+            var dialog = new CareerSkillAdvanceWindow(
+                workspaceId,
+                prepareActive: _ => Task.FromResult<CareerActiveSkillAdvanceEditorState?>(activeState),
+                applyActive: (_, _) =>
+                {
+                    applied = true;
+                    return Task.FromResult(true);
+                },
+                prepareKnowledge: _ => Task.FromResult<CareerKnowledgeSkillAdvanceEditorState?>(null),
+                applyKnowledge: (_, _) => Task.FromResult<CharacterCareerKnowledgeSkillAdvanceReceipt?>(null),
+                prepareGroup: _ => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null),
+                applyGroup: (_, _) => Task.FromResult(false),
+                prepareSpecialization: _ => Task.FromResult<CareerSkillSpecializationEditorState?>(null),
+                prepareSpecializationQuote: (_, _) => Task.FromResult<CharacterCareerSkillSpecializationQuote?>(null),
+                applySpecialization: (_, _) => Task.FromResult(false), isCurrentContext: () => true, expectedContentRevision: 9);
+
+            dialog.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            Button? apply = CareerAttributeAdvanceUiTests.FindButtonByName(dialog, "career-skill-advance-apply");
+            Assert.IsNotNull(apply, "The dialog footer must expose the Advance button by name.");
+
+            string identityKey = "A:" + Guid.Parse("11111111-1111-1111-1111-111111111111");
+            Border? row = FindRowBorderByKey(dialog, identityKey);
+            Assert.IsNotNull(row, "The active-skill quote row must render with its identity name.");
+            bool selected = dialog.SelectRowByKey(identityKey);
+            Assert.IsTrue(selected, "SelectRowByKey must find the rendered active-skill row.");
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.IsFalse(apply.IsEffectivelyEnabled, "Blocked quotes must keep Advance disabled.");
+            Assert.IsFalse(applied, "Blocked quote must not emit a request.");
+
+            dialog.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+    [TestMethod]
+    public void Skill_advance_dialog_apply_emits_confirmed_request_and_survives_revision_bump()
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            var workspaceId = new CharacterWorkspaceId("ws-career-skill-advance-apply");
+            var skillId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            var activeState = new CareerActiveSkillAdvanceEditorState(
+                workspaceId,
+                ContentRevision: 9,
+                Skills: new List<CharacterCareerActiveSkillAdvanceQuote>
+                {
+                    new(
+                        new CharacterCareerActiveSkillIdentity(
+                            skillId,
+                            Guid.Parse("22222222-2222-2222-2222-222222222222")),
+                        Name: "Sneaking",
+                        SkillCategory: "Stealth",
+                        BasePoints: 6,
+                        KarmaPoints: 30,
+                        TotalBaseRating: 5,
+                        RatingMaximum: 6,
+                        AvailableKarma: 30,
+                        KarmaCost: 15,
+                        CanAdvance: true,
+                        Blocker: CharacterCareerActiveSkillAdvanceBlocker.None,
+                        LogicalRevision: Hex64('a'),
+                        SourceRevision: Hex64('b'),
+                        RuleDigest: Hex64('c')),
+                },
+                OmittedSkillCount: 0);
+
+            List<CareerActiveSkillAdvanceRequest> requests = new();
+            var dialog = new CareerSkillAdvanceWindow(
+                workspaceId,
+                prepareActive: _ => Task.FromResult<CareerActiveSkillAdvanceEditorState?>(activeState),
+                applyActive: (request, _) =>
+                {
+                    requests.Add(request);
+                    return Task.FromResult(true);
+                },
+                prepareKnowledge: _ => Task.FromResult<CareerKnowledgeSkillAdvanceEditorState?>(null),
+                applyKnowledge: (_, _) => Task.FromResult<CharacterCareerKnowledgeSkillAdvanceReceipt?>(null),
+                prepareGroup: _ => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null),
+                applyGroup: (_, _) => Task.FromResult(false),
+                prepareSpecialization: _ => Task.FromResult<CareerSkillSpecializationEditorState?>(null),
+                prepareSpecializationQuote: (_, _) => Task.FromResult<CharacterCareerSkillSpecializationQuote?>(null),
+                applySpecialization: (_, _) => Task.FromResult(false), isCurrentContext: () => true, expectedContentRevision: 9);
+
+            dialog.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            bool selected = dialog.SelectRowByKey("A:" + skillId);
+            Assert.IsTrue(selected, "The advanceable row must be selectable programmatically.");
+            Dispatcher.UIThread.RunJobs();
+
+            Button? apply = CareerAttributeAdvanceUiTests.FindButtonByName(dialog, "career-skill-advance-apply");
+            Assert.IsNotNull(apply, "The dialog footer must expose the Advance button by name.");
+            Assert.IsTrue(apply.IsEffectivelyEnabled, "An advanceable selection must enable Advance.");
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(0, requests.Count, "Review is not consent to buy.");
+            Assert.AreEqual("Confirm purchase", apply.Content);
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.AreEqual(1, requests.Count, "Advance must emit exactly one request.");
+            CareerActiveSkillAdvanceRequest request = requests[0];
+            Assert.IsTrue(request.Confirmed, "The emitted request must be explicitly confirmed.");
+            Assert.AreEqual(workspaceId, request.WorkspaceId);
+            Assert.AreEqual(9L, request.ExpectedContentRevision, "Request must bind the prepared content revision.");
+            Assert.AreEqual(skillId, request.ExpectedSkill.Identity.SkillId);
+            Assert.AreEqual(Hex64('c'), request.ExpectedRuleDigest);
+            Assert.AreNotEqual(Guid.Empty, request.ExpenseId);
+            Assert.IsTrue(dialog.AdvanceApplied, "The dialog must report the completed advance.");
+
+            dialog.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Unverified_or_lost_result_is_not_success_and_cannot_be_replayed(bool lost)
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            int writes = 0;
+            var window = NewSkillWindow(apply: (_, _) => { writes++; if (lost) throw new System.IO.IOException("lost response"); return Task.FromResult(false); });
+            window.Show(); Dispatcher.UIThread.RunJobs();
+            Assert.IsTrue(window.SelectRowByKey("A:" + TestSkillId));
+            var button = CareerAttributeAdvanceUiTests.FindButtonByName(window, "career-skill-advance-apply")!;
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual(0, writes);
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(1, writes); Assert.IsFalse(window.AdvanceApplied); Assert.IsFalse(button.IsEnabled);
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual(1, writes);
+            window.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Context_change_during_load_discards_the_old_runner_choices()
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            bool current = true; int writes = 0;
+            var loaded = new TaskCompletionSource<CareerActiveSkillAdvanceEditorState?>();
+            var window = NewSkillWindow(prepare: _ => loaded.Task, current: () => current,
+                apply: (_, _) => { writes++; return Task.FromResult(true); });
+            window.Show(); current = false; loaded.SetResult(TestActiveState()); Dispatcher.UIThread.RunJobs();
+            Assert.IsFalse(window.IsVisible); Assert.IsFalse(window.SelectRowByKey("A:" + TestSkillId));
+            Assert.AreEqual(0, writes);
+        });
+    }
+
+    [TestMethod]
+    public void Changed_context_or_cancelled_review_never_buys_a_skill()
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            bool current = true; int writes = 0;
+            var window = NewSkillWindow(current: () => current, apply: (_, _) => { writes++; return Task.FromResult(true); });
+            window.Show(); Dispatcher.UIThread.RunJobs(); window.SelectRowByKey("A:" + TestSkillId);
+            var button = CareerAttributeAdvanceUiTests.FindButtonByName(window, "career-skill-advance-apply")!;
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual("Confirm purchase", button.Content); Assert.AreEqual(0, writes);
+            current = false; button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual(0, writes); Assert.IsFalse(window.AdvanceApplied); Assert.IsFalse(window.IsVisible);
+        });
+    }
+
+    [TestMethod]
+    public void Specialization_quote_is_displayed_before_separate_explicit_confirmation()
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            var identity = new CharacterCareerSkillIdentity(TestSkillId, TestSourceId, CharacterCareerSkillKind.Active);
+            var option = new CharacterCareerSkillSpecializationOption("urban", "Urban", CharacterCareerSkillSpecializationOptionKind.SourceCatalog, "source");
+            var state = new CareerSkillSpecializationEditorState(new("skill-test"), 9,
+                [new(identity, "Sneaking", "Stealth", "", 3, 0, [option])], 0);
+            var quote = new CharacterCareerSkillSpecializationQuote(identity, new("Urban", option.Kind, option.OptionIdentity), "Sneaking", "Stealth", "", true, false, true, true, false,
+                3, 0, 30, 0, false, false, false, 7, false, true, CharacterCareerSkillSpecializationBlocker.None, "character", "source", "rules", "logical");
+            int writes = 0;
+            var window = new CareerSkillAdvanceWindow(new("skill-test"),
+                _ => Task.FromResult<CareerActiveSkillAdvanceEditorState?>(null), (_, _) => Task.FromResult(false),
+                _ => Task.FromResult<CareerKnowledgeSkillAdvanceEditorState?>(null), (_, _) => Task.FromResult<CharacterCareerKnowledgeSkillAdvanceReceipt?>(null),
+                _ => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null), (_, _) => Task.FromResult(false),
+                _ => Task.FromResult<CareerSkillSpecializationEditorState?>(state), (_, _) => Task.FromResult<CharacterCareerSkillSpecializationQuote?>(quote),
+                (request, _) => { writes++; Assert.AreEqual(quote, request.ExpectedQuote); Assert.IsTrue(request.Confirmed); return Task.FromResult(true); }, () => true, 9);
+            window.Show(); Dispatcher.UIThread.RunJobs(); Assert.IsTrue(window.SelectRowByKey("S:" + TestSkillId + ":urban"));
+            var button = CareerAttributeAdvanceUiTests.FindButtonByName(window, "career-skill-advance-apply")!;
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(0, writes); Assert.AreEqual("Confirm purchase", button.Content);
+            Assert.IsTrue(window.GetVisualDescendants().OfType<TextBlock>().Any(x => x.Text?.Contains("7 Karma") == true));
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(1, writes); Assert.IsTrue(window.AdvanceApplied); Assert.IsFalse(window.IsVisible);
+        });
+    }
+
+    private static readonly Guid TestSkillId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid TestSourceId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static CareerActiveSkillAdvanceEditorState TestActiveState() => new(new("skill-test"), 9,
+        [new(new(TestSkillId, TestSourceId), "Sneaking", "Stealth", 2, 0, 2, 6, 30, 6, true, CharacterCareerActiveSkillAdvanceBlocker.None, Hex64('a'), Hex64('b'), Hex64('c'))], 0);
+    private static CareerSkillAdvanceWindow NewSkillWindow(
+        Func<CancellationToken, Task<CareerActiveSkillAdvanceEditorState?>>? prepare = null,
+        Func<CareerActiveSkillAdvanceRequest, CancellationToken, Task<bool>>? apply = null, Func<bool>? current = null)
+        => new(new("skill-test"), prepare ?? (_ => Task.FromResult<CareerActiveSkillAdvanceEditorState?>(TestActiveState())), apply ?? ((_, _) => Task.FromResult(false)),
+            _ => Task.FromResult<CareerKnowledgeSkillAdvanceEditorState?>(null), (_, _) => Task.FromResult<CharacterCareerKnowledgeSkillAdvanceReceipt?>(null),
+            _ => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null), (_, _) => Task.FromResult(false),
+            _ => Task.FromResult<CareerSkillSpecializationEditorState?>(null), (_, _) => Task.FromResult<CharacterCareerSkillSpecializationQuote?>(null), (_, _) => Task.FromResult(false), current ?? (() => true), 9);
+
+    private static Border? FindRowBorderByKey(Visual root, string identityKey)
+    {
+        if (root is Border b && string.Equals(b.Name, identityKey, StringComparison.Ordinal))
+        {
+            return b;
+        }
+
+        foreach (var child in root.GetVisualChildren())
+        {
+            var hit = FindRowBorderByKey(child, identityKey);
+            if (hit is not null)
+            {
+                return hit;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Attributes-shaped host state with the career strip gated purely on ProfileCreated
+    /// (the production state carries it; the shared helper pins it to false).
+    /// </summary>
+    private static SectionHostState CareerHostState(string rulesetId, bool profileCreated)
+    {
+        string previewJson = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            attributes = new[] { new { } },
+        });
+
+        return new SectionHostState(
+            SectionId: "attributes",
+            NavigationTabs: Array.Empty<NavigatorTabItem>(),
+            ActiveTabId: null,
+            SectionActions: Array.Empty<NavigatorSectionActionItem>(),
+            ActiveActionId: null,
+            Notice: string.Empty,
+            PreviewJson: previewJson,
+            Rows: Array.Empty<SectionRowDisplayItem>(),
+            QuickActions: Array.Empty<SectionQuickActionDisplayItem>(),
+            BuildLab: null,
+            BrowseWorkspace: null,
+            ContactGraph: null,
+            DowntimePlanner: null,
+            NpcPersonaStudio: null,
+            RulesetId: rulesetId,
+            ProfileCreated: profileCreated);
+    }
 }

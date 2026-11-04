@@ -33,6 +33,7 @@ public partial class SectionHostControl : UserControl
     public event EventHandler<string>? QuickActionRequested;
     public event EventHandler<AttributeEditRequest>? AttributeEditRequested;
     public event EventHandler<string>? CareerAttributeAdvanceRequested;
+    public event EventHandler<object?>? CareerSkillAdvanceRequested;
     public event EventHandler<object?>? CareerKarmaAwardRequested;
     public event EventHandler<object?>? CareerNuyenAdjustRequested;
 
@@ -3035,6 +3036,10 @@ public partial class SectionHostControl : UserControl
             Foreground = fg,
             FontSize = 11
         });
+
+        Button skillAdvanceButton = CreateRewardsButton("CareerAdvanceSkills", "Advance Skills\u2026", fg, surface, border);
+        skillAdvanceButton.Click += (_, _) => CareerSkillAdvanceRequested?.Invoke(this, EventArgs.Empty);
+        stack.Children.Add(skillAdvanceButton);
 
         Button karmaButton = CreateRewardsButton("CareerAwardKarma", "Award Karma\u2026", fg, surface, border);
         karmaButton.Click += (_, _) => CareerKarmaAwardRequested?.Invoke(this, EventArgs.Empty);
