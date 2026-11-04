@@ -935,6 +935,85 @@ public sealed class CareerSkillAdvanceUiTests
     }
 
     [TestMethod]
+    public void Specialization_selection_is_locked_while_quote_is_pending_and_confirm_requires_same_identity()
+    {
+        CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
+        {
+            // Two specializations on one skill; the quote provider is gated so the
+            // audit's in-flight interval is actually exercised (TCS-held quotes).
+            var identity = new CharacterCareerSkillIdentity(TestSkillId, TestSourceId, CharacterCareerSkillKind.Active);
+            var optionA = new CharacterCareerSkillSpecializationOption("urban", "Urban", CharacterCareerSkillSpecializationOptionKind.SourceCatalog, "source");
+            var optionB = new CharacterCareerSkillSpecializationOption("wild", "Wilderness", CharacterCareerSkillSpecializationOptionKind.SourceCatalog, "source");
+            var state = new CareerSkillSpecializationEditorState(new("skill-test"), 9,
+                [new(identity, "Sneaking", "Stealth", "", 3, 0, new[] { optionA, optionB })], 0);
+            var quoteA = new CharacterCareerSkillSpecializationQuote(identity, new("Urban", optionA.Kind, optionA.OptionIdentity), "Sneaking", "Stealth", "", true, false, true, true, false,
+                3, 0, 30, 0, false, false, false, 7, false, true, CharacterCareerSkillSpecializationBlocker.None, "character", "source", "rules", "logical");
+            var quoteB = new CharacterCareerSkillSpecializationQuote(identity, new("Wilderness", optionB.Kind, optionB.OptionIdentity), "Sneaking", "Stealth", "", true, false, true, true, false,
+                3, 0, 30, 0, false, false, false, 7, false, true, CharacterCareerSkillSpecializationBlocker.None, "character", "source", "rules", "logical");
+
+            var gateA = new TaskCompletionSource<CharacterCareerSkillSpecializationQuote?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var gateB = new TaskCompletionSource<CharacterCareerSkillSpecializationQuote?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var pendingGate = gateA;
+            var quoteRequests = new List<string>();
+            int writes = 0;
+            var window = new CareerSkillAdvanceWindow(new("skill-test"),
+                _ => Task.FromResult<CareerActiveSkillAdvanceEditorState?>(null), (_, _) => Task.FromResult(false),
+                _ => Task.FromResult<CareerKnowledgeSkillAdvanceEditorState?>(null), (_, _) => Task.FromResult<CharacterCareerKnowledgeSkillAdvanceReceipt?>(null),
+                _ => Task.FromResult<CareerSkillGroupAdvanceEditorState?>(null), (_, _) => Task.FromResult(false),
+                _ => Task.FromResult<CareerSkillSpecializationEditorState?>(state),
+                (request, _) => { quoteRequests.Add(request.Selection.OptionIdentity); return pendingGate.Task; },
+                (_, _) => { writes++; return Task.FromResult(true); }, () => true, 9);
+            window.Show(); Dispatcher.UIThread.RunJobs();
+
+            // Select A and request the review; the quote stays pending (gate held).
+            Assert.IsTrue(window.SelectRowByKey("S:" + TestSkillId + ":urban"));
+            var button = CareerAttributeAdvanceUiTests.FindButtonByName(window, "career-skill-advance-apply")!;
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.IsTrue(window.IsVisible);
+            Assert.AreEqual(0, writes);
+
+            // While A's quote is in flight the list is input-locked: a click on B
+            // must not change the visible selection nor the pending review.
+            var listBox = window.GetVisualDescendants().OfType<ListBox>().Single();
+            Assert.IsFalse(listBox.IsEnabled, "The list must lock while a quote is pending.");
+            window.SelectRowByKey("S:" + TestSkillId + ":wild");
+            Dispatcher.UIThread.RunJobs();
+
+            // Release A's quote; the window offers confirm for A only.
+            gateA.SetResult(quoteA);
+            Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual("Confirm purchase", (string)button.Content!, "Quote A must complete into a confirm offer for A.");
+            Assert.IsTrue(window.GetVisualDescendants().OfType<TextBlock>().Any(x => x.Text?.Contains("Urban") == true),
+                "The confirm offer must name the reviewed identity (Urban).");
+
+            // The lock released with the completed review, so B is selectable now —
+            // but confirming without re-reviewing B must refuse (identity mismatch).
+            Assert.IsTrue(listBox.IsEnabled, "The list unlocks once the review completed.");
+            window.SelectRowByKey("S:" + TestSkillId + ":wild");
+            Dispatcher.UIThread.RunJobs();
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(0, writes, "Confirm must refuse when selected identity != reviewed identity.");
+            Assert.IsTrue(window.IsVisible, "The window stays open; nothing was dispatched.");
+
+            // Re-review B explicitly: its own quote request runs, completes, and the
+            // follow-up click dispatches exactly B's purchase.
+            pendingGate = gateB;
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.IsTrue(quoteRequests.Contains(optionB.OptionIdentity), "Re-review must quote B through its own request.");
+            gateB.SetResult(quoteB);
+            Dispatcher.UIThread.RunJobs();
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(1, writes, "Exactly one purchase, for B, after its own review.");
+            Assert.IsTrue(window.AdvanceApplied);
+            Assert.IsFalse(window.IsVisible);
+        });
+    }
+
+    [TestMethod]
     public void Sr6_skill_list_overflow_is_scrollable_and_keyboard_reachable()
     {
         CareerAttributeAdvanceUiTests.WithHeadlessUi(() =>
@@ -1003,16 +1082,27 @@ public sealed class CareerSkillAdvanceUiTests
                 at.Value.Y >= 0 && at.Value.Y <= window.Height,
                 "Keyboard selection must scroll the row into view, saw Y=" + at.Value.Y);
 
-            // Mouse wheel moves the viewport as well (a second non-helper path).
+            // Mouse wheel moves the viewport as well (second non-helper path).
+            // Audit 2026-11-04 item 4: start from a measured NON-EDGE offset and
+            // assert an exact scroll delta, so the wheel assertion cannot pass on a
+            // viewport that was already at its end (or on scroll starvation).
+            scroll.Offset = new Vector(0, 0);
+            CareerAttributeAdvanceUiTests.PumpLayout(window);
+            Assert.IsTrue(
+                scroll.Extent.Height - scroll.Viewport.Height > 50,
+                "The list must have real scroll headroom beyond 50px for the wheel assertion.");
             double before = scroll.Offset.Y;
+            Assert.AreEqual(0.0, before, "wheel measurement must start from a known non-edge offset");
             window.MouseWheel(
                 new Point(window.Width / 2, window.Height / 2),
                 new Vector(0, -120),
                 global::Avalonia.Input.RawInputModifiers.None);
             CareerAttributeAdvanceUiTests.PumpLayout(window);
+            double after = scroll.Offset.Y;
             Assert.IsTrue(
-                scroll.Offset.Y > before || scroll.Offset.Y > 0,
-                "Mouse wheel must scroll the skill list.");
+                after >= before + 50.0,
+                "Mouse wheel must scroll the skill list measurably (sent -120). " +
+                "before=" + before + " after=" + after);
 
             // Mouse click on the realized, scrolled-into-view row selects it.
             window.MouseMove(at.Value + new Point(12, 8));
@@ -1020,9 +1110,20 @@ public sealed class CareerSkillAdvanceUiTests
             window.MouseUp(at.Value + new Point(12, 8), global::Avalonia.Input.MouseButton.Left, global::Avalonia.Input.RawInputModifiers.None);
             Dispatcher.UIThread.RunJobs();
 
-            // The review/apply affordance exists for the selected row.
+            // The selected row is the one just clicked: assert identity, not just
+            // affordance existence. Audit 2026-11-04 item 4.
             var apply = CareerAttributeAdvanceUiTests.FindButtonByName(window, "career-skill-advance-apply");
             Assert.IsNotNull(apply, "The review/apply affordance must exist for the selected row.");
+            var clickedItem = (ListBoxItem)listBox.SelectedItem!;
+            var clickedBorder = (Border)((StackPanel)clickedItem.Content!).Children[0];
+            var clickedKey = clickedBorder.Name!;
+            Assert.AreEqual(
+                key, clickedKey,
+                "Mouse click must select exactly the row measured before the click.");
+            var clickedName = ((TextBlock)((StackPanel)clickedBorder.Child!).Children[0]).Text;
+            Assert.IsTrue(
+                string.Equals(clickedName, lastName, StringComparison.Ordinal),
+                "Mouse click must keep the reviewed identity: " + clickedName);
         });
     }
 

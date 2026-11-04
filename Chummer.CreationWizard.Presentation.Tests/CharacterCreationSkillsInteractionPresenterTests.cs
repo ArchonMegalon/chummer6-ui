@@ -417,6 +417,79 @@ public sealed partial class CharacterCreationSkillsInteractionPresenterTests
 
     private sealed record Fixture(CharacterCreationSkillsState State);
 
+
+    [TestMethod]
+    public void Prepare_read_failure_yields_recoverable_fail_without_exception_or_writes()
+    {
+        Fixture fixture = CreateFixture();
+        var service = new FakeSkillsService(fixture.State);
+        CharacterOverviewState overview = CreateOverview(fixture.State, service);
+
+        var presenter = new CharacterCreationSkillsInteractionPresenter(service);
+        presenter.Load(overview);
+
+        service.BeforeLoad = () => throw new InvalidOperationException("simulated authority read failure");
+
+        var allocations = new List<CharacterCreationSkillAllocation>
+        {
+            new("pistols", "active", 4, SpecializationOptionId: null, IsNativeLanguage: false),
+        };
+        var groupAllocations = new List<CharacterCreationSkillGroupAllocation>
+        {
+            new("firearms", 2),
+        };
+
+        CharacterCreationSkillsInteractionPrepareResult prepared =
+            presenter.Prepare(overview, allocations, groupAllocations);
+
+        Assert.AreEqual("skills-prepare-outcome-uncertain", prepared.Outcome);
+        Assert.IsNotNull(prepared.Error);
+        StringAssert.Contains(prepared.Error!, "has not changed");
+        Assert.IsNull(prepared.Preview, "a failed prepare must not carry a prepared preview");
+        Assert.AreEqual(0, service.PreviewCalls, "no preview may be dispatched once the state read fails");
+        Assert.AreEqual(0, service.ConfirmCalls, "no write may happen from a failed prepare");
+    }
+
+    [TestMethod]
+    public void Confirm_preread_failure_yields_recoverable_fail_and_dispatches_nothing()
+    {
+        Fixture fixture = CreateFixture();
+        var service = new FakeSkillsService(fixture.State);
+        CharacterOverviewState overview = CreateOverview(fixture.State, service);
+
+        var presenter = new CharacterCreationSkillsInteractionPresenter(service);
+        presenter.Load(overview);
+        var allocations = new List<CharacterCreationSkillAllocation>
+        {
+            new("pistols", "active", 4, SpecializationOptionId: null, IsNativeLanguage: false),
+        };
+        var groupAllocations = new List<CharacterCreationSkillGroupAllocation>
+        {
+            new("firearms", 2),
+        };
+        CharacterCreationSkillsInteractionPrepareResult prepared =
+            presenter.Prepare(overview, allocations, groupAllocations);
+        Assert.AreEqual("ok", prepared.Outcome, prepared.Error);
+        CharacterCreationSkillsInteractionPreparedPreview preview = RequirePrepared(prepared);
+
+        service.BeforeLoad = () => throw new InvalidOperationException("simulated authority read failure");
+
+        var confirmation = new CharacterCreationSkillsInteractionConfirmation(
+            preview.State,
+            allocations,
+            groupAllocations,
+            preview.Preview.PreviewDigest,
+            IdempotencyKey: "skills-confirm-preread-fail",
+            ExplicitlyConfirmed: true);
+        CharacterCreationSkillsInteractionConfirmResult confirmed =
+            presenter.Confirm(overview, confirmation);
+
+        Assert.AreEqual("skills-confirm-preread-outcome-uncertain", confirmed.Outcome);
+        Assert.IsNotNull(confirmed.Error);
+        StringAssert.Contains(confirmed.Error!, "nothing was dispatched");
+        Assert.AreEqual(0, service.ConfirmCalls, "the failed pre-read must not dispatch any write");
+    }
+
     private sealed class FakeSkillsService : IOwnerBoundCharacterCreationSkillsService
     {
         public Action? BeforeLoad { get; set; }

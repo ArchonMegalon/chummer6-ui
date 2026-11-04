@@ -770,7 +770,44 @@ public partial class MainWindow
             var saved = await Task.Run(() => _aiFinishService.InspectSavedResult(workspaceId.Value, owner),
                 _creationWizardLifetime.Token);
             if (!Current()) return;
-            if (saved is not null) { ShowResults(saved, true); return; }
+            if (saved is not null)
+            {
+                ShowResults(saved, true);
+                // Qualified durable staged resumption: exactly one uncertain
+                // (unobserved) stage in the saved run offers a native resume. The
+                // resume re-dispatches ONLY that stage under the SAME frozen plan
+                // and operation identity, gated on fresh authorization and an
+                // exact receipt match inside the same exclusive fence. A completed
+                // or failed run offers nothing: failed stages were observed and
+                // stay observed.
+                bool hasFailedStage = saved.Any(row => !row.Success);
+                var uncertainStage = saved.LastOrDefault(row =>
+                    !row.Success
+                    && row.Outcome == CharacterCreationFoundationOutcomes.Invalid
+                    && row.Blockers.Length == 1
+                    && row.Blockers[0].Contains("uncertain", StringComparison.Ordinal));
+                if (Current() && !hasFailedStage && uncertainStage is not null
+                    && _creationWizardAiFinishFeatureEnabled && _creationWizardBuildGhostPreferenceEnabled)
+                {
+                    var resume = new CreationAiFinishResumeWindow(uncertainStage.Domain);
+                    bool resumeApproved = await resume.ShowDialog<bool>(this);
+                    if (resumeApproved && Current())
+                    {
+                        var resumed = await Task.Run(
+                            () => _aiFinishService.ResumeSavedResult(workspaceId.Value),
+                            _creationWizardLifetime.Token);
+                        if (!Current()) return;
+                        ShowResults(resumed.Results, false);
+                        if (Current(false))
+                        {
+                            await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token);
+                            if (Current(false)) ApplyCreationWizardState(_adapter.State);
+                        }
+                        return;
+                    }
+                }
+                return;
+            }
             var proposal = await Task.Run(() => _aiFinishService.BuildProposal(workspaceId.Value),
                 _creationWizardLifetime.Token);
             if (!Current() || proposal.ExpectedOwner != owner) return;

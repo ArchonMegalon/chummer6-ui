@@ -195,6 +195,7 @@ public sealed class CharacterCreationAiFinishRecoveryTests
     private CreationAiFinishRunStore _store = null!;
     private static OwnerContextStamp Owner(string id = "alice", long revision = 1)
         => new(new OwnerScope("install-account:" + id), "authority", revision);
+    private const string PLAN = "{\"plan\":1}";
     private static CreationAiFinishService.AiFinishDomainResult Success(string domain)
         => new(domain, true, CharacterCreationFoundationOutcomes.Success, []);
 
@@ -311,6 +312,186 @@ public sealed class CharacterCreationAiFinishRecoveryTests
         public OwnerContextStamp Capture() => Stamp;
         public bool TryAcquire(OwnerContextStamp expected, out IOwnerContextLease? lease)
         { lease = null; return false; }
+    }
+
+
+    // ------------------------------------------------------------------
+    // Qualified durable staged resumption (WINDOWS_AI_RECOVERY.md):
+    // resume continues the SAME frozen plan under the SAME operation
+    // identity inside the SAME exclusive fence. Exact receipt reconciliation
+    // first; only the single uncertain domain is re-dispatched.
+    // ------------------------------------------------------------------
+
+    [TestMethod]
+    public void Resume_completes_the_uncertain_domain_after_an_interrupted_dispatch()
+    {
+        // Simulate a crash after the durable dispatch marker for "skills".
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        string[] lines = File.ReadAllLines(path);
+        File.WriteAllLines(path, lines.Take(4)); // claimed, dispatching+observed attributes, dispatching skills
+
+        var record = _store.Read(Owner(), "runner")!;
+        Assert.AreEqual("dispatching", record.Last().Kind);
+        Assert.AreEqual("skills", record.Last().Domain);
+
+        int skillsDispatch = 0;
+        var receipt = _store.ReconcileAndResume(Owner(), "runner", "op1", PLAN,
+            [("skills", () => { skillsDispatch++; return Success("skills"); })]);
+
+        Assert.AreEqual("skills", receipt.ResumedDomain);
+        Assert.AreEqual("op1", receipt.OperationId);
+        Assert.AreEqual(1, skillsDispatch, "only the uncertain domain is re-dispatched");
+        Assert.IsTrue(receipt.Results.All(r => r.Success));
+        var after = _store.Read(Owner(), "runner")!;
+        Assert.AreEqual("completed", after.Last().Kind, "resume appends into the SAME fence and completes it");
+    }
+
+    [TestMethod]
+    public void Resume_refuses_a_plan_that_differs_from_the_claimed_one()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        string[] lines = File.ReadAllLines(path);
+        File.WriteAllLines(path, lines.Take(4)); // leave "skills" uncertain
+
+        int dispatch = 0;
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            _store.ReconcileAndResume(Owner(), "runner", "op1", PLAN + " ",
+                [("skills", () => { dispatch++; return Success("skills"); })]));
+        Assert.AreEqual(0, dispatch, "a plan that does not byte-match the claimed receipt can never be resumed");
+        // The fence is untouched: the uncertain domain stays pending.
+        Assert.AreEqual("dispatching", _store.Read(Owner(), "runner")!.Last().Kind);
+    }
+
+    [TestMethod]
+    public void Resume_refuses_a_changed_operation_identity()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        File.WriteAllLines(path, File.ReadAllLines(path).Take(4));
+
+        int dispatch = 0;
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            _store.ReconcileAndResume(Owner(), "runner", "op2", PLAN,
+                [("skills", () => { dispatch++; return Success("skills"); })]));
+        Assert.AreEqual(0, dispatch, "a different operation identity is a different run, not a resume");
+    }
+
+    [TestMethod]
+    public void Resume_refuses_an_already_completed_or_fully_observed_record()
+    {
+        // Completed record: nothing uncertain left.
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        int dispatch = 0;
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            _store.ReconcileAndResume(Owner(), "runner", "op1", PLAN,
+                [("skills", () => { dispatch++; return Success("skills"); })]));
+        Assert.AreEqual(0, dispatch, "a completed run must not be re-dispatched");
+    }
+
+    [TestMethod]
+    public void Resume_across_processes_and_owner_revisions_appends_to_the_same_fence()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        File.WriteAllLines(path, File.ReadAllLines(path).Take(4));
+
+        // A fresh store instance (fresh process) with a fresh authorization revision.
+        var restarted = new CreationAiFinishRunStore(_root);
+        int dispatch = 0;
+        var receipt = restarted.ReconcileAndResume(Owner(revision: 9), "runner", "op1", PLAN,
+            [("skills", () => { dispatch++; return Success("skills"); })]);
+
+        Assert.AreEqual("skills", receipt.ResumedDomain);
+        Assert.AreEqual(1, dispatch);
+        var after = restarted.Read(Owner(revision: 9), "runner")!;
+        Assert.AreEqual("completed", after.Last().Kind);
+        Assert.AreEqual(1, after.Count(e => e.Kind == "observed" && e.Domain == "skills"),
+            "exactly one re-dispatch is journaled for the uncertain domain");
+    }
+
+    [TestMethod]
+    public void Resume_of_a_failed_dispatch_reuses_the_original_operation_id_and_stays_appended()
+    {
+        // A resume whose re-dispatch fails keeps the record pending and appends
+        // its observed receipt; nothing is deleted or replayed.
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        File.WriteAllLines(path, File.ReadAllLines(path).Take(4));
+
+        var receipt = _store.ReconcileAndResume(Owner(), "runner", "op1", PLAN,
+            [("skills", () => new("skills", false, "blocked", ["Core rejected this selection"]))]);
+
+        Assert.IsFalse(receipt.Results.Single().Success);
+        var after = _store.Read(Owner(), "runner")!;
+        Assert.AreEqual("observed", after.Last().Kind);
+        Assert.IsFalse(after.Last().Result!.Success);
+        Assert.AreNotEqual("completed", after.Last().Kind);
+    }
+
+    [TestMethod]
+    public void Resume_of_a_throwing_redispatch_reports_an_uncertain_outcome_and_never_completes()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        File.WriteAllLines(path, File.ReadAllLines(path).Take(4));
+
+        var receipt = _store.ReconcileAndResume(Owner(), "runner", "op1", PLAN,
+            [("skills", () => throw new IOException("response lost again"))]);
+
+        Assert.IsFalse(receipt.Results.Single().Success);
+        Assert.AreEqual(
+            "resumption-outcome-uncertain",
+            receipt.Results.Single().Outcome,
+            "a lost re-dispatch response stays uncertain, never a clean failure");
+        var after = _store.Read(Owner(), "runner")!;
+        Assert.AreEqual("observed", after.Last().Kind);
+        Assert.AreNotEqual("completed", after.Last().Kind,
+            "an uncertain re-dispatch must never mark the run completed");
+    }
+
+    [TestMethod]
+    public void Resume_refuses_steps_that_do_not_match_the_uncertain_domain()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        File.WriteAllLines(path, File.ReadAllLines(path).Take(4));
+
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            _store.ReconcileAndResume(Owner(), "runner", "op1", PLAN,
+                [("attributes", () => Success("attributes"))]));
+    }
+
+    [TestMethod]
+    public void Service_resume_refuses_a_missing_record_and_a_different_account()
+    {
+        var authority = new TestOwnerAuthority { Stamp = Owner() };
+        var service = new CreationAiFinishService(
+            DispatchProxy.Create<IWorkspaceStore, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterSourceDataResolver, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterFileQueries, UnusedDependency>(), authority, _store);
+
+        // No record at all: nothing to resume, and no character read is needed
+        // to find that out.
+        Assert.ThrowsExactly<InvalidOperationException>(() => service.ResumeSavedResult("runner"));
+
+        // A run by alice exists; a different account must not resume it.
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes"))]);
+        authority.Stamp = Owner("bob", 2);
+        Assert.ThrowsExactly<InvalidOperationException>(() => service.ResumeSavedResult("runner"),
+            "an account transition must not resume another account's saved run");
+        Assert.AreEqual("completed", _store.Read(Owner(), "runner")!.Last().Kind,
+            "the refused resume leaves the original record untouched");
     }
 
     [TestMethod]

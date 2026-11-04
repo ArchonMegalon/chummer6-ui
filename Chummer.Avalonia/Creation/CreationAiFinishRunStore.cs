@@ -7,9 +7,13 @@ using Chummer.Contracts.Characters;
 namespace Chummer.Avalonia.Creation;
 
 /// <summary>
-/// A durable, fail-closed record for the gated staged finisher. It never resumes
-/// writes: a retained run is inspected read-only, including after process restart.
-/// The pinned Core does not offer a unified draft-completion receipt lookup.
+/// A durable, fail-closed record for the gated staged finisher. A retained run is
+/// inspected read-only, including after process restart. Resumption is qualified:
+/// it only ever continues the SAME frozen plan under the SAME operation identity in
+/// the SAME exclusive fence, by appending to the journal; the exclusive CreateNew
+/// fence is never replaced, deleted, or re-created. The pinned Core does not offer
+/// a unified draft-completion receipt lookup, so an unobserved write stays
+/// uncertain until the re-dispatch itself observes it.
 /// </summary>
 public sealed class CreationAiFinishRunStore(string root)
 {
@@ -104,4 +108,108 @@ public sealed class CreationAiFinishRunStore(string root)
         Save(new("completed", operationId, ""));
         return results;
     }
+
+    /// <summary>
+    /// Qualified durable staged resumption: continues the SAME frozen plan under
+    /// the SAME operation identity by appending to the SAME exclusive fence file.
+    /// Exact receipt reconciliation first: the claimed plan must byte-match the
+    /// caller's plan, the claimed operation id must match, and every dispatching
+    /// entry must be paired with an observed result (settled) or is the one
+    /// uncertain domain (returned as the resume point). The exclusive CreateNew
+    /// fence stays untouched; nothing is deleted, replaced, or replayed.
+    /// </summary>
+    public ResumptionReceipt ReconcileAndResume(
+        OwnerContextStamp owner, string workspaceId, string operationId, string frozenPlanJson,
+        IReadOnlyList<(string Domain, Func<CreationAiFinishService.AiFinishDomainResult> Apply)> steps)
+    {
+        string path = RunPath(owner, workspaceId);
+        Directory.CreateDirectory(root);
+        IReadOnlyList<Entry> entries = Read(owner, workspaceId)
+            ?? throw new InvalidOperationException(
+                "No saved AI completion operation exists for this character; there is nothing to resume.");
+        if (entries[0].OperationId != operationId)
+            throw new InvalidOperationException(
+                "The saved operation identity does not match the resume request; a different plan cannot be resumed.");
+        string? claimedPlan = entries.FirstOrDefault(e => e.Kind == "claimed")?.PlanJson;
+        if (claimedPlan is null || claimedPlan != frozenPlanJson)
+            throw new InvalidOperationException(
+                "The frozen plan does not match the saved record; resumption would send different changes.");
+        if (entries[^1].Kind == "completed")
+            throw new InvalidOperationException(
+                "The saved operation already completed; there is nothing to resume.");
+
+        // Exact receipt reconciliation: pair dispatching with observed per domain.
+        // At most one unpaired dispatching (the uncertain domain) may exist: the
+        // store stops at the first failed step, so later steps were never sent.
+        var settled = new HashSet<string>(StringComparer.Ordinal);
+        string? uncertain = null;
+        for (int i = 1; i < entries.Count; i++)
+        {
+            if (entries[i].Kind == "dispatching")
+            {
+                if (i + 1 < entries.Count && entries[i + 1].Kind == "observed"
+                    && entries[i + 1].Domain == entries[i].Domain)
+                {
+                    settled.Add(entries[i].Domain);
+                    i++;
+                    continue;
+                }
+                if (uncertain is not null || i != entries.Count - 1)
+                    throw new InvalidOperationException(
+                        "The saved record has an inconsistent dispatch history; manual inspection is required before any continuation.");
+                uncertain = entries[i].Domain;
+            }
+        }
+        if (uncertain is null)
+            throw new InvalidOperationException(
+                "The saved record has no unobserved stage to resume; manual inspection is required.");
+        if (!steps.Any(step => step.Domain == uncertain))
+            throw new InvalidOperationException(
+                "The resume plan does not contain the uncertain domain; the record stays pending.");
+
+        // Append-only continuation: same stream discipline as Execute.
+        using var stream = new FileStream(path, new FileStreamOptions
+        {
+            Mode = FileMode.Append, Access = FileAccess.Write, Share = FileShare.None,
+            Options = FileOptions.WriteThrough
+        });
+        void Save(Entry entry)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(entry) + "\n");
+            stream.Write(bytes);
+            stream.Flush(flushToDisk: true);
+        }
+        Save(new("resuming", operationId, uncertain));
+        var results = new List<CreationAiFinishService.AiFinishDomainResult>();
+        bool resuming = true;
+        foreach (var step in steps)
+        {
+            if (resuming)
+            {
+                if (settled.Contains(step.Domain) || step.Domain != uncertain)
+                    continue;
+                resuming = false;
+            }
+            Save(new("dispatching", operationId, step.Domain));
+            CreationAiFinishService.AiFinishDomainResult result;
+            try { result = step.Apply(); }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException)
+            {
+                result = new(step.Domain, false, "resumption-outcome-uncertain",
+                    ["The saved outcome is uncertain again. Reload the character to inspect it; no retry or later step was sent."]);
+            }
+            results.Add(result);
+            Save(new("observed", operationId, step.Domain, result));
+            if (!result.Success)
+                return new ResumptionReceipt(operationId, uncertain, results);
+        }
+        if (resuming)
+            throw new InvalidOperationException(
+                "The resume plan does not contain the uncertain domain; the record stays pending.");
+        Save(new("completed", operationId, ""));
+        return new ResumptionReceipt(operationId, uncertain, results);
+    }
+
+    public sealed record ResumptionReceipt(
+        string OperationId, string ResumedDomain, IReadOnlyList<CreationAiFinishService.AiFinishDomainResult> Results);
 }

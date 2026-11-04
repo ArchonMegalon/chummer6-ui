@@ -230,6 +230,51 @@ public sealed class CreationAiFinishService
         return results;
     }
 
+    /// <summary>
+    /// Qualified durable staged resumption entry: with fresh authorization, only
+    /// the single uncertain domain of the SAVED frozen plan is re-dispatched,
+    /// under the SAME operation identity, inside the SAME exclusive fence.
+    /// Exact receipt reconciliation happens in the run store. Everything else —
+    /// including the retained read-only inspection contract — is unchanged.
+    /// </summary>
+    public CreationAiFinishRunStore.ResumptionReceipt ResumeSavedResult(string workspaceId)
+    {
+        var expectedOwner = _ownerContextAccessor.Capture();
+        RequireOwner(expectedOwner);
+        var entries = _runs.Read(expectedOwner, workspaceId)
+            ?? throw new InvalidOperationException(
+                "No saved AI completion operation exists for this character; use the normal review flow instead.");
+        if (entries[0].OperationId is not { Length: > 0 } savedOperationId)
+            throw new InvalidOperationException("The saved record has no operation identity; resumption is unavailable.");
+        string frozenPlanJson = entries.FirstOrDefault(e => e.Kind == "claimed")?.PlanJson
+            ?? throw new InvalidOperationException("The saved record has no frozen plan; resumption is unavailable.");
+
+        // The frozen plan is the qualification: deserialize it and rebuild the
+        // exact same per-domain steps as Apply, then let the run store reconcile
+        // and continue only the uncertain domain.
+        var plan = JsonSerializer.Deserialize<CharacterCreationCompletionPlan>(frozenPlanJson)
+            ?? throw new InvalidOperationException("The frozen plan is unreadable; resumption is unavailable.");
+        var proposal = new AiFinishProposal(
+            savedOperationId, plan,
+            Archetype: null,
+            Recommendations: ImmutableArray<AiFinishRecommendation>.Empty,
+            ManualFollowUps: ImmutableArray<string>.Empty,
+            NeedsChanges: false)
+        {
+            ExpectedOwner = expectedOwner,
+            WorkspaceId = workspaceId,
+            PreparedPlanDigest = PlanDigest(plan),
+        };
+        return _runs.ReconcileAndResume(expectedOwner, workspaceId, savedOperationId, frozenPlanJson,
+        [
+            ("attributes", () => ApplyAttributes(expectedOwner, workspaceId, savedOperationId, plan.Selections.AttributeAllocations)),
+            ("skills", () => ApplySkills(expectedOwner, workspaceId, savedOperationId, plan.Selections.SkillAllocations, plan.Selections.GroupAllocations)),
+            ("qualities", () => ApplyQualities(expectedOwner, workspaceId, savedOperationId, plan.Selections.QualityOptionIds)),
+            ("resources", () => ApplyResources(expectedOwner, workspaceId, savedOperationId, proposal)),
+            ("gear", () => ApplyGear(expectedOwner, workspaceId, savedOperationId, plan.Selections.Gear))
+        ]);
+    }
+
     public IReadOnlyList<AiFinishDomainResult> Apply(string workspaceId, AiFinishProposal proposal)
     {
         ArgumentNullException.ThrowIfNull(proposal);
