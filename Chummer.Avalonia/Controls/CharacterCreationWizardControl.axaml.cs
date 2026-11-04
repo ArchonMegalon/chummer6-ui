@@ -82,6 +82,11 @@ public partial class CharacterCreationWizardControl : UserControl
     private bool _contactMutationBusy;
     private bool _finalizeBusy;
     private string? _finalizeStatus;
+    /// <summary>Latest authoritative finalization availability (from the
+    /// wizard state's review gate). Single source of truth for the Finish
+    /// button projection; mutation-busy transitions must not override it.</summary>
+    private bool _finalizeAvailable;
+    private IReadOnlyList<string> _finalizeBlockers = [];
     private bool _buildGhostPreferenceEnabled = true;
     private bool _buildGhostBusy;
 
@@ -614,14 +619,9 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetFinalizeAvailability(bool canReview, IReadOnlyList<string> blockers)
     {
         ArgumentNullException.ThrowIfNull(blockers);
-        FinalizeButton.IsVisible = canReview && !_finalizeBusy;
-        FinalizeButton.IsEnabled = canReview && !_finalizeBusy;
-        FinalizeStatusText.Text = _finalizeStatus
-            ?? (canReview
-                ? "Whole-build review is available; finalizing applies the authoritative receipt and unlocks the advanced editor."
-                : blockers.Count > 0
-                    ? $"Finalization unavailable: {string.Join(", ", blockers)}"
-                    : "Finalization is not available for this workspace revision.");
+        _finalizeAvailable = canReview;
+        _finalizeBlockers = blockers;
+        RefreshFinalizeButton();
     }
 
     public void SetFinalizeResult(string outcome, IReadOnlyList<string> blockers)
@@ -634,24 +634,40 @@ public partial class CharacterCreationWizardControl : UserControl
                 ? $"Finalization failed ({outcome}): {string.Join(", ", blockers)}"
                 : $"Finalization failed ({outcome}).";
         FinalizeStatusText.Text = _finalizeStatus;
-        FinalizeButton.IsVisible = false;
-        FinalizeButton.IsEnabled = false;
+        // Audit 2026-11-03 P2: a rejected finalization withdraws availability
+        // until the next authoritative gate update; the shared projection then
+        // keeps the button hidden even when mutation-busy clears.
+        _finalizeAvailable = false;
+        RefreshFinalizeButton();
+    }
+
+    /// <summary>
+    /// Single projection point for the Finish button: busy hides; otherwise
+    /// the latest authoritative availability decides, and the status line
+    /// keeps a rejection message once one exists.
+    /// Audit 2026-11-03 P2.
+    /// </summary>
+    private void RefreshFinalizeButton()
+    {
+        var canReview = !_finalizeBusy && _finalizeAvailable;
+        FinalizeButton.IsVisible = canReview;
+        FinalizeButton.IsEnabled = canReview;
+        if (_finalizeStatus is null)
+        {
+            FinalizeStatusText.Text = canReview
+                ? "Whole-build review is available; finalizing applies the authoritative receipt and unlocks the advanced editor."
+                : _finalizeBlockers.Count > 0
+                    ? $"Finalization unavailable: {string.Join(", ", _finalizeBlockers)}"
+                    : "Finalization is not available for this workspace revision.";
+        }
     }
 
     public void SetFinalizeMutationBusy(bool busy)
     {
         _finalizeBusy = busy;
-        if (busy)
-        {
-            FinalizeButton.IsVisible = false;
-            FinalizeButton.IsEnabled = false;
-        }
-        else
-        {
-            bool canReview = _state is not null;
-            FinalizeButton.IsVisible = canReview;
-            FinalizeButton.IsEnabled = canReview;
-        }
+        // Both transitions use the same authoritative availability: entering
+        // busy hides the action; leaving busy cannot revive a rejected review.
+        RefreshFinalizeButton();
     }
 
     /// <summary>Read-only automation projection of the current wizard snapshot.</summary>

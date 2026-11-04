@@ -48,13 +48,13 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "c1208abbfa369c26607ef60264383b4a0d5ba29c",
+        "blob": "2798ed9d8c640cc385b4c67948cf72e718e0fb49",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "d699d3bcc47968705f34f8a7fbf1426473dd393c2cc9dbc94deb1ea9ad8a1723",
+        "rawSha256": "e426d7e71305bbba17dc5797f7cf44fbd9b5547cc3c4d906bb376d0ab2b2ebb2",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "d699d3bcc47968705f34f8a7fbf1426473dd393c2cc9dbc94deb1ea9ad8a1723",
+        "semanticCanonicalSha256": "e426d7e71305bbba17dc5797f7cf44fbd9b5547cc3c4d906bb376d0ab2b2ebb2",
         "semanticCanonicalSizeBytes": 69810,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },
@@ -317,7 +317,7 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
     ("WorkspaceSessionPresenterTests", "Chummer.Tests/Presentation/WorkspaceSessionPresenterTests.cs", 23),
     ("WorkspaceViewStateStoreTests", "Chummer.Tests/Presentation/WorkspaceViewStateStoreTests.cs", 6),
     ("RestartSafeWorkspacePersistenceTests", "Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs", 1),
-    ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 60),
+    ("WorkspaceOverviewFinalizationOwnerTests", "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs", 65),
 )
 # The sealed baseline already contains the 19 base overview cases. Newly linked
 # continuation (19), shell owner (26), recovery (20), and older regressions (213)
@@ -330,7 +330,7 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
 # Local adoption adds three cache/roster cases and four same-ID overview cases.
 # Two Lifestyle admission regressions cover missing/changed runtime owner stamps.
 # Finish-character links 102 completion cases and adds nine overview cases.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 945
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 950
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )

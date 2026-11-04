@@ -139,7 +139,7 @@ public sealed class CharacterCreationAiFinishGateAvaloniaTests
     private static void RaiseClick(Button button)
         => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
-    private static void WithHeadlessUi(Action action)
+    internal static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)
         {
@@ -172,5 +172,108 @@ public sealed class CharacterCreationAiFinishGateAvaloniaTests
                 .ConfigureFonts(static manager => manager.AddFontCollection(new InterFontCollection()))
                 .With(new FontManagerOptions { DefaultFamilyName = "fonts:Inter#Inter" })
                 .WithInterFont();
+    }
+}
+
+[TestClass]
+public sealed class CharacterCreationWizardFinalizeAvailabilityAvaloniaTests
+{
+    private static void WithHeadlessUi(Action action)
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(action);
+
+    [TestMethod]
+    public void Starting_a_mutation_hides_and_disables_an_available_finalize_action()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            control.SetFinalizeAvailability(true, Array.Empty<string>());
+            Assert.IsTrue(control.FinalizeButton.IsVisible);
+            Assert.IsTrue(control.FinalizeButton.IsEnabled);
+
+            control.SetFinalizeMutationBusy(true);
+            Assert.IsFalse(control.FinalizeButton.IsVisible);
+            Assert.IsFalse(control.FinalizeButton.IsEnabled);
+
+            control.SetFinalizeMutationBusy(false);
+            Assert.IsTrue(control.FinalizeButton.IsVisible);
+            Assert.IsTrue(control.FinalizeButton.IsEnabled);
+            host.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Busy_clear_does_not_resurrect_a_finalization_the_overview_denies()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+
+            // Authoritative overview says: not available (blockers present).
+            control.SetFinalizeAvailability(false, new[] { "review not complete" });
+            Assert.IsFalse(control.FinalizeButton.IsVisible,
+                "unavailable finalization must stay hidden");
+
+            // A busy window opens and closes again.
+            control.SetFinalizeMutationBusy(true);
+            control.SetFinalizeMutationBusy(false);
+
+            Assert.IsFalse(control.FinalizeButton.IsVisible,
+                "busy->idle must re-derive from stored availability, not re-enable");
+
+            host.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Rejected_finalize_stays_disabled_after_busy_clears()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+
+            control.SetFinalizeAvailability(true, Array.Empty<string>());
+            Assert.IsTrue(control.FinalizeButton.IsVisible,
+                "available finalization must be visible");
+            Assert.IsTrue(control.FinalizeButton.IsEnabled);
+
+            // The authoritative reject arrives, then the busy flag clears.
+            control.SetFinalizeResult("rejected", Array.Empty<string>());
+            control.SetFinalizeMutationBusy(false);
+
+            Assert.IsFalse(control.FinalizeButton.IsVisible,
+                "a rejected finalize must not come back after busy clears");
+
+            host.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Availability_is_restored_when_overview_turns_positive_again()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+
+            control.SetFinalizeAvailability(false, new[] { "review not complete" });
+            control.SetFinalizeMutationBusy(true);
+            control.SetFinalizeMutationBusy(false);
+            Assert.IsFalse(control.FinalizeButton.IsVisible);
+
+            // Overview turns positive: the button must come back.
+            control.SetFinalizeAvailability(true, Array.Empty<string>());
+            Assert.IsTrue(control.FinalizeButton.IsVisible,
+                "a fresh authoritative availability must show the button again");
+
+            host.Close();
+        });
     }
 }
