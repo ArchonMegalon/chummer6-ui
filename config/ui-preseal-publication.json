@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "7bed3e1f70beeb1c1187f3460f2510d205b726bd",
-  "baseTree": "76b13214e65e9529338d212b013d1f74a242beae",
+  "baseCommit": "e55971eda862ec817f66dc7892abe865176aca04",
+  "baseTree": "b07eeaf5447b32523086a1b2226750eb2c4d2b11",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,90 +44,62 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "9ffac682b774aaa8e09cf55edc075ff1f78d7feb",
+      "blob": "8ab1e9d1184381a519ac4a2008e7813fa3f44038",
       "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
-      "sha256": "8f70346817a33359e7e929058477c2139d1f0ed8fcd1c193e2437917a6c8b4db",
-      "sizeBytes": 69028,
+      "sha256": "405c959307355e5fa82b3fee1e106764ce37cfb37b495d3c3b8f821b8ef038f6",
+      "sizeBytes": 70680,
       "status": "M"
     },
     {
-      "blob": "5a8ffb4a7b31346256e56fa3ea1c0f42885f5dd0",
-      "path": "Chummer.Avalonia/Creation/CreationAttributesAllocationWindow.cs",
-      "sha256": "dca6b47e1e0bfe4fd419763ca55d2a67c0185da9436049da986502930389e92a",
-      "sizeBytes": 15908,
+      "blob": "21a607c06a44a9283060b7a470489bc420a976ff",
+      "path": "Chummer.Avalonia/Creation/CreationSkillsAllocationWindow.cs",
+      "sha256": "0646c9fa9568ab021fc2bec4ea6fca3a5be30819a0d755aafbe02fbd94b982cf",
+      "sizeBytes": 24531,
       "status": "A"
     },
     {
-      "blob": "03609e0f410f284e0c2befe9bf4fd69176025d70",
+      "blob": "cc897e3668856292ca301e30ee4a22bc7cd44c0e",
       "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
-      "sha256": "94a5af3e2ba7bf520b5e0e4011ee91b4f8dfc58d2470371fd04c68526a0480e6",
-      "sizeBytes": 51604,
+      "sha256": "364e37aaa046f445f7b5b400f3ccbd4b51517760b364bd472bad775d728af607",
+      "sizeBytes": 55941,
       "status": "M"
     },
     {
-      "blob": "5f9aa7c51e774bfc317832f36adb984d77f0ac2a",
-      "path": "Chummer.CreationWizard.Presentation.Tests/CharacterCreationAttributesInteractionPresenterTests.cs",
-      "sha256": "57c1992af371815278878915c36b8c9347830dc4233338fe1bdaa896a6ddc967",
-      "sizeBytes": 25435,
+      "blob": "a63136ac52aadd7001faf18127d3f524c25c3532",
+      "path": "Chummer.CreationWizard.Presentation.Tests/CharacterCreationSkillsInteractionPresenterTests.cs",
+      "sha256": "8bcb3f5c4901f4d8cb72e7dee422670f552117c35edf7bacadad367e1c119fc0",
+      "sizeBytes": 29436,
       "status": "A"
     },
     {
-      "blob": "f4db7bad6c760ed08acc4bd71a40508623160c2a",
-      "path": "Chummer.Presentation/Overview/CharacterCreationAttributesInteractionPresenter.cs",
-      "sha256": "28e577c6643225ba353af0cf8883218c6b5b997bbdfc35d3bd128205fe49e6fe",
-      "sizeBytes": 16711,
+      "blob": "d4e9a8195ebdae667ed0250eca0bfe98520a067c",
+      "path": "Chummer.Presentation/Overview/CharacterCreationSkillsInteractionPresenter.cs",
+      "sha256": "6b28bbfffa76b000ca6e8200dc224543891c426a4d2deeaecb3e98090015230a",
+      "sizeBytes": 11010,
       "status": "A"
     },
     {
-      "blob": "68e91ce8f3177860cbe08ec105ab10f4483e1492",
-      "path": "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
-      "sha256": "cfa91027eefe1fcbdf25a287c15c9421b119574875c9a142395c70d0ae32a9ae",
-      "sizeBytes": 130798,
-      "status": "M"
-    },
-    {
-      "blob": "6189e3e3a6974334a9d55f2aa571308bda84b628",
+      "blob": "0c409aafbdabd63c91ca1bc658310a731609c839",
       "path": "Chummer.Tests/Chummer.Tests.csproj",
-      "sha256": "c8d72df6e7b1aca0f2be8f232d80529af8958421c40959f566671878a8e9b5bd",
-      "sizeBytes": 35793,
+      "sha256": "2bb5dc2fb962fd423904bb341e3923ea92dc8f4055e0dcf4dd4a240b48a67461",
+      "sizeBytes": 36077,
       "status": "M"
     },
     {
-      "blob": "a118139ca4344e023c9ab4fe3c09d1f5a3149520",
-      "path": "Chummer.Tests/Presentation/CharacterCreationAttributesAllocationAvaloniaTests.cs",
-      "sha256": "680ea679c0fe9f2bef25576f32904203d17b4999570df5c2790eb3fdf7fcefc1",
-      "sizeBytes": 5108,
+      "blob": "b2f8d0da70eecd99df94c0fba36b106c9e0cec7b",
+      "path": "Chummer.Tests/Presentation/CharacterCreationSkillsAllocationAvaloniaTests.cs",
+      "sha256": "f8b6ae69364c46fc3729afee6cb0a36ff35bff6886a5b64d62cca78cd3dae12f",
+      "sizeBytes": 9248,
       "status": "A"
     },
     {
-      "blob": "087c987752cdfa1e345bf26ab8a0a5ce5b3ff56e",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "f132303cf3489170dc793f757bc8fafc640dbeacbbd4f65178b52c8086a1be87",
-      "sizeBytes": 69810,
-      "status": "M"
-    },
-    {
-      "blob": "5d0bcea05373d6a581a7fc219b3d811440430559",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "a5b2bee52f8fcfa8a2d2f80d8d9eafa3b7faccdd0effe85625902eb47a94c7ca",
-      "sizeBytes": 297158,
-      "status": "M"
-    },
-    {
-      "blob": "ded40f248a05da06ee3cdcfa270b51373cfa8248",
+      "blob": "dcf93efe89eb648f8181bc08eee95defeb662e61",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "e29d457db0a5d786fdaa39541744fef53a1f6f968647c52465cdadd5672d7787",
-      "sizeBytes": 61146,
-      "status": "M"
-    },
-    {
-      "blob": "6f469376fe486b22f6a1ff6ed3ab8b5094a6340a",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "12922e575dc290ca31ec744abdb7c2cb5926b1cefabd5fb1b19684ad38a9d622",
-      "sizeBytes": 198080,
+      "sha256": "b4cd86b031b4aa56daa93f5c5c2da1c81057931dcf4d478fed38bf429faaf515",
+      "sizeBytes": 61498,
       "status": "M"
     }
   ],
-  "recipeTree": "13080a7e6c197e42b6f79850fdfa40cbca0158eb",
+  "recipeTree": "768f1d3dad6bab10aa15858f0ef9f625b37cc68c",
   "releaseClaim": false
 }
