@@ -51,6 +51,46 @@ internal sealed class MainWindowInteractionCoordinator
     public Task ApplyCareerManualNuyenEditAsync(CareerManualNuyenEditRequest request, CancellationToken ct)
         => _presenter.ApplyCareerManualNuyenEditAsync(request, ct);
 
+    public Task<CareerActiveSkillAdvanceEditorState?> PrepareCareerActiveSkillAdvanceAsync(CancellationToken ct)
+        => _presenter.PrepareCareerActiveSkillAdvanceAsync(ct);
+
+    public Task<bool> TryApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
+        => _presenter.TryApplyCareerActiveSkillAdvanceAsync(request, ct);
+
+    public Task ApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
+        => _presenter.ApplyCareerActiveSkillAdvanceAsync(request, ct);
+
+    public Task<CareerKnowledgeSkillAdvanceEditorState?> PrepareCareerKnowledgeSkillAdvanceAsync(CancellationToken ct)
+        => _presenter.PrepareCareerKnowledgeSkillAdvanceAsync(ct);
+
+    public Task<CharacterCareerKnowledgeSkillAdvanceReceipt?> ApplyCareerKnowledgeSkillAdvanceAsync(
+        CareerKnowledgeSkillAdvanceRequest request,
+        CancellationToken ct)
+        => _presenter.ApplyCareerKnowledgeSkillAdvanceAsync(request, ct);
+
+    public Task<CareerSkillGroupAdvanceEditorState?> PrepareCareerSkillGroupAdvanceAsync(CancellationToken ct)
+        => _presenter.PrepareCareerSkillGroupAdvanceAsync(ct);
+
+    public Task<bool> TryApplyCareerSkillGroupAdvanceAsync(CareerSkillGroupAdvanceRequest request, CancellationToken ct)
+        => _presenter.TryApplyCareerSkillGroupAdvanceAsync(request, ct);
+
+    public Task ApplyCareerSkillGroupAdvanceAsync(CareerSkillGroupAdvanceRequest request, CancellationToken ct)
+        => _presenter.ApplyCareerSkillGroupAdvanceAsync(request, ct);
+
+    public Task<CareerSkillSpecializationEditorState?> PrepareCareerSkillSpecializationAsync(CancellationToken ct)
+        => _presenter.PrepareCareerSkillSpecializationAsync(ct);
+
+    public Task<CharacterCareerSkillSpecializationQuote?> PrepareCareerSkillSpecializationQuoteAsync(
+        CareerSkillSpecializationQuoteRequest request,
+        CancellationToken ct)
+        => _presenter.PrepareCareerSkillSpecializationQuoteAsync(request, ct);
+
+    public Task<bool> TryApplyCareerSkillSpecializationAsync(CareerSkillSpecializationRequest request, CancellationToken ct)
+        => _presenter.TryApplyCareerSkillSpecializationAsync(request, ct);
+
+    public Task ApplyCareerSkillSpecializationAsync(CareerSkillSpecializationRequest request, CancellationToken ct)
+        => _presenter.ApplyCareerSkillSpecializationAsync(request, ct);
+
     public CharacterOverviewState PeekState() => _presenter.State;
     public Task<CharacterCareerAttributeCorrectionPlan?> CorrectCareerAttributeAdvanceAsync(
         CareerAttributeCorrectionRequest request,

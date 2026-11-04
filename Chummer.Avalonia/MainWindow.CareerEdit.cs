@@ -105,6 +105,55 @@ public partial class MainWindow
         }
     }
 
+    private async void SectionHost_OnCareerSkillAdvanceRequested(object? sender, object? e)
+    {
+        await RunUiActionAsync(
+            () => OpenCareerSkillAdvanceDialogAsync(),
+            "career-skill-advance").ConfigureAwait(true);
+    }
+
+    private async Task OpenCareerSkillAdvanceDialogAsync()
+    {
+        CharacterOverviewState original = _adapter.State;
+        if (original.WorkspaceId is not { } workspaceId || original.Profile?.Created != true
+            || original.DisplayOwnerContext is not { IsValid: true })
+        {
+            PublishCareerEditNotice("open a saved Career runner before advancing skills.");
+            return;
+        }
+        bool SameOwner() => _adapter.State.WorkspaceId == workspaceId
+            && _adapter.State.DisplayOwnerContext == original.DisplayOwnerContext && IsVisible;
+        bool Current() => SameOwner() && _adapter.State.ContentRevision == original.ContentRevision
+            && _adapter.State.SavedRevision == original.SavedRevision && _adapter.State.Profile?.Created == true;
+        var dialog = new CareerSkillAdvanceWindow(
+            workspaceId,
+            prepareActive: ct => _interactionCoordinator.PrepareCareerActiveSkillAdvanceAsync(ct),
+            applyActive: (request, ct) => _interactionCoordinator.TryApplyCareerActiveSkillAdvanceAsync(request, ct),
+            prepareKnowledge: ct => _interactionCoordinator.PrepareCareerKnowledgeSkillAdvanceAsync(ct),
+            applyKnowledge: (request, ct) => _interactionCoordinator.ApplyCareerKnowledgeSkillAdvanceAsync(request, ct),
+            prepareGroup: ct => _interactionCoordinator.PrepareCareerSkillGroupAdvanceAsync(ct),
+            applyGroup: (request, ct) => _interactionCoordinator.TryApplyCareerSkillGroupAdvanceAsync(request, ct),
+            prepareSpecialization: ct => _interactionCoordinator.PrepareCareerSkillSpecializationAsync(ct),
+            prepareSpecializationQuote: (request, ct) => _interactionCoordinator.PrepareCareerSkillSpecializationQuoteAsync(request, ct),
+            applySpecialization: (request, ct) => _interactionCoordinator.TryApplyCareerSkillSpecializationAsync(request, ct),
+            isCurrentContext: Current, expectedContentRevision: original.ContentRevision, isCurrentOwner: SameOwner);
+        void ContextUpdated(object? sender, EventArgs args) => dialog.InvalidateIfContextChanged();
+        _adapter.Updated += ContextUpdated;
+        try { await dialog.ShowDialog(this).ConfigureAwait(true); }
+        finally { _adapter.Updated -= ContextUpdated; }
+
+        if (!SameOwner()) return;
+        if (dialog.AdvanceApplied)
+        {
+            PublishCareerEditNotice("skill advancement recorded; overview refreshed.");
+        }
+
+        if (PeekCareerEditError() is { } editError)
+        {
+            PublishCareerEditNotice("skill advance failed: " + editError);
+        }
+    }
+
     private string? PeekCareerEditError()
     {
         string? error = _interactionCoordinator.PeekState().Error;

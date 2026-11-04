@@ -3257,7 +3257,10 @@ public sealed partial class CharacterOverviewPresenter
         }
     }
 
-    public async Task ApplyCareerActiveSkillAdvanceAsync(
+    public async Task ApplyCareerActiveSkillAdvanceAsync(CareerActiveSkillAdvanceRequest request, CancellationToken ct)
+        => await TryApplyCareerActiveSkillAdvanceAsync(request, ct).ConfigureAwait(false);
+
+    public async Task<bool> TryApplyCareerActiveSkillAdvanceAsync(
         CareerActiveSkillAdvanceRequest request,
         CancellationToken ct)
     {
@@ -3272,10 +3275,11 @@ public sealed partial class CharacterOverviewPresenter
             {
                 Error = "This runner changed while active-skill advancement was open. Reopen it before saving."
             });
-            return;
+            return false;
         }
 
         string? settingsCatalogJson = requestState.Preferences.CharacterSettingsCatalogJson;
+        bool committed = false;
         await ApplyWorkspaceXmlMutationAsync(
             request.WorkspaceId,
             request.ExpectedContentRevision,
@@ -3284,7 +3288,10 @@ public sealed partial class CharacterOverviewPresenter
                 request,
                 settingsCatalogJson,
                 _characterSourceDataResolver),
-            ct).ConfigureAwait(false);
+            ct,
+            onCommitted: () => committed = true,
+            expectedOwner: requestState.DisplayOwnerContext).ConfigureAwait(false);
+        return committed;
     }
 
     public async Task<CareerKnowledgeSkillAdvanceEditorState?> PrepareCareerKnowledgeSkillAdvanceAsync(
@@ -3599,7 +3606,10 @@ public sealed partial class CharacterOverviewPresenter
         }
     }
 
-    public async Task ApplyCareerSkillGroupAdvanceAsync(
+    public async Task ApplyCareerSkillGroupAdvanceAsync(CareerSkillGroupAdvanceRequest request, CancellationToken ct)
+        => await TryApplyCareerSkillGroupAdvanceAsync(request, ct).ConfigureAwait(false);
+
+    public async Task<bool> TryApplyCareerSkillGroupAdvanceAsync(
         CareerSkillGroupAdvanceRequest request,
         CancellationToken ct)
     {
@@ -3614,10 +3624,11 @@ public sealed partial class CharacterOverviewPresenter
             {
                 Error = "This runner changed while skill-group advancement was open. Reopen it before saving."
             });
-            return;
+            return false;
         }
 
         string? settingsCatalogJson = requestState.Preferences.CharacterSettingsCatalogJson;
+        bool committed = false;
         await ApplyWorkspaceXmlMutationAsync(
             request.WorkspaceId,
             request.ExpectedContentRevision,
@@ -3626,7 +3637,10 @@ public sealed partial class CharacterOverviewPresenter
                 request,
                 settingsCatalogJson,
                 _characterSourceDataResolver),
-            ct).ConfigureAwait(false);
+            ct,
+            onCommitted: () => committed = true,
+            expectedOwner: requestState.DisplayOwnerContext).ConfigureAwait(false);
+        return committed;
     }
 
     public async Task<CareerSkillSpecializationEditorState?> PrepareCareerSkillSpecializationAsync(
@@ -3748,7 +3762,10 @@ public sealed partial class CharacterOverviewPresenter
         }
     }
 
-    public async Task ApplyCareerSkillSpecializationAsync(
+    public async Task ApplyCareerSkillSpecializationAsync(CareerSkillSpecializationRequest request, CancellationToken ct)
+        => await TryApplyCareerSkillSpecializationAsync(request, ct).ConfigureAwait(false);
+
+    public async Task<bool> TryApplyCareerSkillSpecializationAsync(
         CareerSkillSpecializationRequest request,
         CancellationToken ct)
     {
@@ -3763,10 +3780,11 @@ public sealed partial class CharacterOverviewPresenter
             {
                 Error = "This runner changed while specialization review was open. Reopen it before saving."
             });
-            return;
+            return false;
         }
 
         string? settingsCatalogJson = requestState.Preferences.CharacterSettingsCatalogJson;
+        bool committed = false;
         await ApplyWorkspaceXmlMutationAsync(
             request.WorkspaceId,
             request.ExpectedContentRevision,
@@ -3775,7 +3793,10 @@ public sealed partial class CharacterOverviewPresenter
                 request,
                 settingsCatalogJson,
                 _characterSourceDataResolver),
-            ct).ConfigureAwait(false);
+            ct,
+            onCommitted: () => committed = true,
+            expectedOwner: requestState.DisplayOwnerContext).ConfigureAwait(false);
+        return committed;
     }
 
     public async Task<SustainedObjectsEditorState?> PrepareSustainedObjectsEditAsync(CancellationToken ct)
