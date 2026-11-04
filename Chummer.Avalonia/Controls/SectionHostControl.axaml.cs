@@ -465,7 +465,7 @@ public partial class SectionHostControl : UserControl
             advanceButton = new Button
             {
                 Name = $"AttributeAdvance_{ShortAttributeLabel(row.AttributeName)}",
-                Content = "Advanceâ€¦",
+                Content = "Advance…",
                 MinWidth = 86,
                 Height = 24,
                 Padding = new Thickness(8d, 1d),
@@ -1137,7 +1137,7 @@ public partial class SectionHostControl : UserControl
             return;
         }
 
-        BuildLabSummaryText.Text = $"{buildLab.Title} Â· {buildLab.RulesetId}/{buildLab.BuildMethod}";
+        BuildLabSummaryText.Text = $"{buildLab.Title} · {buildLab.RulesetId}/{buildLab.BuildMethod}";
         BuildLabSummaryText.IsVisible = true;
         SetBuildLabTrustReceiptSections(DesktopTrustReceiptText.BuildBuildLabSections(buildLab));
         UpdateSectionRowsHeight();
@@ -1155,7 +1155,7 @@ public partial class SectionHostControl : UserControl
             return;
         }
 
-        SectionContextSummaryText.Text = $"{contactGraph.Nodes.Count} contacts Â· {contactGraph.EdgeCount} links Â· {contactGraph.Obligations.Count} obligations";
+        SectionContextSummaryText.Text = $"{contactGraph.Nodes.Count} contacts · {contactGraph.EdgeCount} links · {contactGraph.Obligations.Count} obligations";
         SectionContextSummaryText.IsVisible = true;
         SectionPreviewBox.Text = string.Join(
             Environment.NewLine + Environment.NewLine,
@@ -1187,7 +1187,7 @@ public partial class SectionHostControl : UserControl
     private static string BuildBrowseSummary(BrowseWorkspaceState browseWorkspace)
     {
         string title = string.IsNullOrWhiteSpace(browseWorkspace.DialogTitle) ? "Browse workspace" : browseWorkspace.DialogTitle!;
-        return $"{title} Â· {browseWorkspace.TotalCount} results Â· {browseWorkspace.SortId}/{browseWorkspace.SortDirection}";
+        return $"{title} · {browseWorkspace.TotalCount} results · {browseWorkspace.SortId}/{browseWorkspace.SortDirection}";
     }
 
     private static string BuildPresetLine(BrowseWorkspacePresetState preset)
@@ -1209,9 +1209,9 @@ public partial class SectionHostControl : UserControl
     {
         string columns = result.ColumnValues.Count == 0
             ? string.Empty
-            : $" Â· {string.Join(" Â· ", result.ColumnValues.Select(pair => $"{pair.Key}: {pair.Value}"))}";
+            : $" · {string.Join(" · ", result.ColumnValues.Select(pair => $"{pair.Key}: {pair.Value}"))}";
         string active = result.IsActive ? "[active] " : string.Empty;
-        string selectable = result.IsSelectable ? string.Empty : " Â· unavailable";
+        string selectable = result.IsSelectable ? string.Empty : " · unavailable";
         return $"{active}{result.Title}{columns}{selectable}";
     }
 
@@ -1235,7 +1235,7 @@ public partial class SectionHostControl : UserControl
         List<string> lines = [];
         if (buildLab.ProvenanceBadges.Count > 0)
         {
-            lines.Add(string.Join(" Â· ", buildLab.ProvenanceBadges.Select(badge => badge.Label)));
+            lines.Add(string.Join(" · ", buildLab.ProvenanceBadges.Select(badge => badge.Label)));
         }
 
         if (!string.IsNullOrWhiteSpace(buildLab.ExplainEntryId))
@@ -1421,10 +1421,10 @@ public partial class SectionHostControl : UserControl
     {
         string metrics = variant.Metrics.Count == 0
             ? string.Empty
-            : $" Â· {string.Join(" Â· ", variant.Metrics.Select(metric => $"{metric.Label}: {metric.Value}"))}";
+            : $" · {string.Join(" · ", variant.Metrics.Select(metric => $"{metric.Label}: {metric.Value}"))}";
         string warnings = variant.Warnings.Count == 0
             ? string.Empty
-            : $" Â· {string.Join(" Â· ", variant.Warnings.Select(warning => warning.Label))}";
+            : $" · {string.Join(" · ", variant.Warnings.Select(warning => warning.Label))}";
         return $"{variant.Label} ({variant.TableFit}){metrics}{warnings}";
     }
 
@@ -1439,7 +1439,7 @@ public partial class SectionHostControl : UserControl
             List<string> signals = [];
 
             string coverageMetrics = string.Join(
-                " Â· ",
+                " · ",
                 variant.Metrics
                     .Where(IsCoverageMetric)
                     .Select(metric => $"{metric.Label}: {metric.Value}"));
@@ -1459,7 +1459,7 @@ public partial class SectionHostControl : UserControl
             }
 
             optimizerReadyVariants++;
-            lines.Add($"{variant.Label}: {string.Join(" Â· ", signals)}");
+            lines.Add($"{variant.Label}: {string.Join(" · ", signals)}");
         }
 
         foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
@@ -1484,7 +1484,7 @@ public partial class SectionHostControl : UserControl
                 strongestCoverageStep.Outcomes
                     .Where(IsCoverageMetric)
                     .Select(metric => $"{metric.Label}: {metric.Value}"));
-            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma Â· {coverageOutcomes}");
+            lines.Add($"{timeline.Title}: strongest coverage checkpoint at {strongestCoverageStep.KarmaTarget} Karma · {coverageOutcomes}");
         }
 
         if (lines.Count == 0)
@@ -1492,7 +1492,7 @@ public partial class SectionHostControl : UserControl
             return string.Empty;
         }
 
-        lines.Insert(0, $"Planner + team coverage Â· {optimizerReadyVariants} optimizer-ready variant(s) Â· {buildLab.ProgressionTimelines.Count} progression timeline(s)");
+        lines.Insert(0, $"Planner + team coverage · {optimizerReadyVariants} optimizer-ready variant(s) · {buildLab.ProgressionTimelines.Count} progression timeline(s)");
         return string.Join(Environment.NewLine, lines);
     }
 
@@ -1544,13 +1544,13 @@ public partial class SectionHostControl : UserControl
         List<string> lines = [];
         foreach (BuildLabProgressionTimeline timeline in buildLab.ProgressionTimelines)
         {
-            lines.Add($"{timeline.Title} Â· {timeline.Summary}");
+            lines.Add($"{timeline.Title} · {timeline.Summary}");
             foreach (BuildLabProgressionStep step in timeline.Steps)
             {
                 string outcomes = step.Outcomes.Count == 0
                     ? string.Empty
-                    : $" Â· {string.Join(" Â· ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))}";
-                lines.Add($"  {step.KarmaTarget} Karma: {step.Label} Â· {step.Summary}{outcomes}");
+                    : $" · {string.Join(" · ", step.Outcomes.Select(metric => $"{metric.Label}: {metric.Value}"))}";
+                lines.Add($"  {step.KarmaTarget} Karma: {step.Label} · {step.Summary}{outcomes}");
             }
 
             if (!string.IsNullOrWhiteSpace(timeline.SourceDocumentId))
@@ -1589,7 +1589,7 @@ public partial class SectionHostControl : UserControl
         List<string> lines = [];
         foreach (BuildLabExportPayload payload in buildLab.ExportPayloads)
         {
-            lines.Add($"{payload.Title} Â· {payload.PayloadKind}");
+            lines.Add($"{payload.Title} · {payload.PayloadKind}");
             foreach (BuildLabExportField field in payload.Fields)
             {
                 lines.Add($"  {field.Label}: {field.Value}");
@@ -1613,8 +1613,8 @@ public partial class SectionHostControl : UserControl
     {
         BuildLabExportPayload? payload = buildLab.ExportPayloads
             .FirstOrDefault(candidate => string.Equals(candidate.PayloadId, target.PayloadId, StringComparison.Ordinal));
-        string payloadLine = payload is null ? string.Empty : $" Â· Payload: {payload.Title}";
-        return $"{target.Label} ({target.TargetKind}) Â· {target.WorkflowId}{payloadLine}";
+        string payloadLine = payload is null ? string.Empty : $" · Payload: {payload.Title}";
+        return $"{target.Label} ({target.TargetKind}) · {target.WorkflowId}{payloadLine}";
     }
 
     private static string BuildActionLine(BuildLabConceptIntakeState buildLab, BuildLabActionDescriptor action)
@@ -1677,14 +1677,14 @@ public partial class SectionHostControl : UserControl
         string defaultPersona = string.IsNullOrWhiteSpace(personaStudio.DefaultPersonaId)
             ? "none"
             : personaStudio.DefaultPersonaId;
-        return $"NPC Persona Studio Â· default {defaultPersona} Â· selected {personaStudio.SelectedPersonaId}";
+        return $"NPC Persona Studio · default {defaultPersona} · selected {personaStudio.SelectedPersonaId}";
     }
 
     private static string BuildPersonaLine(NpcPersonaDescriptorState persona, string selectedPersonaId)
     {
         string selectedTag = string.Equals(persona.PersonaId, selectedPersonaId, StringComparison.Ordinal) ? "[selected] " : string.Empty;
         string evidenceTag = persona.EvidenceFirst ? "evidence-first" : "balanced";
-        return $"{selectedTag}{persona.Label} ({persona.PersonaId}) Â· {evidenceTag} Â· {persona.ApprovalState}";
+        return $"{selectedTag}{persona.Label} ({persona.PersonaId}) · {evidenceTag} · {persona.ApprovalState}";
     }
 
     private static string BuildPolicyLine(NpcPersonaRoutePolicyState policy)
@@ -1693,7 +1693,7 @@ public partial class SectionHostControl : UserControl
         string routeClass = string.IsNullOrWhiteSpace(policy.RouteClassId) ? "class:none" : $"class:{policy.RouteClassId}";
         string tools = policy.AllowedToolIds.Count == 0 ? "tools:none" : $"tools:{string.Join(",", policy.AllowedToolIds)}";
         string persona = string.IsNullOrWhiteSpace(policy.PersonaId) ? "persona:none" : $"persona:{policy.PersonaId}";
-        return $"{policy.RouteType} Â· {routeClass} Â· {provider} Â· {persona} Â· {policy.ApprovalState} Â· {tools}";
+        return $"{policy.RouteType} · {routeClass} · {provider} · {persona} · {policy.ApprovalState} · {tools}";
     }
 
     private static string BuildApprovalSummary(NpcPersonaStudioState personaStudio)
@@ -1705,7 +1705,7 @@ public partial class SectionHostControl : UserControl
 
     private static string BuildDowntimePlannerSummary(DowntimePlannerState downtimePlanner)
     {
-        return $"Downtime planner Â· {downtimePlanner.PlannerLanes.Count} lanes Â· {downtimePlanner.ScheduleItems.Count} scheduled items";
+        return $"Downtime planner · {downtimePlanner.PlannerLanes.Count} lanes · {downtimePlanner.ScheduleItems.Count} scheduled items";
     }
 
     private static string BuildDowntimeCalendarText(DowntimePlannerState downtimePlanner)
@@ -1716,7 +1716,7 @@ public partial class SectionHostControl : UserControl
         }
 
         IEnumerable<string> lines = downtimePlanner.CalendarDays
-            .Select(day => $"{day.Date}: {day.ItemCount} items Â· {day.Summary}");
+            .Select(day => $"{day.Date}: {day.ItemCount} items · {day.Summary}");
         return "Calendar view" + Environment.NewLine + string.Join(Environment.NewLine, lines);
     }
 
@@ -1941,7 +1941,7 @@ public partial class SectionHostControl : UserControl
                 1 => "1 validation issue",
                 _ => $"{issueCount} validation issues"
             });
-            return string.Join("  â€¢  ", parts);
+            return string.Join("  •  ", parts);
         }
 
         if (IsSr6Ruleset(rulesetId) && AttributeWorkbenchProjector.IsAttributeSection(sectionId))
@@ -1969,7 +1969,7 @@ public partial class SectionHostControl : UserControl
                     parts.Add(sr6ExplainSummary);
                 }
 
-                return string.Join("  â€¢  ", parts);
+                return string.Join("  •  ", parts);
             }
         }
 
@@ -2010,7 +2010,7 @@ public partial class SectionHostControl : UserControl
 
         return parts.Count == 0
             ? BuildEmptySectionSummary(sectionId, title, quickActions)
-            : string.Join("  â€¢  ", parts);
+            : string.Join("  •  ", parts);
     }
 
     private static string FormatSectionName(string sectionName)
@@ -2409,7 +2409,7 @@ public partial class SectionHostControl : UserControl
             parts.Add($"Follow-up: {explainContext.FollowUp}");
         }
 
-        return string.Join(" Â· ", parts);
+        return string.Join(" · ", parts);
     }
 
     private static ExplainDrawerContext? ReadExplainDrawerContext(JsonObject? root)
@@ -2577,7 +2577,7 @@ public partial class SectionHostControl : UserControl
             parts.Add(section);
         }
 
-        return parts.Count == 0 ? null : string.Join(" Â· ", parts);
+        return parts.Count == 0 ? null : string.Join(" · ", parts);
     }
 
     private static string? TryBuildSourceLaunchSummary(JsonObject explainNode)
@@ -2986,7 +2986,7 @@ public partial class SectionHostControl : UserControl
         => string.IsNullOrWhiteSpace(value) ? string.Empty : $"{label}: {value}";
 
     private static string BuildJoinedSummary(params string[] segments)
-        => string.Join(" Â· ", segments.Where(static segment => !string.IsNullOrWhiteSpace(segment)));
+        => string.Join(" · ", segments.Where(static segment => !string.IsNullOrWhiteSpace(segment)));
 
     private static string BuildJoinedLines(params string[] lines)
         => string.Join(Environment.NewLine, lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
