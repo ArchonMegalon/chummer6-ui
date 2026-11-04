@@ -27,6 +27,8 @@ public partial class MainWindow
     private bool _creationWizardAiFinishFeatureEnabled;
     private bool _creationQualitiesBusy;
     private bool _creationAttributesBusy;
+    private bool _creationSkillsBusy;
+    private CreationSkillsAllocationWindow? _creationSkillsWindow;
     private readonly Dictionary<Chummer.Contracts.Workspaces.CharacterWorkspaceId, CharacterCreationQualitiesInteraction> _pendingQualitySelections = new();
 
     private void InitializeCreationWizard()
@@ -59,6 +61,7 @@ public partial class MainWindow
         CharacterCreationWizardControl.QualitiesOptionClickRequested += CreationWizard_OnQualitiesOptionClickRequested;
         CharacterCreationWizardControl.QualitiesEditRequested += CreationWizard_OnQualitiesEditRequested;
         CharacterCreationWizardControl.AttributesEditRequested += CreationWizard_OnAttributesEditRequested;
+        CharacterCreationWizardControl.SkillsEditRequested += CreationWizard_OnSkillsEditRequested;
         CharacterCreationWizardControl.MagicResonanceOptionClickRequested += CreationWizard_OnMagicResonanceOptionClickRequested;
         CharacterCreationWizardControl.FinalizeRequested += CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested += CreationWizard_OnPriorityConfirmRequested;
@@ -69,6 +72,7 @@ public partial class MainWindow
     {
         _creationWizardLifetime.Cancel();
         _creationAttributesWindow?.Close();
+        _creationSkillsWindow?.Close();
         _creationAttributesWindow = null;
         CharacterCreationWizardControl.StepRequested -= CreationWizard_OnStepRequested;
         CharacterCreationWizardControl.ContinueRequested -= CreationWizard_OnContinueRequested;
@@ -84,6 +88,7 @@ public partial class MainWindow
         CharacterCreationWizardControl.QualitiesOptionClickRequested -= CreationWizard_OnQualitiesOptionClickRequested;
         CharacterCreationWizardControl.QualitiesEditRequested -= CreationWizard_OnQualitiesEditRequested;
         CharacterCreationWizardControl.AttributesEditRequested -= CreationWizard_OnAttributesEditRequested;
+        CharacterCreationWizardControl.SkillsEditRequested -= CreationWizard_OnSkillsEditRequested;
         CharacterCreationWizardControl.MagicResonanceOptionClickRequested -= CreationWizard_OnMagicResonanceOptionClickRequested;
         CharacterCreationWizardControl.FinalizeRequested -= CreationWizard_OnFinalizeRequested;
         CharacterCreationWizardControl.PriorityConfirmRequested -= CreationWizard_OnPriorityConfirmRequested;
@@ -93,6 +98,7 @@ public partial class MainWindow
     private void ApplyCreationWizardState(CharacterOverviewState overview)
     {
         _creationAttributesWindow?.InvalidateIfContextChanged();
+        _creationSkillsWindow?.InvalidateIfContextChanged();
         CharacterCreationWizardSnapshot? snapshot = overview.CreationWizard;
         CharacterCreationWizardControl.IsVisible = snapshot is not null;
         CharacterCreationWizardControl.IsHitTestVisible = snapshot is not null;
@@ -450,6 +456,85 @@ public partial class MainWindow
             _creationAttributesWindow?.Close();
             _creationAttributesWindow = null;
             CharacterCreationWizardControl.AttributesMutationBusy(false);
+        }
+    }
+
+    private async void CreationWizard_OnSkillsEditRequested(object? sender, EventArgs args)
+        => await CreationWizard_EditSkillsAsync();
+
+    /// <summary>
+    /// Opens the modal skills-allocation editor. Load/Prepare/Confirm run through
+    /// the Core-bound presenter; the fresh overview is re-captured after every await
+    /// and the refreshed state is applied only when the workspace still matches
+    /// (Chain-B display-revalidation discipline).
+    /// </summary>
+    private async Task CreationWizard_EditSkillsAsync()
+    {
+        if (_creationSkillsBusy || _creationWizardLifetime.IsCancellationRequested)
+            return;
+        _creationSkillsBusy = true;
+        CharacterCreationWizardControl.SkillsMutationBusy(true);
+        CharacterCreationWizardControl.SkillsStatus("Loading authoritative skills…");
+        try
+        {
+            CharacterOverviewState overview = _adapter.State;
+            if (overview.WorkspaceId is not { } workspaceId)
+                return;
+
+            var presenter = new CharacterCreationSkillsInteractionPresenter(
+                App.Services?.GetService(typeof(IOwnerBoundCharacterCreationSkillsService))
+                    as IOwnerBoundCharacterCreationSkillsService
+                ?? throw new InvalidOperationException(
+                    "skills service unavailable — cannot allocate skills honestly"));
+            CharacterCreationSkillsInteractionLoadResult loaded =
+                await Task.Run(() => presenter.Load(overview));
+            if (_creationWizardLifetime.IsCancellationRequested || !IsCreationWizardWindowUsable())
+            {
+                CharacterCreationWizardControl.SkillsStatus(
+                    "Skills loading was cancelled. The loaded view was discarded.");
+                return;
+            }
+            if (loaded is not { Outcome: "ok", State: { } state })
+            {
+                CharacterCreationWizardControl.SkillsStatus(
+                    "Skills could not be loaded: " + (loaded.Error ?? loaded.Outcome));
+                return;
+            }
+            if (!presenter.IsCurrentContext(_adapter.State))
+            {
+                CharacterCreationWizardControl.SkillsStatus(
+                    "The workspace changed while skills were loading. The loaded view was discarded.");
+                return;
+            }
+
+            var dialog = new CreationSkillsAllocationWindow(presenter, state, () => _adapter.State);
+            _creationSkillsWindow = dialog;
+            await dialog.ShowDialog<bool>(this);
+            _creationSkillsWindow = null;
+            CharacterCreationWizardControl.SkillsStatus(dialog.Status);
+            if (dialog.Confirmed
+                && _adapter.State.WorkspaceId == workspaceId
+                && _adapter.State.DisplayOwnerContext == overview.DisplayOwnerContext)
+            {
+                await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token);
+                if (!_creationWizardLifetime.IsCancellationRequested && IsCreationWizardWindowUsable()
+                    && _adapter.State.WorkspaceId == workspaceId
+                    && _adapter.State.DisplayOwnerContext == overview.DisplayOwnerContext)
+                    ApplyCreationWizardState(_adapter.State);
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested) { }
+        catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            CharacterCreationWizardControl.SkillsStatus(
+                "Skills could not be loaded. Reload the character and check its prerequisites.");
+        }
+        finally
+        {
+            _creationSkillsBusy = false;
+            _creationSkillsWindow?.Close();
+            _creationSkillsWindow = null;
+            CharacterCreationWizardControl.SkillsMutationBusy(false);
         }
     }
 

@@ -78,6 +78,8 @@ public partial class CharacterCreationWizardControl : UserControl
     private bool _qualitiesMutationBusy;
     private string? _attributesMutationStatus;
     private bool _attributesMutationBusy;
+    private string? _skillsMutationStatus;
+    private bool _skillsMutationBusy;
     private HashSet<string> _selectedQualityIds = new(StringComparer.Ordinal);
     private bool _resourcesMutationBusy;
     private string? _foundationStatus;
@@ -113,6 +115,7 @@ public partial class CharacterCreationWizardControl : UserControl
 
     /// <summary>Raised when the user asks to open the manual attribute allocation editor.</summary>
     public event EventHandler? AttributesEditRequested;
+    public event EventHandler? SkillsEditRequested;
     public event EventHandler<CharacterCreationMagicResonanceOptionClickRequested>? MagicResonanceOptionClickRequested;
 
     /// <summary>Raised whenever the traveler adjusts a Priority rank selection.</summary>
@@ -926,9 +929,21 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
+    public void SkillsStatus(string message)
+    {
+        _skillsMutationStatus = message;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
     public void AttributesMutationBusy(bool busy)
     {
         _attributesMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SkillsMutationBusy(bool busy)
+    {
+        _skillsMutationBusy = busy;
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
@@ -1158,6 +1173,23 @@ public partial class CharacterCreationWizardControl : UserControl
                 LegalOptionList.Children.Add(Caption(_attributesMutationStatus));
             if (!attributesReady)
                 LegalOptionList.Children.Add(Caption("Attribute allocation opens once attributes are authoritative for this workspace."));
+        }
+        if (_state?.ActiveStepId == CharacterCreationWizardStepIds.Skills)
+        {
+            string authorityBlocker = CharacterCreationSkillsBlockers.AuthorityUnavailable;
+            bool skillsReady = _state is { } s
+                && !s.CompletionBlockers.Contains(authorityBlocker)
+                && !s.Budgets.Any(b => b.Blockers.Contains(authorityBlocker));
+            var edit = new Button { Content = "Allocate skills\u2026", IsEnabled = skillsReady && !_skillsMutationBusy };
+            AutomationProperties.SetAutomationId(edit, "creation-wizard-allocate-skills");
+            edit.Click += (_, _) => { if (skillsReady && !_skillsMutationBusy) SkillsEditRequested?.Invoke(this, EventArgs.Empty); };
+            LegalOptionList.Children.Add(edit);
+            if (_skillsMutationBusy)
+                LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
+            if (!string.IsNullOrWhiteSpace(_skillsMutationStatus))
+                LegalOptionList.Children.Add(Caption(_skillsMutationStatus));
+            if (!skillsReady)
+                LegalOptionList.Children.Add(Caption("Attribute allocation opens once skills are authoritative for this workspace."));
         }
         if (options.Count == 0)
         {
