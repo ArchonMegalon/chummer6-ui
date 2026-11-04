@@ -670,4 +670,166 @@ public sealed class WorkspaceOverviewFinalizationOwnerTests
             OwnerContextStamp owner, CharacterCreationFinalizationReceiptLookupRequest request) => throw Unexpected();
         private static AssertFailedException Unexpected() => new("The state factory must only load a projection.");
     }
+
+[TestClass]
+public sealed class WorkspaceOverviewAttributesOwnerTests
+{
+    private static readonly CharacterWorkspaceId WorkspaceId = new("ws-attributes-owner");
+
+    [TestMethod]
+    public void Missing_owner_with_bound_service_makes_no_local_attributes_call()
+    {
+        var local = new RecordingAttributesService();
+        var bound = new RecordingAttributesService();
+        var factory = FactoryWith(local, bound);
+
+        Project(factory, Overview(owner: null));
+
+        Assert.AreEqual(0, local.UnboundLoads,
+            "a missing owner stamp must not fall back to the local attributes authority");
+        Assert.AreEqual(0, bound.BoundLoads,
+            "no valid owner stamp means the bound authority is not addressable either");
+    }
+
+    [TestMethod]
+    public void Invalid_owner_with_bound_service_makes_no_local_attributes_call()
+    {
+        var local = new RecordingAttributesService();
+        var bound = new RecordingAttributesService();
+        var factory = FactoryWith(local, bound);
+
+        Project(factory, Overview(default(OwnerContextStamp)));
+
+        Assert.AreEqual(0, local.UnboundLoads,
+            "an invalid owner stamp must not fall back to the local attributes authority");
+        Assert.AreEqual(0, bound.BoundLoads,
+            "an invalid owner stamp must not be forwarded to the bound authority");
+    }
+
+    [TestMethod]
+    public void Valid_owner_routes_to_bound_service_only()
+    {
+        var local = new RecordingAttributesService();
+        var bound = new RecordingAttributesService();
+        var factory = FactoryWith(local, bound);
+
+        Project(factory, Overview(new OwnerContextStamp(new("account-attributes"), "issuer-attributes", 5)));
+
+        Assert.AreEqual(1, bound.BoundLoads, "a valid owner stamp must read through the bound authority");
+        Assert.IsTrue(bound.LastOwner is { IsValid: true },
+            "the bound read must carry the overview's owner stamp");
+        Assert.AreEqual(0, local.UnboundLoads,
+            "the bound read must never be retried locally");
+    }
+
+    [TestMethod]
+    public void Bound_deny_on_valid_owner_is_not_retried_locally()
+    {
+        var local = new RecordingAttributesService();
+        var bound = new RecordingAttributesService(deny: true);
+        var factory = FactoryWith(local, bound);
+
+        Project(factory, Overview(new OwnerContextStamp(new("account-attributes"), "issuer-attributes", 5)));
+
+        Assert.AreEqual(1, bound.BoundLoads, "the denial must come from the bound authority");
+        Assert.AreEqual(0, local.UnboundLoads,
+            "a bound denial must remain denied; no local retry");
+    }
+
+    [TestMethod]
+    public void Legacy_composition_without_owner_and_without_bound_service_still_reads_locally()
+    {
+        var local = new RecordingAttributesService();
+        var factory = FactoryWith(local, bound: null);
+
+        Project(factory, Overview(owner: null));
+
+        Assert.AreEqual(1, local.UnboundLoads,
+            "explicit legacy composition (no stamp, no bound service) keeps the local read");
+    }
+
+    private static WorkspaceOverviewStateFactory FactoryWith(
+        RecordingAttributesService? local,
+        RecordingAttributesService? bound)
+        => new(
+            creationAttributesService: local,
+            ownerBoundCreationAttributesService: bound);
+
+    private static WorkspaceOverviewLoadResult Overview(OwnerContextStamp? owner)
+    {
+        var overview = CharacterCreationWizardPresentationTests.CreateOverview(false,
+            CharacterCreationBuildMethods.Priority,
+            "<character><name>Attributes owner fixture</name><created>False</created></character>",
+            revision: 7)
+            with { SavedRevision = 3 };
+        typeof(WorkspaceOverviewLoadResult).GetProperty(nameof(WorkspaceOverviewLoadResult.DisplayOwnerContext))!
+            .SetValue(overview, owner);
+        return overview;
+    }
+
+    private static CharacterOverviewState Project(
+        WorkspaceOverviewStateFactory factory, WorkspaceOverviewLoadResult overview)
+    {
+        var session = new WorkspaceSessionState(WorkspaceId,
+            [new(WorkspaceId, "Fixture", "F", DateTimeOffset.UnixEpoch, "sr5",
+                overview.ContentRevision, overview.SavedRevision)], [WorkspaceId])
+            { OwnerContext = overview.DisplayOwnerContext };
+        var previous = CharacterOverviewState.Empty with
+        {
+            DisplayOwnerContext = new OwnerContextStamp(new("previous-account"), "other-issuer", 99)
+        };
+        return factory.CreateLoadedState(previous, WorkspaceId, session, overview, null, hasSavedWorkspace: true);
+    }
+
+    private sealed class RecordingAttributesService(bool deny = false)
+        : ICharacterCreationAttributesService, IOwnerBoundCharacterCreationAttributesService
+    {
+        public int BoundLoads { get; private set; }
+        public int UnboundLoads { get; private set; }
+        public OwnerContextStamp? LastOwner { get; private set; }
+
+        public CharacterCreationFoundationResult<CharacterCreationAttributesState> Load(
+            CharacterCreationAttributesLoadRequest request)
+        {
+            UnboundLoads++;
+            return Blocked();
+        }
+
+        public CharacterCreationFoundationResult<CharacterCreationAttributesPreview> Preview(
+            CharacterCreationAttributesPreviewRequest request)
+            => BlockedPreview();
+
+        public CharacterCreationFoundationResult<CharacterCreationAttributesReceipt> Confirm(
+            CharacterCreationAttributesConfirmRequest request)
+            => BlockedReceipt();
+
+        public CharacterCreationFoundationResult<CharacterCreationAttributesState> Load(
+            OwnerContextStamp owner, CharacterCreationAttributesLoadRequest request)
+        {
+            BoundLoads++;
+            LastOwner = owner;
+            return Blocked();
+        }
+
+        public CharacterCreationFoundationResult<CharacterCreationAttributesPreview> Preview(
+            OwnerContextStamp owner, CharacterCreationAttributesPreviewRequest request)
+            => BlockedPreview();
+
+        public CharacterCreationFoundationResult<CharacterCreationAttributesReceipt> Confirm(
+            OwnerContextStamp owner, CharacterCreationAttributesConfirmRequest request)
+            => BlockedReceipt();
+
+        private static CharacterCreationFoundationResult<CharacterCreationAttributesState> Blocked()
+            => new(CharacterCreationFoundationOutcomes.Blocked, null,
+                [CharacterCreationAttributesBlockers.AuthorityUnavailable]);
+
+        private static CharacterCreationFoundationResult<CharacterCreationAttributesPreview> BlockedPreview()
+            => new(CharacterCreationFoundationOutcomes.Blocked, null,
+                [CharacterCreationAttributesBlockers.AuthorityUnavailable]);
+
+        private static CharacterCreationFoundationResult<CharacterCreationAttributesReceipt> BlockedReceipt()
+            => new(CharacterCreationFoundationOutcomes.Blocked, null,
+                [CharacterCreationAttributesBlockers.AuthorityUnavailable]);
+    }
+}
 }

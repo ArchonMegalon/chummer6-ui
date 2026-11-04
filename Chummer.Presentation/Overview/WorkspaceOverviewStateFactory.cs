@@ -554,7 +554,8 @@ public sealed class WorkspaceOverviewStateFactory :
         CharacterCreationFoundationResult<CharacterCreationAttributesState>? result =
             loadedOverview.DisplayOwnerContext is { IsValid: true } original
                 ? _ownerBoundCreationAttributesService?.Load(original, request)
-                : _creationAttributesService?.Load(request);
+                : loadedOverview.DisplayOwnerContext is null && _ownerBoundCreationAttributesService is null
+                    ? _creationAttributesService?.Load(request) : null;
         return result is not null
             && result.Outcome == CharacterCreationFoundationOutcomes.Success
             && result.Value is CharacterCreationAttributesState attributesState
