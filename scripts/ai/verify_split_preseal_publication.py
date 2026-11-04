@@ -136,6 +136,11 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
 )
 ALLOWED_RECIPE_PATHS = frozenset(
     {
+        "Chummer.Avalonia/Chummer.Avalonia.csproj",
+        "docs/WINDOWS_CORE_CONTENT.md",
+        "tests/test_core_content_bundle_build.py",
+        "scripts/build-core-content-bundle.py",
+        "Chummer.Avalonia/CoreContentBundle.targets",
         # R9 2026-10-10: pipeline-main residual ports (owner-authorized R26 merge).
         "Chummer.Avalonia/MainWindow.EventHandlers.cs",
         "Chummer.Avalonia/MainWindow.PostRefreshCoordinators.cs",
@@ -150,6 +155,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.CoreProjection.Tests/Program.cs",
         "Chummer.CreationWizard.CoreProjection.Tests/README.md",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationContactsInteractionPresenterTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationCoreContentBundleTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationGearInteractionPresenterTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceTestFixture.cs",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceWorkflowTests.cs",
@@ -166,6 +172,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Desktop.Runtime/InProcessChummerClient.Continuation.cs",
         "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
         "Chummer.Presentation/Chummer.Presentation.csproj",
+        "Chummer.Presentation/Content/CoreContentBundle.cs",
+        "Chummer.Presentation/Content/CoreContentRootDiscovery.cs",
         "Chummer.Presentation/OriginBooks/OriginBookAuthoringSource.cs",
         "Chummer.Presentation/OriginBooks/OriginBookChapterText.cs",
         "Chummer.Presentation/OriginBooks/OriginBookProseDraft.cs",
@@ -399,13 +407,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "1a2be4686a0a8d088ffbab42bd77270f9bf5ec00",
+        "blob": "fcf7925387150693a67a4b0c45e529d7d93911c1",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "678595176fe71b1f3da140945c699001f7b3cda05cc27642a4518cbcb3a30e2b",
+        "rawSha256": "6414cd51d722686c5e5da93dbd9b97bcf622d325faa0c79b5e2568185c7ad687",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "678595176fe71b1f3da140945c699001f7b3cda05cc27642a4518cbcb3a30e2b",
+        "semanticCanonicalSha256": "6414cd51d722686c5e5da93dbd9b97bcf622d325faa0c79b5e2568185c7ad687",
         "semanticCanonicalSizeBytes": 69810,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

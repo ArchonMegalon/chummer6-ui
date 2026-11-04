@@ -1,13 +1,7 @@
-"""Guard the Avalonia Core-content-root resolution contract.
+"""Source guards for application-bound runtime content and development discovery.
 
-Authoritative character creation requires the pinned Core content checkout as
-the headless core's content root; the UI repository's partial Chummer/data
-mirror is not sufficient (creation-bootstrap-source-context-unavailable).
-
-This is a source-contract guard in the tests/ convention (this is not package
-qualification): it parses the resolver and its wiring from source, so the
-discovery order, pinned-commit identity, fail-fast semantics, and the
-proven-working (coreRoot, coreRoot) configuration cannot silently regress.
+Behavioral integrity tests live in CharacterCreationCoreContentBundleTests;
+these lightweight checks retain the Avalonia wiring and pinned source identities.
 """
 from pathlib import Path
 import unittest
@@ -26,33 +20,34 @@ class DesktopCoreContentRootResolverContractTests(unittest.TestCase):
     def setUp(self):
         self.resolver = RESOLVER.read_text(encoding="utf-8")
         self.app = APP.read_text(encoding="utf-8")
+        self.discovery = (REPO / "Chummer.Presentation/Content/CoreContentRootDiscovery.cs").read_text()
+        self.bundle = (REPO / "Chummer.Presentation/Content/CoreContentBundle.cs").read_text()
 
     def test_resolver_file_exists(self):
         self.assertTrue(RESOLVER.exists(), "DesktopCoreContentRootResolver.cs must exist in Chummer.Avalonia")
 
-    def test_resolver_discovers_explicit_environment_override_first(self):
-        self.assertIn('"CHUMMER_CORE_CONTENT_ROOT"', self.resolver)
-        self.assertIn("GetEnvironmentVariable", self.resolver)
+    def test_packaged_identity_precedes_development_overrides(self):
+        self.assertIn('"ChummerCoreContentManifestSha256"', self.resolver)
+        self.assertLess(self.discovery.index("CoreContentBundle.Validate(bundle"), self.discovery.index("readEnvironmentVariable(EnvironmentVariable)"))
 
-    def test_resolver_discovers_repo_root_then_core_sibling(self):
-        self.assertIn('Path.Combine(repoRoot, "..", "chummer6-core")', self.resolver)
-        # repo root candidate precedes the sibling candidate
-        self.assertLess(
-            self.resolver.index("yield return Path.GetFullPath(repoRoot);"),
-            self.resolver.index('Path.Combine(repoRoot, "..", "chummer6-core")'),
-        )
+    def test_development_discovery_retains_repo_and_sibling(self):
+        self.assertIn('Path.GetFullPath(repoRoot)', self.discovery)
+        self.assertIn('Path.Combine(repoRoot, "..", "chummer6-core")', self.discovery)
 
-    def test_resolver_requires_settings_all_sources_anchor(self):
-        self.assertIn('"settings-all-sources.xml"', self.resolver)
+    def test_bundle_requires_rules_and_file_integrity(self):
+        self.assertIn('"settings-all-sources.xml"', self.bundle)
+        self.assertIn('"lifemodules.xml"', self.bundle)
+        self.assertIn('SHA256.HashData(stream)', self.bundle)
+        self.assertIn('expected.SetEquals(actual)', self.bundle)
 
     def test_resolver_validates_pinned_core_commits(self):
-        self.assertIn(RUNTIME_COMMIT, self.resolver)
-        self.assertIn(RECIPE_COMMIT, self.resolver)
-        self.assertIn("not a pinned Core content commit", self.resolver)
+        self.assertIn(RUNTIME_COMMIT, self.discovery)
+        self.assertIn(RECIPE_COMMIT, self.discovery)
+        self.assertIn('PinnedCommits.Contains', self.discovery)
 
-    def test_resolver_fails_fast_on_invalid_explicit_root(self):
-        self.assertIn("InvalidOperationException", self.resolver)
-        self.assertIn("was rejected", self.resolver)
+    def test_invalid_bundle_is_not_a_git_fallback(self):
+        self.assertIn('throw new InvalidOperationException(error)', self.discovery)
+        self.assertIn('return failureDetail = CoreContentBundle.Validate', self.discovery)
 
     def test_wiring_uses_proven_core_configuration_when_resolved(self):
         # The probe-proven working configuration: the Core checkout as BOTH
