@@ -286,6 +286,10 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Avalonia/DesktopPersistenceProbe.cs",
         "Chummer.Avalonia/MainWindow.CreationWizard.cs",
         "Chummer.Avalonia/Creation/CreationQualitiesReviewWindow.cs",
+        "Chummer.Avalonia/Creation/CreationAttributesAllocationWindow.cs",
+        "Chummer.Presentation/Overview/CharacterCreationAttributesInteractionPresenter.cs",
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationAttributesInteractionPresenterTests.cs",
+        "Chummer.Tests/Presentation/CharacterCreationAttributesAllocationAvaloniaTests.cs",
         "Chummer.Presentation/Overview/CharacterCreationQualitiesInteraction.cs",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationQualitiesInteractionTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationQualitiesAvaloniaTests.cs",
@@ -386,13 +390,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 16
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "2798ed9d8c640cc385b4c67948cf72e718e0fb49",
+        "blob": "087c987752cdfa1e345bf26ab8a0a5ce5b3ff56e",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "e426d7e71305bbba17dc5797f7cf44fbd9b5547cc3c4d906bb376d0ab2b2ebb2",
+        "rawSha256": "f132303cf3489170dc793f757bc8fafc640dbeacbbd4f65178b52c8086a1be87",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "e426d7e71305bbba17dc5797f7cf44fbd9b5547cc3c4d906bb376d0ab2b2ebb2",
+        "semanticCanonicalSha256": "f132303cf3489170dc793f757bc8fafc640dbeacbbd4f65178b52c8086a1be87",
         "semanticCanonicalSizeBytes": 69810,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

@@ -136,7 +136,7 @@
       "Chummer.Presentation/Overview/CharacterCreationContactsInteractionPresenter.cs": "d03f56617b9e613dae458c23edb6ff762453d107555b9b5c759162a4dafa4172",
       "Chummer.Presentation/Overview/CharacterCreationLifestylesInteractionPresenter.cs": "a40bda2b5b83f8c1d633faf0080ec9101ba3d2731a116a0ee484b6e7944be257",
       "Chummer.Presentation/Overview/CharacterCreationLoadoutInteractionPresenter.cs": "5387a457a2d5cf74d3d7fd1e97c2aac7d9a012e1723515accfe8e06169fa5c94",
-      "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs": "3acb27d0bed600fa69532a47a1b96279b9ee3635877f5a688f49471fb2059407",
+      "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs": "cfa91027eefe1fcbdf25a287c15c9421b119574875c9a142395c70d0ae32a9ae",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.Commands.cs": "bc4f6f47120adf62fd36a139e7f251e024e4bacbcc0e3f83d6acf9ef3cedfb26",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.Continuation.cs": "ea9d7b6f04a3f897907d4ca112bca6e9602ab3adff73bc17c90cfe91714fa57a",
       "Chummer.Presentation/Overview/CharacterOverviewPresenter.CreationBootstrap.cs": "827fcbd0e3fe619fa68df816d309d5a371c01bbaf11289e073b76eae91928aef",

@@ -1,5 +1,6 @@
 using Avalonia.Automation;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -75,6 +76,8 @@ public partial class CharacterCreationWizardControl : UserControl
     private string? _resourcesMutationStatus;
     private string? _qualitiesMutationStatus;
     private bool _qualitiesMutationBusy;
+    private string? _attributesMutationStatus;
+    private bool _attributesMutationBusy;
     private HashSet<string> _selectedQualityIds = new(StringComparer.Ordinal);
     private bool _resourcesMutationBusy;
     private string? _foundationStatus;
@@ -107,6 +110,9 @@ public partial class CharacterCreationWizardControl : UserControl
     public event EventHandler<CharacterCreationResourcesConfirmRequested>? ResourcesConfirmRequested;
     public event EventHandler<CharacterCreationQualitiesOptionClickRequested>? QualitiesOptionClickRequested;
     public event EventHandler? QualitiesEditRequested;
+
+    /// <summary>Raised when the user asks to open the manual attribute allocation editor.</summary>
+    public event EventHandler? AttributesEditRequested;
     public event EventHandler<CharacterCreationMagicResonanceOptionClickRequested>? MagicResonanceOptionClickRequested;
 
     /// <summary>Raised whenever the traveler adjusts a Priority rank selection.</summary>
@@ -914,6 +920,18 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
+    public void AttributesStatus(string message)
+    {
+        _attributesMutationStatus = message;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void AttributesMutationBusy(bool busy)
+    {
+        _attributesMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
     private static string BuildResourcesResultStatus(string outcome, IReadOnlyList<string> blockers)
     {
         string suffix = blockers.Count == 0 ? string.Empty : $" (blocked: {string.Join(", ", blockers)})";
@@ -1123,6 +1141,23 @@ public partial class CharacterCreationWizardControl : UserControl
                 LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
             if (!string.IsNullOrWhiteSpace(_qualitiesMutationStatus))
                 LegalOptionList.Children.Add(Caption(_qualitiesMutationStatus));
+        }
+        if (_state?.ActiveStepId == CharacterCreationWizardStepIds.Attributes)
+        {
+            string authorityBlocker = CharacterCreationWizardProjector.AttributesAuthorityUnavailable;
+            bool attributesReady = _state is { } s
+                && !s.CompletionBlockers.Contains(authorityBlocker)
+                && !s.Budgets.Any(b => b.Blockers.Contains(authorityBlocker));
+            var edit = new Button { Content = "Allocate attributes\u2026", IsEnabled = attributesReady && !_attributesMutationBusy };
+            AutomationProperties.SetAutomationId(edit, "creation-wizard-allocate-attributes");
+            edit.Click += (_, _) => { if (attributesReady && !_attributesMutationBusy) AttributesEditRequested?.Invoke(this, EventArgs.Empty); };
+            LegalOptionList.Children.Add(edit);
+            if (_attributesMutationBusy)
+                LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
+            if (!string.IsNullOrWhiteSpace(_attributesMutationStatus))
+                LegalOptionList.Children.Add(Caption(_attributesMutationStatus));
+            if (!attributesReady)
+                LegalOptionList.Children.Add(Caption("Attribute allocation opens once attributes are authoritative for this workspace."));
         }
         if (options.Count == 0)
         {

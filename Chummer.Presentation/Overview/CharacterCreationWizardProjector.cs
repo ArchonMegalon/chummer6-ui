@@ -28,6 +28,8 @@ public static class CharacterCreationWizardProjector
     public const string ContactsAuthorityUnavailable = "creation-wizard-contacts-authority-unavailable";
     public const string QualitiesAuthorityUnavailable = "creation-wizard-qualities-authority-unavailable";
     public const string MagicResonanceAuthorityUnavailable = "creation-wizard-magic-resonance-authority-unavailable";
+
+    public const string AttributesAuthorityUnavailable = "creation-wizard-attributes-authority-unavailable";
     public const string ContactCreateDeleteAuthorityUnavailable = "creation-wizard-contact-create-delete-authority-unavailable";
     public const string ContactPetsAuthorityUnavailable = "creation-wizard-contact-pets-authority-unavailable";
     public const string LifestylesAuthorityUnavailable = "creation-wizard-lifestyles-authority-unavailable";
@@ -182,7 +184,9 @@ public static class CharacterCreationWizardProjector
             qualities,
             magicResonanceAuthority.Editor,
             skills,
-            resources);
+            resources,
+        attributes,
+        attributesAuthority);
         if (finalizationAuthority.State is null)
             completionBlockers.AddRange(budgets.SelectMany(static budget => budget.Blockers));
         IReadOnlyList<CharacterCreationWizardStageState> steps = BuildSteps(
@@ -660,7 +664,9 @@ public static class CharacterCreationWizardProjector
         CharacterCreationQualitiesState? qualities,
         CharacterCreationMagicResonanceEditorState? magicResonance,
         CharacterCreationSkillsState? skills,
-        CharacterCreationResourcesState? resources)
+        CharacterCreationResourcesState? resources,
+        CharacterCreationAttributesState? attributes,
+        AttributesProjectionAuthority attributesAuthority)
     {
         List<CharacterCreationBudgetState> budgets =
         [
@@ -697,8 +703,18 @@ public static class CharacterCreationWizardProjector
                     IsExact: qualities.CanEdit,
                     Blockers: qualities.Preview.NegativeQualityBudget.Blockers,
                     Unit: "karma"),
-            UnknownBudget(CharacterCreationBudgetIds.NormalAttributes, "Normal attributes", "points"),
-            UnknownBudget(CharacterCreationBudgetIds.SpecialAttributes, "Special attributes", "points"),
+            ProjectAttributesBudget(
+                attributes,
+                attributesAuthority,
+                CharacterCreationBudgetIds.NormalAttributes,
+                "Normal attributes",
+                static state => state.NormalPointBudget),
+            ProjectAttributesBudget(
+                attributes,
+                attributesAuthority,
+                CharacterCreationBudgetIds.SpecialAttributes,
+                "Special attributes",
+                static state => state.SpecialPointBudget),
             skills is null
                 ? UnknownBudget(CharacterCreationBudgetIds.ActiveSkills, "Active skills", "points")
                 : skills.ActiveSkillPointBudget,
@@ -820,6 +836,36 @@ public static class CharacterCreationWizardProjector
             state.CanEdit && budget.Blockers.Count == 0,
             budget.Blockers,
             unit);
+    }
+
+    private static CharacterCreationBudgetState ProjectAttributesBudget(
+        CharacterCreationAttributesState? attributes,
+        AttributesProjectionAuthority attributesAuthority,
+        string budgetId,
+        string label,
+        Func<CharacterCreationAttributesState, CharacterCreationBudgetState> selector)
+    {
+        if (attributes is null || !attributesAuthority.IsReady)
+        {
+            return UnknownBudget(budgetId, label, "points", AttributesAuthorityUnavailable);
+        }
+
+        CharacterCreationBudgetState budget = selector(attributes);
+        string[] blockers = attributes.Blockers
+            .Concat(budget.Blockers)
+            .Where(static blocker => !string.IsNullOrWhiteSpace(blocker))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static blocker => blocker, StringComparer.Ordinal)
+            .ToArray();
+        return new CharacterCreationBudgetState(
+            BudgetId: budgetId,
+            Label: label,
+            Total: budget.Total,
+            Used: budget.Used,
+            Remaining: budget.Remaining,
+            IsExact: attributes.CanEdit && blockers.Length == 0,
+            Blockers: blockers,
+            Unit: "points");
     }
 
     private static CharacterCreationBudgetState ProjectBudget(
