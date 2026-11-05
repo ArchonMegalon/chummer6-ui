@@ -97,6 +97,22 @@ public partial class CharacterCreationWizardControl : UserControl
     private string? _lifestyleMutationStatus;
     private bool _lifestyleMutationBusy;
     private string? _boundLifestylesSnapshotDigest;
+    // Draft-preservation state (audit win008): the wizard keeps the player's
+    // entered values in typed drafts so a preview (valid, blocked, or failed)
+    // re-renders the same editing surface with the same values, and a stable
+    // minted identity survives the whole review cycle for new entities.
+    private Dictionary<string, string>? _contactAddDraft;
+    private Guid? _contactAddDraftIdentity;
+    private readonly Dictionary<Guid, Dictionary<string, string>> _contactEditDrafts = [];
+    private CharacterCreationLifestyleConfiguration? _lifestyleCreateDraft;
+    private Guid? _lifestyleCreateDraftIdentity;
+    private readonly Dictionary<Guid, CharacterCreationLifestyleConfiguration> _lifestyleEditDrafts = [];
+    // Review binding (audit win008): the values at preview time. Confirmation
+    // stays available only while the visible editors still match this baseline.
+    private IReadOnlyDictionary<string, string>? _contactPreviewBaseline;
+    private Guid? _contactPreviewBaselineId;
+    private CharacterCreationLifestyleConfiguration? _lifestylePreviewBaseline;
+    private Guid? _lifestylePreviewBaselineId;
     private bool _finalizeBusy;
     private string? _finalizeStatus;
     /// <summary>Latest authoritative finalization availability (from the
@@ -705,19 +721,34 @@ public partial class CharacterCreationWizardControl : UserControl
         if (!string.Equals(
                 state.ContactsStep?.SnapshotDigest,
                 _boundContactsSnapshotDigest,
-                StringComparison.Ordinal))
+                StringComparison.Ordinal)
+            || !string.Equals(state.WorkspaceId, _state?.WorkspaceId, StringComparison.Ordinal))
         {
             _contactPreview = null;
             _contactMutationStatus = null;
+            _contactAddDraft = null;
+            _contactAddDraftIdentity = null;
+            _contactEditDrafts.Clear();
+            _contactPreviewBaseline = null;
+            _contactPreviewBaselineId = null;
+            ContactsList.Children.Clear();
+            _contactEditors.Clear();
             _boundContactsSnapshotDigest = state.ContactsStep?.SnapshotDigest;
         }
         if (!string.Equals(
                 state.LifestylesStep?.SnapshotDigest,
                 _boundLifestylesSnapshotDigest,
-                StringComparison.Ordinal))
+                StringComparison.Ordinal)
+            || !string.Equals(state.WorkspaceId, _state?.WorkspaceId, StringComparison.Ordinal))
         {
             _lifestylePreview = null;
             _lifestyleMutationStatus = null;
+            _lifestyleCreateDraft = null;
+            _lifestyleCreateDraftIdentity = null;
+            _lifestyleEditDrafts.Clear();
+            _lifestylePreviewBaseline = null;
+            _lifestylePreviewBaselineId = null;
+            LifestylesList.Children.Clear();
             _boundLifestylesSnapshotDigest = state.LifestylesStep?.SnapshotDigest;
         }
         _state = state;
@@ -846,6 +877,9 @@ public partial class CharacterCreationWizardControl : UserControl
         ArgumentNullException.ThrowIfNull(result);
         _contactPreview = result.PreparedPreview;
         _contactMutationStatus = BuildContactResultStatus(result.Outcome, result.Blockers);
+        // Draft preservation: the draft store and the minted add identity are
+        // deliberately NOT cleared here, so the rebuilt editing surface keeps
+        // the player's values across valid, blocked and failed previews.
         RenderContacts(_state?.ContactsStep);
     }
 
@@ -857,6 +891,14 @@ public partial class CharacterCreationWizardControl : UserControl
             or CharacterCreationContactOutcomes.Replayed)
         {
             _contactPreview = null;
+            // The mutation applied: the draft cycle for that entity is complete.
+            _contactAddDraft = null;
+            _contactAddDraftIdentity = null;
+            _contactEditDrafts.Clear();
+            _contactPreviewBaseline = null;
+            _contactPreviewBaselineId = null;
+            ContactsList.Children.Clear();
+            _contactEditors.Clear();
         }
         RenderContacts(_state?.ContactsStep);
     }
@@ -876,6 +918,9 @@ public partial class CharacterCreationWizardControl : UserControl
         ArgumentNullException.ThrowIfNull(result);
         _lifestylePreview = result.PreparedPreview;
         _lifestyleMutationStatus = BuildLifestyleResultStatus(result.Outcome, result.Blockers);
+        // Draft preservation: the draft store and the minted create identity are
+        // deliberately NOT cleared here, so the rebuilt editing surface keeps
+        // the player's values across valid, blocked and failed previews.
         RenderLifestyles(_state?.LifestylesStep);
     }
 
@@ -887,12 +932,32 @@ public partial class CharacterCreationWizardControl : UserControl
             && !result.Blockers.Contains(CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch))
         {
             _lifestylePreview = null;
+            // The mutation saved: the draft cycle for that entity is complete.
+            _lifestyleCreateDraft = null;
+            _lifestyleCreateDraftIdentity = null;
+            _lifestyleEditDrafts.Clear();
+            _lifestylePreviewBaseline = null;
+            _lifestylePreviewBaselineId = null;
+            LifestylesList.Children.Clear();
         }
         RenderLifestyles(_state?.LifestylesStep);
     }
 
     public void ClearContactLifestylePreviews()
     {
+        _contactAddDraft = null;
+        _contactAddDraftIdentity = null;
+        _contactEditDrafts.Clear();
+        _contactPreviewBaseline = null;
+        _contactPreviewBaselineId = null;
+        _lifestyleCreateDraft = null;
+        _lifestyleCreateDraftIdentity = null;
+        _lifestyleEditDrafts.Clear();
+        _lifestylePreviewBaseline = null;
+        _lifestylePreviewBaselineId = null;
+        ContactsList.Children.Clear();
+        _contactEditors.Clear();
+        LifestylesList.Children.Clear();
         _contactPreview = null;
         _contactMutationStatus = null;
         _lifestylePreview = null;
@@ -1386,6 +1451,7 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void RenderLifestyles(CharacterCreationWizardDesktopLifestylesStep? step)
     {
+        HarvestDraftsBeforeRender(contacts: false, lifestyles: true);
         LifestylesList.Children.Clear();
         LifestylesList.IsVisible = step is not null;
         if (step is null)
@@ -1433,6 +1499,9 @@ public partial class CharacterCreationWizardControl : UserControl
                 ? $" · budget blockers: {string.Join(", ", step.Budget.Blockers)}"
                 : string.Empty)));
 
+        // Draft preservation: a pending create draft (kept across previews) seeds
+        // the form so the player's typing and the minted identity survive.
+        CharacterCreationLifestyleConfiguration? createDraft = _lifestyleCreateDraft;
         ComboBox basePicker = new()
         {
             MinWidth = 260,
@@ -1448,18 +1517,31 @@ public partial class CharacterCreationWizardControl : UserControl
                 Tag = option
             });
         }
-        if (basePicker.Items.Count > 0)
+        int draftBaseIndex = createDraft is null
+            ? -1
+            : basePicker.Items.OfType<ComboBoxItem>().ToList().FindIndex(item =>
+                item.Tag is CharacterCreationLifestyleCatalogOption draftOption
+                && string.Equals(
+                    draftOption.OptionId,
+                    createDraft.BaseLifestyleOptionId,
+                    StringComparison.Ordinal));
+        if (draftBaseIndex >= 0)
+            basePicker.SelectedIndex = draftBaseIndex;
+        else if (basePicker.Items.Count > 0)
             basePicker.SelectedIndex = 0;
         AutomationProperties.SetAutomationId(basePicker, "creation-wizard-lifestyle-create-base");
         form.Children.Add(Caption("Base lifestyle"));
+        basePicker.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(basePicker);
 
         TextBox nameBox = new()
         {
+            Text = createDraft?.Name ?? string.Empty,
             Watermark = "Lifestyle name",
             IsEnabled = !_lifestyleMutationBusy
         };
         AutomationProperties.SetAutomationId(nameBox, "creation-wizard-lifestyle-create-name");
+        nameBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(Caption("Name"));
         form.Children.Add(nameBox);
 
@@ -1468,9 +1550,12 @@ public partial class CharacterCreationWizardControl : UserControl
         {
             stylePicker.Items.Add(new ComboBoxItem { Content = style, Tag = style });
         }
-        stylePicker.SelectedIndex = 0;
+        stylePicker.SelectedIndex = Math.Max(0, CharacterCreationLifestyleStyleIds.All
+            .ToList()
+            .FindIndex(style => string.Equals(style, createDraft?.StyleId, StringComparison.Ordinal)));
         AutomationProperties.SetAutomationId(stylePicker, "creation-wizard-lifestyle-create-style");
         form.Children.Add(Caption("Style"));
+        stylePicker.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(stylePicker);
 
         ComboBox incrementPicker = new() { IsEnabled = !_lifestyleMutationBusy };
@@ -1478,32 +1563,37 @@ public partial class CharacterCreationWizardControl : UserControl
         {
             incrementPicker.Items.Add(new ComboBoxItem { Content = increment, Tag = increment });
         }
-        incrementPicker.SelectedIndex = 2;
+        incrementPicker.SelectedIndex = createDraft is null ? 2 : Math.Max(0, CharacterCreationLifestyleIncrementIds.All
+            .ToList()
+            .FindIndex(increment => string.Equals(increment, createDraft?.IncrementId, StringComparison.Ordinal)));
         AutomationProperties.SetAutomationId(incrementPicker, "creation-wizard-lifestyle-create-increment");
         form.Children.Add(Caption("Billing increment"));
+        incrementPicker.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(incrementPicker);
 
         StackPanel numeric = new() { Spacing = 3 };
         numeric.Children.Add(BuildLifestyleNumericEditor(
-            "creation-wizard-lifestyle-create-increments", "Increments", 1, 0, 36));
+            "creation-wizard-lifestyle-create-increments", "Increments", createDraft?.Increments ?? 1, 0, 36));
         numeric.Children.Add(BuildLifestyleNumericEditor(
-            "creation-wizard-lifestyle-create-percentage", "Percentage", 100, 0, 100));
+            "creation-wizard-lifestyle-create-percentage", "Percentage", createDraft?.Percentage ?? 100, 0, 100));
         numeric.Children.Add(BuildLifestyleNumericEditor(
-            "creation-wizard-lifestyle-create-roommates", "Roommates", 0, 0, 10));
+            "creation-wizard-lifestyle-create-roommates", "Roommates", createDraft?.Roommates ?? 0, 0, 10));
         numeric.Children.Add(BuildLifestyleNumericEditor(
-            "creation-wizard-lifestyle-create-area", "Area", 0, 0, 100));
+            "creation-wizard-lifestyle-create-area", "Area", createDraft?.Area ?? 0, 0, 100));
         numeric.Children.Add(BuildLifestyleNumericEditor(
-            "creation-wizard-lifestyle-create-comforts", "Comforts", 0, 0, 100));
+            "creation-wizard-lifestyle-create-comforts", "Comforts", createDraft?.Comforts ?? 0, 0, 100));
         numeric.Children.Add(BuildLifestyleNumericEditor(
-            "creation-wizard-lifestyle-create-security", "Security", 0, 0, 100));
+            "creation-wizard-lifestyle-create-security", "Security", createDraft?.Security ?? 0, 0, 100));
         form.Children.Add(numeric);
 
         CheckBox splitCost = new()
         {
             Content = "Split cost with roommates",
+            IsChecked = createDraft?.SplitCostWithRoommates == true,
             IsEnabled = !_lifestyleMutationBusy
         };
         AutomationProperties.SetAutomationId(splitCost, "creation-wizard-lifestyle-create-split");
+        splitCost.IsCheckedChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(splitCost);
 
         Button previewButton = new()
@@ -1540,6 +1630,7 @@ public partial class CharacterCreationWizardControl : UserControl
             IsEnabled = !_lifestyleMutationBusy
         };
         AutomationProperties.SetAutomationId(editor, automationId);
+        editor.ValueChanged += (_, _) => RefreshPreviewBindingGates();
         row.Children.Add(editor);
         return row;
     }
@@ -1569,16 +1660,22 @@ public partial class CharacterCreationWizardControl : UserControl
             + $" · lifestyle points {lifestyle.Economics.LifestylePointsTotal}"));
 
         string prefix = $"creation-wizard-lifestyle-{configuration.LifestyleId:D}";
-        TextBox name = new() { Text = configuration.Name, IsEnabled = canEdit && !_lifestyleMutationBusy };
+        CharacterCreationLifestyleConfiguration draft = _lifestyleEditDrafts.TryGetValue(
+            configuration.LifestyleId, out CharacterCreationLifestyleConfiguration? editDraft)
+            ? editDraft
+            : configuration;
+        TextBox name = new() { Text = draft.Name, IsEnabled = canEdit && !_lifestyleMutationBusy };
         AutomationProperties.SetAutomationId(name, prefix + "-name");
+        name.TextChanged += (_, _) => RefreshPreviewBindingGates();
         fields.Children.Add(Caption("Name"));
         fields.Children.Add(name);
         var editFields = new StackPanel { IsEnabled = canEdit && !_lifestyleMutationBusy, Spacing = 3 };
-        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-increments", "Billing increments", configuration.Increments, 0, int.MaxValue));
-        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-percentage", "Cost percentage", configuration.Percentage, Math.Min(0, configuration.Percentage), decimal.MaxValue));
-        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-roommates", "Roommates", configuration.Roommates, 0, int.MaxValue));
-        CheckBox split = new() { Content = "Split cost with roommates", IsChecked = configuration.SplitCostWithRoommates };
+        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-increments", "Billing increments", draft.Increments, 0, int.MaxValue));
+        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-percentage", "Cost percentage", draft.Percentage, Math.Min(0, draft.Percentage), decimal.MaxValue));
+        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-roommates", "Roommates", draft.Roommates, 0, int.MaxValue));
+        CheckBox split = new() { Content = "Split cost with roommates", IsChecked = draft.SplitCostWithRoommates };
         AutomationProperties.SetAutomationId(split, prefix + "-split");
+        split.IsCheckedChanged += (_, _) => RefreshPreviewBindingGates();
         editFields.Children.Add(split);
         fields.Children.Add(editFields);
 
@@ -1671,27 +1768,34 @@ public partial class CharacterCreationWizardControl : UserControl
             text += $" After: {after.Configuration.Increments} increments, {after.Configuration.Percentage}% cost, {after.Configuration.Roommates} roommates, split cost: {after.Configuration.SplitCostWithRoommates}.";
         }
         text += $" Budget remaining: {prepared.BudgetBefore.Remaining:0.##} → {prepared.BudgetAfter.Remaining:0.##} nuyen.";
+        bool lifestyleMatchesVisibleEditors = LifestylePreviewMatchesVisibleEditors(prepared);
+        // Review-first layout: the player reads the affected entity, the changes
+        // and the budget effect BEFORE the confirmation action is offered.
+        LifestylesList.Children.Add(Caption(text));
         if (prepared.CanConfirm)
         {
+            if (!lifestyleMatchesVisibleEditors)
+            {
+                LifestylesList.Children.Add(Caption(
+                    "Values changed since this preview — preview again to confirm the new proposal."));
+            }
             Button confirm = new()
             {
                 Content = $"Confirm {prepared.Mutation.MutationKind}",
-                IsEnabled = !_lifestyleMutationBusy,
+                IsEnabled = lifestyleMatchesVisibleEditors && !_lifestyleMutationBusy,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
             };
             confirm.Classes.Add("shell-action");
             AutomationProperties.SetAutomationId(confirm, "creation-wizard-lifestyle-confirm");
             confirm.Click += LifestyleConfirmButton_OnClick;
             LifestylesList.Children.Add(confirm);
-            LifestylesList.Children.Add(Caption(text));
         }
         else
         {
             LifestylesList.Children.Add(Caption(
-                text
-                + (prepared.Blockers.Count > 0
-                    ? $" Blockers: {string.Join(", ", prepared.Blockers)}"
-                    : string.Empty)));
+                prepared.Blockers.Count > 0
+                    ? $"Blocked: {string.Join(", ", prepared.Blockers)}"
+                    : "This proposal cannot be confirmed yet."));
         }
     }
 
@@ -1723,8 +1827,16 @@ public partial class CharacterCreationWizardControl : UserControl
         int security = ReadLifestyleNumeric("creation-wizard-lifestyle-create-security", 0);
         bool splitCost = FindLifestyleEditor<CheckBox>("creation-wizard-lifestyle-create-split")?.IsChecked == true;
 
+        // Draft preservation: reuse the identity minted for this create cycle so
+        // repeated previews describe the same new lifestyle.
+        if (_lifestyleCreateDraftIdentity is not { } mintedLifestyleId)
+        {
+            mintedLifestyleId = Guid.NewGuid();
+            _lifestyleCreateDraftIdentity = mintedLifestyleId;
+        }
+        Guid lifestyleId = mintedLifestyleId;
         CharacterCreationLifestyleConfiguration configuration = BuildConfigurationFromForm(
-            Guid.NewGuid(),
+            lifestyleId,
             option.OptionId,
             name,
             styleId,
@@ -1736,6 +1848,9 @@ public partial class CharacterCreationWizardControl : UserControl
             comforts,
             security,
             splitCost);
+        _lifestyleCreateDraft = configuration;
+        _lifestylePreviewBaseline = configuration;
+        _lifestylePreviewBaselineId = configuration.LifestyleId;
         CharacterCreationLifestyleMutationInput input = new(
             CharacterCreationLifestyleMutationKinds.Create,
             configuration.LifestyleId,
@@ -1763,6 +1878,10 @@ public partial class CharacterCreationWizardControl : UserControl
             CharacterCreationLifestyleMutationKinds.Edit,
             lifestyle.Configuration.LifestyleId,
             edited);
+        // Draft preservation + review binding for the edit cycle.
+        _lifestyleEditDrafts[lifestyle.Configuration.LifestyleId] = edited;
+        _lifestylePreviewBaseline = edited;
+        _lifestylePreviewBaselineId = edited.LifestyleId;
         LifestylePreviewRequested?.Invoke(this, new CharacterCreationLifestylePreviewRequested(input));
     }
 
@@ -1777,6 +1896,7 @@ public partial class CharacterCreationWizardControl : UserControl
             CharacterCreationLifestyleMutationKinds.Delete,
             lifestyle.Configuration.LifestyleId,
             null);
+        _lifestyleEditDrafts.Remove(lifestyle.Configuration.LifestyleId);
         LifestylePreviewRequested?.Invoke(this, new CharacterCreationLifestylePreviewRequested(input));
     }
 
@@ -1784,8 +1904,252 @@ public partial class CharacterCreationWizardControl : UserControl
     {
         if (_lifestylePreview is not { CanConfirm: true } prepared || _lifestyleMutationBusy)
             return;
+        if (!LifestylePreviewMatchesVisibleEditors(prepared))
+            return;
         LifestyleConfirmRequested?.Invoke(this, new CharacterCreationLifestyleConfirmRequested(
             prepared.PreviewDigest));
+    }
+
+    /// <summary>Captures the current editor values for the given contact editor
+    /// keys. Used by the draft store so previews never discard player input.</summary>
+    private Dictionary<string, string> CaptureContactEditorValues(
+        Guid contactId,
+        IEnumerable<string> fieldIds)
+    {
+        Dictionary<string, string> values = new(StringComparer.Ordinal);
+        foreach (string fieldId in fieldIds)
+        {
+            values[fieldId] = ReadContactEditor(contactId, fieldId);
+        }
+        return values;
+    }
+
+    /// <summary>Review-binding invariant: the values visibly being approved must
+    /// be the values bound into the prepared operation. Compares the live editors
+    /// against the baseline captured when the preview was requested.</summary>
+    private bool ContactPreviewMatchesVisibleEditors(Guid contactId)
+    {
+        if (_contactPreviewBaseline is null || _contactPreviewBaselineId != contactId)
+            return true;
+        if (_contactPreview?.Edit.ChangeKind == CharacterCreationContactChangeKind.Remove)
+            return true;
+        Guid editorId = contactId == _contactAddDraftIdentity ? Guid.Empty : contactId;
+        foreach ((string fieldId, string baselineValue) in _contactPreviewBaseline)
+        {
+            string liveValue = ReadContactEditor(editorId, fieldId);
+            if (!string.Equals(liveValue, baselineValue, StringComparison.Ordinal))
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>Review-binding invariant for lifestyles: compares the visible
+    /// editors against the configuration captured when the preview was requested.
+    /// A mismatch means the player changed values after previewing; confirmation
+    /// must wait for a fresh preview of the new proposal.</summary>
+    private bool LifestylePreviewMatchesVisibleEditors(
+        CharacterCreationLifestylePreparedPreview prepared)
+    {
+        Guid lifestyleId = prepared.Mutation.LifestyleId;
+        if (_lifestylePreviewBaseline is null || _lifestylePreviewBaselineId != lifestyleId)
+            return true;
+        CharacterCreationLifestyleConfiguration baseline = _lifestylePreviewBaseline;
+        if (prepared.Mutation.MutationKind == CharacterCreationLifestyleMutationKinds.Delete)
+            return true;
+
+        if (FindLifestyleEditor<TextBox>($"creation-wizard-lifestyle-{lifestyleId:D}-name") is { } nameBox
+            && !string.Equals(nameBox.Text, baseline.Name, StringComparison.Ordinal))
+            return false;
+        if (ReadLifestyleNumeric($"creation-wizard-lifestyle-{lifestyleId:D}-increments", baseline.Increments) != baseline.Increments)
+            return false;
+        if ((FindLifestyleEditor<NumericUpDown>($"creation-wizard-lifestyle-{lifestyleId:D}-percentage")?.Value
+                ?? baseline.Percentage) != baseline.Percentage)
+            return false;
+        if (ReadLifestyleNumeric($"creation-wizard-lifestyle-{lifestyleId:D}-roommates", baseline.Roommates) != baseline.Roommates)
+            return false;
+        if ((FindLifestyleEditor<CheckBox>($"creation-wizard-lifestyle-{lifestyleId:D}-split")?.IsChecked
+                ?? baseline.SplitCostWithRoommates) != baseline.SplitCostWithRoommates)
+            return false;
+
+        if (prepared.Mutation.MutationKind == CharacterCreationLifestyleMutationKinds.Create)
+        {
+            if (!string.Equals(FindLifestyleEditor<TextBox>("creation-wizard-lifestyle-create-name")?.Text ?? string.Empty,
+                    baseline.Name, StringComparison.Ordinal))
+                return false;
+            if (FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-base")?.SelectedItem
+                    is not ComboBoxItem { Tag: CharacterCreationLifestyleCatalogOption option }
+                || !string.Equals(option.OptionId, baseline.BaseLifestyleOptionId, StringComparison.Ordinal))
+                return false;
+            if (!string.Equals((FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-style")?.SelectedItem
+                    as ComboBoxItem)?.Tag as string, baseline.StyleId, StringComparison.Ordinal)
+                || !string.Equals((FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-increment")?.SelectedItem
+                    as ComboBoxItem)?.Tag as string, baseline.IncrementId, StringComparison.Ordinal))
+                return false;
+            if (ReadLifestyleNumeric("creation-wizard-lifestyle-create-increments", baseline.Increments) != baseline.Increments)
+                return false;
+            if ((FindLifestyleEditor<NumericUpDown>("creation-wizard-lifestyle-create-percentage")?.Value
+                    ?? baseline.Percentage) != baseline.Percentage)
+                return false;
+            if (ReadLifestyleNumeric("creation-wizard-lifestyle-create-roommates", baseline.Roommates) != baseline.Roommates)
+                return false;
+            if (ReadLifestyleNumeric("creation-wizard-lifestyle-create-area", baseline.Area) != baseline.Area)
+                return false;
+            if (ReadLifestyleNumeric("creation-wizard-lifestyle-create-comforts", baseline.Comforts) != baseline.Comforts)
+                return false;
+            if (ReadLifestyleNumeric("creation-wizard-lifestyle-create-security", baseline.Security) != baseline.Security)
+                return false;
+            if ((FindLifestyleEditor<CheckBox>("creation-wizard-lifestyle-create-split")?.IsChecked
+                    ?? baseline.SplitCostWithRoommates) != baseline.SplitCostWithRoommates)
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>Live re-evaluation of the review-binding gates (audit win008):
+    /// when any contact or lifestyle editor value changes while a preview is
+    /// pending, the confirm buttons are re-enabled or disabled so the values
+    /// visibly approved stay equal to the values bound into the prepared
+    /// operation. Contact confirm buttons carry a per-contact AutomationId;
+    /// the lifestyle confirm button shares one id.</summary>
+    private void RefreshPreviewBindingGates()
+    {
+        if (_contactPreview is { } contactPreview)
+        {
+            if (FindDescendantByAutomationId<Button>(
+                    ContactsList,
+                    $"creation-wizard-contact-{contactPreview.Edit.ContactId:D}-confirm") is { } contactConfirm)
+            {
+                bool contactMatches = contactPreview.RequiresExplicitConfirmation
+                    && contactPreview.CanConfirm
+                    && contactPreview.Blockers.Count == 0
+                    && ContactPreviewMatchesVisibleEditors(contactPreview.Edit.ContactId);
+                contactConfirm.IsEnabled = contactMatches && !_contactMutationBusy;
+                contactConfirm.Opacity = contactMatches ? 1.0 : 0.55;
+            }
+        }
+
+        if (_lifestylePreview is { } lifestylePreview)
+        {
+            if (FindDescendantByAutomationId<Button>(
+                    LifestylesList, "creation-wizard-lifestyle-confirm") is { } lifestyleConfirm)
+            {
+                bool lifestyleMatches = LifestylePreviewMatchesVisibleEditors(lifestylePreview);
+                lifestyleConfirm.IsEnabled = lifestyleMatches && !_lifestyleMutationBusy;
+                lifestyleConfirm.Opacity = lifestyleMatches ? 1.0 : 0.55;
+            }
+        }
+    }
+
+    /// <summary>Finds a descendant control by AutomationId within the given
+    /// visual root. Returns null when no matching control exists.</summary>
+    private static T? FindDescendantByAutomationId<T>(global::Avalonia.Controls.Control root, string automationId)
+        where T : global::Avalonia.Controls.Control
+    {
+        return root.GetVisualDescendants()
+            .OfType<T>()
+            .FirstOrDefault(candidate => string.Equals(
+                AutomationProperties.GetAutomationId(candidate),
+                automationId,
+                StringComparison.Ordinal));
+    }
+
+    /// <summary>Draft harvest (audit win008): before a re-render clears the
+    /// editing surface, copy the CURRENT visible editor values into the typed
+    /// draft store so edits made after a preview survive that re-render. Only
+    /// editors bound to the currently rendered step are harvested, and only
+    /// while the same snapshot era is still bound — so a snapshot change (which
+    /// already cleared the drafts in SetState) can never re-seed stale values.
+    /// The preview baseline is deliberately untouched: it records the values at
+    /// preview time and must keep detecting post-preview edits.</summary>
+    private void HarvestDraftsBeforeRender(bool contacts, bool lifestyles)
+    {
+        if (lifestyles && _state?.LifestylesStep is { CanEdit: true } lifestyleStep)
+        {
+            foreach (CharacterCreationWizardDesktopLifestyle lifestyle in lifestyleStep.Lifestyles)
+            {
+                Guid lifestyleId = lifestyle.Configuration.LifestyleId;
+                string prefix = $"creation-wizard-lifestyle-{lifestyleId:D}";
+                if (FindLifestyleEditor<TextBox>($"{prefix}-name") is not { } nameBox)
+                    continue;
+                _lifestyleEditDrafts[lifestyleId] = lifestyle.Configuration with
+                {
+                    Name = nameBox.Text ?? string.Empty,
+                    Increments = ReadLifestyleNumeric($"{prefix}-increments", lifestyle.Configuration.Increments),
+                    Percentage = FindLifestyleEditor<NumericUpDown>($"{prefix}-percentage")?.Value
+                        ?? lifestyle.Configuration.Percentage,
+                    Roommates = ReadLifestyleNumeric($"{prefix}-roommates", lifestyle.Configuration.Roommates),
+                    SplitCostWithRoommates = FindLifestyleEditor<CheckBox>($"{prefix}-split")?.IsChecked
+                        ?? lifestyle.Configuration.SplitCostWithRoommates
+                };
+            }
+
+            if (lifestyleStep.Authority.LifestyleOptions.Count > 0
+                && FindLifestyleEditor<TextBox>("creation-wizard-lifestyle-create-name") is { } createName)
+            {
+                CharacterCreationLifestyleConfiguration? selected = null;
+                if (FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-base")?.SelectedItem
+                    is ComboBoxItem { Tag: CharacterCreationLifestyleCatalogOption option })
+                {
+                    selected = new CharacterCreationLifestyleConfiguration(
+                        _lifestyleCreateDraftIdentity ?? Guid.NewGuid(),
+                        option.OptionId,
+                        createName.Text ?? string.Empty,
+                        (FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-style")?.SelectedItem
+                            as ComboBoxItem)?.Tag as string
+                            ?? CharacterCreationLifestyleStyleIds.All[0],
+                        (FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-increment")?.SelectedItem
+                            as ComboBoxItem)?.Tag as string ?? option.DefaultIncrementId,
+                        ReadLifestyleNumeric("creation-wizard-lifestyle-create-increments", 1),
+                        FindLifestyleEditor<NumericUpDown>("creation-wizard-lifestyle-create-percentage")?.Value ?? 100m,
+                        ReadLifestyleNumeric("creation-wizard-lifestyle-create-roommates", 0),
+                        FindLifestyleEditor<CheckBox>("creation-wizard-lifestyle-create-split")?.IsChecked == true,
+                        false,
+                        ReadLifestyleNumeric("creation-wizard-lifestyle-create-area", 0),
+                        ReadLifestyleNumeric("creation-wizard-lifestyle-create-comforts", 0),
+                        ReadLifestyleNumeric("creation-wizard-lifestyle-create-security", 0),
+                        0,
+                        string.Empty,
+                        string.Empty,
+                        string.Empty,
+                        []);
+                }
+                if (selected is not null)
+                {
+                    _lifestyleCreateDraftIdentity ??= selected.LifestyleId;
+                    _lifestyleCreateDraft = selected;
+                }
+            }
+        }
+
+        if (contacts && _state?.ContactsStep is { CanEdit: true } contactsStep)
+        {
+            if (contactsStep.NewContactTemplate is { } template
+                && FindContactEditor(Guid.Empty, CharacterCreationContactFieldIds.Name) is not null)
+            {
+                Dictionary<string, string> addDraft = CaptureContactEditorValues(
+                    Guid.Empty, template.Fields.Select(field => field.FieldId));
+                if (addDraft.Count > 0)
+                {
+                    _contactAddDraft = addDraft;
+                    _contactAddDraftIdentity ??= Guid.NewGuid();
+                }
+            }
+
+            foreach (CharacterCreationWizardDesktopContact contact in contactsStep.Contacts)
+            {
+                if (FindContactEditor(contact.ContactId, CharacterCreationContactFieldIds.Name) is null)
+                    continue;
+                _contactEditDrafts[contact.ContactId] = CaptureContactEditorValues(
+                    contact.ContactId, contact.Fields.Select(field => field.FieldId));
+            }
+        }
+    }
+
+    private Control? FindContactEditor(Guid contactId, string fieldId)
+    {
+        return _contactEditors.TryGetValue((contactId, fieldId), out Control? editor)
+            ? editor
+            : null;
     }
 
     private int ReadLifestyleNumeric(string automationId, int fallback)
@@ -1807,11 +2171,20 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void RenderContacts(CharacterCreationWizardDesktopContactsStep? contacts)
     {
+        HarvestDraftsBeforeRender(contacts: true, lifestyles: false);
         ContactsList.Children.Clear();
         _contactEditors.Clear();
         ContactsList.IsVisible = contacts is not null;
         if (contacts is null)
+        {
+            // The step is gone; the draft cycle ends with it.
+            _contactAddDraft = null;
+            _contactAddDraftIdentity = null;
+            _contactEditDrafts.Clear();
+            _contactPreviewBaseline = null;
+            _contactPreviewBaselineId = null;
             return;
+        }
 
         string authority = contacts.CanEdit
             ? "Core can preview this exact revision; every change still requires explicit confirmation."
@@ -1841,12 +2214,18 @@ public partial class CharacterCreationWizardControl : UserControl
                 + (template.CountsAgainstHighPlacesBudget ? " · counts against Friends in High Places" : string.Empty)));
             foreach (CharacterCreationContactFieldAuthority field in template.Fields)
             {
+                // Draft preservation: the draft value (kept across previews) wins
+                // over the template default so the player's typing survives.
+                string draftValue = _contactAddDraft is not null
+                    && _contactAddDraft.TryGetValue(field.FieldId, out string? draftFieldValue)
+                    ? draftFieldValue
+                    : field.SerializedValue;
                 CharacterCreationWizardDesktopContactField projected = new(
                     field.FieldId,
                     field.Label,
                     field.ValueKind,
                     field.IsEditable,
-                    field.SerializedValue,
+                    draftValue,
                     field.Minimum,
                     field.Maximum,
                     field.LegalOptions,
@@ -1894,11 +2273,28 @@ public partial class CharacterCreationWizardControl : UserControl
                 $"{contact.Role} · {contact.ContactPointCost} contact points"));
             foreach (CharacterCreationWizardDesktopContactField field in contact.Fields)
             {
+                // Draft preservation: the draft value (kept across previews) wins
+                // over the saved projection value so the player's typing survives.
+                string draftValue = _contactEditDrafts.TryGetValue(contact.ContactId, out Dictionary<string, string>? editDraft)
+                    && editDraft.TryGetValue(field.FieldId, out string? editDraftValue)
+                    ? editDraftValue
+                    : field.SerializedValue;
+                CharacterCreationWizardDesktopContactField withDraft = new(
+                    field.FieldId,
+                    field.Label,
+                    field.ValueKind,
+                    field.IsEditable,
+                    draftValue,
+                    field.Minimum,
+                    field.Maximum,
+                    field.LegalOptions,
+                    field.Blockers,
+                    field.SourceAnchorIds);
                 StackPanel row = new() { Spacing = 2 };
                 row.Children.Add(Caption(field.IsEditable
                     ? field.Label
                     : $"{field.Label} · locked"));
-                Control editor = BuildContactEditor(contact.ContactId, field);
+                Control editor = BuildContactEditor(contact.ContactId, withDraft);
                 row.Children.Add(editor);
                 fields.Children.Add(row);
             }
@@ -1990,6 +2386,14 @@ public partial class CharacterCreationWizardControl : UserControl
         AutomationProperties.SetAutomationId(
             editor,
             $"creation-wizard-contact-{contactId:D}-field-{field.FieldId}");
+        if (editor is TextBox contactTextBox)
+        {
+            contactTextBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
+        }
+        else if (editor is ComboBox contactComboBox)
+        {
+            contactComboBox.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
+        }
         _contactEditors[(contactId, field.FieldId)] = editor;
         return editor;
     }
@@ -2024,7 +2428,8 @@ public partial class CharacterCreationWizardControl : UserControl
             IsEnabled = preview.RequiresExplicitConfirmation
                         && preview.CanConfirm
                         && preview.Blockers.Count == 0
-                        && !_contactMutationBusy,
+                        && !_contactMutationBusy
+                        && ContactPreviewMatchesVisibleEditors(preview.Edit.ContactId),
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
         };
         confirm.Classes.Add("shell-action");
@@ -2032,6 +2437,13 @@ public partial class CharacterCreationWizardControl : UserControl
             confirm,
             $"creation-wizard-contact-{preview.Edit.ContactId:D}-confirm");
         confirm.Click += ContactConfirmButton_OnClick;
+        // Review-binding feedback: when the player changed values after the
+        // preview, the confirm button is disabled with an explicit reason.
+        if (!ContactPreviewMatchesVisibleEditors(preview.Edit.ContactId))
+        {
+            body.Children.Add(Caption(
+                "Values changed since this preview — preview again to confirm the new proposal."));
+        }
         body.Children.Add(confirm);
 
         Border card = new()
@@ -2191,7 +2603,7 @@ public partial class CharacterCreationWizardControl : UserControl
         }
 
         return new CharacterCreationContactEditInput(
-            Guid.NewGuid(),
+            _contactAddDraftIdentity ??= Guid.NewGuid(),
             identity,
             connection,
             loyalty,
@@ -2219,6 +2631,12 @@ public partial class CharacterCreationWizardControl : UserControl
             RenderContacts(contacts);
             return;
         }
+        // Draft preservation: remember exactly what the player reviewed and keep
+        // the minted identity stable across the whole add-review cycle.
+        _contactAddDraft = CaptureContactEditorValues(Guid.Empty, template.Fields.Select(field => field.FieldId));
+        _contactAddDraftIdentity = input.ContactId;
+        _contactPreviewBaseline = _contactAddDraft;
+        _contactPreviewBaselineId = input.ContactId;
         _contactMutationStatus = null;
         ContactPreviewRequested?.Invoke(this, new CharacterCreationContactPreviewRequested(input));
     }
@@ -2277,6 +2695,11 @@ public partial class CharacterCreationWizardControl : UserControl
             RenderContacts(contacts);
             return;
         }
+        // Draft preservation + review binding: remember what the player sees and
+        // freeze the baseline the confirm gate compares against.
+        _contactEditDrafts[contact.ContactId] = CaptureContactEditorValues(contact.ContactId, contact.Fields.Select(field => field.FieldId));
+        _contactPreviewBaseline = _contactEditDrafts[contact.ContactId];
+        _contactPreviewBaselineId = contact.ContactId;
         ContactPreviewRequested?.Invoke(this, new CharacterCreationContactPreviewRequested(input));
     }
 
@@ -2289,6 +2712,8 @@ public partial class CharacterCreationWizardControl : UserControl
         {
             return;
         }
+        if (!ContactPreviewMatchesVisibleEditors(preview.Edit.ContactId))
+            return;
         ContactConfirmRequested?.Invoke(
             this,
             new CharacterCreationContactConfirmRequested(preview.PreviewDigest));
