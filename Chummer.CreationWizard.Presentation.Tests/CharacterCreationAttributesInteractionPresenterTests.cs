@@ -385,6 +385,59 @@ public sealed partial class CharacterCreationAttributesInteractionPresenterTests
 
     private sealed record Fixture(CharacterCreationAttributesState State);
 
+
+    [TestMethod]
+    public void Prepare_read_failure_yields_recoverable_fail_without_exception_or_writes()
+    {
+        Fixture fixture = CreateFixture();
+        var service = new FakeAttributesService(fixture.State);
+        CharacterOverviewState overview = CreateOverview(fixture.State, service);
+
+        var presenter = new CharacterCreationAttributesInteractionPresenter(service);
+        presenter.Load(overview);
+
+        service.BeforeLoad = () => throw new InvalidOperationException("simulated authority read failure");
+
+        CharacterCreationAttributesInteractionPrepareResult prepared =
+            presenter.Prepare(overview, [new CharacterCreationAttributeAllocation("BOD", 2, 0)]);
+
+        Assert.AreEqual("attributes-prepare-outcome-uncertain", prepared.Outcome);
+        Assert.IsNotNull(prepared.Error);
+        StringAssert.Contains(prepared.Error!, "has not changed");
+        Assert.IsNull(prepared.State, "a failed prepare must not carry a prepared preview");
+        Assert.AreEqual(0, service.PreviewCalls, "no preview may be dispatched once the state read fails");
+        Assert.AreEqual(0, service.ConfirmCalls, "no write may happen from a failed prepare");
+    }
+
+    [TestMethod]
+    public void Confirm_preread_failure_yields_recoverable_fail_and_dispatches_nothing()
+    {
+        Fixture fixture = CreateFixture();
+        var service = new FakeAttributesService(fixture.State);
+        CharacterOverviewState overview = CreateOverview(fixture.State, service);
+
+        var presenter = new CharacterCreationAttributesInteractionPresenter(service);
+        presenter.Load(overview);
+        CharacterCreationAttributesInteractionPrepareResult prepared =
+            presenter.Prepare(overview, [new CharacterCreationAttributeAllocation("BOD", 2, 0)]);
+        CharacterCreationAttributesPreparedPreview preview = RequirePrepared(prepared);
+
+        service.BeforeLoad = () => throw new InvalidOperationException("simulated authority read failure");
+
+        var confirmation = new CharacterCreationAttributesConfirmation(
+            [new CharacterCreationAttributeAllocation("BOD", 2, 0)],
+            preview.PreviewDigest,
+            ExplicitlyConfirmed: true);
+        CharacterCreationAttributesInteractionConfirmResult confirmed =
+            presenter.Confirm(overview, confirmation);
+
+        Assert.AreEqual("attributes-confirm-preread-outcome-uncertain", confirmed.Outcome);
+        Assert.IsNotNull(confirmed.Error);
+        StringAssert.Contains(confirmed.Error!, "nothing was dispatched");
+        Assert.IsNull(confirmed.State);
+        Assert.AreEqual(0, service.ConfirmCalls, "the failed pre-read must not dispatch any write");
+    }
+
     private sealed class FakeAttributesService : IOwnerBoundCharacterCreationAttributesService
     {
         public bool LoseConfirmResponse { get; init; }
