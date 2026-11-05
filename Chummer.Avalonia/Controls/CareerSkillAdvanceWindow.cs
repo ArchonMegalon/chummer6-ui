@@ -413,6 +413,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
     {
         if (_busy || _dispatchStarted || InvalidateIfContextChanged()) return;
         _reviewedRow = null;
+        SetSkillListLocked(false);
         _applyButton.Content = "Review advancement";
         if (_skillList is not null)
         {
@@ -458,11 +459,25 @@ internal sealed class CareerSkillAdvanceWindow : Window
         return false;
     }
 
+    /// <summary>
+    /// Audit 2026-11-04 P2-1: the visible selection may never diverge from the
+    /// reviewed or submitted identity. While a quote is pending or a dispatch
+    /// started, the ListBox stops accepting selection changes (input lock, not
+    /// a data change); when idle again, selection follows the row the user picks.
+    /// </summary>
+    private void SetSkillListLocked(bool locked)
+    {
+        if (_skillList is null) return;
+        _skillList.IsEnabled = !locked;
+        _skillList.Focusable = !locked;
+    }
+
     private async Task ApplySelectedAsync()
     {
         if (_busy || _dispatchStarted || InvalidateIfContextChanged() || _selectedRow is not { CanAdvance: true } row) return;
         _busy = true;
         _applyButton.IsEnabled = false;
+        SetSkillListLocked(true);
         try
         {
             if (_reviewedRow is null)
@@ -477,6 +492,22 @@ internal sealed class CareerSkillAdvanceWindow : Window
                 _reviewedRow = review;
                 _statusLine.Text = review.DisplayName + " · " + review.Cost + ". Confirm this exact purchase?";
                 _applyButton.Content = "Confirm purchase";
+                return;
+            }
+            // Audit 2026-11-04 P2-1 identity triple-check: selected identity,
+            // reviewed identity and the operation submitted must be the same row
+            // before any purchase dispatch. A stale reviewed row from an earlier
+            // selection is discarded, never submitted. Re-audit 2026-11-05: the
+            // stated recovery action must actually happen - clear the stale
+            // review, reset the action label and unlock the list so the user can
+            // start the promised new review instead of a second rejection.
+            if (_selectedRow is null || _reviewedRow is null
+                || !string.Equals(_selectedRow.IdentityKey, _reviewedRow.IdentityKey, StringComparison.Ordinal))
+            {
+                _reviewedRow = null;
+                _applyButton.Content = "Review advancement";
+                SetSkillListLocked(false);
+                _statusLine.Text = "The selected entry changed while the review was pending. That review was discarded; start the review again for the entry you want.";
                 return;
             }
             _dispatchStarted = true;
@@ -495,6 +526,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
         finally
         {
             _busy = false;
+            SetSkillListLocked(_dispatchStarted);
             _applyButton.IsEnabled = !_closed && !_dispatchStarted && _selectedRow?.CanAdvance == true && _isCurrentContext();
         }
     }

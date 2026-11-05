@@ -45,13 +45,15 @@ public sealed class CharacterCreationSkillsInteractionPresenter
             return CharacterCreationSkillsInteractionPrepareResult.Fail("confirmation-already-dispatched",
                 "A confirmation was already sent. Close this editor and reload the character to check its result.");
         _prepared = null;
-        if (!TryLoadState(overview, out var state, out var error))
-            return CharacterCreationSkillsInteractionPrepareResult.Fail(
-                CharacterCreationSkillsInteractionBlockers.AuthorityUnavailable, error!);
-        var selected = Array.AsReadOnly(allocations.ToArray());
-        var groups = Array.AsReadOnly(groupAllocations.ToArray());
+        CharacterCreationSkillsInteractionState? state = null;
         try
         {
+            if (!TryLoadState(overview, out var loadedState, out var error))
+                return CharacterCreationSkillsInteractionPrepareResult.Fail(
+                    CharacterCreationSkillsInteractionBlockers.AuthorityUnavailable, error!);
+            state = loadedState;
+            var selected = Array.AsReadOnly(allocations.ToArray());
+            var groups = Array.AsReadOnly(groupAllocations.ToArray());
             var result = _skillsService.Preview(state.Owner, new(state.State.Binding, selected, groups));
             if (result.Outcome is not (CharacterCreationFoundationOutcomes.Success or CharacterCreationFoundationOutcomes.Blocked)
                 || result.Value is not { } preview || preview.Binding != state.State.Binding)
@@ -62,7 +64,12 @@ public sealed class CharacterCreationSkillsInteractionPresenter
         }
         catch (Exception errorResult) when (errorResult is IOException or InvalidOperationException or UnauthorizedAccessException)
         {
-            return CharacterCreationSkillsInteractionPrepareResult.Fail("preview-unavailable",
+            // Audit 2026-11-04 P2-2: the whole prepare operation (state read +
+            // preview) is guarded. An expected service read failure yields a
+            // recoverable result: the prepared preview stays invalid
+            // (_prepared = null), confirmation stays off, no write was attempted,
+            // and the caller's unsaved input is untouched.
+            return CharacterCreationSkillsInteractionPrepareResult.Fail("skills-prepare-outcome-uncertain",
                 "Skills could not be reviewed. Your saved allocation has not changed; reload the character and try again.");
         }
     }
@@ -83,10 +90,27 @@ public sealed class CharacterCreationSkillsInteractionPresenter
         if (!confirmation.ExplicitlyConfirmed)
             return CharacterCreationSkillsInteractionConfirmResult.Fail(
                 CharacterCreationSkillsInteractionBlockers.ConfirmationRequired, "Confirm the reviewed allocation before submitting it.");
-        if (!TryLoadState(overview, out var state, out var error)
-            || state.SnapshotDigest != reviewed.State.SnapshotDigest)
+        CharacterCreationSkillsInteractionState state;
+        try
+        {
+            if (!TryLoadState(overview, out var loadedState, out var error))
+                return CharacterCreationSkillsInteractionConfirmResult.Fail(
+                    CharacterCreationSkillsInteractionBlockers.StaleSnapshot, error ?? "Skills changed after review. Reload before confirming.");
+            state = loadedState;
+        }
+        catch (Exception errorResult) when (errorResult is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            // Audit 2026-11-04 P2-2: the pre-confirm re-read is part of the guarded
+            // operation. A read failure before dispatch leaves the saved character
+            // untouched, keeps confirmation unavailable, and preserves the editor
+            // input (no exception escapes the interaction boundary).
+            return CharacterCreationSkillsInteractionConfirmResult.Fail("skills-confirm-preread-outcome-uncertain",
+                "The character could not be re-read before confirmation. Your saved allocation has not changed and nothing was dispatched; reload the character and try again.");
+        }
+
+        if (state.SnapshotDigest != reviewed.State.SnapshotDigest)
             return CharacterCreationSkillsInteractionConfirmResult.Fail(
-                CharacterCreationSkillsInteractionBlockers.StaleSnapshot, error ?? "Skills changed after review. Reload before confirming.");
+                CharacterCreationSkillsInteractionBlockers.StaleSnapshot, "Skills changed after review. Reload before confirming.");
         _dispatched = true;
         try
         {

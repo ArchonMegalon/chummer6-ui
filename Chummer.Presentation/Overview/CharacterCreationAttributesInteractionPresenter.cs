@@ -155,46 +155,62 @@ public sealed class CharacterCreationAttributesInteractionPresenter : ICharacter
                 CharacterCreationAttributesInteractionBlockers.PreparedPreviewMismatch, null,
                 "A confirmation was already sent. Close this editor and reload the saved character to check its result.");
         _prepared = null;
-        if (!TryLoadState(overview, out var state, out var error))
+        CharacterCreationAttributesInteractionState? state = null;
+        try
         {
-            return CharacterCreationAttributesInteractionPrepareResult.Fail(
-                CharacterCreationAttributesInteractionBlockers.AuthorityUnavailable,
-                null,
-                error ?? "attributes authority unavailable");
+            if (!TryLoadState(overview, out var loadedState, out var error))
+            {
+                return CharacterCreationAttributesInteractionPrepareResult.Fail(
+                    CharacterCreationAttributesInteractionBlockers.AuthorityUnavailable,
+                    null,
+                    error ?? "attributes authority unavailable");
+            }
+            state = loadedState;
+
+            CharacterCreationAttributeAllocation[] selected = allocations.ToArray();
+            CharacterCreationAttributesPreviewRequest request = new(state.Binding, selected);
+            CharacterCreationFoundationResult<CharacterCreationAttributesPreview> result =
+                overview.DisplayOwnerContext is { IsValid: true } owner
+                    ? _attributesService.Preview(owner, request)
+                    : DeniedPreview();
+
+            if (result.Outcome is not (CharacterCreationFoundationOutcomes.Success or CharacterCreationFoundationOutcomes.Blocked)
+                || result.Value is null || result.Value.Binding != state.Binding)
+            {
+                return CharacterCreationAttributesInteractionPrepareResult.Fail(
+                    result.Outcome,
+                    state,
+                    DescribeFailure("preview", result));
+            }
+
+            CharacterCreationAttributesPreview preview = result.Value;
+            var prepared = new CharacterCreationAttributesPreparedPreview(
+                state.SnapshotDigest,
+                state.Binding,
+                state.PendingDraft,
+                preview.Attributes,
+                preview.NormalPointBudget,
+                preview.SpecialPointBudget,
+                preview.CreationKarmaBudget,
+                preview.PreviewDigest,
+                preview.RequiresExplicitConfirmation,
+                preview.CanConfirm,
+                preview.Blockers);
+            _prepared = prepared;
+            _allocations = selected;
+            return CharacterCreationAttributesInteractionPrepareResult.Ok(prepared, state);
         }
-
-        CharacterCreationAttributeAllocation[] selected = allocations.ToArray();
-        CharacterCreationAttributesPreviewRequest request = new(state.Binding, selected);
-        CharacterCreationFoundationResult<CharacterCreationAttributesPreview> result =
-            overview.DisplayOwnerContext is { IsValid: true } owner
-                ? _attributesService.Preview(owner, request)
-                : DeniedPreview();
-
-        if (result.Outcome is not (CharacterCreationFoundationOutcomes.Success or CharacterCreationFoundationOutcomes.Blocked)
-            || result.Value is null || result.Value.Binding != state.Binding)
+        catch (Exception failure) when (failure is IOException or InvalidOperationException or UnauthorizedAccessException)
         {
+            // Audit 2026-11-04 P2-2: an expected service read failure during the
+            // whole prepare operation yields a recoverable result. The prepared
+            // result stays invalid (_prepared = null), confirmation stays off, no
+            // write was attempted, and the caller's unsaved input is untouched.
             return CharacterCreationAttributesInteractionPrepareResult.Fail(
-                result.Outcome,
+                "attributes-prepare-outcome-uncertain",
                 state,
-                DescribeFailure("preview", result));
+                "The character could not be read to prepare this adjustment. The saved allocation has not changed; reload or review the character and try again.");
         }
-
-        CharacterCreationAttributesPreview preview = result.Value;
-        var prepared = new CharacterCreationAttributesPreparedPreview(
-            state.SnapshotDigest,
-            state.Binding,
-            state.PendingDraft,
-            preview.Attributes,
-            preview.NormalPointBudget,
-            preview.SpecialPointBudget,
-            preview.CreationKarmaBudget,
-            preview.PreviewDigest,
-            preview.RequiresExplicitConfirmation,
-            preview.CanConfirm,
-            preview.Blockers);
-        _prepared = prepared;
-        _allocations = selected;
-        return CharacterCreationAttributesInteractionPrepareResult.Ok(prepared, state);
     }
 
     public CharacterCreationAttributesInteractionConfirmResult Confirm(
@@ -208,12 +224,28 @@ public sealed class CharacterCreationAttributesInteractionPresenter : ICharacter
             return CharacterCreationAttributesInteractionConfirmResult.Fail(
                 CharacterCreationAttributesInteractionBlockers.PreparedPreviewMismatch, null,
                 "The reviewed character or allocation changed. Close this editor and review the current character again.");
-        if (!TryLoadState(overview, out var state, out var error))
+        CharacterCreationAttributesInteractionState? state = null;
+        try
         {
+            if (!TryLoadState(overview, out var loadedState, out var error))
+            {
+                return CharacterCreationAttributesInteractionConfirmResult.Fail(
+                    CharacterCreationAttributesInteractionBlockers.AuthorityUnavailable,
+                    null,
+                    error ?? "attributes authority unavailable");
+            }
+            state = loadedState;
+        }
+        catch (Exception failure) when (failure is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            // Audit 2026-11-04 P2-2: the pre-confirm re-read is part of the guarded
+            // operation. A read failure before dispatch leaves the saved character
+            // untouched, keeps confirmation unavailable, and preserves the editor
+            // input (no exception escapes the interaction boundary).
             return CharacterCreationAttributesInteractionConfirmResult.Fail(
-                CharacterCreationAttributesInteractionBlockers.AuthorityUnavailable,
+                "attributes-confirm-preread-outcome-uncertain",
                 null,
-                error ?? "attributes authority unavailable");
+                "The character could not be re-read before confirmation. The saved allocation has not changed and nothing was dispatched; reload the character and try again.");
         }
 
         if (state.Binding != reviewed.Binding || state.SnapshotDigest != reviewed.StateSnapshotDigest)
