@@ -93,6 +93,51 @@ public sealed class CharacterCreationContactsAvaloniaTests
         });
     }
 
+    [TestMethod]
+    public void New_contact_keeps_identity_and_confirm_tracks_its_add_form()
+    {
+        WithHeadlessUi(() =>
+        {
+            var fixture = CreateFixture();
+            var control = new CharacterCreationWizardControl();
+            var host = new Window { Content = control };
+            host.Show();
+            try
+            {
+                var state = fixture.DesktopState with { ContactsStep = fixture.DesktopState.ContactsStep! with {
+                    NewContactTemplate = fixture.Contact } };
+                control.SetState(state);
+                string name = "creation-wizard-contact-add-field-" + CharacterCreationContactFieldIds.Name;
+                FindByAutomationId<TextBox>(control, name).Text = "New friend";
+                CharacterCreationContactEditInput? input = null;
+                control.ContactPreviewRequested += (_, request) => input = request.Input;
+                RaiseClick(FindByAutomationId<Button>(control, "creation-wizard-contact-add-preview"));
+                Assert.IsNotNull(input);
+                Guid originalId = input.ContactId;
+                var preview = fixture.PreparedPreview with { Edit = fixture.PreparedPreview.Edit with {
+                    ContactId = originalId, Identity = input.Identity!, ChangeKind = CharacterCreationContactChangeKind.Add } };
+                control.SetContactMutationBusy(true);
+                control.SetContactPrepareResult(new(CharacterCreationContactOutcomes.Available, null, preview, []));
+                control.SetContactMutationBusy(false);
+                string confirmId = $"creation-wizard-contact-{originalId:D}-confirm";
+                Assert.IsTrue(FindByAutomationId<Button>(control, confirmId).IsEnabled);
+                RaiseClick(FindByAutomationId<Button>(control, "creation-wizard-contact-add-preview"));
+                Assert.AreEqual(originalId, input!.ContactId);
+                int confirmations = 0;
+                control.ContactConfirmRequested += (_, _) => confirmations++;
+                FindByAutomationId<TextBox>(control, name).Text = "Unreviewed name";
+                RaiseClick(FindByAutomationId<Button>(control, confirmId));
+                Assert.AreEqual(0, confirmations);
+                control.SetContactMutationBusy(false);
+                Assert.IsFalse(FindByAutomationId<Button>(control, confirmId).IsEnabled);
+                Assert.AreEqual("Unreviewed name", FindByAutomationId<TextBox>(control, name).Text);
+                control.SetState(state with { WorkspaceId = "other-workspace" });
+                Assert.AreEqual(fixture.Contact.Identity.Name, FindByAutomationId<TextBox>(control, name).Text);
+            }
+            finally { host.Close(); }
+        });
+    }
+
     private static Fixture CreateFixture()
     {
         Guid contactId = Guid.Parse("0147fd6c-518c-47df-8906-814f9c3615f7");
