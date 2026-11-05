@@ -358,6 +358,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Avalonia/Controls/CareerAttributeAdvanceWindow.cs",
         "Chummer.Avalonia/Controls/CareerRewardsWindow.cs",
         "Chummer.Avalonia/Controls/CreationAiFinishReviewWindow.cs",
+        "Chummer.Avalonia/Controls/CreationAiFinishResumeWindow.cs",
         "Chummer.Avalonia/Controls/CareerSkillAdvanceWindow.cs",
         "Chummer.Presentation/Overview/ICharacterOverviewPresenter.cs",
         "Chummer.Avalonia/Controls/SectionHostControl.axaml",

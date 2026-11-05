@@ -230,6 +230,22 @@ public sealed class CreationAiFinishService
         return results;
     }
 
+    /// <summary>
+    /// Read-only typed recovery classification of a saved run, resolved under
+    /// fresh owner authorization. The pinned Core has no draft-completion
+    /// receipt/replay contract, so an unobserved dispatch stays
+    /// <see cref="CreationAiFinishRunStore.RecoveryState.OutcomeUnknown"/>:
+    /// no re-dispatch, no fresh confirmation, no retry. This is the honest
+    /// classification the UI must present (what is verified, what stays unknown).
+    /// </summary>
+    public (CreationAiFinishRunStore.RecoveryState State, string? UncertainDomain) ClassifyRecoveryOutcome(string workspaceId, OwnerContextStamp expectedOwner)
+    {
+        RequireOwner(expectedOwner);
+        var (state, uncertain, _) = _runs.ClassifyRecovery(expectedOwner, workspaceId);
+        return (state, uncertain);
+    }
+
+
     public IReadOnlyList<AiFinishDomainResult> Apply(string workspaceId, AiFinishProposal proposal)
     {
         ArgumentNullException.ThrowIfNull(proposal);

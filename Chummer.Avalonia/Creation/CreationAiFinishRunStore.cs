@@ -7,14 +7,37 @@ using Chummer.Contracts.Characters;
 namespace Chummer.Avalonia.Creation;
 
 /// <summary>
-/// A durable, fail-closed record for the gated staged finisher. It never resumes
-/// writes: a retained run is inspected read-only, including after process restart.
-/// The pinned Core does not offer a unified draft-completion receipt lookup.
+/// A durable, fail-closed record for the gated staged finisher. A retained run
+/// is inspected read-only, including after process restart. There is NO automatic
+/// continuation: the pinned Core has no draft-completion receipt/replay contract,
+/// so a re-dispatch could not be distinguished from a duplicate mutation. When a
+/// dispatch outcome was not observed, the typed classification is
+/// <see cref="RecoveryState.OutcomeUnknown"/> and every surface stays read-only.
+/// The journal is a state machine: every prefix that <see cref="Execute"/> can
+/// emit has a defined restart interpretation in <see cref="ClassifyRecovery"/>.
+/// The writer emits only claimed/dispatching/observed/completed, so an unpaired
+/// dispatching entry is always the final entry and classifies as the uncertain
+/// restart point - including after a repeated interruption.
 /// </summary>
 public sealed class CreationAiFinishRunStore(string root)
 {
     public sealed record Entry(string Kind, string OperationId, string Domain,
         CreationAiFinishService.AiFinishDomainResult? Result = null, string? PlanJson = null);
+
+    /// <summary>Typed recovery classification of a saved run. No English matching.</summary>
+    public enum RecoveryState
+    {
+        /// <summary>No saved run: normal flow.</summary>
+        None = 0,
+        /// <summary>Every dispatched stage was observed successful; the run is terminal.</summary>
+        Completed = 1,
+        /// <summary>A dispatched stage was observed failed; later stages were never sent. Terminal.</summary>
+        Failed = 2,
+        /// <summary>A dispatched stage's outcome was never observed; what happened is unknown.</summary>
+        OutcomeUnknown = 3,
+        /// <summary>The record is damaged or structurally inconsistent; nothing is authorized.</summary>
+        Unrecoverable = 4,
+    }
 
     public static CreationAiFinishRunStore ForCurrentProfile()
     {
@@ -103,5 +126,68 @@ public sealed class CreationAiFinishRunStore(string root)
         }
         Save(new("completed", operationId, ""));
         return results;
+    }
+
+    /// <summary>
+    /// Read-only typed recovery classification for the UI and tests. Never
+    /// dispatches; never opens the journal for writing. Throws for a structurally
+    /// damaged record (the same fail-closed contract as Read); returns
+    /// <see cref="RecoveryState.None"/> when no run was ever started.
+    /// Every durable prefix the writer can emit has a defined interpretation:
+    /// a trailing unpaired dispatching entry is OutcomeUnknown (its domain is
+    /// the uncertain one), a trailing completed entry is Completed, an observed
+    /// failure is Failed. Nothing is rejected merely for being a valid prefix.
+    /// </summary>
+    public (RecoveryState State, string? UncertainDomain, IReadOnlyList<Entry> Entries) ClassifyRecovery(
+        OwnerContextStamp owner, string workspaceId)
+    {
+        string path = RunPath(owner, workspaceId);
+        if (!File.Exists(path)) return (RecoveryState.None, null, []);
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (stream.Length > 8 * 1024 * 1024) throw new InvalidOperationException("AI completion recovery record needs review.");
+        using var reader = new StreamReader(stream);
+        var entries = new List<Entry>();
+        while (reader.ReadLine() is { } line)
+        {
+            try { entries.Add(JsonSerializer.Deserialize<Entry>(line) ?? throw new JsonException()); }
+            catch (JsonException) { throw new InvalidOperationException("AI completion was interrupted. Its saved record cannot authorize another write."); }
+        }
+        if (entries.Count == 0 || entries[0].Kind != "claimed")
+            throw new InvalidOperationException("AI completion was interrupted before its record was complete. No retry was sent.");
+
+        // State machine over the durable prefixes emitted by Execute:
+        //   claimed, (dispatching observed)*, [dispatching], [completed].
+        // The writer flushes each observed entry immediately after its dispatch
+        // returns and never emits anything after an unpaired dispatching entry,
+        // so every legitimate prefix ends in one of the three terminal shapes.
+        var settled = new List<(string Domain, CreationAiFinishService.AiFinishDomainResult Result)>();
+        string? uncertain = null;
+        int i = 1;
+        while (i < entries.Count)
+        {
+            Entry e = entries[i];
+            if (e.Kind == "dispatching")
+            {
+                if (i + 1 < entries.Count && entries[i + 1].Kind == "observed" && entries[i + 1].Domain == e.Domain)
+                {
+                    settled.Add((e.Domain, entries[i + 1].Result ?? new(e.Domain, false, CharacterCreationFoundationOutcomes.Invalid, ["Observed result missing."])));
+                    i += 2;
+                    continue;
+                }
+                if (i != entries.Count - 1)
+                    throw new InvalidOperationException("The saved record has an inconsistent dispatch history; manual inspection is required before any continuation.");
+                uncertain = e.Domain;
+                i++;
+                continue;
+            }
+            if (e.Kind == "completed" && i == entries.Count - 1)
+            {
+                i++;
+                continue;
+            }
+            throw new InvalidOperationException("The saved record has an inconsistent dispatch history; manual inspection is required before any continuation.");
+        }
+        if (uncertain is not null) return (RecoveryState.OutcomeUnknown, uncertain, entries);
+        return (settled.Any(s => !s.Result.Success) ? RecoveryState.Failed : RecoveryState.Completed, null, entries);
     }
 }
