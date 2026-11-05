@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private readonly IAvaloniaCoachSidecarClient _coachSidecarClient;
     private readonly DesktopAnalyticsClient _desktopAnalyticsClient;
     private readonly ICharacterCreationContactsInteractionPresenter? _creationContactsInteractionPresenter;
+    private readonly ICharacterCreationLifestylesInteractionPresenter? _creationLifestylesInteractionPresenter;
     private readonly ICharacterCreationFoundationInteractionPresenter? _creationFoundationInteractionPresenter;
     private readonly ICharacterCreationResourcesInteractionPresenter? _creationResourcesInteractionPresenter;
     private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
@@ -55,7 +56,8 @@ public partial class MainWindow : Window
             ResolveService<ICharacterCreationResourcesInteractionPresenter>(),
             ResolveService<ICharacterCreationFinalizationService>(),
             ResolveService<ICharacterCreationPrerequisiteService>(),
-            ResolveService<CreationAiFinishService>())
+            ResolveService<CreationAiFinishService>(),
+            ResolveService<ICharacterCreationLifestylesInteractionPresenter>())
     {
     }
 
@@ -96,6 +98,7 @@ public partial class MainWindow : Window
             desktopAnalyticsClient,
             adapter,
             creationContactsInteractionPresenter: null,
+            creationLifestylesInteractionPresenter: null,
             creationFoundationInteractionPresenter: null,
             creationResourcesInteractionPresenter: null,
             creationFinalizationService: null,
@@ -116,7 +119,8 @@ public partial class MainWindow : Window
         ICharacterCreationResourcesInteractionPresenter? creationResourcesInteractionPresenter,
         ICharacterCreationFinalizationService? creationFinalizationService,
         ICharacterCreationPrerequisiteService? creationPrerequisiteService = null,
-        CreationAiFinishService? creationAiFinishService = null)
+        CreationAiFinishService? creationAiFinishService = null,
+        ICharacterCreationLifestylesInteractionPresenter? creationLifestylesInteractionPresenter = null)
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
@@ -133,6 +137,7 @@ public partial class MainWindow : Window
         _coachSidecarClient = coachSidecarClient;
         _desktopAnalyticsClient = desktopAnalyticsClient;
         _creationContactsInteractionPresenter = creationContactsInteractionPresenter;
+        _creationLifestylesInteractionPresenter = creationLifestylesInteractionPresenter;
         _creationFoundationInteractionPresenter = creationFoundationInteractionPresenter;
         _creationResourcesInteractionPresenter = creationResourcesInteractionPresenter;
         _creationFinalizationService = creationFinalizationService;

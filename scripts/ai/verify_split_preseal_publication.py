@@ -350,6 +350,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/WorkspacePrintPdfComposerTests.cs",
         "Chummer.Presentation/Overview/CharacterCreationWizardDesktopSession.cs",
         "Chummer.Tests/Presentation/CharacterCreationAiFinishGateAvaloniaTests.cs",
+        "Chummer.Tests/Presentation/CharacterCreationManualWorkflowSourceTests.cs",
         "docs/agents/WIN-006-CONTROLLER-FOLLOWUP-EVIDENCE.md",
         "scripts/win004-start-failure-diagnostics.ps1",
         "tests/test_win004_start_failure_diag_privacy.py",
