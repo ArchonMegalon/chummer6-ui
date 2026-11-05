@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Chummer.Contracts.Characters;
 
 namespace Chummer.Presentation.Overview;
@@ -90,13 +90,45 @@ public sealed record CharacterCreationWizardDesktopContact(
     bool CountsAgainstHighPlacesBudget,
     IReadOnlyList<CharacterCreationWizardDesktopContactField> Fields,
     IReadOnlyList<string> SourceAnchorIds,
-    string ContactDigest);
+    string ContactDigest,
+    bool CanDelete = false);
 
 public sealed record CharacterCreationWizardDesktopContactsStep(
     CharacterCreationContactBinding Binding,
     IReadOnlyList<CharacterCreationWizardDesktopContact> Contacts,
     CharacterCreationContactBudget ContactBudget,
     CharacterCreationContactBudget HighPlacesBudget,
+    IReadOnlyList<string> Blockers,
+    bool CanEdit,
+    string SnapshotDigest)
+{
+    /// <summary>
+    /// Core-owned add-contact defaults (ContactId = Guid.Empty). Null when Core authority is
+    /// unavailable. Read-only projection: the desktop session never persists this template.
+    /// </summary>
+    public CharacterCreationContactProjection? NewContactTemplate { get; init; }
+}
+
+/// <summary>
+/// Read-only lifestyle projection for the Contacts &amp; Lifestyles wizard step.
+/// The desktop session never mutates these values; mutations flow through the
+/// Core-owned lifestyles interaction presenter.
+/// </summary>
+public sealed record CharacterCreationWizardDesktopLifestyle(
+    CharacterCreationLifestyleConfiguration Configuration,
+    Guid SourceId,
+    string BaseLifestyleName,
+    string SourceBook,
+    string Page,
+    CharacterCreationLifestyleEconomics Economics,
+    IReadOnlyList<string> SourceAnchorIds,
+    string LifestyleDigest);
+
+public sealed record CharacterCreationWizardDesktopLifestylesStep(
+    CharacterCreationLifestyleBinding Binding,
+    CharacterCreationLifestylesAuthority Authority,
+    IReadOnlyList<CharacterCreationWizardDesktopLifestyle> Lifestyles,
+    CharacterCreationLifestyleBudget Budget,
     IReadOnlyList<string> Blockers,
     bool CanEdit,
     string SnapshotDigest);
@@ -118,7 +150,8 @@ public sealed record CharacterCreationWizardBuildGhostContext(
     IReadOnlyList<CharacterCreationWizardDesktopOption> LegalOptions,
     IReadOnlyList<string> CompletionBlockers,
     IReadOnlyList<string> Warnings,
-    CharacterCreationWizardDesktopContactsStep? ContactsStep = null);
+    CharacterCreationWizardDesktopContactsStep? ContactsStep = null,
+    CharacterCreationWizardDesktopLifestylesStep? LifestylesStep = null);
 
 public sealed record CharacterCreationWizardDesktopState(
     string WorkspaceId,
@@ -136,7 +169,8 @@ public sealed record CharacterCreationWizardDesktopState(
     bool BuildGhostAvailable,
     CharacterCreationWizardDesktopResume Resume,
     CharacterCreationWizardBuildGhostContext BuildGhostContext,
-    CharacterCreationWizardDesktopContactsStep? ContactsStep = null);
+    CharacterCreationWizardDesktopContactsStep? ContactsStep = null,
+    CharacterCreationWizardDesktopLifestylesStep? LifestylesStep = null);
 
 public static class CharacterCreationWizardBuildGhostPolicy
 {
@@ -187,6 +221,7 @@ public sealed class CharacterCreationWizardDesktopSession
 {
     private CharacterCreationWizardSnapshot? _snapshot;
     private CharacterCreationContactsState? _contacts;
+    private CharacterCreationLifestylesState? _lifestyles;
     private CharacterCreationWizardDesktopState? _state;
 
     public CharacterCreationWizardDesktopState State
@@ -195,13 +230,15 @@ public sealed class CharacterCreationWizardDesktopSession
     public CharacterCreationWizardDesktopState Bind(
         CharacterCreationWizardSnapshot snapshot,
         CharacterCreationWizardDesktopCheckpoint? checkpoint = null,
-        CharacterCreationContactsState? contacts = null)
+        CharacterCreationContactsState? contacts = null,
+        CharacterCreationLifestylesState? lifestyles = null)
     {
         ValidateSnapshot(snapshot);
 
         CharacterCreationWizardDesktopResume resume = ResolveResume(snapshot, checkpoint, out string selectedStepId);
         _snapshot = snapshot;
         _contacts = ContactsMatchSnapshot(snapshot, contacts) ? contacts : null;
+        _lifestyles = LifestylesMatchSnapshot(snapshot, lifestyles) ? lifestyles : null;
         _state = Project(snapshot, selectedStepId, resume);
         return _state;
     }
@@ -336,6 +373,12 @@ public sealed class CharacterCreationWizardDesktopSession
                 StringComparison.Ordinal)
             ? ProjectContacts(_contacts)
             : null;
+        CharacterCreationWizardDesktopLifestylesStep? lifestylesStep = string.Equals(
+                selectedStepId,
+                CharacterCreationWizardStepIds.ContactsLifestyles,
+                StringComparison.Ordinal)
+            ? ProjectLifestyles(_lifestyles)
+            : null;
         bool canContinue = active.LegalNextStepIds.Any(nextId =>
             snapshot.Steps.Any(step =>
                 string.Equals(step.StepId, nextId, StringComparison.Ordinal)
@@ -355,6 +398,22 @@ public sealed class CharacterCreationWizardDesktopSession
             Warnings: snapshot.Warnings,
             ContactsStep: contacts);
 
+        // The pinned projector emits create/delete capability warnings unconditionally.
+        // When Core authority for add/remove is actually available (template present and
+        // editable), that warning is stale on this display surface, so filter only the
+        // displayed warnings; snapshot digests and Core-owned projections are untouched.
+        bool contactsAddable = contacts is { } c
+            && c.NewContactTemplate is not null
+            && c.CanEdit;
+        IReadOnlyList<string> displayedWarnings = contactsAddable
+            ? snapshot.Warnings
+                .Where(warning => !string.Equals(
+                    warning,
+                    CharacterCreationWizardProjector.ContactCreateDeleteAuthorityUnavailable,
+                    StringComparison.Ordinal))
+                .ToArray()
+            : snapshot.Warnings;
+
         return new CharacterCreationWizardDesktopState(
             WorkspaceId: snapshot.WorkspaceId,
             WorkspaceRevision: snapshot.WorkspaceRevision,
@@ -364,7 +423,7 @@ public sealed class CharacterCreationWizardDesktopSession
             Budgets: budgets,
             LegalOptions: options,
             CompletionBlockers: snapshot.CompletionBlockers,
-            Warnings: snapshot.Warnings,
+            Warnings: displayedWarnings,
             CanContinue: canContinue,
             // This foundation is navigation/read-only. Canonical finalization is not yet wired;
             // the advanced editor returns only after CreationWizard becomes null upstream.
@@ -373,7 +432,8 @@ public sealed class CharacterCreationWizardDesktopSession
             BuildGhostAvailable: CharacterCreationWizardBuildGhostPolicy.IsAuthorized(snapshot),
             Resume: resume,
             BuildGhostContext: ghost,
-            ContactsStep: contacts);
+            ContactsStep: contacts,
+            LifestylesStep: lifestylesStep);
     }
 
     private static CharacterCreationWizardDesktopContactsStep? ProjectContacts(
@@ -401,18 +461,74 @@ public sealed class CharacterCreationWizardDesktopSession
                         field.Blockers,
                         field.SourceAnchorIds)).ToArray(),
                     contact.SourceAnchorIds,
-                    contact.ContactDigest)).ToArray(),
+                    contact.ContactDigest,
+                    contact.CanDelete)).ToArray(),
                 state.ContactBudget,
                 state.HighPlacesBudget,
                 state.Blockers,
                 state.CanEdit && state.Blockers.Count == 0,
-                state.SnapshotDigest);
+                state.SnapshotDigest)
+        {
+            NewContactTemplate = state.NewContactTemplate
+        };
 
     private static bool ContactsMatchSnapshot(
         CharacterCreationWizardSnapshot snapshot,
         CharacterCreationContactsState? contacts)
         => contacts is not null
            && CharacterCreationWizardProjector.MatchesContactSnapshot(snapshot, contacts);
+
+    private static bool LifestylesMatchSnapshot(
+        CharacterCreationWizardSnapshot snapshot,
+        CharacterCreationLifestylesState? lifestyles)
+    {
+        if (lifestyles is null
+            || snapshot.CharacterCreated
+            || lifestyles.CharacterCreated)
+        {
+            return false;
+        }
+
+        return string.Equals(
+                   lifestyles.Schema,
+                   CharacterCreationLifestylesSchemas.StateV1,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   lifestyles.StepId,
+                   CharacterCreationWizardStepIds.ContactsLifestyles,
+                   StringComparison.Ordinal)
+               && string.Equals(
+                   lifestyles.Binding.WorkspaceId.Value,
+                   snapshot.WorkspaceId,
+                   StringComparison.Ordinal)
+               && lifestyles.Binding.WorkspaceRevision == snapshot.WorkspaceRevision
+               && lifestyles.Binding.ContentRevision == snapshot.WorkspaceRevision
+               && string.Equals(
+                   lifestyles.Binding.ContentDigest,
+                   snapshot.ContentDigest,
+                   StringComparison.Ordinal);
+    }
+
+    private static CharacterCreationWizardDesktopLifestylesStep? ProjectLifestyles(
+        CharacterCreationLifestylesState? state)
+        => state is null
+            ? null
+            : new CharacterCreationWizardDesktopLifestylesStep(
+                state.Binding,
+                state.Authority,
+                state.Lifestyles.Select(static lifestyle => new CharacterCreationWizardDesktopLifestyle(
+                    lifestyle.Configuration,
+                    lifestyle.SourceId,
+                    lifestyle.BaseLifestyleName,
+                    lifestyle.SourceBook,
+                    lifestyle.Page,
+                    lifestyle.Economics,
+                    lifestyle.SourceAnchorIds,
+                    lifestyle.LifestyleDigest)).ToArray(),
+                state.Budget,
+                state.Blockers,
+                state.CanEdit && state.Blockers.Count == 0,
+                state.SnapshotDigest);
 
     private static CharacterCreationWizardDesktopResume ResolveResume(
         CharacterCreationWizardSnapshot snapshot,
