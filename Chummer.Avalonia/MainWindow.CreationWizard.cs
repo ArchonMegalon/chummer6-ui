@@ -1,6 +1,7 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using Avalonia.Controls;
 using Chummer.Application.Characters;
+using Chummer.Application.Owners;
 using Avalonia.Platform.Storage;
 using Chummer.Avalonia.Creation;
 using Chummer.Avalonia.Controls;
@@ -19,6 +20,10 @@ public partial class MainWindow
     private AvaloniaCreationWizardCheckpointStore? _creationWizardCheckpointStore;
     private CreationAttributesAllocationWindow? _creationAttributesWindow;
     private CharacterCreationWizardSnapshot? _boundCreationWizardSnapshot;
+    private OwnerContextStamp? _boundCreationWizardOwner;
+    private bool _creationContactsBusy;
+    // Once dispatch begins, another click can only inspect the original outcome.
+    private readonly Dictionary<string, CharacterCreationLifestylePreparedPreview> _pendingCreationLifestyles = new(StringComparer.Ordinal);
     private CharacterCreationContactPreparedPreview? _creationContactPreparedPreview;
     private CharacterCreationFoundationPreparedPreview? _creationFoundationPreparedPreview;
     private CharacterCreationResourcesPreparedPreview? _creationResourcesPreparedPreview;
@@ -30,6 +35,8 @@ public partial class MainWindow
     private bool _creationQualitiesBusy;
     private bool _creationAttributesBusy;
     private bool _creationSkillsBusy;
+    private bool _creationLifestylesBusy;
+    private CharacterCreationLifestylePreparedPreview? _creationLifestylePreparedPreview;
     private CreationSkillsAllocationWindow? _creationSkillsWindow;
     private readonly Dictionary<Chummer.Contracts.Workspaces.CharacterWorkspaceId, CharacterCreationQualitiesInteraction> _pendingQualitySelections = new();
 
@@ -56,6 +63,8 @@ public partial class MainWindow
         CharacterCreationWizardControl.ExportCheckpointRequested += CreationWizard_OnExportCheckpointRequested;
         CharacterCreationWizardControl.ContactPreviewRequested += CreationWizard_OnContactPreviewRequested;
         CharacterCreationWizardControl.ContactConfirmRequested += CreationWizard_OnContactConfirmRequested;
+        CharacterCreationWizardControl.LifestylePreviewRequested += CreationWizard_OnLifestylePreviewRequested;
+        CharacterCreationWizardControl.LifestyleConfirmRequested += CreationWizard_OnLifestyleConfirmRequested;
         CharacterCreationWizardControl.FoundationOptionClickRequested += CreationWizard_OnFoundationOptionClickRequested;
         CharacterCreationWizardControl.FoundationConfirmRequested += CreationWizard_OnFoundationConfirmRequested;
         CharacterCreationWizardControl.ResourcesOptionClickRequested += CreationWizard_OnResourcesOptionClickRequested;
@@ -83,6 +92,8 @@ public partial class MainWindow
         CharacterCreationWizardControl.ExportCheckpointRequested -= CreationWizard_OnExportCheckpointRequested;
         CharacterCreationWizardControl.ContactPreviewRequested -= CreationWizard_OnContactPreviewRequested;
         CharacterCreationWizardControl.ContactConfirmRequested -= CreationWizard_OnContactConfirmRequested;
+        CharacterCreationWizardControl.LifestylePreviewRequested -= CreationWizard_OnLifestylePreviewRequested;
+        CharacterCreationWizardControl.LifestyleConfirmRequested -= CreationWizard_OnLifestyleConfirmRequested;
         CharacterCreationWizardControl.FoundationOptionClickRequested -= CreationWizard_OnFoundationOptionClickRequested;
         CharacterCreationWizardControl.FoundationConfirmRequested -= CreationWizard_OnFoundationConfirmRequested;
         CharacterCreationWizardControl.ResourcesOptionClickRequested -= CreationWizard_OnResourcesOptionClickRequested;
@@ -112,7 +123,10 @@ public partial class MainWindow
             }
 
             _boundCreationWizardSnapshot = null;
+            _boundCreationWizardOwner = null;
             _creationContactPreparedPreview = null;
+            _creationLifestylePreparedPreview = null;
+            CharacterCreationWizardControl.ClearContactLifestylePreviews();
             return;
         }
 
@@ -130,20 +144,27 @@ public partial class MainWindow
             ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
 
         if (_boundCreationWizardSnapshot is null
+            || _boundCreationWizardOwner != overview.DisplayOwnerContext
+            || _boundCreationWizardSnapshot.WorkspaceId != snapshot.WorkspaceId
+            || _boundCreationWizardSnapshot.WorkspaceRevision != snapshot.WorkspaceRevision
             || !string.Equals(
                 _boundCreationWizardSnapshot.SnapshotDigest,
                 snapshot.SnapshotDigest,
                 StringComparison.Ordinal))
         {
             _creationContactPreparedPreview = null;
+            _creationLifestylePreparedPreview = null;
+            CharacterCreationWizardControl.ClearContactLifestylePreviews();
         }
 
         CharacterCreationWizardDesktopCheckpoint? checkpoint = ResolveCheckpoint(snapshot);
         CharacterCreationWizardDesktopState state = _creationWizardSession.Bind(
             snapshot,
             checkpoint,
-            overview.CreationContacts);
+            overview.CreationContacts,
+            overview.CreationLifestyles);
         _boundCreationWizardSnapshot = snapshot;
+        _boundCreationWizardOwner = overview.DisplayOwnerContext;
         CharacterCreationWizardControl.SetQualitiesSelection(overview.CreationQualities is { } qualities
             ? CharacterCreationQualitiesInteraction.SelectedIds(qualities) : []);
         CharacterCreationWizardControl.SetState(state);
@@ -167,11 +188,23 @@ public partial class MainWindow
         object? sender,
         CharacterCreationContactPreviewRequested request)
     {
-        if (_creationContactsInteractionPresenter is null)
+        if (_creationContactsInteractionPresenter is null || _creationContactsBusy)
             return;
 
-        CharacterCreationContactsInteractionPrepareResult result =
-            _creationContactsInteractionPresenter.Prepare(_adapter.State, request.Input);
+        CharacterCreationContactsInteractionPrepareResult result;
+        try
+        {
+            result = CreationWizardRenderedContextIsCurrent()
+                ? _creationContactsInteractionPresenter.Prepare(_adapter.State,
+                    request.Input with { DisplayOwnerContext = _boundCreationWizardOwner })
+                : new(CharacterCreationContactOutcomes.Conflict, null, null,
+                    ["The character or account changed. Reload before reviewing contacts."]);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            result = new(CharacterCreationContactOutcomes.Unavailable, null, null,
+                ["The contact preview could not be loaded. No change was submitted."]);
+        }
         if (result.PreparedPreview is { } prepared)
         {
             if (_creationContactPreparedPreview is { } previous
@@ -198,6 +231,7 @@ public partial class MainWindow
         CharacterCreationContactConfirmRequested request)
     {
         if (_creationContactsInteractionPresenter is null
+            || _creationContactsBusy
             || _creationContactPreparedPreview is not { } prepared
             || !string.Equals(request.PreviewDigest, prepared.PreviewDigest, StringComparison.Ordinal))
         {
@@ -205,6 +239,7 @@ public partial class MainWindow
         }
 
         CharacterCreationWizardControl.SetContactMutationBusy(true);
+        _creationContactsBusy = true;
         try
         {
             CharacterCreationContactsInteractionConfirmResult result =
@@ -248,6 +283,7 @@ public partial class MainWindow
         }
         finally
         {
+            _creationContactsBusy = false;
             CharacterCreationWizardControl.SetContactMutationBusy(false);
         }
     }
@@ -834,6 +870,173 @@ public partial class MainWindow
         }
     }
 
+    private bool CreationWizardRenderedContextIsCurrent()
+        => !_creationWizardLifetime.IsCancellationRequested
+            && _boundCreationWizardSnapshot is { } rendered
+            && _adapter.State.CreationWizard is { } current
+            && rendered.WorkspaceId == current.WorkspaceId
+            && rendered.WorkspaceRevision == current.WorkspaceRevision
+            && rendered.SnapshotDigest == current.SnapshotDigest
+            && _boundCreationWizardOwner == _adapter.State.DisplayOwnerContext;
+
+    private async void CreationWizard_OnLifestylePreviewRequested(
+        object? sender,
+        CharacterCreationLifestylePreviewRequested request)
+    {
+        if (_creationLifestylesInteractionPresenter is null || _creationLifestylesBusy)
+            return;
+
+        if (CreationWizardRenderedContextIsCurrent()
+            && _pendingCreationLifestyles.TryGetValue(_boundCreationWizardSnapshot!.WorkspaceId, out var pending))
+        {
+            await RecoverAmbiguousCreationLifestyleResultAsync(pending, _creationWizardLifetime.Token);
+            return;
+        }
+
+        CharacterCreationLifestylesInteractionPrepareResult result;
+        try
+        {
+            result = CreationWizardRenderedContextIsCurrent()
+                ? _creationLifestylesInteractionPresenter.Prepare(_adapter.State,
+                    request.Input with { DisplayOwnerContext = _boundCreationWizardOwner })
+                : new(CharacterCreationLifestyleOutcomes.Conflict, null, null,
+                    ["The character or account changed. Reload before reviewing lifestyles."]);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            result = new(CharacterCreationLifestyleOutcomes.Unavailable, null, null,
+                ["The lifestyle preview could not be loaded. No change was submitted."]);
+        }
+        if (result.PreparedPreview is { } prepared)
+        {
+            if (_creationLifestylePreparedPreview is { } previous
+                && string.Equals(
+                    previous.PreviewDigest,
+                    prepared.PreviewDigest,
+                    StringComparison.Ordinal))
+            {
+                prepared = prepared with { IdempotencyKey = previous.IdempotencyKey };
+                result = result with { PreparedPreview = prepared };
+            }
+            _creationLifestylePreparedPreview = prepared;
+        }
+        else
+        {
+            _creationLifestylePreparedPreview = null;
+        }
+
+        CharacterCreationWizardControl.SetLifestylePrepareResult(result);
+    }
+
+    private async void CreationWizard_OnLifestyleConfirmRequested(
+        object? sender,
+        CharacterCreationLifestyleConfirmRequested request)
+    {
+        if (_creationLifestylesInteractionPresenter is null
+            || _creationLifestylePreparedPreview is not { } prepared
+            || !string.Equals(request.PreviewDigest, prepared.PreviewDigest, StringComparison.Ordinal)
+            || _creationLifestylesBusy)
+        {
+            return;
+        }
+
+        CharacterCreationWizardControl.SetLifestyleMutationBusy(true);
+        _creationLifestylesBusy = true;
+        try
+        {
+            string workspace = prepared.Binding.WorkspaceId.Value;
+            if (_pendingCreationLifestyles.TryGetValue(workspace, out var pending))
+            {
+                await RecoverAmbiguousCreationLifestyleResultAsync(pending, _creationWizardLifetime.Token);
+                return;
+            }
+            _pendingCreationLifestyles[workspace] = prepared;
+            CharacterCreationLifestylesInteractionConfirmResult result =
+                _creationLifestylesInteractionPresenter.Confirm(
+                    _adapter.State,
+                    new CharacterCreationLifestyleConfirmation(
+                        prepared,
+                        prepared.PreviewDigest,
+                        prepared.IdempotencyKey,
+                        ExplicitlyConfirmed: true));
+            CharacterCreationWizardControl.SetLifestyleConfirmResult(result);
+            if (result.Receipt is not null
+                && !result.Blockers.Contains(CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch))
+            {
+                _pendingCreationLifestyles.Remove(workspace);
+                await ReloadCreationContactsAuthorityAsync(_creationWizardLifetime.Token)
+                    .ConfigureAwait(true);
+            }
+            else if (result.Outcome is not (CharacterCreationLifestyleOutcomes.Blocked
+                    or CharacterCreationLifestyleOutcomes.Invalid
+                    or CharacterCreationLifestyleOutcomes.Conflict)
+                || result.Blockers.Contains(CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch))
+            {
+                await RecoverAmbiguousCreationLifestyleResultAsync(prepared, _creationWizardLifetime.Token);
+            }
+            else
+            {
+                // A definite rejection permits a new review. An uncertain write does not.
+                _pendingCreationLifestyles.Remove(workspace);
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            await RecoverAmbiguousCreationLifestyleResultAsync(prepared, _creationWizardLifetime.Token);
+        }
+        finally
+        {
+            _creationLifestylesBusy = false;
+            CharacterCreationWizardControl.SetLifestyleMutationBusy(false);
+        }
+    }
+
+    private async Task RecoverAmbiguousCreationLifestyleResultAsync(
+        CharacterCreationLifestylePreparedPreview prepared,
+        CancellationToken ct)
+    {
+        if (_creationLifestylesInteractionPresenter is null || ct.IsCancellationRequested
+            || _adapter.State.WorkspaceId != prepared.Binding.WorkspaceId
+            || _adapter.State.DisplayOwnerContext?.Owner != prepared.DisplayOwnerContext?.Owner)
+            return;
+        CharacterCreationLifestylesInteractionReceiptLookupResult lookup;
+        try
+        {
+            // Fresh authorization, original workspace/key, read-only. Never confirm again here.
+            lookup = _creationLifestylesInteractionPresenter.LookupReceipt(_adapter.State, prepared.IdempotencyKey);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            lookup = new(CharacterCreationLifestyleOutcomes.Unavailable, null, null, []);
+        }
+        // Lookup validates current authority; recovery also binds the receipt to
+        // the exact reviewed operation rather than accepting an unrelated receipt.
+        if (lookup.Receipt is { } receipt &&
+            (lookup.Blockers.Contains(CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch)
+             || receipt.WorkspaceId != prepared.Binding.WorkspaceId
+             || receipt.LifestyleId != prepared.Mutation.LifestyleId
+             || receipt.MutationKind != prepared.Mutation.MutationKind
+             || receipt.PreviousWorkspaceRevision != prepared.Binding.WorkspaceRevision
+             || receipt.WritePlan.PlanDigest != prepared.WritePlan.PlanDigest))
+            lookup = lookup with { Receipt = null, CurrentState = null,
+                Blockers = [CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch] };
+        CharacterCreationWizardControl.SetLifestyleReceiptLookupResult(lookup);
+        if (lookup.Receipt is not null)
+        {
+            _pendingCreationLifestyles.Remove(prepared.Binding.WorkspaceId.Value);
+            _creationLifestylePreparedPreview = null;
+            try { await ReloadCreationContactsAuthorityAsync(ct); }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException)
+            {
+                CharacterCreationWizardControl.SetLifestyleReceiptLookupResult(lookup);
+            }
+        }
+    }
+
     private async Task RecoverAmbiguousCreationContactResultAsync(
         string idempotencyKey,
         CancellationToken ct)
@@ -867,8 +1070,11 @@ public partial class MainWindow
     {
         if (_adapter.State.WorkspaceId is not { } workspaceId)
             return;
+        OwnerContextStamp? owner = _adapter.State.DisplayOwnerContext;
         await _adapter.LoadAsync(workspaceId, ct).ConfigureAwait(true);
-        ApplyCreationWizardState(_adapter.State);
+        if (!ct.IsCancellationRequested && _adapter.State.WorkspaceId == workspaceId
+            && _adapter.State.DisplayOwnerContext == owner)
+            ApplyCreationWizardState(_adapter.State);
     }
 
     private CharacterCreationWizardDesktopCheckpoint? ResolveCheckpoint(
@@ -1077,7 +1283,8 @@ public partial class MainWindow
         CharacterCreationWizardDesktopState recovered = _creationWizardSession.Bind(
             _boundCreationWizardSnapshot,
             checkpoint,
-            _adapter.State.CreationContacts);
+            _adapter.State.CreationContacts,
+            _adapter.State.CreationLifestyles);
         CharacterCreationWizardControl.SetState(recovered);
         TryPersistWizardCheckpoint();
     }

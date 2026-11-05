@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -153,6 +153,8 @@ public partial class App : global::Avalonia.Application
             CharacterCreationFoundationInteractionPresenter>();
         services.AddSingleton<ICharacterCreationResourcesInteractionPresenter,
             CharacterCreationResourcesInteractionPresenter>();
+        services.AddSingleton<ICharacterCreationLifestylesInteractionPresenter,
+            CharacterCreationLifestylesInteractionPresenter>();
         services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         services.AddSingleton<IShellPresenter, ShellPresenter>();
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();

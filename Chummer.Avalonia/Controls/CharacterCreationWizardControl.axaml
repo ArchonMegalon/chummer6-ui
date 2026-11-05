@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.CharacterCreationWizardControl"
              x:Name="WizardRoot"
@@ -84,6 +84,7 @@
             </StackPanel>
             <StackPanel x:Name="LegalOptionList" Spacing="8" />
             <StackPanel x:Name="ContactsList" Spacing="8" IsVisible="False" />
+            <StackPanel x:Name="LifestylesList" Spacing="8" IsVisible="False" />
           </StackPanel>
         </ScrollViewer>
         <StackPanel x:Name="StartingCashPanel" Grid.Row="3" Spacing="4" IsVisible="False">

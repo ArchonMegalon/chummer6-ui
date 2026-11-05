@@ -1,4 +1,6 @@
-using Avalonia.Automation;
+﻿using Avalonia.Automation;
+using Avalonia.VisualTree;
+using Avalonia.Styling;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
@@ -21,6 +23,12 @@ public sealed record CharacterCreationContactPreviewRequested(
     CharacterCreationContactEditInput Input);
 
 public sealed record CharacterCreationContactConfirmRequested(
+    string PreviewDigest);
+
+public sealed record CharacterCreationLifestylePreviewRequested(
+    CharacterCreationLifestyleMutationInput Input);
+
+public sealed record CharacterCreationLifestyleConfirmRequested(
     string PreviewDigest);
 
 public sealed record CharacterCreationFoundationOptionClickRequested(
@@ -85,6 +93,10 @@ public partial class CharacterCreationWizardControl : UserControl
     private string? _foundationStatus;
     private bool _foundationMutationBusy;
     private bool _contactMutationBusy;
+    private CharacterCreationLifestylePreparedPreview? _lifestylePreview;
+    private string? _lifestyleMutationStatus;
+    private bool _lifestyleMutationBusy;
+    private string? _boundLifestylesSnapshotDigest;
     private bool _finalizeBusy;
     private string? _finalizeStatus;
     /// <summary>Latest authoritative finalization availability (from the
@@ -107,6 +119,8 @@ public partial class CharacterCreationWizardControl : UserControl
     public event EventHandler? ExportCheckpointRequested;
     public event EventHandler<CharacterCreationContactPreviewRequested>? ContactPreviewRequested;
     public event EventHandler<CharacterCreationContactConfirmRequested>? ContactConfirmRequested;
+    public event EventHandler<CharacterCreationLifestylePreviewRequested>? LifestylePreviewRequested;
+    public event EventHandler<CharacterCreationLifestyleConfirmRequested>? LifestyleConfirmRequested;
     public event EventHandler<CharacterCreationFoundationOptionClickRequested>? FoundationOptionClickRequested;
     public event EventHandler<CharacterCreationResourcesOptionClickRequested>? ResourcesOptionClickRequested;
     public event EventHandler<CharacterCreationResourcesConfirmRequested>? ResourcesConfirmRequested;
@@ -688,15 +702,23 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetState(CharacterCreationWizardDesktopState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.ContactsStep is { } contacts
-            && !string.Equals(
-                contacts.SnapshotDigest,
+        if (!string.Equals(
+                state.ContactsStep?.SnapshotDigest,
                 _boundContactsSnapshotDigest,
                 StringComparison.Ordinal))
         {
             _contactPreview = null;
             _contactMutationStatus = null;
-            _boundContactsSnapshotDigest = contacts.SnapshotDigest;
+            _boundContactsSnapshotDigest = state.ContactsStep?.SnapshotDigest;
+        }
+        if (!string.Equals(
+                state.LifestylesStep?.SnapshotDigest,
+                _boundLifestylesSnapshotDigest,
+                StringComparison.Ordinal))
+        {
+            _lifestylePreview = null;
+            _lifestyleMutationStatus = null;
+            _boundLifestylesSnapshotDigest = state.LifestylesStep?.SnapshotDigest;
         }
         _state = state;
 
@@ -728,6 +750,7 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderBudgets(state.Budgets);
         RenderLegalOptions(state.LegalOptions);
         RenderContacts(state.ContactsStep);
+        RenderLifestyles(state.LifestylesStep);
         RefreshBuildGhostAvailability();
     }
 
@@ -846,6 +869,51 @@ public partial class CharacterCreationWizardControl : UserControl
         if (result.Receipt is not null)
             _contactPreview = null;
         RenderContacts(_state?.ContactsStep);
+    }
+
+    public void SetLifestylePrepareResult(CharacterCreationLifestylesInteractionPrepareResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _lifestylePreview = result.PreparedPreview;
+        _lifestyleMutationStatus = BuildLifestyleResultStatus(result.Outcome, result.Blockers);
+        RenderLifestyles(_state?.LifestylesStep);
+    }
+
+    public void SetLifestyleConfirmResult(CharacterCreationLifestylesInteractionConfirmResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _lifestyleMutationStatus = BuildLifestyleResultStatus(result.Outcome, result.Blockers);
+        if (result.Receipt is not null
+            && !result.Blockers.Contains(CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch))
+        {
+            _lifestylePreview = null;
+        }
+        RenderLifestyles(_state?.LifestylesStep);
+    }
+
+    public void ClearContactLifestylePreviews()
+    {
+        _contactPreview = null;
+        _contactMutationStatus = null;
+        _lifestylePreview = null;
+        _lifestyleMutationStatus = null;
+        RenderContacts(_state?.ContactsStep);
+        RenderLifestyles(_state?.LifestylesStep);
+    }
+
+    public void SetLifestyleReceiptLookupResult(CharacterCreationLifestylesInteractionReceiptLookupResult result)
+    {
+        _lifestyleMutationStatus = result.Receipt is not null
+            ? "The saved lifestyle change was found. Reloading your character."
+            : "The save outcome is still unknown. Review or confirm again to check the original save; no new change will be sent.";
+        if (result.Receipt is not null) _lifestylePreview = null;
+        RenderLifestyles(_state?.LifestylesStep);
+    }
+
+    public void SetLifestyleMutationBusy(bool busy)
+    {
+        _lifestyleMutationBusy = busy;
+        RenderLifestyles(_state?.LifestylesStep);
     }
 
     public void SetContactMutationBusy(bool busy)
@@ -1300,6 +1368,443 @@ public partial class CharacterCreationWizardControl : UserControl
         LegalOptionList.Children.Add(confirmButton);
     }
 
+    private string BuildLifestyleResultStatus(string outcome, IReadOnlyList<string> blockers)
+    {
+        string status = outcome switch
+        {
+            "applied" => "Lifestyle change applied.",
+            "replayed" => "Lifestyle change was already applied (replayed receipt).",
+            "unavailable" => "The lifestyle result is unavailable. Check the saved outcome before trying another change.",
+            "invalid" => "The lifestyle change was rejected as invalid.",
+            "conflict" => "The lifestyle change conflicts with the current authority.",
+            _ => $"Lifestyle change outcome: {outcome}."
+        };
+        return blockers is { Count: > 0 }
+            ? $"{status} Blockers: {string.Join(", ", blockers)}"
+            : status;
+    }
+
+    private void RenderLifestyles(CharacterCreationWizardDesktopLifestylesStep? step)
+    {
+        LifestylesList.Children.Clear();
+        LifestylesList.IsVisible = step is not null;
+        if (step is null)
+            return;
+
+        string authority = step.CanEdit
+            ? "Core can preview this exact revision; every change still requires explicit confirmation."
+            : "Editing is blocked by Core authority for this exact revision.";
+        LifestylesList.Children.Add(Caption(authority));
+        if (step.Blockers.Count > 0)
+            LifestylesList.Children.Add(Caption($"Blockers: {string.Join(", ", step.Blockers)}"));
+        if (!string.IsNullOrWhiteSpace(_lifestyleMutationStatus))
+            LifestylesList.Children.Add(Caption(_lifestyleMutationStatus));
+        if (step.Lifestyles.Count == 0)
+            LifestylesList.Children.Add(Caption(
+                "No lifestyle is purchased yet. Use the add-lifestyle form below."));
+
+        if (step.CanEdit
+            && step.Authority.LifestyleOptions.Count > 0
+            && !_lifestyleMutationBusy)
+        {
+            LifestylesList.Children.Add(BuildLifestyleCreateForm(step));
+        }
+
+        foreach (CharacterCreationWizardDesktopLifestyle lifestyle in step.Lifestyles)
+        {
+            LifestylesList.Children.Add(BuildLifestyleCard(lifestyle, step.CanEdit));
+        }
+
+        RenderLifestylePreview();
+    }
+
+    private Control BuildLifestyleCreateForm(CharacterCreationWizardDesktopLifestylesStep step)
+    {
+        StackPanel form = new() { Spacing = 3 };
+        form.Children.Add(new TextBlock
+        {
+            Text = "Add a lifestyle",
+            Classes = { "shell-section-title" }
+        });
+        form.Children.Add(Caption(
+            $"Base-lifestyle options: {step.Authority.LifestyleOptions.Count}"
+            + $", budget remaining: {step.Budget.Remaining.ToString("0.##", CultureInfo.InvariantCulture)}"
+            + (step.Budget.Blockers.Count > 0
+                ? $" · budget blockers: {string.Join(", ", step.Budget.Blockers)}"
+                : string.Empty)));
+
+        ComboBox basePicker = new()
+        {
+            MinWidth = 260,
+            IsEnabled = !_lifestyleMutationBusy
+        };
+        foreach (CharacterCreationLifestyleCatalogOption option in step.Authority.LifestyleOptions
+                     .Where(option => option.IsSelectable)
+                     .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            basePicker.Items.Add(new ComboBoxItem
+            {
+                Content = $"{option.Name} ({option.BaseCost.ToString("0.##", CultureInfo.InvariantCulture)} per {option.DefaultIncrementId})",
+                Tag = option
+            });
+        }
+        if (basePicker.Items.Count > 0)
+            basePicker.SelectedIndex = 0;
+        AutomationProperties.SetAutomationId(basePicker, "creation-wizard-lifestyle-create-base");
+        form.Children.Add(Caption("Base lifestyle"));
+        form.Children.Add(basePicker);
+
+        TextBox nameBox = new()
+        {
+            Watermark = "Lifestyle name",
+            IsEnabled = !_lifestyleMutationBusy
+        };
+        AutomationProperties.SetAutomationId(nameBox, "creation-wizard-lifestyle-create-name");
+        form.Children.Add(Caption("Name"));
+        form.Children.Add(nameBox);
+
+        ComboBox stylePicker = new() { IsEnabled = !_lifestyleMutationBusy };
+        foreach (string style in CharacterCreationLifestyleStyleIds.All)
+        {
+            stylePicker.Items.Add(new ComboBoxItem { Content = style, Tag = style });
+        }
+        stylePicker.SelectedIndex = 0;
+        AutomationProperties.SetAutomationId(stylePicker, "creation-wizard-lifestyle-create-style");
+        form.Children.Add(Caption("Style"));
+        form.Children.Add(stylePicker);
+
+        ComboBox incrementPicker = new() { IsEnabled = !_lifestyleMutationBusy };
+        foreach (string increment in CharacterCreationLifestyleIncrementIds.All)
+        {
+            incrementPicker.Items.Add(new ComboBoxItem { Content = increment, Tag = increment });
+        }
+        incrementPicker.SelectedIndex = 2;
+        AutomationProperties.SetAutomationId(incrementPicker, "creation-wizard-lifestyle-create-increment");
+        form.Children.Add(Caption("Billing increment"));
+        form.Children.Add(incrementPicker);
+
+        StackPanel numeric = new() { Spacing = 3 };
+        numeric.Children.Add(BuildLifestyleNumericEditor(
+            "creation-wizard-lifestyle-create-increments", "Increments", 1, 0, 36));
+        numeric.Children.Add(BuildLifestyleNumericEditor(
+            "creation-wizard-lifestyle-create-percentage", "Percentage", 100, 0, 100));
+        numeric.Children.Add(BuildLifestyleNumericEditor(
+            "creation-wizard-lifestyle-create-roommates", "Roommates", 0, 0, 10));
+        numeric.Children.Add(BuildLifestyleNumericEditor(
+            "creation-wizard-lifestyle-create-area", "Area", 0, 0, 100));
+        numeric.Children.Add(BuildLifestyleNumericEditor(
+            "creation-wizard-lifestyle-create-comforts", "Comforts", 0, 0, 100));
+        numeric.Children.Add(BuildLifestyleNumericEditor(
+            "creation-wizard-lifestyle-create-security", "Security", 0, 0, 100));
+        form.Children.Add(numeric);
+
+        CheckBox splitCost = new()
+        {
+            Content = "Split cost with roommates",
+            IsEnabled = !_lifestyleMutationBusy
+        };
+        AutomationProperties.SetAutomationId(splitCost, "creation-wizard-lifestyle-create-split");
+        form.Children.Add(splitCost);
+
+        Button previewButton = new()
+        {
+            Content = "Preview new lifestyle",
+            IsEnabled = true,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+        };
+        previewButton.Classes.Add("shell-action");
+        AutomationProperties.SetAutomationId(previewButton, "creation-wizard-lifestyle-create-preview");
+        previewButton.Click += LifestyleCreatePreviewButton_OnClick;
+        form.Children.Add(previewButton);
+
+        Border card = new()
+        {
+            Classes = { "shell-card", "subtle" },
+            Padding = new global::Avalonia.Thickness(9),
+            Child = form
+        };
+        AutomationProperties.SetAutomationId(card, "creation-wizard-lifestyle-create");
+        return card;
+    }
+
+    private Control BuildLifestyleNumericEditor(string automationId, string label, decimal defaultValue, decimal minimum, decimal maximum)
+    {
+        StackPanel row = new() { Spacing = 2 };
+        row.Children.Add(Caption(label));
+        NumericUpDown editor = new()
+        {
+            Value = defaultValue,
+            Minimum = minimum,
+            Maximum = maximum,
+            AllowSpin = true,
+            IsEnabled = !_lifestyleMutationBusy
+        };
+        AutomationProperties.SetAutomationId(editor, automationId);
+        row.Children.Add(editor);
+        return row;
+    }
+
+    private Control BuildLifestyleCard(
+        CharacterCreationWizardDesktopLifestyle lifestyle,
+        bool canEdit)
+    {
+        CharacterCreationLifestyleConfiguration configuration = lifestyle.Configuration;
+        StackPanel fields = new() { Spacing = 3 };
+        fields.Children.Add(new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(configuration.Name)
+                ? configuration.LifestyleId.ToString("D")
+                : configuration.Name,
+            Classes = { "shell-section-title" }
+        });
+        fields.Children.Add(Caption(
+            $"{lifestyle.BaseLifestyleName} · {configuration.StyleId} · {configuration.IncrementId}"
+            + $" · {lifestyle.Economics.TotalCost.ToString("0.##", CultureInfo.InvariantCulture)} nuyen"
+            + $" · increments {configuration.Increments}"));
+        if (lifestyle.Economics.Blockers.Count > 0)
+            fields.Children.Add(Caption(
+                $"Economics blockers: {string.Join(", ", lifestyle.Economics.Blockers)}"));
+        fields.Children.Add(Caption(
+            "Trust fund covered: " + (lifestyle.Economics.CoveredByTrustFund ? "yes" : "no")
+            + $" · lifestyle points {lifestyle.Economics.LifestylePointsTotal}"));
+
+        string prefix = $"creation-wizard-lifestyle-{configuration.LifestyleId:D}";
+        TextBox name = new() { Text = configuration.Name, IsEnabled = canEdit && !_lifestyleMutationBusy };
+        AutomationProperties.SetAutomationId(name, prefix + "-name");
+        fields.Children.Add(Caption("Name"));
+        fields.Children.Add(name);
+        var editFields = new StackPanel { IsEnabled = canEdit && !_lifestyleMutationBusy, Spacing = 3 };
+        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-increments", "Billing increments", configuration.Increments, 0, int.MaxValue));
+        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-percentage", "Cost percentage", configuration.Percentage, Math.Min(0, configuration.Percentage), decimal.MaxValue));
+        editFields.Children.Add(BuildLifestyleNumericEditor(prefix + "-roommates", "Roommates", configuration.Roommates, 0, int.MaxValue));
+        CheckBox split = new() { Content = "Split cost with roommates", IsChecked = configuration.SplitCostWithRoommates };
+        AutomationProperties.SetAutomationId(split, prefix + "-split");
+        editFields.Children.Add(split);
+        fields.Children.Add(editFields);
+
+        Button editButton = new()
+        {
+            Content = "Preview changes",
+            Tag = lifestyle,
+            IsEnabled = canEdit && !_lifestyleMutationBusy,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+        };
+        editButton.Classes.Add("shell-action");
+        AutomationProperties.SetAutomationId(
+            editButton,
+            $"creation-wizard-lifestyle-{configuration.LifestyleId:D}-preview");
+        editButton.Click += LifestyleEditPreviewButton_OnClick;
+        fields.Children.Add(editButton);
+
+        Button deleteButton = new()
+        {
+            Content = "Delete lifestyle",
+            Tag = lifestyle,
+            IsEnabled = canEdit && !_lifestyleMutationBusy,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+        };
+        deleteButton.Classes.Add("shell-action");
+        AutomationProperties.SetAutomationId(
+            deleteButton,
+            $"creation-wizard-lifestyle-{configuration.LifestyleId:D}-delete");
+        deleteButton.Click += LifestyleDeletePreviewButton_OnClick;
+        fields.Children.Add(deleteButton);
+
+        Border card = new()
+        {
+            Classes = { "shell-card", "subtle" },
+            Padding = new global::Avalonia.Thickness(9),
+            Child = fields
+        };
+        AutomationProperties.SetAutomationId(
+            card,
+            $"creation-wizard-lifestyle-{configuration.LifestyleId:D}");
+        return card;
+    }
+
+    private static CharacterCreationLifestyleConfiguration BuildConfigurationFromForm(
+        Guid lifestyleId,
+        string baseLifestyleOptionId,
+        string name,
+        string styleId,
+        string incrementId,
+        int increments,
+        decimal percentage,
+        int roommates,
+        int area,
+        int comforts,
+        int security,
+        bool splitCost)
+    {
+        return new CharacterCreationLifestyleConfiguration(
+            lifestyleId,
+            baseLifestyleOptionId,
+            name,
+            styleId,
+            incrementId,
+            increments,
+            percentage,
+            roommates,
+            splitCost,
+            TrustFund: false,
+            area,
+            comforts,
+            security,
+            BonusLifestylePoints: 0,
+            City: string.Empty,
+            District: string.Empty,
+            Borough: string.Empty,
+            Qualities: []);
+    }
+
+    private void RenderLifestylePreview()
+    {
+        if (_lifestylePreview is not { } prepared)
+            return;
+        string text = $"Pending lifestyle change: {prepared.Mutation.MutationKind}.";
+        if (prepared.Before is { } before)
+            text += $" Before: {before.Configuration.Name}, {before.Configuration.Increments} increments, {before.Configuration.Percentage}% cost, {before.Configuration.Roommates} roommates, split cost: {before.Configuration.SplitCostWithRoommates}.";
+        if (prepared.After is { } after)
+        {
+            text += $" {after.Configuration.Name} costs "
+                + $"{after.Economics.TotalCost.ToString("0.##", CultureInfo.InvariantCulture)} nuyen.";
+            text += $" After: {after.Configuration.Increments} increments, {after.Configuration.Percentage}% cost, {after.Configuration.Roommates} roommates, split cost: {after.Configuration.SplitCostWithRoommates}.";
+        }
+        text += $" Budget remaining: {prepared.BudgetBefore.Remaining:0.##} → {prepared.BudgetAfter.Remaining:0.##} nuyen.";
+        if (prepared.CanConfirm)
+        {
+            Button confirm = new()
+            {
+                Content = $"Confirm {prepared.Mutation.MutationKind}",
+                IsEnabled = !_lifestyleMutationBusy,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+            };
+            confirm.Classes.Add("shell-action");
+            AutomationProperties.SetAutomationId(confirm, "creation-wizard-lifestyle-confirm");
+            confirm.Click += LifestyleConfirmButton_OnClick;
+            LifestylesList.Children.Add(confirm);
+            LifestylesList.Children.Add(Caption(text));
+        }
+        else
+        {
+            LifestylesList.Children.Add(Caption(
+                text
+                + (prepared.Blockers.Count > 0
+                    ? $" Blockers: {string.Join(", ", prepared.Blockers)}"
+                    : string.Empty)));
+        }
+    }
+
+    private void LifestyleCreatePreviewButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_state?.LifestylesStep is not { CanEdit: true } step || _lifestyleMutationBusy)
+            return;
+        CharacterCreationLifestyleCatalogOption? option =
+            (FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-base")?.SelectedItem
+                as ComboBoxItem)?.Tag as CharacterCreationLifestyleCatalogOption;
+        if (option is null)
+        {
+            SetLifestylePrepareResult(new CharacterCreationLifestylesInteractionPrepareResult(
+                "invalid", null, null, ["No base lifestyle option is selected."]));
+            return;
+        }
+
+        string name = FindLifestyleEditor<TextBox>("creation-wizard-lifestyle-create-name")?.Text
+            ?? string.Empty;
+        string styleId = (FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-style")?.SelectedItem
+            as ComboBoxItem)?.Tag as string ?? CharacterCreationLifestyleStyleIds.Standard;
+        string incrementId = (FindLifestyleEditor<ComboBox>("creation-wizard-lifestyle-create-increment")?.SelectedItem
+            as ComboBoxItem)?.Tag as string ?? CharacterCreationLifestyleIncrementIds.Month;
+        int increments = ReadLifestyleNumeric("creation-wizard-lifestyle-create-increments", 1);
+        decimal percentage = FindLifestyleEditor<NumericUpDown>("creation-wizard-lifestyle-create-percentage")?.Value ?? 100;
+        int roommates = ReadLifestyleNumeric("creation-wizard-lifestyle-create-roommates", 0);
+        int area = ReadLifestyleNumeric("creation-wizard-lifestyle-create-area", 0);
+        int comforts = ReadLifestyleNumeric("creation-wizard-lifestyle-create-comforts", 0);
+        int security = ReadLifestyleNumeric("creation-wizard-lifestyle-create-security", 0);
+        bool splitCost = FindLifestyleEditor<CheckBox>("creation-wizard-lifestyle-create-split")?.IsChecked == true;
+
+        CharacterCreationLifestyleConfiguration configuration = BuildConfigurationFromForm(
+            Guid.NewGuid(),
+            option.OptionId,
+            name,
+            styleId,
+            incrementId,
+            increments,
+            percentage,
+            roommates,
+            area,
+            comforts,
+            security,
+            splitCost);
+        CharacterCreationLifestyleMutationInput input = new(
+            CharacterCreationLifestyleMutationKinds.Create,
+            configuration.LifestyleId,
+            configuration);
+        LifestylePreviewRequested?.Invoke(this, new CharacterCreationLifestylePreviewRequested(input));
+    }
+
+    private void LifestyleEditPreviewButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_lifestyleMutationBusy || _state?.LifestylesStep is not { CanEdit: true } step)
+            return;
+        if ((sender as Button)?.Tag is not CharacterCreationWizardDesktopLifestyle lifestyle)
+            return;
+        if (!step.Lifestyles.Contains(lifestyle)) return;
+        string prefix = $"creation-wizard-lifestyle-{lifestyle.Configuration.LifestyleId:D}";
+        CharacterCreationLifestyleConfiguration edited = lifestyle.Configuration with
+        {
+            Name = FindLifestyleEditor<TextBox>(prefix + "-name")?.Text ?? lifestyle.Configuration.Name,
+            Increments = ReadLifestyleNumeric(prefix + "-increments", lifestyle.Configuration.Increments),
+            Percentage = FindLifestyleEditor<NumericUpDown>(prefix + "-percentage")?.Value ?? lifestyle.Configuration.Percentage,
+            Roommates = ReadLifestyleNumeric(prefix + "-roommates", lifestyle.Configuration.Roommates),
+            SplitCostWithRoommates = FindLifestyleEditor<CheckBox>(prefix + "-split")?.IsChecked ?? lifestyle.Configuration.SplitCostWithRoommates
+        };
+        CharacterCreationLifestyleMutationInput input = new(
+            CharacterCreationLifestyleMutationKinds.Edit,
+            lifestyle.Configuration.LifestyleId,
+            edited);
+        LifestylePreviewRequested?.Invoke(this, new CharacterCreationLifestylePreviewRequested(input));
+    }
+
+    private void LifestyleDeletePreviewButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_lifestyleMutationBusy || _state?.LifestylesStep is not { CanEdit: true } step)
+            return;
+        if ((sender as Button)?.Tag is not CharacterCreationWizardDesktopLifestyle lifestyle)
+            return;
+        if (!step.Lifestyles.Contains(lifestyle)) return;
+        CharacterCreationLifestyleMutationInput input = new(
+            CharacterCreationLifestyleMutationKinds.Delete,
+            lifestyle.Configuration.LifestyleId,
+            null);
+        LifestylePreviewRequested?.Invoke(this, new CharacterCreationLifestylePreviewRequested(input));
+    }
+
+    private void LifestyleConfirmButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_lifestylePreview is not { CanConfirm: true } prepared || _lifestyleMutationBusy)
+            return;
+        LifestyleConfirmRequested?.Invoke(this, new CharacterCreationLifestyleConfirmRequested(
+            prepared.PreviewDigest));
+    }
+
+    private int ReadLifestyleNumeric(string automationId, int fallback)
+    {
+        decimal? value = FindLifestyleEditor<NumericUpDown>(automationId)?.Value;
+        return value is null ? fallback : (int)Math.Round(value.Value, MidpointRounding.AwayFromZero);
+    }
+
+    private T? FindLifestyleEditor<T>(string automationId) where T : global::Avalonia.Controls.Control
+    {
+        return LifestylesList.GetVisualDescendants()
+            .OfType<T>()
+            .FirstOrDefault(candidate =>
+                string.Equals(
+                    AutomationProperties.GetAutomationId(candidate),
+                    automationId,
+                    StringComparison.Ordinal));
+    }
+
     private void RenderContacts(CharacterCreationWizardDesktopContactsStep? contacts)
     {
         ContactsList.Children.Clear();
@@ -1319,8 +1824,59 @@ public partial class CharacterCreationWizardControl : UserControl
         if (contacts.Contacts.Count == 0)
         {
             ContactsList.Children.Add(Caption(
-                "No existing contact is projected. Add-contact and Lifestyle authority are not available in this slice."));
-            return;
+                "No existing contact is projected yet. Use the add-contact form below."));
+        }
+
+        if (contacts.NewContactTemplate is { } template && contacts.CanEdit && !_contactMutationBusy)
+        {
+            StackPanel addFields = new() { Spacing = 3 };
+            addFields.Children.Add(new TextBlock
+            {
+                Text = "Add a contact",
+                Classes = { "shell-section-title" }
+            });
+            addFields.Children.Add(Caption(
+                $"Core add-contact defaults · {template.ContactPointCost} contact points"
+                + (template.CountsAgainstContactBudget ? " · counts against the contact budget" : string.Empty)
+                + (template.CountsAgainstHighPlacesBudget ? " · counts against Friends in High Places" : string.Empty)));
+            foreach (CharacterCreationContactFieldAuthority field in template.Fields)
+            {
+                CharacterCreationWizardDesktopContactField projected = new(
+                    field.FieldId,
+                    field.Label,
+                    field.ValueKind,
+                    field.IsEditable,
+                    field.SerializedValue,
+                    field.Minimum,
+                    field.Maximum,
+                    field.LegalOptions,
+                    field.Blockers,
+                    field.SourceAnchorIds);
+                StackPanel row = new() { Spacing = 2 };
+                row.Children.Add(Caption(field.IsEditable ? field.Label : $"{field.Label} · locked"));
+                row.Children.Add(BuildAddContactEditor(projected));
+                addFields.Children.Add(row);
+            }
+
+            Button addPreview = new()
+            {
+                Content = "Preview new contact",
+                IsEnabled = true,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+            };
+            addPreview.Classes.Add("shell-action");
+            AutomationProperties.SetAutomationId(addPreview, "creation-wizard-contact-add-preview");
+            addPreview.Click += ContactAddPreviewButton_OnClick;
+            addFields.Children.Add(addPreview);
+
+            Border addCard = new()
+            {
+                Classes = { "shell-card", "subtle" },
+                Padding = new global::Avalonia.Thickness(9),
+                Child = addFields
+            };
+            AutomationProperties.SetAutomationId(addCard, "creation-wizard-contact-add");
+            ContactsList.Children.Add(addCard);
         }
 
         foreach (CharacterCreationWizardDesktopContact contact in contacts.Contacts)
@@ -1360,6 +1916,20 @@ public partial class CharacterCreationWizardControl : UserControl
                 $"creation-wizard-contact-{contact.ContactId:D}-preview");
             preview.Click += ContactPreviewButton_OnClick;
             fields.Children.Add(preview);
+            Button remove = new()
+            {
+                Content = "Remove contact",
+                Tag = contact.ContactId,
+                IsEnabled = contact.CanDelete && contacts.CanEdit && !_contactMutationBusy,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+            };
+            remove.Classes.Add("shell-action");
+            AutomationProperties.SetAutomationId(
+                remove,
+                $"creation-wizard-contact-{contact.ContactId:D}-remove");
+            remove.Click += ContactRemoveButton_OnClick;
+            fields.Children.Add(remove);
+
 
             Border card = new()
             {
@@ -1554,6 +2124,123 @@ public partial class CharacterCreationWizardControl : UserControl
         }
     }
 
+    private Control BuildAddContactEditor(
+        CharacterCreationWizardDesktopContactField field)
+    {
+        Control editor = BuildContactEditor(Guid.Empty, field);
+        AutomationProperties.SetAutomationId(
+            editor,
+            $"creation-wizard-contact-add-field-{field.FieldId}");
+        return editor;
+    }
+
+    private CharacterCreationContactEditInput? BuildAddContactInput(
+        CharacterCreationContactProjection template,
+        out string? error)
+    {
+        error = null;
+        if (template is null)
+        {
+            error = "Core did not provide an add-contact template.";
+            return null;
+        }
+
+        Dictionary<string, string> values = template.Fields.ToDictionary(
+            static field => field.FieldId,
+            field => ReadContactEditor(Guid.Empty, field.FieldId),
+            StringComparer.Ordinal);
+        CharacterCreationContactIdentity identity = new(
+            values[CharacterCreationContactFieldIds.Name],
+            values[CharacterCreationContactFieldIds.Role],
+            values[CharacterCreationContactFieldIds.Location],
+            values[CharacterCreationContactFieldIds.Notes],
+            values[CharacterCreationContactFieldIds.CustomName],
+            values[CharacterCreationContactFieldIds.Metatype],
+            values[CharacterCreationContactFieldIds.Gender],
+            values[CharacterCreationContactFieldIds.Age],
+            values[CharacterCreationContactFieldIds.ContactType],
+            values[CharacterCreationContactFieldIds.PreferredPayment],
+            values[CharacterCreationContactFieldIds.HobbiesVice],
+            values[CharacterCreationContactFieldIds.PersonalLife],
+            values[CharacterCreationContactFieldIds.GroupName]);
+        if (!int.TryParse(
+                values[CharacterCreationContactFieldIds.Connection],
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int connection))
+        {
+            error = "Connection is not a valid integer choice.";
+            return null;
+        }
+        if (!int.TryParse(
+                values[CharacterCreationContactFieldIds.Loyalty],
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int loyalty))
+        {
+            error = "Loyalty is not a valid integer choice.";
+            return null;
+        }
+        if (!bool.TryParse(values[CharacterCreationContactFieldIds.Group], out bool group)
+            || !bool.TryParse(values[CharacterCreationContactFieldIds.Free], out bool free)
+            || !bool.TryParse(values[CharacterCreationContactFieldIds.Family], out bool family)
+            || !bool.TryParse(values[CharacterCreationContactFieldIds.Blackmail], out bool blackmail))
+        {
+            error = "Contact flags are not valid yes/no choices.";
+            return null;
+        }
+
+        return new CharacterCreationContactEditInput(
+            Guid.NewGuid(),
+            identity,
+            connection,
+            loyalty,
+            group,
+            free,
+            family,
+            blackmail)
+        {
+            ChangeKind = CharacterCreationContactChangeKind.Add
+        };
+    }
+
+    private void ContactAddPreviewButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_contactMutationBusy || _state?.ContactsStep is not { CanEdit: true } contacts
+            || contacts.NewContactTemplate is not { } template)
+        {
+            return;
+        }
+
+        CharacterCreationContactEditInput? input = BuildAddContactInput(template, out string? error);
+        if (input is null)
+        {
+            _contactMutationStatus = error ?? "The new contact could not be projected.";
+            RenderContacts(contacts);
+            return;
+        }
+        _contactMutationStatus = null;
+        ContactPreviewRequested?.Invoke(this, new CharacterCreationContactPreviewRequested(input));
+    }
+
+    private void ContactRemoveButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_contactMutationBusy || _state?.ContactsStep is not { CanEdit: true } contacts
+            || sender is not Button { Tag: Guid contactId }
+            || contacts.Contacts.SingleOrDefault(contact => contact.ContactId == contactId)
+               is not { CanDelete: true } contact)
+        {
+            return;
+        }
+
+        CharacterCreationContactEditInput input = new(contact.ContactId)
+        {
+            ChangeKind = CharacterCreationContactChangeKind.Remove
+        };
+        _contactMutationStatus = null;
+        ContactPreviewRequested?.Invoke(this, new CharacterCreationContactPreviewRequested(input));
+    }
+
     private string ReadContactEditor(Guid contactId, string fieldId)
     {
         if (!_contactEditors.TryGetValue((contactId, fieldId), out Control? editor))
@@ -1575,7 +2262,7 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void ContactPreviewButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (_state?.ContactsStep is not { } contacts
+        if (_contactMutationBusy || _state?.ContactsStep is not { CanEdit: true } contacts
             || sender is not Button { Tag: Guid contactId }
             || contacts.Contacts.SingleOrDefault(contact => contact.ContactId == contactId)
                is not { } contact)
@@ -1595,7 +2282,7 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void ContactConfirmButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (_contactPreview is not { } preview
+        if (_contactMutationBusy || _contactPreview is not { } preview
             || !preview.RequiresExplicitConfirmation
             || !preview.CanConfirm
             || preview.Blockers.Count != 0)
