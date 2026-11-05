@@ -770,7 +770,28 @@ public partial class MainWindow
             var saved = await Task.Run(() => _aiFinishService.InspectSavedResult(workspaceId.Value, owner),
                 _creationWizardLifetime.Token);
             if (!Current()) return;
-            if (saved is not null) { ShowResults(saved, true); return; }
+            if (saved is not null)
+            {
+                ShowResults(saved, true);
+                // Read-only recovery surface (re-audit 2026-11-05): the pinned
+                // Core has no draft-completion receipt/replay contract, so an
+                // unobserved stage's outcome is genuinely unknown and is NEVER
+                // re-dispatched. Typed classification, no message matching:
+                // OutcomeUnknown names the uncertain stage so the player can
+                // inspect it manually; Completed/Failed/Unrecoverable stay
+                // silent because InspectSavedResult already surfaced them.
+                var (recoveryState, uncertainDomain) = await Task.Run(
+                    () => _aiFinishService.ClassifyRecoveryOutcome(workspaceId.Value, owner),
+                    _creationWizardLifetime.Token);
+                if (Current() && recoveryState == CreationAiFinishRunStore.RecoveryState.OutcomeUnknown
+                    && uncertainDomain is not null)
+                {
+                    var explain = new CreationAiFinishResumeWindow(uncertainDomain);
+                    await explain.ShowDialog<bool>(this);
+                    if (!Current()) return;
+                }
+                return;
+            }
             var proposal = await Task.Run(() => _aiFinishService.BuildProposal(workspaceId.Value),
                 _creationWizardLifetime.Token);
             if (!Current() || proposal.ExpectedOwner != owner) return;

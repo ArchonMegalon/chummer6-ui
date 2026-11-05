@@ -195,6 +195,7 @@ public sealed class CharacterCreationAiFinishRecoveryTests
     private CreationAiFinishRunStore _store = null!;
     private static OwnerContextStamp Owner(string id = "alice", long revision = 1)
         => new(new OwnerScope("install-account:" + id), "authority", revision);
+    private const string PLAN = "{\"plan\":1}";
     private static CreationAiFinishService.AiFinishDomainResult Success(string domain)
         => new(domain, true, CharacterCreationFoundationOutcomes.Success, []);
 
@@ -312,6 +313,248 @@ public sealed class CharacterCreationAiFinishRecoveryTests
         public bool TryAcquire(OwnerContextStamp expected, out IOwnerContextLease? lease)
         { lease = null; return false; }
     }
+
+
+    // ------------------------------------------------------------------
+    // Read-only classification never authorizes replay or continuation. A
+    // missing terminal marker and a lost write response stay distinct from
+    // known completion and known rejection.
+    // ------------------------------------------------------------------
+
+    [TestMethod]
+    public void An_unobserved_dispatch_classifies_as_OutcomeUnknown_and_names_the_stage()
+    {
+        // Terminate after EACH durable append the writer can emit (re-audit item 5):
+        // every legitimate prefix must classify, never reject its own journal.
+        string[] truncatedPrefixes =
+        [
+            "claimed",
+            "claimed + dispatching attributes",
+            "claimed + dispatching/observed attributes",
+            "claimed + dispatching/observed attributes + dispatching skills",
+            "claimed + dispatching/observed attributes + dispatching/observed skills",
+        ];
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        string[] all = File.ReadAllLines(path);
+        Assert.AreEqual(6, all.Length, "claimed + 2x(dispatching observed) + completed");
+
+        // Prefix 0 (claimed only): the run never dispatched; no write was sent.
+        File.WriteAllLines(path, all.Take(1));
+        var restarted = new CreationAiFinishRunStore(_root);
+        var (state0, domain0, _) = restarted.ClassifyRecovery(Owner(), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.Incomplete, state0,
+            "claimed with no dispatching entry has not completed its plan");
+        Assert.IsNull(domain0);
+
+        // Prefix 1: dispatching attributes, never observed -> unknown, names attributes.
+        File.WriteAllLines(path, all.Take(2));
+        var (state1, domain1, _) = restarted.ClassifyRecovery(Owner(), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.OutcomeUnknown, state1);
+        Assert.AreEqual("attributes", domain1);
+
+        // Prefix 2: attributes observed, but the remaining plan is incomplete.
+        File.WriteAllLines(path, all.Take(3));
+        var (state2, domain2, _) = restarted.ClassifyRecovery(Owner(), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.Incomplete, state2);
+        Assert.IsNull(domain2);
+
+        // Prefix 3: skills dispatched, never observed -> unknown, names skills.
+        File.WriteAllLines(path, all.Take(4));
+        var (state3, domain3, _) = restarted.ClassifyRecovery(Owner(), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.OutcomeUnknown, state3);
+        Assert.AreEqual("skills", domain3);
+
+        // Prefix 4: no terminal marker; do not infer completion from the prefix.
+        File.WriteAllLines(path, all.Take(5));
+        var (state4, domain4, _) = restarted.ClassifyRecovery(Owner(), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.Incomplete, state4);
+        Assert.IsNull(domain4);
+        Assert.AreEqual(5, truncatedPrefixes.Length, "documented prefix enumeration");
+    }
+
+    [TestMethod]
+    public void A_commit_with_a_lost_response_stays_unknown_and_cannot_be_dispatched_again()
+    {
+        int committed = 0, later = 0;
+        var returned = _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => { committed++; throw new IOException("response lost after commit"); }),
+             ("skills", () => { later++; return Success("skills"); })]);
+        Assert.AreEqual(CreationAiFinishRunStore.UncertainOutcome, returned.Single().Outcome);
+        string path = Directory.GetFiles(_root).Single();
+        string before = File.ReadAllText(path);
+        var restarted = new CreationAiFinishRunStore(_root);
+        var (state, domain, _) = restarted.ClassifyRecovery(Owner(revision: 2), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.OutcomeUnknown, state);
+        Assert.AreEqual("attributes", domain);
+        Assert.AreEqual(before, File.ReadAllText(path));
+        Assert.ThrowsExactly<IOException>(() => restarted.Execute(Owner(), "runner", "op2", PLAN,
+            [("attributes", () => { committed++; return Success("attributes"); })]));
+        Assert.AreEqual(1, committed);
+        Assert.AreEqual(0, later);
+    }
+
+    [TestMethod]
+    public void Legacy_invalid_observations_do_not_prove_that_a_write_failed()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => new("attributes", false, CharacterCreationFoundationOutcomes.Invalid, []))]);
+        var (state, domain, _) = new CreationAiFinishRunStore(_root).ClassifyRecovery(Owner(), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.OutcomeUnknown, state);
+        Assert.AreEqual("attributes", domain);
+    }
+
+    [TestMethod]
+    public void An_observed_failure_classifies_as_Failed_and_authorizes_no_write()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")),
+             ("skills", () => new("skills", false, "blocked", ["Core rejected this selection"]))]);
+        var restarted = new CreationAiFinishRunStore(_root);
+        var (state, domain, _) = restarted.ClassifyRecovery(Owner(), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.Failed, state,
+            "a failed stage was OBSERVED; its outcome is known and terminal");
+        Assert.IsNull(domain);
+    }
+
+    [TestMethod]
+    public void A_completed_record_classifies_as_Completed()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        var restarted = new CreationAiFinishRunStore(_root);
+        var (state, domain, _) = restarted.ClassifyRecovery(Owner(revision: 9), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.Completed, state);
+        Assert.IsNull(domain);
+        Assert.AreEqual(1, restarted.Read(Owner(revision: 9), "runner")!.Count(e => e.Kind == "completed"));
+    }
+
+    [TestMethod]
+    public void A_fresh_store_instance_classifies_the_same_journal_identically()
+    {
+        // Fresh instance in THIS process is the store-level proxy for restart;
+        // the store's only durable state is the journal file itself.
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string path = Directory.GetFiles(_root).Single();
+        File.WriteAllLines(path, File.ReadAllLines(path).Take(4));
+        var restarted = new CreationAiFinishRunStore(_root);
+        var (state, domain, entries) = restarted.ClassifyRecovery(Owner(revision: 4), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.OutcomeUnknown, state);
+        Assert.AreEqual("skills", domain);
+        Assert.AreEqual("op1", entries[0].OperationId, "the original operation identity is retained");
+    }
+
+    [TestMethod]
+    public void An_exclusively_held_journal_blocks_a_second_writer_from_dispatching()
+    {
+        // Two-process exclusion (re-audit item 3): the exclusive CreateNew fence is
+        // the cross-process authorization. While one writer holds the journal, a
+        // second writer cannot even start a run - it fails before any dispatch.
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes"))]);
+        string path = Directory.GetFiles(_root).Single();
+        var restarted = new CreationAiFinishRunStore(_root);
+        using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            int calls = 0;
+            Assert.ThrowsExactly<IOException>(() => restarted.Execute(Owner(), "runner", "op2", PLAN,
+                [("attributes", () => { calls++; return Success("attributes"); })]),
+                "the second writer cannot obtain the fence while the first holds it");
+            Assert.AreEqual(0, calls, "no step runs without the exclusive fence");
+        }
+    }
+
+    [TestMethod]
+    public void ClassifyRecovery_never_opens_the_journal_for_writing()
+    {
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes"))]);
+        string path = Directory.GetFiles(_root).Single();
+        string before = File.ReadAllText(path);
+        var restarted = new CreationAiFinishRunStore(_root);
+        restarted.ClassifyRecovery(Owner(revision: 2), "runner");
+        Assert.AreEqual(before, File.ReadAllText(path), "classification is strictly read-only");
+    }
+
+    [TestMethod]
+    public void Service_classifies_an_unknown_outcome_read_only_and_refuses_foreign_accounts()
+    {
+        var authority = new TestOwnerAuthority { Stamp = Owner() };
+        var service = new CreationAiFinishService(
+            DispatchProxy.Create<IWorkspaceStore, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterSourceDataResolver, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterFileQueries, UnusedDependency>(), authority, _store);
+
+        // No record at all: normal flow.
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.None,
+            service.ClassifyRecoveryOutcome("runner", Owner()).State);
+
+        // A run by alice exists; a different account gets its own (empty) view.
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes"))]);
+        authority.Stamp = Owner("bob", 2);
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.None,
+            service.ClassifyRecoveryOutcome("runner", Owner("bob", 2)).State,
+            "an account transition must not see another account's saved run");
+        Assert.AreEqual("completed", _store.Read(Owner(), "runner")!.Last().Kind,
+            "the foreign classification leaves the original record untouched");
+
+        // Alice's fresh authorization sees the same run read-only.
+        authority.Stamp = Owner(revision: 5);
+        var restarted = new CreationAiFinishRunStore(_root);
+        string path = Directory.GetFiles(_root).Single();
+        string before = File.ReadAllText(path);
+        var (state, _, _) = restarted.ClassifyRecovery(Owner(revision: 5), "runner");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.Completed, state);
+        Assert.AreEqual(before, File.ReadAllText(path));
+    }
+
+    [TestMethod]
+    public void Service_recovery_entry_distinguishes_unknown_from_terminal_failures()
+    {
+        // Typed-state UI entry contract (re-audit item 6): the service's typed
+        // classification drives the dialog branch, so a genuinely unknown stage
+        // and a terminal failure must never be confusable.
+        var authority = new TestOwnerAuthority { Stamp = Owner() };
+        var service = new CreationAiFinishService(
+            DispatchProxy.Create<IWorkspaceStore, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterSourceDataResolver, UnusedDependency>(),
+            DispatchProxy.Create<ICharacterFileQueries, UnusedDependency>(), authority, _store);
+
+        // Terminal failure: the stage was OBSERVED as failed - outcome known.
+        _store.Execute(Owner(), "runner", "op1", PLAN,
+            [("attributes", () => Success("attributes")),
+             ("skills", () => new("skills", false, "blocked", ["Core rejected this selection"]))]);
+        var (failedState, failedDomain) = service.ClassifyRecoveryOutcome("runner", Owner());
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.Failed, failedState,
+            "an observed failure is terminal, never 'unknown'");
+        Assert.IsNull(failedDomain);
+
+        // Unknown outcome: interrupted before observation - the only state that
+        // may surface the informational dialog, and it names the stage.
+        _store.Execute(Owner(), "runner2", "op2", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        // An isolated store root for the second run keeps fence lookup exact.
+        string root2 = Path.Combine(Path.GetTempPath(), "chummer-d2-" + Guid.NewGuid().ToString("N"));
+        var store2 = new CreationAiFinishRunStore(root2);
+        store2.Execute(Owner(), "solo", "op2", PLAN,
+            [("attributes", () => Success("attributes")), ("skills", () => Success("skills"))]);
+        string fence2 = Directory.GetFiles(root2).Single();
+        File.WriteAllLines(fence2, File.ReadAllLines(fence2).Take(4)); // skills dispatched, unobserved
+        var (unknownState, unknownDomain, _) = store2.ClassifyRecovery(Owner(), "solo");
+        Assert.AreEqual(CreationAiFinishRunStore.RecoveryState.OutcomeUnknown, unknownState);
+        Assert.AreEqual("skills", unknownDomain);
+
+        // Both classifications are read-only: bytes unchanged afterwards.
+        foreach (string f in Directory.GetFiles(_root).Concat(Directory.GetFiles(root2)))
+        {
+            Assert.IsFalse(File.ReadAllText(f).Contains("\"resuming\""),
+                "no classification may ever append anything to any journal");
+        }
+    }
+
 
     [TestMethod]
     public void Successful_steps_are_recorded_in_order_and_completed_only_after_all_confirm()
