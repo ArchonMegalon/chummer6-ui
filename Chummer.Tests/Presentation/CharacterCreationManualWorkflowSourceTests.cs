@@ -183,6 +183,99 @@ public sealed class CharacterCreationManualWorkflowSourceTests
             "lifestyles prepare and confirm seams must exist");
     }
 
+    [TestMethod]
+    public void Uncertain_save_recovery_is_receipt_lookup_not_a_second_mutation()
+    {
+        string root = ResolveRoot();
+        string integration = File.ReadAllText(Path.Combine(
+            root, "Chummer.Avalonia", "MainWindow.CreationWizard.cs"));
+
+        // Audit win008 finding 5: confirm dispatches the mutation exactly once,
+        // then every recovery path is a read-only receipt lookup. The confirm
+        // handler must hand a PENDING preview to the recovery routine before
+        // and after dispatch, and the recovery routine must never call Confirm.
+        Assert.Contains("_pendingCreationLifestyles[workspace] = prepared;", integration, StringComparison.Ordinal);
+        Assert.IsGreaterThanOrEqualTo(
+            0,
+            integration.IndexOf("await RecoverAmbiguousCreationLifestyleResultAsync(pending, _creationWizardLifetime.Token);", StringComparison.Ordinal),
+            "a re-click while a pending operation exists must recover, not re-dispatch");
+        Assert.Contains(
+            "lookup = _creationLifestylesInteractionPresenter.LookupReceipt(_adapter.State, prepared.IdempotencyKey);",
+            integration,
+            StringComparison.Ordinal);
+        // The recovery routine itself (from its method definition to EOF) must
+        // never confirm again — it is a read-only receipt lookup only.
+        int recoveryDef = integration.IndexOf(
+            "private async Task RecoverAmbiguousCreationLifestyleResultAsync(",
+            StringComparison.Ordinal);
+        Assert.IsGreaterThanOrEqualTo(0, recoveryDef, "recovery routine must exist");
+        Assert.DoesNotContain(
+            "_creationLifestylesInteractionPresenter.Confirm(",
+            integration.Substring(recoveryDef),
+            StringComparison.Ordinal);
+        // The single first-dispatch Confirm call is preceded by the pending
+        // registration, so a lost response can be recovered by lookup.
+        int confirmSite = integration.IndexOf(
+            "_creationLifestylesInteractionPresenter.Confirm(", StringComparison.Ordinal);
+        Assert.IsGreaterThanOrEqualTo(0, confirmSite, "first dispatch must exist");
+        int pendingSite = integration.IndexOf(
+            "_pendingCreationLifestyles[workspace] = prepared;", StringComparison.Ordinal);
+        Assert.IsGreaterThan(pendingSite, confirmSite,
+            "the operation must be pending BEFORE the mutation is dispatched");
+        // The receipt must be bound to the exact reviewed operation.
+        Assert.Contains("receipt.WritePlan.PlanDigest != prepared.WritePlan.PlanDigest", integration, StringComparison.Ordinal);
+        Assert.Contains("receipt.PreviousWorkspaceRevision != prepared.Binding.WorkspaceRevision", integration, StringComparison.Ordinal);
+        Assert.Contains("receipt.MutationKind != prepared.Mutation.MutationKind", integration, StringComparison.Ordinal);
+        // A verified receipt clears the pending state and reloads the character.
+        Assert.Contains("_pendingCreationLifestyles.Remove(prepared.Binding.WorkspaceId.Value);", integration, StringComparison.Ordinal);
+        // A definite rejection re-opens review; an uncertain write stays pending.
+        Assert.Contains("_pendingCreationLifestyles.Remove(workspace);", integration, StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Rook_context_receives_the_lifestyle_projection()
+    {
+        string root = ResolveRoot();
+        string session = File.ReadAllText(Path.Combine(
+            root, "Chummer.Presentation", "Overview", "CharacterCreationWizardDesktopSession.cs"));
+
+        // Audit win008 finding 4: the serialized Build Ghost context must carry
+        // the same lifestyle projection the player sees, revision-bound.
+        Assert.Contains("LifestylesStep: lifestylesStep", session, StringComparison.Ordinal);
+        Assert.Contains(
+            "CharacterCreationWizardDesktopLifestylesStep? LifestylesStep = null",
+            session,
+            StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void Draft_and_review_lifecycle_wiring_is_present()
+    {
+        string root = ResolveRoot();
+        string control = File.ReadAllText(Path.Combine(
+            root, "Chummer.Avalonia", "Controls", "CharacterCreationWizardControl.axaml.cs"));
+
+        // Audit win008 findings 2+3: drafts survive previews (valid, blocked or
+        // failed) and confirmation is bound to the visible reviewed values.
+        Assert.Contains("_contactAddDraft", control, StringComparison.Ordinal);
+        Assert.Contains("_contactAddDraftIdentity", control, StringComparison.Ordinal);
+        Assert.Contains("_contactEditDrafts", control, StringComparison.Ordinal);
+        Assert.Contains("_lifestyleCreateDraft", control, StringComparison.Ordinal);
+        Assert.Contains("_lifestyleCreateDraftIdentity", control, StringComparison.Ordinal);
+        Assert.Contains("_lifestyleEditDrafts", control, StringComparison.Ordinal);
+        Assert.Contains("_contactPreviewBaseline", control, StringComparison.Ordinal);
+        Assert.Contains("_lifestylePreviewBaseline", control, StringComparison.Ordinal);
+        Assert.Contains("CaptureContactEditorValues", control, StringComparison.Ordinal);
+        Assert.Contains("ContactPreviewMatchesVisibleEditors", control, StringComparison.Ordinal);
+        Assert.Contains("LifestylePreviewMatchesVisibleEditors", control, StringComparison.Ordinal);
+        Assert.Contains(
+            "Values changed since this preview",
+            control,
+            StringComparison.Ordinal);
+        // The minted create identity must be reused, not re-minted per preview.
+        Assert.Contains("repeated previews describe the same new lifestyle", control, StringComparison.Ordinal);
+    }
+
     private static string ResolveRoot()
         => DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
             AppContext.BaseDirectory,
@@ -303,6 +396,90 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         });
 
     [TestMethod]
+    public void Lifestyle_edit_draft_survives_blocked_preview_result()
+        => WithUi((control, _) =>
+        {
+            var original = Configuration();
+            control.SetState(State(original));
+            string prefix = $"creation-wizard-lifestyle-{original.LifestyleId:D}";
+
+            // Enter non-default values and request a preview.
+            Find<TextBox>(control, prefix + "-name").Text = "New home";
+            Find<NumericUpDown>(control, prefix + "-increments").Value = 3;
+            Click(Find<Button>(control, prefix + "-preview"));
+
+            // A BLOCKED preview rebuilds the surface; the typed values must
+            // still be in the controls (draft preservation), not the saved ones.
+            control.SetLifestylePrepareResult(new(
+                CharacterCreationLifestyleOutcomes.Blocked, null, null,
+                ["This Lifestyle exceeds your budget."]));
+            Assert.AreEqual("New home", Find<TextBox>(control, prefix + "-name").Text);
+            Assert.AreEqual(3, ReadNumeric(control, prefix + "-increments"));
+
+            // Re-preview without re-entering: the emitted input still carries
+            // the typed values.
+            CharacterCreationLifestyleMutationInput? blockedInput = null;
+            control.LifestylePreviewRequested += (_, request) => blockedInput = request.Input;
+            Click(Find<Button>(control, prefix + "-preview"));
+            Assert.IsNotNull(blockedInput);
+            Assert.AreEqual("New home", blockedInput.Configuration!.Name);
+            Assert.AreEqual(3, blockedInput.Configuration.Increments);
+        });
+
+    [TestMethod]
+    public void Lifestyle_create_preview_reuses_the_minted_identity()
+        => WithUi((control, _) =>
+        {
+            control.SetState(State(Configuration()));
+            Guid? firstId = null;
+            control.LifestylePreviewRequested += (_, request) => firstId = request.Input.LifestyleId;
+            Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
+            Assert.IsNotNull(firstId);
+            // A preview result rebuilds the surface; a second preview must keep
+            // the identity minted for this create cycle, not mint a new one.
+            control.SetLifestylePrepareResult(new("available", null, EditPreview(Configuration()), []));
+            Guid? secondId = null;
+            control.LifestylePreviewRequested += (_, request) => secondId = request.Input.LifestyleId;
+            Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
+            Assert.IsNotNull(secondId);
+            Assert.AreEqual(firstId, secondId);
+        });
+
+    [TestMethod]
+    public void Lifestyle_edit_after_preview_disables_confirmation_until_new_preview()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            control.SetState(State(config));
+            string prefix = $"creation-wizard-lifestyle-{config.LifestyleId:D}";
+
+            // Real flow: edit, preview (captures the baseline), result arrives.
+            Find<TextBox>(control, prefix + "-name").Text = "Reviewed name";
+            Click(Find<Button>(control, prefix + "-preview"));
+            control.SetLifestylePrepareResult(new(
+                "available", null, EditPreview(config with { Name = "Reviewed name" }), []));
+            Button confirm = Find<Button>(control, "creation-wizard-lifestyle-confirm");
+            Assert.IsTrue(confirm.IsEnabled);
+
+            // Changing the visible field retires the reviewed proposal:
+            // confirmation is unavailable until the new proposal is reviewed.
+            Find<TextBox>(control, prefix + "-name").Text = "Changed after preview";
+            control.SetLifestyleMutationBusy(false);
+            confirm = Find<Button>(control, "creation-wizard-lifestyle-confirm");
+            Assert.IsFalse(confirm.IsEnabled);
+            string text = string.Join("\n",
+                control.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+            StringAssert.Contains(text, "Values changed since this preview");
+
+            // A fresh preview of the changed values restores confirmation.
+            Click(Find<Button>(control, prefix + "-preview"));
+            control.SetLifestylePrepareResult(new(
+                "available", null, EditPreview(config with { Name = "Changed after preview" }), []));
+            confirm = Find<Button>(control, "creation-wizard-lifestyle-confirm");
+            Assert.IsTrue(confirm.IsEnabled);
+        });
+
+    [TestMethod]
     public void Uncertain_save_has_visible_read_only_recovery_feedback()
         => WithUi((control, _) =>
         {
@@ -325,6 +502,14 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
 
     private static CharacterCreationLifestyleProjection Projection(CharacterCreationLifestyleConfiguration config)
         => new(config, Guid.Empty, "Low", "SR5", "10", new(50, 100, 5, 2, true, false, []), [], "lifestyle");
+
+    private static CharacterCreationLifestylePreparedPreview EditPreview(
+        CharacterCreationLifestyleConfiguration config)
+        => new("lifestyles", Binding(), new("edit", config.LifestyleId, config), [Projection(config)], Projection(config), null,
+            new(1000, 100, 900, 0, true, [], []), new(1000, 0, 1000, 0, true, [], []), null!, [], true, true, "operation", "preview");
+
+    private static int ReadNumeric(Control control, string id)
+        => (int)Find<NumericUpDown>(control, id).Value!.Value;
 
     private static CharacterCreationLifestylePreparedPreview Preview(CharacterCreationLifestyleConfiguration config)
         => new("lifestyles", Binding(), new("delete", config.LifestyleId, null), [Projection(config)], Projection(config), null,

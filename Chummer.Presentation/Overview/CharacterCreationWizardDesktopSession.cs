@@ -396,7 +396,10 @@ public sealed class CharacterCreationWizardDesktopSession
             LegalOptions: options,
             CompletionBlockers: snapshot.CompletionBlockers,
             Warnings: snapshot.Warnings,
-            ContactsStep: contacts);
+            ContactsStep: contacts,
+            // Rook's wizard advice must see the same lifestyle projection the
+            // player sees (audit win008 finding 4), without extra private data.
+            LifestylesStep: lifestylesStep);
 
         // The pinned projector emits create/delete capability warnings unconditionally.
         // When Core authority for add/remove is actually available (template present and
