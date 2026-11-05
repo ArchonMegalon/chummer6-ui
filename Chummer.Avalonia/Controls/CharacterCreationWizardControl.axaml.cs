@@ -718,39 +718,75 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetState(CharacterCreationWizardDesktopState state)
     {
         ArgumentNullException.ThrowIfNull(state);
+        // Draft lifecycle (audit win009): drafts and their minted identities are
+        // bound to the character context, not to which wizard step is visible.
+        // Step navigation (ContactsStep/LifestylesStep appearing or disappearing
+        // while the same character revision stays bound) must preserve unsaved
+        // input. A character revision change (another entry saved elsewhere)
+        // also preserves the player's input: retained drafts become "unreviewed"
+        // and require a fresh Core preview before they may be applied again.
+        // Only a genuine character-context change (different workspace identity)
+        // retires drafts, so unsaved input never transplants into another
+        // character. Previews and review baselines are still retired whenever
+        // the character revision or their step projection changes, because a
+        // review describes the exact values it was prepared against.
+        bool contextChanged = !string.Equals(
+                                  state.WorkspaceId,
+                                  _state?.WorkspaceId,
+                                  StringComparison.Ordinal)
+                              || state.WorkspaceRevision != _state?.WorkspaceRevision
+                              || !string.Equals(
+                                  state.SnapshotDigest,
+                                  _state?.SnapshotDigest,
+                                  StringComparison.Ordinal);
+        bool ownerChanged = !string.Equals(
+            state.WorkspaceId,
+            _state?.WorkspaceId,
+            StringComparison.Ordinal);
         if (!string.Equals(
                 state.ContactsStep?.SnapshotDigest,
                 _boundContactsSnapshotDigest,
                 StringComparison.Ordinal)
-            || !string.Equals(state.WorkspaceId, _state?.WorkspaceId, StringComparison.Ordinal))
+            || contextChanged)
         {
             _contactPreview = null;
             _contactMutationStatus = null;
-            _contactAddDraft = null;
-            _contactAddDraftIdentity = null;
-            _contactEditDrafts.Clear();
             _contactPreviewBaseline = null;
             _contactPreviewBaselineId = null;
-            ContactsList.Children.Clear();
-            _contactEditors.Clear();
+            if (ownerChanged)
+            {
+                _contactAddDraft = null;
+                _contactAddDraftIdentity = null;
+                _contactEditDrafts.Clear();
+                ContactsList.Children.Clear();
+                _contactEditors.Clear();
+            }
             _boundContactsSnapshotDigest = state.ContactsStep?.SnapshotDigest;
         }
         if (!string.Equals(
                 state.LifestylesStep?.SnapshotDigest,
                 _boundLifestylesSnapshotDigest,
                 StringComparison.Ordinal)
-            || !string.Equals(state.WorkspaceId, _state?.WorkspaceId, StringComparison.Ordinal))
+            || contextChanged)
         {
             _lifestylePreview = null;
             _lifestyleMutationStatus = null;
-            _lifestyleCreateDraft = null;
-            _lifestyleCreateDraftIdentity = null;
-            _lifestyleEditDrafts.Clear();
             _lifestylePreviewBaseline = null;
             _lifestylePreviewBaselineId = null;
-            LifestylesList.Children.Clear();
+            if (ownerChanged)
+            {
+                _lifestyleCreateDraft = null;
+                _lifestyleCreateDraftIdentity = null;
+                _lifestyleEditDrafts.Clear();
+                LifestylesList.Children.Clear();
+            }
             _boundLifestylesSnapshotDigest = state.LifestylesStep?.SnapshotDigest;
         }
+        // Harvest BEFORE rebinding _state: the harvest reads the currently bound
+        // step projection to locate the live editors. If the new state drops the
+        // step (navigation away), a harvest after the rebind would silently skip
+        // and lose the player's typing (audit win009 navigation trigger).
+        HarvestDraftsBeforeRender(contacts: true, lifestyles: true);
         _state = state;
 
         CharacterCreationWizardDesktopStep active = state.Steps.Single(step => step.IsSelected);
@@ -891,14 +927,23 @@ public partial class CharacterCreationWizardControl : UserControl
             or CharacterCreationContactOutcomes.Replayed)
         {
             _contactPreview = null;
-            // The mutation applied: the draft cycle for that entity is complete.
-            _contactAddDraft = null;
-            _contactAddDraftIdentity = null;
-            _contactEditDrafts.Clear();
+            // The mutation applied: only the saved entry's draft cycle is
+            // complete (audit win009). Other entries keep their unsaved input;
+            // a later character-context change retires them via SetState.
+            Guid savedContactId = result.PreparedPreview?.Edit.ContactId ?? Guid.Empty;
+            if (savedContactId != Guid.Empty && savedContactId == _contactAddDraftIdentity)
+            {
+                _contactAddDraft = null;
+                _contactAddDraftIdentity = null;
+                ContactsList.Children.Clear();
+                _contactEditors.Clear();
+            }
+            else
+            {
+                _contactEditDrafts.Remove(savedContactId);
+            }
             _contactPreviewBaseline = null;
             _contactPreviewBaselineId = null;
-            ContactsList.Children.Clear();
-            _contactEditors.Clear();
         }
         RenderContacts(_state?.ContactsStep);
     }
@@ -932,14 +977,43 @@ public partial class CharacterCreationWizardControl : UserControl
             && !result.Blockers.Contains(CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch))
         {
             _lifestylePreview = null;
-            // The mutation saved: the draft cycle for that entity is complete.
-            _lifestyleCreateDraft = null;
-            _lifestyleCreateDraftIdentity = null;
-            _lifestyleEditDrafts.Clear();
+            // The mutation saved: only the saved entry's draft cycle is complete
+            // (audit win009). Other entries keep their unsaved input; a later
+            // character-context change retires them via SetState.
+            Guid savedLifestyleId = result.PreparedPreview?.Mutation.LifestyleId ?? Guid.Empty;
+            if (savedLifestyleId != Guid.Empty && savedLifestyleId == _lifestyleCreateDraftIdentity)
+            {
+                _lifestyleCreateDraft = null;
+                _lifestyleCreateDraftIdentity = null;
+                LifestylesList.Children.Clear();
+            }
+            else
+            {
+                _lifestyleEditDrafts.Remove(savedLifestyleId);
+            }
             _lifestylePreviewBaseline = null;
             _lifestylePreviewBaselineId = null;
-            LifestylesList.Children.Clear();
         }
+        RenderLifestyles(_state?.LifestylesStep);
+    }
+
+    /// <summary>
+    /// Retires prepared previews and review baselines after a character revision
+    /// changed, but preserves the player's unsaved drafts (audit win009): a save
+    /// of one entry must not discard unrelated input in either domain. Drafts
+    /// remain unreviewed; confirming them requires a fresh Core preview.
+    /// </summary>
+    public void RetireContactLifestylePreviews()
+    {
+        _contactPreview = null;
+        _contactMutationStatus = null;
+        _contactPreviewBaseline = null;
+        _contactPreviewBaselineId = null;
+        _lifestylePreview = null;
+        _lifestyleMutationStatus = null;
+        _lifestylePreviewBaseline = null;
+        _lifestylePreviewBaselineId = null;
+        RenderContacts(_state?.ContactsStep);
         RenderLifestyles(_state?.LifestylesStep);
     }
 
@@ -2177,10 +2251,10 @@ public partial class CharacterCreationWizardControl : UserControl
         ContactsList.IsVisible = contacts is not null;
         if (contacts is null)
         {
-            // The step is gone; the draft cycle ends with it.
-            _contactAddDraft = null;
-            _contactAddDraftIdentity = null;
-            _contactEditDrafts.Clear();
+            // The step is merely not visible (audit win009): navigation away
+            // keeps the unsaved drafts so returning restores the player's
+            // input. Only SetState retires drafts on a real context change.
+            _contactPreview = null;
             _contactPreviewBaseline = null;
             _contactPreviewBaselineId = null;
             return;

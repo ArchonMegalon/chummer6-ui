@@ -69,16 +69,64 @@ public sealed class CharacterCreationContactsAvaloniaTests
             Assert.IsNull(requestedEdit.Connection);
             Assert.IsNull(requestedEdit.Loyalty);
 
+            // Test-quality fix (R50 audit): the prepared preview must be built
+            // from the ACTUAL captured input (name "Nova" + free), not from a
+            // static fixture that only models the Free flip. Assert the exact
+            // emitted identity, retained fields and resulting operations.
+            Assert.IsNotNull(requestedEdit.Identity);
+            CharacterCreationContactEdit actualEdit = new(
+                fixture.Contact.ContactId,
+                requestedEdit.Identity,
+                Free: true);
+            CharacterCreationContactProjection projectedAfter = Contact(
+                fixture.Contact.ContactId,
+                requestedEdit.Identity,
+                free: true,
+                cost: 0,
+                Digest('b'));
+            CharacterCreationContactAtomicWritePlan actualPlan = new(
+                CharacterCreationContactsSchemas.WritePlanV1,
+                CharacterCreationWizardStepIds.ContactsLifestyles,
+                fixture.Contact.ContactId,
+                [
+                    new CharacterCreationContactWriteOperation(
+                        1,
+                        CharacterCreationContactFieldIds.Name,
+                        fixture.Contact.Identity.Name,
+                        "Nova",
+                        CharacterCreationContactSourceAnchors.All),
+                    new CharacterCreationContactWriteOperation(
+                        2,
+                        CharacterCreationContactFieldIds.Free,
+                        "False",
+                        "True",
+                        CharacterCreationContactSourceAnchors.All)
+                ],
+                fixture.PreparedPreview.WritePlan.ContentDigestBefore,
+                Digest('1'),
+                Digest('2'),
+                Digest('2'),
+                Digest('3'),
+                Digest('3'),
+                PreservesUntouchedSiblingState: true,
+                PreservesNestedState: true,
+                PlanDigest: Digest('4'));
+            CharacterCreationContactPreparedPreview actualPreview = fixture.PreparedPreview with {
+                Edit = actualEdit,
+                ContactAfter = projectedAfter,
+                WritePlan = actualPlan
+            };
             control.SetContactPrepareResult(new CharacterCreationContactsInteractionPrepareResult(
                 CharacterCreationContactOutcomes.Available,
                 null,
-                fixture.PreparedPreview,
+                actualPreview,
                 []));
             string renderedText = string.Join(
                 "\n",
                 control.GetVisualDescendants().OfType<TextBlock>().Select(static block => block.Text));
             StringAssert.Contains(renderedText, "Contacts: 9 → 12 remaining");
-            StringAssert.Contains(renderedText, "1. free: False → True");
+            StringAssert.Contains(renderedText, "1. name: Fixer → Nova");
+            StringAssert.Contains(renderedText, "2. free: False → True");
 
             string? confirmedDigest = null;
             control.ContactConfirmRequested += (_, request) => confirmedDigest = request.PreviewDigest;
@@ -87,7 +135,7 @@ public sealed class CharacterCreationContactsAvaloniaTests
                 $"creation-wizard-contact-{fixture.Contact.ContactId:D}-confirm");
             Assert.IsTrue(confirm.IsEnabled);
             RaiseClick(confirm);
-            Assert.AreEqual(fixture.PreparedPreview.PreviewDigest, confirmedDigest);
+            Assert.AreEqual(actualPreview.PreviewDigest, confirmedDigest);
 
             host.Close();
         });
