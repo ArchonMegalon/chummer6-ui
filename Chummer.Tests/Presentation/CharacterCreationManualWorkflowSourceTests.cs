@@ -2,6 +2,7 @@
 
 using System;
 using System.IO;
+using System.Net.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Chummer.Desktop.Runtime;
 using System.Collections.Generic;
@@ -15,6 +16,15 @@ using Avalonia.Headless;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using Chummer.Contracts.AI;
+using Chummer.Contracts.Workspaces;
+using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Rulesets;
+using Chummer.Rulesets.Hosting;
+using Chummer.Rulesets.Sr5;
+using Chummer.Presentation.Shell;
 using Chummer.Avalonia;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.Characters;
@@ -932,6 +942,534 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             Assert.IsNotNull(createInput);
             Assert.AreNotEqual(lostIdentity, createInput.LifestyleId);
         });
+
+    [TestMethod]
+    public void Window_recovery_executes_a_committed_lost_response_operation_through_the_real_handler()
+    {
+        WithMainWindow((window, overviewPresenter, lifestyles, pump) =>
+        {
+            var binding = Binding();
+
+            // ---- State 1: character with NO lifestyles, revision 1 -------------
+            overviewPresenter.Publish(OverviewState(binding, [], revision: 1));
+            pump();
+
+            // ---- 1. start a create cycle: preview mints identity X -------------
+            lifestyles.PreparePreview = CreatePreview(binding, "Lost response flat", revision: 1);
+            EmitLifestylePreview(window, new CharacterCreationLifestyleMutationInput(
+                CharacterCreationLifestyleMutationKinds.Create, Guid.NewGuid(), null));
+            pump();
+            var prepared = lifestyles.LastPreparedPreview;
+            Assert.IsNotNull(prepared, "The prepare call must reach the lifestyles presenter.");
+            Guid identityX = prepared.Mutation.LifestyleId;
+            Assert.AreNotEqual(Guid.Empty, identityX);
+
+            // ---- 2. confirm: the write commits but the response is LOST --------
+            lifestyles.ConfirmThrows = new IOException("lost response");
+            lifestyles.LookupReceiptValue = CreateReceipt(binding, identityX, prepared.IdempotencyKey, prepared.WritePlan);
+            EmitLifestyleConfirm(window, prepared.PreviewDigest);
+            pump();
+
+            // ---- 3. recovery: receipt lookup resolves the EXACT operation ------
+            Assert.IsTrue(lifestyles.LookupCalls >= 1,
+                "The window must resolve the ambiguous result via receipt lookup.");
+            Assert.AreEqual(prepared.IdempotencyKey, lifestyles.LastLookupKey);
+            Assert.AreEqual(identityX, lifestyles.LastLookupReceipt?.LifestyleId,
+                "The receipt must belong to the lost create operation.");
+
+            // ---- 4. the character refreshes: now contains the saved lifestyle --
+            Assert.AreEqual(1, overviewPresenter.LoadCalls,
+                "A verified receipt must reload the character authority.");
+            var savedConfig = Configuration() with { Name = "Lost response flat", LifestyleId = identityX };
+            overviewPresenter.Publish(OverviewState(binding, [Projection(savedConfig)], revision: 2));
+            pump();
+
+            // ---- 5. a DISTINCT new create operation must NOT replay ------------
+            lifestyles.PreparePreview = CreatePreview(binding, "Second flat", revision: 2);
+            Assert.AreEqual(1, lifestyles.WriteAttempts,
+                "The main recovery test: exactly the lost-response write attempt ran.");
+            int writesBefore = lifestyles.WriteAttempts;
+            EmitLifestylePreview(window, new CharacterCreationLifestyleMutationInput(
+                CharacterCreationLifestyleMutationKinds.Create, Guid.NewGuid(), null));
+            pump();
+            var second = lifestyles.LastPreparedPreview;
+            Assert.IsNotNull(second);
+            Assert.AreNotEqual(identityX, second.Mutation.LifestyleId,
+                "The next create cycle must receive a fresh identity, not the completed one.");
+            Assert.AreEqual(writesBefore, lifestyles.WriteAttempts,
+                "Recovery must not replay the original write.");
+        });
+    }
+
+    [TestMethod]
+    public void Window_recovery_rejects_a_receipt_bound_to_a_different_operation()
+    {
+        // A receipt whose PreviousWorkspaceRevision does not bind it to the
+        // exact reviewed operation must be rejected: no authority reload, no
+        // retirement of the pending identity, no confirmation of an unrelated
+        // write. The window stays in the ambiguous state.
+        WithMainWindow((window, overviewPresenter, lifestyles, pump) =>
+        {
+            var binding = Binding();
+            overviewPresenter.Publish(OverviewState(binding, [], revision: 1));
+            pump();
+            lifestyles.PreparePreview = CreatePreview(binding, "Foreign receipt", revision: 1);
+            EmitLifestylePreview(window, new CharacterCreationLifestyleMutationInput(
+                CharacterCreationLifestyleMutationKinds.Create, Guid.NewGuid(), null));
+            pump();
+            var prepared = lifestyles.LastPreparedPreview;
+            Assert.IsNotNull(prepared);
+            lifestyles.ConfirmThrows = new IOException("lost response");
+            lifestyles.LookupReceiptValue = CreateReceipt(
+                binding, prepared.Mutation.LifestyleId, prepared.IdempotencyKey,
+                prepared.WritePlan) with { PreviousWorkspaceRevision = binding.WorkspaceRevision + 5 };
+            EmitLifestyleConfirm(window, prepared.PreviewDigest);
+            pump();
+            Assert.IsTrue(lifestyles.LookupCalls >= 1,
+                "The window must attempt the receipt lookup.");
+            Assert.AreEqual(0, overviewPresenter.LoadCalls,
+                "A receipt from another operation must NOT trigger the authority reload.");
+            Assert.AreEqual(1, lifestyles.ConfirmCalls,
+                "Only the original lost-response confirm may have run.");
+            Assert.AreEqual(1, lifestyles.WriteAttempts,
+                "Recovery must not issue a second (replay) confirm: the only write attempt is the original lost response.");
+        });
+    }
+
+    [TestMethod]
+    public void Window_build_ghost_question_sends_the_bound_wizard_context_to_the_sidecar()
+    {
+        // Production chain under test: the overview state binds the wizard
+        // snapshot (via ApplyCreationWizardState -> Bind/Project), the player
+        // asks the Build Ghost a question on the Contacts & Lifestyles step,
+        // and the window handler serializes the CURRENT bound context --
+        // including the lifestyle projection the player sees -- into the
+        // sidecar message. Rook must never answer from a context that omits
+        // the visible entries.
+        WithMainWindow((window, overviewPresenter, lifestyles, pump) =>
+        {
+            var stub = FindCoachStub(window);
+            var binding = Binding();
+            overviewPresenter.Publish(OverviewState(binding,
+                [Projection(Configuration())], revision: 1));
+            pump();
+
+            var session = (CharacterCreationWizardDesktopSession)typeof(MainWindow)
+                .GetField("_creationWizardSession", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetValue(window)!;
+            CharacterCreationWizardDesktopState state = session.State;
+            Assert.IsNotNull(state.LifestylesStep,
+                "The bound desktop state must carry the lifestyle projection.");
+            Assert.AreEqual(1, state.LifestylesStep.Lifestyles.Count);
+            Assert.IsTrue(state.BuildGhostAvailable,
+                "An authorized runtime with no blockers must make the Build Ghost available.");
+
+            RaiseEvent(WizardControl(window), "BuildGhostQuestionSubmitted",
+                new CharacterCreationWizardBuildGhostQuestion(
+                    "Which lifestyle fits my remaining nuyen?", state.BuildGhostContext));
+            pump();
+
+            Assert.HasCount(1, stub.BuildTurns);
+            AiConversationTurnRequest request = stub.BuildTurns[0];
+            Assert.AreEqual(state.BuildGhostContext.WorkspaceId, request.WorkspaceId);
+            Assert.AreEqual(state.BuildGhostContext.RuntimeFingerprint, request.RuntimeFingerprint);
+            Assert.AreEqual("creation-wizard:" + state.BuildGhostContext.WorkspaceId, request.ConversationId);
+            // The serialized context is embedded verbatim in the message.
+            StringAssert.Contains(request.Message, "\"LifestylesStep\"");
+            StringAssert.Contains(request.Message, Configuration().LifestyleId.ToString("D"));
+            StringAssert.Contains(request.Message, Configuration().Name);
+            StringAssert.Contains(request.Message, "\"WorkspaceRevision\":" + state.WorkspaceRevision);
+            StringAssert.Contains(request.Message, "User question: Which lifestyle fits my remaining nuyen?");
+            // Read-only advice: the production preamble must explicitly bind
+            // Rook to reviewable-only advice (no mutation claims).
+            StringAssert.Contains(request.Message,
+                "Advice and reviewable suggestions only: do not claim to apply, confirm, finalize, or mutate anything.");
+        });
+    }
+
+    [TestMethod]
+    public void Window_build_ghost_answer_bound_to_a_stale_context_is_rejected()
+    {
+        // A late answer that no longer matches the bound context (revision
+        // moved on) must be replaced by the stale-context notice -- the
+        // sidecar text must never reach the transcript unverified.
+        WithMainWindow((window, overviewPresenter, lifestyles, pump) =>
+        {
+            var stub = FindCoachStub(window);
+            var binding = Binding();
+            overviewPresenter.Publish(OverviewState(binding,
+                [Projection(Configuration())], revision: 1));
+            pump();
+            var session = (CharacterCreationWizardDesktopSession)typeof(MainWindow)
+                .GetField("_creationWizardSession", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetValue(window)!;
+            CharacterCreationWizardDesktopState state = session.State;
+
+            stub.NextBuildAnswer = "STALE ADVICE";
+            stub.HoldBuildResponses = true;
+            RaiseEvent(WizardControl(window), "BuildGhostQuestionSubmitted",
+                new CharacterCreationWizardBuildGhostQuestion("?", state.BuildGhostContext));
+            pump();
+
+            // The answer raced a revision bump: publish a new revision while
+            // the sidecar response is still in flight, then let it arrive.
+            overviewPresenter.Publish(OverviewState(binding,
+                [Projection(Configuration())], revision: 2));
+            pump();
+            stub.ReleaseBuildResponse();
+            pump();
+            pump();
+
+            Assert.HasCount(1, stub.BuildTurns,
+                "Exactly one sidecar turn must have been sent.");
+            string transcript = GetGhostTranscriptText(window);
+            Assert.IsFalse(transcript.Contains("STALE ADVICE"),
+                "A stale answer must never reach the transcript. Transcript: " + transcript);
+            Assert.IsTrue(transcript.Contains("changed while I was answering"),
+                "The stale-context notice must be shown instead. Transcript: " + transcript);
+        });
+    }
+
+    private static StubCoachSidecarClientForLifestyleTests FindCoachStub(MainWindow window)
+        => (StubCoachSidecarClientForLifestyleTests)typeof(MainWindow)
+            .GetField("_coachSidecarClient", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(window)!;
+
+    private static CharacterCreationWizardControl WizardControl(MainWindow window)
+        => window.GetVisualDescendants().OfType<CharacterCreationWizardControl>().First();
+
+    private static string GetGhostTranscriptText(MainWindow window)
+    {
+        var control = WizardControl(window);
+        var panel = control.FindControl<global::Avalonia.Controls.StackPanel>("GhostConversation")!;
+        var sb = new System.Text.StringBuilder();
+        foreach (var child in panel.Children)
+            if (child is global::Avalonia.Controls.TextBlock block)
+                sb.Append(block.Text).Append('\n');
+        return sb.ToString();
+    }
+
+    private static void EmitLifestylePreview(MainWindow window, CharacterCreationLifestyleMutationInput input)
+    {
+        var control = window.GetVisualDescendants().OfType<CharacterCreationWizardControl>().First();
+        RaiseEvent(control, nameof(CharacterCreationWizardControl.LifestylePreviewRequested),
+            new CharacterCreationLifestylePreviewRequested(input));
+    }
+
+    private static void EmitLifestyleConfirm(MainWindow window, string previewDigest)
+    {
+        var control = window.GetVisualDescendants().OfType<CharacterCreationWizardControl>().First();
+        RaiseEvent(control, nameof(CharacterCreationWizardControl.LifestyleConfirmRequested),
+            new CharacterCreationLifestyleConfirmRequested(previewDigest));
+    }
+
+    private static string Sha256(string input)
+        => "sha256:" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(input))).ToLowerInvariant();
+
+    private static void RaiseEvent(Control control, string eventName, object args)
+    {
+        var field = typeof(CharacterCreationWizardControl)
+            .GetField(eventName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Missing event backing field '" + eventName + "'.");
+        var handler = (System.Delegate?)field.GetValue(control);
+        handler?.DynamicInvoke(control, args);
+    }
+
+    private static CharacterCreationLifestylePreparedPreview CreatePreview(
+        CharacterCreationLifestyleBinding binding, string name, long revision)
+    {
+        var config = Configuration() with { Name = name, LifestyleId = Guid.NewGuid() };
+        var after = Projection(config);
+        var bindingAtRevision = binding with { WorkspaceRevision = revision, ContentRevision = revision,
+            SavedRevision = revision };
+        var plan = new CharacterCreationLifestyleAtomicWritePlan(
+            "schema", "lifestyles", CharacterCreationLifestyleMutationKinds.Create, config.LifestyleId,
+            null, after, [], "before-digest", "after-digest", "sib-b", "sib-a", "nest-b", "nest-a",
+            true, true, "plan");
+        return new(
+            "lifestyles", bindingAtRevision,
+            new(CharacterCreationLifestyleMutationKinds.Create, config.LifestyleId, config),
+            [], null, after,
+            new(1000, 100, 900, 0, true, [], []), new(1000, 100, 900, 0, true, [], []),
+            plan, [], true, true,
+            "creation-lifestyle-" + Guid.NewGuid().ToString("N"),
+            "preview-digest-" + Guid.NewGuid().ToString("N"));
+    }
+
+    private static CharacterOverviewState OverviewState(
+        CharacterCreationLifestyleBinding binding,
+        IReadOnlyList<CharacterCreationLifestyleProjection> lifestyles,
+        long revision)
+    {
+        var authority = new CharacterCreationLifestylesAuthority("schema", "sr5", "settings", [], [],
+            1, false, [], [], true, "source", "profile", "policy", "runtime", "authority");
+        var step = CharacterCreationWizardStepIds.ContactsLifestyles;
+        var desktopLifestyles = lifestyles.Select(p => new CharacterCreationWizardDesktopLifestyle(
+            p.Configuration, Guid.Empty, p.BaseLifestyleName, p.SourceBook, p.Page,
+            p.Economics, [], "lifestyle")).ToArray();
+        var lifestylesStep = new CharacterCreationWizardDesktopLifestylesStep(
+            binding with { WorkspaceRevision = revision, ContentRevision = revision, SavedRevision = revision },
+            authority, desktopLifestyles, new(1000, 100, 900, 0, true, [], []), [], true, "lifestyles");
+        var snapshot = new CharacterCreationWizardSnapshot(
+            Schema: CharacterCreationWizardSchemas.SnapshotV1,
+            WorkspaceId: binding.WorkspaceId.Value,
+            WorkspaceRevision: revision,
+            ContentDigest: "content",
+            SourceDigest: "source",
+            RulesetId: "sr5",
+            RuntimeFingerprint: "runtime",
+            BuildMethod: "Priority",
+            CharacterCreated: false,
+            ActiveStepId: step,
+            Steps: [new(step, step, "available", true, true, false, [], [], [], [])],
+            Budgets: [],
+            LegalOptionsByStep: new Dictionary<string, IReadOnlyList<CharacterCreationLegalOption>>(),
+            CompletionBlockers: [],
+            Warnings: [],
+            CanFinalize: false,
+            SnapshotDigest: string.Empty);
+        snapshot = snapshot with { SnapshotDigest = Sha256("snapshot-" + revision) };
+        var desktopState = new CharacterCreationWizardDesktopState(
+            "manual-workspace", revision, Sha256("snapshot-" + revision), step,
+            [new(step, step, "available", true, true, false, true, [], [], [], [])],
+            [], [], [], [], false, false, false, false,
+            new(false, null),
+            new(CharacterCreationWizardDesktopSchemas.BuildGhostContextV1,
+                "manual-workspace", revision, Sha256("snapshot-" + revision), step, "sr5",
+                "runtime", "Priority", [], [], [], [], LifestylesStep: lifestylesStep),
+            LifestylesStep: lifestylesStep);
+        var contractState = new CharacterCreationLifestylesState(
+            CharacterCreationLifestylesSchemas.StateV1, step,
+            binding with { WorkspaceRevision = revision, ContentRevision = revision, SavedRevision = revision },
+            authority, false, lifestyles, new(1000, 100, 900, 0, true, [], []), [], true,
+            Sha256("snapshot-" + revision));
+        return CharacterOverviewState.Empty with
+        {
+            WorkspaceId = binding.WorkspaceId,
+            CreationWizard = snapshot,
+            CreationLifestyles = contractState
+        };
+    }
+
+    private sealed class RecordingLifestylesPresenter : ICharacterCreationLifestylesInteractionPresenter
+    {
+        public CharacterCreationLifestylePreparedPreview? PreparePreview;
+        public Exception? ConfirmThrows;
+        public CharacterCreationLifestyleReceipt? LookupReceiptValue;
+        public int LookupCalls;
+        public string? LastLookupKey;
+        public CharacterCreationLifestyleReceipt? LastLookupReceipt;
+        public int WriteAttempts;
+        public int ConfirmCalls;
+        public CharacterCreationLifestylePreparedPreview? LastPreparedPreview;
+        public (CharacterOverviewState State, CharacterCreationLifestyleMutationInput Input)? LastPrepare;
+
+        public CharacterCreationLifestylesInteractionLoadResult Load(CharacterOverviewState overview)
+            => new(CharacterCreationLifestyleOutcomes.Available, null, []);
+
+        public CharacterCreationLifestylesInteractionPrepareResult Prepare(
+            CharacterOverviewState overview, CharacterCreationLifestyleMutationInput input)
+        {
+            LastPrepare = (overview, input);
+            if (PreparePreview is null)
+            {
+                LastPreparedPreview = null;
+                return new(CharacterCreationLifestyleOutcomes.Unavailable, null, null, []);
+            }
+            var prepared = PreparePreview with { DisplayOwnerContext = overview.DisplayOwnerContext };
+            LastPreparedPreview = prepared;
+            return new(CharacterCreationLifestyleOutcomes.Available, null, prepared, []);
+        }
+
+        public CharacterCreationLifestylesInteractionConfirmResult Confirm(
+            CharacterOverviewState overview, CharacterCreationLifestyleConfirmation confirmation)
+        {
+            WriteAttempts++;
+            ConfirmCalls++;
+            if (ConfirmThrows is { } error)
+                throw error;
+            return new(CharacterCreationLifestyleOutcomes.Applied, confirmation.PreparedPreview,
+                LookupReceiptValue, null, []);
+        }
+
+        public CharacterCreationLifestylesInteractionReceiptLookupResult LookupReceipt(
+            CharacterOverviewState overview, string idempotencyKey)
+        {
+            LookupCalls++;
+            LastLookupKey = idempotencyKey;
+            LastLookupReceipt = LookupReceiptValue;
+            if (LookupReceiptValue is { } receipt)
+                return new(CharacterCreationLifestyleOutcomes.Applied, receipt, null, []);
+            return new(CharacterCreationLifestyleOutcomes.Unavailable, null, null,
+                [CharacterCreationLifestylesInteractionBlockers.ReceiptMismatch]);
+        }
+    }
+
+    private static void WithMainWindow(
+        Action<MainWindow, FakeCharacterOverviewPresenter, RecordingLifestylesPresenter, Action> action)
+    {
+        lock (AvaloniaHeadlessSessionGate.SyncRoot)
+        {
+            using var session = HeadlessUnitTestSession.StartNew(typeof(Bootstrap));
+            session.Dispatch(() =>
+            {
+                var overviewPresenter = new FakeCharacterOverviewPresenter();
+                using var adapter = new CharacterOverviewViewModelAdapter(overviewPresenter);
+                var lifestyles = new RecordingLifestylesPresenter();
+                var availabilityEvaluator = new DefaultCommandAvailabilityEvaluator();
+                var shellCatalogResolver = new RulesetShellCatalogResolverService(
+                    new RulesetPluginRegistry([new Sr5RulesetPlugin()]));
+                var window = new MainWindow(
+                    overviewPresenter,
+                    new RecordingShellPresenterForLifestyleTests(),
+                    availabilityEvaluator,
+                    new ShellSurfaceResolver(shellCatalogResolver, availabilityEvaluator),
+                    new StubCoachSidecarClientForLifestyleTests(),
+                    new DesktopAnalyticsClient(new HttpClient { BaseAddress = new Uri("http://localhost/") }),
+                    adapter,
+                    creationContactsInteractionPresenter: null,
+                    creationFoundationInteractionPresenter: null,
+                    creationResourcesInteractionPresenter: null,
+                    creationFinalizationService: null,
+                    creationPrerequisiteService: null,
+                    creationAiFinishService: null,
+                    creationLifestylesInteractionPresenter: lifestyles);
+                window.Show();
+                void Pump()
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Pump();
+                try { action(window, overviewPresenter, lifestyles, Pump); }
+                finally { window.Close(); Pump(); }
+            }, CancellationToken.None).GetAwaiter().GetResult();
+        }
+    }
+
+    private sealed class RecordingShellPresenterForLifestyleTests : IShellPresenter
+    {
+        public ShellState State { get; private set; } = ShellState.Empty with
+        {
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            Commands = [],
+            MenuRoots = [],
+            NavigationTabs = [],
+            ActiveTabId = "tab-info",
+            Notice = "Ready."
+        };
+        public event EventHandler? StateChanged;
+
+        public Task InitializeAsync(CancellationToken ct)
+        {
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task ExecuteCommandAsync(string commandId, CancellationToken ct) => Task.CompletedTask;
+        public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;
+        public Task ToggleMenuAsync(string menuId, CancellationToken ct) => Task.CompletedTask;
+        public Task SetPreferredRulesetAsync(string rulesetId, CancellationToken ct) => Task.CompletedTask;
+        public Task SyncWorkspaceContextAsync(CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
+            => Task.CompletedTask;
+    }
+
+    private sealed class StubCoachSidecarClientForLifestyleTests : IAvaloniaCoachSidecarClient
+    {
+        public List<AiConversationTurnRequest> BuildTurns = [];
+        public string? NextBuildAnswer;
+        public bool HoldBuildResponses;
+        private TaskCompletionSource<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>>? _heldBuild;
+        private AiConversationTurnRequest? _heldRequest;
+        private string? _heldAnswer;
+        public void ReleaseBuildResponse()
+        {
+            TaskCompletionSource<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>>? held = _heldBuild;
+            AiConversationTurnRequest? request = _heldRequest;
+            _heldBuild = null;
+            _heldRequest = null;
+            held?.TrySetResult(AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>.Success(
+                200, NewBuildResponse(request!, _heldAnswer ?? "Build Ghost stub answer.")));
+        }
+        public Task<AvaloniaCoachSidecarCallResult<AiGatewayStatusProjection>> GetStatusAsync(CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiGatewayStatusProjection>.Failure(0, "disabled"));
+        public Task<AvaloniaCoachSidecarCallResult<AiProviderHealthProjection[]>> ListProviderHealthAsync(string? routeType = null, CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiProviderHealthProjection[]>.Failure(0, "disabled"));
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationAuditCatalogPage>> ListConversationAuditsAsync(
+            string routeType,
+            string? runtimeFingerprint = null,
+            int maxCount = 3,
+            CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationAuditCatalogPage>.Failure(0, "disabled"));
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendCoachTurnAsync(
+            AiConversationTurnRequest request,
+            CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>.Failure(0, "disabled"));
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendBuildTurnAsync(
+            AiConversationTurnRequest request,
+            CancellationToken ct = default)
+        {
+            BuildTurns.Add(request);
+            string answer = NextBuildAnswer ?? "Build Ghost stub answer.";
+            if (HoldBuildResponses)
+            {
+                _heldRequest = request;
+                _heldAnswer = answer;
+                _heldBuild = new TaskCompletionSource<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                return _heldBuild.Task;
+            }
+            return Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>.Success(200,
+                NewBuildResponse(request, answer)));
+        }
+
+        private static AiConversationTurnResponse NewBuildResponse(
+            AiConversationTurnRequest request,
+            string answer)
+            =>
+                new AiConversationTurnResponse(
+                    ConversationId: request.ConversationId,
+                    RouteType: AiRouteTypes.Build,
+                    ProviderId: AiProviderIds.AiMagicx,
+                    Answer: answer,
+                    RouteDecision: new AiProviderRouteDecision(
+                        RouteType: AiRouteTypes.Build,
+                        ProviderId: AiProviderIds.AiMagicx,
+                        Reason: "stub provider adapter registered",
+                        BudgetUnit: AiBudgetUnits.ChummerAiUnits,
+                        CredentialTier: AiProviderCredentialTiers.Primary,
+                        CredentialSlotIndex: 0),
+                    Grounding: new AiGroundingBundle(
+                        RouteType: AiRouteTypes.Build,
+                        RuntimeFingerprint: request.RuntimeFingerprint,
+                        CharacterId: request.CharacterId,
+                        ConversationId: request.ConversationId,
+                        WorkspaceId: request.WorkspaceId,
+                        RuntimeFacts: new Dictionary<string, string>(),
+                        CharacterFacts: new Dictionary<string, string>(),
+                        Constraints: [],
+                        RetrievedItems: [],
+                        AllowedTools: []),
+                    Budget: new AiBudgetSnapshot(AiBudgetUnits.ChummerAiUnits, 10, 1, 4, 1, true),
+                    Citations: [],
+                    SuggestedActions: [],
+                    ToolInvocations: [],
+                    FlavorLine: "Signal's clean.",
+                    StructuredAnswer: null,
+                    Cache: null);
+    }
+
+    private static CharacterCreationLifestyleReceipt CreateReceipt(
+        CharacterCreationLifestyleBinding binding, Guid lifestyleId, string idempotencyKeyDigest,
+        CharacterCreationLifestyleAtomicWritePlan writePlan)
+        => new("schema", "receipt-" + Guid.NewGuid().ToString("N"), "lifestyles",
+            binding.WorkspaceId, CharacterCreationLifestyleMutationKinds.Create, lifestyleId,
+            idempotencyKeyDigest, "cmd", binding.WorkspaceRevision, binding.WorkspaceRevision + 1,
+            binding.ContentRevision, binding.ContentRevision + 1, binding.SavedRevision,
+            binding.SavedRevision + 1, "before", "after", "source", "rules", "runtime",
+            0m, 100m, 900m, writePlan, "receipt-digest");
 
     private static CharacterCreationLifestyleConfiguration Configuration()
         => new(Guid.Parse("5ee27326-0912-4dad-b65b-9ad4c01a8cbe"), "low", "Old home", "advanced", "week",

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Validate the non-authoritative split-preseal publication transaction.
 
 The preseal lane exists only to publish package-recipe and verification code
@@ -351,6 +351,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/Overview/CharacterCreationWizardDesktopSession.cs",
         "Chummer.Tests/Presentation/CharacterCreationAiFinishGateAvaloniaTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationManualWorkflowSourceTests.cs",
+        "Chummer.Tests/Presentation/FakeCharacterOverviewPresenter.cs",
         "Chummer.Tests/Presentation/CharacterCreationContactsAvaloniaTests.cs",
         "docs/agents/WIN-006-CONTROLLER-FOLLOWUP-EVIDENCE.md",
         "scripts/win004-start-failure-diagnostics.ps1",
