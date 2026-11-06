@@ -984,6 +984,10 @@ public partial class CharacterCreationWizardControl : UserControl
     {
         if (savedContactId != Guid.Empty && savedContactId == _contactAddDraftIdentity)
         {
+            // Same harvest-before-clear ordering as the lifestyle retire: the
+            // add identity must still be set during the harvest (no fresh
+            // minting), and the clears below retire the completed cycle.
+            HarvestDraftsBeforeRender(contacts: true, lifestyles: false);
             _contactAddDraft = null;
             _contactAddDraftIdentity = null;
             ContactsList.Children.Clear();
@@ -1035,6 +1039,14 @@ public partial class CharacterCreationWizardControl : UserControl
     {
         if (savedLifestyleId != Guid.Empty && savedLifestyleId == _lifestyleCreateDraftIdentity)
         {
+            // Harvest BEFORE clearing anything (audit win011 P2): the retire
+            // runs while the old projection is still bound, so unrelated
+            // unsaved edits visible right now must be captured into the draft
+            // store before the controls (and their values) are destroyed. The
+            // create identity must still be set during this harvest — the
+            // create-form harvest branch keeps (never mints) it, and the
+            // clears below then retire the completed cycle for good.
+            HarvestDraftsBeforeRender(contacts: false, lifestyles: true);
             _lifestyleCreateDraft = null;
             _lifestyleCreateDraftIdentity = null;
             LifestylesList.Children.Clear();
@@ -1805,6 +1817,17 @@ public partial class CharacterCreationWizardControl : UserControl
                 ? storedDraft
                 : configuration,
             configuration);
+        if (storedDraft is not null)
+        {
+            // Persist the merged view and roll the base forward to the saved
+            // values this render was seeded from (audit win011 P2): typing
+            // after this render must be compared against the CURRENT saved
+            // configuration, never the pre-refresh base, or an edit made in a
+            // previously untouched field would be classified "unchanged" and
+            // silently reverted to the refreshed saved value.
+            _lifestyleEditDrafts[configuration.LifestyleId] = draft;
+            _lifestyleEditDraftBases[configuration.LifestyleId] = configuration;
+        }
         if (_lifestyleMergeConflictNotes.Remove(configuration.LifestyleId, out string? conflictNote))
         {
             fields.Children.Add(Caption(conflictNote));

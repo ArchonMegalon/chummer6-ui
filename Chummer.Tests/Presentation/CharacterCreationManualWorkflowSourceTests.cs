@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 
 using System;
 using System.IO;
@@ -910,6 +910,140 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         });
 
     [TestMethod]
+    public void Refreshed_lifestyle_typing_the_previous_base_value_after_a_refresh_is_kept()
+        => WithUi((control, _) =>
+    {
+        // Audit win011 P2 (post-refresh-edit baseline): after a refresh the
+        // card render must roll the draft/base pair forward to the saved
+        // values it just displayed. Otherwise fresh typing that happens to
+        // equal the pre-refresh base is misclassified as "unchanged" and the
+        // refreshed saved value silently overwrites it.
+        var config = Configuration();
+        control.SetState(State(config));
+        string nameId = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+
+        // The player renames the entry; a save elsewhere moves the saved
+        // name under them.
+        Find<TextBox>(control, nameId).Text = "Local rename";
+        control.SetState(State(config with { Name = "Saved elsewhere" }) with
+        {
+            WorkspaceRevision = 2,
+            SnapshotDigest = "snapshot-2"
+        });
+        Assert.AreEqual("Local rename", Find<TextBox>(control, nameId).Text,
+            "the pre-refresh edit must survive the first refreshed render.");
+
+        // The player now types exactly the PRE-REFRESH base value. Against
+        // the rolled-forward base (the refreshed saved name) this is a real
+        // edit and must win; against the stale pre-refresh base it would
+        // look "unchanged" and be discarded.
+        Find<TextBox>(control, nameId).Text = "Old home";
+        control.SetState(State(config with { Name = "Saved elsewhere" }) with
+        {
+            WorkspaceRevision = 3,
+            SnapshotDigest = "snapshot-3"
+        });
+        Assert.AreEqual("Old home", Find<TextBox>(control, nameId).Text,
+            "fresh typing after the refresh must be classified against the refreshed saved value, not the stale pre-refresh base.");
+    });
+
+    [TestMethod]
+    public void Refreshed_contact_typing_the_previous_base_value_after_a_refresh_is_kept()
+        => WithUi((control, _) =>
+    {
+        // Same audit win011 P2 on the contact render path: the merged field
+        // view and the rolled-forward base must be persisted on every
+        // refreshed render, so post-refresh typing is judged against the
+        // currently saved field values.
+        var config = Configuration();
+        var state = State(config);
+        Guid contactId = Guid.Parse("3f7f5c1e-2f04-4c53-9db1-6f0f5f3e1a01");
+        System.Collections.Generic.List<CharacterCreationWizardDesktopContactField> fields =
+        [
+            new(CharacterCreationContactFieldIds.Name, "Name", "text", true,
+                "Old name", null, null, [], [], []),
+            new(CharacterCreationContactFieldIds.Notes, "Notes", "text", true,
+                "Old notes", null, null, [], [], [])
+        ];
+        var contact = new CharacterCreationWizardDesktopContact(
+            contactId, "Old name", "Broker", 3, true, false, fields, [], "digest-1");
+        var contactBinding = new CharacterCreationContactBinding(
+            new("manual-workspace"), 1, 1, 1, "content", "aux", "source", "rules", "runtime");
+        var contactsStep = new CharacterCreationWizardDesktopContactsStep(
+            contactBinding, [contact], null, null, [], CanEdit: true, SnapshotDigest: "contacts-1");
+        control.SetState(state with { ContactsStep = contactsStep });
+        string nameId = $"creation-wizard-contact-{contactId:D}-field-"
+            + CharacterCreationContactFieldIds.Name;
+
+        // The player edits the name; a save elsewhere moves BOTH saved fields.
+        Find<TextBox>(control, nameId).Text = "Local rename";
+        var refreshed = contact with
+        {
+            Fields = fields.Select(f => f.FieldId == CharacterCreationContactFieldIds.Name
+                ? f with { SerializedValue = "Saved elsewhere" }
+                : f with { SerializedValue = "Refreshed notes" }).ToArray()
+        };
+        control.SetState(state with
+        {
+            WorkspaceRevision = 2,
+            SnapshotDigest = "snapshot-2",
+            ContactsStep = contactsStep with { Contacts = [refreshed], SnapshotDigest = "contacts-2" }
+        });
+        Assert.AreEqual("Local rename", Find<TextBox>(control, nameId).Text,
+            "the pre-refresh edit must survive the first refreshed render.");
+
+        // The player types the PRE-REFRESH saved name back; against the
+        // rolled-forward base this is a real edit and must survive the next
+        // refresh; against the stale base it would be dropped.
+        Find<TextBox>(control, nameId).Text = "Old name";
+        control.SetState(state with
+        {
+            WorkspaceRevision = 3,
+            SnapshotDigest = "snapshot-3",
+            ContactsStep = contactsStep with { Contacts = [refreshed], SnapshotDigest = "contacts-3" }
+        });
+        Assert.AreEqual("Old name", Find<TextBox>(control, nameId).Text,
+            "fresh typing after the refresh must be classified against the refreshed saved value.");
+    });
+    [TestMethod]
+    public void Verified_receipt_recovery_harvests_unrelated_unsaved_edits_before_clearing_controls()
+        => WithUi((control, _) =>
+    {
+        // Audit win011 P2 (recover-cleanup ordering): retiring the completed
+        // create cycle clears the wizard controls. Unrelated unsaved edits
+        // visible in the live editors at that moment must be harvested
+        // BEFORE the clear, or they are silently lost.
+        var config = Configuration();
+        var state = State(config);
+        control.SetState(state);
+
+        // A create cycle is pending (identity minted).
+        CharacterCreationLifestyleMutationInput? createInput = null;
+        control.LifestylePreviewRequested += (_, request) => createInput = request.Input;
+        Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text = "Lost response flat";
+        Find<ComboBox>(control, "creation-wizard-lifestyle-create-base").SelectedIndex = 0;
+        Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
+        Assert.IsNotNull(createInput);
+        Guid pendingIdentity = createInput.LifestyleId;
+
+        // An unrelated entry carries an unsaved edit in its live editor.
+        string editNameId = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+        Find<TextBox>(control, editNameId).Text = "Unrelated unsaved edit";
+
+        // Receipt recovery retires the completed create cycle.
+        control.SetLifestyleReceiptLookupResult(new(
+            CharacterCreationLifestyleOutcomes.Applied,
+            Receipt(pendingIdentity),
+            null,
+            []));
+
+        // The unrelated edit must have survived the control reset: the next
+        // render restores it from the draft store.
+        Assert.AreEqual("Unrelated unsaved edit", Find<TextBox>(control, editNameId).Text,
+            "the recover cleanup must harvest unrelated unsaved edits before clearing the controls.");
+    });
+
+    [TestMethod]
     public void Verified_receipt_recovery_retires_the_create_cycle_and_next_create_gets_a_new_identity()
         => WithUi((control, _) =>
         {
@@ -950,20 +1084,35 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         {
             var binding = Binding();
 
-            // ---- State 1: character with NO lifestyles, revision 1 -------------
-            overviewPresenter.Publish(OverviewState(binding, [], revision: 1));
+            // ---- State 1: ONE unrelated saved lifestyle, revision 1 ------------
+            // (audit win011 §4 end form: an unrelated entry with an unsaved
+            // edit must survive the whole lost-response recovery chain.)
+            var unrelatedConfig = Configuration() with
+            {
+                LifestyleId = Guid.Parse("6b1f4a2c-8e3d-4c5a-9b0f-1d2e3f4a5b6c"),
+                Name = "Cozy safehouse"
+            };
+            overviewPresenter.Publish(OverviewState(
+                binding, [Projection(unrelatedConfig)], revision: 1));
             pump();
 
-            // ---- 1. start a create cycle: preview mints identity X -------------
+            // ---- 1. start a create cycle via the REAL preview button ------------
+            // The button click mints the control-owned identity (the production
+            // path); the retire branch in the recovery must then match it.
             lifestyles.PreparePreview = CreatePreview(binding, "Lost response flat", revision: 1);
-            EmitLifestylePreview(window, new CharacterCreationLifestyleMutationInput(
-                CharacterCreationLifestyleMutationKinds.Create, Guid.NewGuid(), null));
+            var control = window.GetVisualDescendants()
+                .OfType<CharacterCreationWizardControl>().First();
+            Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
             pump();
             var prepared = lifestyles.LastPreparedPreview;
             Assert.IsNotNull(prepared, "The prepare call must reach the lifestyles presenter.");
             Guid identityX = prepared.Mutation.LifestyleId;
             Assert.AreNotEqual(Guid.Empty, identityX);
 
+            // ---- 1b. an unrelated saved entry carries an UNSAVED EDIT -------
+            string unrelatedNameId = $"creation-wizard-lifestyle-{unrelatedConfig.LifestyleId:D}-name";
+            Find<TextBox>(control, unrelatedNameId).Text = "Cozy safehouse (renovating)";
+            pump();
             // ---- 2. confirm: the write commits but the response is LOST --------
             lifestyles.ConfirmThrows = new IOException("lost response");
             lifestyles.LookupReceiptValue = CreateReceipt(binding, identityX, prepared.IdempotencyKey, prepared.WritePlan);
@@ -981,8 +1130,14 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             Assert.AreEqual(1, overviewPresenter.LoadCalls,
                 "A verified receipt must reload the character authority.");
             var savedConfig = Configuration() with { Name = "Lost response flat", LifestyleId = identityX };
-            overviewPresenter.Publish(OverviewState(binding, [Projection(savedConfig)], revision: 2));
+            overviewPresenter.Publish(OverviewState(
+                binding, [Projection(savedConfig), Projection(unrelatedConfig)], revision: 2));
             pump();
+
+            // ---- 4b. the unrelated unsaved edit SURVIVED the whole chain ------
+            Assert.AreEqual("Cozy safehouse (renovating)",
+                Find<TextBox>(control, unrelatedNameId).Text,
+                "an unrelated unsaved edit must survive the lost-response recovery, the receipt retirement and the authority reload.");
 
             // ---- 5. a DISTINCT new create operation must NOT replay ------------
             lifestyles.PreparePreview = CreatePreview(binding, "Second flat", revision: 2);
@@ -1201,7 +1356,9 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         IReadOnlyList<CharacterCreationLifestyleProjection> lifestyles,
         long revision)
     {
-        var authority = new CharacterCreationLifestylesAuthority("schema", "sr5", "settings", [], [],
+        var option = new CharacterCreationLifestyleCatalogOption("low", Guid.Empty, "Low", 50, 1, 100, 5,
+            1, 1, 1, 0, 10, 0, 10, 0, 10, true, "month", "SR5", "10", [], true, true, [], [], "option");
+        var authority = new CharacterCreationLifestylesAuthority("schema", "sr5", "settings", [option], [],
             1, false, [], [], true, "source", "profile", "policy", "runtime", "authority");
         var step = CharacterCreationWizardStepIds.ContactsLifestyles;
         var desktopLifestyles = lifestyles.Select(p => new CharacterCreationWizardDesktopLifestyle(
