@@ -556,6 +556,9 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             Assert.AreEqual(string.Empty, Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text);
             Find<TextBox>(control, name).Text = "Another draft";
             control.ClearContactLifestylePreviews();
+            Assert.IsFalse(control.GetVisualDescendants().OfType<TextBox>().Any(editor =>
+                AutomationProperties.GetAutomationId(editor) == name));
+            control.SetState(state with { WorkspaceId = "other-workspace" });
             Assert.AreEqual(config.Name, Find<TextBox>(control, name).Text);
             Find<TextBox>(control, name).Text = "Old revision";
             control.SetState(state with { LifestylesStep = state.LifestylesStep! with { SnapshotDigest = "new-revision" } });
@@ -574,12 +577,184 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             Assert.AreEqual("Not previewed yet", Find<TextBox>(control, name).Text);
         });
 
+
+    [TestMethod]
+    public void Lifestyle_draft_survives_step_navigation_within_the_same_character()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+            string name = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            Find<TextBox>(control, name).Text = "Unsaved navigation draft";
+
+            // Navigate away: the step projection becomes null (digest changes),
+            // which must retire previews but NOT discard the unsaved input.
+            // Away from the step: no editor is rendered, but the draft must be
+            // retained in the control (it is not cleared by navigation).
+            control.SetState(state with { LifestylesStep = null });
+
+            // Returning to the step restores the editor with the draft values.
+            control.SetState(state);
+            Assert.AreEqual("Unsaved navigation draft",
+                Find<TextBox>(control, name).Text);
+        });
+
+    [TestMethod]
+    public void Saving_one_lifestyle_keeps_the_other_entrys_unsaved_input()
+        => WithUi((control, _) =>
+        {
+            var first = Configuration();
+            var second = first with { LifestyleId = Guid.Parse("a1111111-1111-1111-1111-111111111111") };
+            var state = State(first) with { LifestylesStep = State(first).LifestylesStep! with {
+                Lifestyles = [DesktopLifestyle(first), DesktopLifestyle(second)] } };
+            control.SetState(state);
+            string firstId = $"creation-wizard-lifestyle-{first.LifestyleId:D}-name";
+            string secondId = $"creation-wizard-lifestyle-{second.LifestyleId:D}-name";
+            Find<TextBox>(control, firstId).Text = "First unsaved";
+            Find<TextBox>(control, secondId).Text = "Second unsaved";
+
+            // Preview and confirm the FIRST entry; the second keeps its input.
+            Click(Find<Button>(control, $"creation-wizard-lifestyle-{first.LifestyleId:D}-preview"));
+            var prepared = EditPreview(first with { Name = "First unsaved" });
+            control.SetLifestylePrepareResult(new("available", null, prepared, []));
+            int confirms = 0;
+            control.LifestyleConfirmRequested += (_, _) => confirms++;
+            Click(Find<Button>(control, "creation-wizard-lifestyle-confirm"));
+            Assert.AreEqual(1, confirms);
+            control.SetLifestyleConfirmResult(new(
+                CharacterCreationLifestyleOutcomes.Applied,
+                prepared,
+                Receipt(first.LifestyleId),
+                null, []));
+
+            Assert.AreEqual("Second unsaved", Find<TextBox>(control, secondId).Text);
+        });
+
+    [TestMethod]
+    public void Saving_a_contact_keeps_unsaved_lifestyle_input()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+            string lifestyleName = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            Find<TextBox>(control, lifestyleName).Text = "Lifestyle unsaved";
+            Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text = "Lifestyle new unsaved";
+
+            // A contact save advances the character revision: the refresh may
+            // retire the contact preview, but the lifestyle input must survive
+            // the state refresh with the same character identity.
+            control.SetState(state with {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "snapshot-2",
+                LifestylesStep = state.LifestylesStep! with { SnapshotDigest = "lifestyles-2" } });
+            Assert.AreEqual("Lifestyle unsaved", Find<TextBox>(control, lifestyleName).Text);
+            Assert.AreEqual("Lifestyle new unsaved",
+                Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text);
+        });
+
+    [TestMethod]
+    public void Drafts_do_not_leak_into_another_owner_or_character_context()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+            string name = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            Find<TextBox>(control, name).Text = "Owner A draft";
+            Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text = "Owner A new";
+
+            // A different workspace identity is a different character context:
+            // drafts must not transplant into it.
+            control.SetState(state with { WorkspaceId = "other-character" });
+            Assert.AreEqual(config.Name, Find<TextBox>(control, name).Text);
+            Assert.AreEqual(string.Empty, Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text);
+        });
+
+    [TestMethod]
+    public void Untouched_lifestyle_uses_refreshed_authoritative_values()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            control.SetState(State(config));
+            control.SetLifestyleMutationBusy(true);
+            control.SetLifestyleMutationBusy(false);
+            control.SetState(State(config with { Name = "New saved name" }) with
+            {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "new-saved-snapshot"
+            });
+            Assert.AreEqual("New saved name",
+                Find<TextBox>(control, $"creation-wizard-lifestyle-{config.LifestyleId:D}-name").Text);
+        });
+
+    [TestMethod]
+    public void Owner_reset_uses_the_next_authoritative_values_for_the_same_workspace()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            control.SetState(State(config));
+            string name = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            Find<TextBox>(control, name).Text = "Private previous-owner draft";
+            control.ClearContactLifestylePreviews();
+            var next = State(config with { Name = "Current owner home" }) with
+            {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "current-owner-snapshot"
+            };
+            control.SetState(next);
+            Assert.AreEqual("Current owner home", Find<TextBox>(control, name).Text);
+        });
+
+    [TestMethod]
+    public void Retained_draft_after_revision_change_requires_a_fresh_preview()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+            string name = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            string previewButtonId = $"creation-wizard-lifestyle-{config.LifestyleId:D}-preview";
+            Find<TextBox>(control, name).Text = "Reviewed draft";
+            Click(Find<Button>(control, previewButtonId));
+            control.SetLifestylePrepareResult(new(
+                "available", null, EditPreview(config with { Name = "Reviewed draft" }), []));
+            Button confirm = Find<Button>(control, "creation-wizard-lifestyle-confirm");
+            Assert.IsTrue(confirm.IsEnabled);
+
+            // The character revision advances (another save elsewhere). The old
+            // confirmation must be unusable even though the draft is retained.
+            control.SetState(state with {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "snapshot-2",
+                LifestylesStep = state.LifestylesStep! with { SnapshotDigest = "lifestyles-2" } });
+            control.SetLifestyleMutationBusy(false);
+            // The retired preview means no confirmation is offered at all: the
+            // old review cannot be applied against the advanced revision.
+            Assert.IsFalse(FindOptional<Button>(control, "creation-wizard-lifestyle-confirm") is { });
+
+            // A fresh Core preview re-enables confirmation for the retained input.
+            Click(Find<Button>(control, previewButtonId));
+            control.SetLifestylePrepareResult(new(
+                "available", null, EditPreview(config with { Name = "Reviewed draft" }), []));
+            confirm = Find<Button>(control, "creation-wizard-lifestyle-confirm");
+            Assert.IsTrue(confirm.IsEnabled);
+        });
+
     private static CharacterCreationLifestyleConfiguration Configuration()
         => new(Guid.Parse("5ee27326-0912-4dad-b65b-9ad4c01a8cbe"), "low", "Old home", "advanced", "week",
             2, 75.25m, 1, false, true, 2, 3, 4, 5, "Seattle", "Redmond", "Barrens", []);
 
     private static CharacterCreationLifestyleBinding Binding()
         => new(new("manual-workspace"), 1, 1, 1, "content", "aux", "source", "rules", "runtime");
+
+    private static CharacterCreationWizardDesktopLifestyle DesktopLifestyle(
+        CharacterCreationLifestyleConfiguration config)
+    {
+        var projection = Projection(config);
+        return new(config, Guid.Empty, "Low", "SR5", "10", projection.Economics, [], "lifestyle");
+    }
 
     private static CharacterCreationLifestyleProjection Projection(CharacterCreationLifestyleConfiguration config)
         => new(config, Guid.Empty, "Low", "SR5", "10", new(50, 100, 5, 2, true, false, []), [], "lifestyle");
@@ -588,6 +763,55 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         CharacterCreationLifestyleConfiguration config)
         => new("lifestyles", Binding(), new("edit", config.LifestyleId, config), [Projection(config)], Projection(config), null,
             new(1000, 100, 900, 0, true, [], []), new(1000, 0, 1000, 0, true, [], []), null!, [], true, true, "operation", "preview");
+
+    [TestMethod]
+    public void BuildGhost_context_serialization_carries_the_lifestyle_projection()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+
+            // The serialized outgoing context must carry the same lifestyle
+            // projection the player sees: identity, current values, revision.
+            CharacterCreationWizardBuildGhostContext context = state.BuildGhostContext;
+            Assert.IsNotNull(context.LifestylesStep, "The wizard context must include the lifestyle step.");
+            Assert.HasCount(1, context.LifestylesStep.Lifestyles);
+            CharacterCreationWizardDesktopLifestyle projected = context.LifestylesStep.Lifestyles[0];
+            Assert.AreEqual(config, projected.Configuration);
+            Assert.AreEqual(config.Name, projected.Configuration.Name);
+            Assert.AreEqual(state.WorkspaceId, context.WorkspaceId);
+            Assert.AreEqual(state.WorkspaceRevision, context.WorkspaceRevision);
+
+            string json = CharacterCreationWizardDesktopSession.SerializeBuildGhostContext(context);
+            StringAssert.Contains(json, config.LifestyleId.ToString("D"));
+            StringAssert.Contains(json, config.Name);
+            StringAssert.Contains(json, "\"WorkspaceRevision\":" + state.WorkspaceRevision);
+            StringAssert.Contains(json, "\"LifestylesStep\"");
+        });
+
+    [TestMethod]
+    public void BuildGhost_context_serialization_omits_null_lifestyle_step()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config) with { LifestylesStep = null };
+            control.SetState(state);
+
+            CharacterCreationWizardBuildGhostContext context = state.BuildGhostContext with {
+                LifestylesStep = null };
+            string json = CharacterCreationWizardDesktopSession.SerializeBuildGhostContext(context);
+            // Read-only advice payload: a step without projection must not
+            // fabricate lifestyle data.
+            Assert.IsFalse(json.Contains("\"Lifestyles\""),
+                "A context without a lifestyle step must not fabricate lifestyle data.");
+        });
+
+    private static CharacterCreationLifestyleReceipt Receipt(Guid lifestyleId)
+        => new("schema", "receipt-1", "lifestyles", new("manual-workspace"), "edit",
+            lifestyleId, "idem", "cmd", 1, 2, 1, 2, 1, 2,
+            "before", "after", "source", "rules", "runtime",
+            100m, 75.25m, 925m, null!, "digest");
 
     private static int ReadNumeric(Control control, string id)
         => (int)Find<NumericUpDown>(control, id).Value!.Value;
@@ -605,15 +829,21 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             1, false, [], [], true, "source", "profile", "policy", "runtime", "authority");
         var projection = Projection(config);
         var lifestyle = new CharacterCreationWizardDesktopLifestyle(config, Guid.Empty, "Low", "SR5", "10", projection.Economics, [], "lifestyle");
+        var lifestylesStep = new CharacterCreationWizardDesktopLifestylesStep(Binding(), authority, [lifestyle],
+            new(1000, 100, 900, 0, true, [], []), [], true, "lifestyles");
         return new("manual-workspace", 1, "snapshot", step,
             [new(step, step, "available", true, true, false, true, [], [], [], [])], [], [], [], [], false, false, false, false,
             new(false, null), new(CharacterCreationWizardDesktopSchemas.BuildGhostContextV1,
-                "manual-workspace", 1, "snapshot", step, "sr5", "runtime", "Priority", [], [], [], []),
-            LifestylesStep: new(Binding(), authority, [lifestyle], new(1000, 100, 900, 0, true, [], []), [], true, "lifestyles"));
+                "manual-workspace", 1, "snapshot", step, "sr5", "runtime", "Priority", [], [], [], [],
+                LifestylesStep: lifestylesStep),
+            LifestylesStep: lifestylesStep);
     }
 
     private static T Find<T>(Control control, string id) where T : Control
-        => control.GetVisualDescendants().OfType<T>().Single(c => AutomationProperties.GetAutomationId(c) == id);
+        => FindOptional<T>(control, id)
+           ?? throw new InvalidOperationException($"No {typeof(T).Name} with id '{id}'.");
+    private static T? FindOptional<T>(Control control, string id) where T : Control
+        => control.GetVisualDescendants().OfType<T>().FirstOrDefault(c => AutomationProperties.GetAutomationId(c) == id);
     private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     private static void WithUi(Action<CharacterCreationWizardControl, Window> action)
     {

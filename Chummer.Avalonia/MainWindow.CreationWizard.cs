@@ -143,18 +143,30 @@ public partial class MainWindow
         if (ContentRegion.ColumnDefinitions.Count >= 3)
             ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
 
-        if (_boundCreationWizardSnapshot is null
+        bool wizardIdentityChanged = _boundCreationWizardSnapshot is null
             || _boundCreationWizardOwner != overview.DisplayOwnerContext
-            || _boundCreationWizardSnapshot.WorkspaceId != snapshot.WorkspaceId
-            || _boundCreationWizardSnapshot.WorkspaceRevision != snapshot.WorkspaceRevision
-            || !string.Equals(
-                _boundCreationWizardSnapshot.SnapshotDigest,
-                snapshot.SnapshotDigest,
-                StringComparison.Ordinal))
+            || _boundCreationWizardSnapshot.WorkspaceId != snapshot.WorkspaceId;
+        bool wizardContentChanged = _boundCreationWizardSnapshot is not null
+            && (_boundCreationWizardSnapshot.WorkspaceRevision != snapshot.WorkspaceRevision
+                || !string.Equals(
+                    _boundCreationWizardSnapshot.SnapshotDigest,
+                    snapshot.SnapshotDigest,
+                    StringComparison.Ordinal));
+        if (wizardIdentityChanged || wizardContentChanged)
         {
             _creationContactPreparedPreview = null;
             _creationLifestylePreparedPreview = null;
-            CharacterCreationWizardControl.ClearContactLifestylePreviews();
+            if (wizardIdentityChanged)
+            {
+                // A different owner or character must never inherit drafts.
+                CharacterCreationWizardControl.ClearContactLifestylePreviews();
+            }
+            else
+            {
+                // Same character, new revision (e.g. one entry was saved): retire
+                // the stale reviews but keep unrelated unsaved input (audit win009).
+                CharacterCreationWizardControl.RetireContactLifestylePreviews();
+            }
         }
 
         CharacterCreationWizardDesktopCheckpoint? checkpoint = ResolveCheckpoint(snapshot);
