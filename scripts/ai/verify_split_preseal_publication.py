@@ -168,6 +168,14 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/OriginStoryDecisionTextTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/OwnerBoundWorkspaceRefreshContractTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/Sr6BuildMethodSelectionTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/Sr6CreationFoundationInteractionPresenterTests.cs",
+        # R58 2026-11-06: SR6 creation wizard foundation binding (owner-authorized
+        # integration of the SR6 wizard onto ISr6CreationFoundationService).
+        "Chummer.Avalonia/Creation/Sr6CreationWizardGatePolicy.cs",
+        "Chummer.Tests/Presentation/Sr6CreationWizardWindowTests.cs",
+        "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml",
+        "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml.cs",
+        "Chummer.Presentation/Overview/Sr6CreationFoundationInteractionPresenter.cs",
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
