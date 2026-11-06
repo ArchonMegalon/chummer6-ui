@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private readonly ICharacterCreationLifestylesInteractionPresenter? _creationLifestylesInteractionPresenter;
     private readonly ICharacterCreationFoundationInteractionPresenter? _creationFoundationInteractionPresenter;
     private readonly ICharacterCreationResourcesInteractionPresenter? _creationResourcesInteractionPresenter;
+    private ISr6CreationFoundationInteractionPresenter? _creationSr6FoundationInteractionPresenter;
     private readonly ICharacterCreationFinalizationService? _creationFinalizationService;
     private readonly ICharacterCreationPrerequisiteService? _creationPrerequisiteService;
     private readonly CreationAiFinishService? _aiFinishService;
@@ -57,7 +58,8 @@ public partial class MainWindow : Window
             ResolveService<ICharacterCreationFinalizationService>(),
             ResolveService<ICharacterCreationPrerequisiteService>(),
             ResolveService<CreationAiFinishService>(),
-            ResolveService<ICharacterCreationLifestylesInteractionPresenter>())
+            ResolveService<ICharacterCreationLifestylesInteractionPresenter>(),
+            ResolveService<ISr6CreationFoundationInteractionPresenter>())
     {
     }
 
@@ -120,7 +122,8 @@ public partial class MainWindow : Window
         ICharacterCreationFinalizationService? creationFinalizationService,
         ICharacterCreationPrerequisiteService? creationPrerequisiteService = null,
         CreationAiFinishService? creationAiFinishService = null,
-        ICharacterCreationLifestylesInteractionPresenter? creationLifestylesInteractionPresenter = null)
+        ICharacterCreationLifestylesInteractionPresenter? creationLifestylesInteractionPresenter = null,
+        ISr6CreationFoundationInteractionPresenter? creationSr6FoundationInteractionPresenter = null)
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
@@ -138,6 +141,7 @@ public partial class MainWindow : Window
         _desktopAnalyticsClient = desktopAnalyticsClient;
         _creationContactsInteractionPresenter = creationContactsInteractionPresenter;
         _creationLifestylesInteractionPresenter = creationLifestylesInteractionPresenter;
+        _creationSr6FoundationInteractionPresenter = creationSr6FoundationInteractionPresenter;
         _creationFoundationInteractionPresenter = creationFoundationInteractionPresenter;
         _creationResourcesInteractionPresenter = creationResourcesInteractionPresenter;
         _creationFinalizationService = creationFinalizationService;
