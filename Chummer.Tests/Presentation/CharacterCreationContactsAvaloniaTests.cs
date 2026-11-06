@@ -21,6 +21,52 @@ namespace Chummer.Tests.Presentation;
 [TestClass]
 public sealed class CharacterCreationContactsAvaloniaTests
 {
+    [DataTestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Refreshed_contact_values_replace_untouched_or_owner_reset_editors(bool ownerReset)
+    {
+        WithHeadlessUi(() =>
+        {
+            Fixture fixture = CreateFixture();
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            try
+            {
+                control.SetState(fixture.DesktopState);
+                var step = fixture.DesktopState.ContactsStep!;
+                var contact = step.Contacts.Single();
+                string editorId = FieldAutomationId(contact.ContactId, CharacterCreationContactFieldIds.Name);
+                if (ownerReset)
+                {
+                    FindByAutomationId<TextBox>(control, editorId).Text = "Private previous-owner draft";
+                    control.ClearContactLifestylePreviews();
+                    Assert.IsFalse(control.GetVisualDescendants().OfType<TextBox>().Any(editor =>
+                        AutomationProperties.GetAutomationId(editor) == editorId));
+                }
+                else
+                {
+                    control.SetContactMutationBusy(true);
+                    control.SetContactMutationBusy(false);
+                }
+                var refreshedContact = contact with
+                {
+                    Fields = contact.Fields.Select(field => field.FieldId == CharacterCreationContactFieldIds.Name
+                        ? field with { SerializedValue = "Current saved contact" } : field).ToArray()
+                };
+                control.SetState(fixture.DesktopState with
+                {
+                    WorkspaceRevision = fixture.DesktopState.WorkspaceRevision + 1,
+                    SnapshotDigest = "new-contact-snapshot",
+                    ContactsStep = step with { Contacts = [refreshedContact] }
+                });
+                Assert.AreEqual("Current saved contact", FindByAutomationId<TextBox>(control, editorId).Text);
+            }
+            finally { host.Close(); }
+        });
+    }
+
     [TestMethod]
     public void Contact_editor_projects_typed_complete_identity_and_explicit_confirmation()
     {
@@ -69,16 +115,64 @@ public sealed class CharacterCreationContactsAvaloniaTests
             Assert.IsNull(requestedEdit.Connection);
             Assert.IsNull(requestedEdit.Loyalty);
 
+            // Test-quality fix (R50 audit): the prepared preview must be built
+            // from the ACTUAL captured input (name "Nova" + free), not from a
+            // static fixture that only models the Free flip. Assert the exact
+            // emitted identity, retained fields and resulting operations.
+            Assert.IsNotNull(requestedEdit.Identity);
+            CharacterCreationContactEdit actualEdit = new(
+                fixture.Contact.ContactId,
+                requestedEdit.Identity,
+                Free: true);
+            CharacterCreationContactProjection projectedAfter = Contact(
+                fixture.Contact.ContactId,
+                requestedEdit.Identity,
+                free: true,
+                cost: 0,
+                Digest('b'));
+            CharacterCreationContactAtomicWritePlan actualPlan = new(
+                CharacterCreationContactsSchemas.WritePlanV1,
+                CharacterCreationWizardStepIds.ContactsLifestyles,
+                fixture.Contact.ContactId,
+                [
+                    new CharacterCreationContactWriteOperation(
+                        1,
+                        CharacterCreationContactFieldIds.Name,
+                        fixture.Contact.Identity.Name,
+                        "Nova",
+                        CharacterCreationContactSourceAnchors.All),
+                    new CharacterCreationContactWriteOperation(
+                        2,
+                        CharacterCreationContactFieldIds.Free,
+                        "False",
+                        "True",
+                        CharacterCreationContactSourceAnchors.All)
+                ],
+                fixture.PreparedPreview.WritePlan.ContentDigestBefore,
+                Digest('1'),
+                Digest('2'),
+                Digest('2'),
+                Digest('3'),
+                Digest('3'),
+                PreservesUntouchedSiblingState: true,
+                PreservesNestedState: true,
+                PlanDigest: Digest('4'));
+            CharacterCreationContactPreparedPreview actualPreview = fixture.PreparedPreview with {
+                Edit = actualEdit,
+                ContactAfter = projectedAfter,
+                WritePlan = actualPlan
+            };
             control.SetContactPrepareResult(new CharacterCreationContactsInteractionPrepareResult(
                 CharacterCreationContactOutcomes.Available,
                 null,
-                fixture.PreparedPreview,
+                actualPreview,
                 []));
             string renderedText = string.Join(
                 "\n",
                 control.GetVisualDescendants().OfType<TextBlock>().Select(static block => block.Text));
             StringAssert.Contains(renderedText, "Contacts: 9 → 12 remaining");
-            StringAssert.Contains(renderedText, "1. free: False → True");
+            StringAssert.Contains(renderedText, "1. name: Fixer → Nova");
+            StringAssert.Contains(renderedText, "2. free: False → True");
 
             string? confirmedDigest = null;
             control.ContactConfirmRequested += (_, request) => confirmedDigest = request.PreviewDigest;
@@ -87,7 +181,7 @@ public sealed class CharacterCreationContactsAvaloniaTests
                 $"creation-wizard-contact-{fixture.Contact.ContactId:D}-confirm");
             Assert.IsTrue(confirm.IsEnabled);
             RaiseClick(confirm);
-            Assert.AreEqual(fixture.PreparedPreview.PreviewDigest, confirmedDigest);
+            Assert.AreEqual(actualPreview.PreviewDigest, confirmedDigest);
 
             host.Close();
         });
