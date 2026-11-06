@@ -2532,7 +2532,7 @@ public static class DesktopInstallLinkingRuntime
                 return false;
             }
 
-            publicKey = Convert.ToBase64String(rsa.ExportRSAPublicKey());
+            publicKey = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo());
             return true;
         }
         catch (CryptographicException)

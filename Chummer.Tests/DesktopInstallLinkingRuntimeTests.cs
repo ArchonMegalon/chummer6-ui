@@ -153,7 +153,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
             HashAlgorithmName.SHA256,
             RSASignaturePadding.Pkcs1));
         CollectionAssert.AreEqual(
-            installationKey.ExportRSAPublicKey(),
+            installationKey.ExportSubjectPublicKeyInfo(),
             Convert.FromBase64String(publicKey));
     }
 
