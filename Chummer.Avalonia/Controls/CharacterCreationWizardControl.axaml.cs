@@ -104,9 +104,21 @@ public partial class CharacterCreationWizardControl : UserControl
     private Dictionary<string, string>? _contactAddDraft;
     private Guid? _contactAddDraftIdentity;
     private readonly Dictionary<Guid, Dictionary<string, string>> _contactEditDrafts = [];
+    // Field-level dirty tracking (audit win010): the saved values each edit
+    // draft was captured from. A draft field equal to its base is "not changed
+    // by the player" and must accept newer saved values on refresh instead of
+    // resurrecting stale content.
+    private readonly Dictionary<Guid, Dictionary<string, string>> _contactEditDraftBases = [];
     private CharacterCreationLifestyleConfiguration? _lifestyleCreateDraft;
     private Guid? _lifestyleCreateDraftIdentity;
     private readonly Dictionary<Guid, CharacterCreationLifestyleConfiguration> _lifestyleEditDrafts = [];
+    // Saved values each lifestyle edit draft was captured from (audit win010).
+    private readonly Dictionary<Guid, CharacterCreationLifestyleConfiguration> _lifestyleEditDraftBases = [];
+    // Field-level merge conflicts (audit win010): the saved state and the
+    // retained draft changed the same field differently. Rendered as a visible
+    // note instead of silently preferring one side.
+    private readonly Dictionary<Guid, string> _lifestyleMergeConflictNotes = [];
+    private readonly Dictionary<Guid, string> _contactMergeConflictNotes = [];
     // Review binding (audit win008): the values at preview time. Confirmation
     // stays available only while the visible editors still match this baseline.
     private IReadOnlyDictionary<string, string>? _contactPreviewBaseline;
@@ -758,6 +770,8 @@ public partial class CharacterCreationWizardControl : UserControl
                 _contactAddDraft = null;
                 _contactAddDraftIdentity = null;
                 _contactEditDrafts.Clear();
+                _contactEditDraftBases.Clear();
+                _contactMergeConflictNotes.Clear();
                 ContactsList.Children.Clear();
                 _contactEditors.Clear();
             }
@@ -778,6 +792,8 @@ public partial class CharacterCreationWizardControl : UserControl
                 _lifestyleCreateDraft = null;
                 _lifestyleCreateDraftIdentity = null;
                 _lifestyleEditDrafts.Clear();
+                _lifestyleEditDraftBases.Clear();
+                _lifestyleMergeConflictNotes.Clear();
                 LifestylesList.Children.Clear();
             }
             _boundLifestylesSnapshotDigest = state.LifestylesStep?.SnapshotDigest;
@@ -935,20 +951,7 @@ public partial class CharacterCreationWizardControl : UserControl
             // The mutation applied: only the saved entry's draft cycle is
             // complete (audit win009). Other entries keep their unsaved input;
             // a later character-context change retires them via SetState.
-            Guid savedContactId = result.PreparedPreview?.Edit.ContactId ?? Guid.Empty;
-            if (savedContactId != Guid.Empty && savedContactId == _contactAddDraftIdentity)
-            {
-                _contactAddDraft = null;
-                _contactAddDraftIdentity = null;
-                ContactsList.Children.Clear();
-                _contactEditors.Clear();
-            }
-            else
-            {
-                _contactEditDrafts.Remove(savedContactId);
-            }
-            _contactPreviewBaseline = null;
-            _contactPreviewBaselineId = null;
+            RetireCompletedContactDraftCycle(result.PreparedPreview?.Edit.ContactId ?? Guid.Empty);
         }
         RenderContacts(_state?.ContactsStep);
     }
@@ -959,8 +962,40 @@ public partial class CharacterCreationWizardControl : UserControl
         ArgumentNullException.ThrowIfNull(result);
         _contactMutationStatus = BuildContactResultStatus(result.Outcome, result.Blockers);
         if (result.Receipt is not null)
+        {
+            // A matching receipt proves the save committed. This is the same
+            // verified completion as a direct confirmation, so the same draft
+            // retirement applies (audit win010): the next create cycle must
+            // mint a fresh identity instead of reusing the saved one. A missing
+            // or mismatched receipt stays unresolved and retires nothing.
             _contactPreview = null;
+            RetireCompletedContactDraftCycle(result.Receipt.ContactId);
+        }
         RenderContacts(_state?.ContactsStep);
+    }
+
+    /// <summary>
+    /// Retires the draft cycle of one verified-completed contact entry
+    /// (direct confirmation or verified receipt recovery): the add/create
+    /// draft identity if the saved entry was the minted create cycle, the
+    /// entry's edit draft otherwise. Unrelated unsaved drafts survive.
+    /// </summary>
+    private void RetireCompletedContactDraftCycle(Guid savedContactId)
+    {
+        if (savedContactId != Guid.Empty && savedContactId == _contactAddDraftIdentity)
+        {
+            _contactAddDraft = null;
+            _contactAddDraftIdentity = null;
+            ContactsList.Children.Clear();
+            _contactEditors.Clear();
+        }
+        else
+        {
+            _contactEditDrafts.Remove(savedContactId);
+            _contactEditDraftBases.Remove(savedContactId);
+        }
+        _contactPreviewBaseline = null;
+        _contactPreviewBaselineId = null;
     }
 
     public void SetLifestylePrepareResult(CharacterCreationLifestylesInteractionPrepareResult result)
@@ -985,21 +1020,32 @@ public partial class CharacterCreationWizardControl : UserControl
             // The mutation saved: only the saved entry's draft cycle is complete
             // (audit win009). Other entries keep their unsaved input; a later
             // character-context change retires them via SetState.
-            Guid savedLifestyleId = result.PreparedPreview?.Mutation.LifestyleId ?? Guid.Empty;
-            if (savedLifestyleId != Guid.Empty && savedLifestyleId == _lifestyleCreateDraftIdentity)
-            {
-                _lifestyleCreateDraft = null;
-                _lifestyleCreateDraftIdentity = null;
-                LifestylesList.Children.Clear();
-            }
-            else
-            {
-                _lifestyleEditDrafts.Remove(savedLifestyleId);
-            }
-            _lifestylePreviewBaseline = null;
-            _lifestylePreviewBaselineId = null;
+            RetireCompletedLifestyleDraftCycle(result.PreparedPreview?.Mutation.LifestyleId ?? Guid.Empty);
         }
         RenderLifestyles(_state?.LifestylesStep);
+    }
+
+    /// <summary>
+    /// Retires the draft cycle of one verified-completed lifestyle entry
+    /// (direct confirmation or verified receipt recovery): the create draft
+    /// identity if the saved entry was the minted create cycle, the entry's
+    /// edit draft otherwise. Unrelated unsaved drafts survive.
+    /// </summary>
+    private void RetireCompletedLifestyleDraftCycle(Guid savedLifestyleId)
+    {
+        if (savedLifestyleId != Guid.Empty && savedLifestyleId == _lifestyleCreateDraftIdentity)
+        {
+            _lifestyleCreateDraft = null;
+            _lifestyleCreateDraftIdentity = null;
+            LifestylesList.Children.Clear();
+        }
+        else
+        {
+            _lifestyleEditDrafts.Remove(savedLifestyleId);
+            _lifestyleEditDraftBases.Remove(savedLifestyleId);
+        }
+        _lifestylePreviewBaseline = null;
+        _lifestylePreviewBaselineId = null;
     }
 
     /// <summary>
@@ -1031,11 +1077,15 @@ public partial class CharacterCreationWizardControl : UserControl
         _contactAddDraft = null;
         _contactAddDraftIdentity = null;
         _contactEditDrafts.Clear();
+        _contactEditDraftBases.Clear();
+        _contactMergeConflictNotes.Clear();
         _contactPreviewBaseline = null;
         _contactPreviewBaselineId = null;
         _lifestyleCreateDraft = null;
         _lifestyleCreateDraftIdentity = null;
         _lifestyleEditDrafts.Clear();
+        _lifestyleEditDraftBases.Clear();
+        _lifestyleMergeConflictNotes.Clear();
         _lifestylePreviewBaseline = null;
         _lifestylePreviewBaselineId = null;
         ContactsList.Children.Clear();
@@ -1054,7 +1104,13 @@ public partial class CharacterCreationWizardControl : UserControl
         _lifestyleMutationStatus = result.Receipt is not null
             ? "The saved lifestyle change was found. Reloading your character."
             : "The save outcome is still unknown. Review or confirm again to check the original save; no new change will be sent.";
-        if (result.Receipt is not null) _lifestylePreview = null;
+        if (result.Receipt is not null)
+        {
+            // Verified completion via receipt recovery retires the completed
+            // create cycle exactly like a direct confirmation (audit win010).
+            _lifestylePreview = null;
+            RetireCompletedLifestyleDraftCycle(result.Receipt.LifestyleId);
+        }
         RenderLifestyles(_state?.LifestylesStep);
     }
 
@@ -1743,10 +1799,16 @@ public partial class CharacterCreationWizardControl : UserControl
             + $" · lifestyle points {lifestyle.Economics.LifestylePointsTotal}"));
 
         string prefix = $"creation-wizard-lifestyle-{configuration.LifestyleId:D}";
-        CharacterCreationLifestyleConfiguration draft = _lifestyleEditDrafts.TryGetValue(
-            configuration.LifestyleId, out CharacterCreationLifestyleConfiguration? editDraft)
-            ? editDraft
-            : configuration;
+        CharacterCreationLifestyleConfiguration draft = MergeLifestyleDraft(
+            configuration.LifestyleId,
+            _lifestyleEditDrafts.TryGetValue(configuration.LifestyleId, out CharacterCreationLifestyleConfiguration? storedDraft)
+                ? storedDraft
+                : configuration,
+            configuration);
+        if (_lifestyleMergeConflictNotes.Remove(configuration.LifestyleId, out string? conflictNote))
+        {
+            fields.Children.Add(Caption(conflictNote));
+        }
         TextBox name = new() { Text = draft.Name, IsEnabled = canEdit && !_lifestyleMutationBusy };
         AutomationProperties.SetAutomationId(name, prefix + "-name");
         name.TextChanged += (_, _) => RefreshPreviewBindingGates();
@@ -1961,8 +2023,11 @@ public partial class CharacterCreationWizardControl : UserControl
             CharacterCreationLifestyleMutationKinds.Edit,
             lifestyle.Configuration.LifestyleId,
             edited);
-        // Draft preservation + review binding for the edit cycle.
+        // Draft preservation + review binding for the edit cycle. The base is
+        // the saved configuration the editors were seeded from, so unchanged
+        // fields keep accepting refreshed saved values (audit win010).
         _lifestyleEditDrafts[lifestyle.Configuration.LifestyleId] = edited;
+        _lifestyleEditDraftBases[lifestyle.Configuration.LifestyleId] = lifestyle.Configuration;
         _lifestylePreviewBaseline = edited;
         _lifestylePreviewBaselineId = edited.LifestyleId;
         LifestylePreviewRequested?.Invoke(this, new CharacterCreationLifestylePreviewRequested(input));
@@ -1980,6 +2045,7 @@ public partial class CharacterCreationWizardControl : UserControl
             lifestyle.Configuration.LifestyleId,
             null);
         _lifestyleEditDrafts.Remove(lifestyle.Configuration.LifestyleId);
+        _lifestyleEditDraftBases.Remove(lifestyle.Configuration.LifestyleId);
         LifestylePreviewRequested?.Invoke(this, new CharacterCreationLifestylePreviewRequested(input));
     }
 
@@ -2164,10 +2230,29 @@ public partial class CharacterCreationWizardControl : UserControl
                     SplitCostWithRoommates = FindLifestyleEditor<CheckBox>($"{prefix}-split")?.IsChecked
                         ?? lifestyle.Configuration.SplitCostWithRoommates
                 };
-                if (draft == lifestyle.Configuration)
+                if (_lifestyleEditDraftBases.TryGetValue(lifestyleId, out CharacterCreationLifestyleConfiguration? capturedBase))
+                {
+                    // An existing draft cycle: unchanged fields (editor value
+                    // equals the captured base) keep the retained draft value
+                    // merged with the latest saved values; only fields the
+                    // player actually touched are updated from the editors.
+                    // The merge input is the freshly captured editor state,
+                    // not the previously stored draft: re-renders between edits
+                    // must keep the newest typing (R48 gate regression).
+                    CharacterCreationLifestyleConfiguration merged = MergeLifestyleDraft(
+                        lifestyleId, draft, lifestyle.Configuration);
+                    _lifestyleEditDrafts[lifestyleId] = merged;
+                    _lifestyleEditDraftBases[lifestyleId] = lifestyle.Configuration;
+                }
+                else if (draft == lifestyle.Configuration)
+                {
                     _lifestyleEditDrafts.Remove(lifestyleId);
+                }
                 else
+                {
                     _lifestyleEditDrafts[lifestyleId] = draft;
+                    _lifestyleEditDraftBases[lifestyleId] = lifestyle.Configuration;
+                }
             }
 
             if (lifestyleStep.Authority.LifestyleOptions.Count > 0
@@ -2230,9 +2315,15 @@ public partial class CharacterCreationWizardControl : UserControl
                     contact.ContactId, contact.Fields.Select(field => field.FieldId));
                 if (contact.Fields.All(field => string.Equals(
                         draft[field.FieldId], field.SerializedValue, StringComparison.Ordinal)))
+                {
                     _contactEditDrafts.Remove(contact.ContactId);
+                    _contactEditDraftBases.Remove(contact.ContactId);
+                }
                 else
+                {
                     _contactEditDrafts[contact.ContactId] = draft;
+                    _contactEditDraftBases[contact.ContactId] = CaptureSavedContactValues(contact);
+                }
             }
         }
     }
@@ -2243,6 +2334,86 @@ public partial class CharacterCreationWizardControl : UserControl
             ? editor
             : null;
     }
+
+    /// <summary>
+    /// Merges a retained lifestyle edit draft over the current saved
+    /// configuration field by field (audit win010). A field the player did not
+    /// change (draft equals the captured base) falls back to the latest saved
+    /// value, so a refreshed projection is not reverted by stale draft content.
+    /// A changed field keeps the player's edit. The merged configuration is
+    /// what the editors show and what the next preview proposes.
+    /// </summary>
+    private CharacterCreationLifestyleConfiguration MergeLifestyleDraft(
+        Guid lifestyleId,
+        CharacterCreationLifestyleConfiguration editorDraft,
+        CharacterCreationLifestyleConfiguration saved)
+    {
+        if (!_lifestyleEditDraftBases.TryGetValue(lifestyleId, out CharacterCreationLifestyleConfiguration? baseSnapshot))
+        {
+            return editorDraft;
+        }
+        List<string> conflicts = [];
+        string mergedName = !string.Equals(editorDraft.Name, baseSnapshot.Name, StringComparison.Ordinal)
+            ? editorDraft.Name
+            : saved.Name;
+        // Conflict: the player edited the field AND the saved state moved away
+        // from the captured base. The local edit still wins, but the divergence
+        // is reported instead of silently choosing a side (audit win010).
+        if (!string.Equals(editorDraft.Name, baseSnapshot.Name, StringComparison.Ordinal)
+            && !string.Equals(saved.Name, baseSnapshot.Name, StringComparison.Ordinal))
+            conflicts.Add($"name (saved '{saved.Name}' vs your edit '{editorDraft.Name}')");
+        int mergedIncrements = editorDraft.Increments != baseSnapshot.Increments
+            ? editorDraft.Increments
+            : saved.Increments;
+        if (editorDraft.Increments != baseSnapshot.Increments
+            && saved.Increments != baseSnapshot.Increments)
+            conflicts.Add($"billing increments (saved {saved.Increments} vs your edit {editorDraft.Increments})");
+        decimal mergedPercentage = editorDraft.Percentage != baseSnapshot.Percentage
+            ? editorDraft.Percentage
+            : saved.Percentage;
+        if (editorDraft.Percentage != baseSnapshot.Percentage
+            && saved.Percentage != baseSnapshot.Percentage)
+            conflicts.Add($"cost percentage (saved {saved.Percentage} vs your edit {editorDraft.Percentage})");
+        int mergedRoommates = editorDraft.Roommates != baseSnapshot.Roommates
+            ? editorDraft.Roommates
+            : saved.Roommates;
+        if (editorDraft.Roommates != baseSnapshot.Roommates
+            && saved.Roommates != baseSnapshot.Roommates)
+            conflicts.Add($"roommates (saved {saved.Roommates} vs your edit {editorDraft.Roommates})");
+        bool mergedSplit = editorDraft.SplitCostWithRoommates != baseSnapshot.SplitCostWithRoommates
+            ? editorDraft.SplitCostWithRoommates
+            : saved.SplitCostWithRoommates;
+        if (editorDraft.SplitCostWithRoommates != baseSnapshot.SplitCostWithRoommates
+            && saved.SplitCostWithRoommates != baseSnapshot.SplitCostWithRoommates)
+            conflicts.Add($"cost sharing (saved {(saved.SplitCostWithRoommates ? "on" : "off")} vs your edit {(editorDraft.SplitCostWithRoommates ? "on" : "off")})");
+        if (conflicts.Count > 0)
+            _lifestyleMergeConflictNotes[lifestyleId] =
+                "This entry changed elsewhere while you were editing. Your edits are kept for: "
+                + string.Join("; ", conflicts)
+                + ". Review the changes before saving.";
+        // Notes are consumed when the card renders them; the merge never
+        // clears them, because the harvest transition (old base vs new saved
+        // values) is the only point that can detect the conflict.
+        return saved with
+        {
+            Name = mergedName,
+            Increments = mergedIncrements,
+            Percentage = mergedPercentage,
+            Roommates = mergedRoommates,
+            SplitCostWithRoommates = mergedSplit
+        };
+    }
+
+    /// <summary>
+    /// Captures the currently saved contact field values so the edit draft can
+    /// later distinguish player edits from unchanged content (audit win010).
+    /// </summary>
+    private static Dictionary<string, string> CaptureSavedContactValues(
+        CharacterCreationWizardDesktopContact contact)
+        => contact.Fields.ToDictionary(
+            field => field.FieldId,
+            field => field.SerializedValue,
+            StringComparer.Ordinal);
 
     private int ReadLifestyleNumeric(string automationId, int fallback)
     {
@@ -2361,16 +2532,40 @@ public partial class CharacterCreationWizardControl : UserControl
                 Text = title,
                 Classes = { "shell-section-title" }
             });
+            if (_contactMergeConflictNotes.Remove(contact.ContactId, out string? contactConflictNote))
+                fields.Children.Add(Caption(contactConflictNote + ". Review the changes before saving."));
             fields.Children.Add(Caption(
                 $"{contact.Role} · {contact.ContactPointCost} contact points"));
             foreach (CharacterCreationWizardDesktopContactField field in contact.Fields)
             {
-                // Draft preservation: the draft value (kept across previews) wins
-                // over the saved projection value so the player's typing survives.
-                string draftValue = _contactEditDrafts.TryGetValue(contact.ContactId, out Dictionary<string, string>? editDraft)
+                // Draft preservation with field-level merge (audit win010): a
+                // field the player did not change (draft equals the captured
+                // base) shows the latest saved value, so a refreshed projection
+                // is not reverted by stale draft content. Changed fields keep
+                // the player's typing.
+                string draftValue = field.SerializedValue;
+                if (_contactEditDrafts.TryGetValue(contact.ContactId, out Dictionary<string, string>? editDraft)
                     && editDraft.TryGetValue(field.FieldId, out string? editDraftValue)
-                    ? editDraftValue
-                    : field.SerializedValue;
+                    && (!_contactEditDraftBases.TryGetValue(contact.ContactId, out Dictionary<string, string>? editBase)
+                        || !editBase.TryGetValue(field.FieldId, out string? baseValue)
+                        || !string.Equals(editDraftValue, baseValue, StringComparison.Ordinal)))
+                {
+                    draftValue = editDraftValue;
+                    // The player changed this field; if the saved projection
+                    // changed it too, differently, keep the player's edit but
+                    // surface the conflict instead of silently overriding
+                    // (audit win010).
+                    if ((!editBase.TryGetValue(field.FieldId, out string? conflictBase)
+                            || !string.Equals(field.SerializedValue, conflictBase, StringComparison.Ordinal))
+                        && !string.Equals(editDraftValue, field.SerializedValue, StringComparison.Ordinal))
+                    {
+                        _contactMergeConflictNotes[contact.ContactId] =
+                            (_contactMergeConflictNotes.TryGetValue(contact.ContactId, out string? existing)
+                                ? existing + "; "
+                                : "This entry changed elsewhere while you were editing. Your edits are kept for: ")
+                            + $"{field.Label} (saved '{field.SerializedValue}' vs your edit '{editDraftValue}')";
+                    }
+                }
                 CharacterCreationWizardDesktopContactField withDraft = new(
                     field.FieldId,
                     field.Label,
@@ -2790,6 +2985,7 @@ public partial class CharacterCreationWizardControl : UserControl
         // Draft preservation + review binding: remember what the player sees and
         // freeze the baseline the confirm gate compares against.
         _contactEditDrafts[contact.ContactId] = CaptureContactEditorValues(contact.ContactId, contact.Fields.Select(field => field.FieldId));
+        _contactEditDraftBases[contact.ContactId] = CaptureSavedContactValues(contact);
         _contactPreviewBaseline = _contactEditDrafts[contact.ContactId];
         _contactPreviewBaselineId = contact.ContactId;
         ContactPreviewRequested?.Invoke(this, new CharacterCreationContactPreviewRequested(input));
