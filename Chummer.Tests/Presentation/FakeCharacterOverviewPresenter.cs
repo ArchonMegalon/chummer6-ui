@@ -59,6 +59,8 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
 
     public int InitializeCalls { get; private set; }
 
+    public int LoadCalls { get; private set; }
+
     public Task InitializeAsync(CancellationToken ct)
     {
         InitializeCalls++;
@@ -74,6 +76,7 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
 
     public Task LoadAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
+        LoadCalls++;
         LoadedWorkspaceId = id;
         return Task.CompletedTask;
     }
