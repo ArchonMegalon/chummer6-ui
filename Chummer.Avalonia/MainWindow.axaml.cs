@@ -57,7 +57,8 @@ public partial class MainWindow : Window
             ResolveService<ICharacterCreationFinalizationService>(),
             ResolveService<ICharacterCreationPrerequisiteService>(),
             ResolveService<CreationAiFinishService>(),
-            ResolveService<ICharacterCreationLifestylesInteractionPresenter>())
+            ResolveService<ICharacterCreationLifestylesInteractionPresenter>(),
+            ResolveService<ISr6CreationFoundationInteractionPresenter>())
     {
     }
 
@@ -120,7 +121,8 @@ public partial class MainWindow : Window
         ICharacterCreationFinalizationService? creationFinalizationService,
         ICharacterCreationPrerequisiteService? creationPrerequisiteService = null,
         CreationAiFinishService? creationAiFinishService = null,
-        ICharacterCreationLifestylesInteractionPresenter? creationLifestylesInteractionPresenter = null)
+        ICharacterCreationLifestylesInteractionPresenter? creationLifestylesInteractionPresenter = null,
+        ISr6CreationFoundationInteractionPresenter? creationSr6FoundationInteractionPresenter = null)
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
@@ -140,6 +142,7 @@ public partial class MainWindow : Window
         _creationLifestylesInteractionPresenter = creationLifestylesInteractionPresenter;
         _creationFoundationInteractionPresenter = creationFoundationInteractionPresenter;
         _creationResourcesInteractionPresenter = creationResourcesInteractionPresenter;
+        _creationSr6FoundationInteractionPresenter = creationSr6FoundationInteractionPresenter;
         _creationFinalizationService = creationFinalizationService;
         _creationPrerequisiteService = creationPrerequisiteService;
         _aiFinishService = creationAiFinishService;

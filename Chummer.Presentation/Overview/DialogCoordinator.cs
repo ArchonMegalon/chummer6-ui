@@ -1459,7 +1459,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             ActiveDialog = null,
             Error = null,
             Notice = rulesetId == RulesetDefaults.Sr6
-                ? $"Opened {name} · {buildMethod} · SR6 draft. The remaining SR6 wizard steps are not available yet."
+                ? $"Opened {name} · {buildMethod} · SR6 draft. The native SR6 wizard is available in the creation window."
                 : $"Opened {name} · {buildMethod} · SR5"
         });
     }

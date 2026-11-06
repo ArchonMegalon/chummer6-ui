@@ -151,6 +151,8 @@ public partial class App : global::Avalonia.Application
             CharacterCreationContactsInteractionPresenter>();
         services.AddSingleton<ICharacterCreationFoundationInteractionPresenter,
             CharacterCreationFoundationInteractionPresenter>();
+        services.AddSingleton<ISr6CreationFoundationInteractionPresenter,
+            Sr6CreationFoundationInteractionPresenter>();
         services.AddSingleton<ICharacterCreationResourcesInteractionPresenter,
             CharacterCreationResourcesInteractionPresenter>();
         services.AddSingleton<ICharacterCreationLifestylesInteractionPresenter,

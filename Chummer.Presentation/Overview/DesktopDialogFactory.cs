@@ -1443,7 +1443,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         => new(
             NewCharacterSr6WizardUnavailableDialogId,
             "SR6 character creation",
-            "SR6 draft created. The remaining SR6 wizard steps are not available yet.",
+            "SR6 draft created. The native SR6 wizard is available in the creation window.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
@@ -2942,7 +2942,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             ? " House rules are enabled in Character Settings."
             : " House rules are currently disabled.";
         string sr6Disclosure = string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
-            ? " SR6 draft: the remaining SR6 wizard steps are not available yet."
+            ? " SR6 draft: the native SR6 wizard is available in the creation window."
             : string.Empty;
         return $"Choose the ruleset and build method for {rulesetId.ToUpperInvariant()}. {route}{houseRules}{sr6Disclosure}";
     }

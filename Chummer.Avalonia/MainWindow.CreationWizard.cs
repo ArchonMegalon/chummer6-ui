@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using Chummer.Avalonia.Creation;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.AI;
+using Chummer.Contracts.Rulesets;
 using Chummer.Desktop.Runtime;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.LifeModules;
@@ -39,6 +40,9 @@ public partial class MainWindow
     private CharacterCreationLifestylePreparedPreview? _creationLifestylePreparedPreview;
     private CreationSkillsAllocationWindow? _creationSkillsWindow;
     private readonly Dictionary<Chummer.Contracts.Workspaces.CharacterWorkspaceId, CharacterCreationQualitiesInteraction> _pendingQualitySelections = new();
+    private ISr6CreationFoundationInteractionPresenter? _creationSr6FoundationInteractionPresenter;
+    private Sr6CreationWizardWindow? _creationSr6WizardWindow;
+    private Chummer.Contracts.Workspaces.CharacterWorkspaceId? _creationSr6WizardWorkspaceId;
 
     private void InitializeCreationWizard()
     {
@@ -113,6 +117,15 @@ public partial class MainWindow
         _creationAttributesWindow?.InvalidateIfContextChanged();
         _creationSkillsWindow?.InvalidateIfContextChanged();
         CharacterCreationWizardSnapshot? snapshot = overview.CreationWizard;
+        ApplySr6WizardState(overview, snapshot);
+        if (snapshot is not null && string.Equals(snapshot.RulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
+        {
+            // The native SR6 wizard window owns the SR6 creation journey; the SR5
+            // snapshot grid stays hidden for SR6 drafts.
+            CharacterCreationWizardControl.IsVisible = false;
+            CharacterCreationWizardControl.IsHitTestVisible = false;
+            return;
+        }
         CharacterCreationWizardControl.IsVisible = snapshot is not null;
         CharacterCreationWizardControl.IsHitTestVisible = snapshot is not null;
         if (snapshot is null)
@@ -1459,6 +1472,149 @@ public partial class MainWindow
         {
             _priorityMutationBusy = false;
             CharacterCreationWizardControl.SetPriorityMutationBusy(false);
+        }
+    }
+
+    /// <summary>
+    /// Native SR6 creation wizard: a dedicated Windows-desktop wizard window
+    /// bound to the Core SR6 creation foundation service. Opened while an
+    /// unfinished SR6 draft owns the workspace; closed when the snapshot clears
+    /// (profile created / workspace left). Owner + workspace identity are
+    /// checked on every state application so a different owner or character
+    /// never inherits an open SR6 wizard window.
+    /// </summary>
+    private void ApplySr6WizardState(CharacterOverviewState overview, CharacterCreationWizardSnapshot? snapshot)
+    {
+        if (_creationSr6FoundationInteractionPresenter is null)
+        {
+            _creationSr6FoundationInteractionPresenter =
+                App.Services?.GetService(typeof(ISr6CreationFoundationInteractionPresenter))
+                    as ISr6CreationFoundationInteractionPresenter;
+        }
+
+        bool isSr6Draft = snapshot is not null
+            && string.Equals(snapshot.RulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+            && overview.Profile?.Created != true;
+        if (!isSr6Draft
+            || _creationSr6FoundationInteractionPresenter is null
+            || overview.WorkspaceId is not Chummer.Contracts.Workspaces.CharacterWorkspaceId sr6WorkspaceId)
+        {
+            // Leaving the SR6 draft context (profile created, workspace left,
+            // snapshot cleared) must always retire an open SR6 wizard window —
+            // the finalization gate depends on it never surviving the career
+            // transition.
+            CloseSr6WizardWindow();
+            return;
+        }
+
+        Chummer.Contracts.Workspaces.CharacterWorkspaceId workspaceId = sr6WorkspaceId;
+        if (_creationSr6WizardWindow is { } openWindow
+            && _creationSr6WizardWorkspaceId is { } boundWorkspaceId
+            && string.Equals(boundWorkspaceId.Value, workspaceId.Value, StringComparison.Ordinal)
+            && _boundCreationWizardOwner == overview.DisplayOwnerContext
+            && openWindow.IsVisible)
+        {
+            // Same owner + workspace: the open window keeps its own authority loop.
+            return;
+        }
+
+        CloseSr6WizardWindowIfContextChanged(workspaceId, overview.DisplayOwnerContext);
+        var wizard = new Sr6CreationWizardWindow(_creationSr6FoundationInteractionPresenter, overview);
+        _creationSr6WizardWindow = wizard;
+        _creationSr6WizardWorkspaceId = workspaceId;
+        wizard.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_creationSr6WizardWindow, wizard))
+            {
+                _creationSr6WizardWindow = null;
+                _creationSr6WizardWorkspaceId = null;
+                if (wizard.Finalized && workspaceId is { } finalizedWorkspaceId)
+                {
+                    // One-way career transition completed in the Core store;
+                    // reload so the overview leaves the SR6 draft context.
+                    _ = ReloadOverviewAfterSr6FinalizationAsync(finalizedWorkspaceId);
+                }
+            }
+        };
+        wizard.Show(this);
+    }
+
+    /// <summary>
+    /// Reloads the overview after the SR6 wizard completed the one-way career
+    /// transition, mirroring the SR5 finalization path: adapter reload, then a
+    /// fresh creation-wizard state application (which retires the closed
+    /// window's context bindings).
+    /// </summary>
+    private async Task ReloadOverviewAfterSr6FinalizationAsync(
+        Chummer.Contracts.Workspaces.CharacterWorkspaceId workspaceId)
+    {
+        try
+        {
+            await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+            ApplyCreationWizardState(_adapter.State);
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            // Normierte Meldung statt roher Exception: der Overview-Reload
+            // bleibt wiederholbar, der Draft-Kontext bleibt unangetastet.
+            System.Diagnostics.Debug.WriteLine(
+                $"[sr6-finalization] overview reload failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Unconditionally closes the open SR6 wizard window, if any.
+    /// Used when the workspace left the SR6 draft context.</summary>
+    private void CloseSr6WizardWindow()
+    {
+        if (_creationSr6WizardWindow is not { } openWindow)
+        {
+            _creationSr6WizardWorkspaceId = null;
+            return;
+        }
+
+        _creationSr6WizardWindow = null;
+        _creationSr6WizardWorkspaceId = null;
+        try
+        {
+            openWindow.Close();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The window is already gone; nothing to retire.
+        }
+    }
+
+    private void CloseSr6WizardWindowIfContextChanged(
+        Chummer.Contracts.Workspaces.CharacterWorkspaceId? workspaceId,
+        OwnerContextStamp? owner)
+    {
+        if (_creationSr6WizardWindow is not { } openWindow)
+        {
+            _creationSr6WizardWorkspaceId = null;
+            return;
+        }
+
+        bool sameContext = workspaceId is { } current
+            && _creationSr6WizardWorkspaceId is { } bound
+            && string.Equals(bound.Value, current.Value, StringComparison.Ordinal)
+            && (_boundCreationWizardOwner == owner || owner is null);
+        if (sameContext)
+        {
+            return;
+        }
+
+        _creationSr6WizardWindow = null;
+        _creationSr6WizardWorkspaceId = null;
+        try
+        {
+            openWindow.Close();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The window is already gone; nothing to retire.
         }
     }
 
