@@ -62,7 +62,21 @@ public partial class Sr6CreationWizardWindow : Window
     private void LoadFromAuthority()
     {
         if (!RequireCurrentContext()) return;
-        Sr6CreationFoundationInteractionLoadResult result = _presenter.Load(_overview);
+        Sr6CreationFoundationInteractionLoadResult result;
+        try
+        {
+            result = _presenter.Load(_overview);
+        }
+        catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            _activeStepIndex = 0;
+            ShowBlockers(
+                ["sr6-creation-foundation-store-read-failed"],
+                CharacterCreationFoundationOutcomes.Invalid);
+            RenderSteps();
+            RenderActiveStep();
+            return;
+        }
         _lastOutcome = result.Outcome;
         _state = result.State;
         if (result.Outcome != CharacterCreationFoundationOutcomes.Success || _state is null)
@@ -228,6 +242,7 @@ public partial class Sr6CreationWizardWindow : Window
             {
                 SetPriorityRank(categoryId, box.SelectedItem as string);
                 _preparedPreview = null;
+                _confirmedPreviewDigest = null;
                 UpdateFooterForDirtySelection();
             };
             Grid.SetColumn(box, 1);
@@ -291,6 +306,7 @@ public partial class Sr6CreationWizardWindow : Window
             {
                 _pointBuyAmounts[pool.Id] = (int)(input.Value ?? 0);
                 _preparedPreview = null;
+                _confirmedPreviewDigest = null;
                 UpdateFooterForDirtySelection();
             };
             Grid.SetColumn(input, 1);
@@ -485,6 +501,7 @@ public partial class Sr6CreationWizardWindow : Window
         {
             CurrentMetatypeId = metatypeList.SelectedItem as string;
             _preparedPreview = null;
+            _confirmedPreviewDigest = null;
             UpdateFooterForDirtySelection();
         };
         panel.Children.Add(metatypeList);
@@ -501,6 +518,7 @@ public partial class Sr6CreationWizardWindow : Window
         {
             CurrentTalentId = talentList.SelectedItem as string;
             _preparedPreview = null;
+            _confirmedPreviewDigest = null;
             UpdateFooterForDirtySelection();
         };
         panel.Children.Add(talentList);
@@ -568,11 +586,13 @@ public partial class Sr6CreationWizardWindow : Window
             pointsInput.ValueChanged += (_, _) =>
             {
                 _preparedPreview = null;
+                _confirmedPreviewDigest = null;
                 UpdateFooterForDirtySelection();
             };
             adjustmentInput.ValueChanged += (_, _) =>
             {
                 _preparedPreview = null;
+                _confirmedPreviewDigest = null;
                 UpdateFooterForDirtySelection();
             };
             Grid.SetColumn(pointsInput, 1);
@@ -635,24 +655,27 @@ public partial class Sr6CreationWizardWindow : Window
         var confirmCheck = new CheckBox
         {
             Content = "I confirm this preview should be applied to the character draft.",
-            IsChecked = _explicitlyConfirmed,
+            IsChecked = string.Equals(_confirmedPreviewDigest, preview.PreviewDigest, StringComparison.Ordinal),
         };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(confirmCheck, "sr6-confirm-checkbox");
         confirmCheck.IsCheckedChanged += (_, _) =>
         {
-            _explicitlyConfirmed = confirmCheck.IsChecked == true;
-            FinishButton.IsEnabled = _explicitlyConfirmed;
+            _confirmedPreviewDigest = confirmCheck.IsChecked == true ? preview.PreviewDigest : null;
+            FinishButton.IsEnabled = _confirmedPreviewDigest is not null;
         };
         panel.Children.Add(confirmCheck);
 
         StepContentHost.Content = panel;
         GuidanceText.Text = "Confirm these choices once. If saving is interrupted, reopen the character to inspect the saved result.";
         FinishButton.IsVisible = true;
-        FinishButton.IsEnabled = _explicitlyConfirmed;
+        FinishButton.IsEnabled = _confirmedPreviewDigest is not null;
         NextButton.IsEnabled = false;
     }
 
-    private bool _explicitlyConfirmed;
+    // The acknowledgement is bound to the exact prepared preview digest the
+    // user saw. Any selection change mints a new digest and voids the ack,
+    // so a stale confirmation can never dispatch a preview it never saw.
+    private string? _confirmedPreviewDigest;
 
     private string? CurrentMetatypeId { get; set; }
     private string? CurrentTalentId { get; set; }
@@ -713,7 +736,8 @@ public partial class Sr6CreationWizardWindow : Window
             return;
         }
 
-        if (_preparedPreview is null || !_explicitlyConfirmed)
+        if (_preparedPreview is null
+            || !string.Equals(_confirmedPreviewDigest, _preparedPreview.PreviewDigest, StringComparison.Ordinal))
         {
             return;
         }
@@ -742,7 +766,19 @@ public partial class Sr6CreationWizardWindow : Window
             || result.Commit is null)
         {
             // A dispatched mutation must be inspected, not resent under a new identity.
-            _explicitlyConfirmed = false;
+            _confirmedPreviewDigest = null;
+            if (result.Commit is not null
+                && result.Blockers.Contains(Sr6CreationFoundationInteractionBlockers.RefreshAuthorityRequired))
+            {
+                // The commit IS durable (receipt verified against the operation
+                // identity); only the post-commit refresh failed. Preserve the
+                // saved outcome instead of reporting a total save failure.
+                _state = result.RefreshedState ?? _state;
+                ShowBlockers(result.Blockers, CharacterCreationFoundationOutcomes.Success);
+                BackButton.IsEnabled = NextButton.IsEnabled = FinishButton.IsEnabled = false;
+                FooterStatusText.Text = "Saved; the post-save refresh failed. Close and reopen the character to load the saved result before another change.";
+                return;
+            }
             ShowBlockers(result.Blockers, result.Outcome);
             if (result.RefreshedState is not null)
             {
@@ -759,7 +795,7 @@ public partial class Sr6CreationWizardWindow : Window
         }
 
         _preparedPreview = null;
-        _explicitlyConfirmed = false;
+        _confirmedPreviewDigest = null;
         _operationId = Guid.NewGuid();
         _confirmationDispatched = false;
         FooterStatusText.Text = "Foundation committed. The final step reviews the whole draft and performs the one-way career transition.";
@@ -838,8 +874,19 @@ public partial class Sr6CreationWizardWindow : Window
             PointBuy = IsPointBuy(_state!.Foundation.BuildMethod) ? BuildPointBuySelection() : null,
         };
 
-        Sr6CreationFoundationInteractionPrepareResult result =
-            _presenter.Prepare(_overview, selection);
+        Sr6CreationFoundationInteractionPrepareResult result;
+        try
+        {
+            result = _presenter.Prepare(_overview, selection);
+        }
+        catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            _lastOutcome = CharacterCreationFoundationOutcomes.Invalid;
+            ShowBlockers(
+                ["sr6-creation-foundation-store-read-failed"],
+                CharacterCreationFoundationOutcomes.Invalid);
+            return false;
+        }
         _lastOutcome = result.Outcome;
         if (result.Outcome != CharacterCreationFoundationOutcomes.Success
             || result.PreparedPreview is null)
