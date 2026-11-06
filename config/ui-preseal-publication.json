@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "b069fa47720e205bc6108340e1f0da0ac542b9cf",
-  "baseTree": "d1120f758fcd1c1255c813abfa2a55a8c39e0f73",
+  "baseCommit": "013011a8f6c1c8bc07337ac9612a4d49d3b0e036",
+  "baseTree": "73914d714bce18282ef1f78491497decb5454723",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,34 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "19a10c7e30f90fb934e0c515eb1b0258d7b84890",
+      "blob": "bb95b0069795ed98887da6fd1ffc632bee848895",
       "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
-      "sha256": "b6669b32a1f0f009f7f88e0f69ef6185f6557e090b274cecd123161ac92ff2d3",
-      "sizeBytes": 131931,
+      "sha256": "7352d694f7fba5a3600f93b43acc5d79341d5844944838210cb802cf0b726b8c",
+      "sizeBytes": 143785,
       "status": "M"
     },
     {
-      "blob": "9575f6f8b171a82a2b0ba1382012bdd207161105",
-      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
-      "sha256": "8eb284d7d39835000a78d827ba47d7b324de786d3c04c3752a1080367f3e5285",
-      "sizeBytes": 69895,
-      "status": "M"
-    },
-    {
-      "blob": "fe52afecec3343dfcf2b1fc8728148f1ddec9a49",
-      "path": "Chummer.Tests/Presentation/CharacterCreationContactsAvaloniaTests.cs",
-      "sha256": "199085851dfcabf1a0d515e708860e28d7ef3567118451bba3ea1f6b9d535b11",
-      "sizeBytes": 24286,
-      "status": "M"
-    },
-    {
-      "blob": "6a7971279136ee45d9ebeb5d62bb5782cb1e10af",
+      "blob": "88d6ebdfed918dd9147407c5cc10bc62a72b7867",
       "path": "Chummer.Tests/Presentation/CharacterCreationManualWorkflowSourceTests.cs",
-      "sha256": "6937631cc01dd82e2b348873cf850cb420b4627e0daa859c07488cacb8c6a6bf",
-      "sizeBytes": 48677,
+      "sha256": "f91290b5fdc51f6b6514f8e1a364e19154cebaee06d699246901444cdbddbe7d",
+      "sizeBytes": 58979,
       "status": "M"
     }
   ],
-  "recipeTree": "def1e8055e53bf3b3ada4bcedb4dbaaca3516bb7",
+  "recipeTree": "e53024703abc06d7f335a6c835b56bbf8243dff0",
   "releaseClaim": false
 }
