@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "22ceba70bab0b3f378a3572d48f0de2484f7fad9",
-  "baseTree": "0868d568ec206c2762aff6e7e2bda0d0b7889114",
+  "baseCommit": "282fec4572e507daef43e1990e8d7d2eed0fb6bc",
+  "baseTree": "d07089a5667e5ed4d9bccbe53a14d657581539df",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,20 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "b2da1239b12d9cba02273e1a722a5fe26f690710",
-      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
-      "sha256": "69c9494f3cd740ff775023ef330c100c96f6bc5be3c88340defa00dae8f5c03b",
-      "sizeBytes": 145349,
+      "blob": "11ee960fc41059907f6bce1739b9576aff0014f5",
+      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
+      "sha256": "1712375a4ac55d93ce7291add786bda555519036a7a5d5baa296e14a5ed88111",
+      "sizeBytes": 71696,
       "status": "M"
     },
     {
-      "blob": "db53d958454087c3c7d47bd98db1012c6fe1d734",
+      "blob": "1fc5e03c4cbeae374624d8f89bbf46bfc497f789",
       "path": "Chummer.Tests/Presentation/CharacterCreationManualWorkflowSourceTests.cs",
-      "sha256": "5b37e7dff1446b8e032162510ba3a4fb9c166566d4afa72bca5e2a1e36f5513b",
-      "sizeBytes": 96723,
+      "sha256": "5b74b975d41402e9101e56b95fc0a17c39cdd870ace1ab24d690ae0960f3ba0c",
+      "sizeBytes": 104865,
       "status": "M"
     }
   ],
-  "recipeTree": "5efaf5fbd6a0ec3dfcb0333329a50ebc7ef0c366",
+  "recipeTree": "e29b76245d47b0dfcfd00826ca82acbf877df3b3",
   "releaseClaim": false
 }
