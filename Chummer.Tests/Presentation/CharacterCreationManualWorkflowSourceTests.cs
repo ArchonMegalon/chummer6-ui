@@ -1401,6 +1401,128 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         });
     }
 
+    [TestMethod]
+    public void Window_build_ghost_transcript_and_unsent_question_are_reset_on_workspace_change()
+    {
+        // Display isolation (audit win015): pending replies were already
+        // isolated by turn invalidation, but content ALREADY ON SCREEN --
+        // the transcript and a typed-but-unsubmitted question -- survived
+        // a character switch. The identity boundary must reset the Rook
+        // display so the previous context's advice is never presented as
+        // the new context's.
+        WithMainWindow((window, overviewPresenter, lifestyles, pump) =>
+        {
+            var stub = FindCoachStub(window);
+            var bindingA = Binding();
+            var bindingB = bindingA with { WorkspaceId = new CharacterWorkspaceId("other-workspace") };
+            overviewPresenter.Publish(OverviewState(bindingA,
+                [Projection(Configuration())], revision: 1));
+            pump();
+            var control = WizardControl(window);
+            var question = Find<TextBox>(control, "creation-wizard-build-ghost-question");
+            var send = Find<Button>(control, "creation-wizard-build-ghost-send");
+
+            // Character A: ask, receive and display an answer ...
+            stub.NextBuildAnswer = "WORKSPACE A ADVICE";
+            question.Text = "Workspace A question";
+            Click(send);
+            pump();
+            pump();
+            Assert.HasCount(1, stub.BuildTurns);
+            Assert.AreEqual("manual-workspace", stub.BuildTurns[0].WorkspaceId);
+            string transcriptA = GetGhostTranscriptText(window);
+            StringAssert.Contains(transcriptA, "Workspace A question");
+            StringAssert.Contains(transcriptA, "WORKSPACE A ADVICE");
+
+            // ... and type an unsent follow-up question.
+            question.Text = "Workspace A unsent follow-up";
+
+            // Switch to character B in the same window (same owner).
+            overviewPresenter.Publish(OverviewState(bindingB,
+                [Projection(Configuration())], revision: 1));
+            pump();
+
+            string transcriptB = GetGhostTranscriptText(window);
+            Assert.IsFalse(transcriptB.Contains("WORKSPACE A ADVICE"),
+                "The previous character's answer must not survive the switch. Transcript: " + transcriptB);
+            Assert.IsFalse(transcriptB.Contains("Workspace A question"),
+                "The previous character's sent question must not survive the switch. Transcript: " + transcriptB);
+            Assert.IsEmpty(question.Text,
+                "The previous character's unsent question must not survive the switch.");
+
+            // The new character can ask; only B's intended question is sent.
+            stub.NextBuildAnswer = "WORKSPACE B ADVICE";
+            question.Text = "Workspace B question";
+            Click(send);
+            pump();
+            pump();
+            Assert.HasCount(2, stub.BuildTurns);
+            Assert.AreEqual("other-workspace", stub.BuildTurns[1].WorkspaceId,
+                "The second turn must bind to the NEW character context.");
+            string transcript = GetGhostTranscriptText(window);
+            StringAssert.Contains(transcript, "Workspace B question");
+            StringAssert.Contains(transcript, "WORKSPACE B ADVICE");
+            Assert.IsFalse(transcript.Contains("WORKSPACE A"),
+                "No residue from character A may remain. Transcript: " + transcript);
+        });
+    }
+
+    [TestMethod]
+    public void Window_build_ghost_transcript_and_unsent_question_are_reset_on_owner_change()
+    {
+        // Display isolation (audit win015): a genuine account transition in
+        // the same window must reset the displayed conversation and the
+        // unsent question -- retained questions or answers could otherwise
+        // expose the previous account's context.
+        WithMainWindow((window, overviewPresenter, lifestyles, pump) =>
+        {
+            var stub = FindCoachStub(window);
+            var binding = Binding();
+            var ownerA = new OwnerContextStamp(new OwnerScope("local-single-user"), "authority-test", 1);
+            var ownerB = new OwnerContextStamp(new OwnerScope("local-single-user"), "authority-test", 2);
+            overviewPresenter.Publish(OverviewState(binding,
+                [Projection(Configuration())], revision: 1, ownerContext: ownerA));
+            pump();
+            var control = WizardControl(window);
+            var question = Find<TextBox>(control, "creation-wizard-build-ghost-question");
+            var send = Find<Button>(control, "creation-wizard-build-ghost-send");
+
+            stub.NextBuildAnswer = "ACCOUNT A ADVICE";
+            question.Text = "Account A question";
+            Click(send);
+            pump();
+            pump();
+            Assert.HasCount(1, stub.BuildTurns);
+            StringAssert.Contains(GetGhostTranscriptText(window), "ACCOUNT A ADVICE");
+            question.Text = "Account A unsent follow-up";
+
+            // Genuine account transition, same character snapshot.
+            overviewPresenter.Publish(OverviewState(binding,
+                [Projection(Configuration())], revision: 1, ownerContext: ownerB));
+            pump();
+
+            string transcript = GetGhostTranscriptText(window);
+            Assert.IsFalse(transcript.Contains("ACCOUNT A"),
+                "The previous account's conversation must not survive the transition. Transcript: " + transcript);
+            Assert.IsEmpty(question.Text,
+                "The previous account's unsent question must not survive the transition.");
+            Assert.IsTrue(send.IsEnabled,
+                "The new account must be able to ask without waiting for the previous account.");
+
+            stub.NextBuildAnswer = "ACCOUNT B ADVICE";
+            question.Text = "Account B question";
+            Click(send);
+            pump();
+            pump();
+            Assert.HasCount(2, stub.BuildTurns);
+            string transcriptB = GetGhostTranscriptText(window);
+            StringAssert.Contains(transcriptB, "Account B question");
+            StringAssert.Contains(transcriptB, "ACCOUNT B ADVICE");
+            Assert.IsFalse(transcriptB.Contains("ACCOUNT A"),
+                "No residue from the previous account may remain. Transcript: " + transcriptB);
+        });
+    }
+
     private static StubCoachSidecarClientForLifestyleTests FindCoachStub(MainWindow window)
         => (StubCoachSidecarClientForLifestyleTests)typeof(MainWindow)
             .GetField("_coachSidecarClient", BindingFlags.NonPublic | BindingFlags.Instance)!

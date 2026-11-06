@@ -1347,6 +1347,22 @@ public partial class CharacterCreationWizardControl : UserControl
         });
     }
 
+    /// <summary>
+    /// Clears the entire Build Ghost conversation transcript and the unsent
+    /// question draft. Invoked by the window at an owner/workspace identity
+    /// boundary so the previous context's advice and typed-but-unsubmitted
+    /// question can never be presented as the current context's content
+    /// (audit win015: pending replies were already isolated by turn
+    /// invalidation, but content already on screen survived the switch).
+    /// Turn invalidation itself stays in the window; this only resets the
+    /// displayed state.
+    /// </summary>
+    public void ResetBuildGhostConversation()
+    {
+        GhostConversation.Children.Clear();
+        GhostQuestionTextBox.Text = string.Empty;
+    }
+
     public void SetBuildGhostBusy(bool busy)
     {
         _buildGhostBusy = busy;

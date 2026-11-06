@@ -130,6 +130,7 @@ public partial class MainWindow
             _boundCreationWizardSnapshot = null;
             _boundCreationWizardOwner = null;
             RetireCreationWizardBuildGhostTurn();
+            CharacterCreationWizardControl.ResetBuildGhostConversation();
             _creationContactPreparedPreview = null;
             _creationLifestylePreparedPreview = null;
             CharacterCreationWizardControl.ClearContactLifestylePreviews();
@@ -167,6 +168,12 @@ public partial class MainWindow
                 // A different owner or character must never inherit drafts --
                 // and must never receive an in-flight Build Ghost answer.
                 RetireCreationWizardBuildGhostTurn();
+                // Display isolation (audit win015): the previous context's
+                // transcript and unsent question are content already on
+                // screen -- a turn guard cannot remove them. The identity
+                // boundary explicitly resets the Rook display so nothing
+                // from the old context is presented as the new context's.
+                CharacterCreationWizardControl.ResetBuildGhostConversation();
                 CharacterCreationWizardControl.ClearContactLifestylePreviews();
             }
             else
