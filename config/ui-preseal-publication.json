@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "282fec4572e507daef43e1990e8d7d2eed0fb6bc",
-  "baseTree": "d07089a5667e5ed4d9bccbe53a14d657581539df",
+  "baseCommit": "f2e3ad68703297b4062878df407e0a30a084bc88",
+  "baseTree": "c74edc8d00b8829192d0ba14abef12d6d578ddd9",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,20 +44,90 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "11ee960fc41059907f6bce1739b9576aff0014f5",
-      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
-      "sha256": "1712375a4ac55d93ce7291add786bda555519036a7a5d5baa296e14a5ed88111",
-      "sizeBytes": 71696,
+      "blob": "83e76009fe6e1051f7dacda2ce5bb8f6b6ebce8a",
+      "path": "Chummer.Avalonia/App.axaml.cs",
+      "sha256": "fa0928ae2b1c593f5d5b91daa8fbffd5a55ba80ef1368c93edece4ad26a20def",
+      "sizeBytes": 23457,
       "status": "M"
     },
     {
-      "blob": "1fc5e03c4cbeae374624d8f89bbf46bfc497f789",
+      "blob": "08387856aa4cf8c41a06757fce3e777675d7ec35",
+      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
+      "sha256": "8513d03905dd78d5686158f6cbaf9f2da40cd97492bfba28f6fe1e178a3c9425",
+      "sizeBytes": 146085,
+      "status": "M"
+    },
+    {
+      "blob": "1b11650e2de651b937f5a9963bb62332fb9d3a47",
+      "path": "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml",
+      "sha256": "06707e77eb2b2f707819acc97b0b61ff72a5c64a161e55f730e2e1496602f6a5",
+      "sizeBytes": 4374,
+      "status": "A"
+    },
+    {
+      "blob": "50ecaba28a72d44125a8936d3d042985ceec065b",
+      "path": "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml.cs",
+      "sha256": "a208b763a5924ec7c9b1ed62f89cfd1489460515ffd518f0510fa4f3a9ec1dd8",
+      "sizeBytes": 35514,
+      "status": "A"
+    },
+    {
+      "blob": "538178dbdcb7434684f85ba2dba49c90ffc6b71d",
+      "path": "Chummer.Avalonia/Creation/Sr6CreationWizardGatePolicy.cs",
+      "sha256": "1b2583f2cce25048754669483805f243291c30583d1b0d7e40987b53371e4a24",
+      "sizeBytes": 439,
+      "status": "A"
+    },
+    {
+      "blob": "c7640ccaa237f3fa65d84cdd0ca6739689e87bf3",
+      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
+      "sha256": "dc76867d8c8a4cfb0d99c2271c7ec27dd6f48d401caec872162c25d6d6ebc00d",
+      "sizeBytes": 78086,
+      "status": "M"
+    },
+    {
+      "blob": "b0855e61793db197f70331a9d82df34d925d78f4",
+      "path": "Chummer.Avalonia/MainWindow.axaml.cs",
+      "sha256": "62c948effb7f2aafe1e0182271c3685439e81f2ca40ca38b1bf92ef173a4b185",
+      "sizeBytes": 16295,
+      "status": "M"
+    },
+    {
+      "blob": "4a5c8b5d056d90b874a3e841c0d897bfe02ba039",
+      "path": "Chummer.CreationWizard.Presentation.Tests/Sr6CreationFoundationInteractionPresenterTests.cs",
+      "sha256": "e78e6a1e74a18c6bad40a50a8c56175531f57998bae9a9af0bd71d4e8f46d385",
+      "sizeBytes": 22027,
+      "status": "A"
+    },
+    {
+      "blob": "d38b5c40d26f17abe7fcf95622a984b24e6f8555",
+      "path": "Chummer.Presentation/Overview/Sr6CreationFoundationInteractionPresenter.cs",
+      "sha256": "816fc0a4b0334407a53e38a179bb95a59b7c0130e5776847dd86a24084ca2a98",
+      "sizeBytes": 20311,
+      "status": "A"
+    },
+    {
+      "blob": "229505ce74fcd0a789042c8d2be76d8808813982",
       "path": "Chummer.Tests/Presentation/CharacterCreationManualWorkflowSourceTests.cs",
-      "sha256": "5b74b975d41402e9101e56b95fc0a17c39cdd870ace1ab24d690ae0960f3ba0c",
-      "sizeBytes": 104865,
+      "sha256": "5f53ff743416cd78e7e6a8b07e1d448a2de297b4bfaf9bce03f369569a0f23e9",
+      "sizeBytes": 113524,
+      "status": "M"
+    },
+    {
+      "blob": "2983f485adf83e6a0805363bf29d01d88660ac57",
+      "path": "Chummer.Tests/Presentation/Sr6CreationWizardWindowTests.cs",
+      "sha256": "f8586892a011ebbb54d1e69d528347a1c9c35d125ddf07b9e6b1e29d99e755ef",
+      "sizeBytes": 9982,
+      "status": "A"
+    },
+    {
+      "blob": "20ecf6b10ee84e3e153fc2915f8af7d017cfa095",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "dd7aeb903e9c9996c95e7bf0808bc62d2e048761d4a16f70e0df085d6fe4ff80",
+      "sizeBytes": 63377,
       "status": "M"
     }
   ],
-  "recipeTree": "e29b76245d47b0dfcfd00826ca82acbf877df3b3",
+  "recipeTree": "e0837ba0338f20d88519b8f68d3a63d0e272922b",
   "releaseClaim": false
 }
