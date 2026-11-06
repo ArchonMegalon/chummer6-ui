@@ -168,6 +168,12 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/OriginStoryDecisionTextTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/OwnerBoundWorkspaceRefreshContractTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/Sr6BuildMethodSelectionTests.cs",
+        "Chummer.CreationWizard.Presentation.Tests/Sr6CreationFoundationInteractionPresenterTests.cs",
+        # R58 2026-11-06: SR6 creation wizard foundation binding (owner-authorized
+        # integration of the SR6 wizard onto ISr6CreationFoundationService).
+        "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml",
+        "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml.cs",
+        "Chummer.Presentation/Overview/Sr6CreationFoundationInteractionPresenter.cs",
         "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
@@ -413,13 +419,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "fcf7925387150693a67a4b0c45e529d7d93911c1",
+        "blob": "91890a4f65b0b82d5f42f9ae601389ca04da33fd",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "6414cd51d722686c5e5da93dbd9b97bcf622d325faa0c79b5e2568185c7ad687",
+        "rawSha256": "1567593f991015302e5cd9e2521b95f3f0752c43130ce9f0c65745e0c49fda82",
         "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "6414cd51d722686c5e5da93dbd9b97bcf622d325faa0c79b5e2568185c7ad687",
+        "semanticCanonicalSha256": "1567593f991015302e5cd9e2521b95f3f0752c43130ce9f0c65745e0c49fda82",
         "semanticCanonicalSizeBytes": 69810,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

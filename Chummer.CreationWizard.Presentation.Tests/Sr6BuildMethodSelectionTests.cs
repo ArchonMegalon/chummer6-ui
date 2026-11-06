@@ -29,7 +29,7 @@ public sealed class Sr6BuildMethodSelectionTests
         CollectionAssert.Contains(values, Sr6CharacterCreationBuildMethods.Karma);
         CollectionAssert.DoesNotContain(values, "LifeModule");
         StringAssert.Contains(dialog.Message!, "SR6 draft");
-        StringAssert.Contains(dialog.Message!, "remaining SR6 wizard steps are not available");
+        StringAssert.Contains(dialog.Message!, "native SR6 wizard is available");
     }
 
     [TestMethod]
@@ -159,7 +159,7 @@ public sealed class Sr6BuildMethodSelectionTests
         Assert.IsNull(state.ActiveDialog);
         Assert.IsNull(state.Error);
         StringAssert.Contains(state.Notice!, method + " · SR6 draft");
-        StringAssert.Contains(state.Notice!, "remaining SR6 wizard steps are not available");
+        StringAssert.Contains(state.Notice!, "native SR6 wizard is available");
     }
 
     [TestMethod]

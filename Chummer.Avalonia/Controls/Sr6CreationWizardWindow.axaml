@@ -1,0 +1,101 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Chummer.Avalonia.Controls.Sr6CreationWizardWindow"
+        Title="Character Creation Wizard - Shadowrun Sixth Edition"
+        Width="980" Height="680"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner"
+        AutomationProperties.AutomationId="sr6-creation-wizard-window">
+  <Design.PreviewWith>
+    <Border />
+  </Design.PreviewWith>
+  <Grid RowDefinitions="Auto,*,Auto">
+    <!-- Header strip -->
+    <Border Grid.Row="0" Classes="shell-card subtle" Padding="14,10" Margin="12,12,12,2">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Classes="shell-section-title" Text="SR6 Character Creation Wizard" />
+          <TextBlock x:Name="WizardStepCounter"
+                     Classes="shell-caption"
+                     VerticalAlignment="Center"
+                     AutomationProperties.AutomationId="sr6-creation-wizard-step-counter" />
+        </StackPanel>
+        <TextBlock x:Name="AuthorityStatusText"
+                   Grid.Column="1"
+                   Classes="shell-caption"
+                   VerticalAlignment="Center"
+                   TextWrapping="Wrap"
+                   MaxWidth="480"
+                   TextAlignment="Right" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="230,*,280" ColumnSpacing="10" Margin="12,2,12,2">
+      <!-- Left step navigation pane -->
+      <Border Grid.Column="0" Classes="shell-card subtle" Padding="12">
+        <Grid RowDefinitions="Auto,*" RowSpacing="10">
+          <TextBlock Classes="shell-section-title" Text="Steps" />
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="StepList" Spacing="6" />
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
+      <!-- Content area -->
+      <Border Grid.Column="1" Classes="shell-card" Padding="14">
+        <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+          <TextBlock x:Name="ActiveStepTitle" Classes="shell-section-title" />
+          <TextBlock x:Name="StepStatusText"
+                     Grid.Row="1"
+                     Classes="shell-caption"
+                     TextWrapping="Wrap" />
+          <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <ContentControl x:Name="StepContentHost" />
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
+      <!-- Right assistant pane -->
+      <Border Grid.Column="2" Classes="shell-card subtle" Padding="12">
+        <Grid RowDefinitions="Auto,*" RowSpacing="10">
+          <TextBlock Classes="shell-section-title" Text="Guidance" />
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <TextBlock x:Name="GuidanceText"
+                       TextWrapping="Wrap"
+                       Text="Select a step on the left. Values are previewed and confirmed against the rules authority before they are applied to the character draft." />
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <!-- Footer: classic wizard chrome -->
+    <Border Grid.Row="2" Classes="shell-card subtle" Padding="12" Margin="12,2,12,12">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+        <TextBlock x:Name="FooterStatusText"
+                   Classes="shell-caption"
+                   VerticalAlignment="Center"
+                   TextWrapping="Wrap"
+                   MaxWidth="560" />
+        <Button x:Name="BackButton"
+                Grid.Column="1"
+                Content="&lt; Back"
+                MinWidth="86"
+                Click="BackButton_Click"
+                AutomationProperties.AutomationId="sr6-wizard-back" />
+        <Button x:Name="NextButton"
+                Grid.Column="2"
+                Content="Next &gt;"
+                MinWidth="86"
+                Click="NextButton_Click"
+                AutomationProperties.AutomationId="sr6-wizard-next" />
+        <Button x:Name="FinishButton"
+                Grid.Column="3"
+                Content="Finish"
+                MinWidth="86"
+                Click="FinishButton_Click"
+                IsVisible="False"
+                AutomationProperties.AutomationId="sr6-wizard-finish" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>
