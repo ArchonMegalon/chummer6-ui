@@ -136,6 +136,115 @@ public sealed class Sr6CreationWizardWindowTests
             StringAssert.Contains(scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text!, "could not be verified");
         });
 
+    [TestMethod]
+    public void Confirmation_is_voided_when_the_selection_changes_before_finish()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            // Reach the confirm step with an acknowledged preview.
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            window.GetVisualDescendants().OfType<CheckBox>().Single().IsChecked = true;
+            Click(window, "FinishButton");
+            Assert.AreEqual(1, presenter.Confirms);
+            // Back out, change a rank, come forward again: the new preview has a
+            // new digest, so the earlier acknowledgement must NOT dispatch.
+            Click(window, "BackButton");
+            Click(window, "BackButton");
+            Click(window, "BackButton");
+            window.GetVisualDescendants().OfType<ComboBox>().First().SelectedItem = "B";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            var confirmCheck = window.GetVisualDescendants().OfType<CheckBox>().Single();
+            Assert.IsFalse(confirmCheck.IsChecked == true, "New digest voids the earlier acknowledgement.");
+            Click(window, "FinishButton");
+            Assert.AreEqual(1, presenter.Confirms, "A stale acknowledgement must not dispatch the new preview.");
+        });
+
+    [TestMethod]
+    public void Store_read_failure_on_open_surfaces_as_blockers_not_crash()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter { ThrowOnLoad = true };
+            using var scope = new WizardScope(presenter);
+            StringAssert.Contains(scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text!, "store-read-failed");
+        });
+
+    [TestMethod]
+    public void Store_read_failure_on_preview_surfaces_as_blockers_not_crash()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter { ThrowOnPrepare = true };
+            using var scope = new WizardScope(presenter);
+            Click(scope.Window, "NextButton");
+            Click(scope.Window, "NextButton");
+            Click(scope.Window, "NextButton");
+            StringAssert.Contains(scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text!, "store-read-failed");
+            Assert.AreEqual(1, presenter.Prepares);
+        });
+
+    [TestMethod]
+    public void Commit_with_failed_refresh_is_reported_as_saved_not_total_failure()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter { RefreshFailsAfterCommit = true };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            window.GetVisualDescendants().OfType<CheckBox>().Single().IsChecked = true;
+            Click(window, "FinishButton");
+            Assert.AreEqual(1, presenter.Confirms);
+            StringAssert.Contains(window.FindControl<TextBlock>("FooterStatusText")!.Text!, "Saved; the post-save refresh failed");
+            StringAssert.Contains(window.FindControl<TextBlock>("AuthorityStatusText")!.Text!, "refresh-authority-required");
+        });
+
+    [TestMethod]
+    public void Finish_gate_requires_acknowledgement_digest_to_match_the_held_preview()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            // Reach the state the gate exists for: the held preview's digest has
+            // changed since the user acknowledged (a replacement path that did
+            // not void the ack). Reflection is the documented way to pin the
+            // window field without a UI route that re-acks.
+            window.GetVisualDescendants().OfType<CheckBox>().Single().IsChecked = true;
+            var field = typeof(Sr6CreationWizardWindow).GetField("_confirmedPreviewDigest",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.IsNotNull(field);
+            field.SetValue(window, "sha256:stale-stale-stale");
+            Click(window, "FinishButton");
+            Assert.AreEqual(0, presenter.Confirms, "A mismatched acknowledgement must not dispatch.");
+        });
+
     private static void Click(Sr6CreationWizardWindow window, string name)
         => window.FindControl<Button>(name)!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
@@ -154,7 +263,7 @@ public sealed class Sr6CreationWizardWindowTests
 public sealed class RecordingSr6WizardPresenter : ISr6CreationFoundationInteractionPresenter
 {
     public int Prepares, Confirms;
-    public bool PointBuy, ThrowOnConfirm;
+    public bool PointBuy, ThrowOnConfirm, ThrowOnLoad, ThrowOnPrepare, RefreshFailsAfterCommit;
     public Sr6CreationFoundationSelection? LastSelection;
     public Sr6CreationFoundationState? SavedState;
     private Sr6CreationFoundationState State(CharacterOverviewState overview) => SavedState ?? new(
@@ -167,10 +276,14 @@ public sealed class RecordingSr6WizardPresenter : ISr6CreationFoundationInteract
     };
     private const string Digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     public Sr6CreationFoundationInteractionLoadResult Load(CharacterOverviewState overview)
-        => new(CharacterCreationFoundationOutcomes.Success, new(State(overview), []), []);
+    {
+        if (ThrowOnLoad) throw new IOException("test store read failed");
+        return new(CharacterCreationFoundationOutcomes.Success, new(State(overview), []), []);
+    }
     public Sr6CreationFoundationInteractionPrepareResult Prepare(CharacterOverviewState overview, Sr6CreationFoundationSelection selection)
     {
         Prepares++;
+        if (ThrowOnPrepare) throw new IOException("test store read failed");
         LastSelection = selection;
         var state = State(overview);
         var preview = new Sr6CreationFoundationPreview(state.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], Digest);
@@ -180,6 +293,31 @@ public sealed class RecordingSr6WizardPresenter : ISr6CreationFoundationInteract
     {
         Confirms++;
         if (ThrowOnConfirm) throw new IOException("test uncertain outcome");
+        if (RefreshFailsAfterCommit)
+        {
+            Sr6CreationFoundationConfirmRequest command = new(
+                confirmation.PreparedPreview.Foundation.Binding,
+                confirmation.PreparedPreview.Preview.Selection,
+                confirmation.PreviewDigest,
+                confirmation.OperationId,
+                ExplicitlyConfirmed: true);
+            Sr6CreationFoundationDecision seed = new(
+                Sr6CreationFoundationDecision.SchemaV1,
+                command,
+                confirmation.PreparedPreview.Preview,
+                CommittedContentRevision: confirmation.PreparedPreview.Foundation.Binding.ContentRevision + 1,
+                Digest);
+            Sr6CreationFoundationDecision decision = seed with
+            {
+                DecisionDigest = Sr6CreationFoundationIntegrity.DecisionDigest(seed),
+            };
+            return new(
+                CharacterCreationFoundationOutcomes.Conflict,
+                confirmation.PreparedPreview,
+                new Sr6CreationFoundationCommit(decision, Replayed: false),
+                null,
+                [Sr6CreationFoundationInteractionBlockers.RefreshAuthorityRequired]);
+        }
         return new(CharacterCreationFoundationOutcomes.Blocked, confirmation.PreparedPreview, null, null, ["test-blocked"]);
     }
     public Sr6CreationFinalizationInteractionReviewResult ReviewFinalization(CharacterOverviewState overview, Sr6CreationFoundationBinding binding)
