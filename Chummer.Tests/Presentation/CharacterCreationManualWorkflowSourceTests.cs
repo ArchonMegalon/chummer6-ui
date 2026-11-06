@@ -742,6 +742,197 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             Assert.IsTrue(confirm.IsEnabled);
         });
 
+    [TestMethod]
+    public void Partly_edited_lifestyle_keeps_local_edit_and_accepts_refreshed_values()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+            string nameId = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            string percentageId = $"creation-wizard-lifestyle-{config.LifestyleId:D}-percentage";
+
+            // The player changes ONLY the name.
+            Find<TextBox>(control, nameId).Text = "My unsaved rename";
+            // The saved projection of the same lifestyle advances: percentage
+            // changed from 75.25 to 50 elsewhere, name stayed "Old home". The
+            // refreshed state carries its OWN lifestyle step (new saved values).
+            control.SetState(State(config with { Percentage = 50m }) with
+            {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "snapshot-2"
+            });
+            // Field-level merge: local edit retained, untouched field refreshed.
+            Assert.AreEqual("My unsaved rename", Find<TextBox>(control, nameId).Text);
+            Assert.AreEqual(50m, Find<NumericUpDown>(control, percentageId).Value);
+        });
+
+    [TestMethod]
+    public void Refreshed_lifestyle_conflicting_with_local_edit_is_reported_and_keeps_the_edit()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+            string nameId = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            Find<TextBox>(control, nameId).Text = "My unsaved rename";
+            // Same field changed differently elsewhere: keep the local edit,
+            // surface the conflict instead of silently choosing a side.
+            control.SetState(State(config with { Name = "Saved elsewhere" }) with
+            {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "snapshot-2"
+            });
+            Assert.AreEqual("My unsaved rename", Find<TextBox>(control, nameId).Text);
+            string rendered = string.Join("\n",
+                control.GetVisualDescendants().OfType<TextBlock>().Select(b => b.Text));
+            StringAssert.Contains(rendered, "changed elsewhere");
+            StringAssert.Contains(rendered, "saved 'Saved elsewhere' vs your edit 'My unsaved rename'");
+        });
+
+    [TestMethod]
+    public void Refreshed_contact_untouched_fields_accept_saved_changes_and_dirty_fields_win()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            Guid contactId = Guid.Parse("3f7f5c1e-2f04-4c53-9db1-6f0f5f3e1a01");
+            System.Collections.Generic.List<CharacterCreationWizardDesktopContactField> fields =
+            [
+                new(CharacterCreationContactFieldIds.Name, "Name", "text", true,
+                    "Old name", null, null, [], [], []),
+                new(CharacterCreationContactFieldIds.Notes, "Notes", "text", true,
+                    "Old notes", null, null, [], [], [])
+            ];
+            var contact = new CharacterCreationWizardDesktopContact(
+                contactId, "Old name", "Broker", 3, true, false, fields, [], "digest-1");
+            var contactBinding = new CharacterCreationContactBinding(
+                new("manual-workspace"), 1, 1, 1, "content", "aux", "source", "rules", "runtime");
+            var contactsStep = new CharacterCreationWizardDesktopContactsStep(
+                contactBinding, [contact], null, null, [], CanEdit: true, SnapshotDigest: "contacts-1");
+            control.SetState(state with { ContactsStep = contactsStep });
+            string nameId = $"creation-wizard-contact-{contactId:D}-field-"
+                + CharacterCreationContactFieldIds.Name;
+            string notesId = $"creation-wizard-contact-{contactId:D}-field-"
+                + CharacterCreationContactFieldIds.Notes;
+
+            // The player edits only the contact name.
+            Find<TextBox>(control, nameId).Text = "Local rename";
+            // A save elsewhere changes the saved notes value.
+            var refreshed = contact with
+            {
+                Fields = fields.Select(f => f.FieldId == CharacterCreationContactFieldIds.Notes
+                    ? f with { SerializedValue = "Refreshed notes" } : f).ToArray()
+            };
+            control.SetState(state with
+            {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "snapshot-2",
+                ContactsStep = contactsStep with { Contacts = [refreshed], SnapshotDigest = "contacts-2" }
+            });
+            Assert.AreEqual("Local rename", Find<TextBox>(control, nameId).Text);
+            Assert.AreEqual("Refreshed notes", Find<TextBox>(control, notesId).Text);
+        });
+
+    [TestMethod]
+    public void Refreshed_contact_conflict_is_visible_on_the_first_refreshed_render()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            Guid contactId = Guid.Parse("3f7f5c1e-2f04-4c53-9db1-6f0f5f3e1a01");
+            System.Collections.Generic.List<CharacterCreationWizardDesktopContactField> fields =
+            [
+                new(CharacterCreationContactFieldIds.Name, "Name", "text", true,
+                    "Old name", null, null, [], [], []),
+                new(CharacterCreationContactFieldIds.Notes, "Notes", "text", true,
+                    "Old notes", null, null, [], [], [])
+            ];
+            var contact = new CharacterCreationWizardDesktopContact(
+                contactId, "Old name", "Broker", 3, true, false, fields, [], "digest-1");
+            var contactBinding = new CharacterCreationContactBinding(
+                new("manual-workspace"), 1, 1, 1, "content", "aux", "source", "rules", "runtime");
+            var contactsStep = new CharacterCreationWizardDesktopContactsStep(
+                contactBinding, [contact], null, null, [], CanEdit: true, SnapshotDigest: "contacts-1");
+            control.SetState(state with { ContactsStep = contactsStep });
+            string nameId = $"creation-wizard-contact-{contactId:D}-field-"
+                + CharacterCreationContactFieldIds.Name;
+            string notesId = $"creation-wizard-contact-{contactId:D}-field-"
+                + CharacterCreationContactFieldIds.Notes;
+
+            // The player edits only the contact name.
+            Find<TextBox>(control, nameId).Text = "Local rename";
+            // A save elsewhere changes the saved notes value.
+            var refreshed = contact with
+            {
+                Fields = fields.Select(f => f.FieldId == CharacterCreationContactFieldIds.Notes
+                    ? f with { SerializedValue = "Refreshed notes" } : f with { SerializedValue = "Saved elsewhere" }).ToArray()
+            };
+            control.SetState(state with
+            {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "snapshot-2",
+                ContactsStep = contactsStep with { Contacts = [refreshed], SnapshotDigest = "contacts-2" }
+            });
+            Assert.AreEqual("Local rename", Find<TextBox>(control, nameId).Text);
+            Assert.AreEqual("Refreshed notes", Find<TextBox>(control, notesId).Text);
+            string rendered = string.Join("\n", control.GetVisualDescendants().OfType<TextBlock>().Select(b => b.Text));
+            StringAssert.Contains(rendered, "changed elsewhere");
+            StringAssert.Contains(rendered, "Saved elsewhere");
+        });
+
+    [TestMethod]
+    public void Lifestyle_refresh_matching_the_local_edit_does_not_report_a_conflict()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            control.SetState(State(config));
+            string nameId = $"creation-wizard-lifestyle-{config.LifestyleId:D}-name";
+            Find<TextBox>(control, nameId).Text = "Shared new name";
+            control.SetState(State(config with { Name = "Shared new name" }) with
+            {
+                WorkspaceRevision = 2,
+                SnapshotDigest = "snapshot-2"
+            });
+            Assert.AreEqual("Shared new name", Find<TextBox>(control, nameId).Text);
+            string rendered = string.Join("\n", control.GetVisualDescendants().OfType<TextBlock>().Select(b => b.Text));
+            Assert.IsFalse(rendered.Contains("changed elsewhere", StringComparison.Ordinal));
+        });
+
+    [TestMethod]
+    public void Verified_receipt_recovery_retires_the_create_cycle_and_next_create_gets_a_new_identity()
+        => WithUi((control, _) =>
+        {
+            var config = Configuration();
+            var state = State(config);
+            control.SetState(state);
+
+            // Start a create cycle: mint an identity through a preview.
+            CharacterCreationLifestyleMutationInput? createInput = null;
+            control.LifestylePreviewRequested += (_, request) => createInput = request.Input;
+            Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text = "Lost response flat";
+            Find<ComboBox>(control, "creation-wizard-lifestyle-create-base").SelectedIndex = 0;
+            Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
+            Assert.IsNotNull(createInput);
+            Guid lostIdentity = createInput.LifestyleId;
+
+            // The response is lost; a later receipt lookup finds the save.
+            control.SetLifestyleReceiptLookupResult(new(
+                CharacterCreationLifestyleOutcomes.Applied,
+                Receipt(lostIdentity),
+                null,
+                []));
+
+            // The completed create cycle must be retired: a distinct new create
+            // operation mints a DIFFERENT identity instead of reusing the saved
+            // one. An unrelated dirty edit survives.
+            Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text = "Second flat";
+            createInput = null;
+            Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
+            Assert.IsNotNull(createInput);
+            Assert.AreNotEqual(lostIdentity, createInput.LifestyleId);
+        });
+
     private static CharacterCreationLifestyleConfiguration Configuration()
         => new(Guid.Parse("5ee27326-0912-4dad-b65b-9ad4c01a8cbe"), "low", "Old home", "advanced", "week",
             2, 75.25m, 1, false, true, 2, 3, 4, 5, "Seattle", "Redmond", "Barrens", []);
