@@ -21,6 +21,11 @@ public partial class MainWindow
     private CreationAttributesAllocationWindow? _creationAttributesWindow;
     private CharacterCreationWizardSnapshot? _boundCreationWizardSnapshot;
     private OwnerContextStamp? _boundCreationWizardOwner;
+    // Build-Ghost turns are bound to the owner/session context that started
+    // them: a late answer may only reach the transcript while the originating
+    // turn, owner and window lifetime are still current (audit 2026-11-06).
+    private long _creationWizardBuildGhostNextTurn;
+    private long _creationWizardBuildGhostActiveTurn;
     private bool _creationContactsBusy;
     // Once dispatch begins, another click can only inspect the original outcome.
     private readonly Dictionary<string, CharacterCreationLifestylePreparedPreview> _pendingCreationLifestyles = new(StringComparer.Ordinal);
@@ -158,7 +163,9 @@ public partial class MainWindow
             _creationLifestylePreparedPreview = null;
             if (wizardIdentityChanged)
             {
-                // A different owner or character must never inherit drafts.
+                // A different owner or character must never inherit drafts --
+                // and must never receive an in-flight Build Ghost answer.
+                _creationWizardBuildGhostActiveTurn++;
                 CharacterCreationWizardControl.ClearContactLifestylePreviews();
             }
             else
@@ -1179,11 +1186,16 @@ public partial class MainWindow
             return;
         }
 
-        _ = AskCreationWizardBuildGhostAsync(question, _creationWizardLifetime.Token);
+        OwnerContextStamp? requestOwner = _boundCreationWizardOwner;
+        long turnId = ++_creationWizardBuildGhostNextTurn;
+        _creationWizardBuildGhostActiveTurn = turnId;
+        _ = AskCreationWizardBuildGhostAsync(question, requestOwner, turnId, _creationWizardLifetime.Token);
     }
 
     private async Task AskCreationWizardBuildGhostAsync(
         CharacterCreationWizardBuildGhostQuestion turn,
+        OwnerContextStamp? requestOwner,
+        long turnId,
         CancellationToken ct)
     {
         CharacterCreationWizardControl.SetBuildGhostBusy(true);
@@ -1207,7 +1219,8 @@ public partial class MainWindow
             AvaloniaCoachSidecarCallResult<AiConversationTurnResponse> result =
                 await _coachSidecarClient.SendBuildTurnAsync(request, ct).ConfigureAwait(true);
 
-            if (!MatchesCurrentBuildGhostContext(turn.Context))
+            if (!BuildGhostTurnIsCurrent(requestOwner, turnId)
+                || !MatchesCurrentBuildGhostContext(turn.Context))
             {
                 CharacterCreationWizardControl.AppendBuildGhostAnswer(
                     "Rook",
@@ -1231,9 +1244,20 @@ public partial class MainWindow
         }
         finally
         {
-            CharacterCreationWizardControl.SetBuildGhostBusy(false);
+            // A superseded turn must not clear the busy flag of the turn
+            // that replaced it (owner change while the response was held).
+            if (turnId >= _creationWizardBuildGhostActiveTurn
+                && !_creationWizardLifetime.IsCancellationRequested)
+            {
+                CharacterCreationWizardControl.SetBuildGhostBusy(false);
+            }
         }
     }
+
+    private bool BuildGhostTurnIsCurrent(OwnerContextStamp? requestOwner, long turnId)
+        => turnId == _creationWizardBuildGhostActiveTurn
+           && !_creationWizardLifetime.IsCancellationRequested
+           && _boundCreationWizardOwner == requestOwner;
 
     private bool MatchesCurrentBuildGhostContext(CharacterCreationWizardBuildGhostContext expected)
     {

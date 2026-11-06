@@ -28,6 +28,8 @@ using Chummer.Presentation.Shell;
 using Chummer.Avalonia;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Owners;
+using Chummer.Application.Owners;
 using Chummer.Presentation.Overview;
 using Chummer.Tests.Presentation;
 
@@ -1102,12 +1104,24 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             lifestyles.PreparePreview = CreatePreview(binding, "Lost response flat", revision: 1);
             var control = window.GetVisualDescendants()
                 .OfType<CharacterCreationWizardControl>().First();
+            Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text = "Lost response flat";
+            pump();
             Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
             pump();
             var prepared = lifestyles.LastPreparedPreview;
             Assert.IsNotNull(prepared, "The prepare call must reach the lifestyles presenter.");
             Guid identityX = prepared.Mutation.LifestyleId;
             Assert.AreNotEqual(Guid.Empty, identityX);
+            // The identity chain must be consistent end to end: the control's
+            // create request identity equals the prepared mutation identity and
+            // the write-plan identity, and the entered configuration is carried
+            // through instead of a preselected template configuration.
+            Assert.AreEqual(identityX, lifestyles.LastPrepare!.Value.Input.LifestyleId,
+                "The prepared preview must be derived from the captured create request.");
+            Assert.AreEqual(identityX, prepared.WritePlan.LifestyleId,
+                "The write plan must target the control-created identity.");
+            Assert.AreEqual("Lost response flat", prepared.Mutation.Configuration!.Name,
+                "The entered configuration values must flow through the prepared preview.");
 
             // ---- 1b. an unrelated saved entry carries an UNSAVED EDIT -------
             string unrelatedNameId = $"creation-wizard-lifestyle-{unrelatedConfig.LifestyleId:D}-name";
@@ -1144,13 +1158,19 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
             Assert.AreEqual(1, lifestyles.WriteAttempts,
                 "The main recovery test: exactly the lost-response write attempt ran.");
             int writesBefore = lifestyles.WriteAttempts;
-            EmitLifestylePreview(window, new CharacterCreationLifestyleMutationInput(
-                CharacterCreationLifestyleMutationKinds.Create, Guid.NewGuid(), null));
+            // The second operation must also run through the REAL create form so
+            // the control itself mints its next identity after the retirement;
+            // comparing fixture identities would assert nothing about the control.
+            Find<TextBox>(control, "creation-wizard-lifestyle-create-name").Text = "Second flat";
+            pump();
+            Click(Find<Button>(control, "creation-wizard-lifestyle-create-preview"));
             pump();
             var second = lifestyles.LastPreparedPreview;
             Assert.IsNotNull(second);
             Assert.AreNotEqual(identityX, second.Mutation.LifestyleId,
                 "The next create cycle must receive a fresh identity, not the completed one.");
+            Assert.AreNotEqual(identityX, lifestyles.LastPrepare!.Value.Input.LifestyleId,
+                "The control minted a fresh identity for the next create cycle.");
             Assert.AreEqual(writesBefore, lifestyles.WriteAttempts,
                 "Recovery must not replay the original write.");
         });
@@ -1285,6 +1305,52 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         });
     }
 
+    [TestMethod]
+    public void Window_build_ghost_answer_from_a_replaced_owner_is_not_displayed()
+    {
+        // An owner transition while a Build Ghost response is held must
+        // invalidate the in-flight turn even when the character snapshot
+        // is identical: the late answer belongs to the replaced context
+        // and must never reach the new owner\u2019s transcript.
+        WithMainWindow((window, overviewPresenter, lifestyles, pump) =>
+        {
+            var stub = FindCoachStub(window);
+            var binding = Binding();
+            var ownerA = new OwnerContextStamp(new OwnerScope("local-single-user"), "authority-test", 1);
+            var ownerB = new OwnerContextStamp(new OwnerScope("local-single-user"), "authority-test", 2);
+            overviewPresenter.Publish(OverviewState(binding,
+                [Projection(Configuration())], revision: 1, ownerContext: ownerA));
+            pump();
+            var session = (CharacterCreationWizardDesktopSession)typeof(MainWindow)
+                .GetField("_creationWizardSession", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .GetValue(window)!;
+            CharacterCreationWizardDesktopState state = session.State;
+
+            stub.NextBuildAnswer = "OWNER A ADVICE";
+            stub.HoldBuildResponses = true;
+            RaiseEvent(WizardControl(window), "BuildGhostQuestionSubmitted",
+                new CharacterCreationWizardBuildGhostQuestion("?", state.BuildGhostContext));
+            pump();
+
+            // The owner transition while the response is still in flight:
+            // identical snapshot, identical revision, new owner stamp.
+            overviewPresenter.Publish(OverviewState(binding,
+                [Projection(Configuration())], revision: 1, ownerContext: ownerB));
+            pump();
+            stub.ReleaseBuildResponse();
+            pump();
+            pump();
+
+            Assert.HasCount(1, stub.BuildTurns,
+                "Exactly one sidecar turn must have been sent.");
+            string transcript = GetGhostTranscriptText(window);
+            Assert.IsFalse(transcript.Contains("OWNER A ADVICE"),
+                "An answer from a replaced owner must never reach the transcript. Transcript: " + transcript);
+            Assert.IsTrue(transcript.Contains("changed while I was answering"),
+                "The stale-context notice must be shown instead. Transcript: " + transcript);
+        });
+    }
+
     private static StubCoachSidecarClientForLifestyleTests FindCoachStub(MainWindow window)
         => (StubCoachSidecarClientForLifestyleTests)typeof(MainWindow)
             .GetField("_coachSidecarClient", BindingFlags.NonPublic | BindingFlags.Instance)!
@@ -1354,7 +1420,8 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
     private static CharacterOverviewState OverviewState(
         CharacterCreationLifestyleBinding binding,
         IReadOnlyList<CharacterCreationLifestyleProjection> lifestyles,
-        long revision)
+        long revision,
+        OwnerContextStamp? ownerContext = null)
     {
         var option = new CharacterCreationLifestyleCatalogOption("low", Guid.Empty, "Low", 50, 1, 100, 5,
             1, 1, 1, 0, 10, 0, 10, 0, 10, true, "month", "SR5", "10", [], true, true, [], [], "option");
@@ -1404,7 +1471,8 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
         {
             WorkspaceId = binding.WorkspaceId,
             CreationWizard = snapshot,
-            CreationLifestyles = contractState
+            CreationLifestyles = contractState,
+            DisplayOwnerContext = ownerContext
         };
     }
 
@@ -1433,9 +1501,45 @@ public sealed class CharacterCreationManualWorkflowAvaloniaTests
                 LastPreparedPreview = null;
                 return new(CharacterCreationLifestyleOutcomes.Unavailable, null, null, []);
             }
-            var prepared = PreparePreview with { DisplayOwnerContext = overview.DisplayOwnerContext };
+            // The response is derived from the CAPTURED INPUT: the identity the
+            // control minted and the configuration the player entered. A response
+            // built from the pre-fabricated template identity would break the
+            // identity chain (control request = prepared mutation = write plan =
+            // recovered receipt) and silently bypass the retirement branch.
+            var prepared = DerivePreparedFromInput(PreparePreview, input, overview.DisplayOwnerContext);
             LastPreparedPreview = prepared;
             return new(CharacterCreationLifestyleOutcomes.Available, null, prepared, []);
+        }
+
+        private static CharacterCreationLifestylePreparedPreview DerivePreparedFromInput(
+            CharacterCreationLifestylePreparedPreview template,
+            CharacterCreationLifestyleMutationInput input,
+            OwnerContextStamp? ownerContext)
+        {
+            CharacterCreationLifestyleConfiguration? configuration = input.Configuration
+                ?? (template.Mutation.Configuration is { } templateConfiguration
+                    ? templateConfiguration with { LifestyleId = input.LifestyleId }
+                    : null);
+            CharacterCreationLifestyleProjection? after = configuration is { } && template.After is { } templateAfter
+                ? templateAfter with { Configuration = configuration }
+                : template.After;
+            CharacterCreationLifestyleMutation mutation = new(
+                input.MutationKind,
+                input.LifestyleId,
+                input.Configuration ?? (input.MutationKind == CharacterCreationLifestyleMutationKinds.Create ? configuration : null));
+            CharacterCreationLifestyleAtomicWritePlan plan = template.WritePlan with
+            {
+                MutationKind = input.MutationKind,
+                LifestyleId = input.LifestyleId,
+                After = after,
+            };
+            return template with
+            {
+                Mutation = mutation,
+                After = after,
+                WritePlan = plan,
+                DisplayOwnerContext = ownerContext,
+            };
         }
 
         public CharacterCreationLifestylesInteractionConfirmResult Confirm(
