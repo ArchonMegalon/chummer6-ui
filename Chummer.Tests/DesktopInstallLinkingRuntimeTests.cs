@@ -152,9 +152,23 @@ public sealed class DesktopInstallLinkingRuntimeTests
             Convert.FromBase64String(signature),
             HashAlgorithmName.SHA256,
             RSASignaturePadding.Pkcs1));
-        CollectionAssert.AreEqual(
-            installationKey.ExportRSAPublicKey(),
-            Convert.FromBase64String(publicKey));
+        byte[] wirePublicKey = Convert.FromBase64String(publicKey);
+        CollectionAssert.AreEqual(installationKey.ExportSubjectPublicKeyInfo(), wirePublicKey);
+        using RSA serverKey = RSA.Create();
+        serverKey.ImportSubjectPublicKeyInfo(wirePublicKey, out int bytesRead);
+        Assert.AreEqual(wirePublicKey.Length, bytesRead);
+        Assert.IsTrue(serverKey.VerifyData(
+            payload,
+            Convert.FromBase64String(signature),
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1));
+        byte[] alteredPayload = (byte[])payload.Clone();
+        alteredPayload[0] ^= 1;
+        Assert.IsFalse(serverKey.VerifyData(
+            alteredPayload,
+            Convert.FromBase64String(signature),
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1));
     }
 
     [TestMethod]
