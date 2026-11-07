@@ -13,6 +13,7 @@ using Chummer.Presentation.OriginBooks;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Run.Contracts.Billing;
+using Chummer.Run.Contracts.Community;
 using System.Diagnostics;
 using System.Net;
 using System.Security.Cryptography;
@@ -46,6 +47,7 @@ internal sealed class DesktopAliceWindow : Window
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private readonly IReadOnlyList<DesktopBuildPathCandidate> _buildPathCandidates;
     private readonly IAvaloniaCoachSidecarClient? _coachSidecarClient;
+    private readonly IAliceOriginBookChapterBridge? _originBookChapterBridge;
     private readonly string? _rulesetId;
     private readonly string? _workspaceId;
     private readonly string? _preferredConversationMode;
@@ -88,6 +90,7 @@ internal sealed class DesktopAliceWindow : Window
         _recentWorkspaces = recentWorkspaces;
         _buildPathCandidates = buildPathCandidates;
         _coachSidecarClient = coachSidecarClient;
+        _originBookChapterBridge = App.Services?.GetService(typeof(IAliceOriginBookChapterBridge)) as IAliceOriginBookChapterBridge;
         _rulesetId = RulesetDefaults.NormalizeOptional(rulesetId);
         _workspaceId = recentWorkspaces.FirstOrDefault()?.Id.Value;
         _preferredConversationMode = preferredConversationMode;
@@ -2459,17 +2462,12 @@ internal sealed class DesktopAliceWindow : Window
             ?? _selectedBuildPath?.Suggestion.Title
             ?? _selectedHandoff?.Title
             ?? "Unclassified shadow asset";
-        string[] causalityHints = new string?[]
-        {
+        string[] causalityHints = AliceOriginBookChapterBridge.BuildCausalityHints(
+            ResolveOriginCanonicalChapterHint(),
             _selectedHandoff?.Summary,
             _selectedHandoff?.NextSafeAction,
             _selectedBuildPath?.Preview?.CampaignReturnSummary,
-            _selectedBuildPath?.Preview?.RuntimeCompatibilitySummary
-        }
-        .Where(static line => !string.IsNullOrWhiteSpace(line))
-        .Take(4)
-        .Cast<string>()
-        .ToArray();
+            _selectedBuildPath?.Preview?.RuntimeCompatibilitySummary);
 
         string[] standoutSignals = new string?[]
         {
@@ -2879,6 +2877,28 @@ internal sealed class DesktopAliceWindow : Window
         }
 
         return HumanLines(lines);
+    }
+
+    private string? ResolveOriginCanonicalChapterHint()
+    {
+        WorkspaceListItem? workspace = _recentWorkspaces.FirstOrDefault();
+        if (workspace is null || _originBookChapterBridge is null)
+        {
+            return null;
+        }
+
+        OriginChapterSource? source = _originBookChapterBridge.TryResolveChapterSource(
+            workspace.Id,
+            workspace.ContentRevision,
+            workspace.SavedRevision);
+        if (source is null || source.Facts.Count == 0)
+        {
+            return null;
+        }
+
+        return string.Join(
+            " | ",
+            source.Facts.Take(3).Select(f => f.Text));
     }
 
     private void EnsureOriginDraftReviewPacket(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)

@@ -79,6 +79,49 @@ public sealed class AvaloniaHeadlessSmokeTests
         WithHeadlessUi(() => Assert.IsNotNull(global::Avalonia.Application.Current));
     }
 
+    [TestMethod]
+    public void Life_module_controls_dispatch_the_version_and_follow_up_and_offer_explicit_finish()
+    {
+        WithHeadlessUi(() =>
+        {
+            var snapshot = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+            var session = new Chummer.Presentation.Overview.CharacterCreationWizardDesktopSession();
+            var journey = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.Journey(snapshot, 5);
+            session.Bind(snapshot, journey: journey);
+            Assert.IsTrue(session.TryContinue());
+            var control = new Chummer.Avalonia.Controls.CharacterCreationWizardControl();
+            var window = new Window { Content = control };
+            window.Show();
+            try
+            {
+                control.SetState(session.State);
+                Chummer.Avalonia.Controls.CharacterCreationJourneyOptionClickRequested? captured = null;
+                control.JourneyOptionClickRequested += (_, request) => captured = request;
+                var choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                choice.SelectedIndex = 0;
+                var button = control.GetVisualDescendants().OfType<Button>().Single(b =>
+                    b.Tag is Chummer.Presentation.Overview.CharacterCreationWizardDesktopOption);
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.IsNotNull(captured);
+                Assert.AreEqual("module-5", captured.Option.OptionId);
+                Assert.AreEqual("version-a", captured.Option.VersionId);
+                Assert.AreEqual("pistols", captured.FollowUpValues!["skill-choice"]);
+                int finishes = 0;
+                control.JourneyFinishRequested += (_, _) => finishes++;
+                var finish = control.GetVisualDescendants().OfType<Button>().Single(b =>
+                    global::Avalonia.Automation.AutomationProperties.GetAutomationId(b) == "creation-wizard-journey-finish");
+                Assert.IsTrue(finish.IsEnabled);
+                finish.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.AreEqual(1, finishes);
+                control.SetJourneyMutationBusy(true);
+                button = control.GetVisualDescendants().OfType<Button>().Single(b =>
+                    b.Tag is Chummer.Presentation.Overview.CharacterCreationWizardDesktopOption);
+                Assert.IsFalse(button.IsEnabled);
+            }
+            finally { window.Close(); }
+        });
+    }
+
     private static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)

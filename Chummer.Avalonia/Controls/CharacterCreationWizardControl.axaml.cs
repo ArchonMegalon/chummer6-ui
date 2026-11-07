@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.LifeModules;
 using Chummer.Presentation.Overview;
 using Chummer.Contracts.Presentation;
 using System.Globalization;
@@ -55,6 +56,18 @@ public sealed record CharacterCreationQualitiesOptionClickRequested(
 public sealed record CharacterCreationMagicResonanceOptionClickRequested(
     CharacterCreationWizardDesktopOption Option);
 
+public sealed record CharacterCreationJourneyOptionClickRequested(
+    CharacterCreationWizardDesktopOption Option,
+    IReadOnlyDictionary<string, string>? FollowUpValues = null);
+
+public sealed record CharacterCreationJourneyConfirmRequested(
+    string PreviewDigest);
+
+public sealed record CharacterCreationJourneyFinishRequested;
+
+public sealed record CharacterCreationJourneyFinishConfirmRequested(
+    string PreviewDigest);
+
 public partial class CharacterCreationWizardControl : UserControl
 {
     private static readonly string[] s_IdentityFieldIds =
@@ -92,6 +105,14 @@ public partial class CharacterCreationWizardControl : UserControl
     private bool _resourcesMutationBusy;
     private string? _foundationStatus;
     private bool _foundationMutationBusy;
+    private CharacterCreationLifeModulePreparedPreview? _journeyPreview;
+    private string? _journeyMutationStatus;
+    private bool _journeyMutationBusy;
+    private CharacterCreationLifeModuleFinishPreview? _journeyFinishPreview;
+
+    public CharacterCreationLifeModulePreparedPreview? JourneyPreview => _journeyPreview;
+
+    public CharacterCreationLifeModuleFinishPreview? JourneyFinishPreview => _journeyFinishPreview;
     private bool _contactMutationBusy;
     private CharacterCreationLifestylePreparedPreview? _lifestylePreview;
     private string? _lifestyleMutationStatus;
@@ -583,6 +604,14 @@ public partial class CharacterCreationWizardControl : UserControl
         RefreshPrioritySelectionVisuals();
     }
     public event EventHandler<CharacterCreationFoundationConfirmRequested>? FoundationConfirmRequested;
+
+    public event EventHandler<CharacterCreationJourneyOptionClickRequested>? JourneyOptionClickRequested;
+
+    public event EventHandler<CharacterCreationJourneyConfirmRequested>? JourneyConfirmRequested;
+
+    public event EventHandler<CharacterCreationJourneyFinishRequested>? JourneyFinishRequested;
+
+    public event EventHandler<CharacterCreationJourneyFinishConfirmRequested>? JourneyFinishConfirmRequested;
     public event EventHandler? FinalizeRequested;
 
     /// <summary>Raised when the user asks the Build Ghost to finish the character.</summary>
@@ -1161,6 +1190,71 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
+    public void SetJourneyPrepareResult(CharacterCreationLifeModuleJourneyInteractionPrepareResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _journeyPreview = result.PreparedPreview;
+        _journeyMutationStatus = BuildJourneyResultStatus(result.Outcome, result.Blockers);
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetJourneyConfirmResult(CharacterCreationLifeModuleJourneyInteractionConfirmResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _journeyMutationStatus = BuildJourneyResultStatus(result.Outcome, result.Blockers);
+        if (result.Receipt is not null
+            && !result.Blockers.Contains(CharacterCreationLifeModuleJourneyInteractionBlockers.ReceiptMismatch))
+        {
+            _journeyPreview = null;
+        }
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetJourneyFinishPrepareResult(CharacterCreationLifeModuleJourneyInteractionFinishPrepareResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _journeyFinishPreview = result.FinishPreview;
+        _journeyMutationStatus = BuildJourneyResultStatus(result.Outcome, result.Blockers);
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetJourneyFinishConfirmResult(CharacterCreationLifeModuleJourneyInteractionFinishConfirmResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        _journeyMutationStatus = BuildJourneyResultStatus(result.Outcome, result.Blockers);
+        if (result.Receipt is not null
+            && !result.Blockers.Contains(CharacterCreationLifeModuleJourneyInteractionBlockers.ReceiptMismatch))
+        {
+            _journeyFinishPreview = null;
+        }
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetJourneyMutationBusy(bool busy)
+    {
+        _journeyMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void SetJourneyStatus(string message)
+    {
+        _journeyMutationStatus = message;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void ClearJourneyPreviews()
+    {
+        _journeyPreview = null;
+        _journeyFinishPreview = null;
+        _journeyMutationStatus = null;
+    }
+
+    private static string BuildJourneyResultStatus(string outcome, IReadOnlyList<string> blockers)
+    {
+        string suffix = blockers.Count == 0 ? string.Empty : $" — {string.Join(", ", blockers)}";
+        return $"Life module journey: {outcome}{suffix}";
+    }
+
     public void SetResourcesPrepareResult(CharacterCreationResourcesInteractionPrepareResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -1270,6 +1364,15 @@ public partial class CharacterCreationWizardControl : UserControl
                 StringComparison.Ordinal))
         {
             MagicResonanceOptionClickRequested?.Invoke(this, new CharacterCreationMagicResonanceOptionClickRequested(option));
+            return;
+        }
+        if (_state?.JourneyStep is not null
+            && string.Equals(
+                _state?.ActiveStepId,
+                CharacterCreationWizardStepIds.LifeModules,
+                StringComparison.Ordinal))
+        {
+            JourneyOptionButton_OnClick(sender, e);
             return;
         }
         FoundationOptionClickRequested?.Invoke(this, new CharacterCreationFoundationOptionClickRequested(option));
@@ -1441,6 +1544,10 @@ public partial class CharacterCreationWizardControl : UserControl
         if (!LegalOptionList.IsVisible)
             return;
         bool qualities = _state?.ActiveStepId == CharacterCreationWizardStepIds.Qualities;
+        bool journey = _state?.ActiveStepId == CharacterCreationWizardStepIds.LifeModules
+            && _state?.JourneyStep is not null;
+        if (journey)
+            RenderJourneyStepHeader();
         if (_state?.ActiveStepId == CharacterCreationWizardStepIds.MagicResonance)
         {
             LegalOptionList.Children.Add(Caption("Magic/Resonance editing is not available in this Windows build yet. These choices cannot be applied here."));
@@ -1555,13 +1662,175 @@ public partial class CharacterCreationWizardControl : UserControl
         };
             optionButton.Classes.Add("quiet");
             AutomationProperties.SetAutomationId(optionButton, $"creation-wizard-option-{option.OptionId}");
-            optionButton.Click += FoundationOptionButton_OnClick;
-            card.Child = optionButton;
+            if (journey)
+            {
+                var body = new StackPanel { Spacing = 4 };
+                var readers = new Dictionary<string, Func<string?>>(StringComparer.Ordinal);
+                foreach (LifeModuleFollowUpPromptDto prompt in option.FollowUps)
+                {
+                    body.Children.Add(Caption(prompt.Label + (prompt.IsRequired ? " (required)" : "")));
+                    if (prompt.Options.Count > 0)
+                    {
+                        var choice = new ComboBox
+                        {
+                            ItemsSource = prompt.Options.Where(o => o.IsEnabled).Select(o => new ComboBoxItem
+                            { Content = o.Label, Tag = o.SourceValue }).ToArray(),
+                            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
+                        };
+                        AutomationProperties.SetAutomationId(choice, $"creation-journey-input-{prompt.PromptId}");
+                        readers[prompt.PromptId] = () => (choice.SelectedItem as ComboBoxItem)?.Tag as string;
+                        body.Children.Add(choice);
+                    }
+                    else
+                    {
+                        var input = new TextBox { Watermark = prompt.Label };
+                        AutomationProperties.SetAutomationId(input, $"creation-journey-input-{prompt.PromptId}");
+                        readers[prompt.PromptId] = () => input.Text;
+                        body.Children.Add(input);
+                    }
+                }
+                optionButton.IsEnabled = option.IsEnabled && !_journeyMutationBusy;
+                optionButton.Click += (_, _) =>
+                {
+                    if (_journeyMutationBusy || !option.IsEnabled) return;
+                    var values = readers.Select(pair => (pair.Key, Value: pair.Value()))
+                        .Where(pair => !string.IsNullOrWhiteSpace(pair.Value))
+                        .ToDictionary(pair => pair.Key, pair => pair.Value!, StringComparer.Ordinal);
+                    JourneyOptionClickRequested?.Invoke(this, new CharacterCreationJourneyOptionClickRequested(option, values));
+                };
+                body.Children.Add(optionButton);
+                card.Child = body;
+            }
+            else
+            {
+                optionButton.Click += FoundationOptionButton_OnClick;
+                card.Child = optionButton;
+            }
             LegalOptionList.Children.Add(card);
         }
 
         RenderFoundationPreview(options);
         RenderResourcesPreview();
+        if (journey)
+            RenderJourneyPreviewPanel();
+    }
+
+    private void RenderJourneyStepHeader()
+    {
+        if (_state?.JourneyStep is not { } journey)
+            return;
+        LegalOptionList.Children.Add(Caption($"Life module stage {journey.CurrentStageOrder} of 5: {journey.CurrentStageLabel}"));
+        if (_journeyMutationBusy)
+            LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
+        if (!string.IsNullOrWhiteSpace(_journeyMutationStatus))
+            LegalOptionList.Children.Add(Caption(_journeyMutationStatus));
+        if (journey.SelectionFinished)
+        {
+            LegalOptionList.Children.Add(Caption(
+                "Your life module selection is finished. The origin story follows in the character overview."));
+            return;
+        }
+        if (journey.CanFinishSelection && journey.CurrentStageOrder == 5
+            && _journeyFinishPreview is not { } finishPreview)
+        {
+            Button finishButton = new() { Content = "Review and finish life module selection\u2026", IsEnabled = !_journeyMutationBusy };
+            AutomationProperties.SetAutomationId(finishButton, "creation-wizard-journey-finish");
+            finishButton.Click += (_, finishArgs) =>
+            {
+                if (!_journeyMutationBusy)
+                    JourneyFinishRequested?.Invoke(this, new CharacterCreationJourneyFinishRequested());
+            };
+            LegalOptionList.Children.Add(finishButton);
+        }
+        if (journey.CanFinishSelection && journey.CurrentStageOrder == 5
+            && _journeyFinishPreview is { } finish)
+        {
+            Border finishCard = new() { Classes = { "shell-card", "subtle" }, Padding = new global::Avalonia.Thickness(9) };
+            finishCard.Child = new StackPanel
+            {
+                Spacing = 4,
+                Children =
+                {
+                    new TextBlock { Text = "Exact Core finish preview", Classes = { "shell-section-title" } },
+                    Caption($"Source anchors: {finish.SourceAnchorIds.Count}"),
+                    finish.CanConfirm && finish.Blockers.Count == 0
+                        ? Caption("Selection complete; confirm to finish the journey against this exact revision.")
+                        : Caption($"Blocked: {string.Join(", ", finish.Blockers)}")
+                }
+            };
+            Button finishConfirm = new()
+            {
+                Content = "Confirm and finish selection",
+                IsEnabled = finish.CanConfirm && finish.Blockers.Count == 0 && !_journeyMutationBusy
+            };
+            AutomationProperties.SetAutomationId(finishConfirm, "creation-wizard-journey-finish-confirm");
+            finishConfirm.Click += (_, _) =>
+            {
+                if (_journeyFinishPreview is { } held
+                    && held.CanConfirm && held.Blockers.Count == 0
+                    && !_journeyMutationBusy)
+                {
+                    JourneyFinishConfirmRequested?.Invoke(this, new CharacterCreationJourneyFinishConfirmRequested(held.PreviewDigest));
+                }
+            };
+            finishCard.Child = new StackPanel
+            {
+                Spacing = 4,
+                Children =
+                {
+                    (finishCard.Child as StackPanel)!,
+                    finishConfirm
+                }
+            };
+            LegalOptionList.Children.Add(finishCard);
+        }
+    }
+
+    private void RenderJourneyPreviewPanel()
+    {
+        if (_journeyPreview is not { } preview)
+            return;
+        Border panel = new() { Classes = { "shell-card", "subtle" }, Padding = new global::Avalonia.Thickness(9) };
+        StackPanel body = new() { Spacing = 4 };
+        body.Children.Add(new TextBlock { Text = "Exact Core life module preview", Classes = { "shell-section-title" } });
+        body.Children.Add(Caption($"Stage {preview.StageOrder}: {preview.Entry.StoryTemplate}"));
+        foreach (LifeModuleEffectProjectionDto effect in preview.Entry.ProjectedEffects)
+            body.Children.Add(Caption($"Effect {effect.EffectId} ({effect.Domain}): {effect.TargetId}"));
+        foreach (LifeModuleRequirementProjectionDto requirement in preview.Entry.RequirementEvaluations)
+            body.Children.Add(Caption($"Requirement {requirement.RequirementId}: {(requirement.IsMet ? "met" : "unmet")}"));
+        body.Children.Add(Caption($"Karma before: {preview.BudgetBefore.Remaining:0} \u2022 after: {preview.BudgetAfter.Remaining:0}"));
+        if (preview.AuthorityBlockers.Count > 0)
+            body.Children.Add(Caption($"Authority: {string.Join(", ", preview.AuthorityBlockers)}"));
+        body.Children.Add(preview.CanConfirm && preview.AuthorityBlockers.Count == 0
+            ? Caption("Preview is legal; confirm to commit against this exact revision.")
+            : Caption($"Blocked: {string.Join(", ", preview.AuthorityBlockers.Count > 0 ? preview.AuthorityBlockers : ["preview not confirmable"])}"));
+        if (!string.IsNullOrWhiteSpace(_journeyMutationStatus))
+            body.Children.Add(Caption(_journeyMutationStatus));
+        Button confirm = new()
+        {
+            Content = "Confirm and apply life module",
+            IsEnabled = preview.CanConfirm && preview.AuthorityBlockers.Count == 0 && !_journeyMutationBusy
+        };
+        AutomationProperties.SetAutomationId(confirm, "creation-wizard-journey-confirm");
+        confirm.Click += JourneyConfirmButton_OnClick;
+        body.Children.Add(confirm);
+        panel.Child = body;
+        LegalOptionList.Children.Add(panel);
+    }
+
+    private void JourneyOptionButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: CharacterCreationWizardDesktopOption option })
+            return;
+        if (!option.IsEnabled)
+            return;
+        JourneyOptionClickRequested?.Invoke(this, new CharacterCreationJourneyOptionClickRequested(option));
+    }
+
+    private void JourneyConfirmButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_journeyPreview is { } preview)
+            JourneyConfirmRequested?.Invoke(this, new CharacterCreationJourneyConfirmRequested(preview.PreviewDigest));
     }
 
     private void RenderResourcesPreview()

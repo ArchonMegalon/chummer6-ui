@@ -342,6 +342,10 @@ def test_bootstrap_source_anchor_fixtures_have_exact_recipe_membership() -> None
 def test_owner_context_recipe_accepts_only_exact_reviewed_file_names(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     members = preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert len(members) == 82
+    assert {
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardDesktopSessionTests.cs",
+        "Chummer.Tests/Presentation/AvaloniaHeadlessSmokeTests.cs",
+    } <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert all(not any(token in name for token in ("*", "?", "..")) for name in members)
     monkeypatch.setattr(preseal, "git", lambda *args, **kwargs:

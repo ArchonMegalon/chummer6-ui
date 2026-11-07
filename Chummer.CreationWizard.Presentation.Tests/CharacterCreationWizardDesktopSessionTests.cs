@@ -1,4 +1,6 @@
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.LifeModules;
+using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -151,7 +153,71 @@ public sealed class CharacterCreationWizardDesktopSessionTests
             new CharacterCreationWizardDesktopSession().Bind(created));
     }
 
-    private static CharacterCreationWizardSnapshot CreateSnapshot()
+    [TestMethod]
+    public void Journey_projects_current_stage_versions_and_inputs_instead_of_nationality()
+    {
+        var snapshot = CreateSnapshot();
+        var journey = Journey(snapshot, 2);
+        var session = new CharacterCreationWizardDesktopSession();
+        session.Bind(snapshot, journey: journey);
+        Assert.IsTrue(session.TryContinue());
+        Assert.AreEqual(2, session.State.JourneyStep!.CurrentStageOrder);
+        var option = AssertExactlyOne(session.State.LegalOptions);
+        Assert.AreEqual("module-2", option.OptionId);
+        Assert.AreEqual("version-a", option.VersionId);
+        Assert.AreEqual("skill-choice", AssertExactlyOne(option.FollowUps).PromptId);
+        Assert.AreEqual(7m, AssertExactlyOne(option.Costs).Delta);
+        foreach (int stage in new[] { 3, 4, 5, 5 })
+        {
+            journey = Journey(snapshot, stage);
+            session.Bind(snapshot, journey: journey);
+            Assert.IsTrue(session.TryContinue());
+            Assert.AreEqual(stage, session.State.JourneyStep!.CurrentStageOrder);
+            Assert.AreEqual("module-" + stage, AssertExactlyOne(session.State.LegalOptions).OptionId);
+        }
+        var finished = Journey(snapshot, 5) with { SelectionFinished = true, CanFinishSelection = false, Options = [] };
+        session.Bind(snapshot, journey: finished);
+        Assert.IsTrue(session.TryContinue());
+        Assert.IsTrue(session.State.JourneyStep!.SelectionFinished);
+        Assert.AreEqual(0, session.State.LegalOptions.Count);
+    }
+
+    [TestMethod]
+    public void Journey_rejects_stale_workspace_source_and_revision_and_keeps_nationality_on_foundation()
+    {
+        var snapshot = CreateSnapshot();
+        var journey = Journey(snapshot, 2);
+        foreach (var stale in new[] {
+            journey with { Binding = journey.Binding with { ContentRevision = 8 } },
+            journey with { Binding = journey.Binding with { SourceDigest = "different-source" } },
+            journey with { Binding = journey.Binding with { WorkspaceId = new("other-runner") } } })
+        {
+            var session = new CharacterCreationWizardDesktopSession();
+            session.Bind(snapshot, journey: stale);
+            session.TryContinue();
+            Assert.IsNull(session.State.JourneyStep);
+            Assert.AreEqual(0, session.State.LegalOptions.Count);
+        }
+        var nationality = new CharacterCreationWizardDesktopSession();
+        nationality.Bind(snapshot, journey: journey with { CurrentStageOrder = 1 });
+        nationality.TryContinue();
+        Assert.IsNull(nationality.State.JourneyStep);
+    }
+
+    internal static CharacterCreationLifeModuleJourneyInteractionState Journey(CharacterCreationWizardSnapshot snapshot, int stage)
+    {
+        var followUp = new LifeModuleFollowUpPromptDto("skill-choice", "Choose a skill", "choice", true,
+            [new("skill-a", "Skill A", true, null, new Dictionary<string, string>(), "pistols")], [], "effect", "skill");
+        var version = new LifeModuleVersionProjectionDto("version-a", "Version A", true, [], [], [followUp], [],
+            "Story", 7m, "7", true, "RF", 10, "10", []);
+        var option = new LifeModuleLegalOptionDto("module-" + stage, stage, "Module", 7m, "RF", 10, "Story", true,
+            [], [version], [], [], [], "stage-" + stage, stage == 5, "7", true, "10", []);
+        return new(new(new(snapshot.WorkspaceId), snapshot.WorkspaceRevision, snapshot.WorkspaceRevision,
+            snapshot.ContentDigest, "xml-v1", snapshot.SourceDigest, "sources-v1", false, []),
+            1, "sha256:" + new string('e', 64), stage, "stage-" + stage, [option], snapshot.Budgets[0], [], false, stage == 5, []);
+    }
+
+    internal static CharacterCreationWizardSnapshot CreateSnapshot()
     {
         CharacterCreationWizardStageState foundation = Stage(
             CharacterCreationWizardStepIds.Foundation,
