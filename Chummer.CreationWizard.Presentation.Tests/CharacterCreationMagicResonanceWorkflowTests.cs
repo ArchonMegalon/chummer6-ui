@@ -36,7 +36,10 @@ public sealed class CharacterCreationMagicResonanceWorkflowTests
         foreach (var attributes in new[]
         {
             state.AttributesDraft! with { Attributes = [] },
-            state.AttributesDraft! with { Allocations = [] },
+            state.AttributesDraft! with { Allocations = [], Attributes = state.AttributesDraft!.Attributes.Select(item =>
+                item.AttributeId == "MAG" ? item with { PriorityPointsSpent = 1 } : item).ToArray() },
+            state.AttributesDraft! with { Allocations = [], Attributes = state.AttributesDraft!.Attributes.Select(item =>
+                item.AttributeId == "MAG" ? item with { KarmaLevels = 1 } : item).ToArray() },
             state.AttributesDraft! with { Attributes = state.AttributesDraft!.Attributes.Select(item =>
                 item.AttributeId == "MAG" ? item with { Current = 5 } : item).ToArray() }
         })
@@ -50,6 +53,29 @@ public sealed class CharacterCreationMagicResonanceWorkflowTests
             Assert.IsFalse(CharacterCreationMagicResonanceWorkflow.TryProject(
                 CharacterCreationMagicResonanceTestFixture.WithSnapshotDigest(forged), out _));
         }
+    }
+
+    [TestMethod]
+    public void Projection_accepts_source_bound_sparse_zero_special_allocations()
+    {
+        var state = CharacterCreationMagicResonanceTestFixture.CreateState(
+            CharacterCreationMagicResonanceTestFixture.Digest('0'));
+        Assert.IsTrue(CharacterCreationMagicResonanceWorkflow.TryProject(state, out var complete));
+        var sparse = state.AttributesDraft! with { Allocations = [], DraftDigest = string.Empty };
+        sparse = sparse with { DraftDigest = CharacterCreationMagicResonanceDigest.Compute(sparse) };
+        var current = CharacterCreationMagicResonanceTestFixture.WithSnapshotDigest(state with
+        {
+            AttributesDraft = sparse,
+            Binding = state.Binding with { AttributesDraftDigest = sparse.DraftDigest }
+        });
+
+        Assert.IsTrue(CharacterCreationMagicResonanceWorkflow.TryProject(current, out var projected));
+        Assert.AreEqual(complete!.Talent.Magic, projected!.Talent.Magic);
+        Assert.AreEqual(complete.Talent.Resonance, projected.Talent.Resonance);
+        Assert.AreEqual(complete.Talent.Depth, projected.Talent.Depth);
+        Assert.AreEqual(current.Binding, projected.Binding);
+        Assert.AreEqual(current.SnapshotDigest, projected.CoreSnapshotDigest);
+        Assert.HasCount(0, current.AttributesDraft!.Allocations);
     }
 
     [TestMethod]

@@ -403,7 +403,19 @@ def test_cold_hub_contracts_reject_in_place_changes_on_recheck(tmp_path: Path) -
         package_plane.cold_hub_contract_feed_inventory(lock, feed)
 
 
-def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation() -> None:
+def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # P/Q may change live consumer sources while the reviewed oracle remains fixed.
+    # Exercise derivation with that reviewed input, not an unqualified live checkout.
+    reviewed_sources = dict(
+        package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)["consumer"]["sourceFiles"]
+    )
+    monkeypatch.setattr(
+        package_plane,
+        "source_digest",
+        lambda path: reviewed_sources[path.relative_to(REPO_ROOT).as_posix()],
+    )
     previous = json.loads(LOCK.read_text(encoding="utf-8"))
     previous_bytes = package_plane.encoded_json(previous)
     next_lock = package_plane.build_next_unsealed_authority_lock(
@@ -451,6 +463,14 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
     package_plane.validate_lock(next_lock, allow_unsealed_ui_owner=True)
+
+    # The same derivation must still reject a changed source against the real oracle.
+    reviewed_sources[sorted(reviewed_sources)[0]] = "0" * 64
+    with pytest.raises(
+        package_plane.VerificationError, match="differs from the fixed authority oracle"
+    ):
+        package_plane.build_next_unsealed_authority_lock(REPO_ROOT, previous)
+    assert package_plane.encoded_json(previous) == previous_bytes
 
 
 def test_sealed_next_transition_rejects_oracle_payload_or_metadata_substitution(
@@ -544,11 +564,10 @@ def _next_sealed_lock_fixture() -> tuple[dict, dict, list]:
 
     Historical checked-in lock bytes intentionally survive P/Q. Negatives must
     start from current upstream authority to reach the guard under test.
+    Use the validated reviewed input here; live-source derivation is a separate
+    boundary and may reject consumer edits during preseal.
     """
-    previous = json.loads(LOCK.read_text(encoding="utf-8"))
-    next_lock = package_plane.build_next_unsealed_authority_lock(
-        REPO_ROOT, previous
-    )
+    next_lock = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
     package_rows = []
     for package_id, (owner, project, file_name, version) in (
         package_plane.EXPECTED_PACKAGES.items()
