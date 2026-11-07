@@ -269,6 +269,187 @@ public sealed class DesktopInstallLinkingRuntimeTests
 
 
     [TestMethod]
+    public void Retained_approval_survives_an_application_version_refresh()
+    {
+        // Regression for the R69 audit finding: an application update refreshes the
+        // runtime metadata (ApplicationVersion/ChannelId) on every state load, but the
+        // retained approval is the immutable signed target of the original operation
+        // and must remain recoverable with the same installation identity and key.
+        string root = Path.Combine(Path.GetTempPath(), "desktop-approval-update", Guid.NewGuid().ToString("N"));
+        string? previous = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        MethodInfo Method(string name) => typeof(DesktopInstallLinkingRuntime).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException(name);
+        DesktopInstallLinkingState Prepare(DesktopInstallLinkingState state, bool expected)
+        {
+            object?[] args = [state, null, null];
+            Assert.AreEqual(expected, Method("TryPrepareBrowserApproval").Invoke(null, args));
+            return (DesktopInstallLinkingState)args[1]!;
+        }
+        string Property(object request, string name) => (string)request.GetType().GetProperty(name)!.GetValue(request)!;
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", root);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            DesktopInstallLinkingState versionA = Prepare(created, true);
+            Assert.IsNotNull(versionA.BrowserApprovalRequest);
+            object requestA = Method("ReadRetainedRemoteCallbackRequest").Invoke(null, [versionA])!;
+            string nonceA = Property(requestA, "Nonce");
+            string operationA = Property(requestA, "OperationId");
+            string versionAApplicationVersion = Property(requestA, "ApplicationVersion");
+
+            // Simulate the application update: the runtime metadata moves to a newer
+            // version while the installation identity, key and retained request stay
+            // unchanged. This is what RefreshRuntimeMetadata does on every startup.
+            DesktopInstallLinkingState versionB = PersistInstallLinkingState(versionA with
+            {
+                ApplicationVersion = "6.1.0-preview"
+            });
+            Assert.AreNotEqual(versionAApplicationVersion, versionB.ApplicationVersion);
+            Assert.IsNotNull(versionB.BrowserApprovalRequest);
+
+            // Version B must still be able to read and poll the retained request: the
+            // reader must not compare its signed version against the running version.
+            object requestB = Method("ReadRetainedRemoteCallbackRequest").Invoke(null, [versionB])!;
+            Assert.AreEqual(nonceA, Property(requestB, "Nonce"));
+            Assert.AreEqual(operationA, Property(requestB, "OperationId"));
+            Assert.AreEqual(versionAApplicationVersion, Property(requestB, "ApplicationVersion"));
+
+            // Preparation under version B must not refuse because of the version
+            // refresh: the retained approval is still recoverable.
+            DesktopInstallLinkingState repared = Prepare(versionB, true);
+            Assert.IsNotNull(repared.BrowserApprovalRequest);
+
+            // Recovery polling reuses the byte-identical signed request.
+            object pollB = Method("CreateRemoteCallbackPollRequest").Invoke(null, [versionB])!;
+            Assert.AreEqual(nonceA, Property(pollB, "Nonce"));
+            Assert.AreEqual(operationA, Property(pollB, "OperationId"));
+            Assert.AreEqual(versionAApplicationVersion, Property(pollB, "ApplicationVersion"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previous);
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Headless_mode_recovers_a_retained_uncertain_approval_instead_of_exiting()
+    {
+        // Regression for the R69 audit finding: the headless entry point used to exit
+        // with code 1 when preparation refused a new approval, so a retained uncertain
+        // request from a previous process was never polled.
+        string root = Path.Combine(Path.GetTempPath(), "desktop-approval-headless", Guid.NewGuid().ToString("N"));
+        string? previousRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        string? previousOpenBrowser = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER");
+        string? previousTimeout = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS");
+        MethodInfo Method(string name) => typeof(DesktopInstallLinkingRuntime).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException(name);
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", root);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            object?[] prepareArgs = [created, null, null];
+            Assert.AreEqual(true, Method("TryPrepareBrowserApproval").Invoke(null, prepareArgs));
+            DesktopInstallLinkingState prepared = (DesktopInstallLinkingState)prepareArgs[1]!;
+
+            // Persist the request as uncertain, as if the previous process died right
+            // after dispatching it.
+            object retained = Method("ReadRetainedRemoteCallbackRequest").Invoke(null, [prepared])!;
+            object?[] retain = [prepared, retained, true, false, null];
+            Assert.AreEqual(true, Method("TryRetainRemoteCallbackRequest").Invoke(null, retain));
+            DesktopInstallLinkingState uncertain = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.IsTrue(uncertain.BrowserApprovalUncertain);
+
+            // A new headless process against the same state must recover, not exit.
+            using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+            listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            listenerSocket.Listen(16);
+            int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+            string apiBase = $"http://127.0.0.1:{port}/";
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", "0");
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", "15");
+            using StringWriter output = new();
+            using StringWriter error = new();
+
+            // The fake Hub answers pending (202) on every poll; the headless wait loop
+            // keeps observing the durable state and eventually times out gracefully.
+            _ = Task.Run(async () =>
+            {
+                byte[] buffer = new byte[65536];
+                while (true)
+                {
+                    Socket connection = await listenerSocket.AcceptAsync();
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            using Socket socket = connection;
+                            int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                            string requestText = Encoding.ASCII.GetString(buffer, 0, read);
+                            int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                            string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                            // The fake Hub answers 202 pending; the headless wait loop
+                            // then observes the state flip and exits successfully.
+                            string responseBody = "{}";
+                            string response = "HTTP/1.1 202 Pending\r\n" +
+                                              "Content-Type: application/json\r\n" +
+                                              "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                              "Connection: close\r\n\r\n" + responseBody;
+                            await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                        }
+                        catch (SocketException)
+                        {
+                        }
+                    });
+                }
+            });
+
+            DesktopInstallLinkingStartupContext context = new(
+                State: uncertain,
+                ClaimResult: null,
+                StartupClaimCode: null,
+                ShouldPrompt: true,
+                PromptReason: "claim_required");
+
+            int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+                "avalonia",
+                ["--install-link-headless"],
+                context,
+                output,
+                error,
+                CancellationToken.None);
+
+            string outputText = output.ToString();
+            StringAssert.Contains(outputText,
+                "Checking the result of the previous browser approval before opening a new one.",
+                StringComparison.Ordinal);
+            StringAssert.Contains(outputText,
+                "The pending approval was created by an earlier session or version.",
+                StringComparison.Ordinal);
+
+            // The recovery entry did not exit before polling: with the fake Hub answering
+            // pending for the whole window, headless mode ends in the explicit timeout
+            // path (2), never in the old preparation-failure exit (1).
+            Assert.AreEqual(2, exitCode);
+            StringAssert.Contains(error.ToString(),
+                "timed out before Chummer confirmed the handoff", StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [TestMethod]
     public async Task PollRemoteBrowserCallback_replays_the_identical_signed_request_after_an_ambiguous_send()
     {
         MethodInfo pollMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(

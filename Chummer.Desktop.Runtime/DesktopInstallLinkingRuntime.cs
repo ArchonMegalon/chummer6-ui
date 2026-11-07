@@ -296,32 +296,68 @@ public static class DesktopInstallLinkingRuntime
             return 0;
         }
 
+        bool recoveringRetainedApproval = false;
         if (!TryPrepareBrowserApproval(state, out state, out string? approvalError))
         {
-            await error.WriteLineAsync(approvalError).ConfigureAwait(false);
-            return 1;
+            // A refused preparation usually means a retained approval is still being
+            // recovered (including an uncertain send from a previous process). The
+            // GUI entry points keep polling the retained request in that case, so
+            // headless mode must recover it too instead of exiting before the poll
+            // can ever reach the Hub. Recovery reuses the exact signed request; no
+            // new browser approval is created and the request identity is unchanged.
+            RemoteCallbackPollRequest? recoverable = null;
+            try
+            {
+                recoverable = ReadRetainedRemoteCallbackRequest(state);
+            }
+            catch (InvalidOperationException)
+            {
+                recoverable = null;
+            }
+            if (recoverable is null || state.BrowserApprovalTerminal)
+            {
+                await error.WriteLineAsync(approvalError).ConfigureAwait(false);
+                return 1;
+            }
+            recoveringRetainedApproval = true;
+            await output.WriteLineAsync(
+                "Checking the result of the previous browser approval before opening a new one.")
+                .ConfigureAwait(false);
         }
         string relativePath = BuildClaimPortalRelativePathForInstall(state);
         string absoluteUri = BuildPublicPortalAbsoluteUri(relativePath);
         bool remoteProofPolling = TryExportRemoteCallbackPublicKey(state.PublicKey, out _);
         StartRemoteBrowserCallbackPolling(state);
-        await output.WriteLineAsync(remoteProofPolling
-            ? "Open this secure approval URL in any browser:"
-            : "Open this URL to sign in and claim this Linux copy:").ConfigureAwait(false);
-        await output.WriteLineAsync(absoluteUri).ConfigureAwait(false);
-        if (remoteProofPolling)
+        if (recoveringRetainedApproval)
         {
+            // Recovery of the retained operation: do NOT open a browser approval for
+            // the current metadata (that would mint a different signed target). The
+            // existing approval page keeps working for the original operation; the
+            // recovered proof poll completes the link once the browser confirms it.
             await output.WriteLineAsync(
-                "The browser may be on another computer. Keep Chummer running here while the device-key approval returns over HTTPS.")
+                    "The pending approval was created by an earlier session or version. If its approval page is still open, confirm it there; this copy is checking for its result.")
                 .ConfigureAwait(false);
         }
         else
         {
-            await output.WriteLineAsync("If the browser cannot return to WSL, copy the claim URL from the browser page and run:").ConfigureAwait(false);
-            await output.WriteLineAsync($"{InstallLinkHeadlessSwitch} {InstallLinkCallbackSwitch} \"<callback-url>\"").ConfigureAwait(false);
+            await output.WriteLineAsync(remoteProofPolling
+                ? "Open this secure approval URL in any browser:"
+                : "Open this URL to sign in and claim this Linux copy:").ConfigureAwait(false);
+            await output.WriteLineAsync(absoluteUri).ConfigureAwait(false);
+            if (remoteProofPolling)
+            {
+                await output.WriteLineAsync(
+                    "The browser may be on another computer. Keep Chummer running here while the device-key approval returns over HTTPS.")
+                    .ConfigureAwait(false);
+            }
+            else
+            {
+                await output.WriteLineAsync("If the browser cannot return to WSL, copy the claim URL from the browser page and run:").ConfigureAwait(false);
+                await output.WriteLineAsync($"{InstallLinkHeadlessSwitch} {InstallLinkCallbackSwitch} \"<callback-url>\"").ConfigureAwait(false);
+            }
         }
 
-        if (ShouldOpenHeadlessInstallLinkBrowser())
+        if (!recoveringRetainedApproval && ShouldOpenHeadlessInstallLinkBrowser())
         {
             bool opened = TryOpenClaimPortalForInstall(state, out string dispatchedUri, out string? failureReason);
             if (!string.Equals(dispatchedUri, absoluteUri, StringComparison.OrdinalIgnoreCase)
@@ -2327,10 +2363,14 @@ public static class DesktopInstallLinkingRuntime
             || request.OperationId != RemoteCallbackOperationId(request.Nonce)
             || string.IsNullOrWhiteSpace(state.BrowserApprovalReturnState)
             || request.InstallationId != state.InstallationId || request.HeadId != state.HeadId
-            || request.ApplicationVersion != state.ApplicationVersion || request.ChannelId != state.ChannelId
             || request.Platform != state.Platform || request.Arch != state.Arch
             || !TryExportRemoteCallbackPublicKey(state.PublicKey, out string? key) || request.PublicKey != key)
             throw new InvalidOperationException("The retained browser approval belongs to a different installation context. Recover that approval before starting another.");
+        // The retained request carries the approval's ORIGINAL application version and
+        // channel: it is the immutable signed target of that operation, not a claim
+        // about the process performing recovery. An application update refreshes the
+        // runtime metadata above, but it must not strand the retained operation —
+        // recovery keeps polling the exact signed request within the reuse window.
         return request;
     }
 
@@ -2681,13 +2721,20 @@ public static class DesktopInstallLinkingRuntime
         }
 
         long issuedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        string nonce = ReadRetainedRemoteCallbackRequest(state)?.Nonce
+        RemoteCallbackPollRequest? retained = ReadRetainedRemoteCallbackRequest(state);
+        string nonce = retained?.Nonce
             ?? Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+        // A recovery re-sign keeps the retained operation's ORIGINAL application
+        // version and channel: the signed target of an existing approval must not
+        // drift just because the recovering process was updated in between. Only a
+        // fresh approval (no retained request) signs with the current metadata.
+        string applicationVersion = retained?.ApplicationVersion ?? state.ApplicationVersion;
+        string channelId = retained?.ChannelId ?? state.ChannelId;
         byte[] payload = BuildRemoteCallbackProofPayload(
             state.InstallationId,
             state.HeadId,
-            state.ApplicationVersion,
-            state.ChannelId,
+            applicationVersion,
+            channelId,
             state.Platform,
             state.Arch,
             issuedAtUnixSeconds,
@@ -2706,8 +2753,8 @@ public static class DesktopInstallLinkingRuntime
             return new RemoteCallbackPollRequest(
                 InstallationId: state.InstallationId,
                 HeadId: state.HeadId,
-                ApplicationVersion: state.ApplicationVersion,
-                ChannelId: state.ChannelId,
+                ApplicationVersion: applicationVersion,
+                ChannelId: channelId,
                 Platform: state.Platform,
                 Arch: state.Arch,
                 PublicKey: publicKey!,
