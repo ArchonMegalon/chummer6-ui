@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "ca736594c07d9e6af6c387a2cf5c2c0b29fb9d8b",
-  "baseTree": "6e6e5a19d43c3a488c901e0e7bbda95bbfc05436",
+  "baseCommit": "b0fc4bc393421d6f143dc13153570b0677e19ff4",
+  "baseTree": "e71545ad5182077c95ceaaf26dd6a09a58bd5315",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,20 +44,83 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "3363c4deb41314e2ff18c0563d0296fa31ef2b6b",
-      "path": "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml.cs",
-      "sha256": "d8f5d2af7922f7563dac4f772043104410671d3f4503e96ba3fc1377a7af9b17",
-      "sizeBytes": 37981,
+      "blob": "38e483f0291826da5d19f708e05fc3b744234182",
+      "path": "Chummer.Avalonia/App.axaml.cs",
+      "sha256": "3bf6f97e94126c59cd5aed0f9ce2bc09eb2a9c2cbf62c0b01b7fc4b399e056c9",
+      "sizeBytes": 24007,
       "status": "M"
     },
     {
-      "blob": "a79f8b10cbfe7299541d822dbca22d56fb3ce7db",
-      "path": "Chummer.Tests/Presentation/Sr6CreationWizardWindowTests.cs",
-      "sha256": "cbc2b86bfd68f34c4f8a513c18aca6c5d370b5ef651f63341670aaa1eb90500f",
-      "sizeBytes": 17576,
+      "blob": "8d2cb676c2634428a7882c0be352970d97eaafea",
+      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
+      "sha256": "c0019706112e2d8754999c48f51dad4471eb6872b529b83775cd6999b22cd776",
+      "sizeBytes": 156471,
+      "status": "M"
+    },
+    {
+      "blob": "d907a2edd2c4d2a7f4891e0a3bfc541a53982813",
+      "path": "Chummer.Avalonia/DesktopAliceWindow.cs",
+      "sha256": "7390bd387355e6a2101f24f66c0aa4142711e931af8fd75f49445318a17075d4",
+      "sizeBytes": 250366,
+      "status": "M"
+    },
+    {
+      "blob": "4e31439d9e1c7d304139d158fd1e34ef4930b1d4",
+      "path": "Chummer.Avalonia/MainWindow.CreationWizard.cs",
+      "sha256": "73153f9cd7a0ab453915e374daeeeed1d17118116fc93e6e233a51e87740b159",
+      "sizeBytes": 87492,
+      "status": "M"
+    },
+    {
+      "blob": "95a09b8f4464f360f13231bfa621371efe60d7f5",
+      "path": "Chummer.Avalonia/MainWindow.axaml.cs",
+      "sha256": "9285e29158dd32ba57c2b3e4e5e4aaaa69c7023d41fda250583a52115825e540",
+      "sizeBytes": 16644,
+      "status": "M"
+    },
+    {
+      "blob": "09fd6b59b74d089c6a43acf8950cf2f88d09a0c4",
+      "path": "Chummer.Presentation/OriginBooks/AliceOriginBookChapterBridge.cs",
+      "sha256": "c8bd20e8efed493d2d83fdce47c26c806473a29f17fd9c00b21849183bf69fd0",
+      "sizeBytes": 3276,
+      "status": "A"
+    },
+    {
+      "blob": "abff830b23319f7d67ac70852014a8a0305614b8",
+      "path": "Chummer.Presentation/Overview/CharacterCreationLifeModuleJourneyInteractionPresenter.cs",
+      "sha256": "4f5648af7dd3ec0c927751215f72b07047fd1c12c74a01810d6501cc8a9f1d7a",
+      "sizeBytes": 31633,
+      "status": "A"
+    },
+    {
+      "blob": "865dec44b30a8c621c19e8248dba4cdf800b24c2",
+      "path": "Chummer.Presentation/Overview/CharacterCreationWizardDesktopSession.cs",
+      "sha256": "91148c79febf16ec35a028fff724c086204cdeb6269519aa384e60c73d158058",
+      "sizeBytes": 29487,
+      "status": "M"
+    },
+    {
+      "blob": "cdb75b2c2fd9488a71c77ec1db8423e62712a0de",
+      "path": "Chummer.Tests/Presentation/AliceOriginBookChapterBridgeTests.cs",
+      "sha256": "3a385d9c9747009a8963c869bbbc04566366b57ac9ca3c4b3122ca2da6e27b12",
+      "sizeBytes": 6921,
+      "status": "A"
+    },
+    {
+      "blob": "131035b392a71412107bccca06a89952395a327b",
+      "path": "Chummer.Tests/Presentation/CharacterCreationLifeModuleJourneyInteractionPresenterTests.cs",
+      "sha256": "77a96ced8cbf6070a65b553c762ee065be0e4e1081919da7c62b2127b401d4a9",
+      "sizeBytes": 29386,
+      "status": "A"
+    },
+    {
+      "blob": "ed94dba164925542e2e4b373c0e4bd437ad42097",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "a55ec9a49cb2b172efba48d9ef6a5f4a7e18e04c8671ea9139b2e29ead16eb1e",
+      "sizeBytes": 63928,
       "status": "M"
     }
   ],
-  "recipeTree": "bf87f78930397d4722c1844ae7025a2b878ed5f1",
+  "recipeTree": "b165716ed8faa667e3abc9665ec798d372dbd98a",
   "releaseClaim": false
 }
