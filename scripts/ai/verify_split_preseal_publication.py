@@ -401,6 +401,14 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "docs/creation-ai-finish-evidence-artifacts/screenshots/05-workspace-saved.png",
         "docs/creation-ai-finish-evidence-artifacts/trace.json",
         "docs/creation-ai-finish-evidence.md",
+
+        # R67 (2026-11-07): life-modules journey stages 2-5 wiring in the SR6
+        # creation wizard plus the read-only Alice origin-book bridge.
+        "Chummer.Avalonia/DesktopAliceWindow.cs",
+        "Chummer.Presentation/Overview/CharacterCreationLifeModuleJourneyInteractionPresenter.cs",
+        "Chummer.Presentation/OriginBooks/AliceOriginBookChapterBridge.cs",
+        "Chummer.Tests/Presentation/CharacterCreationLifeModuleJourneyInteractionPresenterTests.cs",
+        "Chummer.Tests/Presentation/AliceOriginBookChapterBridgeTests.cs",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these

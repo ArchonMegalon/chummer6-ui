@@ -170,7 +170,19 @@ public sealed record CharacterCreationWizardDesktopState(
     CharacterCreationWizardDesktopResume Resume,
     CharacterCreationWizardBuildGhostContext BuildGhostContext,
     CharacterCreationWizardDesktopContactsStep? ContactsStep = null,
-    CharacterCreationWizardDesktopLifestylesStep? LifestylesStep = null);
+    CharacterCreationWizardDesktopLifestylesStep? LifestylesStep = null,
+    CharacterCreationWizardDesktopJourneyStep? JourneyStep = null);
+
+/// <summary>Authoritative, renderer-neutral projection of the Life-Modules
+/// journey (stages 2..5). The stage options ride the regular LegalOptions
+/// channel for the life-modules step; this record adds only stage context
+/// the renderer cannot derive. No workspace writes, no derived legality.</summary>
+public sealed record CharacterCreationWizardDesktopJourneyStep(
+    int CurrentStageOrder,
+    string CurrentStageId,
+    string CurrentStageLabel,
+    bool SelectionFinished,
+    bool CanFinishSelection);
 
 public static class CharacterCreationWizardBuildGhostPolicy
 {
@@ -222,6 +234,7 @@ public sealed class CharacterCreationWizardDesktopSession
     private CharacterCreationWizardSnapshot? _snapshot;
     private CharacterCreationContactsState? _contacts;
     private CharacterCreationLifestylesState? _lifestyles;
+    private CharacterCreationLifeModuleJourneyInteractionState? _journey;
     private CharacterCreationWizardDesktopState? _state;
 
     public CharacterCreationWizardDesktopState State
@@ -231,7 +244,8 @@ public sealed class CharacterCreationWizardDesktopSession
         CharacterCreationWizardSnapshot snapshot,
         CharacterCreationWizardDesktopCheckpoint? checkpoint = null,
         CharacterCreationContactsState? contacts = null,
-        CharacterCreationLifestylesState? lifestyles = null)
+        CharacterCreationLifestylesState? lifestyles = null,
+        CharacterCreationLifeModuleJourneyInteractionState? journey = null)
     {
         ValidateSnapshot(snapshot);
 
@@ -239,6 +253,7 @@ public sealed class CharacterCreationWizardDesktopSession
         _snapshot = snapshot;
         _contacts = ContactsMatchSnapshot(snapshot, contacts) ? contacts : null;
         _lifestyles = LifestylesMatchSnapshot(snapshot, lifestyles) ? lifestyles : null;
+        _journey = JourneyMatchesSnapshot(snapshot, journey) ? journey : null;
         _state = Project(snapshot, selectedStepId, resume);
         return _state;
     }
@@ -417,6 +432,18 @@ public sealed class CharacterCreationWizardDesktopSession
                 .ToArray()
             : snapshot.Warnings;
 
+        CharacterCreationWizardDesktopJourneyStep? journeyStep = _journey is { } journeyState
+            && string.Equals(
+                selectedStepId,
+                CharacterCreationWizardStepIds.LifeModules,
+                StringComparison.Ordinal)
+            ? new CharacterCreationWizardDesktopJourneyStep(
+                journeyState.CurrentStageOrder,
+                journeyState.CurrentStageId,
+                JourneyStageLabel(journeyState.CurrentStageId),
+                journeyState.SelectionFinished,
+                journeyState.CanFinishSelection)
+            : null;
         return new CharacterCreationWizardDesktopState(
             WorkspaceId: snapshot.WorkspaceId,
             WorkspaceRevision: snapshot.WorkspaceRevision,
@@ -436,7 +463,8 @@ public sealed class CharacterCreationWizardDesktopSession
             Resume: resume,
             BuildGhostContext: ghost,
             ContactsStep: contacts,
-            LifestylesStep: lifestylesStep);
+            LifestylesStep: lifestylesStep,
+            JourneyStep: journeyStep);
     }
 
     private static CharacterCreationWizardDesktopContactsStep? ProjectContacts(
@@ -480,6 +508,27 @@ public sealed class CharacterCreationWizardDesktopSession
         CharacterCreationContactsState? contacts)
         => contacts is not null
            && CharacterCreationWizardProjector.MatchesContactSnapshot(snapshot, contacts);
+
+    private static bool JourneyMatchesSnapshot(
+        CharacterCreationWizardSnapshot snapshot,
+        CharacterCreationLifeModuleJourneyInteractionState? journey)
+        => journey is not null
+           && !snapshot.CharacterCreated
+           && string.Equals(
+               snapshot.WorkspaceId,
+               journey.Binding.WorkspaceId.Value,
+               StringComparison.Ordinal);
+
+    private static string JourneyStageLabel(string stageId)
+        => stageId switch
+        {
+            CharacterCreationLifeModuleStageIds.Nationality => "Nationality",
+            CharacterCreationLifeModuleStageIds.FormativeYears => "Formative Years",
+            CharacterCreationLifeModuleStageIds.TeenYears => "Teen Years",
+            CharacterCreationLifeModuleStageIds.FurtherEducation => "Further Education",
+            CharacterCreationLifeModuleStageIds.RealLife => "Real Life",
+            _ => stageId,
+        };
 
     private static bool LifestylesMatchSnapshot(
         CharacterCreationWizardSnapshot snapshot,

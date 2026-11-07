@@ -8,6 +8,7 @@ using Chummer.Application.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Presentation;
+using Chummer.Presentation.OriginBooks;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Microsoft.Extensions.DependencyInjection;
@@ -153,6 +154,12 @@ public partial class App : global::Avalonia.Application
             CharacterCreationFoundationInteractionPresenter>();
         services.AddSingleton<ISr6CreationFoundationInteractionPresenter,
             Sr6CreationFoundationInteractionPresenter>();
+        services.AddSingleton<ICharacterCreationLifeModuleJourneyInteractionPresenter,
+            CharacterCreationLifeModuleJourneyInteractionPresenter>();
+        services.AddSingleton<IAliceOriginBookChapterBridge>(serviceProvider =>
+            new AliceOriginBookChapterBridge(
+                serviceProvider.GetRequiredService<Chummer.Application.LifeModules.IOwnerBoundLifeModuleBookService>(),
+                serviceProvider.GetRequiredService<Chummer.Application.Owners.IOwnerContextAccessor>()));
         services.AddSingleton<ICharacterCreationResourcesInteractionPresenter,
             CharacterCreationResourcesInteractionPresenter>();
         services.AddSingleton<ICharacterCreationLifestylesInteractionPresenter,

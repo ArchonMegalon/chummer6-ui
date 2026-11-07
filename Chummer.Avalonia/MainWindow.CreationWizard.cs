@@ -77,6 +77,10 @@ public partial class MainWindow
         CharacterCreationWizardControl.LifestyleConfirmRequested += CreationWizard_OnLifestyleConfirmRequested;
         CharacterCreationWizardControl.FoundationOptionClickRequested += CreationWizard_OnFoundationOptionClickRequested;
         CharacterCreationWizardControl.FoundationConfirmRequested += CreationWizard_OnFoundationConfirmRequested;
+        CharacterCreationWizardControl.JourneyOptionClickRequested += CreationWizard_OnJourneyOptionClickRequested;
+        CharacterCreationWizardControl.JourneyConfirmRequested += CreationWizard_OnJourneyConfirmRequested;
+        CharacterCreationWizardControl.JourneyFinishRequested += CreationWizard_OnJourneyFinishRequested;
+        CharacterCreationWizardControl.JourneyFinishConfirmRequested += CreationWizard_OnJourneyFinishConfirmRequested;
         CharacterCreationWizardControl.ResourcesOptionClickRequested += CreationWizard_OnResourcesOptionClickRequested;
         CharacterCreationWizardControl.ResourcesConfirmRequested += CreationWizard_OnResourcesConfirmRequested;
         CharacterCreationWizardControl.QualitiesOptionClickRequested += CreationWizard_OnQualitiesOptionClickRequested;
@@ -107,6 +111,10 @@ public partial class MainWindow
         CharacterCreationWizardControl.LifestyleConfirmRequested -= CreationWizard_OnLifestyleConfirmRequested;
         CharacterCreationWizardControl.FoundationOptionClickRequested -= CreationWizard_OnFoundationOptionClickRequested;
         CharacterCreationWizardControl.FoundationConfirmRequested -= CreationWizard_OnFoundationConfirmRequested;
+        CharacterCreationWizardControl.JourneyOptionClickRequested -= CreationWizard_OnJourneyOptionClickRequested;
+        CharacterCreationWizardControl.JourneyConfirmRequested -= CreationWizard_OnJourneyConfirmRequested;
+        CharacterCreationWizardControl.JourneyFinishRequested -= CreationWizard_OnJourneyFinishRequested;
+        CharacterCreationWizardControl.JourneyFinishConfirmRequested -= CreationWizard_OnJourneyFinishConfirmRequested;
         CharacterCreationWizardControl.ResourcesOptionClickRequested -= CreationWizard_OnResourcesOptionClickRequested;
         CharacterCreationWizardControl.ResourcesConfirmRequested -= CreationWizard_OnResourcesConfirmRequested;
         CharacterCreationWizardControl.QualitiesOptionClickRequested -= CreationWizard_OnQualitiesOptionClickRequested;
@@ -154,7 +162,10 @@ public partial class MainWindow
             CharacterCreationWizardControl.ResetBuildGhostConversation();
             _creationContactPreparedPreview = null;
             _creationLifestylePreparedPreview = null;
+            _lastBoundJourneyState = null;
+            _creationJourneyPreview = null;
             CharacterCreationWizardControl.ClearContactLifestylePreviews();
+            CharacterCreationWizardControl.ClearJourneyPreviews();
             return;
         }
 
@@ -184,6 +195,7 @@ public partial class MainWindow
         {
             _creationContactPreparedPreview = null;
             _creationLifestylePreparedPreview = null;
+            _creationJourneyPreview = null;
             if (wizardIdentityChanged)
             {
                 // A different owner or character must never inherit drafts --
@@ -196,12 +208,14 @@ public partial class MainWindow
                 // from the old context is presented as the new context's.
                 CharacterCreationWizardControl.ResetBuildGhostConversation();
                 CharacterCreationWizardControl.ClearContactLifestylePreviews();
+                CharacterCreationWizardControl.ClearJourneyPreviews();
             }
             else
             {
                 // Same character, new revision (e.g. one entry was saved): retire
                 // the stale reviews but keep unrelated unsaved input (audit win009).
                 CharacterCreationWizardControl.RetireContactLifestylePreviews();
+                CharacterCreationWizardControl.ClearJourneyPreviews();
             }
         }
 
@@ -628,6 +642,22 @@ public partial class MainWindow
         => CharacterCreationWizardControl.QualitiesStatus(
             "Magic/Resonance editing is not available in this Windows build yet.");
 
+    private CharacterCreationLifeModuleJourneyInteractionState? _lastBoundJourneyState;
+    private CharacterCreationLifeModuleFinishPreview? _creationJourneyPreview;
+
+    private CharacterCreationLifeModuleJourneyInteractionState? CreationWizard_LoadJourneyState(
+        CharacterOverviewState overview)
+    {
+        try
+        {
+            return _creationLifeModuleJourneyInteractionPresenter?.Load(overview).State;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     private async void CreationWizard_OnFoundationConfirmRequested(
         object? sender,
         CharacterCreationFoundationConfirmRequested request)
@@ -672,6 +702,201 @@ public partial class MainWindow
         finally
         {
             CharacterCreationWizardControl.SetFoundationMutationBusy(false);
+        }
+    }
+
+    private bool _creationJourneyBusy;
+
+    private void CreationWizard_OnJourneyOptionClickRequested(
+        object? sender,
+        CharacterCreationJourneyOptionClickRequested request)
+    {
+        if (_creationLifeModuleJourneyInteractionPresenter is null
+            || _lastBoundJourneyState is null
+            || _creationJourneyBusy)
+        {
+            return;
+        }
+
+        CharacterCreationWizardControl.SetJourneyMutationBusy(true);
+        try
+        {
+            CharacterCreationLifeModuleJourneyInteractionPrepareResult result =
+                _creationLifeModuleJourneyInteractionPresenter.Prepare(
+                    _adapter.State,
+                    new CharacterCreationLifeModuleSelectionInput(request.Option.OptionId, null));
+            CharacterCreationWizardControl.SetJourneyPrepareResult(result);
+            if (result.State is not null)
+            {
+                _lastBoundJourneyState = result.State;
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            // Authority refresh on the next state application will reconcile.
+        }
+        finally
+        {
+            _creationJourneyBusy = false;
+            CharacterCreationWizardControl.SetJourneyMutationBusy(false);
+        }
+    }
+
+    private void CreationWizard_OnJourneyConfirmRequested(
+        object? sender,
+        CharacterCreationJourneyConfirmRequested request)
+    {
+        if (_creationLifeModuleJourneyInteractionPresenter is null
+            || _lastBoundJourneyState is null
+            || _creationJourneyBusy
+            || CharacterCreationWizardControl.JourneyPreview is not { } prepared
+            || !string.Equals(request.PreviewDigest, prepared.PreviewDigest, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _ = CreationWizard_ConfirmJourneyAsync(prepared);
+    }
+
+    private async Task CreationWizard_ConfirmJourneyAsync(
+        CharacterCreationLifeModulePreparedPreview prepared)
+    {
+        if (_creationLifeModuleJourneyInteractionPresenter is null)
+            return;
+
+        _creationJourneyBusy = true;
+        CharacterCreationWizardControl.SetJourneyMutationBusy(true);
+        try
+        {
+            CharacterCreationLifeModuleJourneyInteractionConfirmResult result =
+                _creationLifeModuleJourneyInteractionPresenter.Confirm(
+                    _adapter.State,
+                    new CharacterCreationLifeModuleConfirmation(
+                        prepared,
+                        prepared.PreviewDigest,
+                        ExplicitlyConfirmed: true));
+            CharacterCreationWizardControl.SetJourneyConfirmResult(result);
+            if (result.Outcome == CharacterCreationFoundationOutcomes.Success)
+            {
+                if (result.RefreshedState is not null)
+                {
+                    _lastBoundJourneyState = result.RefreshedState;
+                }
+                _creationJourneyPreview = null;
+                if (_adapter.State.WorkspaceId is { } workspaceId)
+                {
+                    await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+                    ApplyCreationWizardState(_adapter.State);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            // Authority refresh on the next state application will reconcile.
+        }
+        finally
+        {
+            _creationJourneyBusy = false;
+            CharacterCreationWizardControl.SetJourneyMutationBusy(false);
+        }
+    }
+
+    private void CreationWizard_OnJourneyFinishRequested(
+        object? sender,
+        CharacterCreationJourneyFinishRequested request)
+    {
+        if (_creationLifeModuleJourneyInteractionPresenter is null
+            || _lastBoundJourneyState is null
+            || _creationJourneyBusy
+            || _lastBoundJourneyState.CanFinishSelection == false)
+        {
+            return;
+        }
+
+        CharacterCreationWizardControl.SetJourneyMutationBusy(true);
+        try
+        {
+            CharacterCreationLifeModuleJourneyInteractionFinishPrepareResult result =
+                _creationLifeModuleJourneyInteractionPresenter.PrepareFinish(_adapter.State);
+            CharacterCreationWizardControl.SetJourneyFinishPrepareResult(result);
+            if (result.FinishPreview is not null)
+            {
+                _creationJourneyPreview = result.FinishPreview;
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            // Authority refresh on the next state application will reconcile.
+        }
+        finally
+        {
+            _creationJourneyBusy = false;
+            CharacterCreationWizardControl.SetJourneyMutationBusy(false);
+        }
+    }
+
+    private async void CreationWizard_OnJourneyFinishConfirmRequested(
+        object? sender,
+        CharacterCreationJourneyFinishConfirmRequested request)
+    {
+        if (_creationLifeModuleJourneyInteractionPresenter is null
+            || _lastBoundJourneyState is null
+            || _creationJourneyBusy
+            || _creationJourneyPreview is not CharacterCreationLifeModuleFinishPreview finishPreview
+            || !string.Equals(
+                request.PreviewDigest,
+                finishPreview.PreviewDigest,
+                StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _creationJourneyBusy = true;
+        CharacterCreationWizardControl.SetJourneyMutationBusy(true);
+        try
+        {
+            CharacterCreationLifeModuleJourneyInteractionFinishConfirmResult result =
+                _creationLifeModuleJourneyInteractionPresenter.ConfirmFinish(
+                    _adapter.State,
+                    new CharacterCreationLifeModuleFinishConfirmation(
+                        _lastBoundJourneyState.DraftDigest,
+                        request.PreviewDigest,
+                        ExplicitlyConfirmed: true));
+            CharacterCreationWizardControl.SetJourneyFinishConfirmResult(result);
+            if (result.Outcome == CharacterCreationFoundationOutcomes.Success)
+            {
+                if (result.RefreshedState is not null)
+                {
+                    _lastBoundJourneyState = result.RefreshedState;
+                }
+                _creationJourneyPreview = null;
+                if (_adapter.State.WorkspaceId is { } workspaceId)
+                {
+                    await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);
+                    ApplyCreationWizardState(_adapter.State);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException)
+        {
+            // Authority refresh on the next state application will reconcile.
+        }
+        finally
+        {
+            _creationJourneyBusy = false;
+            CharacterCreationWizardControl.SetJourneyMutationBusy(false);
         }
     }
 
