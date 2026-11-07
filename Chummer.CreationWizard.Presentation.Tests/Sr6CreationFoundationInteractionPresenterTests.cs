@@ -139,6 +139,40 @@ public sealed class Sr6CreationFoundationInteractionPresenterTests
     }
 
     [TestMethod]
+    public void Confirm_preserves_a_verified_commit_when_the_post_commit_reload_throws()
+    {
+        Sr6CreationFoundationState foundation = CreateFoundation();
+        Sr6CreationFoundationPreview preview = CreatePreview(foundation);
+        var service = new FakeSr6FoundationService(foundation)
+        {
+            PreviewResult = Success(preview),
+            ThrowOnPostCommitLoad = true,
+        };
+        var presenter = new Sr6CreationFoundationInteractionPresenter(service);
+        Sr6CreationFoundationPreparedPreview prepared = RequirePrepared(presenter.Prepare(
+            CreateOverview(foundation),
+            Selection()));
+
+        Sr6CreationFoundationInteractionConfirmResult result = presenter.Confirm(
+            CreateOverview(foundation),
+            new Sr6CreationFoundationInteractionConfirmation(
+                prepared,
+                prepared.PreviewDigest,
+                Guid.NewGuid(),
+                ExplicitlyConfirmed: true));
+
+        // The commit was verified before the reload threw: the save is durable and
+        // the presenter must report saved-but-not-refreshed instead of leaking the
+        // exception and losing the verified commit at the presenter boundary.
+        Assert.AreEqual(1, service.ConfirmCalls);
+        Assert.IsNotNull(result.Commit);
+        Assert.AreEqual(CharacterCreationFoundationOutcomes.Conflict, result.Outcome);
+        CollectionAssert.Contains(
+            result.Blockers.ToArray(),
+            Sr6CreationFoundationInteractionBlockers.RefreshAuthorityRequired);
+    }
+
+    [TestMethod]
     public void ReviewFinalization_rejects_owner_and_binding_mismatch_before_core()
     {
         Sr6CreationFoundationState foundation = CreateFoundation();
@@ -381,6 +415,7 @@ public sealed class Sr6CreationFoundationInteractionPresenterTests
         private Sr6CreationFoundationState? _committed;
 
         public bool WrongReceiptOperation;
+        public bool ThrowOnPostCommitLoad;
         public int LoadCalls { get; private set; }
         public int PreviewCalls { get; private set; }
         public int ConfirmCalls { get; private set; }
@@ -395,6 +430,10 @@ public sealed class Sr6CreationFoundationInteractionPresenterTests
             OwnerContextStamp owner, CharacterWorkspaceId workspaceId)
         {
             LoadCalls++;
+            if (ThrowOnPostCommitLoad && _committed is not null)
+            {
+                throw new IOException("test post-commit store read failed");
+            }
             if (!string.Equals(_foundation.Binding.WorkspaceId.Value, workspaceId.Value, StringComparison.Ordinal))
             {
                 return new CharacterCreationFoundationResult<Sr6CreationFoundationState>(

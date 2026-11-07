@@ -124,7 +124,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
                 context.Publish(context.State with
                 {
                     Error = null,
-                    Notice = "Login video is handled by the desktop shell."
+                    Notice = "Matrix uplink dialog is handled by the desktop shell."
                 });
                 return;
             case "close_all":

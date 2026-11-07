@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
@@ -117,6 +118,134 @@ public sealed class AvaloniaHeadlessSmokeTests
                 button = control.GetVisualDescendants().OfType<Button>().Single(b =>
                     b.Tag is Chummer.Presentation.Overview.CharacterCreationWizardDesktopOption);
                 Assert.IsFalse(button.IsEnabled);
+            }
+            finally { window.Close(); }
+        });
+    }
+
+    [TestMethod]
+    public void Life_module_follow_up_drafts_survive_busy_rerenders_and_edits_invalidate_preview()
+    {
+        WithHeadlessUi(() =>
+        {
+            var snapshot = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+            var session = new Chummer.Presentation.Overview.CharacterCreationWizardDesktopSession();
+            var journey = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.Journey(snapshot, 5);
+            session.Bind(snapshot, journey: journey);
+            Assert.IsTrue(session.TryContinue());
+            var control = new Chummer.Avalonia.Controls.CharacterCreationWizardControl();
+            var window = new Window { Content = control };
+            window.Show();
+            try
+            {
+                var option = session.State.LegalOptions.Single();
+                var prompt = option.FollowUps.Single();
+                var secondChoice = prompt.Options[0] with { Label = "Perception", SourceValue = "perception" };
+                control.SetState(session.State with
+                {
+                    LegalOptions = [option with { FollowUps = [prompt with { Options = [prompt.Options[0], secondChoice] }] }]
+                });
+                var choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                choice.SelectedIndex = 0;
+
+                // A busy re-render must preserve the selected follow-up value.
+                control.SetJourneyMutationBusy(true);
+                choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                Assert.AreEqual(0, choice.SelectedIndex, "busy re-render must not reset the choice");
+                control.SetJourneyMutationBusy(false);
+                choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                Assert.AreEqual(0, choice.SelectedIndex, "unbusy re-render must not reset the choice");
+
+                // The click collects the harvested (surviving) draft value.
+                Chummer.Avalonia.Controls.CharacterCreationJourneyOptionClickRequested? captured = null;
+                control.JourneyOptionClickRequested += (_, request) => captured = request;
+                var button = control.GetVisualDescendants().OfType<Button>().Single(b =>
+                    b.Tag is Chummer.Presentation.Overview.CharacterCreationWizardDesktopOption);
+                button.RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(global::Avalonia.Controls.Button.ClickEvent));
+                Assert.IsNotNull(captured);
+                Assert.AreEqual("pistols", captured.FollowUpValues!["skill-choice"]);
+
+                // An edit after a preview was prepared must invalidate it.
+                var journeyState = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.Journey(snapshot, 5);
+                var preparedPreview = new Chummer.Presentation.Overview.CharacterCreationLifeModulePreparedPreview(
+                    "sha256:" + new string('f', 64),
+                    journeyState.Binding,
+                    journeyState.CurrentStageOrder,
+                    journeyState.CurrentStageId,
+                    new Chummer.Contracts.Characters.CharacterCreationFoundationSelection(
+                        "module-5", "version-a"),
+                    new Chummer.Contracts.Characters.CharacterCreationLifeModuleDraftEntry(
+                        5, "module-5",
+                        new Chummer.Contracts.Characters.CharacterCreationFoundationSelection("module-5", "version-a"),
+                        7m, Array.Empty<Chummer.Contracts.LifeModules.LifeModuleRequirementProjectionDto>(),
+                        Array.Empty<Chummer.Contracts.LifeModules.LifeModuleEffectProjectionDto>(),
+                        new Dictionary<string, string> { ["skill-choice"] = "pistols" },
+                        Array.Empty<string>(), "Story"),
+                    journeyState.Budget,
+                    journeyState.Budget,
+                    Array.Empty<string>(), true, true, "sha256:" + new string('a', 64));
+                control.SetJourneyPrepareResult(new Chummer.Presentation.Overview.CharacterCreationLifeModuleJourneyInteractionPrepareResult(
+                    "prepared", journeyState, preparedPreview, Array.Empty<string>()));
+                Assert.IsNotNull(control.JourneyPreview);
+                choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                choice.SelectedIndex = 1;
+                Assert.IsNull(control.JourneyPreview,
+                    "an edit after prepare must clear the stale preview");
+                Assert.AreSame(choice, control.GetVisualDescendants().OfType<ComboBox>().Single(),
+                    "invalidating the review must preserve the active editor");
+                Assert.AreEqual(1, choice.SelectedIndex, "the new answer must remain visible");
+                Assert.IsFalse(control.GetVisualDescendants().OfType<Button>().Any(b =>
+                    AutomationProperties.GetAutomationId(b) == "creation-wizard-journey-confirm"));
+                control.SetJourneyStatus("Prepare the changed answers again.");
+                choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                Assert.AreEqual(1, choice.SelectedIndex, "the changed answer must survive a later render");
+            }
+            finally { window.Close(); }
+        });
+    }
+
+    [TestMethod]
+    public void Life_module_follow_up_drafts_keep_each_option_and_version_separate_and_retire_on_workspace_change()
+    {
+        WithHeadlessUi(() =>
+        {
+            var snapshot = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+            var session = new Chummer.Presentation.Overview.CharacterCreationWizardDesktopSession();
+            session.Bind(snapshot, journey: Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.Journey(snapshot, 5));
+            Assert.IsTrue(session.TryContinue());
+            var option = session.State.LegalOptions.Single();
+            var prompt = option.FollowUps.Single() with { Options = [] };
+            var first = option with { OptionId = "first-module", FollowUps = [prompt] };
+            var second = option with { OptionId = "second-module", FollowUps = [prompt] };
+            var state = session.State with { LegalOptions = [first, second] };
+            var control = new Chummer.Avalonia.Controls.CharacterCreationWizardControl();
+            var window = new Window { Content = control };
+            window.Show();
+            try
+            {
+                TextBox[] Inputs() => control.GetVisualDescendants().OfType<TextBox>()
+                    .Where(input => AutomationProperties.GetAutomationId(input) == "creation-journey-input-skill-choice").ToArray();
+                control.SetState(state);
+                Inputs()[0].Text = "First answer";
+                Inputs()[1].Text = "Second answer";
+                control.SetJourneyMutationBusy(true);
+                control.SetJourneyMutationBusy(false);
+                control.SetJourneyStatus("Ready for preview.");
+                Assert.AreEqual("First answer", Inputs()[0].Text);
+                Assert.AreEqual("Second answer", Inputs()[1].Text);
+
+                control.SetState(state with { LegalOptions = [first with { VersionId = "another-version" }, second] });
+                Assert.IsTrue(string.IsNullOrEmpty(Inputs()[0].Text));
+                Assert.AreEqual("Second answer", Inputs()[1].Text);
+                control.SetState(state);
+                Assert.AreEqual("First answer", Inputs()[0].Text);
+                Assert.AreEqual("Second answer", Inputs()[1].Text);
+
+                control.SetState(state with { WorkspaceId = "another-workspace" });
+                Assert.IsTrue(Inputs().All(input => string.IsNullOrEmpty(input.Text)));
+                control.SetState(state);
+                Assert.IsTrue(Inputs().All(input => string.IsNullOrEmpty(input.Text)),
+                    "retired workspace drafts must not return into a newly bound context");
             }
             finally { window.Close(); }
         });

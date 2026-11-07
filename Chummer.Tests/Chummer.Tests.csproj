@@ -471,7 +471,7 @@
     </ProjectReference>
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Application\\Chummer.Application.csproj')" />
     <ProjectReference Include="..\Chummer.Blazor\Chummer.Blazor.csproj">
-      <Private>false</Private>
+      <Private>true</Private>
     </ProjectReference>
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Core\Chummer.Core.csproj" Condition="Exists('..\\..\\chummer-core-engine\\Chummer.Core\\Chummer.Core.csproj')" />
