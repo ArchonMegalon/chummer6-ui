@@ -110,6 +110,15 @@ public partial class CharacterCreationWizardControl : UserControl
     private bool _journeyMutationBusy;
     private CharacterCreationLifeModuleFinishPreview? _journeyFinishPreview;
 
+    // Journey follow-up drafts (audit ui019/T292): the follow-up inputs are
+    // rebuilt on every busy/status re-render; without a draft map the
+    // player's typing is lost whenever a preview or status line appears.
+    // Drafts are scoped to the option they belong to so a re-render can
+    // never substitute another option's values into a different card.
+    private readonly Dictionary<(int Stage, string OptionId, string? VersionId), Dictionary<string, string>> _journeyFollowUpDrafts = [];
+    private readonly Dictionary<(int Stage, string OptionId, string? VersionId), Dictionary<string, Func<string?>>> _journeyFollowUpReaders = [];
+    private Border? _journeyPreviewPanel;
+
     public CharacterCreationLifeModulePreparedPreview? JourneyPreview => _journeyPreview;
 
     public CharacterCreationLifeModuleFinishPreview? JourneyFinishPreview => _journeyFinishPreview;
@@ -784,6 +793,15 @@ public partial class CharacterCreationWizardControl : UserControl
             state.WorkspaceId,
             _state?.WorkspaceId,
             StringComparison.Ordinal);
+        HarvestJourneyFollowUpDrafts();
+        if (ownerChanged)
+            ClearJourneyPreviews();
+        else if (contextChanged)
+        {
+            _journeyPreview = null;
+            _journeyFinishPreview = null;
+            _journeyMutationStatus = null;
+        }
         if (!string.Equals(
                 state.ContactsStep?.SnapshotDigest,
                 _boundContactsSnapshotDigest,
@@ -1247,6 +1265,9 @@ public partial class CharacterCreationWizardControl : UserControl
         _journeyPreview = null;
         _journeyFinishPreview = null;
         _journeyMutationStatus = null;
+        _journeyFollowUpDrafts.Clear();
+        _journeyFollowUpReaders.Clear();
+        _journeyPreviewPanel = null;
     }
 
     private static string BuildJourneyResultStatus(string outcome, IReadOnlyList<string> blockers)
@@ -1536,6 +1557,9 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void RenderLegalOptions(IReadOnlyList<CharacterCreationWizardDesktopOption> options)
     {
+        HarvestJourneyFollowUpDrafts();
+        _journeyFollowUpReaders.Clear();
+        _journeyPreviewPanel = null;
         LegalOptionList.Children.Clear();
         LegalOptionList.IsVisible = _state?.ContactsStep is null;
         StepContentHeading.Text = _state?.ContactsStep is null
@@ -1666,6 +1690,8 @@ public partial class CharacterCreationWizardControl : UserControl
             {
                 var body = new StackPanel { Spacing = 4 };
                 var readers = new Dictionary<string, Func<string?>>(StringComparer.Ordinal);
+                var draftKey = (_state!.JourneyStep!.CurrentStageOrder, option.OptionId, option.VersionId);
+                _journeyFollowUpDrafts.TryGetValue(draftKey, out Dictionary<string, string>? drafts);
                 foreach (LifeModuleFollowUpPromptDto prompt in option.FollowUps)
                 {
                     body.Children.Add(Caption(prompt.Label + (prompt.IsRequired ? " (required)" : "")));
@@ -1678,17 +1704,33 @@ public partial class CharacterCreationWizardControl : UserControl
                             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
                         };
                         AutomationProperties.SetAutomationId(choice, $"creation-journey-input-{prompt.PromptId}");
+                        if (drafts is not null && drafts.TryGetValue(prompt.PromptId, out string? draftChoice))
+                        {
+                            choice.SelectedItem = ((IEnumerable<ComboBoxItem>)choice.ItemsSource!)
+                                .FirstOrDefault(item => string.Equals(item.Tag as string, draftChoice, StringComparison.Ordinal));
+                        }
                         readers[prompt.PromptId] = () => (choice.SelectedItem as ComboBoxItem)?.Tag as string;
+                        choice.SelectionChanged += (_, _) => InvalidateJourneyPreviewOnEdit();
                         body.Children.Add(choice);
                     }
                     else
                     {
                         var input = new TextBox { Watermark = prompt.Label };
                         AutomationProperties.SetAutomationId(input, $"creation-journey-input-{prompt.PromptId}");
+                        if (drafts is not null && drafts.TryGetValue(prompt.PromptId, out string? draftText))
+                            input.Text = draftText;
                         readers[prompt.PromptId] = () => input.Text;
+                        input.PropertyChanged += (_, args) =>
+                        {
+                            if (args.Property == TextBox.TextProperty)
+                                InvalidateJourneyPreviewOnEdit();
+                        };
                         body.Children.Add(input);
                     }
                 }
+                // The readers survive the render so the next re-render can
+                // harvest typing before the inputs are rebuilt.
+                _journeyFollowUpReaders[draftKey] = readers;
                 optionButton.IsEnabled = option.IsEnabled && !_journeyMutationBusy;
                 optionButton.Click += (_, _) =>
                 {
@@ -1786,6 +1828,46 @@ public partial class CharacterCreationWizardControl : UserControl
         }
     }
 
+
+    /// <summary>
+    /// Reads the live journey follow-up inputs (the per-option reader lambdas
+    /// captured during the last card render) into the draft map. Called
+    /// before every re-render of the legal-option cards while a journey step
+    /// is active so typing survives busy/status re-renders.
+    /// </summary>
+    private void HarvestJourneyFollowUpDrafts()
+    {
+        foreach (var (key, readers) in _journeyFollowUpReaders)
+        {
+            Dictionary<string, string> captured = new(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, Func<string?>> pair in readers)
+            {
+                if (pair.Value() is { } value)
+                    captured[pair.Key] = value;
+            }
+            _journeyFollowUpDrafts[key] = captured;
+        }
+    }
+
+    /// <summary>
+    /// Clears the prepared preview when the player edits a follow-up input
+    /// after a preview was prepared: the preview described the values at
+    /// prepare time, so editing without invalidating would let the confirm
+    /// gate commit a stale projection (audit ui019/T292).
+    /// </summary>
+    private void InvalidateJourneyPreviewOnEdit()
+    {
+        if (_journeyPreview is null)
+            return;
+        _journeyPreview = null;
+        _journeyMutationStatus =
+            "Life module preview cleared - adjust the follow-up answers and prepare again.";
+        // Retire only the confirmation surface. Rebuilding every editor here
+        // would discard the active control and interrupt typing after one key.
+        if (_journeyPreviewPanel is { } panel)
+            panel.Child = Caption(_journeyMutationStatus);
+    }
+
     private void RenderJourneyPreviewPanel()
     {
         if (_journeyPreview is not { } preview)
@@ -1815,6 +1897,7 @@ public partial class CharacterCreationWizardControl : UserControl
         confirm.Click += JourneyConfirmButton_OnClick;
         body.Children.Add(confirm);
         panel.Child = body;
+        _journeyPreviewPanel = panel;
         LegalOptionList.Children.Add(panel);
     }
 

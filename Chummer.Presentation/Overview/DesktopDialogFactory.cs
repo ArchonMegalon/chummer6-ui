@@ -388,9 +388,9 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 [new DesktopDialogAction("close", "Close", true)]),
             "show_login_video" => new DesktopDialogState(
                 "dialog.show_login_video",
-                "Show Login Video",
-                "The Avalonia desktop host opens the Matrix uplink login video on demand, including after the install is already linked.",
-                BuildWindowUtilityFields("Show Matrix uplink login video", "The Help menu opens the same flagship login render without forcing account linking or browser startup. Use the login button inside that surface only when you want to link this copy."),
+                "Show Matrix Uplink",
+                "The Avalonia desktop host opens the Matrix uplink dialog on demand, including after the install is already linked.",
+                BuildWindowUtilityFields("Show Matrix uplink dialog", "The Help menu opens the same flagship Matrix uplink render without forcing account linking or browser startup. Use the login button inside that surface only when you want to link this copy."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "revision_history" => new DesktopDialogState(
                 "dialog.revision_history",

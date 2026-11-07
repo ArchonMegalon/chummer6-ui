@@ -351,8 +351,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
             else if (_loginVideoPreview)
             {
-                SetStatus("Login video preview. The browser will not open unless you press the claim button.");
-                UpdateMatrixHandoffState("Login video preview");
+                SetStatus("Matrix uplink preview. The browser will not open unless you press the claim button.");
+                UpdateMatrixHandoffState("Matrix uplink preview");
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {

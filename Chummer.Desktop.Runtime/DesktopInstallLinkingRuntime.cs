@@ -69,7 +69,11 @@ public sealed record DesktopInstallLinkingState(
     string? LastBrowserDispatchUri = null,
     string? LastBrowserDispatchFailure = null,
     long StateRevision = 0,
-    long OwnerTransitionRevision = 0);
+    long OwnerTransitionRevision = 0,
+    string? BrowserApprovalRequest = null,
+    string? BrowserApprovalReturnState = null,
+    bool BrowserApprovalUncertain = false,
+    bool BrowserApprovalTerminal = false);
 
 internal readonly record struct DesktopInstallOwnerAuthorityStamp(
     OwnerScope Owner,
@@ -89,7 +93,8 @@ public static class DesktopInstallLinkingRuntime
         long IssuedAtUnixSeconds,
         string Nonce,
         string Signature,
-        string? HostLabel);
+        string? HostLabel,
+        string OperationId);
 
     private const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
@@ -291,6 +296,11 @@ public static class DesktopInstallLinkingRuntime
             return 0;
         }
 
+        if (!TryPrepareBrowserApproval(state, out state, out string? approvalError))
+        {
+            await error.WriteLineAsync(approvalError).ConfigureAwait(false);
+            return 1;
+        }
         string relativePath = BuildClaimPortalRelativePathForInstall(state);
         string absoluteUri = BuildPublicPortalAbsoluteUri(relativePath);
         bool remoteProofPolling = TryExportRemoteCallbackPublicKey(state.PublicKey, out _);
@@ -547,6 +557,10 @@ public static class DesktopInstallLinkingRuntime
                 LastBrowserDispatchAttemptUtc = null,
                 LastBrowserDispatchUri = null,
                 LastBrowserDispatchFailure = null,
+                BrowserApprovalRequest = null,
+                BrowserApprovalReturnState = null,
+                BrowserApprovalUncertain = false,
+                BrowserApprovalTerminal = false,
                 UpdatedAtUtc = now
             };
         });
@@ -584,6 +598,12 @@ public static class DesktopInstallLinkingRuntime
         out string? failureReason)
     {
         ArgumentNullException.ThrowIfNull(state);
+        if (!TryPrepareBrowserApproval(state, out state, out failureReason))
+        {
+            absoluteUri = string.Empty;
+            StartRemoteBrowserCallbackPolling(state);
+            return false;
+        }
         StartRemoteBrowserCallbackPolling(state);
         return TryOpenPublicPortalForInstallState(
             state,
@@ -604,6 +624,12 @@ public static class DesktopInstallLinkingRuntime
         out string? failureReason)
     {
         ArgumentNullException.ThrowIfNull(state);
+        if (!TryPrepareBrowserApproval(state, out state, out failureReason))
+        {
+            absoluteUri = string.Empty;
+            StartRemoteBrowserCallbackPolling(state);
+            return false;
+        }
         StartRemoteBrowserCallbackPolling(state);
         return TryOpenPublicPortalForInstallState(
             state,
@@ -913,7 +939,11 @@ public static class DesktopInstallLinkingRuntime
         if (TryExportRemoteCallbackPublicKey(state.PublicKey, out string? publicKey))
         {
             AppendQueryParameter(query, "installLinkTransport", RemoteCallbackTransport);
-            AppendQueryParameter(query, "installLinkCallbackUri", "chummer://install-link");
+            RemoteCallbackPollRequest? attempt = ReadRetainedRemoteCallbackRequest(state);
+            AppendQueryParameter(query, "installLinkOperationId", attempt?.OperationId);
+            AppendQueryParameter(query, "installLinkCallbackUri", attempt is null
+                ? "chummer://install-link"
+                : "chummer://install-link?state=" + Uri.EscapeDataString(state.BrowserApprovalReturnState!));
             AppendQueryParameter(query, "publicKey", publicKey);
         }
         else
@@ -2284,9 +2314,106 @@ public static class DesktopInstallLinkingRuntime
         query.Add($"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value.Trim())}");
     }
 
+    private static string RemoteCallbackOperationId(string nonce)
+        => Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(nonce)), 0, 24)
+            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    private static RemoteCallbackPollRequest? ReadRetainedRemoteCallbackRequest(DesktopInstallLinkingState state)
+    {
+        if (state.BrowserApprovalRequest is null)
+            return null;
+        RemoteCallbackPollRequest? request = JsonSerializer.Deserialize<RemoteCallbackPollRequest>(state.BrowserApprovalRequest, JsonOptions);
+        if (request is null || string.IsNullOrWhiteSpace(request.Nonce)
+            || request.OperationId != RemoteCallbackOperationId(request.Nonce)
+            || string.IsNullOrWhiteSpace(state.BrowserApprovalReturnState)
+            || request.InstallationId != state.InstallationId || request.HeadId != state.HeadId
+            || request.ApplicationVersion != state.ApplicationVersion || request.ChannelId != state.ChannelId
+            || request.Platform != state.Platform || request.Arch != state.Arch
+            || !TryExportRemoteCallbackPublicKey(state.PublicKey, out string? key) || request.PublicKey != key)
+            throw new InvalidOperationException("The retained browser approval belongs to a different installation context. Recover that approval before starting another.");
+        return request;
+    }
+
+    private static bool TryPrepareBrowserApproval(
+        DesktopInstallLinkingState expected,
+        out DesktopInstallLinkingState prepared,
+        out string? failure)
+    {
+        prepared = expected;
+        failure = null;
+        if (IsClaimed(expected) || !TryExportRemoteCallbackPublicKey(expected.PublicKey, out _))
+            return true;
+        try
+        {
+            bool ready = false;
+            prepared = UpdateCurrentState(expected.HeadId, current =>
+            {
+                if (!IsSameOwnerAuthority(current, expected) || !IsSameInstallCredentialGeneration(current, expected))
+                    return null;
+                if (current.BrowserApprovalUncertain)
+                    return null;
+                RemoteCallbackPollRequest? retained = current.BrowserApprovalTerminal
+                    ? null : ReadRetainedRemoteCallbackRequest(current);
+                if (retained is not null && !current.BrowserApprovalTerminal)
+                {
+                    ready = true;
+                    return null;
+                }
+                DesktopInstallLinkingState fresh = current with { BrowserApprovalRequest = null };
+                RemoteCallbackPollRequest request = CreateRemoteCallbackPollRequest(fresh)
+                    ?? throw new InvalidOperationException("The installation key could not sign the browser approval.");
+                ready = true;
+                return fresh with
+                {
+                    BrowserApprovalRequest = JsonSerializer.Serialize(request, JsonOptions),
+                    BrowserApprovalReturnState = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant(),
+                    BrowserApprovalUncertain = false,
+                    BrowserApprovalTerminal = false,
+                    UpdatedAtUtc = DateTimeOffset.UtcNow
+                };
+            });
+            if (!ready)
+            {
+                failure = "An earlier browser approval still needs to be checked. Keep this copy open while it recovers; a new approval has not been started.";
+            }
+            return ready;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or JsonException)
+        {
+            failure = "The saved browser approval could not be prepared. Your existing approval has been retained.";
+            return false;
+        }
+    }
+
+    private static bool TryRetainRemoteCallbackRequest(
+        DesktopInstallLinkingState expected, RemoteCallbackPollRequest request,
+        bool uncertain, bool terminal, out DesktopInstallLinkingState saved)
+    {
+        bool retained = false;
+        saved = UpdateCurrentState(expected.HeadId, current =>
+        {
+            if (!IsSameOwnerAuthority(current, expected) || IsClaimed(current)
+                || !IsSameInstallCredentialGeneration(current, expected)
+                || current.BrowserApprovalRequest != expected.BrowserApprovalRequest
+                || current.BrowserApprovalUncertain != expected.BrowserApprovalUncertain
+                || current.BrowserApprovalTerminal != expected.BrowserApprovalTerminal)
+                return null;
+            retained = true;
+            return current with
+            {
+                BrowserApprovalRequest = JsonSerializer.Serialize(request, JsonOptions),
+                BrowserApprovalUncertain = uncertain,
+                BrowserApprovalTerminal = terminal,
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            };
+        });
+        return retained;
+    }
+
     private static void StartRemoteBrowserCallbackPolling(DesktopInstallLinkingState state)
     {
         if (IsClaimed(state)
+            || state.BrowserApprovalRequest is null || state.BrowserApprovalTerminal
             || string.IsNullOrWhiteSpace(state.PrivateKey)
             || !TryExportRemoteCallbackPublicKey(state.PublicKey, out _)
             || !RemoteCallbackPolls.TryAdd(state.InstallationId, 0))
@@ -2303,6 +2430,10 @@ public static class DesktopInstallLinkingRuntime
             finally
             {
                 RemoteCallbackPolls.TryRemove(state.InstallationId, out _);
+                DesktopInstallLinkingState latest = LoadOrCreateState(state.HeadId);
+                if (IsSameOwnerAuthority(latest, state) && !IsClaimed(latest)
+                    && latest.BrowserApprovalReturnState != state.BrowserApprovalReturnState)
+                    StartRemoteBrowserCallbackPolling(latest);
             }
         });
     }
@@ -2314,29 +2445,61 @@ public static class DesktopInstallLinkingRuntime
         DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(15);
         int transientFailures = 0;
         bool waitingStateRecorded = false;
+        if (initialState.BrowserApprovalRequest is null
+            && !TryPrepareBrowserApproval(initialState, out initialState, out _))
+            return;
+        RemoteCallbackPollRequest? retainedRequest = ReadRetainedRemoteCallbackRequest(initialState);
+        if (retainedRequest is null || initialState.BrowserApprovalTerminal)
+            return;
+        bool awaitingDefinitiveOutcome = initialState.BrowserApprovalUncertain;
         using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
         while (DateTimeOffset.UtcNow < deadline)
         {
             DesktopInstallLinkingState currentState = LoadOrCreateState(initialState.HeadId);
             if (!IsSameOwnerAuthority(currentState, initialState)
+                || currentState.BrowserApprovalReturnState != initialState.BrowserApprovalReturnState
+                || currentState.BrowserApprovalTerminal
                 || IsClaimed(currentState))
             {
                 return;
             }
 
-            RemoteCallbackPollRequest? request = CreateRemoteCallbackPollRequest(currentState);
-            if (request is null)
+            RemoteCallbackProofReuseDecision reuseDecision =
+                ResolveRemoteCallbackProofReuseDecision(
+                    retainedRequest,
+                    awaitingDefinitiveOutcome,
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            if (reuseDecision == RemoteCallbackProofReuseDecision.EnterExplicitRecovery)
             {
+                // The last send's outcome is still unknown and this proof can no longer
+                // be replayed. Quietly minting a fresh proof here could present a new
+                // approval as the recovery of one the Hub may have already completed,
+                // so the loop stops with an explicit recovery request instead.
                 RecordRemoteCallbackPollFailure(
                     currentState,
-                    "Chummer could not sign the secure browser approval with this installation key. Start a fresh link from the app.");
+                    "The secure browser approval could not be confirmed before its request expired. If the browser already approved this copy, check the linked installations on your account before starting a new link.");
                 return;
+            }
+            if (reuseDecision == RemoteCallbackProofReuseDecision.ResignAfterDefinitiveOutcome)
+            {
+                retainedRequest = CreateRemoteCallbackPollRequest(currentState);
+                if (retainedRequest is null)
+                {
+                    RecordRemoteCallbackPollFailure(
+                        currentState,
+                        "Chummer could not sign the secure browser approval with this installation key. Start a fresh link from the app.");
+                    return;
+                }
             }
 
             try
             {
+                // Save the exact signed request as uncertain before dispatch. A
+                // restart or lost response can only retry this same operation.
+                if (!TryRetainRemoteCallbackRequest(currentState, retainedRequest!, true, false, out currentState))
+                    return;
                 using StringContent content = new(
-                    JsonSerializer.Serialize(request, JsonOptions),
+                    JsonSerializer.Serialize(retainedRequest, JsonOptions),
                     Encoding.UTF8,
                     MediaTypeNames.Application.Json);
                 using HttpResponseMessage response = await client.PostAsync(
@@ -2344,9 +2507,12 @@ public static class DesktopInstallLinkingRuntime
                     content,
                     cancellationToken).ConfigureAwait(false);
                 string responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                if (response.StatusCode is HttpStatusCode.Accepted or HttpStatusCode.NotFound)
+                if (response.StatusCode == HttpStatusCode.Accepted)
                 {
+                    if (!TryRetainRemoteCallbackRequest(currentState, retainedRequest!, false, false, out currentState))
+                        return;
                     transientFailures = 0;
+                    awaitingDefinitiveOutcome = false;
                     if (!waitingStateRecorded)
                     {
                         RecordRemoteCallbackPollWaiting(currentState);
@@ -2359,6 +2525,11 @@ public static class DesktopInstallLinkingRuntime
 
                 if (IsTransientRemoteCallbackStatus(response.StatusCode))
                 {
+                    // The request may or may not have reached the Hub. Replay the
+                    // identical signed proof so a lost successful response can be
+                    // recovered through the Hub's redemption receipt instead of
+                    // being stranded behind a freshly signed, differently bound poll.
+                    awaitingDefinitiveOutcome = true;
                     transientFailures += 1;
                     await Task.Delay(ResolveRemoteCallbackRetryDelay(response, transientFailures), cancellationToken)
                         .ConfigureAwait(false);
@@ -2367,6 +2538,10 @@ public static class DesktopInstallLinkingRuntime
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    // A retry of an uncertain send must not turn an expired proof
+                    // into permission to replace an outcome that may have committed.
+                    if (!TryRetainRemoteCallbackRequest(currentState, retainedRequest!, awaitingDefinitiveOutcome, !awaitingDefinitiveOutcome, out currentState))
+                        return;
                     RecordRemoteCallbackPollFailure(currentState, BuildErrorMessage(response, responseText));
                     return;
                 }
@@ -2390,11 +2565,13 @@ public static class DesktopInstallLinkingRuntime
             }
             catch (HttpRequestException) when (DateTimeOffset.UtcNow < deadline)
             {
+                awaitingDefinitiveOutcome = true;
                 transientFailures += 1;
                 await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures), cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) when (DateTimeOffset.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
             {
+                awaitingDefinitiveOutcome = true;
                 transientFailures += 1;
                 await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures), cancellationToken).ConfigureAwait(false);
             }
@@ -2411,7 +2588,7 @@ public static class DesktopInstallLinkingRuntime
         {
             RecordRemoteCallbackPollFailure(
                 finalState,
-                "Remote browser approval timed out. Open the claim link again to retry safely.");
+                "Browser approval is still unresolved. Keep the existing approval for recovery before starting another.");
         }
     }
 
@@ -2430,8 +2607,41 @@ public static class DesktopInstallLinkingRuntime
            && current.GrantIssuedAtUtc == expected.GrantIssuedAtUtc
            && current.GrantExpiresAtUtc == expected.GrantExpiresAtUtc;
 
+    // The Hub accepts a remote proof within a five-minute clock-skew window. Stop
+    // replaying a proof well before that boundary so a retried request can never be
+    // rejected purely for its age, and never re-sign on top of an unresolved send.
+    private const long RemoteCallbackProofReuseSeconds = 240;
+
+    private enum RemoteCallbackProofReuseDecision
+    {
+        Reuse,
+        ResignAfterDefinitiveOutcome,
+        EnterExplicitRecovery
+    }
+
+    private static RemoteCallbackProofReuseDecision ResolveRemoteCallbackProofReuseDecision(
+        RemoteCallbackPollRequest? retainedRequest,
+        bool awaitingDefinitiveOutcome,
+        long nowUnixSeconds)
+    {
+        if (retainedRequest is null)
+        {
+            return RemoteCallbackProofReuseDecision.ResignAfterDefinitiveOutcome;
+        }
+
+        if (nowUnixSeconds - retainedRequest.IssuedAtUnixSeconds < RemoteCallbackProofReuseSeconds)
+        {
+            return RemoteCallbackProofReuseDecision.Reuse;
+        }
+
+        return awaitingDefinitiveOutcome
+            ? RemoteCallbackProofReuseDecision.EnterExplicitRecovery
+            : RemoteCallbackProofReuseDecision.ResignAfterDefinitiveOutcome;
+    }
+
     private static bool IsTransientRemoteCallbackStatus(HttpStatusCode statusCode)
-        => statusCode is HttpStatusCode.RequestTimeout
+        => statusCode is HttpStatusCode.NotFound
+            or HttpStatusCode.RequestTimeout
             or HttpStatusCode.TooManyRequests
             or HttpStatusCode.InternalServerError
             or HttpStatusCode.BadGateway
@@ -2471,7 +2681,8 @@ public static class DesktopInstallLinkingRuntime
         }
 
         long issuedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        string nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+        string nonce = ReadRetainedRemoteCallbackRequest(state)?.Nonce
+            ?? Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
         byte[] payload = BuildRemoteCallbackProofPayload(
             state.InstallationId,
             state.HeadId,
@@ -2503,7 +2714,8 @@ public static class DesktopInstallLinkingRuntime
                 IssuedAtUnixSeconds: issuedAtUnixSeconds,
                 Nonce: nonce,
                 Signature: signature,
-                HostLabel: null);
+                HostLabel: null,
+                OperationId: RemoteCallbackOperationId(nonce));
         }
         catch (CryptographicException)
         {

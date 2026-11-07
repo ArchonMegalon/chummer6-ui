@@ -381,13 +381,13 @@ public sealed class DesktopInstallLinkingShellChromeTests
     {
         string installWindowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
         string selectionSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.SelectionHandlers.cs"));
-        string projectorSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs"));
+        string menuCatalogSource = File.ReadAllText(FindPath("Chummer.Presentation", "Shell", "DesktopMenuProjectionCatalog.cs"));
         string catalogSource = File.ReadAllText(FindPath("Chummer.Presentation", "Shell", "CatalogOnlyRulesetShellCatalogResolver.cs"));
         string labelSource = File.ReadAllText(FindPath("Chummer.Presentation", "UiKit", "ShellChromeBoundary.cs"));
 
         StringAssert.Contains(catalogSource, "Command(\"show_login_video\", \"command.show_login_video\", \"help\", false)");
-        StringAssert.Contains(projectorSource, "\"show_login_video\"");
-        StringAssert.Contains(labelSource, "[\"show_login_video\"] = \"Show Login Video\"");
+        StringAssert.Contains(menuCatalogSource, "\"show_login_video\"");
+        StringAssert.Contains(labelSource, "[\"show_login_video\"] = \"Show Matrix Uplink\"");
         StringAssert.Contains(selectionSource, "case \"show_login_video\":");
         StringAssert.Contains(selectionSource, "DesktopInstallLinkingWindow.ShowLoginVideoAsync(this, DesktopHeadId)");
         StringAssert.Contains(installWindowSource, "ShowLoginVideoAsync(Window owner, string headId)");
