@@ -384,6 +384,365 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
     }
 
+    [DataTestMethod]
+    [DataRow("missing-approved-key", true)]
+    [DataRow("matching-approved-key", true)]
+    [DataRow("wrong-callback-key", false)]
+    [DataRow("wrong-installation-key", false)]
+    [DataRow("wrong-callback-grant-reference", false)]
+    [DataRow("missing-callback-grant-reference", false)]
+    [DataRow("empty-callback-grant-reference", false)]
+    [DataRow("whitespace-callback-grant-reference", false)]
+    [DataRow("omitted-callback-grant-reference", false)]
+    public async Task ExchangeBrowserCallback_enforces_direct_approval_key_and_grant_bindings(
+        string mutation, bool shouldSucceed)
+    {
+        MethodInfo exchangeMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "ExchangeBrowserCallbackCodeAsync", BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The direct callback exchange should exist.");
+        string root = Path.Combine(Path.GetTempPath(), "desktop-direct-callback", Guid.NewGuid().ToString("N"));
+        string? previousRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(15));
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(1);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+
+        Task listenerTask = Task.Run(async () =>
+        {
+            using Socket socket = await listenerSocket.AcceptAsync(timeout.Token);
+            using NetworkStream stream = new(socket, ownsSocket: false);
+            using StreamReader reader = new(stream, Encoding.UTF8, false, 1024, leaveOpen: true);
+            Assert.AreEqual("POST /api/v1/install-linking/callbacks/exchange HTTP/1.1",
+                await reader.ReadLineAsync(timeout.Token));
+            int contentLength = 0;
+            string? header;
+            while (!string.IsNullOrEmpty(header = await reader.ReadLineAsync(timeout.Token)))
+            {
+                if (header.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
+                    contentLength = int.Parse(header["Content-Length:".Length..].Trim());
+            }
+            Assert.IsTrue(contentLength > 0);
+            char[] body = new char[contentLength];
+            Assert.AreEqual(contentLength, await reader.ReadBlockAsync(body.AsMemory(), timeout.Token));
+            using JsonDocument request = JsonDocument.Parse(new string(body));
+            string Field(string name) => request.RootElement.GetProperty(name).GetString()!;
+            Assert.AreEqual("code-recovery-1", Field("callbackCode"));
+
+            string responseBody = mutation == "matching-approved-key"
+                ? BuildRecoveryGrantResponse(Field("installationId"), Field("headId"), Field("platform"),
+                    Field("arch"), Field("applicationVersion"), Field("channelId"))
+                : BuildMutatedRecoveryGrantResponse(Field("installationId"), Field("headId"), Field("platform"),
+                    Field("arch"), Field("applicationVersion"), Field("channelId"), mutation);
+            // Hub's non-proof browser approval leaves Callback.PublicKey null while
+            // the accepted installation is bound to the key sent by this exchange.
+            if (mutation != "matching-approved-key" && mutation != "wrong-callback-key")
+                responseBody = ReplaceInBlock(responseBody, "callback", "\"publicKey\": \"%PublicKey%\"", "\"publicKey\": null");
+            responseBody = responseBody.Replace("\"%PublicKey%\"", JsonSerializer.Serialize(Field("publicKey")));
+            byte[] response = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n" +
+                "Content-Type: application/json\r\n" +
+                "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                "Connection: close\r\n\r\n" + responseBody);
+            await stream.WriteAsync(response.AsMemory(), timeout.Token);
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", root);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", $"http://127.0.0.1:{port}/");
+            DesktopInstallLinkingState initial = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            DesktopInstallClaimResult result = await (Task<DesktopInstallClaimResult>)exchangeMethod.Invoke(
+                null, ["avalonia", "code-recovery-1", initial, timeout.Token])!;
+            await listenerTask;
+
+            Assert.AreEqual(shouldSucceed, result.Succeeded, mutation);
+            DesktopInstallLinkingState persisted = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual(initial.InstallationId, persisted.InstallationId);
+            Assert.AreEqual(initial.PublicKey, persisted.PublicKey);
+            if (shouldSucceed)
+            {
+                Assert.AreEqual("claimed", persisted.Status);
+                Assert.AreEqual("grant-recovered-1", persisted.GrantId);
+                Assert.AreEqual("token-recovered-1", persisted.GrantToken);
+                Assert.AreEqual("user-recovered-1", persisted.UserId);
+                Assert.AreEqual("subject.install.recovery", persisted.SubjectId);
+                Assert.IsNotNull(persisted.ClaimedAtUtc);
+                Assert.IsNull(persisted.LastClaimError);
+            }
+            else
+            {
+                StringAssert.Contains(result.Message, "does not match this installation's request");
+                Assert.AreNotEqual("claimed", persisted.Status);
+                Assert.IsNull(persisted.GrantId);
+                Assert.IsNull(persisted.GrantToken);
+                Assert.IsNull(persisted.UserId);
+                Assert.IsNull(persisted.SubjectId);
+                Assert.IsNull(persisted.ClaimedAtUtc);
+            }
+        }
+        finally
+        {
+            timeout.Cancel();
+            listenerSocket.Dispose();
+            try
+            {
+                await listenerTask;
+            }
+            catch (OperationCanceledException) { }
+            catch (ObjectDisposedException) { }
+            catch (SocketException) { }
+            finally
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
+                Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+                if (Directory.Exists(root)) Directory.Delete(root, true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task PollRemoteBrowserCallback_rejects_responses_that_do_not_match_the_requested_installation()
+    {
+        // Regression for the R70 audit finding: a successful poll response used to be
+        // applied without checking that its callback, installation and grant actually
+        // belong to the requested installation. Each case mutates exactly one binding;
+        // every mutated response must leave the local link state unchanged and keep
+        // the retained request resolvable for a later, correct response.
+        MethodInfo pollMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "PollRemoteBrowserCallbackAsync",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The remote callback poll loop should exist.");
+
+        string tempBase = Path.Combine(
+            Path.GetTempPath(), "desktop-install-linking-integrity-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+
+        // One binding per case: (name, expected catcher comment)
+        string[] mutations =
+        [
+            "wrong-installation-id",
+            "wrong-callback-grant-reference",
+            "missing-callback-grant-reference",
+            "empty-callback-grant-reference",
+            "whitespace-callback-grant-reference",
+            "omitted-callback-grant-reference",
+            "inconsistent-grant-user",
+            "wrong-callback-version",
+            "wrong-approved-key",
+            "missing-approved-key",
+            "unusable-grant-status"
+        ];
+
+        using RSA installationKey = RSA.Create(2048);
+        List<string> bodies = new();
+        DesktopInstallLinkingState? fixtureSource = null;
+        int mutationIndex = -1;
+
+        string installationPublicKey = Convert.ToBase64String(installationKey.ExportSubjectPublicKeyInfo());
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(16);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+
+        Task listenerTask = Task.Run(async () =>
+        {
+            byte[] buffer = new byte[65536];
+            while (true)
+            {
+                Socket connection = await listenerSocket.AcceptAsync();
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using Socket socket = connection;
+                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        string requestText = Encoding.ASCII.GetString(buffer, 0, read);
+                        int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                        string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                        int index;
+                        lock (bodies)
+                        {
+                            bodies.Add(body);
+                            index = bodies.Count;
+                        }
+                        // Odd sends are the ambiguous first attempt (lost response);
+                        // even sends carry the mutated grant for the current case.
+                        string status = index % 2 == 1 ? "500" : "200";
+                        string responseBody = "lost";
+                        if (status == "200")
+                        {
+                            DesktopInstallLinkingState? source = fixtureSource;
+                            int caseIndex;
+                            lock (bodies)
+                            {
+                                caseIndex = mutationIndex;
+                            }
+                            if (source is not null && caseIndex >= 0 && caseIndex < mutations.Length)
+                            {
+                                responseBody = BuildMutatedRecoveryGrantResponse(
+                                    source.InstallationId,
+                                    source.HeadId,
+                                    source.Platform,
+                                    source.Arch,
+                                    source.ApplicationVersion,
+                                    source.ChannelId,
+                                    mutations[caseIndex]);
+                            }
+                        }
+                        responseBody = responseBody
+                            .Replace("%PublicKey%", installationPublicKey)
+                            .Replace("%IssuedAt%", DateTimeOffset.UtcNow.AddDays(-1).ToString("o"))
+                            .Replace("%ExpiresAt%", DateTimeOffset.UtcNow.AddDays(30).ToString("o"));
+                        string response = "HTTP/1.1 " + status + " Test\r\n" +
+                                          "Content-Type: application/json\r\n" +
+                                          "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                          "Connection: close\r\n\r\n" + responseBody;
+                        await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (SocketException)
+                    {
+                    }
+                });
+            }
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            for (int caseIndex = 0; caseIndex < mutations.Length; caseIndex++)
+            {
+                string caseRoot = Path.Combine(tempBase, "case-" + caseIndex);
+                Directory.CreateDirectory(caseRoot);
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", caseRoot);
+                lock (bodies)
+                {
+                    mutationIndex = caseIndex;
+                }
+                bodies.Clear();
+
+                DesktopInstallLinkingState initial = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+                DesktopInstallLinkingState prepared = PersistInstallLinkingState(initial with
+                {
+                    Status = "guest",
+                    ClaimedAtUtc = null,
+                    GrantId = null,
+                    GrantToken = null,
+                    GrantIssuedAtUtc = null,
+                    GrantExpiresAtUtc = null,
+                    PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                    PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+                });
+                fixtureSource = prepared;
+
+                await (Task)(pollMethod.Invoke(null, [prepared, CancellationToken.None])
+                    ?? throw new AssertFailedException("The poll loop should return a task."));
+
+                // The loop returns at the first rejected response. The critical assertion
+                // is that the mutated grant was NOT adopted and the request is retained.
+                DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+                Assert.AreNotEqual("claimed", finalState.Status,
+                    $"[{mutations[caseIndex]}] An inconsistent response must never claim the installation.");
+                Assert.IsNull(finalState.GrantToken,
+                    $"[{mutations[caseIndex]}] A mutated grant token must not be adopted into local state.");
+                Assert.IsNull(finalState.UserId,
+                    $"[{mutations[caseIndex]}] A mutated account identity must not be adopted into local state.");
+                Assert.IsNotNull(finalState.BrowserApprovalRequest,
+                    $"[{mutations[caseIndex]}] The retained request must survive a rejected response for later recovery.");
+                // Exactly two sends per case: the ambiguous one and the mutated answer.
+                Assert.AreEqual(2, bodies.Count,
+                    $"[{mutations[caseIndex]}] The loop must replay the identical request exactly once before rejecting.");
+            }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            try
+            {
+                listenerSocket.Dispose();
+                await listenerTask;
+            }
+            catch (Exception)
+            {
+            }
+            if (Directory.Exists(tempBase))
+            {
+                Directory.Delete(tempBase, recursive: true);
+            }
+        }
+    }
+
+    // Each mutation changes exactly ONE binding of an otherwise valid recovery
+    // response, so a rejected case identifies the specific check that caught it.
+    private static string BuildMutatedRecoveryGrantResponse(
+        string installationId,
+        string headId,
+        string platform,
+        string arch,
+        string version,
+        string channel,
+        string mutation)
+    {
+        string json = BuildRecoveryGrantResponse(installationId, headId, platform, arch, version, channel);
+        switch (mutation)
+        {
+            case "wrong-installation-id":
+                // Every installationId mention now names a foreign installation: the
+                // response is internally consistent but does not belong to this request.
+                return json.Replace("\"installationId\": \"" + installationId + "\"", "\"installationId\": \"ins-foreign\"");
+            case "wrong-callback-grant-reference":
+                // Only the callback's grant reference drifts from the returned grant.
+                return ReplaceInBlock(json, "callback", "\"grantId\": \"grant-recovered-1\"", "\"grantId\": \"grant-foreign\"");
+            case "missing-callback-grant-reference":
+                return ReplaceInBlock(json, "callback", "\"grantId\": \"grant-recovered-1\"", "\"grantId\": null");
+            case "empty-callback-grant-reference":
+                return ReplaceInBlock(json, "callback", "\"grantId\": \"grant-recovered-1\"", "\"grantId\": \"\"");
+            case "whitespace-callback-grant-reference":
+                return ReplaceInBlock(json, "callback", "\"grantId\": \"grant-recovered-1\"", "\"grantId\": \" \"");
+            case "omitted-callback-grant-reference":
+                return ReplaceInBlock(json, "callback", ",\n    \"grantId\": \"grant-recovered-1\"", "");
+            case "missing-approved-key":
+                return ReplaceInBlock(json, "callback", "\"publicKey\": \"%PublicKey%\"", "\"publicKey\": null");
+            case "wrong-callback-key":
+                return ReplaceInBlock(json, "callback", "\"publicKey\": \"%PublicKey%\"", "\"publicKey\": \"Zm9vYmFyRm9v\"");
+            case "wrong-installation-key":
+                return ReplaceInBlock(json, "installation", "\"publicKey\": \"%PublicKey%\"", "\"publicKey\": \"Zm9vYmFyRm9v\"");
+            case "inconsistent-grant-user":
+                // Only the grant's account identity drifts from callback/installation.
+                return ReplaceInBlock(json, "grant", "\"userId\": \"user-recovered-1\"", "\"userId\": \"user-foreign\"");
+            case "wrong-callback-version":
+                // Only the callback claims a different approved version.
+                return ReplaceInBlock(json, "callback", "\"version\": \"" + version + "\"", "\"version\": \"9.9.9-other\"");
+            case "wrong-approved-key":
+                // Both key mentions are replaced before the fixture substitutes the real
+                // key, so callback and installation now carry a foreign device key.
+                return json.Replace("\"publicKey\": \"%PublicKey%\"", "\"publicKey\": \"Zm9vYmFyRm9v\"");
+            case "unusable-grant-status":
+                // The grant is not in a state a linked client can use.
+                return ReplaceInBlock(json, "grant", "\"status\": \"active\"", "\"status\": \"inactive\"");
+            default:
+                throw new AssertFailedException("Unknown mutation: " + mutation);
+        }
+    }
+
+    private static string ReplaceInBlock(string json, string block, string oldText, string newText)
+    {
+        int start = json.IndexOf("\"" + block + "\": {", StringComparison.Ordinal);
+        Assert.IsTrue(start >= 0, "Block " + block + " missing in fixture.");
+        int end = json.IndexOf('\n', start);
+        Assert.IsTrue(end > start, "Block " + block + " malformed.");
+        int next = json.IndexOf("\n  },", end, StringComparison.Ordinal);
+        Assert.IsTrue(next > end, "Block " + block + " end missing.");
+        string section = json.Substring(end, next - end);
+        return json.Substring(0, end) + section.Replace(oldText, newText) + json.Substring(next);
+    }
+
     [TestMethod]
     public async Task Headless_mode_recovers_a_retained_uncertain_approval_instead_of_exiting()
     {
@@ -502,6 +861,308 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public async Task Headless_mode_completes_recovery_with_the_retained_proof_and_claims_the_installation()
+    {
+        // Regression for the R70 audit finding: the previous recovery test only proved
+        // that the entry point survives until timeout. This test proves SUCCESSFUL
+        // recovery: the headless entry point polls the retained request, the fake Hub
+        // validates the received proof against the ORIGINAL operation and returns the
+        // grant; the process must exit 0 with a persisted claimed state.
+        string root = Path.Combine(Path.GetTempPath(), "desktop-approval-headless-success", Guid.NewGuid().ToString("N"));
+        string? previousRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        string? previousOpenBrowser = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER");
+        string? previousTimeout = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS");
+        MethodInfo Method(string name) => typeof(DesktopInstallLinkingRuntime).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException(name);
+
+        List<string> bodies = new();
+        DesktopInstallLinkingState? fixtureSource = null;
+
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(16);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+
+        Task listenerTask = Task.Run(async () =>
+        {
+            byte[] buffer = new byte[65536];
+            while (true)
+            {
+                Socket connection = await listenerSocket.AcceptAsync();
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using Socket socket = connection;
+                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        string requestText = Encoding.ASCII.GetString(buffer, 0, read);
+                        int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                        string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                        lock (bodies)
+                        {
+                            bodies.Add(body);
+                        }
+                        DesktopInstallLinkingState? source = fixtureSource;
+                        string responseBody = "{}";
+                        // The fake Hub answers every poll with the ORIGINAL grant of the
+                        // retained operation — the successful-recovery scenario.
+                        if (source is not null)
+                        {
+                            responseBody = BuildRecoveryGrantResponse(
+                                source.InstallationId,
+                                source.HeadId,
+                                source.Platform,
+                                source.Arch,
+                                source.ApplicationVersion,
+                                source.ChannelId);
+                        }
+                                                string responsePublicKey = "unused";
+                        if (source is not null)
+                        {
+                            // The state stores the key as PEM; the wire format is
+                            // Base64 SPKI — derive it exactly like the runtime does.
+                            using RSA fixtureKey = RSA.Create();
+                            fixtureKey.ImportFromPem(source.PublicKey);
+                            responsePublicKey = Convert.ToBase64String(fixtureKey.ExportSubjectPublicKeyInfo());
+                        }
+responseBody = responseBody
+                            .Replace("%PublicKey%", responsePublicKey)
+                            .Replace("%IssuedAt%", DateTimeOffset.UtcNow.AddDays(-1).ToString("o"))
+                            .Replace("%ExpiresAt%", DateTimeOffset.UtcNow.AddDays(30).ToString("o"));
+                        string response = "HTTP/1.1 200 OK\r\n" +
+                                          "Content-Type: application/json\r\n" +
+                                          "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                          "Connection: close\r\n\r\n" + responseBody;
+                        await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (SocketException)
+                    {
+                    }
+                });
+            }
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", root);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            object?[] prepareArgs = [created, null, null];
+            Assert.AreEqual(true, Method("TryPrepareBrowserApproval").Invoke(null, prepareArgs));
+            DesktopInstallLinkingState prepared = (DesktopInstallLinkingState)prepareArgs[1]!;
+            fixtureSource = prepared;
+
+            // Persist the request as uncertain, as if the previous process died right
+            // after dispatching it.
+            object retained = Method("ReadRetainedRemoteCallbackRequest").Invoke(null, [prepared])!;
+            object?[] retain = [prepared, retained, true, false, null];
+            Assert.AreEqual(true, Method("TryRetainRemoteCallbackRequest").Invoke(null, retain));
+            DesktopInstallLinkingState uncertain = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.IsTrue(uncertain.BrowserApprovalUncertain);
+
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", "0");
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", "30");
+            using StringWriter output = new();
+            using StringWriter error = new();
+
+            DesktopInstallLinkingStartupContext context = new(
+                State: uncertain,
+                ClaimResult: null,
+                StartupClaimCode: null,
+                ShouldPrompt: true,
+                PromptReason: "claim_required");
+
+            int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+                "avalonia",
+                ["--install-link-headless"],
+                context,
+                output,
+                error,
+                CancellationToken.None);
+
+            // The retained proof recovered the original grant: exit 0, claimed state.
+            Assert.AreEqual(0, exitCode,
+                "Headless recovery must complete with the retained proof, not time out.");
+            StringAssert.Contains(output.ToString(), "Install linked:", StringComparison.Ordinal);
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual("claimed", finalState.Status);
+            Assert.AreEqual("grant-recovered-1", finalState.GrantId);
+            Assert.AreEqual("token-recovered-1", finalState.GrantToken);
+            Assert.AreEqual("user-recovered-1", finalState.UserId);
+            Assert.AreEqual("subject.install.recovery", finalState.SubjectId);
+
+            // The server received the retained proof (at least one poll), and every
+            // received poll body carries the same operation — no replacement identity.
+            Assert.IsTrue(bodies.Count >= 1, "The headless path must poll the retained request.");
+            lock (bodies)
+            {
+                string first = bodies[0];
+                for (int i = 1; i < bodies.Count; i++)
+                {
+                    StringAssert.Contains(bodies[i], first[..Math.Min(80, first.Length)],
+                        "Every poll must carry the identical retained request identity.");
+                }
+            }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
+            // Test isolation: observe the listener loop to completion BEFORE the
+            // environment is restored and the temp directory is removed; a discarded
+            // task could otherwise depend on timing in later tests.
+            listenerSocket.Dispose();
+            try
+            {
+                await listenerTask;
+            }
+            catch (Exception)
+            {
+            }
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task Headless_timeout_reports_an_unresolved_outcome_without_claiming_nothing_was_linked()
+    {
+        // Regression for the R70 audit finding: the headless timeout used to print
+        // "Nothing was linked" even when the server-side outcome remained unknown.
+        // An unresolved operation must be reported as retained-for-recovery; only a
+        // conclusively rejected approval may be reported as a rejection.
+        string root = Path.Combine(Path.GetTempPath(), "desktop-approval-headless-timeout", Guid.NewGuid().ToString("N"));
+        string? previousRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        string? previousOpenBrowser = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER");
+        string? previousTimeout = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS");
+        MethodInfo Method(string name) => typeof(DesktopInstallLinkingRuntime).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException(name);
+
+        using RSA installationKey = RSA.Create(2048);
+
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(16);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+
+        Task listenerTask = Task.Run(async () =>
+        {
+            byte[] buffer = new byte[65536];
+            while (true)
+            {
+                Socket connection = await listenerSocket.AcceptAsync();
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using Socket socket = connection;
+                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        string requestText = Encoding.ASCII.GetString(buffer, 0, read);
+                        int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                        string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                        // The fake Hub answers every poll with pending (202): the
+                        // server-side outcome stays unknown for the whole window.
+                        string responseBody = "{}";
+                        string response = "HTTP/1.1 202 Pending\r\n" +
+                                          "Content-Type: application/json\r\n" +
+                                          "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                          "Connection: close\r\n\r\n" + responseBody;
+                        await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (SocketException)
+                    {
+                    }
+                });
+            }
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", root);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            object?[] prepareArgs = [created, null, null];
+            Assert.AreEqual(true, Method("TryPrepareBrowserApproval").Invoke(null, prepareArgs));
+            DesktopInstallLinkingState prepared = (DesktopInstallLinkingState)prepareArgs[1]!;
+
+            // Persist the request as uncertain, as if the previous process died right
+            // after dispatching it.
+            object retained = Method("ReadRetainedRemoteCallbackRequest").Invoke(null, [prepared])!;
+            object?[] retain = [prepared, retained, true, false, null];
+            Assert.AreEqual(true, Method("TryRetainRemoteCallbackRequest").Invoke(null, retain));
+            DesktopInstallLinkingState uncertain = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.IsTrue(uncertain.BrowserApprovalUncertain);
+
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", "0");
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", "2");
+            using StringWriter output = new();
+            using StringWriter error = new();
+
+            DesktopInstallLinkingStartupContext context = new(
+                State: uncertain,
+                ClaimResult: null,
+                StartupClaimCode: null,
+                ShouldPrompt: true,
+                PromptReason: "claim_required");
+
+            int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+                "avalonia",
+                ["--install-link-headless"],
+                context,
+                output,
+                error,
+                CancellationToken.None);
+
+            Assert.AreEqual(2, exitCode, "The timeout exit code stays 2.");
+            string errorText = error.ToString();
+            StringAssert.Contains(errorText,
+                "timed out before Chummer confirmed the handoff", StringComparison.Ordinal);
+            StringAssert.Contains(errorText,
+                "The approval may already have completed", StringComparison.Ordinal);
+            StringAssert.Contains(errorText,
+                "The original request has been retained for recovery", StringComparison.Ordinal);
+            Assert.IsFalse(errorText.Contains("Nothing was linked", StringComparison.Ordinal),
+                "A timeout must not claim a definitive negative outcome.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
+            // Test isolation: observe the listener loop to completion BEFORE the
+            // environment is restored and the temp directory is removed; a discarded
+            // task could otherwise depend on timing in later tests.
+            listenerSocket.Dispose();
+            try
+            {
+                await listenerTask;
+            }
+            catch (Exception)
+            {
+            }
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task PollRemoteBrowserCallback_replays_the_identical_signed_request_after_an_ambiguous_send()
     {
         MethodInfo pollMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
@@ -523,6 +1184,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
         List<string> bodies = new();
         int grantCount = 0;
         string installationPublicKey = Convert.ToBase64String(installationKey.ExportSubjectPublicKeyInfo());
+        DesktopInstallLinkingState? fixtureSource = null;
         using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
         listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
         listenerSocket.Listen(16);
@@ -565,7 +1227,16 @@ public sealed class DesktopInstallLinkingRuntimeTests
                             {
                                 // Recovery: the identical retry gets the original grant.
                                 status = "200";
-                                responseBody = BuildRecoveryGrantResponse();
+                                DesktopInstallLinkingState? source = fixtureSource;
+                                responseBody = source is null
+                                    ? "{}"
+                                    : BuildRecoveryGrantResponse(
+                                        source.InstallationId,
+                                        source.HeadId,
+                                        source.Platform,
+                                        source.Arch,
+                                        source.ApplicationVersion,
+                                        source.ChannelId);
                             }
                         }
                         responseBody = responseBody
@@ -593,6 +1264,11 @@ public sealed class DesktopInstallLinkingRuntimeTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
             DesktopInstallLinkingState initial = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            fixtureSource = initial with
+            {
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            };
             DesktopInstallLinkingState prepared = PersistInstallLinkingState(initial with
             {
                 Status = "guest",
@@ -647,7 +1323,13 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
     }
 
-    private static string BuildRecoveryGrantResponse()
+    private static string BuildRecoveryGrantResponse(
+        string installationId,
+        string headId,
+        string platform,
+        string arch,
+        string version,
+        string channel)
     {
         string issuedAt = DateTimeOffset.UtcNow.ToString("o");
         string expiresAt = DateTimeOffset.UtcNow.AddDays(30).ToString("o");
@@ -656,10 +1338,10 @@ public sealed class DesktopInstallLinkingRuntimeTests
   "callback": {
     "callbackId": "callback-recovery-1",
     "callbackCode": "code-recovery-1",
-    "installationId": "ins-avalonia-1",
+    "installationId": "%InstallationId%",
     "artifactId": "avalonia-win-x64-installer",
-    "channel": "preview",
-    "version": "6.0.1-preview",
+    "channel": "%Channel%",
+    "version": "%Version%",
     "installAccessClass": "open_public",
     "status": "redeemed",
     "createdAtUtc": "%IssuedAt%",
@@ -667,18 +1349,18 @@ public sealed class DesktopInstallLinkingRuntimeTests
     "userId": "user-recovered-1",
     "subjectId": "subject.install.recovery",
     "publicKey": "%PublicKey%",
-    "headId": "avalonia",
-    "platform": "linux",
-    "arch": "x64",
+    "headId": "%HeadId%",
+    "platform": "%Platform%",
+    "arch": "%Arch%",
     "hostLabel": null,
     "callbackUri": "http://127.0.0.1/recovery",
     "grantId": "grant-recovered-1"
   },
   "installation": {
-    "installationId": "ins-avalonia-1",
+    "installationId": "%InstallationId%",
     "artifactId": "avalonia-win-x64-installer",
-    "channel": "preview",
-    "version": "6.0.1-preview",
+    "channel": "%Channel%",
+    "version": "%Version%",
     "installAccessClass": "open_public",
     "status": "active",
     "createdAtUtc": "%IssuedAt%",
@@ -687,15 +1369,15 @@ public sealed class DesktopInstallLinkingRuntimeTests
     "subjectId": "subject.install.recovery",
     "publicKey": "%PublicKey%",
     "claimTicketId": "ticket-recovery-1",
-    "headId": "avalonia",
-    "platform": "linux",
-    "arch": "x64",
+    "headId": "%HeadId%",
+    "platform": "%Platform%",
+    "arch": "%Arch%",
     "hostLabel": null,
     "grantId": "grant-recovered-1"
   },
   "grant": {
     "grantId": "grant-recovered-1",
-    "installationId": "ins-avalonia-1",
+    "installationId": "%InstallationId%",
     "status": "active",
     "accessToken": "token-recovered-1",
     "issuedAtUtc": "%IssuedAt%",
@@ -705,8 +1387,17 @@ public sealed class DesktopInstallLinkingRuntimeTests
   },
   "alreadyClaimed": true
 }
-""";
+"""
+            .Replace("%InstallationId%", installationId)
+            .Replace("%HeadId%", headId)
+            .Replace("%Platform%", platform)
+            .Replace("%Arch%", arch)
+            .Replace("%Version%", version)
+            .Replace("%Channel%", channel)
+            .Replace("%IssuedAt%", issuedAt)
+            .Replace("%ExpiresAt%", expiresAt);
     }
+
 
     [TestMethod]
     public void ShouldPromptForStartup_stops_after_user_dismisses_optional_claim()
@@ -798,7 +1489,11 @@ public sealed class DesktopInstallLinkingRuntimeTests
             StringAssert.Contains(outputText, "installLinkCallbackUri%3Dhttp%253A%252F%252F127.0.0.1%253A", StringComparison.Ordinal);
             StringAssert.Contains(outputText, "--install-link-headless --install-link-callback");
             StringAssert.Contains(outputText, "Browser auto-open disabled");
-            StringAssert.Contains(error.ToString(), "timed out");
+            // Timeout=0 reports the misconfiguration cause; this state has no
+            // in-flight approval request, so the definitive "nothing was linked"
+            // wording is accurate here (unlike an unresolved retained operation).
+            StringAssert.Contains(error.ToString(), "Install-link headless timeout is disabled or misconfigured.");
+            StringAssert.Contains(error.ToString(), "No approval request was in flight; nothing was linked.");
         }
         finally
         {
