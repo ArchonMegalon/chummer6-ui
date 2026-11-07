@@ -2210,7 +2210,7 @@ public static class CharacterCreationWizardProjector
 
         IReadOnlyList<CharacterCreationLegalOption> metatypeOptions = foundation.MetatypeOptions;
         IReadOnlyList<CharacterCreationLegalOption> nationalityOptions =
-            BuildNationalityOptions(foundation.NationalityOptions);
+            BuildLifeModuleOptions(foundation.NationalityOptions);
         bool hasEnabledMetatype = metatypeOptions.Any(IsEnabledOption);
         bool hasSelectableNationality = nationalityOptions.Any(IsEnabledOption)
                                         || HasMetatypeEvaluableNationality(
@@ -2584,7 +2584,7 @@ public static class CharacterCreationWizardProjector
             : ["creation-wizard-read-only-foundation"];
     }
 
-    private static IReadOnlyList<CharacterCreationLegalOption> BuildNationalityOptions(
+    internal static IReadOnlyList<CharacterCreationLegalOption> BuildLifeModuleOptions(
         IReadOnlyList<LifeModuleLegalOptionDto> modules)
     {
         var options = new List<CharacterCreationLegalOption>();

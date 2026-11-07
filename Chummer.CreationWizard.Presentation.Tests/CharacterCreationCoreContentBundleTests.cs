@@ -1,13 +1,14 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Chummer.Presentation.Content;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.CreationWizard.Presentation.Tests;
 
 [TestClass]
 public sealed class CharacterCreationCoreContentBundleTests
 {
-    private const string Pinned = "8706f38a7b5c29308fe007baa101038f06f61906";
+    private const string Pinned = "c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c";
     private readonly List<string> _temporary = [];
     [TestCleanup] public void Cleanup() { foreach (string path in _temporary) if (Directory.Exists(path)) Directory.Delete(path, true); }
 
@@ -48,7 +49,7 @@ public sealed class CharacterCreationCoreContentBundleTests
     [TestMethod]
     [DataRow("[]")]
     [DataRow("null")]
-    [DataRow("{\"schemaVersion\":\"2\",\"contentCommit\":\"8706f38a7b5c29308fe007baa101038f06f61906\"}")]
+    [DataRow("{\"schemaVersion\":\"2\",\"contentCommit\":\"c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c\"}")]
     [DataRow("{\"schemaVersion\":1,\"contentCommit\":\"short\"}")]
     [DataRow("{broken")]
     public void Malformed_manifests_fail_without_throwing_or_git_fallback(string text)

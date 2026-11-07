@@ -136,6 +136,8 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
 )
 ALLOWED_RECIPE_PATHS = frozenset(
     {
+        "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardDesktopSessionTests.cs",
+        "Chummer.Tests/Presentation/AvaloniaHeadlessSmokeTests.cs",
         "Chummer.Avalonia/Chummer.Avalonia.csproj",
         "docs/WINDOWS_CORE_CONTENT.md",
         "tests/test_core_content_bundle_build.py",
@@ -401,6 +403,14 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "docs/creation-ai-finish-evidence-artifacts/screenshots/05-workspace-saved.png",
         "docs/creation-ai-finish-evidence-artifacts/trace.json",
         "docs/creation-ai-finish-evidence.md",
+
+        # R67 (2026-11-07): life-modules journey stages 2-5 wiring in the SR6
+        # creation wizard plus the read-only Alice origin-book bridge.
+        "Chummer.Avalonia/DesktopAliceWindow.cs",
+        "Chummer.Presentation/Overview/CharacterCreationLifeModuleJourneyInteractionPresenter.cs",
+        "Chummer.Presentation/OriginBooks/AliceOriginBookChapterBridge.cs",
+        "Chummer.Tests/Presentation/CharacterCreationLifeModuleJourneyInteractionPresenterTests.cs",
+        "Chummer.Tests/Presentation/AliceOriginBookChapterBridgeTests.cs",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these
@@ -421,14 +431,14 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "230ff754d0c413f1161f0552a70bbad44095616e",
+        "blob": "e6abc526c8ebbdaf8bd6e3dd0a3558b48f54611b",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "a84a7232ffe9753e81e319d7419a4ea803513e501197214a407ede879ec503fb",
-        "rawSizeBytes": 69810,
-        "semanticCanonicalSha256": "a84a7232ffe9753e81e319d7419a4ea803513e501197214a407ede879ec503fb",
-        "semanticCanonicalSizeBytes": 69810,
+        "rawSha256": "8337c8c2aec14dec9f10dfd29aa55d358617fb076cf8de2384191630595c6156",
+        "rawSizeBytes": 69811,
+        "semanticCanonicalSha256": "8337c8c2aec14dec9f10dfd29aa55d358617fb076cf8de2384191630595c6156",
+        "semanticCanonicalSizeBytes": 69811,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },
     "producerLock": {
