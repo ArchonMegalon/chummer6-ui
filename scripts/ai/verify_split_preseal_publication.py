@@ -450,13 +450,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "5e5c213e3f1ead64a0307b4c3043948b36a17874",
+        "blob": "9a86350ffd4d5781ecb11be50b8f1f0c27587471",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "1433c14abe0820b9e5e289c0cf70e2d6f88ba2f0e6a8055e46cb85a4a16c34a5",
+        "rawSha256": "bfba72985ffd2b1523817a370d5b90f90e483b864d60323f3ea2fed4920941dc",
         "rawSizeBytes": 69811,
-        "semanticCanonicalSha256": "1433c14abe0820b9e5e289c0cf70e2d6f88ba2f0e6a8055e46cb85a4a16c34a5",
+        "semanticCanonicalSha256": "bfba72985ffd2b1523817a370d5b90f90e483b864d60323f3ea2fed4920941dc",
         "semanticCanonicalSizeBytes": 69811,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

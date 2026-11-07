@@ -387,9 +387,7 @@ public static class DesktopInstallLinkingRuntime
         TimeSpan timeout = ResolveHeadlessInstallLinkTimeout();
         if (timeout <= TimeSpan.Zero)
         {
-            await error.WriteLineAsync(remoteProofPolling
-                ? "Secure install approval timed out before Chummer confirmed the handoff. Nothing was linked."
-                : "Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
+            await WriteHeadlessTimeoutOutcomeAsync(output, error, state, headlessDeadlineExceeded: true).ConfigureAwait(false);
             return 2;
         }
 
@@ -422,10 +420,45 @@ public static class DesktopInstallLinkingRuntime
             return 0;
         }
 
-        await error.WriteLineAsync(remoteProofPolling
-            ? "Secure install approval timed out before Chummer confirmed the handoff. Nothing was linked."
-            : "Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
+        await WriteHeadlessTimeoutOutcomeAsync(output, error, state, headlessDeadlineExceeded: false).ConfigureAwait(false);
         return 2;
+    }
+
+    // A headless timeout is NOT evidence that the Hub rejected the approval: a lost
+    // response can leave the server-side grant completed while this copy never saw
+    // it. Report only what is established. A conclusive terminal rejection is a
+    // different outcome and is reported as such; an unresolved operation keeps its
+    // retained request so a later process can still recover it.
+    private static async Task WriteHeadlessTimeoutOutcomeAsync(
+        TextWriter output,
+        TextWriter error,
+        DesktopInstallLinkingState state,
+        bool headlessDeadlineExceeded)
+    {
+        string timeoutCause = headlessDeadlineExceeded
+            ? "Install-link headless timeout is disabled or misconfigured."
+            : "Secure install approval timed out before Chummer confirmed the handoff.";
+
+        if (state.BrowserApprovalTerminal)
+        {
+            string rejection = string.IsNullOrWhiteSpace(state.LastClaimError)
+                ? "The approval request was rejected; this copy is not linked."
+                : $"The approval request was rejected: {state.LastClaimError}";
+            await error.WriteLineAsync($"{timeoutCause} {rejection}").ConfigureAwait(false);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.BrowserApprovalRequest))
+        {
+            await error.WriteLineAsync(
+                $"{timeoutCause} This copy could not confirm the approval before timing out. "
+                + "The approval may already have completed. The original request has been retained for recovery.")
+                .ConfigureAwait(false);
+            return;
+        }
+
+        await error.WriteLineAsync($"{timeoutCause} No approval request was in flight; nothing was linked.")
+            .ConfigureAwait(false);
     }
 
     public static DesktopInstallLinkingState LoadOrCreateState(string headId)
@@ -1399,9 +1432,10 @@ public static class DesktopInstallLinkingRuntime
             }
 
             ExchangeInstallBrowserCallbackResponseDto? accepted = JsonSerializer.Deserialize<ExchangeInstallBrowserCallbackResponseDto>(responseText, JsonOptions);
-            if (accepted?.Installation is null || accepted.Grant is null || accepted.Callback is null)
+            if (accepted?.Installation is null || accepted.Grant is null || accepted.Callback is null
+                || !IsConsistentAcceptedDirectBrowserCallback(accepted, currentState))
             {
-                string error = "Hub accepted the browser install callback but returned an unreadable payload.";
+                string error = "Hub accepted the browser install callback but returned a response that does not match this installation's request.";
                 DesktopInstallLinkingState invalidState = currentState with
                 {
                     LastClaimAttemptUtc = attemptAtUtc,
@@ -2589,11 +2623,15 @@ public static class DesktopInstallLinkingRuntime
 
                 ExchangeInstallBrowserCallbackResponseDto? accepted =
                     JsonSerializer.Deserialize<ExchangeInstallBrowserCallbackResponseDto>(responseText, JsonOptions);
-                if (accepted?.Installation is null || accepted.Grant is null || accepted.Callback is null)
+                if (accepted?.Installation is null || accepted.Grant is null || accepted.Callback is null
+                    || !IsConsistentAcceptedBrowserCallback(accepted, retainedRequest))
                 {
+                    // A wrong, stale or internally inconsistent response must never
+                    // change local link state: the retained operation stays exactly
+                    // as it was, so a correct response can still recover it later.
                     RecordRemoteCallbackPollFailure(
                         currentState,
-                        "Hub accepted the remote browser callback but returned an unreadable payload.");
+                        "Hub accepted the remote browser callback but returned a response that does not match this installation's approved request.");
                     return;
                 }
 
@@ -2638,6 +2676,108 @@ public static class DesktopInstallLinkingRuntime
         DesktopInstallLinkingState expected)
         => string.Equals(current.InstallationId, expected.InstallationId, StringComparison.Ordinal)
            && current.OwnerTransitionRevision == expected.OwnerTransitionRevision;
+
+    // A successful poll response must describe the operation that was actually
+    // requested before its grant and account identity are copied into local state.
+    // "The local context has not changed" and "the response belongs to this local
+    // installation" are different guarantees: the owner/credential-generation checks
+    // inside ApplyAcceptedBrowserCallback cover the former; this covers the latter.
+    // The approved version/channel are compared against the RETAINED request — the
+    // immutable signed target of the operation — not against the running process,
+    // so an application update can never invalidate its own recovery.
+    private static bool IsConsistentAcceptedBrowserCallback(
+        ExchangeInstallBrowserCallbackResponseDto accepted,
+        RemoteCallbackPollRequest request)
+        => IsConsistentAcceptedBrowserCallback(
+            accepted,
+            request.InstallationId,
+            request.HeadId,
+            request.ApplicationVersion,
+            request.ChannelId,
+            request.Platform,
+            request.Arch,
+            request.PublicKey,
+            requireCallbackPublicKey: true);
+
+    // Direct browser approvals can omit the approval key. The returned installation
+    // must still bind to the current key, and any supplied approval key must match.
+    // The local state's metadata remains the approved target of this exchange.
+    private static bool IsConsistentAcceptedDirectBrowserCallback(
+        ExchangeInstallBrowserCallbackResponseDto accepted,
+        DesktopInstallLinkingState state)
+        => IsConsistentAcceptedBrowserCallback(
+            accepted,
+            state.InstallationId,
+            state.HeadId,
+            state.ApplicationVersion,
+            state.ChannelId,
+            state.Platform,
+            state.Arch,
+            state.PublicKey,
+            requireCallbackPublicKey: false);
+
+    private static bool IsConsistentAcceptedBrowserCallback(
+        ExchangeInstallBrowserCallbackResponseDto accepted,
+        string installationId,
+        string headId,
+        string applicationVersion,
+        string channelId,
+        string platform,
+        string arch,
+        string publicKey,
+        bool requireCallbackPublicKey)
+    {
+        bool callbackPublicKeyMatches = accepted.Callback.PublicKey is null
+            ? !requireCallbackPublicKey
+            : !string.IsNullOrWhiteSpace(accepted.Callback.PublicKey)
+              && string.Equals(accepted.Callback.PublicKey, publicKey, StringComparison.Ordinal);
+        if (!string.Equals(accepted.Callback.InstallationId, installationId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Callback.HeadId, headId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Callback.Platform, platform, StringComparison.Ordinal)
+            || !string.Equals(accepted.Callback.Arch, arch, StringComparison.Ordinal)
+            || !callbackPublicKeyMatches
+            || !string.Equals(accepted.Callback.Version, applicationVersion, StringComparison.Ordinal)
+            || !string.Equals(accepted.Callback.Channel, channelId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (!string.Equals(accepted.Installation.InstallationId, installationId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.PublicKey, publicKey, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.HeadId, headId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.Platform, platform, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.Arch, arch, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.Version, applicationVersion, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.Channel, channelId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Mutual consistency of the returned objects: the grant must belong to the
+        // same installation, the callback must reference that grant, and the account
+        // identity fields must agree across callback, installation and grant.
+        string? userId = accepted.Installation.UserId;
+        string? subjectId = accepted.Installation.SubjectId;
+        if (!string.Equals(accepted.Grant.InstallationId, installationId, StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(accepted.Callback.GrantId)
+            || !string.Equals(accepted.Callback.GrantId, accepted.Grant.GrantId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.GrantId, accepted.Grant.GrantId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Callback.UserId, userId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Callback.SubjectId, subjectId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Grant.UserId, userId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Grant.SubjectId, subjectId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Grant usability: the credential must be present and the grant must be in
+        // a state a linked client can actually use.
+        return !string.IsNullOrWhiteSpace(accepted.Grant.AccessToken)
+            && !string.IsNullOrWhiteSpace(accepted.Grant.GrantId)
+            && !string.IsNullOrWhiteSpace(userId)
+            && !string.IsNullOrWhiteSpace(subjectId)
+            && string.Equals(accepted.Grant.Status, "active", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool IsSameInstallCredentialGeneration(
         DesktopInstallLinkingState current,
