@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Validate the non-authoritative split-preseal publication transaction.
 
 The preseal lane exists only to publish package-recipe and verification code
@@ -450,13 +450,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "b311cc4cf1996981ab84c1f5bf6599c23289f8dd",
+        "blob": "5e5c213e3f1ead64a0307b4c3043948b36a17874",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "85f296041483e803a4e12c007baf8a86438e3a50b7fc05f04d9836755072972a",
+        "rawSha256": "1433c14abe0820b9e5e289c0cf70e2d6f88ba2f0e6a8055e46cb85a4a16c34a5",
         "rawSizeBytes": 69811,
-        "semanticCanonicalSha256": "85f296041483e803a4e12c007baf8a86438e3a50b7fc05f04d9836755072972a",
+        "semanticCanonicalSha256": "1433c14abe0820b9e5e289c0cf70e2d6f88ba2f0e6a8055e46cb85a4a16c34a5",
         "semanticCanonicalSizeBytes": 69811,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },
