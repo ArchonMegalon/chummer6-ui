@@ -800,7 +800,7 @@ public sealed class PublicPreviewSurfaceTests
     [DataRow("/workbench?command=new_window", "new_window", "new-window", "New Window", "New Window shell", "second-shell handoff stays inside the shared shell")]
     [DataRow("/workbench?command=wiki", "wiki", "wiki", "Wiki", "Wiki shell", "legacy documentation handoff stays inside the shared shell")]
     [DataRow("/workbench?command=discord", "discord", "discord", "Discord", "Discord shell", "community handoff stays inside the shared shell")]
-    [DataRow("/workbench?command=show_login_video", "show_login_video", "login-video", "Login Video", "Login Video shell", "Matrix uplink handoff stays inside the shared shell")]
+    [DataRow("/workbench?command=show_login_video", "show_login_video", "login-video", "Matrix Uplink", "Matrix Uplink shell", "Matrix uplink handoff stays inside the shared shell")]
     [DataRow("/workbench?command=revision_history", "revision_history", "revision-history", "Revision History", "Revision History shell", "release notes and external history links stay inside the shared shell")]
     [DataRow("/workbench?command=dumpshock", "dumpshock", "issue-tracker", "Issue Tracker", "Issue Tracker shell", "issue-handling and external tracker context stay inside the shared shell")]
     [DataRow("/workbench?command=open_sourcebooks", "open_sourcebooks", "sourcebooks", "Sourcebooks", "Sourcebooks shell", "active book selection stays inside the shared shell")]

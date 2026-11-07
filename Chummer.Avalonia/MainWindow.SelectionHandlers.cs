@@ -255,7 +255,7 @@ public partial class MainWindow
             case "show_login_video":
                 await RunUiActionAsync(
                     () => DesktopInstallLinkingWindow.ShowLoginVideoAsync(this, DesktopHeadId),
-                    "show login video");
+                    "show matrix uplink");
                 return true;
             case "revision_history":
                 await RunUiActionAsync(

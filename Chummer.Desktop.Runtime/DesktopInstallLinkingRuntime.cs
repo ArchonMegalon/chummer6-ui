@@ -89,7 +89,8 @@ public static class DesktopInstallLinkingRuntime
         long IssuedAtUnixSeconds,
         string Nonce,
         string Signature,
-        string? HostLabel);
+        string? HostLabel,
+        long AttemptStartedAtUnixSeconds);
 
     private const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
@@ -2314,6 +2315,8 @@ public static class DesktopInstallLinkingRuntime
         DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(15);
         int transientFailures = 0;
         bool waitingStateRecorded = false;
+        bool awaitingDefinitiveOutcome = false;
+        RemoteCallbackPollRequest? retainedRequest = null;
         using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
         while (DateTimeOffset.UtcNow < deadline)
         {
@@ -2324,19 +2327,38 @@ public static class DesktopInstallLinkingRuntime
                 return;
             }
 
-            RemoteCallbackPollRequest? request = CreateRemoteCallbackPollRequest(currentState);
-            if (request is null)
+            RemoteCallbackProofReuseDecision reuseDecision =
+                ResolveRemoteCallbackProofReuseDecision(
+                    retainedRequest,
+                    awaitingDefinitiveOutcome,
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            if (reuseDecision == RemoteCallbackProofReuseDecision.EnterExplicitRecovery)
             {
+                // The last send's outcome is still unknown and this proof can no longer
+                // be replayed. Quietly minting a fresh proof here could present a new
+                // approval as the recovery of one the Hub may have already completed,
+                // so the loop stops with an explicit recovery request instead.
                 RecordRemoteCallbackPollFailure(
                     currentState,
-                    "Chummer could not sign the secure browser approval with this installation key. Start a fresh link from the app.");
+                    "The secure browser approval could not be confirmed before its request expired. If the browser already approved this copy, check the linked installations on your account before starting a new link.");
                 return;
+            }
+            if (reuseDecision == RemoteCallbackProofReuseDecision.ResignAfterDefinitiveOutcome)
+            {
+                retainedRequest = CreateRemoteCallbackPollRequest(currentState);
+                if (retainedRequest is null)
+                {
+                    RecordRemoteCallbackPollFailure(
+                        currentState,
+                        "Chummer could not sign the secure browser approval with this installation key. Start a fresh link from the app.");
+                    return;
+                }
             }
 
             try
             {
                 using StringContent content = new(
-                    JsonSerializer.Serialize(request, JsonOptions),
+                    JsonSerializer.Serialize(retainedRequest, JsonOptions),
                     Encoding.UTF8,
                     MediaTypeNames.Application.Json);
                 using HttpResponseMessage response = await client.PostAsync(
@@ -2347,6 +2369,7 @@ public static class DesktopInstallLinkingRuntime
                 if (response.StatusCode is HttpStatusCode.Accepted or HttpStatusCode.NotFound)
                 {
                     transientFailures = 0;
+                    awaitingDefinitiveOutcome = false;
                     if (!waitingStateRecorded)
                     {
                         RecordRemoteCallbackPollWaiting(currentState);
@@ -2359,6 +2382,11 @@ public static class DesktopInstallLinkingRuntime
 
                 if (IsTransientRemoteCallbackStatus(response.StatusCode))
                 {
+                    // The request may or may not have reached the Hub. Replay the
+                    // identical signed proof so a lost successful response can be
+                    // recovered through the Hub's redemption receipt instead of
+                    // being stranded behind a freshly signed, differently bound poll.
+                    awaitingDefinitiveOutcome = true;
                     transientFailures += 1;
                     await Task.Delay(ResolveRemoteCallbackRetryDelay(response, transientFailures), cancellationToken)
                         .ConfigureAwait(false);
@@ -2390,11 +2418,13 @@ public static class DesktopInstallLinkingRuntime
             }
             catch (HttpRequestException) when (DateTimeOffset.UtcNow < deadline)
             {
+                awaitingDefinitiveOutcome = true;
                 transientFailures += 1;
                 await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures), cancellationToken).ConfigureAwait(false);
             }
             catch (TaskCanceledException) when (DateTimeOffset.UtcNow < deadline && !cancellationToken.IsCancellationRequested)
             {
+                awaitingDefinitiveOutcome = true;
                 transientFailures += 1;
                 await Task.Delay(ResolveRemoteCallbackRetryDelay(null, transientFailures), cancellationToken).ConfigureAwait(false);
             }
@@ -2429,6 +2459,38 @@ public static class DesktopInstallLinkingRuntime
            && string.Equals(current.GrantToken, expected.GrantToken, StringComparison.Ordinal)
            && current.GrantIssuedAtUtc == expected.GrantIssuedAtUtc
            && current.GrantExpiresAtUtc == expected.GrantExpiresAtUtc;
+
+    // The Hub accepts a remote proof within a five-minute clock-skew window. Stop
+    // replaying a proof well before that boundary so a retried request can never be
+    // rejected purely for its age, and never re-sign on top of an unresolved send.
+    private const long RemoteCallbackProofReuseSeconds = 240;
+
+    private enum RemoteCallbackProofReuseDecision
+    {
+        Reuse,
+        ResignAfterDefinitiveOutcome,
+        EnterExplicitRecovery
+    }
+
+    private static RemoteCallbackProofReuseDecision ResolveRemoteCallbackProofReuseDecision(
+        RemoteCallbackPollRequest? retainedRequest,
+        bool awaitingDefinitiveOutcome,
+        long nowUnixSeconds)
+    {
+        if (retainedRequest is null)
+        {
+            return RemoteCallbackProofReuseDecision.ResignAfterDefinitiveOutcome;
+        }
+
+        if (nowUnixSeconds - retainedRequest.IssuedAtUnixSeconds < RemoteCallbackProofReuseSeconds)
+        {
+            return RemoteCallbackProofReuseDecision.Reuse;
+        }
+
+        return awaitingDefinitiveOutcome
+            ? RemoteCallbackProofReuseDecision.EnterExplicitRecovery
+            : RemoteCallbackProofReuseDecision.ResignAfterDefinitiveOutcome;
+    }
 
     private static bool IsTransientRemoteCallbackStatus(HttpStatusCode statusCode)
         => statusCode is HttpStatusCode.RequestTimeout
@@ -2503,7 +2565,8 @@ public static class DesktopInstallLinkingRuntime
                 IssuedAtUnixSeconds: issuedAtUnixSeconds,
                 Nonce: nonce,
                 Signature: signature,
-                HostLabel: null);
+                HostLabel: null,
+                AttemptStartedAtUnixSeconds: ResolveAttemptStartedUnixSeconds(state));
         }
         catch (CryptographicException)
         {
@@ -2514,6 +2577,12 @@ public static class DesktopInstallLinkingRuntime
             return null;
         }
     }
+
+    // The browser dispatch marks the start of the current approval attempt. The
+    // stamp is advisory (unsigned): it lets the Hub separate terminal history of
+    // an older attempt from a terminal outcome of the attempt in progress.
+    private static long ResolveAttemptStartedUnixSeconds(DesktopInstallLinkingState state)
+        => state.LastBrowserDispatchAttemptUtc?.ToUnixTimeSeconds() ?? 0;
 
     private static bool TryExportRemoteCallbackPublicKey(string? publicKeyPem, out string? publicKey)
     {

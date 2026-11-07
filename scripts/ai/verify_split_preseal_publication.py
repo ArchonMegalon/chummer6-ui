@@ -411,6 +411,26 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Presentation/OriginBooks/AliceOriginBookChapterBridge.cs",
         "Chummer.Tests/Presentation/CharacterCreationLifeModuleJourneyInteractionPresenterTests.cs",
         "Chummer.Tests/Presentation/AliceOriginBookChapterBridgeTests.cs",
+
+        # R68 (2026-11-07): re-audit P2 closeout - desktop retry binding,
+        # attempt-history boundary, life-module follow-up drafts, SR6
+        # post-commit reload boundary, and the matrix-uplink dialog rename.
+        "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
+        "Chummer.Avalonia/DesktopInstallLinkingWindow.cs",
+        "Chummer.Avalonia/MainWindow.SelectionHandlers.cs",
+        "Chummer.Blazor/Components/App.razor",
+        "Chummer.Blazor/Components/Pages/Preview.razor",
+        "Chummer.CreationWizard.Presentation.Tests/Sr6CreationFoundationInteractionPresenterTests.cs",
+        "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
+        "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+        "Chummer.Presentation/Overview/OverviewCommandDispatcher.cs",
+        "Chummer.Presentation/Overview/Sr6CreationFoundationInteractionPresenter.cs",
+        "Chummer.Presentation/UiKit/ShellChromeBoundary.cs",
+        "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
+        "Chummer.Tests/Presentation/AppRouteSurfaceTests.cs",
+        "Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs",
+        "Chummer.Tests/Presentation/DesktopInstallLinkingShellChromeTests.cs",
+        "Chummer.Tests/Presentation/PublicPreviewSurfaceTests.cs",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these
@@ -431,13 +451,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "e6abc526c8ebbdaf8bd6e3dd0a3558b48f54611b",
+        "blob": "ecb7d10c74cb96e5deded7ec37c18b585b4b19a4",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "8337c8c2aec14dec9f10dfd29aa55d358617fb076cf8de2384191630595c6156",
+        "rawSha256": "fea20b3cd40cf7dc4a0174530dd38f56b633649ba4730edb1d490077baf94e49",
         "rawSizeBytes": 69811,
-        "semanticCanonicalSha256": "8337c8c2aec14dec9f10dfd29aa55d358617fb076cf8de2384191630595c6156",
+        "semanticCanonicalSha256": "fea20b3cd40cf7dc4a0174530dd38f56b633649ba4730edb1d490077baf94e49",
         "semanticCanonicalSizeBytes": 69811,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

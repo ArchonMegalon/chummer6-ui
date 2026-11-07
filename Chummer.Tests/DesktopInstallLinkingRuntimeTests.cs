@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -193,6 +194,214 @@ public sealed class DesktopInstallLinkingRuntimeTests
         Assert.AreEqual(true, transientStatusMethod.Invoke(null, [HttpStatusCode.TooManyRequests]));
         Assert.AreEqual(true, transientStatusMethod.Invoke(null, [HttpStatusCode.ServiceUnavailable]));
         Assert.AreEqual(false, transientStatusMethod.Invoke(null, [HttpStatusCode.BadRequest]));
+    }
+
+
+    [TestMethod]
+    public async Task PollRemoteBrowserCallback_replays_the_identical_signed_request_after_an_ambiguous_send()
+    {
+        MethodInfo pollMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "PollRemoteBrowserCallbackAsync",
+            BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The remote callback poll loop should exist.");
+
+        using RSA installationKey = RSA.Create(2048);
+        string tempRoot = Path.Combine(
+            Path.GetTempPath(), "desktop-install-linking-recovery-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        Task pollTask = null!;
+
+        // The fake Hub records every poll body and decides per request how to answer.
+        // Request A is accepted (the Hub commits the grant) but the response is lost.
+        // The retried request must be byte-identical to A so the Hub can recover the
+        // original grant through its redemption receipt.
+        List<string> bodies = new();
+        int grantCount = 0;
+        string installationPublicKey = Convert.ToBase64String(installationKey.ExportSubjectPublicKeyInfo());
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(16);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+
+        Task listenerTask = Task.Run(async () =>
+        {
+            byte[] buffer = new byte[65536];
+            while (true)
+            {
+                Socket connection = await listenerSocket.AcceptAsync();
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using Socket socket = connection;
+                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        string requestText = Encoding.ASCII.GetString(buffer, 0, read);
+                        int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                        string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                        lock (bodies)
+                        {
+                            bodies.Add(body);
+                        }
+                        string status;
+                        string responseBody;
+                        lock (bodies)
+                        {
+                            if (bodies.Count == 1)
+                            {
+                                // First send: the Hub accepts the proof, records the
+                                // redemption, and commits the grant — but the response
+                                // never reaches the client.
+                                grantCount++;
+                                status = "500";
+                                responseBody = "lost";
+                            }
+                            else
+                            {
+                                // Recovery: the identical retry gets the original grant.
+                                status = "200";
+                                responseBody = BuildRecoveryGrantResponse();
+                            }
+                        }
+                        responseBody = responseBody
+                            .Replace("%PublicKey%", installationPublicKey)
+                            .Replace("%IssuedAt%", DateTimeOffset.UtcNow.AddDays(-1).ToString("o"))
+                            .Replace("%ExpiresAt%", DateTimeOffset.UtcNow.AddDays(30).ToString("o"));
+                        string response = "HTTP/1.1 " + status + " Lost Response\r\n" +
+                                          "Content-Type: application/json\r\n" +
+                                          "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                          "Connection: close\r\n\r\n" + responseBody;
+                        await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (SocketException)
+                    {
+                    }
+                });
+            }
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            DesktopInstallLinkingState initial = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            DesktopInstallLinkingState prepared = PersistInstallLinkingState(initial with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            pollTask = (Task)pollMethod.Invoke(null, [prepared, CancellationToken.None])
+                ?? throw new AssertFailedException("The poll loop should return a task.");
+            await pollTask;
+
+            Assert.IsTrue(bodies.Count >= 2,
+                "The poll loop should retry after the ambiguous first send.");
+            lock (bodies)
+            {
+                Assert.AreEqual(bodies[0], bodies[1],
+                    "The retry after an ambiguous send must be byte-identical to the original signed request.");
+            }
+
+            // Exactly one grant may exist: the Hub committed once, for request A.
+            Assert.AreEqual(1, grantCount,
+                "The Hub commits the grant exactly once; the client must not re-mint proofs for the same approval.");
+
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual("claimed", finalState.Status);
+            Assert.AreEqual("grant-recovered-1", finalState.GrantId);
+            Assert.AreEqual("token-recovered-1", finalState.GrantToken);
+            Assert.AreEqual("user-recovered-1", finalState.UserId);
+            Assert.AreEqual("subject.install.recovery", finalState.SubjectId);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            try
+            {
+                listenerSocket.Dispose();
+                await listenerTask;
+            }
+            catch (Exception)
+            {
+            }
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    private static string BuildRecoveryGrantResponse()
+    {
+        string issuedAt = DateTimeOffset.UtcNow.ToString("o");
+        string expiresAt = DateTimeOffset.UtcNow.AddDays(30).ToString("o");
+        return """
+{
+  "callback": {
+    "callbackId": "callback-recovery-1",
+    "callbackCode": "code-recovery-1",
+    "installationId": "ins-avalonia-1",
+    "artifactId": "avalonia-win-x64-installer",
+    "channel": "preview",
+    "version": "6.0.1-preview",
+    "installAccessClass": "open_public",
+    "status": "redeemed",
+    "createdAtUtc": "%IssuedAt%",
+    "expiresAtUtc": "%ExpiresAt%",
+    "userId": "user-recovered-1",
+    "subjectId": "subject.install.recovery",
+    "publicKey": "%PublicKey%",
+    "headId": "avalonia",
+    "platform": "linux",
+    "arch": "x64",
+    "hostLabel": null,
+    "callbackUri": "http://127.0.0.1/recovery",
+    "grantId": "grant-recovered-1"
+  },
+  "installation": {
+    "installationId": "ins-avalonia-1",
+    "artifactId": "avalonia-win-x64-installer",
+    "channel": "preview",
+    "version": "6.0.1-preview",
+    "installAccessClass": "open_public",
+    "status": "active",
+    "createdAtUtc": "%IssuedAt%",
+    "updatedAtUtc": "%ExpiresAt%",
+    "userId": "user-recovered-1",
+    "subjectId": "subject.install.recovery",
+    "publicKey": "%PublicKey%",
+    "claimTicketId": "ticket-recovery-1",
+    "headId": "avalonia",
+    "platform": "linux",
+    "arch": "x64",
+    "hostLabel": null,
+    "grantId": "grant-recovered-1"
+  },
+  "grant": {
+    "grantId": "grant-recovered-1",
+    "installationId": "ins-avalonia-1",
+    "status": "active",
+    "accessToken": "token-recovered-1",
+    "issuedAtUtc": "%IssuedAt%",
+    "expiresAtUtc": "%ExpiresAt%",
+    "userId": "user-recovered-1",
+    "subjectId": "subject.install.recovery"
+  },
+  "alreadyClaimed": true
+}
+""";
     }
 
     [TestMethod]

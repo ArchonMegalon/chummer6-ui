@@ -122,6 +122,74 @@ public sealed class AvaloniaHeadlessSmokeTests
         });
     }
 
+    [TestMethod]
+    public void Life_module_follow_up_drafts_survive_busy_rerenders_and_edits_invalidate_preview()
+    {
+        WithHeadlessUi(() =>
+        {
+            var snapshot = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+            var session = new Chummer.Presentation.Overview.CharacterCreationWizardDesktopSession();
+            var journey = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.Journey(snapshot, 5);
+            session.Bind(snapshot, journey: journey);
+            Assert.IsTrue(session.TryContinue());
+            var control = new Chummer.Avalonia.Controls.CharacterCreationWizardControl();
+            var window = new Window { Content = control };
+            window.Show();
+            try
+            {
+                control.SetState(session.State);
+                var choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                choice.SelectedIndex = 0;
+
+                // A busy re-render must preserve the selected follow-up value.
+                control.SetJourneyMutationBusy(true);
+                choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                Assert.AreEqual(0, choice.SelectedIndex, "busy re-render must not reset the choice");
+                control.SetJourneyMutationBusy(false);
+                choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                Assert.AreEqual(0, choice.SelectedIndex, "unbusy re-render must not reset the choice");
+
+                // The click collects the harvested (surviving) draft value.
+                Chummer.Avalonia.Controls.CharacterCreationJourneyOptionClickRequested? captured = null;
+                control.JourneyOptionClickRequested += (_, request) => captured = request;
+                var button = control.GetVisualDescendants().OfType<Button>().Single(b =>
+                    b.Tag is Chummer.Presentation.Overview.CharacterCreationWizardDesktopOption);
+                button.RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(global::Avalonia.Controls.Button.ClickEvent));
+                Assert.IsNotNull(captured);
+                Assert.AreEqual("pistols", captured.FollowUpValues!["skill-choice"]);
+
+                // An edit after a preview was prepared must invalidate it.
+                var fixture = new Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests();
+                var journeyState = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.Journey(snapshot, 5);
+                var preparedPreview = new Chummer.Presentation.Overview.CharacterCreationLifeModulePreparedPreview(
+                    "sha256:" + new string('f', 64),
+                    journeyState.Binding,
+                    journeyState.CurrentStageOrder,
+                    journeyState.CurrentStageId,
+                    new Chummer.Contracts.Characters.CharacterCreationFoundationSelection(
+                        "module-5", "version-a"),
+                    new Chummer.Contracts.Characters.CharacterCreationLifeModuleDraftEntry(
+                        5, "module-5",
+                        new Chummer.Contracts.Characters.CharacterCreationFoundationSelection("module-5", "version-a"),
+                        7m, Array.Empty<Chummer.Contracts.LifeModules.LifeModuleRequirementProjectionDto>(),
+                        Array.Empty<Chummer.Contracts.LifeModules.LifeModuleEffectProjectionDto>(),
+                        new Dictionary<string, string> { ["skill-choice"] = "pistols" },
+                        Array.Empty<string>(), "Story"),
+                    journeyState.Budget,
+                    journeyState.Budget,
+                    Array.Empty<string>(), true, true, "sha256:" + new string('a', 64));
+                control.SetJourneyPrepareResult(new Chummer.Presentation.Overview.CharacterCreationLifeModuleJourneyInteractionPrepareResult(
+                    "prepared", journeyState, preparedPreview, Array.Empty<string>()));
+                Assert.IsNotNull(control.JourneyPreview);
+                choice = control.GetVisualDescendants().OfType<ComboBox>().Single();
+                choice.SelectedIndex = 1;
+                Assert.IsNull(control.JourneyPreview,
+                    "an edit after prepare must clear the stale preview");
+            }
+            finally { window.Close(); }
+        });
+    }
+
     private static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)

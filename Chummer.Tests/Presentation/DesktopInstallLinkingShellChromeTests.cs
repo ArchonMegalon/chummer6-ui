@@ -387,7 +387,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
 
         StringAssert.Contains(catalogSource, "Command(\"show_login_video\", \"command.show_login_video\", \"help\", false)");
         StringAssert.Contains(projectorSource, "\"show_login_video\"");
-        StringAssert.Contains(labelSource, "[\"show_login_video\"] = \"Show Login Video\"");
+        StringAssert.Contains(labelSource, "[\"show_login_video\"] = \"Show Matrix Uplink\"");
         StringAssert.Contains(selectionSource, "case \"show_login_video\":");
         StringAssert.Contains(selectionSource, "DesktopInstallLinkingWindow.ShowLoginVideoAsync(this, DesktopHeadId)");
         StringAssert.Contains(installWindowSource, "ShowLoginVideoAsync(Window owner, string headId)");

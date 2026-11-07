@@ -239,8 +239,23 @@ public sealed class Sr6CreationFoundationInteractionPresenter
                 [Sr6CreationFoundationInteractionBlockers.ReceiptMismatch]);
         }
 
-        CharacterCreationFoundationResult<Sr6CreationFoundationState> refresh =
-            _service.Load(load.Owner, foundation.Binding.WorkspaceId);
+        // A verified commit must survive a failing post-commit reload: the save
+        // itself is durable at this point, so an unexpected reload failure is
+        // reported as saved-but-not-refreshed instead of discarding the commit.
+        CharacterCreationFoundationResult<Sr6CreationFoundationState> refresh;
+        try
+        {
+            refresh = _service.Load(load.Owner, foundation.Binding.WorkspaceId);
+        }
+        catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            return new Sr6CreationFoundationInteractionConfirmResult(
+                CharacterCreationFoundationOutcomes.Conflict,
+                prepared,
+                commit,
+                null,
+                [Sr6CreationFoundationInteractionBlockers.RefreshAuthorityRequired]);
+        }
         if (refresh.Outcome != CharacterCreationFoundationOutcomes.Success
             || refresh.Value is not Sr6CreationFoundationState refreshed
             || !RefreshedStateMatches(commit, refreshed))
