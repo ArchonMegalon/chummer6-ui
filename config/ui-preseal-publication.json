@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "26dcdda9f720c1b4b99199bdd33122f9bc30b21d",
-  "baseTree": "26873eca5691b30e665cc3d0168be68826938726",
+  "baseCommit": "4a88569df0635753ede536b98072c7f9f0ad4be1",
+  "baseTree": "60ecafc65709d99bff878055b96a745769c34e44",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -25,13 +25,13 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "5e5c213e3f1ead64a0307b4c3043948b36a17874",
+      "blob": "6585cc982d221caad630631398f8a2129f8ef877",
       "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "1433c14abe0820b9e5e289c0cf70e2d6f88ba2f0e6a8055e46cb85a4a16c34a5",
+      "rawSha256": "939476d6ba0831ce39c15075fa460d5298929ab1beab11ff202e71e2ee439b88",
       "rawSizeBytes": 69811,
-      "semanticCanonicalSha256": "1433c14abe0820b9e5e289c0cf70e2d6f88ba2f0e6a8055e46cb85a4a16c34a5",
+      "semanticCanonicalSha256": "939476d6ba0831ce39c15075fa460d5298929ab1beab11ff202e71e2ee439b88",
       "semanticCanonicalSizeBytes": 69811,
       "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },
@@ -44,48 +44,48 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "c0a4182e3a19ca812fb263075523d35bf5f12177",
+      "blob": "d7440f4fcb2a5c07a63b743d7b565cbb11a71a6c",
       "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
-      "sha256": "64fc6c0e5a14c011eb47ca8aa8aa397ac707bbeaecc90d1439acafbccf60ee8a",
-      "sizeBytes": 157351,
+      "sha256": "c3a5172e5bc71513f307a3ae9d767aa0450d0f5f245736208b182b191917dd53",
+      "sizeBytes": 164539,
       "status": "M"
     },
     {
-      "blob": "3d16d45e8ad5ed7a80d0300e4d3b55da59914b71",
+      "blob": "53459f4170e662611a9f2e5012912e4addf5a59b",
       "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
-      "sha256": "39a9e8432efdb28831414210ddf0653bfb48aa75182eade56973996b5fc7be40",
-      "sizeBytes": 105380,
+      "sha256": "beeb4c331eaaa41b1c14418d732d8ba19508bee7eded315d2924c81616ad531a",
+      "sizeBytes": 135125,
       "status": "M"
     },
     {
-      "blob": "5e5c213e3f1ead64a0307b4c3043948b36a17874",
+      "blob": "6585cc982d221caad630631398f8a2129f8ef877",
       "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "1433c14abe0820b9e5e289c0cf70e2d6f88ba2f0e6a8055e46cb85a4a16c34a5",
+      "sha256": "939476d6ba0831ce39c15075fa460d5298929ab1beab11ff202e71e2ee439b88",
       "sizeBytes": 69811,
       "status": "M"
     },
     {
-      "blob": "62da11d98a4cd05732e4e00326bad38f0f9f6ac1",
+      "blob": "8726aa3767db9a39857496d6744cb53535475899",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "531144e83e239e22d168c48f37c86c59ecc8a3ed3aa3b213362b6ad96a411268",
+      "sha256": "0b7faa7e494862a332f9c0c02dc3ef51cfb5739820df87f313f99f54859900d1",
       "sizeBytes": 297159,
       "status": "M"
     },
     {
-      "blob": "4ed2cf72216e8f320a1bc7f08e3ce8055d8a146f",
+      "blob": "417ffa283163832c9540a2c8b606a1db47709c3c",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "334b32205d1253180ef8ee1e8a1649c290b18e5a2fdb27059841583eff2a00ef",
+      "sha256": "ce1803265b050a2c8fbbda954a5bf71bd6e6d64dbbb884360461938d0ad089e0",
       "sizeBytes": 65350,
       "status": "M"
     },
     {
-      "blob": "e221be5196538f2a859ef444f5fd53e0dfc89645",
+      "blob": "25f70d757785a0cd2e28bbc25e16cc3d8a2fd29e",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "bf23de5ea06c3608277be8f2e0eedcc66c78284a9845341d6e24baf732f6a2e9",
+      "sha256": "c8050a76c5a7aae3faa37071874878f4a8a642f7ff8020146eb9c43c2ef78ca7",
       "sizeBytes": 199225,
       "status": "M"
     }
   ],
-  "recipeTree": "0bb41384e787f2b50d030c1259b6ace9455a31c4",
+  "recipeTree": "f7cd7da6d1cc6927f0eca5178662bfc9a7b40dba",
   "releaseClaim": false
 }
