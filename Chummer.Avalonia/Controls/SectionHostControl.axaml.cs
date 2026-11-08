@@ -3038,7 +3038,23 @@ public partial class SectionHostControl : UserControl
         });
 
         Button skillAdvanceButton = CreateRewardsButton("CareerAdvanceSkills", "Advance Skills\u2026", fg, surface, border);
-        skillAdvanceButton.Click += (_, _) => CareerSkillAdvanceRequested?.Invoke(this, EventArgs.Empty);
+        if (AttributeWorkbenchProjector.IsSr6Ruleset(_activeRulesetId))
+        {
+            // SR6 skill advancement is not yet implemented: the career dialog
+            // resolves SR5 settings profiles and SR5 skill sources, which cannot
+            // bind the SR6 skill identities the native wizard writes. Disclose
+            // that honestly instead of opening a dialog that fails to load.
+            skillAdvanceButton.IsEnabled = false;
+            ToolTip.SetTip(skillAdvanceButton,
+                "SR6 skill advancement is not available yet. Attribute improvement stays available on the attribute rows.");
+            global::Avalonia.Automation.AutomationProperties.SetName(skillAdvanceButton, "Advance Skills");
+            global::Avalonia.Automation.AutomationProperties.SetHelpText(skillAdvanceButton,
+                "SR6 skill advancement is not available yet. Attribute improvement stays available on the attribute rows.");
+        }
+        else
+        {
+            skillAdvanceButton.Click += (_, _) => CareerSkillAdvanceRequested?.Invoke(this, EventArgs.Empty);
+        }
         stack.Children.Add(skillAdvanceButton);
 
         Button karmaButton = CreateRewardsButton("CareerAwardKarma", "Award Karma\u2026", fg, surface, border);

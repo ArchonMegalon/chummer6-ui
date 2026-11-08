@@ -28,8 +28,15 @@ public sealed class Sr6BuildMethodSelectionTests
         Assert.AreEqual(method, DesktopDialogFieldValueParser.GetValue(Rebuild(dialog), "newCharacterBuildMethod"));
         CollectionAssert.Contains(values, Sr6CharacterCreationBuildMethods.Karma);
         CollectionAssert.DoesNotContain(values, "LifeModule");
-        StringAssert.Contains(dialog.Message!, "SR6 draft");
-        StringAssert.Contains(dialog.Message!, "remaining SR6 wizard steps are not available");
+        if (method is "Priority" or "SumtoTen" or "PointBuy")
+        {
+            Assert.IsFalse(dialog.Message!.Contains("not available", StringComparison.Ordinal), dialog.Message!);
+        }
+        else
+        {
+            StringAssert.Contains(dialog.Message!, "SR6 draft");
+            StringAssert.Contains(dialog.Message!, "remaining SR6 wizard steps are not available");
+        }
     }
 
     [TestMethod]
@@ -158,8 +165,14 @@ public sealed class Sr6BuildMethodSelectionTests
         Assert.AreEqual(workspaceId, state.WorkspaceId);
         Assert.IsNull(state.ActiveDialog);
         Assert.IsNull(state.Error);
-        StringAssert.Contains(state.Notice!, method + " · SR6 draft");
-        StringAssert.Contains(state.Notice!, "remaining SR6 wizard steps are not available");
+        if (method is "Priority" or "SumtoTen" or "PointBuy")
+        {
+            Assert.IsFalse(state.Notice!.Contains("not available", StringComparison.Ordinal), state.Notice!);
+        }
+        else
+        {
+            StringAssert.Contains(state.Notice!, "remaining SR6 wizard steps are not available");
+        }
     }
 
     [TestMethod]

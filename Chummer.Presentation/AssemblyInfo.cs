@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Chummer.Tests")]
+[assembly: InternalsVisibleTo("Chummer.CreationWizard.Presentation.Tests")]
 [assembly: InternalsVisibleTo("Chummer.Product.UnitTests")]
 [assembly: InternalsVisibleTo("Chummer.Desktop.Runtime.Tests")]
 [assembly: InternalsVisibleTo("Chummer.Avalonia")]

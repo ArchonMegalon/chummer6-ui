@@ -1408,7 +1408,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             && !string.Equals(resolvedBuildMethod, Sr6CharacterCreationBuildMethods.Priority, StringComparison.Ordinal)
             && !string.Equals(resolvedBuildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal))
         {
-            // SR6 Point Buy / Life Path / Karma have no typed wizard surface yet. Never
+            // SR6 Life Path / Karma have no typed wizard surface yet. Never
             // substitute SR5 Karma or Life Modules mechanics for them (contract note in
             // Sr6CharacterCreationBuildMethods): disclose and stop.
             return BuildNewCharacterSr6WizardUnavailableDialog(
@@ -2930,6 +2930,15 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
             || string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal);
 
+    /// <summary>
+    /// SR6 build methods with a native typed wizard surface (method, foundation,
+    /// attributes, confirm, finalize). Life Path and Karma remain disclosure-only.
+    /// </summary>
+    internal static bool IsSr6WizardCapable(string buildMethod)
+        => string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.Priority, StringComparison.Ordinal)
+            || string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.SumToTen, StringComparison.Ordinal)
+            || string.Equals(buildMethod, Sr6CharacterCreationBuildMethods.PointBuy, StringComparison.Ordinal);
+
     private static string BuildNewCharacterMessage(
         string rulesetId,
         string buildMethod,
@@ -2941,7 +2950,11 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string houseRules = houseRulesEnabled
             ? " House rules are enabled in Character Settings."
             : " House rules are currently disabled.";
+        // Only the SR6 build methods without a typed wizard surface (Life Path, Karma)
+        // still carry the unavailable disclosure; Priority, Sum-to-Ten and Point Buy
+        // have the native SR6 wizard (method, foundation, attributes, confirm, finalize).
         string sr6Disclosure = string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+            && !IsSr6WizardCapable(buildMethod)
             ? " SR6 draft: the remaining SR6 wizard steps are not available yet."
             : string.Empty;
         return $"Choose the ruleset and build method for {rulesetId.ToUpperInvariant()}. {route}{houseRules}{sr6Disclosure}";

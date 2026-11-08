@@ -1458,8 +1458,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             ActiveDialog = null,
             Error = null,
+            // Only SR6 build methods without a typed wizard surface (Life Path, Karma)
+            // still carry the unavailable disclosure.
             Notice = rulesetId == RulesetDefaults.Sr6
-                ? $"Opened {name} · {buildMethod} · SR6 draft. The remaining SR6 wizard steps are not available yet."
+                ? $"Opened {name} · {buildMethod} · SR6 draft." + (DesktopDialogFactory.IsSr6WizardCapable(buildMethod)
+                    ? " The native SR6 creation wizard opens for this build method."
+                    : " The remaining SR6 wizard steps are not available yet.")
                 : $"Opened {name} · {buildMethod} · SR5"
         });
     }

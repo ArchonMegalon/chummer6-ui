@@ -422,6 +422,9 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.CreationWizard.Presentation.Tests/Sr6CreationFoundationInteractionPresenterTests.cs",
         "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
         "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+        # R72 2026-11-08: SR6 wizard/career disclosure round adds the presentation
+        # assembly-info pin target (oracle rotation covers this file).
+        "Chummer.Presentation/AssemblyInfo.cs",
         "Chummer.Presentation/Overview/OverviewCommandDispatcher.cs",
         "Chummer.Presentation/Overview/Sr6CreationFoundationInteractionPresenter.cs",
         "Chummer.Presentation/UiKit/ShellChromeBoundary.cs",
@@ -450,13 +453,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "0c0b798cb5cbccac71a69b0922e7e9ffe6cddde1",
+        "blob": "0aae171c0cef1c6765c156aea345f7d13a725bac",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "4403db30f928add07954df94e29c15e07484c14697206171732a42a69212ecd5",
+        "rawSha256": "99e16f0eaaea5b19a139e19b8c5036e9118b1a9d49570cd13a8f1ff0a41f3de9",
         "rawSizeBytes": 69811,
-        "semanticCanonicalSha256": "4403db30f928add07954df94e29c15e07484c14697206171732a42a69212ecd5",
+        "semanticCanonicalSha256": "99e16f0eaaea5b19a139e19b8c5036e9118b1a9d49570cd13a8f1ff0a41f3de9",
         "semanticCanonicalSizeBytes": 69811,
         "tree": "8ad074d568e7766ecde60718e004dafefa4de297"
     },

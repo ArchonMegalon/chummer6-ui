@@ -20,18 +20,15 @@ namespace Chummer.Tests.Presentation;
 public sealed class Sr6CreationWizardWindowTests
 {
     [TestMethod]
-    public void Development_wizard_requires_explicit_session_opt_in()
+    public void Development_wizard_defaults_on_and_supports_explicit_opt_out()
     {
         string? before = Environment.GetEnvironmentVariable(Sr6CreationWizardGatePolicy.SessionEnvVariable);
         try
         {
-            foreach (string? value in new string?[] { null, "", "0", "true" })
-            {
-                Environment.SetEnvironmentVariable(Sr6CreationWizardGatePolicy.SessionEnvVariable, value);
-                Assert.IsFalse(Sr6CreationWizardGatePolicy.IsSessionEnabled());
-            }
-            Environment.SetEnvironmentVariable(Sr6CreationWizardGatePolicy.SessionEnvVariable, "1");
+            Environment.SetEnvironmentVariable(Sr6CreationWizardGatePolicy.SessionEnvVariable, null);
             Assert.IsTrue(Sr6CreationWizardGatePolicy.IsSessionEnabled());
+            Environment.SetEnvironmentVariable(Sr6CreationWizardGatePolicy.SessionEnvVariable, "0");
+            Assert.IsFalse(Sr6CreationWizardGatePolicy.IsSessionEnabled());
         }
         finally { Environment.SetEnvironmentVariable(Sr6CreationWizardGatePolicy.SessionEnvVariable, before); }
     }
