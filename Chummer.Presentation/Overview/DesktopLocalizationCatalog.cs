@@ -147,7 +147,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.link_copy"] = "Claim your copy",
         ["desktop.install_link.button.copy_login_url"] = "Copy Claim Link",
         ["desktop.install_link.button.open_claim_link"] = "Open Claim Link",
-        ["desktop.install_link.button.redeem_claim_code"] = "Use Fallback Code",
+        ["desktop.install_link.button.check_previous_approval"] = "Check Previous Approval",        ["desktop.install_link.button.redeem_claim_code"] = "Use Fallback Code",
         ["desktop.install_link.button.unlink_copy"] = "Unlink this copy",
         ["desktop.install_link.button.login_website"] = "Claim your copy",
         ["desktop.install_link.button.continue_unlinked"] = "Continue unlinked",
@@ -252,7 +252,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.status.unable_open_origin_dossier"] = "Unable to open Origin Dossier from this host.",
         ["desktop.install_link.status.claim_code_required"] = "Paste the fallback claim code first.",
         ["desktop.install_link.status.linking"] = "Claiming this installation...",
-        ["desktop.install_link.status.guided_tools_visible"] = "Helper buttons are visible.",
+        ["desktop.install_link.status.recovery_pending"] = "An earlier browser approval is still being checked...",        ["desktop.install_link.status.recovery_detail"] = "Keep this copy open; the earlier approval is confirmed on its own page. No new approval has been started.",        ["desktop.install_link.status.guided_tools_visible"] = "Helper buttons are visible.",
         ["desktop.install_link.status.guided_tools_hidden"] = "Helper buttons are hidden.",
         ["desktop.install_link.summary.installation_id"] = "Installation ID: {0}",
         ["desktop.install_link.summary.head"] = "App: {0}",
@@ -654,7 +654,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "Konto öffnen";
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.button.open_claim_link"] = "Claim-Link offnen";
-            localized["desktop.install_link.button.redeem_claim_code"] = "Fallback-Code nutzen";
+            localized["desktop.install_link.button.check_previous_approval"] = "Fruehere Freigabe pruefen";            localized["desktop.install_link.button.redeem_claim_code"] = "Fallback-Code nutzen";
             localized["desktop.install_link.button.unlink_copy"] = "Diese Kopie trennen";
             localized["desktop.install_link.button.login_website"] = "Diese Kopie beanspruchen";
             localized["desktop.install_link.button.continue_unlinked"] = "Ohne Verknuepfung fortfahren";
@@ -687,7 +687,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.summary.browser_open_error"] = "Browser-Claim-Fehler: {0}";
             localized["desktop.install_link.status.claim_code_required"] = "Fugen Sie zuerst den Anmeldecode ein.";
             localized["desktop.install_link.status.linking"] = "Diese Kopie wird beansprucht...";
-            localized["desktop.install_link.status.guided_tools_visible"] = "Helfer-Buttons sind sichtbar.";
+            localized["desktop.install_link.status.recovery_pending"] = "Eine fruehere Browser-Freigabe wird noch geprueft...";            localized["desktop.install_link.status.recovery_detail"] = "Lassen Sie diese Kopie offen; die fruehere Freigabe wird auf ihrer eigenen Seite bestaetigt. Es wurde keine neue Freigabe gestartet.";            localized["desktop.install_link.status.guided_tools_visible"] = "Helfer-Buttons sind sichtbar.";
             localized["desktop.install_link.status.guided_tools_hidden"] = "Helfer-Buttons sind ausgeblendet.";
             localized["desktop.install_link.summary.installation_id"] = "Installations-ID: {0}";
             localized["desktop.install_link.summary.head"] = "App: {0}";
@@ -1102,7 +1102,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "Ouvrir le compte";
             localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
             localized["desktop.install_link.button.open_claim_link"] = "Ouvrir le lien";
-            localized["desktop.install_link.button.redeem_claim_code"] = "Utiliser dans l'app";
+            localized["desktop.install_link.button.check_previous_approval"] = "Verifier l'approbation precedente";            localized["desktop.install_link.button.redeem_claim_code"] = "Utiliser dans l'app";
             localized["desktop.install_link.button.unlink_copy"] = "Délier cette copie";
             localized["desktop.install_link.button.login_website"] = "Reclamer cette copie";
             localized["desktop.install_link.button.continue_unlinked"] = "Continuer sans lien";
@@ -1130,7 +1130,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.unable_open_origin_dossier"] = "Impossible d'ouvrir Origin Dossier depuis cet hote.";
             localized["desktop.install_link.status.claim_code_required"] = "Collez d'abord le relais d'installation depuis le parcours Chummer connecte.";
             localized["desktop.install_link.status.linking"] = "Liaison de cette installation avec Hub...";
-            localized["desktop.install_link.status.guided_tools_visible"] = "Les boutons d'aide sont visibles.";
+            localized["desktop.install_link.status.recovery_pending"] = "Une approbation precedente du navigateur est encore en cours de verification...";            localized["desktop.install_link.status.recovery_detail"] = "Laissez cette copie ouverte; l\'approbation precedente est confirmee sur sa propre page. Aucune nouvelle approbation n\'a ete lancee.";            localized["desktop.install_link.status.guided_tools_visible"] = "Les boutons d'aide sont visibles.";
             localized["desktop.install_link.status.guided_tools_hidden"] = "Les boutons d'aide sont masques.";
             localized["desktop.install_link.summary.installation_id"] = "ID d'installation : {0}";
             localized["desktop.install_link.summary.head"] = "App : {0}";
@@ -1550,7 +1550,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "アカウントを開く";
             localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
             localized["desktop.install_link.button.open_claim_link"] = "請求リンクを開く";
-            localized["desktop.install_link.button.redeem_claim_code"] = "アプリ内で引き換え";
+            localized["desktop.install_link.button.check_previous_approval"] = "以前の承認を確認";            localized["desktop.install_link.button.redeem_claim_code"] = "アプリ内で引き換え";
             localized["desktop.install_link.button.unlink_copy"] = "このコピーのリンクを解除";
             localized["desktop.install_link.button.login_website"] = "このコピーを取得";
             localized["desktop.install_link.button.continue_unlinked"] = "リンクせずに続行";
@@ -1578,7 +1578,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.unable_open_origin_dossier"] = "このホストでは Origin Dossier を開けません。";
             localized["desktop.install_link.status.claim_code_required"] = "先にサインイン済み Chummer 経路のインストール引き継ぎを貼り付けてください。";
             localized["desktop.install_link.status.linking"] = "このインストールを Hub とリンクしています...";
-            localized["desktop.install_link.status.guided_tools_visible"] = "ヘルプボタンは表示されています。";
+            localized["desktop.install_link.status.recovery_pending"] = "以前のブラウザ承認をまだ確認しています...";            localized["desktop.install_link.status.recovery_detail"] = "このコピーを開いたままにしてください。以前の承認は専用ページで確認されます。新しい承認は開始されていません。";            localized["desktop.install_link.status.guided_tools_visible"] = "ヘルプボタンは表示されています。";
             localized["desktop.install_link.status.guided_tools_hidden"] = "ヘルプボタンは非表示です。";
             localized["desktop.install_link.summary.installation_id"] = "インストール ID: {0}";
             localized["desktop.install_link.summary.head"] = "アプリ: {0}";
@@ -1998,7 +1998,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "Abrir conta";
             localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
             localized["desktop.install_link.button.open_claim_link"] = "Abrir link";
-            localized["desktop.install_link.button.redeem_claim_code"] = "Resgatar no app";
+            localized["desktop.install_link.button.check_previous_approval"] = "Verificar aprovacao anterior";            localized["desktop.install_link.button.redeem_claim_code"] = "Resgatar no app";
             localized["desktop.install_link.button.unlink_copy"] = "Desvincular esta cópia";
             localized["desktop.install_link.button.login_website"] = "Reivindicar esta cópia";
             localized["desktop.install_link.button.continue_unlinked"] = "Continuar sem vincular";
@@ -2026,7 +2026,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.unable_open_origin_dossier"] = "Nao foi possivel abrir Origin Dossier neste host.";
             localized["desktop.install_link.status.claim_code_required"] = "Cole primeiro a transferência da instalação vinda do caminho conectado do Chummer.";
             localized["desktop.install_link.status.linking"] = "Vinculando esta instalacao com o Hub...";
-            localized["desktop.install_link.status.guided_tools_visible"] = "Botoes de ajuda estao visiveis.";
+            localized["desktop.install_link.status.recovery_pending"] = "Uma aprovacao anterior do navegador ainda esta sendo verificada...";            localized["desktop.install_link.status.recovery_detail"] = "Mantenha esta copia aberta; a aprovacao anterior e confirmada em sua propria pagina. Nenhuma nova aprovacao foi iniciada.";            localized["desktop.install_link.status.guided_tools_visible"] = "Botoes de ajuda estao visiveis.";
             localized["desktop.install_link.status.guided_tools_hidden"] = "Botoes de ajuda estao ocultos.";
             localized["desktop.install_link.summary.installation_id"] = "ID da instalacao: {0}";
             localized["desktop.install_link.summary.head"] = "App: {0}";
@@ -2446,7 +2446,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "打开账户";
             localized["desktop.install_link.button.link_copy"] = "绑定此副本";
             localized["desktop.install_link.button.open_claim_link"] = "打开认领链接";
-            localized["desktop.install_link.button.redeem_claim_code"] = "在应用内兑换";
+            localized["desktop.install_link.button.check_previous_approval"] = "检查以前的批准";            localized["desktop.install_link.button.redeem_claim_code"] = "在应用内兑换";
             localized["desktop.install_link.button.unlink_copy"] = "解除此副本绑定";
             localized["desktop.install_link.button.login_website"] = "认领此副本";
             localized["desktop.install_link.button.continue_unlinked"] = "不关联继续";
@@ -2474,7 +2474,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.unable_open_origin_dossier"] = "此主机无法打开 Origin Dossier。";
             localized["desktop.install_link.status.claim_code_required"] = "请先粘贴来自已登录 Chummer 路径的安装接续。";
             localized["desktop.install_link.status.linking"] = "正在将此安装与 Hub 绑定...";
-            localized["desktop.install_link.status.guided_tools_visible"] = "帮助按钮已显示。";
+            localized["desktop.install_link.status.recovery_pending"] = "仍在检查先前的浏览器批准...";            localized["desktop.install_link.status.recovery_detail"] = "请保持此副本开启；以前的批准将在其专用页面上确认。尚未开始新的批准。";            localized["desktop.install_link.status.guided_tools_visible"] = "帮助按钮已显示。";
             localized["desktop.install_link.status.guided_tools_hidden"] = "帮助按钮已隐藏。";
             localized["desktop.install_link.summary.installation_id"] = "安装 ID: {0}";
             localized["desktop.install_link.summary.head"] = "应用: {0}";

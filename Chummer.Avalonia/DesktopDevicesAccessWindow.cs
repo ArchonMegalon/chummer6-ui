@@ -475,6 +475,11 @@ internal sealed class DesktopDevicesAccessWindow : Window
     {
         ArgumentNullException.ThrowIfNull(state);
 
+        if (DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(state))
+        {
+            return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.check_previous_approval", language);
+        }
+
         return string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure)
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_claim_link", language);

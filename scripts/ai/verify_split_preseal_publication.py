@@ -430,6 +430,13 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/CommandAvailabilityEvaluatorTests.cs",
         "Chummer.Tests/Presentation/DesktopInstallLinkingShellChromeTests.cs",
         "Chummer.Tests/Presentation/PublicPreviewSurfaceTests.cs",
+
+        # R74 (2026-11-08): state-specific linking messages that accompany real
+        # recovery actions - retained-approval recovery branch in the install
+        # linking window, recovery-aware devices-access entry label, and the
+        # localization keys for the recovery copy in all shipping languages.
+        "Chummer.Avalonia/DesktopDevicesAccessWindow.cs",
+        "Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these

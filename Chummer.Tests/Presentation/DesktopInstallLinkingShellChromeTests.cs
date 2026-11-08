@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using Chummer.Avalonia;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
@@ -498,6 +499,110 @@ public sealed class DesktopInstallLinkingShellChromeTests
             DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
                 CreateInstallState(status: "guest"),
                 DesktopLocalizationCatalog.DefaultLanguage));
+    }
+
+    [TestMethod]
+    public void Recovery_state_gets_state_specific_messages_instead_of_url_less_fallback()
+    {
+        // Copy keys exist in every language and stay human-facing.
+        foreach (string language in new[] { "en-us", "de-de", "fr-fr", "ja-jp", "pt-br", "zh-cn" })
+        {
+            StringAssert.Contains(
+                DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_pending", language).ToLowerInvariant(),
+                language.StartsWith("pt") ? "aprovacao"
+                    : language.StartsWith("de") ? "freigabe"
+                    : language.StartsWith("fr") ? "approbation"
+                    : language.StartsWith("zh") ? "批准"
+                    : language.StartsWith("ja") ? "承認"
+                    : "approval");
+            string detail = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_detail", language);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(detail), $"recovery_detail must be translated for {language}");
+            Assert.IsTrue(detail.Length > 20, $"recovery_detail must carry guidance, not a stub, for {language}");
+            string buttonLabel = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.check_previous_approval", language);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(buttonLabel), $"check_previous_approval must be translated for {language}");
+        }
+
+        // The GUI branches to recovery polling, not to the browser fallback.
+        string windowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
+        // The exact guard line is asserted so guarding the branch off (e.g. "if (false && ...)")
+        // still counts as removing the recovery path and fails this test.
+        StringAssert.Contains(windowSource, "if (DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(_state))");
+        StringAssert.Contains(windowSource, "StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString(\"desktop.install_link.status.recovery_detail\"");
+        int fallbackIdx = windowSource.IndexOf("await ShowManualBrowserFallbackAsync(loginUrl, failureReason)", StringComparison.Ordinal);
+        int recoveryIdx = windowSource.IndexOf("IsRecoveringRetainedApproval(_state)", StringComparison.Ordinal);
+        Assert.IsTrue(recoveryIdx >= 0 && fallbackIdx > recoveryIdx, "recovery branch must precede the fallback branch");
+
+        // The account button label reflects the recovery state before fallback labels.
+        Assert.AreEqual(
+            "Check Previous Approval",
+            DesktopInstallLinkingWindow.BuildAccountButtonLabel(
+                claimed: false,
+                browserFallbackVisible: false,
+                DesktopLocalizationCatalog.DefaultLanguage,
+                recoveringRetainedApproval: true));
+        // The devices-access entry label reflects the recovery state only when a
+        // retained approval request is actually recoverable, not for any guest state.
+        Assert.AreEqual(
+            "Check Previous Approval",
+            DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
+                CreateRetainedApprovalState(),
+                DesktopLocalizationCatalog.DefaultLanguage));
+        Assert.AreNotEqual(
+            "Check Previous Approval",
+            DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
+                CreateInstallState(status: "guest"),
+                DesktopLocalizationCatalog.DefaultLanguage));
+    }
+
+    /// <summary>
+    /// Builds an unclaimed guest state carrying a retained browser-approval request
+    /// whose fields are mutually consistent with the state, so the runtime's hard
+    /// retained-request validation accepts it (identity, operation id derived from
+    /// the nonce, and the SPKI public key of the state; the signature is checked
+    /// later at poll time, not at recovery-detection time).
+    /// </summary>
+    private static DesktopInstallLinkingState CreateRetainedApprovalState()
+    {
+        using RSA installationKey = RSA.Create(2048);
+        DesktopInstallLinkingState baseState = CreateInstallState(status: "guest") with
+        {
+            PublicKey = installationKey.ExportRSAPublicKeyPem(),
+            BrowserApprovalReturnState = "career"
+        };
+
+        string nonce = "MTIzNDU2Nzg5MGFiY2RlZjAxMjM0NTY3ODlhYjBj";
+        string operationId = (string)(typeof(DesktopInstallLinkingRuntime)
+            .GetMethod("RemoteCallbackOperationId", BindingFlags.NonPublic | BindingFlags.Static)
+            ?.Invoke(null, [nonce])
+            ?? throw new AssertFailedException("The operation-id factory should exist."));
+        // The retained request carries the SPKI as base64 (the same form the runtime
+        // derives in TryExportRemoteCallbackPublicKey), not the raw PEM.
+        string publicKeyBase64 = Convert.ToBase64String(installationKey.ExportSubjectPublicKeyInfo());
+        string requestJson = "{" +
+            $"\"installationId\":\"{baseState.InstallationId}\"," +
+            $"\"headId\":\"{baseState.HeadId}\"," +
+            $"\"applicationVersion\":\"{baseState.ApplicationVersion}\"," +
+            $"\"channelId\":\"{baseState.ChannelId}\"," +
+            $"\"platform\":\"{baseState.Platform}\"," +
+            $"\"arch\":\"{baseState.Arch}\"," +
+            $"\"publicKey\":\"{publicKeyBase64}\"," +
+            $"\"issuedAtUnixSeconds\":0," +
+            $"\"nonce\":\"{nonce}\"," +
+            $"\"signature\":\"sig\"," +
+            $"\"operationId\":\"{operationId}\"" + "}";
+
+        return baseState with { BrowserApprovalRequest = requestJson };
+    }
+
+    [TestMethod]
+    public void IsRecoveringRetainedApproval_matches_retained_request_and_terminal_states()
+    {
+        Assert.IsFalse(DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(CreateInstallState(status: "guest")));
+        Assert.IsFalse(DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(CreateInstallState(status: "claimed")));
+
+        DesktopInstallLinkingState retained = CreateRetainedApprovalState();
+        Assert.IsTrue(DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(retained));
+        Assert.IsFalse(DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(retained with { BrowserApprovalTerminal = true }));
     }
 
     [TestMethod]
