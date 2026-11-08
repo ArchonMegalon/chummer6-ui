@@ -2374,6 +2374,19 @@ public static class DesktopInstallLinkingRuntime
         }
     }
 
+    public static TimeSpan ResolveRemoteCallbackObservationLifetime()
+    {
+        // Test hook: a non-positive override shortens the UI's observation window
+        // (via ResolveInstallLinkObservationLifetime) without touching production.
+        string? overrideSeconds = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_OBSERVATION_LIFETIME_SECONDS");
+        if (double.TryParse(overrideSeconds, out double seconds) && seconds > 0)
+        {
+            return TimeSpan.FromSeconds(seconds);
+        }
+
+        return RemoteCallbackObservationLifetime;
+    }
+
     private static HttpClient CreateApiHttpClient(TimeSpan timeout)
     {
         HttpClient client = new()
@@ -2645,7 +2658,7 @@ public static class DesktopInstallLinkingRuntime
         DesktopInstallLinkingState initialState,
         CancellationToken cancellationToken)
     {
-        DateTimeOffset deadline = DateTimeOffset.UtcNow.AddMinutes(15);
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.Add(ResolveRemoteCallbackObservationLifetime());
         int transientFailures = 0;
         bool waitingStateRecorded = false;
         if (initialState.BrowserApprovalRequest is null
@@ -3030,6 +3043,14 @@ public static class DesktopInstallLinkingRuntime
     // replaying a proof well before that boundary so a retried request can never be
     // rejected purely for its age, and never re-sign on top of an unresolved send.
     private const long RemoteCallbackProofReuseSeconds = 240;
+
+    /// <summary>
+    /// The runtime browser-callback poll observes the active operation for up to
+    /// this long before giving up on automatic recovery. The install-linking
+    /// dialog mirrors the same lifetime so its observation never ends while the
+    /// operation it displays is still being polled.
+    /// </summary>
+    public static readonly TimeSpan RemoteCallbackObservationLifetime = TimeSpan.FromMinutes(15);
 
     private enum RemoteCallbackProofReuseDecision
     {
