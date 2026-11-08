@@ -53,6 +53,14 @@ public enum DesktopRemoteCallbackRecoveryProjection
     /// <summary>The retained approval is being recovered; its proof is still replayable.</summary>
     Running,
 
+    /// <summary>
+    /// The retained approval's proof aged out while its outcome was unknown, but
+    /// the runtime's poll worker is still registered for this installation, so
+    /// an admitted HTTP request may still complete. The UI must keep observing
+    /// the actual operation instead of declaring recovery stopped.
+    /// </summary>
+    InFlight,
+
     /// <summary>The retained approval's proof expired while its outcome was unknown; automatic recovery has stopped and must not be described as running.</summary>
     Stopped,
 
@@ -1304,10 +1312,72 @@ public static class DesktopInstallLinkingRuntime
         // the UI must reflect that stop, not an active check. A request whose
         // outcome was definitively received (pending acknowledged) is re-signed
         // by the loop instead, so recovery genuinely continues.
-        bool proofAgedOut = now.ToUnixTimeSeconds() - request.IssuedAtUnixSeconds >= RemoteCallbackProofReuseSeconds;
-        return state.BrowserApprovalUncertain && proofAgedOut
-            ? DesktopRemoteCallbackRecoveryProjection.Stopped
-            : DesktopRemoteCallbackRecoveryProjection.Running;
+        bool proofAgedOut = now.ToUnixTimeSeconds() - request.IssuedAtUnixSeconds >= ResolveRemoteCallbackProofReuseSecondsForTests();
+        if (!(state.BrowserApprovalUncertain && proofAgedOut))
+        {
+            return DesktopRemoteCallbackRecoveryProjection.Running;
+        }
+
+        // Proof age alone is NOT evidence that the last admitted send has
+        // finished (audit 8 Nov): the runtime only re-evaluates the reuse
+        // decision between sends, never while an HTTP response is awaited.
+        // While the poll worker remains registered for this installation, the
+        // outcome is in flight and the dialog must keep observing the actual
+        // operation instead of declaring recovery stopped.
+        return IsRemoteCallbackPollActive(state.InstallationId)
+            ? DesktopRemoteCallbackRecoveryProjection.InFlight
+            : DesktopRemoteCallbackRecoveryProjection.Stopped;
+    }
+
+    /// <summary>
+    /// True while the runtime's remote-callback poll worker is registered for
+    /// the installation — i.e. an admitted request may still complete or the
+    /// loop may still re-sign a definitively-pending operation. This is the
+    /// runtime's actual operation state, not an inference from retained proof
+    /// data: "may start a request" is a different fact from "a request is
+    /// currently in flight".
+    /// </summary>
+    public static bool IsRemoteCallbackPollActive(string installationId)
+        => !string.IsNullOrWhiteSpace(installationId)
+           && RemoteCallbackPolls.ContainsKey(installationId);
+
+    /// <summary>
+    /// Resumes the bounded network continuation of a retained approval after
+    /// the runtime's poll worker has ended (e.g. its observation deadline
+    /// elapsed while the last response was definitively pending). Reuses the
+    /// existing guarded start: it never replays an expired uncertain proof,
+    /// never mints a replacement approval, and never re-enters a terminal or
+    /// claimed operation — the same proof-reuse rules apply as for any other
+    /// dispatch. Returns false when the operation cannot be resumed.
+    /// </summary>
+    public static bool TryResumeRemoteCallbackPolling(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (IsClaimed(state) || state.BrowserApprovalTerminal)
+        {
+            return false;
+        }
+
+        if (IsRemoteCallbackPollActive(state.InstallationId))
+        {
+            // A worker is already running; there is nothing to resume.
+            return true;
+        }
+
+        try
+        {
+            if (ReadRetainedRemoteCallbackRequest(state) is null)
+            {
+                return false;
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or JsonException)
+        {
+            return false;
+        }
+
+        StartRemoteBrowserCallbackPolling(state);
+        return true;
     }
 
     public static OwnerScope ResolveOwnerScope(DesktopInstallLinkingState state)
@@ -3045,6 +3115,23 @@ public static class DesktopInstallLinkingRuntime
     private const long RemoteCallbackProofReuseSeconds = 240;
 
     /// <summary>
+    /// Test hook: a positive override shortens the proof-reuse window so
+    /// in-flight-across-boundary timing can be exercised without multi-minute
+    /// wall-clock waits. Production behavior is unchanged without the
+    /// environment variable.
+    /// </summary>
+    internal static long ResolveRemoteCallbackProofReuseSecondsForTests()
+    {
+        string? overrideSeconds = Environment.GetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS");
+        if (long.TryParse(overrideSeconds, out long seconds) && seconds > 0)
+        {
+            return seconds;
+        }
+
+        return RemoteCallbackProofReuseSeconds;
+    }
+
+    /// <summary>
     /// The runtime browser-callback poll observes the active operation for up to
     /// this long before giving up on automatic recovery. The install-linking
     /// dialog mirrors the same lifetime so its observation never ends while the
@@ -3069,7 +3156,7 @@ public static class DesktopInstallLinkingRuntime
             return RemoteCallbackProofReuseDecision.ResignAfterDefinitiveOutcome;
         }
 
-        if (nowUnixSeconds - retainedRequest.IssuedAtUnixSeconds < RemoteCallbackProofReuseSeconds)
+        if (nowUnixSeconds - retainedRequest.IssuedAtUnixSeconds < ResolveRemoteCallbackProofReuseSecondsForTests())
         {
             return RemoteCallbackProofReuseDecision.Reuse;
         }

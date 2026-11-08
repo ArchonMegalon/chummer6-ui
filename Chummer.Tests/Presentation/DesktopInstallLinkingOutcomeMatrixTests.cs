@@ -388,6 +388,452 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
         });
     }
 
+    [TestMethod]
+    public async Task Integration_inflight_completed_response_reaches_dialog_across_proof_boundary()
+    {
+        // Audit P2-1 regression, worker + observer together: the runtime
+        // worker admits a request, the loopback Hub withholds the response
+        // BODY past the (overridden) proof-reuse boundary while the dialog's
+        // observer runs. The dialog must NOT declare recovery stopped while
+        // the admitted response is in flight, and the released completed
+        // response must reach the dialog ("Linked") without reopening it.
+        Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", "1");
+        DesktopInstallLinkingWindow.ObservationDelay = static (ms, ct) => Task.Delay(15, ct);
+        DesktopInstallLinkingWindow.ObservationMaxSteps = 4000;
+        try
+        {
+            await WithWindowAsync(async window =>
+            {
+                using InflightHubFixture fixture = new(pendingFirst: false, holdBody: true);
+                DesktopInstallLinkingState before = PrepareRetainedApproval();
+                string url = DesktopInstallLinkingRuntime.BuildClaimPortalAbsoluteUriForInstall(before);
+                await InvokeHandlerAsync(window, opened: false, url, "browser launch failed");
+                AssertFallbackShown(window, url);
+
+                Assert.IsTrue(DesktopInstallLinkingRuntime.TryResumeRemoteCallbackPolling(
+                    DesktopInstallLinkingRuntime.LoadOrCreateState(HeadId)));
+                Assert.IsTrue(DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(
+                    DesktopInstallLinkingRuntime.LoadOrCreateState(HeadId).InstallationId));
+
+                // Let the observer run past the overridden proof-reuse
+                // boundary while the response body is still withheld.
+                await StepLoopAsync(maxSteps: 90);
+
+                DesktopInstallLinkingState during = DesktopInstallLinkingRuntime.LoadOrCreateState(HeadId);
+                Assert.IsTrue(DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(during.InstallationId),
+                    "precondition: worker still registered while its response is in flight");
+                Assert.IsFalse(GetStatus(window).Contains("has stopped", StringComparison.Ordinal), "stopped copy must not appear while the admitted response is in flight");
+                Assert.IsFalse(GetStatus(window).Contains("was rejected", StringComparison.Ordinal), "rejection copy must not appear while the admitted response is in flight");
+
+                fixture.ReleaseResponses();
+                await StepLoopAsync(maxSteps: 300);
+                string status = GetStatus(window);
+                bool linked = status.Contains("Linked. Grant expires", StringComparison.Ordinal)
+                    || status.Contains("already linked", StringComparison.Ordinal);
+                Assert.IsTrue(linked,
+                    "the released completed response must reach the dialog as a linked state, got: " + status);
+            });
+        }
+        finally
+        {
+            DesktopInstallLinkingWindow.ObservationDelay = static (ms, ct) => Task.Delay(ms, ct);
+            DesktopInstallLinkingWindow.ObservationMaxSteps = int.MaxValue;
+            Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", null);
+        }
+    }
+
+    [TestMethod]
+    public async Task Integration_worker_ended_then_refresh_resumes_network_check()
+    {
+        // Audit P2-2 regression: the network worker ends (lifetime overridden
+        // to 1s) after a definitive pending outcome, THEN the approval
+        // completes remotely. The real RefreshObservationAsync must resume
+        // the network check (re-signing is permitted because the outcome was
+        // definitive, not uncertain) and the dialog must reach "Linked"
+        // through the SAME retained operation - not an idle local wait.
+        Environment.SetEnvironmentVariable(
+            "CHUMMER_INSTALL_LINK_OBSERVATION_LIFETIME_SECONDS", "1");
+        DesktopInstallLinkingWindow.ObservationDelay = static (ms, ct) => Task.Delay(15, ct);
+        DesktopInstallLinkingWindow.ObservationMaxSteps = 4000;
+        try
+        {
+            await WithWindowAsync(async window =>
+            {
+                using InflightHubFixture fixture = new(pendingFirst: true, holdBody: false);
+                DesktopInstallLinkingState before = PrepareRetainedApproval();
+                string url = DesktopInstallLinkingRuntime.BuildClaimPortalAbsoluteUriForInstall(before);
+                await InvokeHandlerAsync(window, opened: false, url, "browser launch failed");
+                AssertFallbackShown(window, url);
+
+                Assert.IsTrue(DesktopInstallLinkingRuntime.TryResumeRemoteCallbackPolling(
+                    DesktopInstallLinkingRuntime.LoadOrCreateState(HeadId)));
+
+                // Worker 1: gets the definitive pending response, then exits
+                // when its 1s lifetime elapses between iterations. Sync-pump
+                // (Thread.Sleep + RunJobs) - never await on the headless
+                // dispatcher, or continuations starve (R76 lesson).
+                for (int i = 0; i < 200; i++)
+                {
+                    Thread.Sleep(25);
+                    Dispatcher.UIThread.RunJobs();
+                    if (!DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(
+                            LoadState().InstallationId))
+                    {
+                        break;
+                    }
+                }
+                Assert.IsFalse(DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(LoadState().InstallationId),
+                    "precondition: the network worker must have ended");
+                DesktopInstallLinkingState ended = LoadState();
+                Assert.IsFalse(ended.BrowserApprovalUncertain,
+                    "the definitive pending response must have cleared uncertainty");
+                Assert.IsFalse(DesktopInstallLinkingRuntime.IsClaimed(ended),
+                    "precondition: the operation is still unclaimed when the worker ends");
+
+                // The approval completes AFTER the worker ended. A refresh
+                // that only re-read the local store could never see this.
+                fixture.MarkApprovalAvailableRemotely();
+
+                MethodInfo refresh = typeof(DesktopInstallLinkingWindow).GetMethod(
+                        "RefreshObservationAsync", BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?? throw new AssertFailedException("RefreshObservationAsync missing");
+                // Do NOT await the refresh task directly on the blocked headless
+                // dispatcher: fire it and sync-pump until the resumed worker is
+                // registered (the same starvation pattern R76 closed).
+                Task refreshTask = (Task)refresh.Invoke(window, null)!;
+                bool resumed = false;
+                for (int i = 0; i < 240; i++)
+                {
+                    Thread.Sleep(25);
+                    Dispatcher.UIThread.RunJobs();
+                    if (DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(LoadState().InstallationId))
+                    {
+                        resumed = true;
+                        break;
+                    }
+                }
+                Assert.IsTrue(resumed, "refresh must have resumed the network check");
+
+                await StepLoopAsync(maxSteps: 300);
+                string finalStatus = GetStatus(window);
+                bool linked = finalStatus.Contains("Linked. Grant expires", StringComparison.Ordinal)
+                    || finalStatus.Contains("already linked", StringComparison.Ordinal);
+                Assert.IsTrue(linked,
+                    "the resumed worker must complete the SAME operation in the dialog, got: " + finalStatus);
+            });
+        }
+        finally
+        {
+            DesktopInstallLinkingWindow.ObservationDelay = static (ms, ct) => Task.Delay(ms, ct);
+            DesktopInstallLinkingWindow.ObservationMaxSteps = int.MaxValue;
+            Environment.SetEnvironmentVariable(
+                "CHUMMER_INSTALL_LINK_OBSERVATION_LIFETIME_SECONDS", null);
+        }
+    }
+
+    /// <summary>
+    /// Loopback Hub for worker+observer integration. pendingFirst: the first
+    /// poll request is answered with a definitive 202 pending body (the
+    /// runtime clears uncertainty and keeps going); later requests get a
+    /// valid completed grant. holdBody: a 200 response's status line is sent
+    /// immediately (request admitted) but the body is withheld until
+    /// ReleaseResponses, realizing an in-flight response across the
+    /// proof-reuse boundary.
+    /// </summary>
+    private sealed class InflightHubFixture : IDisposable
+    {
+        private readonly System.Net.Sockets.Socket _listener;
+        private readonly string _stateRoot;
+        private readonly string _priorStateRoot;
+        private readonly string _priorApiBase;
+        private readonly string _priorProofReuse;
+        private readonly bool _pendingFirst;
+        private readonly bool _holdBody;
+        private Task? _listenerTask;
+        private readonly List<TaskCompletionSource<bool>> _gates = new();
+        private readonly object _gateLock = new();
+        private readonly string _completedBody;
+        private int _requests;
+        private volatile bool _approvalAvailable;
+
+        public InflightHubFixture(bool pendingFirst, bool holdBody)
+        {
+            _pendingFirst = pendingFirst;
+            _holdBody = holdBody;
+            _priorProofReuse = Environment.GetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS") ?? "";
+            _priorStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT") ?? "";
+            _priorApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL") ?? "";
+            _stateRoot = Path.Combine(Path.GetTempPath(), "chummer-inflight-matrix", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_stateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", _stateRoot);
+            using System.Security.Cryptography.RSA installationKey = System.Security.Cryptography.RSA.Create(2048);
+            DesktopInstallLinkingState initial = LoadState();
+            SaveState(initial with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            _listener = new System.Net.Sockets.Socket(System.Net.Sockets.SocketType.Stream,
+                System.Net.Sockets.ProtocolType.Tcp);
+            _listener.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 0));
+            _listener.Listen(16);
+            string apiBase = $"http://127.0.0.1:{((System.Net.IPEndPoint)_listener.LocalEndPoint!).Port}/";
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+
+            string publicKey = Convert.ToBase64String(installationKey.ExportSubjectPublicKeyInfo());
+            _completedBody = BuildMatrixGrantResponse(LoadState(), publicKey);
+
+            _listenerTask = Task.Run(async () =>
+            {
+                while (true)
+                {
+                    System.Net.Sockets.Socket connection = await _listener.AcceptAsync();
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            using System.Net.Sockets.Socket socket = connection;
+                            byte[] buffer = new byte[65536];
+                            await socket.ReceiveAsync(buffer, System.Net.Sockets.SocketFlags.None);
+                            System.Threading.Interlocked.Increment(ref _requests);
+                            // Pending until the approval is marked available
+                            // remotely: worker 1 then ALWAYS ends unclaimed at
+                            // its deadline (the audit's scenario), and the
+                            // post-deadline resumed worker gets the grant.
+                            bool pending = _pendingFirst && !_approvalAvailable;
+                            byte[] payload = System.Text.Encoding.UTF8.GetBytes(pending
+                                ? "{\"pending\":true}"
+                                : _completedBody);
+                            string status = pending ? "202 Pending" : "200 OK";
+                            string header = "HTTP/1.1 " + status + "\r\n" +
+                                            "Content-Type: application/json\r\n" +
+                                            "Content-Length: " + payload.Length + "\r\n" +
+                                            "Connection: close\r\n\r\n";
+                            await socket.SendAsync(
+                                System.Text.Encoding.ASCII.GetBytes(header),
+                                System.Net.Sockets.SocketFlags.None);
+                            if (!pending && _holdBody)
+                            {
+                                // Body withheld: the response is in flight.
+                                TaskCompletionSource<bool> gate = new(
+                                    System.Threading.Tasks.TaskCreationOptions.RunContinuationsAsynchronously);
+                                lock (_gateLock) { _gates.Add(gate); }
+                                await gate.Task;
+                            }
+                            else if (!pending)
+                            {
+                                // Give the observer a beat to observe the
+                                // in-flight boundary before instant completion.
+                                await System.Threading.Tasks.Task.Delay(50);
+                            }
+                            await socket.SendAsync(payload, System.Net.Sockets.SocketFlags.None);
+                        }
+                        catch (Exception ex) when (ex is System.ObjectDisposedException
+                            or System.Net.Sockets.SocketException
+                            or System.OperationCanceledException
+                            or System.IO.IOException)
+                        {
+                        }
+                    });
+                }
+            });
+        }
+
+        public void ReleaseResponses()
+        {
+            List<TaskCompletionSource<bool>> gates;
+            lock (_gateLock)
+            {
+                gates = new List<TaskCompletionSource<bool>>(_gates);
+                _gates.Clear();
+            }
+            foreach (TaskCompletionSource<bool> gate in gates)
+            {
+                gate.TrySetResult(true);
+            }
+        }
+
+        /// <summary>
+        /// Journey marker: from this point the Hub has a completed result for
+        /// the retained approval (it always serves one in this fixture); the
+        /// point is that it became available only AFTER the worker ended.
+        /// </summary>
+        public void MarkApprovalAvailableRemotely()
+        {
+            _approvalAvailable = true;
+        }
+
+        public void Dispose()
+        {
+            ReleaseResponses();
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", _priorStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", _priorApiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", _priorProofReuse);
+            try { _listener.Dispose(); _listenerTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+            try { if (Directory.Exists(_stateRoot)) Directory.Delete(_stateRoot, recursive: true); } catch { }
+        }
+    }
+
+    private static string BuildMatrixGrantResponse(DesktopInstallLinkingState state, string publicKey)
+    {
+        // Same DTO shape the runtime integration tests use; issued in the past
+        // (valid), expiring in 30 days.
+        string issuedAt = DateTimeOffset.UtcNow.AddDays(-1).ToString("o");
+        string expiresAt = DateTimeOffset.UtcNow.AddDays(30).ToString("o");
+        return $$"""
+{
+  "callback": {
+    "callbackId": "callback-matrix-1",
+    "callbackCode": "code-matrix-1",
+    "installationId": "{{state.InstallationId}}",
+    "artifactId": "avalonia-win-x64-installer",
+    "channel": "{{state.ChannelId}}",
+    "version": "{{state.ApplicationVersion}}",
+    "installAccessClass": "open_public",
+    "status": "redeemed",
+    "createdAtUtc": "{{issuedAt}}",
+    "expiresAtUtc": "{{expiresAt}}",
+    "userId": "user-matrix-1",
+    "subjectId": "subject.matrix",
+    "publicKey": "{{publicKey}}",
+    "headId": "{{state.HeadId}}",
+    "platform": "{{state.Platform}}",
+    "arch": "{{state.Arch}}",
+    "hostLabel": null,
+    "callbackUri": "http://127.0.0.1/matrix",
+    "grantId": "grant-matrix-1"
+  },
+  "installation": {
+    "installationId": "{{state.InstallationId}}",
+    "artifactId": "avalonia-win-x64-installer",
+    "channel": "{{state.ChannelId}}",
+    "version": "{{state.ApplicationVersion}}",
+    "installAccessClass": "open_public",
+    "status": "active",
+    "createdAtUtc": "{{issuedAt}}",
+    "updatedAtUtc": "{{expiresAt}}",
+    "userId": "user-matrix-1",
+    "subjectId": "subject.matrix",
+    "publicKey": "{{publicKey}}",
+    "claimTicketId": "ticket-matrix-1",
+    "headId": "{{state.HeadId}}",
+    "platform": "{{state.Platform}}",
+    "arch": "{{state.Arch}}",
+    "hostLabel": null,
+    "grantId": "grant-matrix-1"
+  },
+  "grant": {
+    "grantId": "grant-matrix-1",
+    "installationId": "{{state.InstallationId}}",
+    "status": "active",
+    "accessToken": "token-matrix-1",
+    "issuedAtUtc": "{{issuedAt}}",
+    "expiresAtUtc": "{{expiresAt}}",
+    "userId": "user-matrix-1",
+    "subjectId": "subject.matrix"
+  },
+  "alreadyClaimed": true
+}
+""";
+    }
+
+    [TestMethod]
+    public async Task Resume_guard_refuses_claimed_and_terminal_operations()
+    {
+        // Mutation I kill: the resume entry point must refuse operations the
+        // runtime has already finished with (claimed or conclusively
+        // rejected), even though their retained request is still readable.
+        // Without the guard the call would report success and start a new
+        // network worker against a completed operation.
+        await WithWindowAsync(async window =>
+        {
+            DesktopInstallLinkingState before = PrepareRetainedApproval();
+
+            // Claimed: the same operation, completed.
+            SaveState(LoadState() with
+            {
+                Status = "claimed",
+                ClaimedAtUtc = DateTimeOffset.UtcNow,
+                GrantId = "grant-killtest-1",
+                GrantToken = "token-killtest-1",
+                LastClaimMessage = "Linked. Grant expires in 30 days.",
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            });
+            Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(LoadState()),
+                "precondition: claimed state");
+            Assert.IsFalse(DesktopInstallLinkingRuntime.TryResumeRemoteCallbackPolling(LoadState()),
+                "resume must refuse a claimed operation");
+
+            // Terminal: conclusively rejected.
+            SaveState(LoadState() with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                LastClaimMessage = null,
+                BrowserApprovalTerminal = true,
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            });
+            Assert.IsTrue(LoadState().BrowserApprovalTerminal, "precondition: terminal state");
+            Assert.IsFalse(DesktopInstallLinkingRuntime.TryResumeRemoteCallbackPolling(LoadState()),
+                "resume must refuse a terminal operation");
+
+            // And a genuinely pending operation with a readable retained
+            // request must still be resumable - the guard is narrow, not a
+            // blanket veto.
+            SaveState(LoadState() with
+            {
+                BrowserApprovalTerminal = false,
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            });
+            Assert.IsFalse(LoadState().BrowserApprovalTerminal, "precondition: pending state");
+            bool resumed = DesktopInstallLinkingRuntime.TryResumeRemoteCallbackPolling(LoadState());
+            Assert.IsTrue(resumed, "a pending operation with a retained request must be resumable");
+            Assert.IsTrue(DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(LoadState().InstallationId),
+                "resume must actually start the network worker");
+        });
+    }
+
+    [TestMethod]
+    public async Task Refresh_states_explicit_limitation_when_resume_is_refused()
+    {
+        // Mutation M kill: when the runtime cannot resume the operation
+        // (here: the retained request is unreadable), refresh must show the
+        // explicit recovery-unavailable limitation instead of silently
+        // starting another local wait.
+        await WithWindowAsync(async window =>
+        {
+            DesktopInstallLinkingState before = PrepareRetainedApproval();
+            string url = DesktopInstallLinkingRuntime.BuildClaimPortalAbsoluteUriForInstall(before);
+            await InvokeHandlerAsync(window, opened: false, url, "browser launch failed");
+            AssertFallbackShown(window, url);
+
+            // Corrupt the retained request so TryResumeRemoteCallbackPolling
+            // refuses (unreadable request - the explicit recovery case).
+            SaveState(LoadState() with
+            {
+                BrowserApprovalRequest = "not-json",
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            });
+
+            var refresh = typeof(DesktopInstallLinkingWindow).GetMethod("RefreshObservationAsync",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("RefreshObservationAsync missing");
+            await (Task)refresh.Invoke(window, null)!;
+
+            StringAssert.Contains(GetStatus(window), "cannot be resumed", StringComparison.Ordinal);
+            StringAssert.Contains(GetMatrixHandoffState(window), "Recovery unavailable", StringComparison.Ordinal);
+        });
+    }
+
     // ------------------------------------------------------------------
     // helpers
     // ------------------------------------------------------------------
