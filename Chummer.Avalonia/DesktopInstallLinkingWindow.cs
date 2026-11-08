@@ -846,6 +846,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         switch (DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(_state))
         {
             case DesktopRemoteCallbackRecoveryProjection.Running:
+            case DesktopRemoteCallbackRecoveryProjection.InFlight:
+                // InFlight means an admitted request may still complete: the
+                // dialog keeps observing and may keep the manual fallback open
+                // exactly as for a running recovery.
                 if (!string.IsNullOrWhiteSpace(accountUrl))
                 {
                     // A genuine browser-launch failure with a usable approval
@@ -983,6 +987,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     // of presenting an indefinite "pending" wait.
                     DesktopRemoteCallbackRecoveryProjection projection =
                         DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(current);
+                    if (projection == DesktopRemoteCallbackRecoveryProjection.InFlight)
+                    {
+                        // An admitted HTTP request may still complete: keep
+                        // observing the actual operation instead of ending the
+                        // loop on proof age alone.
+                        continue;
+                    }
+
                     if (projection is DesktopRemoteCallbackRecoveryProjection.Stopped
                         or DesktopRemoteCallbackRecoveryProjection.Terminal)
                     {
@@ -1127,10 +1139,25 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return;
         }
 
-        // The operation is still pending: restart observation for another full
-        // lifetime. Observation stays read-only - this never extends proof
-        // validity or mints another approval.
-        StartClaimPolling("Re-checking approval state");
+        // Post-deadline contract (audit 8 Nov): a pending projection alone is
+        // not evidence that a network check is still producing a result.
+        //  - Worker still active: keep observing it (read-only).
+        //  - Worker ended after a definitive pending outcome: resume the
+        //    runtime's bounded continuation of the SAME operation. It never
+        //    replays an expired uncertain proof and never mints a new
+        //    approval; if it cannot resume, say so explicitly.
+        //  - Stopped/Terminal: already handled above with the explicit
+        //    recovery limitation copy.
+        if (DesktopInstallLinkingRuntime.TryResumeRemoteCallbackPolling(_state))
+        {
+            StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString(
+                "desktop.install_link.status.rechecking", _language));
+            return;
+        }
+
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString(
+            "desktop.install_link.status.recovery_unavailable", _language));
+        UpdateMatrixHandoffState("Recovery unavailable");
     }
 
     private async Task CopyInstallIdAsync()
@@ -1332,7 +1359,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _followThroughButton.Content = claimed
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
-        _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language, recovery == DesktopRemoteCallbackRecoveryProjection.Running);
+        _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language,
+            recovery is DesktopRemoteCallbackRecoveryProjection.Running
+                or DesktopRemoteCallbackRecoveryProjection.InFlight);
         _followThroughButton.IsVisible = claimed;
         _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
         _unlinkButton.IsVisible = claimed;
