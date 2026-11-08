@@ -270,10 +270,8 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(text, "desktop.install_link.button.copy_login_url");
         StringAssert.Contains(text, "private bool _browserFallbackVisible;");
         StringAssert.Contains(text, "_copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;");
-        StringAssert.Contains(text, "_claimCodeEntryRow.IsVisible = !claimed && _browserFallbackVisible;");
-        Assert.IsFalse(
-            text.Contains("_claimCodeEntryRow.IsVisible = !claimed;", StringComparison.Ordinal),
-            "Fallback claim-code controls must not be visible during the normal browser claim path.");
+        StringAssert.Contains(text, "bool showClaimCode = ShouldShowClaimCodeEntry(claimed, _browserFallbackVisible, recovery);");
+        StringAssert.Contains(text, "_claimCodeEntryRow.IsVisible = showClaimCode;");
         StringAssert.Contains(text, "PollForClaimedInstallAsync");
         StringAssert.Contains(text, "DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId)");
     }
@@ -538,9 +536,15 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(windowSource, "StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString");
         StringAssert.Contains(windowSource, "await HandlePortalOpenOutcomeAsync(opened, loginUrl, failureReason).ConfigureAwait(true);");
         StringAssert.Contains(windowSource, "await HandlePortalOpenOutcomeAsync(opened, accountUrl, failureReason).ConfigureAwait(true);");
-        int fallbackIdx = windowSource.IndexOf("await ShowManualBrowserFallbackAsync(accountUrl, failureReason).ConfigureAwait(true);", StringComparison.Ordinal);
-        int recoveryIdx = windowSource.IndexOf("case DesktopRemoteCallbackRecoveryProjection.Running:", StringComparison.Ordinal);
-        Assert.IsTrue(recoveryIdx >= 0 && fallbackIdx > recoveryIdx, "recovery branch must precede the fallback branch");
+        // Audit R76 (8 Nov re-audit, §4): the source-order assertion was replaced
+        // by behavioral outcome-matrix tests
+        // (DesktopInstallLinkingOutcomeMatrixTests) that drive the REAL handler
+        // headlessly. The matrix covers the two distinct Running cases the old
+        // ordering could not express: a genuine browser-launch failure WITH a
+        // usable URL must expose the manual link, while URL-less recovery must
+        // not show an empty fallback panel.
+        StringAssert.Contains(windowSource, "if (!string.IsNullOrWhiteSpace(accountUrl))");
+        StringAssert.Contains(windowSource, "Recovering a retained approval without a browser URL");
 
         // The account button label reflects the recovery state before fallback labels.
         Assert.AreEqual(

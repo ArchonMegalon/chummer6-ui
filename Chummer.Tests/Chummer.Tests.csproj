@@ -289,6 +289,7 @@
     <Compile Include="Presentation\DesktopAnarchyWindowTests.cs" />
     <Compile Include="Presentation\DesktopGhostwireWindowTests.cs" />
     <Compile Include="Presentation\DesktopInstallLinkingShellChromeTests.cs" />
+    <Compile Include="Presentation\DesktopInstallLinkingOutcomeMatrixTests.cs" />
     <Compile Include="Presentation\DesktopClaimCopyLanguageTests.cs" />
     <Compile Include="Presentation\DesktopShellDownloadDispatchTests.cs" />
     <Compile Include="Presentation\DesktopStartupUpdateWindowTests.cs" />

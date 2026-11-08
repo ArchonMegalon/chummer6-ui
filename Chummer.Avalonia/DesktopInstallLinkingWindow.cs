@@ -53,6 +53,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private bool _automaticHandoffStarted;
     private bool _browserFallbackVisible;
     private string? _lastLoginUrl;
+    private DesktopInstallLinkingState? _observedOperation;
+    private Button? _refreshObservationButton;
 
     public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context, bool loginVideoPreview = false)
     {
@@ -844,6 +846,26 @@ internal sealed class DesktopInstallLinkingWindow : Window
         switch (DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(_state))
         {
             case DesktopRemoteCallbackRecoveryProjection.Running:
+                if (!string.IsNullOrWhiteSpace(accountUrl))
+                {
+                    // A genuine browser-launch failure with a usable approval
+                    // URL: the runtime retained and keeps polling the SAME
+                    // operation, so expose the link for manual continuation
+                    // instead of hiding it behind a waiting message. Never
+                    // mint a replacement approval here.
+                    await ShowManualBrowserFallbackAsync(accountUrl, failureReason).ConfigureAwait(true);
+                    UpdateMatrixHandoffState("Browser fallback ready");
+                    if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
+                    {
+                        StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString(
+                            "desktop.install_link.status.recovery_detail", _language));
+                    }
+
+                    return;
+                }
+
+                // Recovering a retained approval without a browser URL: keep
+                // observing the original operation, never the empty fallback.
                 _browserFallbackVisible = false;
                 RefreshSummary();
                 RefreshActionState();
@@ -897,23 +919,67 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _handoffPollCancellation?.Cancel();
         _handoffPollCancellation?.Dispose();
         _handoffPollCancellation = new CancellationTokenSource();
+        _observedOperation = _state;
+        if (_refreshObservationButton is not null) _refreshObservationButton.IsVisible = false;
         UpdateMatrixHandoffState(stateLabel);
-        _ = PollForClaimedInstallAsync(_handoffPollCancellation.Token);
+        _ = PollForClaimedInstallAsync(_state, _handoffPollCancellation.Token);
     }
 
-    private async Task PollForClaimedInstallAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Test seam: the observation loop reads its clock from here so tests can
+    /// run virtual time deterministically. Production default is wall clock.
+    /// </summary>
+    internal static Func<DateTimeOffset> ObservationNow { get; set; } =
+        static () => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Test seam: the observation loop awaits this for its inter-poll delay.
+    /// Tests override it to make delayed state transitions deterministic
+    /// without real wall-clock sleeps.
+    /// </summary>
+    internal static Func<int, CancellationToken, Task> ObservationDelay { get; set; } =
+        static (milliseconds, cancellationToken) => Task.Delay(milliseconds, cancellationToken);
+
+    /// <summary>Test seam: total lifetime the observation loop may run.</summary>
+    internal static Func<TimeSpan> ObservationLifetime { get; set; } =
+        static () => DesktopInstallLinkingRuntime.ResolveRemoteCallbackObservationLifetime();
+
+    /// <summary>
+    /// Test seam: caps the number of observation ticks so behavioral tests can
+    /// bound the loop deterministically without wall-clock sleeps. The
+    /// production loop remains deadline-based; this budget only shortens test
+    /// runs and is reset to <see cref="int.MaxValue"/> outside tests.
+    /// </summary>
+    internal static int ObservationMaxSteps { get; set; } = int.MaxValue;
+
+    private async Task PollForClaimedInstallAsync(DesktopInstallLinkingState observedOperation, CancellationToken cancellationToken)
     {
         try
         {
-            for (int attempt = 0; attempt < 80; attempt++)
+            // Track the exact operation this dialog observes. If the owner or
+            // installation context changes underneath us, observation must stop
+            // rather than updating a dialog that no longer owns that operation.
+            DateTimeOffset deadline = ObservationNow().Add(ObservationLifetime());
+            int steps = 0;
+            while (ObservationNow() < deadline && steps++ < ObservationMaxSteps)
             {
-                await Task.Delay(750, cancellationToken).ConfigureAwait(true);
-                DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+                await ObservationDelay(750, cancellationToken).ConfigureAwait(true);
+                cancellationToken.ThrowIfCancellationRequested();
+                DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(observedOperation.HeadId);
+                if (!IsSameObservedOperation(current, observedOperation))
+                {
+                    // Owner/authority transition: the runtime stopped serving
+                    // this operation. Stop observing; never touch the new one.
+                    SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
+                    UpdateMatrixHandoffState("Observation ended");
+                    return;
+                }
+
                 if (!DesktopInstallLinkingRuntime.IsClaimed(current))
                 {
                     // The runtime may have stopped recovering (proof expired
                     // while the outcome stayed unknown) or recorded a terminal
-                    // rejection while we were observing — surface that instead
+                    // rejection while we were observing - surface that instead
                     // of presenting an indefinite "pending" wait.
                     DesktopRemoteCallbackRecoveryProjection projection =
                         DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(current);
@@ -921,6 +987,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         or DesktopRemoteCallbackRecoveryProjection.Terminal)
                     {
                         _state = current;
+                        _browserFallbackVisible = false;
                         RefreshSummary();
                         RefreshActionState();
                         SetStatus(DesktopLocalizationCatalog.GetRequiredString(
@@ -954,12 +1021,116 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
             if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
-                UpdateMatrixHandoffState("Browser claim pending");
+                // The observation lifetime elapsed without a terminal outcome.
+                // The runtime poll may still be running, so say so explicitly and
+                // offer a manual re-check instead of implying live monitoring.
+                ShowRefreshObservationAffordance();
+                UpdateMatrixHandoffState("Observation paused");
             }
         }
         catch (OperationCanceledException)
         {
         }
+    }
+
+    /// <summary>
+    /// True while the observed operation is still the one this dialog
+    /// displays, including the single owner transition of its completion.
+    /// </summary>
+    private static bool IsSameObservedOperation(DesktopInstallLinkingState current,
+        DesktopInstallLinkingState observed)
+    {
+        // Accept the one owner transition caused by completing this approval,
+        // but never a later account transition under the same installation.
+        bool expectedOwner = current.OwnerTransitionRevision == observed.OwnerTransitionRevision
+            || (!DesktopInstallLinkingRuntime.IsClaimed(observed)
+                && DesktopInstallLinkingRuntime.IsClaimed(current)
+                && observed.OwnerTransitionRevision < long.MaxValue
+                && current.OwnerTransitionRevision == observed.OwnerTransitionRevision + 1);
+        return expectedOwner
+            && string.Equals(current.InstallationId, observed.InstallationId, StringComparison.Ordinal)
+            && string.Equals(current.HeadId, observed.HeadId, StringComparison.Ordinal)
+            && string.Equals(current.PublicKey, observed.PublicKey, StringComparison.Ordinal)
+            && string.Equals(current.BrowserApprovalReturnState, observed.BrowserApprovalReturnState, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Observation ended without a terminal outcome: present an explicit
+    /// re-check affordance instead of implying the dialog is still watching.
+    /// </summary>
+    private void ShowRefreshObservationAffordance()
+    {
+        if (_refreshObservationButton is null)
+        {
+            _refreshObservationButton = CreateButton(
+                DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.refresh_result", _language),
+                RefreshObservationAsync);
+            if (_statusText.Parent is Panel statusPanel
+                && !statusPanel.Children.Contains(_refreshObservationButton))
+            {
+                statusPanel.Children.Add(_refreshObservationButton);
+            }
+        }
+
+        _refreshObservationButton.IsVisible = true;
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.observation_ended", _language));
+    }
+
+    private async Task RefreshObservationAsync()
+    {
+        if (_refreshObservationButton is not null)
+        {
+            _refreshObservationButton.IsVisible = false;
+        }
+
+        DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+        if (_observedOperation is null || !IsSameObservedOperation(current, _observedOperation))
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
+            UpdateMatrixHandoffState("Observation ended");
+            return;
+        }
+        _state = current;
+        if (DesktopInstallLinkingRuntime.IsClaimed(_state))
+        {
+            RefreshSummary();
+            RefreshActionState();
+            if (Owner is MainWindow ownerWindow)
+            {
+                ownerWindow.ApplyInstallLinkingChrome(_state);
+            }
+
+            SetStatus(!string.IsNullOrWhiteSpace(_state.LastClaimMessage)
+                ? _state.LastClaimMessage
+                : FormatClaimStatus(_state, _language));
+            UpdateMatrixHandoffState("Grant accepted");
+            return;
+        }
+
+        DesktopRemoteCallbackRecoveryProjection projection =
+            DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(_state);
+        if (projection is DesktopRemoteCallbackRecoveryProjection.Stopped
+            or DesktopRemoteCallbackRecoveryProjection.Terminal)
+        {
+            _browserFallbackVisible = false;
+            RefreshSummary();
+            RefreshActionState();
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString(
+                projection == DesktopRemoteCallbackRecoveryProjection.Terminal
+                    ? "desktop.install_link.status.recovery_terminal"
+                    : "desktop.install_link.status.recovery_stopped",
+                _language));
+            UpdateMatrixHandoffState(
+                projection == DesktopRemoteCallbackRecoveryProjection.Terminal
+                    ? "Approval rejected"
+                    : "Recovery stopped");
+            return;
+        }
+
+        // The operation is still pending: restart observation for another full
+        // lifetime. Observation stays read-only - this never extends proof
+        // validity or mints another approval.
+        StartClaimPolling("Re-checking approval state");
     }
 
     private async Task CopyInstallIdAsync()
