@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "2393499ee1486444184dc4876820b7424d098634",
-  "baseTree": "03db10eaed50a3073a0999c85b61e06ef5ec6d62",
+  "baseCommit": "1ebcbc8b88225a02a0be0614c0a0ccfb555f5135",
+  "baseTree": "86c9a9eef60005313b0e81c9c4297931727a331e",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -25,15 +25,15 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "4f6aa2b22c0a2e733b88e38f4a561888008f9b37",
+      "blob": "34bde86edfbd7f2bec71cbc21c0fe3134fc6c9c9",
       "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "ef0afd17135d8d7b5ba46c03bec4b99189a96a12097a141fbdcba9063cf25c20",
+      "rawSha256": "1cb2d318c5c352c79656348acffb06122de7ce7b5d3d3a630b14ef778614b6f3",
       "rawSizeBytes": 69811,
-      "semanticCanonicalSha256": "ef0afd17135d8d7b5ba46c03bec4b99189a96a12097a141fbdcba9063cf25c20",
+      "semanticCanonicalSha256": "1cb2d318c5c352c79656348acffb06122de7ce7b5d3d3a630b14ef778614b6f3",
       "semanticCanonicalSizeBytes": 69811,
-      "tree": "bd30eeef4743db4d2662d80b18a5379797fd1c21"
+      "tree": "005dc0cff67f7a47072bd4f71e89a1ac7a29edcd"
     },
     "producerLock": {
       "absentAtCommit": true,
@@ -44,76 +44,69 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "23ed13fdd8063cc158097afa16cc35cbab68643a",
+      "blob": "8143f63720a1b49cec694711568136f8fc97fd65",
       "path": "Chummer.Avalonia/DesktopInstallLinkingWindow.cs",
-      "sha256": "eb71338ca96f3e4d220473d9a837325f1510647d31d6e172bc0bee1466702df7",
-      "sizeBytes": 70268,
+      "sha256": "1f9cdf9d3bdb7c39b355969c8b37ae0e9327c0587f04f9b99d1fb2a415fb2011",
+      "sizeBytes": 71828,
       "status": "M"
     },
     {
-      "blob": "3a024463659411ae492273c98d3eaea92e1587fe",
+      "blob": "3dfde679e12903bebf3a012185813e0df2f4a7c6",
       "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
-      "sha256": "65f6333a469b051daa0843e082345edb1d1dcac3c36c0ddfdb3e43df1120ae29",
-      "sizeBytes": 177022,
+      "sha256": "a9d1867ebb90ff353ea77581c3a603b05dd1dc8e8bb75891836602a44de71b65",
+      "sizeBytes": 180690,
       "status": "M"
     },
     {
-      "blob": "21f49a4569de4d56393979c5337da596c47b253b",
+      "blob": "b4fc0e520fc77c7dbb8218d0a0a294766266e9a7",
       "path": "Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs",
-      "sha256": "3188efcb9d9ac3edd238cd8c49676a70d1687f494d415a804196ef96161ee988",
-      "sizeBytes": 298766,
+      "sha256": "a50cb46f2cf0f0b8fb479a29e0aae945275244d7b48e31f53ae18f25c3e3afbd",
+      "sizeBytes": 300863,
       "status": "M"
     },
     {
-      "blob": "5aa7f9c105185a0001940375f968a598489531ba",
-      "path": "Chummer.Tests/Chummer.Tests.csproj",
-      "sha256": "88831b3dd2445d6d45002f8631e8e9362ce7f58287bf44c3859db74c1f705280",
-      "sizeBytes": 36158,
+      "blob": "ad9a3f9c893d714997fc1fcc7e9dc0da1e850446",
+      "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
+      "sha256": "c71cb3b31c2009d92aa6352d90e1c8740a3fc433fe12104e6546f330a5f16180",
+      "sizeBytes": 193056,
       "status": "M"
     },
     {
-      "blob": "2a5f3420fcedbbc8d3ca2c46ef55a7dfe3f0c2ed",
+      "blob": "e4e32e82ff70aa412c5c1e57b0679be98ec0ca65",
       "path": "Chummer.Tests/Presentation/DesktopInstallLinkingOutcomeMatrixTests.cs",
-      "sha256": "1c72565e666f4a6df854d8bc83165f714ebd47dbb7f8602c1eaf09d7610fdaec",
-      "sizeBytes": 27513,
-      "status": "A"
-    },
-    {
-      "blob": "1bba7654518e077d1576aebc68ccdc045a72e4bf",
-      "path": "Chummer.Tests/Presentation/DesktopInstallLinkingShellChromeTests.cs",
-      "sha256": "2b79420e6f0d6766ffd991370ae59ed3ab9b663624531a64ecdc7a63657f7d97",
-      "sizeBytes": 50138,
+      "sha256": "339876194270b0fde1a7af01e8e167abbad6bba4dc3f7bde4270dcff5af254b5",
+      "sizeBytes": 50020,
       "status": "M"
     },
     {
-      "blob": "4f6aa2b22c0a2e733b88e38f4a561888008f9b37",
+      "blob": "34bde86edfbd7f2bec71cbc21c0fe3134fc6c9c9",
       "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "ef0afd17135d8d7b5ba46c03bec4b99189a96a12097a141fbdcba9063cf25c20",
+      "sha256": "1cb2d318c5c352c79656348acffb06122de7ce7b5d3d3a630b14ef778614b6f3",
       "sizeBytes": 69811,
       "status": "M"
     },
     {
-      "blob": "9826e42bb7dce4088c5bfb69f88168bc31366be1",
+      "blob": "be1a342662fd1c5228373afdd59c7741782d4527",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "19c4ec4c2b295611a3f9cacc1f20df66ba90092057cc3831d78a71b4cc1c1895",
+      "sha256": "d2440701417056bf8eea49f7fc8f8e1440dd5754e77d9a3a8c62c76c8567f16d",
       "sizeBytes": 297159,
       "status": "M"
     },
     {
-      "blob": "58042add163b5311c69685a15f295a11bdf6b9a7",
+      "blob": "50aa00db517698f4e147f57e56013ceed93e43fe",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "2810373852b24e31daa0e9986881eed6a0c86029ddd7cdfe8e20e6b432fd09d8",
+      "sha256": "68d54be426ced16c56f19840ee12e9a7eadc895acacba6630539f2d64cf697ac",
       "sizeBytes": 66219,
       "status": "M"
     },
     {
-      "blob": "237ce5b4c8ab8df5a7a593f6856f5828774c0c72",
+      "blob": "1a44bb007fbad8434003a5794aead95720532485",
       "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "47120aa29cece3a08de6fcca31b6553166cd9995d0210822e1c6c610a4a03a48",
+      "sha256": "8cfb1382189b15e01b0f939295f01bb5cfe0eee3e8b719304539136d5122e4c6",
       "sizeBytes": 199225,
       "status": "M"
     }
   ],
-  "recipeTree": "ae8a31aad95afac8322f9e6ce22ce795eacb4e65",
+  "recipeTree": "1d36fc5aedea96b5405571fbcecdf56499172c35",
   "releaseClaim": false
 }
