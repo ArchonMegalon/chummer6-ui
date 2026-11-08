@@ -1515,6 +1515,325 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
     }
 
+    // ------------------------------------------------------------------
+    // R77 audit (8 Nov): polling-lifecycle synchronization.
+    // ------------------------------------------------------------------
+
+    [TestMethod]
+    public void Proof_reuse_test_override_cannot_extend_expired_uncertain_recovery()
+    {
+        string? previous = Environment.GetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS");
+        try
+        {
+            DesktopInstallLinkingState state = BuildAgedUncertainState();
+            Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", long.MaxValue.ToString());
+            Assert.AreEqual(DesktopRemoteCallbackRecoveryProjection.Stopped,
+                DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(state, DateTimeOffset.UtcNow),
+                "A timing override must not make an expired uncertain proof replayable.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", previous);
+        }
+    }
+
+    [TestMethod]
+    public void Projection_aged_uncertain_with_active_worker_is_inflight()
+    {
+        // Proof age alone is not evidence that the last admitted send has
+        // finished: while a poll worker is registered for the installation the
+        // projection must report InFlight, not Stopped.
+        DesktopInstallLinkingState state = BuildAgedUncertainState();
+        var polls = (System.Collections.Concurrent.ConcurrentDictionary<string, byte>)typeof(
+            DesktopInstallLinkingRuntime).GetField(
+                "RemoteCallbackPolls", BindingFlags.NonPublic | BindingFlags.Static)!
+            .GetValue(null)!;
+
+        Assert.AreEqual(
+            DesktopRemoteCallbackRecoveryProjection.Stopped,
+            DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(state, DateTimeOffset.UtcNow),
+            "precondition: no worker registered");
+
+        try
+        {
+            Assert.IsTrue(polls.TryAdd(state.InstallationId, 0), "worker registration failed");
+            Assert.AreEqual(
+                DesktopRemoteCallbackRecoveryProjection.InFlight,
+                DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(state, DateTimeOffset.UtcNow),
+                "an admitted in-flight send must not be classified as stopped");
+        }
+        finally
+        {
+            polls.TryRemove(state.InstallationId, out _);
+        }
+    }
+
+    [TestMethod]
+    public async Task Inflight_completed_response_applies_after_proof_age_boundary()
+    {
+        // The audit's exact regression: the poll worker admits a request, the
+        // Hub holds the response body across the proof-reuse boundary, and the
+        // response is a valid completed result. The runtime must still
+        // validate and apply it: proof age gates NEW sends, never the outcome
+        // of an admitted one.
+        Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", "1");
+        try
+        {
+            using InflightResponseFixture fixture = new(respondPending: false, holdMs: 2000);
+            DesktopInstallLinkingState prepared = fixture.Prepared;
+            fixture.RegisterWorker();
+
+            MethodInfo pollMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                    "PollRemoteBrowserCallbackAsync", BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new AssertFailedException("poll loop missing");
+            Task pollTask = (Task)pollMethod.Invoke(null, [prepared, CancellationToken.None])!;
+            await pollTask;
+
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState(prepared.HeadId);
+            Assert.AreEqual("claimed", finalState.Status, "the admitted response must complete the operation");
+            Assert.AreEqual("grant-recovered-1", finalState.GrantId);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", null);
+        }
+    }
+
+    [TestMethod]
+    public async Task Inflight_definitive_pending_clears_uncertainty_and_continues()
+    {
+        // A delayed definitive pending (202) response: the runtime clears the
+        // uncertain flag and continues checking; the worker stays registered.
+        Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", "1");
+        try
+        {
+            using InflightResponseFixture fixture = new(respondPending: true, holdMs: 1500);
+            DesktopInstallLinkingState prepared = fixture.Prepared;
+            fixture.RegisterWorker();
+
+            MethodInfo pollMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                    "PollRemoteBrowserCallbackAsync", BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new AssertFailedException("poll loop missing");
+            using CancellationTokenSource stop = new();
+            Task pollTask = (Task)pollMethod.Invoke(null, [prepared, stop.Token])!;
+            try
+            {
+                for (int i = 0; i < 240 && LoadUncertaintyFor(prepared.HeadId); i++)
+                {
+                    await Task.Delay(25);
+                }
+                Assert.IsFalse(LoadUncertaintyFor(prepared.HeadId),
+                    "a definitive pending response must clear the uncertain flag");
+                DesktopInstallLinkingState now = DesktopInstallLinkingRuntime.LoadOrCreateState(prepared.HeadId);
+                Assert.IsFalse(DesktopInstallLinkingRuntime.IsClaimed(now));
+                Assert.IsTrue(DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(prepared.InstallationId),
+                    "the worker must still be registered while it continues checking");
+            }
+            finally
+            {
+                stop.Cancel();
+                await SafeAwait(pollTask);
+            }
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", null);
+        }
+    }
+
+    private static async Task SafeAwait(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException
+            or SocketException or HttpRequestException or IOException)
+        {
+        }
+    }
+
+    private static bool LoadUncertaintyFor(string headId)
+        => DesktopInstallLinkingRuntime.LoadOrCreateState(headId).BrowserApprovalUncertain;
+
+    /// <summary>
+    /// Loopback Hub fixture for in-flight timing: the response status line is
+    /// sent immediately (request admitted) but the BODY is withheld for
+    /// <c>holdMs</c>, so the response stays in flight across the proof-reuse
+    /// boundary (overridden to 1s in the tests) without multi-minute
+    /// wall-clock waits.
+    /// </summary>
+    private sealed class InflightResponseFixture : IDisposable
+    {
+        private readonly Socket _listener;
+        private readonly string _stateRoot;
+        private readonly string _priorStateRoot;
+        private readonly string _priorApiBase;
+        private readonly int _holdMs;
+        private readonly bool _respondPending;
+        private Task? _listenerTask;
+
+        public DesktopInstallLinkingState Prepared { get; }
+
+        public InflightResponseFixture(bool respondPending, int holdMs)
+        {
+            _respondPending = respondPending;
+            _holdMs = holdMs;
+            _priorStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT") ?? "";
+            _priorApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL") ?? "";
+            _stateRoot = Path.Combine(Path.GetTempPath(), "chummer-inflight-tests", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_stateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", _stateRoot);
+            Environment.SetEnvironmentVariable(
+                "CHUMMER_INSTALL_LINK_OBSERVATION_LIFETIME_SECONDS", "8");
+            using RSA installationKey = RSA.Create(2048);
+            DesktopInstallLinkingState initial = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Prepared = PersistInstallLinkingState(initial with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            _listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            _listener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            _listener.Listen(16);
+            string apiBase = $"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndPoint!).Port}/";
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+
+            string publicKey = Convert.ToBase64String(installationKey.ExportSubjectPublicKeyInfo());
+            string completedBody = BuildRecoveryGrantResponse(
+                Prepared.InstallationId,
+                Prepared.HeadId,
+                Prepared.Platform,
+                Prepared.Arch,
+                Prepared.ApplicationVersion,
+                Prepared.ChannelId)
+                .Replace("%PublicKey%", publicKey)
+                .Replace("%IssuedAt%", DateTimeOffset.UtcNow.AddDays(-1).ToString("o"))
+                .Replace("%ExpiresAt%", DateTimeOffset.UtcNow.AddDays(30).ToString("o"));
+            string pendingBody = "{\"pending\":true}";
+
+            _listenerTask = Task.Run(async () =>
+            {
+                while (true)
+                {
+                    Socket connection = await _listener.AcceptAsync();
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            using Socket socket = connection;
+                            byte[] buffer = new byte[65536];
+                            await socket.ReceiveAsync(buffer, SocketFlags.None);
+                            byte[] payload = Encoding.UTF8.GetBytes(
+                                _respondPending ? pendingBody : completedBody);
+                            string response = "HTTP/1.1 " + (_respondPending ? "202 Pending" : "200 OK") + "\r\n" +
+                                              "Content-Type: application/json\r\n" +
+                                              "Content-Length: " + payload.Length + "\r\n" +
+                                              "Connection: close\r\n\r\n";
+                            await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                            // The BODY is withheld: the request is admitted,
+                            // the response in flight across the boundary.
+                            await Task.Delay(_holdMs);
+                            await socket.SendAsync(payload, SocketFlags.None);
+                        }
+                        catch (Exception ex) when (ex is ObjectDisposedException or SocketException
+                            or OperationCanceledException or IOException)
+                        {
+                        }
+                    });
+                }
+            });
+        }
+
+        /// <summary>Registers a poll-worker liveness entry for the fixture's installation.</summary>
+        public void RegisterWorker()
+        {
+            var polls = (System.Collections.Concurrent.ConcurrentDictionary<string, byte>)typeof(
+                DesktopInstallLinkingRuntime).GetField(
+                    "RemoteCallbackPolls", BindingFlags.NonPublic | BindingFlags.Static)!
+                .GetValue(null)!;
+            Assert.IsTrue(polls.TryAdd(Prepared.InstallationId, 0), "worker registration failed");
+        }
+
+        public void Dispose()
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", _priorStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", _priorApiBase);
+            Environment.SetEnvironmentVariable(
+                "CHUMMER_INSTALL_LINK_OBSERVATION_LIFETIME_SECONDS", null);
+            try { _listener.Dispose(); _listenerTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+            try { if (Directory.Exists(_stateRoot)) Directory.Delete(_stateRoot, recursive: true); } catch { }
+        }
+    }
+
+    private static DesktopInstallLinkingState BuildAgedUncertainState()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), "chummer-inflight-unit", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            DesktopInstallLinkingState prepared = PersistInstallLinkingState(created with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null
+            });
+            object?[] prepareArgs = [prepared, null, null];
+            MethodInfo prepare = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                    "TryPrepareBrowserApproval", BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("TryPrepareBrowserApproval missing");
+            Assert.AreEqual(true, prepare.Invoke(null, prepareArgs));
+            prepared = (DesktopInstallLinkingState)prepareArgs[1]!;
+            object? retained = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                    "ReadRetainedRemoteCallbackRequest", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, [prepared]);
+            Assert.IsNotNull(retained);
+            object?[] retainArgs = [prepared, retained, true, false, null];
+            MethodInfo retain = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                    "TryRetainRemoteCallbackRequest", BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("TryRetainRemoteCallbackRequest missing");
+            Assert.AreEqual(true, retain.Invoke(null, retainArgs));
+            DesktopInstallLinkingState retainedState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(retainedState.BrowserApprovalRequest),
+                "the retained request must be persisted before aging");
+
+            // Age the retained proof beyond the reuse window (same JSON rewrite
+            // the matrix suite uses): IssuedAtUnixSeconds far in the past.
+            System.Text.Json.Nodes.JsonObject request =
+                System.Text.Json.Nodes.JsonNode.Parse(retainedState.BrowserApprovalRequest)!.AsObject();
+            request["IssuedAtUnixSeconds"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 10_000;
+            DesktopInstallLinkingState aged = retainedState with
+            {
+                BrowserApprovalRequest = request.ToJsonString(),
+                BrowserApprovalUncertain = true,
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            };
+            PersistInstallLinkingState(aged);
+            object? retainedCheck = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                    "ReadRetainedRemoteCallbackRequest", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, [aged]);
+            Assert.IsNotNull(retainedCheck, "aged/uncertain fixture must keep a readable retained request");
+            return aged;
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            try { if (Directory.Exists(tempRoot)) Directory.Delete(tempRoot, recursive: true); } catch { }
+        }
+    }
+
     private static string BuildRecoveryGrantResponse(
         string installationId,
         string headId,
