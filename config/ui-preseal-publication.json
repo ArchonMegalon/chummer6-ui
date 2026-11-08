@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "cad71cc4842059c3b6fdd5445d42c51b62bb8686",
-  "baseTree": "307af5ae4ba92f841a9918f9dc1d62818bf08ecb",
+  "baseCommit": "aab03a996a2a93f407070321a0231ec67b52d7f4",
+  "baseTree": "2f55206359b6f2b4ef6cf83da2a552cfacba59e8",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,48 +44,48 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "bb1694f6cfcfc170516cfcdbf6e376e01d104493",
+      "blob": "2126a73efa1af52483ae401a3ac37011b24d8ca4",
       "path": "Chummer.Avalonia/DesktopDevicesAccessWindow.cs",
-      "sha256": "6ef7b81fd8e9838b7e13e02896f558d97e467864c029d54f28be4cb1db2bcdca",
-      "sizeBytes": 29387,
+      "sha256": "8cd4ac279bafdb001b5473cfa7ddc86a4cdc446410088b55d7d4a9794af93159",
+      "sizeBytes": 29440,
       "status": "M"
     },
     {
-      "blob": "67d38f1550dcd2e2ab5e9a69c1d2ba0406f329b7",
+      "blob": "9f296e67352dcb58df83de6f34ec4b9d646de716",
       "path": "Chummer.Avalonia/DesktopInstallLinkingWindow.cs",
-      "sha256": "fcd1e97e8439cafa37c4b99670b56a8869b1af05b78a11ff1dab66be6e7ec317",
-      "sizeBytes": 56699,
+      "sha256": "c7ceec41466f13ff7716fd96a336da103944e12d5cf235bb73cd71065c63d58b",
+      "sizeBytes": 60336,
       "status": "M"
     },
     {
-      "blob": "d99f2e4f5781345186245c47fd5161b135a3c054",
+      "blob": "2891907f61283a84161217b4f62a53343e0931ef",
       "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
-      "sha256": "482eb54d83183d56706c7b90589708bd165f1c962429d11c883ceea00cac5c33",
-      "sizeBytes": 172482,
+      "sha256": "0260cc75817dd4347f9252fa8dbacfc0d511d09e3d5ce80523eacbbcf048a3d9",
+      "sizeBytes": 175984,
       "status": "M"
     },
     {
-      "blob": "6569d3d93ccad2953ca71992a487e89c15b32f80",
+      "blob": "797a2198aa6e3c26742ebfc7daa2116b5b90ce86",
       "path": "Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs",
-      "sha256": "16d81072f98f0d45c370181bdb194d78f9a6fedfd9f4c10ae826632e0bc19ecf",
-      "sizeBytes": 294755,
+      "sha256": "a1fa147234772cdbbbaed52ae77a5b13f469cc04bad1f079664895d8eea28a4f",
+      "sizeBytes": 297084,
       "status": "M"
     },
     {
-      "blob": "3d8c8aa66028284e6ac57c1ff071a04fb6d55a96",
+      "blob": "9e23be1c479215055d7c65ffc249801af79979b1",
+      "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
+      "sha256": "06dfbedb01bf51f9166f57566fe02c0f9df43e777cfafd9e314f0d8497b88d7c",
+      "sizeBytes": 177805,
+      "status": "M"
+    },
+    {
+      "blob": "b79c0f79f583c04e5b8832e5a2e0e760f4e06895",
       "path": "Chummer.Tests/Presentation/DesktopInstallLinkingShellChromeTests.cs",
-      "sha256": "a5e1d6e468067a4215ac58eb8cf83b37bed2c71d7e2ce1f5d214506f1245b3ae",
-      "sizeBytes": 43737,
-      "status": "M"
-    },
-    {
-      "blob": "2d1b7478835374c7a889479673c90fbf5ead5cf3",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "5c01a7d9e238ad38b67e98a3917aa2578ee82bd25f1139ad7daa5f86a20535b9",
-      "sizeBytes": 65792,
+      "sha256": "cad73c43a7b65a001ef7ae219a6346b5726e4306c2eb9ba9a2319d24217b2476",
+      "sizeBytes": 48011,
       "status": "M"
     }
   ],
-  "recipeTree": "72042ae89ab3bf204871bdfd98553a4e9e38749d",
+  "recipeTree": "c94e42367acb4913ea1e688f29a40055ceb7cb6d",
   "releaseClaim": false
 }
