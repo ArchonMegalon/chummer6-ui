@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Chummer.Hub.Registry.Contracts.InstallLinking;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Contracts.Characters;
@@ -535,7 +536,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
             "missing-approved-key",
             "unusable-grant-status",
             "expired-grant",
-            "future-issued-grant"
+            "future-issued-grant",
+            "reversed-interval-grant",
+            "zero-length-interval-grant"
         ];
 
         using RSA installationKey = RSA.Create(2048);
@@ -550,18 +553,20 @@ public sealed class DesktopInstallLinkingRuntimeTests
         int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
         string apiBase = $"http://127.0.0.1:{port}/";
 
+        List<Task> handlerTasks = new();
+        using var serverCancellation = new CancellationTokenSource();
         Task listenerTask = Task.Run(async () =>
         {
-            byte[] buffer = new byte[65536];
             while (true)
             {
-                Socket connection = await listenerSocket.AcceptAsync();
-                _ = Task.Run(async () =>
+                Socket connection = await listenerSocket.AcceptAsync(serverCancellation.Token);
+                Task handler = Task.Run(async () =>
                 {
                     try
                     {
                         using Socket socket = connection;
-                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        byte[] buffer = new byte[65536];
+                        int read = await socket.ReceiveAsync(buffer.AsMemory(), SocketFlags.None, serverCancellation.Token);
                         string requestText = Encoding.ASCII.GetString(buffer, 0, read);
                         int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
                         string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
@@ -603,7 +608,10 @@ public sealed class DesktopInstallLinkingRuntimeTests
                                           "Content-Type: application/json\r\n" +
                                           "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
                                           "Connection: close\r\n\r\n" + responseBody;
-                        await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                        await socket.SendAsync(Encoding.ASCII.GetBytes(response).AsMemory(), SocketFlags.None, serverCancellation.Token);
+                    }
+                    catch (OperationCanceledException) when (serverCancellation.IsCancellationRequested)
+                    {
                     }
                     catch (ObjectDisposedException)
                     {
@@ -612,6 +620,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
                     {
                     }
                 });
+                handlerTasks.Add(handler);
             }
         });
 
@@ -664,16 +673,24 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
-            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            serverCancellation.Cancel();
+            listenerSocket.Dispose();
             try
             {
-                listenerSocket.Dispose();
                 await listenerTask;
             }
             catch (Exception)
             {
             }
+            try
+            {
+                await Task.WhenAll(handlerTasks);
+            }
+            catch (Exception)
+            {
+            }
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
             if (Directory.Exists(tempBase))
             {
                 Directory.Delete(tempBase, recursive: true);
@@ -692,6 +709,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
         string channel,
         string mutation)
     {
+        // One captured timestamp shared by both fields of the zero-length case
+        // (separate UtcNow calls would drift and create a tiny valid interval).
+        DateTimeOffset zeroLengthBoundary = DateTimeOffset.UtcNow.AddMinutes(4);
         string json = BuildRecoveryGrantResponse(installationId, headId, platform, arch, version, channel);
         switch (mutation)
         {
@@ -744,6 +764,36 @@ public sealed class DesktopInstallLinkingRuntimeTests
                     json,
                     "\"issuedAtUtc\": \"[^\"]*\"",
                     m => "\"issuedAtUtc\": \"" + DateTimeOffset.UtcNow.AddMinutes(30).ToString("o") + "\"");
+            case "reversed-interval-grant":
+                // Both timestamps pass the individual bounds (not expired, within
+                // the clock tolerance) but expiry precedes issuance. Only the
+                // interval-ordering check can catch this response.
+                return System.Text.RegularExpressions.Regex.Replace(
+                    json,
+                    "\"issuedAtUtc\": \"[^\"]*\"",
+                    m => "\"issuedAtUtc\": \"" + DateTimeOffset.UtcNow.AddMinutes(4).ToString("o") + "\"")
+                    is string withIssued
+                    ? System.Text.RegularExpressions.Regex.Replace(
+                        withIssued,
+                        "\"expiresAtUtc\": \"[^\"]*\"",
+                        m => "\"expiresAtUtc\": \"" + DateTimeOffset.UtcNow.AddMinutes(2).ToString("o") + "\"")
+                    : throw new InvalidOperationException();
+            case "zero-length-interval-grant":
+                // A zero-length validity interval (expiry == issuance) is not a
+                // positive lifetime and must be rejected. The SAME captured
+                // timestamp is written to both fields — two separate UtcNow
+                // calls would drift by milliseconds and produce a tiny valid
+                // interval instead.
+                return System.Text.RegularExpressions.Regex.Replace(
+                    json,
+                    "\"issuedAtUtc\": \"[^\"]*\"",
+                    m => "\"issuedAtUtc\": \"" + zeroLengthBoundary.ToString("o") + "\"")
+                    is string withIssuedZero
+                    ? System.Text.RegularExpressions.Regex.Replace(
+                        withIssuedZero,
+                        "\"expiresAtUtc\": \"[^\"]*\"",
+                        m => "\"expiresAtUtc\": \"" + zeroLengthBoundary.ToString("o") + "\"")
+                    : throw new InvalidOperationException();
             default:
                 throw new AssertFailedException("Unknown mutation: " + mutation);
         }
@@ -897,6 +947,8 @@ public sealed class DesktopInstallLinkingRuntimeTests
         List<string> bodies = new();
         DesktopInstallLinkingState? fixtureSource = null;
 
+        List<Task> handlerTasks = new();
+        using var serverCancellation = new CancellationTokenSource();
         using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
         listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
         listenerSocket.Listen(16);
@@ -905,16 +957,16 @@ public sealed class DesktopInstallLinkingRuntimeTests
 
         Task listenerTask = Task.Run(async () =>
         {
-            byte[] buffer = new byte[65536];
             while (true)
             {
-                Socket connection = await listenerSocket.AcceptAsync();
-                _ = Task.Run(async () =>
+                Socket connection = await listenerSocket.AcceptAsync(serverCancellation.Token);
+                Task handler = Task.Run(async () =>
                 {
                     try
                     {
                         using Socket socket = connection;
-                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        byte[] buffer = new byte[65536];
+                        int read = await socket.ReceiveAsync(buffer.AsMemory(), SocketFlags.None, serverCancellation.Token);
                         string requestText = Encoding.ASCII.GetString(buffer, 0, read);
                         int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
                         string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
@@ -936,7 +988,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
                                 source.ApplicationVersion,
                                 source.ChannelId);
                         }
-                                                string responsePublicKey = "unused";
+                        string responsePublicKey = "unused";
                         if (source is not null)
                         {
                             // The state stores the key as PEM; the wire format is
@@ -945,7 +997,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
                             fixtureKey.ImportFromPem(source.PublicKey);
                             responsePublicKey = Convert.ToBase64String(fixtureKey.ExportSubjectPublicKeyInfo());
                         }
-responseBody = responseBody
+                        responseBody = responseBody
                             .Replace("%PublicKey%", responsePublicKey)
                             .Replace("%IssuedAt%", DateTimeOffset.UtcNow.AddDays(-1).ToString("o"))
                             .Replace("%ExpiresAt%", DateTimeOffset.UtcNow.AddDays(30).ToString("o"));
@@ -953,7 +1005,10 @@ responseBody = responseBody
                                           "Content-Type: application/json\r\n" +
                                           "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
                                           "Connection: close\r\n\r\n" + responseBody;
-                        await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                        await socket.SendAsync(Encoding.ASCII.GetBytes(response).AsMemory(), SocketFlags.None, serverCancellation.Token);
+                    }
+                    catch (OperationCanceledException) when (serverCancellation.IsCancellationRequested)
+                    {
                     }
                     catch (ObjectDisposedException)
                     {
@@ -962,6 +1017,7 @@ responseBody = responseBody
                     {
                     }
                 });
+                handlerTasks.Add(handler);
             }
         });
 
@@ -1034,13 +1090,12 @@ responseBody = responseBody
         }
         finally
         {
-            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
-            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
-            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
-            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
-            // Test isolation: observe the listener loop to completion BEFORE the
-            // environment is restored and the temp directory is removed; a discarded
-            // task could otherwise depend on timing in later tests.
+            // Test isolation (audit 2026-11-08): cancel test-owned asynchronous work,
+            // stop accepting connections, AWAIT the listener and every accepted
+            // connection handler, and only then restore process-wide state and remove
+            // temporary files. Restoring shared configuration while a handler or poll
+            // completion path is still running makes later tests timing-dependent.
+            serverCancellation.Cancel();
             listenerSocket.Dispose();
             try
             {
@@ -1049,6 +1104,17 @@ responseBody = responseBody
             catch (Exception)
             {
             }
+            try
+            {
+                await Task.WhenAll(handlerTasks);
+            }
+            catch (Exception)
+            {
+            }
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
             if (Directory.Exists(root))
             {
                 Directory.Delete(root, true);
@@ -1566,6 +1632,37 @@ responseBody = responseBody
             Assert.IsTrue(valueEnd > valueStart, "The redemption fixture must terminate the issuedAtUtc value.");
             return body[..valueStart] + DateTimeOffset.UtcNow.AddHours(2).ToString("o") + body[valueEnd..];
         }
+
+        // Both timestamps pass the individual bounds, but expiry precedes
+        // issuance. Only the interval-ordering check can catch this response.
+        public string WithReversedIntervalGrant()
+        {
+            string body = BuildConsistentResponse();
+            body = ReplaceLastTimestamp(body, "issuedAtUtc", DateTimeOffset.UtcNow.AddMinutes(4));
+            return ReplaceLastTimestamp(body, "expiresAtUtc", DateTimeOffset.UtcNow.AddMinutes(2));
+        }
+
+        // A zero-length validity interval (expiry == issuance) is not a
+        // positive lifetime and must be rejected. The SAME captured timestamp
+        // is written to both fields; separate UtcNow calls would drift by
+        // milliseconds and produce a tiny valid interval instead.
+        public string WithZeroLengthIntervalGrant()
+        {
+            string body = BuildConsistentResponse();
+            DateTimeOffset boundary = DateTimeOffset.UtcNow.AddMinutes(4);
+            body = ReplaceLastTimestamp(body, "issuedAtUtc", boundary);
+            return ReplaceLastTimestamp(body, "expiresAtUtc", boundary);
+        }
+
+        private static string ReplaceLastTimestamp(string body, string fieldName, DateTimeOffset value)
+        {
+            int marker = body.LastIndexOf("\"" + fieldName + "\": \"", StringComparison.Ordinal);
+            Assert.IsTrue(marker >= 0, "The redemption fixture must contain a " + fieldName + " value.");
+            int valueStart = marker + ("\"" + fieldName + "\": \"").Length;
+            int valueEnd = body.IndexOf('"', valueStart);
+            Assert.IsTrue(valueEnd > valueStart, "The redemption fixture must terminate the " + fieldName + " value.");
+            return body[..valueStart] + value.ToString("o") + body[valueEnd..];
+        }
     }
 
     [TestMethod]
@@ -1582,6 +1679,8 @@ responseBody = responseBody
             ("unusable-grant-status", fixture => fixture.WithUnusableGrantStatus()),
             ("expired-grant", fixture => fixture.WithExpiredGrant()),
             ("future-issued-grant", fixture => fixture.WithFutureIssuedGrant()),
+            ("reversed-interval-grant", fixture => fixture.WithReversedIntervalGrant()),
+            ("zero-length-interval-grant", fixture => fixture.WithZeroLengthIntervalGrant()),
         ];
 
         foreach ((string name, Func<RedeemFixture, string> mutate) in cases)
@@ -1756,6 +1855,71 @@ responseBody = responseBody
         byte[] body = new byte[contentLength];
         await stream.ReadExactlyAsync(body.AsMemory(), cancellationToken);
         return Encoding.UTF8.GetString(body);
+    }
+
+    [TestMethod]
+    public void IsGrantTimeValid_enforces_the_full_grant_interval_contract()
+    {
+        // Audit 2026-11-08: grant timestamps were individually bounded but their
+        // interval was never validated. Deterministic validation time, no sockets.
+        DateTimeOffset now = new(2026, 11, 8, 12, 0, 0, TimeSpan.Zero);
+        MethodInfo isValid = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "IsGrantTimeValid", BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new AssertFailedException("The shared grant-time helper should exist.");
+
+        bool Validate(string? issued, string? expires)
+            => (bool)isValid.Invoke(null,
+            [
+                issued is null ? null : (DateTimeOffset?)DateTimeOffset.Parse(issued, System.Globalization.CultureInfo.InvariantCulture),
+                expires is null ? null : (DateTimeOffset?)DateTimeOffset.Parse(expires, System.Globalization.CultureInfo.InvariantCulture),
+                now
+            ])!;
+
+        // Valid interval and currently usable.
+        Assert.IsTrue(Validate("2026-11-08T11:00:00.0000000+00:00", "2026-12-08T12:00:00.0000000+00:00"),
+            "A usable grant with a positive interval must be accepted.");
+        // Already expired.
+        Assert.IsFalse(Validate("2026-11-08T11:00:00.0000000+00:00", "2026-11-08T11:59:00.0000000+00:00"),
+            "An already-expired grant must be rejected.");
+        // Issuance beyond the five-minute clock tolerance.
+        Assert.IsFalse(Validate("2026-11-08T12:10:00.0000000+00:00", "2026-12-08T12:00:00.0000000+00:00"),
+            "A future-issued grant beyond the clock tolerance must be rejected.");
+        // Expiry before issuance, both within the current allowances.
+        Assert.IsFalse(Validate("2026-11-08T12:04:00.0000000+00:00", "2026-11-08T12:02:00.0000000+00:00"),
+            "A reversed validity interval must be rejected even when both bounds pass individually.");
+        // Zero-length validity interval: no positive lifetime.
+        Assert.IsFalse(Validate("2026-11-08T12:04:00.0000000+00:00", "2026-11-08T12:04:00.0000000+00:00"),
+            "A zero-length validity interval must be rejected.");
+        // Missing timestamps keep the optional-field contract.
+        Assert.IsTrue(Validate(null, null), "Missing timestamps are optional and acceptable.");
+        Assert.IsTrue(Validate("2026-11-08T11:00:00.0000000+00:00", null), "Issuance-only grants remain acceptable.");
+        Assert.IsTrue(Validate(null, "2026-12-08T12:00:00.0000000+00:00"), "Expiry-only grants remain acceptable.");
+        // Boundary: expiry exactly at the validation time is expired.
+        Assert.IsFalse(Validate("2026-11-08T11:00:00.0000000+00:00", "2026-11-08T12:00:00.0000000+00:00"),
+            "Expiry exactly at the validation time must be rejected.");
+        // Boundary: issuance exactly at the tolerance edge is acceptable.
+        Assert.IsTrue(Validate("2026-11-08T12:05:00.0000000+00:00", "2026-12-08T12:00:00.0000000+00:00"),
+            "Issuance exactly at the five-minute tolerance edge must be accepted.");
+    }
+
+    [TestMethod]
+    public void Redeemed_grant_validation_uses_the_supplied_time()
+    {
+        DateTimeOffset issued = DateTimeOffset.UtcNow.AddMinutes(-1);
+        DateTimeOffset expires = issued.AddMinutes(11);
+        var fixture = new RedeemFixture("ins-clock", "head-clock", "1.0", "internal",
+            "windows", "x64", "synthetic-key", "{}");
+        JsonObject response = JsonNode.Parse(fixture.BuildConsistentResponse(expires))!.AsObject();
+        response["grant"]!["issuedAtUtc"] = issued.ToString("o");
+        RedeemInstallClaimResponseDto accepted = JsonSerializer.Deserialize<RedeemInstallClaimResponseDto>(
+            response.ToJsonString(), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        MethodInfo validate = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "IsConsistentRedeemedClaimResponse", BindingFlags.NonPublic | BindingFlags.Static)!;
+        bool At(DateTimeOffset time) => (bool)validate.Invoke(null,
+            [accepted, fixture.InstallationId, fixture.HeadId, fixture.Version, fixture.Channel,
+                fixture.Platform, fixture.Arch, fixture.PublicKey, time])!;
+        Assert.IsTrue(At(issued.AddMinutes(1)), "The consistent grant must be usable before expiry.");
+        Assert.IsFalse(At(expires), "The redemption path must use its supplied time, not read the clock again.");
     }
 
     [TestMethod]
