@@ -813,6 +813,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
                 StartClaimPolling("Waiting for browser callback");
             }
+            else if (DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(_state))
+            {
+                _browserFallbackVisible = false;
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_pending", _language));
+                StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_detail", _language));
+            }
             else
             {
                 _state = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
@@ -1086,7 +1092,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _followThroughButton.Content = claimed
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
-        _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language);
+        _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language, DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(_state));
         _followThroughButton.IsVisible = claimed;
         _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
         _unlinkButton.IsVisible = claimed;
@@ -1198,11 +1204,16 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.login_url_copied", language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", language);
 
-    internal static string BuildAccountButtonLabel(bool claimed, bool browserFallbackVisible, string language)
+    internal static string BuildAccountButtonLabel(bool claimed, bool browserFallbackVisible, string language, bool recoveringRetainedApproval = false)
     {
         if (claimed)
         {
             return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", language);
+        }
+
+        if (recoveringRetainedApproval)
+        {
+            return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.check_previous_approval", language);
         }
 
         return browserFallbackVisible

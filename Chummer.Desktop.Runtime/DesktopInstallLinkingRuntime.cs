@@ -1209,6 +1209,27 @@ public static class DesktopInstallLinkingRuntime
         => string.Equals(state.Status, ClaimedStatus, StringComparison.OrdinalIgnoreCase)
            && !string.IsNullOrWhiteSpace(state.GrantToken);
 
+    /// <summary>
+    /// True when this installation still holds a recoverable, non-terminal browser
+    /// approval from an earlier session or version. The GUI must accompany that
+    /// recovery with a state-specific message ("checking the previous approval")
+    /// instead of offering a manual browser fallback that has no URL to show.
+    /// </summary>
+    public static bool IsRecoveringRetainedApproval(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (IsClaimed(state) || state.BrowserApprovalTerminal)
+            return false;
+        try
+        {
+            return ReadRetainedRemoteCallbackRequest(state) is not null;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or JsonException)
+        {
+            return false;
+        }
+    }
+
     public static OwnerScope ResolveOwnerScope(DesktopInstallLinkingState state)
     {
         ArgumentNullException.ThrowIfNull(state);
