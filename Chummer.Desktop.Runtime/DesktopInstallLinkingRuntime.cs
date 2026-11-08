@@ -37,6 +37,32 @@ public sealed record DesktopStartupAccountLaunchResult(
     string ResourceId,
     string Source);
 
+/// <summary>
+/// Projection of the remote browser-callback recovery state. Distinguishes an
+/// operation that is actively being recovered (its proof is still inside the
+/// reuse window) from one the runtime has deliberately stopped (the proof
+/// expired while its outcome remained unknown) and from a conclusive terminal
+/// rejection. The UI must present these differently: "checking the previous
+/// approval" is only true while the recovery is actually running.
+/// </summary>
+public enum DesktopRemoteCallbackRecoveryProjection
+{
+    /// <summary>No retained approval is held; nothing to recover.</summary>
+    None,
+
+    /// <summary>The retained approval is being recovered; its proof is still replayable.</summary>
+    Running,
+
+    /// <summary>The retained approval's proof expired while its outcome was unknown; automatic recovery has stopped and must not be described as running.</summary>
+    Stopped,
+
+    /// <summary>The retained approval reached a conclusive terminal rejection/revocation.</summary>
+    Terminal,
+
+    /// <summary>The installation is already linked.</summary>
+    Linked
+}
+
 public sealed record DesktopInstallLinkingState(
     string InstallationId,
     string HeadId,
@@ -1228,6 +1254,60 @@ public static class DesktopInstallLinkingRuntime
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Projects the current retained-approval situation onto a UI-facing status.
+    /// "Running" requires the retained request's proof to still be inside the
+    /// reuse window (the poll loop can replay it); an uncertain request whose
+    /// proof has aged out has been deliberately stopped by the runtime and must
+    /// not be presented as an active check. A terminal flag always wins.
+    /// </summary>
+    public static DesktopRemoteCallbackRecoveryProjection DescribeRemoteCallbackRecovery(
+        DesktopInstallLinkingState state)
+        => DescribeRemoteCallbackRecovery(state, DateTimeOffset.UtcNow);
+
+    /// <summary>Testable overload with an explicit projection time.</summary>
+    public static DesktopRemoteCallbackRecoveryProjection DescribeRemoteCallbackRecovery(
+        DesktopInstallLinkingState state,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (IsClaimed(state))
+        {
+            return DesktopRemoteCallbackRecoveryProjection.Linked;
+        }
+
+        if (state.BrowserApprovalTerminal)
+        {
+            return DesktopRemoteCallbackRecoveryProjection.Terminal;
+        }
+
+        RemoteCallbackPollRequest? request;
+        try
+        {
+            request = ReadRetainedRemoteCallbackRequest(state);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or JsonException)
+        {
+            return DesktopRemoteCallbackRecoveryProjection.None;
+        }
+
+        if (request is null)
+        {
+            return DesktopRemoteCallbackRecoveryProjection.None;
+        }
+
+        // Mirror of ResolveRemoteCallbackProofReuseDecision: an uncertain send
+        // whose proof has aged out can no longer be replayed, so the poll loop
+        // stops with an explicit recovery requirement instead of replaying it —
+        // the UI must reflect that stop, not an active check. A request whose
+        // outcome was definitively received (pending acknowledged) is re-signed
+        // by the loop instead, so recovery genuinely continues.
+        bool proofAgedOut = now.ToUnixTimeSeconds() - request.IssuedAtUnixSeconds >= RemoteCallbackProofReuseSeconds;
+        return state.BrowserApprovalUncertain && proofAgedOut
+            ? DesktopRemoteCallbackRecoveryProjection.Stopped
+            : DesktopRemoteCallbackRecoveryProjection.Running;
     }
 
     public static OwnerScope ResolveOwnerScope(DesktopInstallLinkingState state)

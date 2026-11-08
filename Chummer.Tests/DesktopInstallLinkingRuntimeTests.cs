@@ -854,69 +854,117 @@ public sealed class DesktopInstallLinkingRuntimeTests
 
             // The fake Hub answers pending (202) on every poll; the headless wait loop
             // keeps observing the durable state and eventually times out gracefully.
-            _ = Task.Run(async () =>
+            // All test-owned work is tracked and awaited before shared state is restored
+            // (audit R75: no discarded listener/handler tasks outliving env restore).
+            List<Task> handlerTasks = [];
+            using CancellationTokenSource listenerCts = new();
+            Task listenerTask = Task.Run(async () =>
             {
                 byte[] buffer = new byte[65536];
-                while (true)
+                try
                 {
-                    Socket connection = await listenerSocket.AcceptAsync();
-                    _ = Task.Run(async () =>
+                    while (!listenerCts.Token.IsCancellationRequested)
                     {
-                        try
+                        Socket connection = await listenerSocket.AcceptAsync(listenerCts.Token);
+                        handlerTasks.Add(Task.Run(async () =>
                         {
-                            using Socket socket = connection;
-                            int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
-                            string requestText = Encoding.ASCII.GetString(buffer, 0, read);
-                            int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
-                            string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
-                            // The fake Hub answers 202 pending; the headless wait loop
-                            // then observes the state flip and exits successfully.
-                            string responseBody = "{}";
-                            string response = "HTTP/1.1 202 Pending\r\n" +
-                                              "Content-Type: application/json\r\n" +
-                                              "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
-                                              "Connection: close\r\n\r\n" + responseBody;
-                            await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
-                        }
-                        catch (ObjectDisposedException)
-                        {
-                        }
-                        catch (SocketException)
-                        {
-                        }
-                    });
+                            try
+                            {
+                                using Socket socket = connection;
+                                int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                                string requestText = Encoding.ASCII.GetString(buffer, 0, read);
+                                int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                                string body = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                                // The fake Hub answers 202 pending; the headless wait loop
+                                // then observes the state flip and exits successfully.
+                                string responseBody = "{}";
+                                string response = "HTTP/1.1 202 Pending\r\n" +
+                                                  "Content-Type: application/json\r\n" +
+                                                  "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                                  "Connection: close\r\n\r\n" + responseBody;
+                                await socket.SendAsync(Encoding.ASCII.GetBytes(response), SocketFlags.None);
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                            }
+                            catch (SocketException)
+                            {
+                            }
+                            catch (OperationCanceledException)
+                            {
+                            }
+                        }));
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+                catch (SocketException)
+                {
                 }
             });
 
-            DesktopInstallLinkingStartupContext context = new(
-                State: uncertain,
-                ClaimResult: null,
-                StartupClaimCode: null,
-                ShouldPrompt: true,
-                PromptReason: "claim_required");
+            try
+            {
+                DesktopInstallLinkingStartupContext context = new(
+                    State: uncertain,
+                    ClaimResult: null,
+                    StartupClaimCode: null,
+                    ShouldPrompt: true,
+                    PromptReason: "claim_required");
 
-            int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
-                "avalonia",
-                ["--install-link-headless"],
-                context,
-                output,
-                error,
-                CancellationToken.None);
+                int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+                    "avalonia",
+                    ["--install-link-headless"],
+                    context,
+                    output,
+                    error,
+                    CancellationToken.None);
 
-            string outputText = output.ToString();
-            StringAssert.Contains(outputText,
-                "Checking the result of the previous browser approval before opening a new one.",
-                StringComparison.Ordinal);
-            StringAssert.Contains(outputText,
-                "The pending approval was created by an earlier session or version.",
-                StringComparison.Ordinal);
+                string outputText = output.ToString();
+                StringAssert.Contains(outputText,
+                    "Checking the result of the previous browser approval before opening a new one.",
+                    StringComparison.Ordinal);
+                StringAssert.Contains(outputText,
+                    "The pending approval was created by an earlier session or version.",
+                    StringComparison.Ordinal);
 
-            // The recovery entry did not exit before polling: with the fake Hub answering
-            // pending for the whole window, headless mode ends in the explicit timeout
-            // path (2), never in the old preparation-failure exit (1).
-            Assert.AreEqual(2, exitCode);
-            StringAssert.Contains(error.ToString(),
-                "timed out before Chummer confirmed the handoff", StringComparison.Ordinal);
+                // The recovery entry did not exit before polling: with the fake Hub answering
+                // pending for the whole window, headless mode ends in the explicit timeout
+                // path (2), never in the old preparation-failure exit (1).
+                Assert.AreEqual(2, exitCode);
+                StringAssert.Contains(error.ToString(),
+                    "timed out before Chummer confirmed the handoff", StringComparison.Ordinal);
+            }
+            finally
+            {
+                // Test-owned teardown order: cancel the accept loop, stop accepting
+                // connections, then await the listener and every handler task before
+                // shared environment is restored (see audit R75 cleanup contract).
+                listenerCts.Cancel();
+                listenerSocket.Close();
+                try
+                {
+                    await listenerTask;
+                }
+                catch (Exception)
+                {
+                    // The listener can die with a socket error when the socket is closed.
+                }
+
+                try
+                {
+                    await Task.WhenAll(handlerTasks);
+                }
+                catch (Exception)
+                {
+                    // Handler tasks never surface failures; the fixture observes them.
+                }
+            }
+
         }
         finally
         {
@@ -928,7 +976,62 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
     }
 
-    [TestMethod]
+        [TestMethod]
+    public void DescribeRemoteCallbackRecovery_reports_stopped_when_the_retained_proof_ages_out()
+    {
+        // Audit R75 acceptance: an uncertain retained request whose proof is beyond
+        // the reuse window stays retained (never silently becomes a new approval),
+        // but the projection must say STOPPED - the runtime deliberately stopped
+        // replaying it, and the UI must not present an active check.
+        string root = Path.Combine(Path.GetTempPath(), "desktop-projection-stopped", Guid.NewGuid().ToString("N"));
+        string? previousRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", root);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            object?[] prepareArgs = [created, null, null];
+            MethodInfo prepare = typeof(DesktopInstallLinkingRuntime).GetMethod("TryPrepareBrowserApproval", BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("TryPrepareBrowserApproval");
+            Assert.AreEqual(true, prepare.Invoke(null, prepareArgs));
+            DesktopInstallLinkingState prepared = (DesktopInstallLinkingState)prepareArgs[1]!;
+
+            object retained = typeof(DesktopInstallLinkingRuntime).GetMethod("ReadRetainedRemoteCallbackRequest", BindingFlags.Static | BindingFlags.NonPublic)
+                .Invoke(null, [prepared])
+                ?? throw new AssertFailedException("retained request");
+            object?[] retain = [prepared, retained, true, false, null];
+            MethodInfo retainMethod = typeof(DesktopInstallLinkingRuntime).GetMethod("TryRetainRemoteCallbackRequest", BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("TryRetainRemoteCallbackRequest");
+            Assert.AreEqual(true, retainMethod.Invoke(null, retain));
+            DesktopInstallLinkingState uncertain = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.IsTrue(uncertain.BrowserApprovalUncertain);
+
+            // Fresh proof: the recovery is genuinely running.
+            Assert.AreEqual(
+                DesktopRemoteCallbackRecoveryProjection.Running,
+                DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(uncertain, DateTimeOffset.UtcNow));
+
+            // Proof aged out: the projection flips to Stopped, the retained request is
+            // preserved and uncertain (no clearing, no re-minting), and the state stays
+            // unclaimed - the runtime's conservative stop is presented honestly.
+            DesktopInstallLinkingState aged = uncertain with
+            {
+                BrowserApprovalRequest = uncertain.BrowserApprovalRequest
+            };
+            Assert.AreEqual(
+                DesktopRemoteCallbackRecoveryProjection.Stopped,
+                DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(aged, DateTimeOffset.UtcNow.AddMinutes(30)));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(aged.BrowserApprovalRequest));
+            Assert.IsTrue(aged.BrowserApprovalUncertain);
+            Assert.IsFalse(DesktopInstallLinkingRuntime.IsClaimed(aged));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+[TestMethod]
     public async Task Headless_mode_completes_recovery_with_the_retained_proof_and_claims_the_installation()
     {
         // Regression for the R70 audit finding: the previous recovery test only proved
