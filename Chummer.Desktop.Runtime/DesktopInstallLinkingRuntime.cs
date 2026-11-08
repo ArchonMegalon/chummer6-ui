@@ -2805,16 +2805,12 @@ public static class DesktopInstallLinkingRuntime
             && !string.IsNullOrWhiteSpace(subjectId)
             && string.Equals(accepted.Grant.Status, "active", StringComparison.OrdinalIgnoreCase))
         {
-            // Grant time-validity: never adopt an already-expired or implausibly
-            // future-issued credential. The issuance allowance mirrors the Hub's
-            // remote-proof clock-skew window.
-            DateTimeOffset now = DateTimeOffset.UtcNow;
-            if (accepted.Grant.ExpiresAtUtc is DateTimeOffset expiresAt && expiresAt <= now)
-            {
-                return false;
-            }
-            return !(accepted.Grant.IssuedAtUtc is DateTimeOffset issuedAt
-                && issuedAt > now.AddMinutes(5));
+            // Grant time-validity (shared helper): never adopt an already-expired,
+            // implausibly future-issued, or internally reversed credential.
+            return IsGrantTimeValid(
+                accepted.Grant.IssuedAtUtc,
+                accepted.Grant.ExpiresAtUtc,
+                DateTimeOffset.UtcNow);
         }
         return false;
     }
@@ -2876,15 +2872,48 @@ public static class DesktopInstallLinkingRuntime
             return false;
         }
 
-        // Grant time-validity: never adopt an already-expired or implausibly
-        // future-issued credential. The issuance allowance mirrors the Hub's
-        // remote-proof clock-skew window.
-        if (accepted.Grant.ExpiresAtUtc is DateTimeOffset expiresAt && expiresAt <= now)
+        // Grant time-validity (shared helper): never adopt an already-expired,
+        // implausibly future-issued, or internally reversed credential.
+        return IsGrantTimeValid(
+            accepted.Grant.IssuedAtUtc,
+            accepted.Grant.ExpiresAtUtc,
+            now);
+    }
+
+    // Shared grant-time validation for the browser-callback and claim-code
+    // redemption acceptance paths so the two cannot drift (audit 2026-11-08:
+    // the issuance/expiry interval ordering was never established). A
+    // credential is adoptable only when it has not already expired at
+    // validationTime, its issuance does not exceed the five-minute clock
+    // tolerance mirrored from the Hub's remote-proof clock-skew window, and —
+    // whenever both timestamps are present — expiry lies strictly after
+    // issuance. Missing timestamps keep their existing optional-field
+    // contract; the clock tolerance governs the relationship between two
+    // clocks and never justifies a reversed validity interval.
+    internal static bool IsGrantTimeValid(
+        DateTimeOffset? issuedAtUtc,
+        DateTimeOffset? expiresAtUtc,
+        DateTimeOffset validationTime)
+    {
+        if (expiresAtUtc is DateTimeOffset expires && expires <= validationTime)
         {
             return false;
         }
-        return !(accepted.Grant.IssuedAtUtc is DateTimeOffset issuedAt
-            && issuedAt > now.AddMinutes(5));
+
+        if (issuedAtUtc is DateTimeOffset issued &&
+            issued > validationTime.AddMinutes(5))
+        {
+            return false;
+        }
+
+        if (issuedAtUtc is DateTimeOffset issuedAt &&
+            expiresAtUtc is DateTimeOffset expiresAt &&
+            expiresAt <= issuedAt)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static bool IsSameInstallCredentialGeneration(
