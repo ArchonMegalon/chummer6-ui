@@ -1311,6 +1311,33 @@ public static class DesktopInstallLinkingRuntime
                 return new DesktopInstallClaimResult(false, false, error, invalidState);
             }
 
+            if (!IsConsistentRedeemedClaimResponse(
+                    accepted,
+                    currentState.InstallationId,
+                    currentState.HeadId,
+                    currentState.ApplicationVersion,
+                    currentState.ChannelId,
+                    currentState.Platform,
+                    currentState.Arch,
+                    currentState.PublicKey,
+                    attemptAtUtc))
+            {
+                string error = "Hub accepted install claim redemption but returned a response that does not match this installation's request.";
+                DesktopInstallLinkingState rejectedState = currentState with
+                {
+                    LastClaimAttemptUtc = attemptAtUtc,
+                    LastClaimCode = normalizedClaimCode,
+                    LastClaimError = error,
+                    LastClaimMessage = null,
+                    UpdatedAtUtc = attemptAtUtc
+                };
+                if (!TrySaveState(rejectedState, out rejectedState))
+                {
+                    return BuildStaleOwnerClaimResult(rejectedState);
+                }
+                return new DesktopInstallClaimResult(false, false, error, rejectedState);
+            }
+
             DesktopInstallLinkingState claimedState = currentState with
             {
                 Status = ClaimedStatus,
@@ -2772,11 +2799,89 @@ public static class DesktopInstallLinkingRuntime
 
         // Grant usability: the credential must be present and the grant must be in
         // a state a linked client can actually use.
-        return !string.IsNullOrWhiteSpace(accepted.Grant.AccessToken)
+        if (!string.IsNullOrWhiteSpace(accepted.Grant.AccessToken)
             && !string.IsNullOrWhiteSpace(accepted.Grant.GrantId)
             && !string.IsNullOrWhiteSpace(userId)
             && !string.IsNullOrWhiteSpace(subjectId)
-            && string.Equals(accepted.Grant.Status, "active", StringComparison.OrdinalIgnoreCase);
+            && string.Equals(accepted.Grant.Status, "active", StringComparison.OrdinalIgnoreCase))
+        {
+            // Grant time-validity: never adopt an already-expired or implausibly
+            // future-issued credential. The issuance allowance mirrors the Hub's
+            // remote-proof clock-skew window.
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            if (accepted.Grant.ExpiresAtUtc is DateTimeOffset expiresAt && expiresAt <= now)
+            {
+                return false;
+            }
+            return !(accepted.Grant.IssuedAtUtc is DateTimeOffset issuedAt
+                && issuedAt > now.AddMinutes(5));
+        }
+        return false;
+    }
+
+    // A redeemed claim response must bind to the installation that sent the
+    // request: installation identity (id, key, approved target), mutual
+    // consistency of the ticket/installation/grant references and account
+    // identity, grant usability, and grant time-validity at redemption time.
+    private static bool IsConsistentRedeemedClaimResponse(
+        RedeemInstallClaimResponseDto accepted,
+        string installationId,
+        string headId,
+        string applicationVersion,
+        string channelId,
+        string platform,
+        string arch,
+        string publicKey,
+        DateTimeOffset now)
+    {
+        if (!string.Equals(accepted.Installation.InstallationId, installationId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.PublicKey, publicKey, StringComparison.Ordinal)
+            || !(accepted.Installation.HeadId is null
+                || string.Equals(accepted.Installation.HeadId, headId, StringComparison.Ordinal))
+            || !string.Equals(accepted.Installation.Version, applicationVersion, StringComparison.Ordinal)
+            || !string.Equals(accepted.Installation.Channel, channelId, StringComparison.Ordinal)
+            || !(accepted.Installation.Platform is null
+                || string.Equals(accepted.Installation.Platform, platform, StringComparison.Ordinal))
+            || !(accepted.Installation.Arch is null
+                || string.Equals(accepted.Installation.Arch, arch, StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        // Mutual consistency: the ticket and the grant must belong to the same
+        // installation and the same account identity as the returned installation.
+        if (string.IsNullOrWhiteSpace(accepted.Ticket.TicketId)
+            || !(accepted.Ticket.InstallationId is null
+                || string.Equals(accepted.Ticket.InstallationId, installationId, StringComparison.Ordinal))
+            || !(accepted.Installation.ClaimTicketId is null
+                || string.Equals(accepted.Installation.ClaimTicketId, accepted.Ticket.TicketId, StringComparison.Ordinal))
+            || !string.Equals(accepted.Grant.InstallationId, installationId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Grant.UserId, accepted.Installation.UserId, StringComparison.Ordinal)
+            || !string.Equals(accepted.Grant.SubjectId, accepted.Installation.SubjectId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // Grant usability: the credential must be present and the grant must be in
+        // a state a linked client can actually use.
+        if (string.IsNullOrWhiteSpace(accepted.Grant.AccessToken)
+            || string.IsNullOrWhiteSpace(accepted.Grant.GrantId)
+            || string.IsNullOrWhiteSpace(accepted.Installation.UserId)
+            || string.IsNullOrWhiteSpace(accepted.Installation.SubjectId)
+            || !string.Equals(accepted.Grant.Status, "active", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // Grant time-validity: never adopt an already-expired or implausibly
+        // future-issued credential. The issuance allowance mirrors the Hub's
+        // remote-proof clock-skew window.
+        if (accepted.Grant.ExpiresAtUtc is DateTimeOffset expiresAt && expiresAt <= now)
+        {
+            return false;
+        }
+        return !(accepted.Grant.IssuedAtUtc is DateTimeOffset issuedAt
+            && issuedAt > now.AddMinutes(5));
     }
 
     private static bool IsSameInstallCredentialGeneration(

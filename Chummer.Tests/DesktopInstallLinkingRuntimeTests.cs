@@ -532,7 +532,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
             "wrong-callback-version",
             "wrong-approved-key",
             "missing-approved-key",
-            "unusable-grant-status"
+            "unusable-grant-status",
+            "expired-grant",
+            "future-issued-grant"
         ];
 
         using RSA installationKey = RSA.Create(2048);
@@ -726,6 +728,21 @@ public sealed class DesktopInstallLinkingRuntimeTests
             case "unusable-grant-status":
                 // The grant is not in a state a linked client can use.
                 return ReplaceInBlock(json, "grant", "\"status\": \"active\"", "\"status\": \"inactive\"");
+            case "expired-grant":
+                // The grant is already expired at validation time. Every other
+                // binding is consistent, so only the time-validity check catches
+                // this response.
+                return System.Text.RegularExpressions.Regex.Replace(
+                    json,
+                    "\"expiresAtUtc\": \"[^\"]*\"",
+                    m => "\"expiresAtUtc\": \"" + DateTimeOffset.UtcNow.AddMinutes(-5).ToString("o") + "\"");
+            case "future-issued-grant":
+                // The issuance timestamp is implausibly in the future (beyond the
+                // clock-skew allowance) and must be rejected as forged.
+                return System.Text.RegularExpressions.Regex.Replace(
+                    json,
+                    "\"issuedAtUtc\": \"[^\"]*\"",
+                    m => "\"issuedAtUtc\": \"" + DateTimeOffset.UtcNow.AddMinutes(30).ToString("o") + "\"");
             default:
                 throw new AssertFailedException("Unknown mutation: " + mutation);
         }
@@ -997,15 +1014,20 @@ responseBody = responseBody
             Assert.AreEqual("subject.install.recovery", finalState.SubjectId);
 
             // The server received the retained proof (at least one poll), and every
-            // received poll body carries the same operation — no replacement identity.
+            // received poll body is the ORIGINAL persisted request re-serialized —
+            // byte-identical, no replacement identity, no re-signed variant.
             Assert.IsTrue(bodies.Count >= 1, "The headless path must poll the retained request.");
+            System.Text.Json.JsonSerializerOptions runtimeJson = (System.Text.Json.JsonSerializerOptions)typeof(
+                DesktopInstallLinkingRuntime)
+                .GetField("JsonOptions", BindingFlags.Static | BindingFlags.NonPublic)!
+                .GetValue(null)!;
+            string expectedOriginalBody = System.Text.Json.JsonSerializer.Serialize(retained, retained.GetType(), runtimeJson);
             lock (bodies)
             {
-                string first = bodies[0];
-                for (int i = 1; i < bodies.Count; i++)
+                foreach (string body in bodies)
                 {
-                    StringAssert.Contains(bodies[i], first[..Math.Min(80, first.Length)],
-                        "Every poll must carry the identical retained request identity.");
+                    Assert.AreEqual(expectedOriginalBody, body,
+                        "Every poll must be the byte-identical original retained request.");
                 }
             }
         }
@@ -1398,6 +1420,403 @@ responseBody = responseBody
             .Replace("%ExpiresAt%", expiresAt);
     }
 
+
+    // Redemption-response integrity (R71 audit P2-1): a redeemed claim response
+    // must bind to the installation that sent the request before any grant or
+    // account field is adopted. The fake Hub derives the consistent response
+    // from the captured request (as the real Hub echoes request metadata);
+    // each case mutates exactly one binding. Every case must leave the client
+    // unclaimed and must not adopt foreign credentials.
+    private sealed record RedeemFixture(
+        string InstallationId,
+        string HeadId,
+        string Version,
+        string Channel,
+        string Platform,
+        string Arch,
+        string PublicKey,
+        string RequestBody)
+    {
+        public string BuildConsistentResponse()
+        {
+            string issuedAt = DateTimeOffset.UtcNow.AddMinutes(-1).ToString("o");
+            string expiresAt = DateTimeOffset.UtcNow.AddDays(30).ToString("o");
+            return $$"""
+{
+  "ticket": {
+    "ticketId": "ticket-claim-1",
+    "claimCode": "claim-code-1",
+    "installationId": "{{InstallationId}}",
+    "status": "redeemed",
+    "createdAtUtc": "{{issuedAt}}",
+    "expiresAtUtc": "{{expiresAt}}"
+  },
+  "installation": {
+    "installationId": "{{InstallationId}}",
+    "artifactId": "avalonia-win-x64-installer",
+    "channel": "{{Channel}}",
+    "version": "{{Version}}",
+    "installAccessClass": "open_public",
+    "status": "active",
+    "createdAtUtc": "{{issuedAt}}",
+    "updatedAtUtc": "{{issuedAt}}",
+    "userId": "user-claim-1",
+    "subjectId": "subject.install.claim",
+    "publicKey": "{{PublicKey}}",
+    "claimTicketId": null,
+    "headId": "{{HeadId}}",
+    "platform": "{{Platform}}",
+    "arch": "{{Arch}}",
+    "hostLabel": null,
+    "grantId": "grant-claim-1"
+  },
+  "grant": {
+    "grantId": "grant-claim-1",
+    "installationId": "{{InstallationId}}",
+    "status": "active",
+    "accessToken": "token-claim-1",
+    "issuedAtUtc": "{{issuedAt}}",
+    "expiresAtUtc": "{{expiresAt}}",
+    "userId": "user-claim-1",
+    "subjectId": "subject.install.claim"
+  },
+  "alreadyClaimed": false
+}
+""";
+        }
+
+        private static string ReplaceLast(string body, string find, string replace)
+        {
+            int index = body.LastIndexOf(find, StringComparison.Ordinal);
+            return index < 0 ? body : body[..index] + replace + body[(index + find.Length)..];
+        }
+
+        // Every occurrence: the response is internally consistent but no longer
+        // refers to the installation that sent the request.
+        public string WithForeignInstallationId()
+            => BuildConsistentResponse().Replace(InstallationId, "ins-other-1", StringComparison.Ordinal);
+
+        public string WithForeignPublicKey()
+            => BuildConsistentResponse().Replace(PublicKey, "Zm9yZWlnbiBrZXk=", StringComparison.Ordinal);
+
+        public string WithForeignVersion()
+            => BuildConsistentResponse().Replace(Version, "9.9.9.9", StringComparison.Ordinal);
+
+        public string WithForeignChannel()
+            => BuildConsistentResponse().Replace(Channel, "nightly", StringComparison.Ordinal);
+
+        // The last "installationId" occurrence is the grant block: the grant
+        // references a different installation than the returned installation.
+        public string WithForeignGrantReference()
+            => ReplaceLast(
+                BuildConsistentResponse(),
+                "\"installationId\": \"" + InstallationId + "\"",
+                "\"installationId\": \"ins-other-1\"");
+
+        // The last "userId" occurrence is the grant block: the grant belongs to
+        // a different account than the returned installation.
+        public string WithInconsistentAccountIdentity()
+            => ReplaceLast(
+                BuildConsistentResponse(),
+                "\"userId\": \"user-claim-1\"",
+                "\"userId\": \"user-other-1\"");
+
+        // The last "active" status is the grant block: an unusable grant.
+        public string WithUnusableGrantStatus()
+            => ReplaceLast(
+                BuildConsistentResponse(),
+                "\"status\": \"active\"",
+                "\"status\": \"revoked\"");
+
+        // The last "expiresAtUtc" is the grant block: an already-expired grant.
+        public string WithExpiredGrant()
+        {
+            string body = BuildConsistentResponse();
+            int marker = body.LastIndexOf("\"expiresAtUtc\": \"", StringComparison.Ordinal);
+            Assert.IsTrue(marker >= 0, "The redemption fixture must contain an expiresAtUtc value.");
+            int valueStart = marker + "\"expiresAtUtc\": \"".Length;
+            int valueEnd = body.IndexOf('"', valueStart);
+            Assert.IsTrue(valueEnd > valueStart, "The redemption fixture must terminate the expiresAtUtc value.");
+            return body[..valueStart] + "2020-01-01T00:00:00.0000000+00:00" + body[valueEnd..];
+        }
+
+        // A future-issued grant is implausible and must be rejected as well.
+        public string WithFutureIssuedGrant()
+        {
+            string body = BuildConsistentResponse();
+            int marker = body.LastIndexOf("\"issuedAtUtc\": \"", StringComparison.Ordinal);
+            Assert.IsTrue(marker >= 0, "The redemption fixture must contain an issuedAtUtc value.");
+            int valueStart = marker + "\"issuedAtUtc\": \"".Length;
+            int valueEnd = body.IndexOf('"', valueStart);
+            Assert.IsTrue(valueEnd > valueStart, "The redemption fixture must terminate the issuedAtUtc value.");
+            return body[..valueStart] + DateTimeOffset.UtcNow.AddHours(2).ToString("o") + body[valueEnd..];
+        }
+    }
+
+    [TestMethod]
+    public async Task RedeemClaimCode_rejects_responses_that_do_not_match_the_request()
+    {
+        (string Name, Func<RedeemFixture, string> Mutate)[] cases =
+        [
+            ("wrong-installation-id", fixture => fixture.WithForeignInstallationId()),
+            ("wrong-public-key", fixture => fixture.WithForeignPublicKey()),
+            ("wrong-version", fixture => fixture.WithForeignVersion()),
+            ("wrong-channel", fixture => fixture.WithForeignChannel()),
+            ("wrong-grant-reference", fixture => fixture.WithForeignGrantReference()),
+            ("inconsistent-account-identity", fixture => fixture.WithInconsistentAccountIdentity()),
+            ("unusable-grant-status", fixture => fixture.WithUnusableGrantStatus()),
+            ("expired-grant", fixture => fixture.WithExpiredGrant()),
+            ("future-issued-grant", fixture => fixture.WithFutureIssuedGrant()),
+        ];
+
+        foreach ((string name, Func<RedeemFixture, string> mutate) in cases)
+        {
+            await RunRedemptionRejectionCase(name, mutate);
+        }
+    }
+
+    private static async Task RunRedemptionRejectionCase(
+        string caseName,
+        Func<RedeemFixture, string> mutate)
+    {
+        using RSA installationKey = RSA.Create(2048);
+        string tempRoot = Path.Combine(
+            Path.GetTempPath(), "desktop-install-linking-redeem-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(16);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+
+        Task listenerTask = Task.Run(async () =>
+        {
+            byte[] buffer = new byte[65536];
+            while (true)
+            {
+                Socket connection = await listenerSocket.AcceptAsync();
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using Socket socket = connection;
+                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        string requestText = Encoding.UTF8.GetString(buffer, 0, read);
+                        int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                        string requestBody = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(requestBody);
+                        System.Text.Json.JsonElement root = document.RootElement;
+                        string GetString(string name)
+                            => root.TryGetProperty(name, out System.Text.Json.JsonElement value)
+                                && value.ValueKind == System.Text.Json.JsonValueKind.String
+                                ? value.GetString()!
+                                : string.Empty;
+                        // The real Hub echoes NormalizeOptional(request.PublicKey)
+                        // verbatim (PEM incl. newlines); the JSON writer must escape
+                        // it exactly like the request encoding did.
+                        string requestPublicKey = System.Text.Json.JsonSerializer.Serialize(
+                            GetString("publicKey"));
+                        if (requestPublicKey.Length >= 2 && requestPublicKey[0] == '"' && requestPublicKey[^1] == '"')
+                        {
+                            requestPublicKey = requestPublicKey[1..^1];
+                        }
+                        RedeemFixture fixture = new(
+                            GetString("installationId"),
+                            GetString("headId"),
+                            GetString("applicationVersion"),
+                            GetString("channelId"),
+                            GetString("platform"),
+                            GetString("arch"),
+                            requestPublicKey,
+                            requestBody);
+                        string responseBody = mutate(fixture);
+                        string response = "HTTP/1.1 200 OK\r\n" +
+                                          "Content-Type: application/json\r\n" +
+                                          "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                          "Connection: close\r\n\r\n" + responseBody;
+                        await socket.SendAsync(Encoding.UTF8.GetBytes(response), SocketFlags.None);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (SocketException)
+                    {
+                    }
+                });
+            }
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            DesktopInstallLinkingState prepared = PersistInstallLinkingState(created with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
+                "avalonia", "claim-code-1", CancellationToken.None);
+
+            Assert.IsFalse(result.Succeeded,
+                $"[{caseName}] A mismatched redemption response must not claim the client.");
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual("guest", finalState.Status,
+                $"[{caseName}] A mismatched redemption response must leave the client unclaimed.");
+            Assert.IsNull(finalState.GrantId,
+                $"[{caseName}] A mismatched redemption response must not adopt a grant.");
+            Assert.IsNull(finalState.UserId,
+                $"[{caseName}] A mismatched redemption response must not adopt an account identity.");
+            Assert.IsNull(finalState.ClaimTicketId,
+                $"[{caseName}] A mismatched redemption response must not adopt the ticket.");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            listenerSocket.Dispose();
+            try
+            {
+                await listenerTask;
+            }
+            catch (Exception)
+            {
+            }
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task RedeemClaimCode_accepts_a_consistent_response_and_claims_the_client()
+    {
+        using RSA installationKey = RSA.Create(2048);
+        string tempRoot = Path.Combine(
+            Path.GetTempPath(), "desktop-install-linking-redeem-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(16);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+
+        Task listenerTask = Task.Run(async () =>
+        {
+            byte[] buffer = new byte[65536];
+            while (true)
+            {
+                Socket connection = await listenerSocket.AcceptAsync();
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using Socket socket = connection;
+                        int read = await socket.ReceiveAsync(buffer, SocketFlags.None);
+                        string requestText = Encoding.UTF8.GetString(buffer, 0, read);
+                        int bodyStart = requestText.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                        string requestBody = bodyStart >= 0 ? requestText[(bodyStart + 4)..] : string.Empty;
+                        using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(requestBody);
+                        System.Text.Json.JsonElement root = document.RootElement;
+                        string GetString(string name)
+                            => root.TryGetProperty(name, out System.Text.Json.JsonElement value)
+                                && value.ValueKind == System.Text.Json.JsonValueKind.String
+                                ? value.GetString()!
+                                : string.Empty;
+                        // The real Hub echoes NormalizeOptional(request.PublicKey)
+                        // verbatim (PEM incl. newlines); the JSON writer must escape
+                        // it exactly like the request encoding did.
+                        string requestPublicKey = System.Text.Json.JsonSerializer.Serialize(
+                            GetString("publicKey"));
+                        if (requestPublicKey.Length >= 2 && requestPublicKey[0] == '"' && requestPublicKey[^1] == '"')
+                        {
+                            requestPublicKey = requestPublicKey[1..^1];
+                        }
+                        RedeemFixture fixture = new(
+                            GetString("installationId"),
+                            GetString("headId"),
+                            GetString("applicationVersion"),
+                            GetString("channelId"),
+                            GetString("platform"),
+                            GetString("arch"),
+                            requestPublicKey,
+                            requestBody);
+                        string responseBody = fixture.BuildConsistentResponse();
+                        string response = "HTTP/1.1 200 OK\r\n" +
+                                          "Content-Type: application/json\r\n" +
+                                          "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                                          "Connection: close\r\n\r\n" + responseBody;
+                        await socket.SendAsync(Encoding.UTF8.GetBytes(response), SocketFlags.None);
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                    }
+                    catch (SocketException)
+                    {
+                    }
+                });
+            }
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            DesktopInstallLinkingState prepared = PersistInstallLinkingState(created with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
+                "avalonia", "claim-code-1", CancellationToken.None);
+
+            Assert.IsTrue(result.Succeeded,
+                "A consistent redemption response claims the client. Message: " + result.Message);
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual("claimed", finalState.Status);
+            Assert.AreEqual("grant-claim-1", finalState.GrantId);
+            Assert.AreEqual("token-claim-1", finalState.GrantToken);
+            Assert.AreEqual("user-claim-1", finalState.UserId);
+            Assert.AreEqual("subject.install.claim", finalState.SubjectId);
+            Assert.AreEqual("ticket-claim-1", finalState.ClaimTicketId);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            listenerSocket.Dispose();
+            try
+            {
+                await listenerTask;
+            }
+            catch (Exception)
+            {
+            }
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
 
     [TestMethod]
     public void ShouldPromptForStartup_stops_after_user_dismisses_optional_claim()
