@@ -475,7 +475,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
     {
         ArgumentNullException.ThrowIfNull(state);
 
-        if (DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(state))
+        if (DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(state) == DesktopRemoteCallbackRecoveryProjection.Running)
         {
             return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.check_previous_approval", language);
         }

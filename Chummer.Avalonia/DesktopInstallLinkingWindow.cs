@@ -807,30 +807,89 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _state,
                 out string loginUrl,
                 out string? failureReason);
-            if (opened)
-            {
-                _browserFallbackVisible = false;
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
-                StartClaimPolling("Waiting for browser callback");
-            }
-            else if (DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(_state))
-            {
-                _browserFallbackVisible = false;
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_pending", _language));
-                StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_detail", _language));
-            }
-            else
-            {
-                _state = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
-                await ShowManualBrowserFallbackAsync(loginUrl, failureReason).ConfigureAwait(true);
-                UpdateMatrixHandoffState("Browser fallback ready");
-            }
+            await HandlePortalOpenOutcomeAsync(opened, loginUrl, failureReason).ConfigureAwait(true);
         }
         catch (Exception ex)
         {
             UpdateMatrixHandoffState("Browser fallback ready");
             SetStatus(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Shared result-to-UI handling for portal-open attempts from BOTH entry
+    /// points (automatic handoff and the account button). The audit boundary:
+    /// a retained approval that is being recovered returns "opened == false"
+    /// with an empty URL by design — that must show recovery guidance and keep
+    /// observing, never the manual-browser fallback with an empty link.
+    /// </summary>
+    private async Task HandlePortalOpenOutcomeAsync(bool opened, string accountUrl, string? failureReason)
+    {
+        // Decide from the current persisted state, not the window's snapshot.
+        _state = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+        if (opened)
+        {
+            _browserFallbackVisible = false;
+            RefreshSummary();
+            RefreshActionState();
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
+            if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
+            {
+                StartClaimPolling("Waiting for browser callback");
+            }
+
+            return;
+        }
+
+        switch (DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(_state))
+        {
+            case DesktopRemoteCallbackRecoveryProjection.Running:
+                _browserFallbackVisible = false;
+                RefreshSummary();
+                RefreshActionState();
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_pending", _language));
+                StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_detail", _language));
+                return;
+            case DesktopRemoteCallbackRecoveryProjection.Stopped:
+                _browserFallbackVisible = false;
+                RefreshSummary();
+                RefreshActionState();
+                SetStatus(BuildRecoveryStoppedStatus(_language));
+                UpdateMatrixHandoffState("Recovery stopped");
+                return;
+            case DesktopRemoteCallbackRecoveryProjection.Terminal:
+                _browserFallbackVisible = false;
+                RefreshSummary();
+                RefreshActionState();
+                SetStatus(BuildRecoveryTerminalStatus(_language));
+                UpdateMatrixHandoffState("Approval rejected");
+                return;
+            case DesktopRemoteCallbackRecoveryProjection.Linked:
+                _browserFallbackVisible = false;
+                RefreshSummary();
+                RefreshActionState();
+                if (Owner is MainWindow ownerWindow)
+                {
+                    ownerWindow.ApplyInstallLinkingChrome(_state);
+                }
+                SetStatus(FormatClaimStatus(_state, _language));
+                return;
+        }
+
+        if (string.IsNullOrWhiteSpace(accountUrl))
+        {
+            // No recovery in progress and no usable link: show the concrete
+            // failure instead of a fallback panel with an empty URL field.
+            _browserFallbackVisible = false;
+            RefreshSummary();
+            RefreshActionState();
+            SetStatus(BuildBrowserFallbackDetail(_language, failureReason));
+            UpdateMatrixHandoffState("Browser fallback ready");
+            return;
+        }
+
+        await ShowManualBrowserFallbackAsync(accountUrl, failureReason).ConfigureAwait(true);
+        UpdateMatrixHandoffState("Browser fallback ready");
     }
 
     private void StartClaimPolling(string stateLabel)
@@ -852,6 +911,30 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
                 if (!DesktopInstallLinkingRuntime.IsClaimed(current))
                 {
+                    // The runtime may have stopped recovering (proof expired
+                    // while the outcome stayed unknown) or recorded a terminal
+                    // rejection while we were observing — surface that instead
+                    // of presenting an indefinite "pending" wait.
+                    DesktopRemoteCallbackRecoveryProjection projection =
+                        DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(current);
+                    if (projection is DesktopRemoteCallbackRecoveryProjection.Stopped
+                        or DesktopRemoteCallbackRecoveryProjection.Terminal)
+                    {
+                        _state = current;
+                        RefreshSummary();
+                        RefreshActionState();
+                        SetStatus(DesktopLocalizationCatalog.GetRequiredString(
+                            projection == DesktopRemoteCallbackRecoveryProjection.Terminal
+                                ? "desktop.install_link.status.recovery_terminal"
+                                : "desktop.install_link.status.recovery_stopped",
+                            _language));
+                        UpdateMatrixHandoffState(
+                            projection == DesktopRemoteCallbackRecoveryProjection.Terminal
+                                ? "Approval rejected"
+                                : "Recovery stopped");
+                        return;
+                    }
+
                     continue;
                 }
 
@@ -1001,7 +1084,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return DesktopReportIssueWindow.ShowAsync(this, _state.HeadId);
     }
 
-    private Task OpenAccountAsync()
+    private async Task OpenAccountAsync()
     {
         string accountUrl;
         string? failureReason;
@@ -1009,22 +1092,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ? DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state, out accountUrl, out failureReason)
             : DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state, out accountUrl, out failureReason);
 
-        if (opened)
-        {
-            _browserFallbackVisible = false;
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
-            if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
-            {
-                StartClaimPolling("Waiting for browser callback");
-            }
-        }
-        else
-        {
-            _state = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
-            return ShowManualBrowserFallbackAsync(accountUrl, failureReason);
-        }
-
-        return Task.CompletedTask;
+        await HandlePortalOpenOutcomeAsync(opened, accountUrl, failureReason).ConfigureAwait(true);
     }
 
     private Task ContinueUnlinkedAsync()
@@ -1086,13 +1154,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private void RefreshActionState()
     {
         bool claimed = DesktopInstallLinkingRuntime.IsClaimed(_state);
+        DesktopRemoteCallbackRecoveryProjection recovery = DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(_state);
         _linkStateText.Text = FormatClaimStatus(_state, _language);
         UpdateMatrixHandoffState(claimed ? "Grant accepted" : "Waiting for account claim");
         RefreshMatrixIdentityOverlay();
         _followThroughButton.Content = claimed
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
-        _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language, DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(_state));
+        _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language, recovery == DesktopRemoteCallbackRecoveryProjection.Running);
         _followThroughButton.IsVisible = claimed;
         _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
         _unlinkButton.IsVisible = claimed;
@@ -1112,9 +1181,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         RefreshButtonTip(_unlinkButton);
         RefreshButtonTip(_exitButton);
 
-        _claimCodeHintText.IsVisible = !claimed && _browserFallbackVisible;
-        _claimCodeLabelText.IsVisible = !claimed && _browserFallbackVisible;
-        _claimCodeEntryRow.IsVisible = !claimed && _browserFallbackVisible;
+        bool showClaimCode = ShouldShowClaimCodeEntry(claimed, _browserFallbackVisible, recovery);
+        _claimCodeHintText.IsVisible = showClaimCode;
+        _claimCodeLabelText.IsVisible = showClaimCode;
+        _claimCodeEntryRow.IsVisible = showClaimCode;
         _browserFallbackPanel.IsVisible = !claimed && _browserFallbackVisible;
         _moreToolsHeading.IsVisible = true;
         _moreToolsPanel.IsVisible = true;
@@ -1204,6 +1274,22 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.login_url_copied", language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", language);
 
+    internal static string BuildRecoveryStoppedStatus(string language)
+        => DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", language);
+
+    // An expired or rejected approval still needs an actionable recovery route,
+    // even when there is no browser URL to display or copy.
+    internal static bool ShouldShowClaimCodeEntry(
+        bool claimed,
+        bool browserFallbackVisible,
+        DesktopRemoteCallbackRecoveryProjection recovery)
+        => !claimed && (browserFallbackVisible
+            || recovery is DesktopRemoteCallbackRecoveryProjection.Stopped
+                or DesktopRemoteCallbackRecoveryProjection.Terminal);
+
+    internal static string BuildRecoveryTerminalStatus(string language)
+        => DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_terminal", language);
+
     internal static string BuildAccountButtonLabel(bool claimed, bool browserFallbackVisible, string language, bool recoveringRetainedApproval = false)
     {
         if (claimed)
@@ -1211,6 +1297,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", language);
         }
 
+        // "Check previous approval" is only honest while the recovery is
+        // actually running; a stopped or terminal recovery shows a neutral
+        // claim label instead (audit P2: label must match the action).
         if (recoveringRetainedApproval)
         {
             return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.check_previous_approval", language);
