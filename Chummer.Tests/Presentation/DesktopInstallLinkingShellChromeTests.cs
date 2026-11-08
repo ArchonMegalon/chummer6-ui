@@ -250,7 +250,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(text, "TryOpenClaimPortalForInstall(");
         StringAssert.Contains(text, "out string loginUrl");
         StringAssert.Contains(text, "out string? failureReason");
-        StringAssert.Contains(text, "ShowManualBrowserFallbackAsync(loginUrl, failureReason)");
+        StringAssert.Contains(text, "ShowManualBrowserFallbackAsync(accountUrl, failureReason)");
         StringAssert.Contains(text, "_browserFallbackPanel");
         StringAssert.Contains(text, "_browserFallbackHeadingText");
         StringAssert.Contains(text, "_browserFallbackSummaryText");
@@ -499,6 +499,12 @@ public sealed class DesktopInstallLinkingShellChromeTests
             DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
                 CreateInstallState(status: "guest"),
                 DesktopLocalizationCatalog.DefaultLanguage));
+        // A stopped or terminal recovery must not present itself as an active check.
+        Assert.AreNotEqual(
+            "Check Previous Approval",
+            DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
+                CreateRetainedApprovalState() with { BrowserApprovalTerminal = true },
+                DesktopLocalizationCatalog.DefaultLanguage));
     }
 
     [TestMethod]
@@ -522,14 +528,18 @@ public sealed class DesktopInstallLinkingShellChromeTests
             Assert.IsFalse(string.IsNullOrWhiteSpace(buttonLabel), $"check_previous_approval must be translated for {language}");
         }
 
-        // The GUI branches to recovery polling, not to the browser fallback.
+        // The GUI branches to recovery presentation, not to the browser fallback.
         string windowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
-        // The exact guard line is asserted so guarding the branch off (e.g. "if (false && ...)")
-        // still counts as removing the recovery path and fails this test.
-        StringAssert.Contains(windowSource, "if (DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(_state))");
-        StringAssert.Contains(windowSource, "StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString(\"desktop.install_link.status.recovery_detail\"");
-        int fallbackIdx = windowSource.IndexOf("await ShowManualBrowserFallbackAsync(loginUrl, failureReason)", StringComparison.Ordinal);
-        int recoveryIdx = windowSource.IndexOf("IsRecoveringRetainedApproval(_state)", StringComparison.Ordinal);
+        // Exact guard lines are asserted so guarding a branch off (e.g. "if (false && ...)")
+        // still counts as removing the recovery path and fails this test. The unified
+        // handler must be reached from BOTH entry points (automatic handoff and the
+        // account button) - audit R75: the manual path must not fall into the empty-URL fallback.
+        StringAssert.Contains(windowSource, "case DesktopRemoteCallbackRecoveryProjection.Running:");
+        StringAssert.Contains(windowSource, "StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString");
+        StringAssert.Contains(windowSource, "await HandlePortalOpenOutcomeAsync(opened, loginUrl, failureReason).ConfigureAwait(true);");
+        StringAssert.Contains(windowSource, "await HandlePortalOpenOutcomeAsync(opened, accountUrl, failureReason).ConfigureAwait(true);");
+        int fallbackIdx = windowSource.IndexOf("await ShowManualBrowserFallbackAsync(accountUrl, failureReason).ConfigureAwait(true);", StringComparison.Ordinal);
+        int recoveryIdx = windowSource.IndexOf("case DesktopRemoteCallbackRecoveryProjection.Running:", StringComparison.Ordinal);
         Assert.IsTrue(recoveryIdx >= 0 && fallbackIdx > recoveryIdx, "recovery branch must precede the fallback branch");
 
         // The account button label reflects the recovery state before fallback labels.
@@ -545,7 +555,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
         Assert.AreEqual(
             "Check Previous Approval",
             DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
-                CreateRetainedApprovalState(),
+                CreateRetainedApprovalState(DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 30),
                 DesktopLocalizationCatalog.DefaultLanguage));
         Assert.AreNotEqual(
             "Check Previous Approval",
@@ -561,7 +571,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
     /// the nonce, and the SPKI public key of the state; the signature is checked
     /// later at poll time, not at recovery-detection time).
     /// </summary>
-    private static DesktopInstallLinkingState CreateRetainedApprovalState()
+    private static DesktopInstallLinkingState CreateRetainedApprovalState(long issuedAtUnixSeconds = 0)
     {
         using RSA installationKey = RSA.Create(2048);
         DesktopInstallLinkingState baseState = CreateInstallState(status: "guest") with
@@ -586,12 +596,14 @@ public sealed class DesktopInstallLinkingShellChromeTests
             $"\"platform\":\"{baseState.Platform}\"," +
             $"\"arch\":\"{baseState.Arch}\"," +
             $"\"publicKey\":\"{publicKeyBase64}\"," +
-            $"\"issuedAtUnixSeconds\":0," +
+            $"\"issuedAtUnixSeconds\":{issuedAtUnixSeconds}," +
             $"\"nonce\":\"{nonce}\"," +
             $"\"signature\":\"sig\"," +
             $"\"operationId\":\"{operationId}\"" + "}";
 
-        return baseState with { BrowserApprovalRequest = requestJson };
+        // BrowserApprovalUncertain = true mirrors the audit's stopped-recovery scenario:
+        // an uncertain retained request whose proof can age out of the reuse window.
+        return baseState with { BrowserApprovalRequest = requestJson, BrowserApprovalUncertain = true };
     }
 
     [TestMethod]
@@ -603,6 +615,60 @@ public sealed class DesktopInstallLinkingShellChromeTests
         DesktopInstallLinkingState retained = CreateRetainedApprovalState();
         Assert.IsTrue(DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(retained));
         Assert.IsFalse(DesktopInstallLinkingRuntime.IsRecoveringRetainedApproval(retained with { BrowserApprovalTerminal = true }));
+    }
+
+    [TestMethod]
+    public void DescribeRemoteCallbackRecovery_distinguishes_running_stopped_and_terminal()
+    {
+        // A fresh uncertain retained approval is actively running.
+        DesktopInstallLinkingState retained = CreateRetainedApprovalState();
+        Assert.AreEqual(
+            DesktopRemoteCallbackRecoveryProjection.Running,
+            DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(retained, DateTimeOffset.FromUnixTimeSeconds(120)));
+
+        // Once the proof ages past the reuse window while the outcome stays unknown,
+        // the runtime has deliberately stopped - the UI must not claim an active check.
+        Assert.AreEqual(
+            DesktopRemoteCallbackRecoveryProjection.Stopped,
+            DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(retained, DateTimeOffset.FromUnixTimeSeconds(10_000)));
+
+        // A terminal rejection wins over every other projection.
+        Assert.AreEqual(
+            DesktopRemoteCallbackRecoveryProjection.Terminal,
+            DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(retained with { BrowserApprovalTerminal = true }, DateTimeOffset.FromUnixTimeSeconds(120)));
+
+        // A linked install reports Linked regardless of any retained artifacts.
+        Assert.AreEqual(
+            DesktopRemoteCallbackRecoveryProjection.Linked,
+            DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(CreateInstallState(status: "claimed")));
+
+        // No retained request: nothing to recover.
+        Assert.AreEqual(
+            DesktopRemoteCallbackRecoveryProjection.None,
+            DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(CreateInstallState(status: "guest")));
+
+        // The stopped/terminal copy keys exist in every language and are human-facing.
+        foreach (string language in new[] { "en-us", "de-de", "fr-fr", "ja-jp", "pt-br", "zh-cn" })
+        {
+            foreach (string key in new[]
+            {
+                "desktop.install_link.status.recovery_stopped",
+                "desktop.install_link.status.recovery_terminal"
+            })
+            {
+                string text = DesktopLocalizationCatalog.GetRequiredString(key, language);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(text), $"{key} must be translated for {language}");
+                Assert.IsTrue(text.Length > 20, $"{key} must carry guidance, not a stub, for {language}");
+                Assert.AreNotEqual(key, text, $"{key} must not fall back to its own key for {language}");
+            }
+        }
+
+        // The observation loop must surface stopped/terminal results instead of
+        // ending on an indefinite "pending" label (audit R75: display gap).
+        string windowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
+        StringAssert.Contains(windowSource, "DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(current)");
+        StringAssert.Contains(windowSource, "DesktopRemoteCallbackRecoveryProjection.Stopped");
+        StringAssert.Contains(windowSource, "DesktopRemoteCallbackRecoveryProjection.Terminal");
     }
 
     [TestMethod]
