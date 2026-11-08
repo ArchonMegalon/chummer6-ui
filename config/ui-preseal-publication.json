@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "7ec429414267e2d85fbca5be917a59dbf286cbb0",
-  "baseTree": "2993c97886105c8a91fbedda9996df67a631fca8",
+  "baseCommit": "e16694edbf03efe16f5cc9bf512835b4ecaff7f2",
+  "baseTree": "6dceefeed1ca76fbd0066cf50b1d79c6d7c99d07",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,27 +44,34 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "4d94389ffdc26f473683a91c828595bc56015993",
-      "path": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-      "sha256": "ec5eb986756842d607da6e560cfbab41cf1ca69a14621688876391eddd01a9de",
-      "sizeBytes": 141168,
+      "blob": "33727c559de45f30afa336a90347f01b41e2bede",
+      "path": ".github/workflows/pull-request-ci.yml",
+      "sha256": "6f769024f4f34c9a9472f210277432bbfad38e44cee40487ed877f14ad2e9851",
+      "sizeBytes": 14279,
       "status": "M"
     },
     {
-      "blob": "eaa524299d3c0eb8ad9d711b0b1b37bbbff6f5f6",
-      "path": "Chummer.Avalonia/MainWindow.CareerEdit.cs",
-      "sha256": "e65f11a249ca4ed78d59bf0e94c9949c537298d3fda77eb94fa235b7f4adef2b",
-      "sizeBytes": 10839,
+      "blob": "84ffb2634f3a3749c14187f90910c403360b2b72",
+      "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
+      "sha256": "e750e44a01223446491d81416e836a48395e2a11edfa92a270d804ab7189fe4f",
+      "sizeBytes": 171645,
       "status": "M"
     },
     {
-      "blob": "ad25fa477ba0ae505e7de80cd0e428940ede6f9c",
-      "path": "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
-      "sha256": "8ccd111707178066b04b28d071850dcba232bdc02c77485f4c2db4a03b598859",
-      "sizeBytes": 72492,
+      "blob": "ee45e21e64b5684a81552a744060dab9d67d2539",
+      "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
+      "sha256": "f371cc18a10136dcab4545f96afaf31695f8107b08bf8285827b93dcff29ed89",
+      "sizeBytes": 172327,
+      "status": "M"
+    },
+    {
+      "blob": "ff6405b9049227c140f75589d20b658aa1ed2915",
+      "path": "tests/fixtures/keylocker-signer-v1/MANIFEST.json",
+      "sha256": "70083f01e2ca198b015ecd92f0f5011f61088ec0ab71bc457a44d7c3abc4f284",
+      "sizeBytes": 2885,
       "status": "M"
     }
   ],
-  "recipeTree": "b9455ef5515e1aab49def135680b738db243599a",
+  "recipeTree": "2fd922ece8f1e579f09c673fb9575dfed3056fa9",
   "releaseClaim": false
 }
