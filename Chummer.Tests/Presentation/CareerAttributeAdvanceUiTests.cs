@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -693,14 +694,64 @@ public sealed class CareerSkillAdvanceUiTests
             var sr6Host = (SectionHostControl)sr6Window.Content!;
             sr6Host.SetState(CareerHostState("sr6", profileCreated: true));
             CareerAttributeAdvanceUiTests.PumpLayout(sr6Host);
-            Assert.IsNotNull(CareerAttributeAdvanceUiTests.FindButtonByName(sr6Host, "CareerAdvanceSkills"),
-                "Career skill advance quick action is ruleset-agnostic and must render on SR6 too.");
+            Button? sr6Button = CareerAttributeAdvanceUiTests.FindButtonByName(sr6Host, "CareerAdvanceSkills");
+            Assert.IsNotNull(sr6Button,
+                "The SR6 rewards strip still renders the quick action slot, but it must disclose the gap.");
+            Assert.IsFalse(sr6Button.IsEnabled,
+                "SR6 career mode must keep the Advance Skills quick action disabled until SR6 skill advancement exists.");
+            Assert.IsTrue(
+                (ToolTip.GetTip(sr6Button)?.ToString() ?? string.Empty).Contains("not available yet", StringComparison.Ordinal),
+                "The SR6 quick action must carry the honest availability disclosure as its tooltip.");
 
             careerWindow.Close();
             creationWindow.Close();
             sr6Window.Close();
             Dispatcher.UIThread.RunJobs();
         });
+    }
+
+    [TestMethod]
+    public void Sr6_skill_advance_dialog_entry_discloses_unavailability_and_keeps_sr5_untouched()
+    {
+        // The dialog-entry guard lives in MainWindow.CareerEdit.cs and cannot be
+        // instantiated headless; pin its logic via the established source-text
+        // compliance pattern (same mechanism as the SetNotice state pins).
+        string careerEditPath = FindSourcePath("Chummer.Avalonia", "MainWindow.CareerEdit.cs");
+        string careerEditText = File.ReadAllText(careerEditPath);
+        StringAssert.Contains(careerEditText,
+            "AttributeWorkbenchProjector.IsSr6Ruleset(original.Rules?.GameEdition)");
+        StringAssert.Contains(careerEditText,
+            "SR6 skill advancement is not available yet. Attribute improvement stays available on the attribute rows.");
+        // The guard must sit BEFORE any dialog construction: no dialog fields are
+        // read and no prepare callback runs for SR6.
+        int guardIndex = careerEditText.IndexOf(
+            "AttributeWorkbenchProjector.IsSr6Ruleset(original.Rules?.GameEdition)", StringComparison.Ordinal);
+        int dialogIndex = careerEditText.IndexOf("new CareerSkillAdvanceWindow(", StringComparison.Ordinal);
+        Assert.IsTrue(guardIndex >= 0 && dialogIndex > guardIndex,
+            "The SR6 disclosure must return before the skill-advance dialog is constructed.");
+
+        // The rewards-strip gate itself is pinned headless above; pin its source
+        // contract too so refactors cannot silently drop the disclosure branch.
+        string sectionHostPath = FindSourcePath("Chummer.Avalonia", "Controls", "SectionHostControl.axaml.cs");
+        string sectionHostText = File.ReadAllText(sectionHostPath);
+        StringAssert.Contains(sectionHostText,
+            "if (AttributeWorkbenchProjector.IsSr6Ruleset(_activeRulesetId))");
+        StringAssert.Contains(sectionHostText,
+            "SR6 skill advancement is not available yet. Attribute improvement stays available on the attribute rows.");
+    }
+
+    private static string FindSourcePath(params string[] segments)
+    {
+        DirectoryInfo directory = new(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Chummer.Avalonia", "Chummer.Avalonia.csproj")))
+        {
+            directory = directory.Parent;
+        }
+
+        Assert.IsNotNull(directory, "The Chummer.Avalonia project root must be discoverable from the test base directory.");
+        string path = Path.Combine(directory.FullName, Path.Combine(segments));
+        Assert.IsTrue(File.Exists(path), $"Expected source file to exist: {path}");
+        return path;
     }
 
     [TestMethod]
