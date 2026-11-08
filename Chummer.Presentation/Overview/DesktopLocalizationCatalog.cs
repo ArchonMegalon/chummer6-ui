@@ -254,7 +254,11 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.status.linking"] = "Claiming this installation...",
         ["desktop.install_link.status.recovery_stopped"] = "Automatic checking of the earlier approval has stopped. Check linked installations in your account before using a fallback code below.",
         ["desktop.install_link.status.recovery_terminal"] = "The earlier browser approval was rejected. Start a new approval or use a fallback code.",
-        ["desktop.install_link.status.recovery_pending"] = "An earlier browser approval is still being checked...",        ["desktop.install_link.status.recovery_detail"] = "Keep this copy open; the earlier approval is confirmed on its own page. No new approval has been started.",        ["desktop.install_link.status.guided_tools_visible"] = "Helper buttons are visible.",
+        ["desktop.install_link.status.recovery_pending"] = "An earlier browser approval is still being checked...",
+        ["desktop.install_link.status.observation_ended"] = "Automatic checking paused. Use Refresh result to re-check the approval state.",
+        ["desktop.install_link.button.refresh_result"] = "Refresh result",
+        ["desktop.install_link.status.recovery_detail"] = "Keep this copy open; the earlier approval is confirmed on its own page. No new approval has been started.",
+        ["desktop.install_link.status.guided_tools_visible"] = "Helper buttons are visible.",
         ["desktop.install_link.status.guided_tools_hidden"] = "Helper buttons are hidden.",
         ["desktop.install_link.summary.installation_id"] = "Installation ID: {0}",
         ["desktop.install_link.summary.head"] = "App: {0}",
@@ -692,6 +696,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.recovery_stopped"] = "Die automatische Pruefung der frueheren Freigabe wurde beendet. Pruefen Sie die verknuepften Installationen in Ihrem Konto, bevor Sie unten einen Fallback-Code verwenden.";
             localized["desktop.install_link.status.recovery_terminal"] = "Die fruehere Browser-Freigabe wurde abgelehnt. Starten Sie eine neue Freigabe oder nutzen Sie einen Fallback-Code.";
             localized["desktop.install_link.status.recovery_pending"] = "Eine fruehere Browser-Freigabe wird noch geprueft...";            localized["desktop.install_link.status.recovery_detail"] = "Lassen Sie diese Kopie offen; die fruehere Freigabe wird auf ihrer eigenen Seite bestaetigt. Es wurde keine neue Freigabe gestartet.";            localized["desktop.install_link.status.guided_tools_visible"] = "Helfer-Buttons sind sichtbar.";
+        localized["desktop.install_link.status.observation_ended"] = "Automatische Pruefung pausiert. Pruefen Sie mit 'Ergebnis aktualisieren' den Genehmigungsstatus.";
+        localized["desktop.install_link.button.refresh_result"] = "Ergebnis aktualisieren";
             localized["desktop.install_link.status.guided_tools_hidden"] = "Helfer-Buttons sind ausgeblendet.";
             localized["desktop.install_link.summary.installation_id"] = "Installations-ID: {0}";
             localized["desktop.install_link.summary.head"] = "App: {0}";
@@ -1137,6 +1143,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.recovery_stopped"] = "La verification automatique de l\'approbation precedente est arretee. Verifiez les installations liees dans votre compte avant d\'utiliser un code de secours ci-dessous.";
             localized["desktop.install_link.status.recovery_terminal"] = "L\'approbation precedente du navigateur a ete rejetee. Lancez une nouvelle approbation ou utilisez un code de secours.";
             localized["desktop.install_link.status.recovery_pending"] = "Une approbation precedente du navigateur est encore en cours de verification...";            localized["desktop.install_link.status.recovery_detail"] = "Laissez cette copie ouverte; l\'approbation precedente est confirmee sur sa propre page. Aucune nouvelle approbation n\'a ete lancee.";            localized["desktop.install_link.status.guided_tools_visible"] = "Les boutons d'aide sont visibles.";
+        localized["desktop.install_link.status.observation_ended"] = "Verification automatique en pause. Utilisez 'Actualiser le resultat' pour reverifier l'approbation.";
+        localized["desktop.install_link.button.refresh_result"] = "Actualiser le resultat";
             localized["desktop.install_link.status.guided_tools_hidden"] = "Les boutons d'aide sont masques.";
             localized["desktop.install_link.summary.installation_id"] = "ID d'installation : {0}";
             localized["desktop.install_link.summary.head"] = "App : {0}";
@@ -1587,6 +1595,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.recovery_stopped"] = "前回の承認の自動確認は停止しました。下のフォールバックコードを使用する前に、アカウントにリンク済みのインストールを確認してください。";
             localized["desktop.install_link.status.recovery_terminal"] = "前回のブラウザ承認は拒否されました。新しい承認を開始するか、フォールバックコードを使用してください。";
             localized["desktop.install_link.status.recovery_pending"] = "以前のブラウザ承認をまだ確認しています...";            localized["desktop.install_link.status.recovery_detail"] = "このコピーを開いたままにしてください。以前の承認は専用ページで確認されます。新しい承認は開始されていません。";            localized["desktop.install_link.status.guided_tools_visible"] = "ヘルプボタンは表示されています。";
+        localized["desktop.install_link.status.observation_ended"] = "自動チェックは一時停止しています。「結果を更新」を使用して承認状態を再確認してください。";
+        localized["desktop.install_link.button.refresh_result"] = "結果を更新";
             localized["desktop.install_link.status.guided_tools_hidden"] = "ヘルプボタンは非表示です。";
             localized["desktop.install_link.summary.installation_id"] = "インストール ID: {0}";
             localized["desktop.install_link.summary.head"] = "アプリ: {0}";
@@ -2037,6 +2047,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.recovery_stopped"] = "A verificacao automatica da aprovacao anterior parou. Verifique as instalacoes vinculadas na sua conta antes de usar um codigo de reserva abaixo.";
             localized["desktop.install_link.status.recovery_terminal"] = "A aprovacao anterior do navegador foi rejeitada. Inicie uma nova aprovacao ou use um codigo de reserva.";
             localized["desktop.install_link.status.recovery_pending"] = "Uma aprovacao anterior do navegador ainda esta sendo verificada...";            localized["desktop.install_link.status.recovery_detail"] = "Mantenha esta copia aberta; a aprovacao anterior e confirmada em sua propria pagina. Nenhuma nova aprovacao foi iniciada.";            localized["desktop.install_link.status.guided_tools_visible"] = "Botoes de ajuda estao visiveis.";
+        localized["desktop.install_link.status.observation_ended"] = "Verificacao automatica pausada. Use 'Atualizar resultado' para verificar novamente o estado da aprovacao.";
+        localized["desktop.install_link.button.refresh_result"] = "Atualizar resultado";
             localized["desktop.install_link.status.guided_tools_hidden"] = "Botoes de ajuda estao ocultos.";
             localized["desktop.install_link.summary.installation_id"] = "ID da instalacao: {0}";
             localized["desktop.install_link.summary.head"] = "App: {0}";
@@ -2487,6 +2499,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.status.recovery_stopped"] = "先前批准的自动检查已停止。请先检查账户中已关联的安装，再使用下方的备用代码。";
             localized["desktop.install_link.status.recovery_terminal"] = "先前的浏览器批准已被拒绝。请开始新的批准或使用备用代码。";
             localized["desktop.install_link.status.recovery_pending"] = "仍在检查先前的浏览器批准...";            localized["desktop.install_link.status.recovery_detail"] = "请保持此副本开启；以前的批准将在其专用页面上确认。尚未开始新的批准。";            localized["desktop.install_link.status.guided_tools_visible"] = "帮助按钮已显示。";
+        localized["desktop.install_link.status.observation_ended"] = "自动检查已暂停。请使用“刷新结果”重新检查审批状态。";
+        localized["desktop.install_link.button.refresh_result"] = "刷新结果";
             localized["desktop.install_link.status.guided_tools_hidden"] = "帮助按钮已隐藏。";
             localized["desktop.install_link.summary.installation_id"] = "安装 ID: {0}";
             localized["desktop.install_link.summary.head"] = "应用: {0}";
