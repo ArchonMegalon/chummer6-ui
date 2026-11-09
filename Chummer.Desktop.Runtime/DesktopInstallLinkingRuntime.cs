@@ -156,6 +156,15 @@ public static class DesktopInstallLinkingRuntime
     private static readonly object AppLocalCallbackListenerSync = new();
     private static readonly ConcurrentDictionary<string, byte> RemoteCallbackPolls =
         new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Observation registry: maps an active poll worker to its running Task.
+    /// Registered by the worker itself as its first statement and removed in
+    /// its finally (same lifetime as <see cref="RemoteCallbackPolls"/>, which
+    /// keeps the atomic-claim role). Test teardown joins these tasks so no
+    /// test-owned network work survives shared-state restoration.
+    /// </summary>
+    internal static readonly ConcurrentDictionary<string, Task> RemoteCallbackPollTasks = new();
     private static AppLocalCallbackListenerState? _appLocalCallbackListener;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -2707,14 +2716,19 @@ public static class DesktopInstallLinkingRuntime
             return;
         }
 
-        _ = Task.Run(async () =>
+        Task pollTask = null!;
+        pollTask = Task.Run(async () =>
         {
+            // Register this exact task as its first statement: teardown can
+            // then await the real worker instead of hoping it has finished.
+            RemoteCallbackPollTasks[state.InstallationId] = pollTask;
             try
             {
                 await PollRemoteBrowserCallbackAsync(state, CancellationToken.None).ConfigureAwait(false);
             }
             finally
             {
+                RemoteCallbackPollTasks.TryRemove(state.InstallationId, out _);
                 RemoteCallbackPolls.TryRemove(state.InstallationId, out _);
                 DesktopInstallLinkingState latest = LoadOrCreateState(state.HeadId);
                 if (IsSameOwnerAuthority(latest, state) && !IsClaimed(latest)

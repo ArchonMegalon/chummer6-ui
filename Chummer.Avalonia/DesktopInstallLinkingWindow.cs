@@ -49,6 +49,20 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _unlinkButton;
     private readonly Button _exitButton;
     private CancellationTokenSource? _handoffPollCancellation;
+
+    /// <summary>
+    /// Window-lifetime token: cancelled exactly once, when the window closes
+    /// (or the user continues unlinked). Every not-yet-started window-owned
+    /// operation - the delayed automatic handoff, post-clipboard control
+    /// updates, new observation loops - rechecks this token after each
+    /// asynchronous boundary, so a dismissed window cannot dispatch a browser
+    /// or start new linking work. Operations that may already have reached
+    /// Hub are NOT cancelled by this token: their identity and outcome remain
+    /// safely retained (audit boundary: cancel work that has not started,
+    /// preserve work that may have been dispatched).
+    /// </summary>
+    private CancellationTokenSource? _windowLifetimeCancellation;
+    private Task? _automaticHandoffTask;
     private readonly bool _loginVideoPreview;
     private bool _automaticHandoffStarted;
     private bool _browserFallbackVisible;
@@ -61,6 +75,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         ArgumentNullException.ThrowIfNull(context);
 
         _state = context.State;
+        _windowLifetimeCancellation = new CancellationTokenSource();
         _loginVideoPreview = loginVideoPreview;
         _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(context.State.HeadId);
         _preferences = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId);
@@ -791,25 +806,72 @@ internal sealed class DesktopInstallLinkingWindow : Window
         }
 
         _automaticHandoffStarted = true;
-        _ = RunAutomaticHandoffAsync();
+        // Retained so completion (including cancellation) can be observed;
+        // a discarded task could keep dispatching after the window closed.
+        _automaticHandoffTask = RunAutomaticHandoffAsync();
     }
+
+    /// <summary>True while the window is still open and may start new work.</summary>
+    private bool IsWindowLifetimeActive
+        => _windowLifetimeCancellation is { IsCancellationRequested: false };
+
+    /// <summary>
+    /// Test seam: the automatic handoff awaits this for its start delay.
+    /// Tests override it to hold the handoff before dispatch and close the
+    /// window deterministically (audit demand: no race on a 250 ms window).
+    /// </summary>
+    internal static Func<int, CancellationToken, Task> HandoffDelay { get; set; } =
+        static (milliseconds, cancellationToken) => Task.Delay(milliseconds, cancellationToken);
+
+    /// <summary>
+    /// Test seam: replaces the actual portal dispatch of the automatic
+    /// handoff. Returning a result records a dispatch attempt without
+    /// launching a shell process; when no override is set the runtime's real
+    /// dispatch path runs. Production behavior is unchanged.
+    /// </summary>
+    internal static Func<DesktopInstallLinkingState, (bool opened, string absoluteUri, string? failureReason)>? PortalOpenOverride { get; set; }
+
+    /// <summary>
+    /// Test seam: replaces the clipboard write of the manual fallback so
+    /// tests can hold that asynchronous boundary deterministically.
+    /// </summary>
+    internal static Func<string, CancellationToken, Task>? ClipboardWriteOverride { get; set; }
 
     private async Task RunAutomaticHandoffAsync()
     {
+        CancellationToken lifetime = _windowLifetimeCancellation?.Token ?? CancellationToken.None;
         try
         {
             UpdateMatrixHandoffState("Preparing local callback");
-            await Task.Delay(250).ConfigureAwait(true);
-            if (DesktopInstallLinkingRuntime.IsClaimed(_state))
+            // The start delay MUST observe the lifetime token: cancelling an
+            // unrelated observer token does not cancel this wait (audit P2).
+            await HandoffDelay(250, lifetime).ConfigureAwait(true);
+            if (lifetime.IsCancellationRequested || DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
                 return;
             }
 
-            bool opened = DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(
-                _state,
-                out string loginUrl,
-                out string? failureReason);
-            await HandlePortalOpenOutcomeAsync(opened, loginUrl, failureReason).ConfigureAwait(true);
+            if (PortalOpenOverride is { } portalOpenOverride)
+            {
+                (bool opened, string loginUrl, string? failureReason) overridden = portalOpenOverride(_state);
+                await HandlePortalOpenOutcomeAsync(overridden.opened, overridden.loginUrl, overridden.failureReason)
+                    .ConfigureAwait(true);
+            }
+            else
+            {
+                bool opened = DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(
+                    _state,
+                    out string loginUrl,
+                    out string? failureReason);
+                await HandlePortalOpenOutcomeAsync(opened, loginUrl, failureReason).ConfigureAwait(true);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected shutdown path: the window closed (or the user chose
+            // "continue unlinked") while the handoff delay was still pending.
+            // This is cancellation, not a browser fallback outcome.
+            UpdateMatrixHandoffState("Handoff cancelled");
         }
         catch (Exception ex)
         {
@@ -858,6 +920,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     // instead of hiding it behind a waiting message. Never
                     // mint a replacement approval here.
                     await ShowManualBrowserFallbackAsync(accountUrl, failureReason).ConfigureAwait(true);
+                    // Async boundary: a closed window must not start a new
+                    // observer (the clipboard continuation above may have
+                    // resumed after OnClosing already cancelled the previous
+                    // token).
+                    if (!IsWindowLifetimeActive)
+                    {
+                        return;
+                    }
+
                     UpdateMatrixHandoffState("Browser fallback ready");
                     if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
                     {
@@ -915,11 +986,26 @@ internal sealed class DesktopInstallLinkingWindow : Window
         }
 
         await ShowManualBrowserFallbackAsync(accountUrl, failureReason).ConfigureAwait(true);
+        if (!IsWindowLifetimeActive)
+        {
+            return;
+        }
+
         UpdateMatrixHandoffState("Browser fallback ready");
     }
 
     private void StartClaimPolling(string stateLabel)
     {
+        if (!IsWindowLifetimeActive)
+        {
+            // The window was closed (or the user continued unlinked) after an
+            // asynchronous boundary: do not start another observer. An
+            // already-dispatched approval remains safely retained with the
+            // runtime - closing the window never erases an operation that may
+            // have reached Hub.
+            return;
+        }
+
         _handoffPollCancellation?.Cancel();
         _handoffPollCancellation?.Dispose();
         _handoffPollCancellation = new CancellationTokenSource();
@@ -1300,6 +1386,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
             DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId);
         }
 
+        // Invalidate the pending handoff BEFORE the close event fires, so the
+        // delayed continuation can never dispatch a browser after the user
+        // chose to continue without linking.
+        _windowLifetimeCancellation?.Cancel();
         Close();
         return Task.CompletedTask;
     }
@@ -1403,6 +1493,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private void OnClosing(object? sender, WindowClosingEventArgs e)
     {
         _handoffPollCancellation?.Cancel();
+        // Cancels the not-yet-started automatic handoff (its cancellable
+        // delay) and blocks any post-async-boundary continuation from
+        // dispatching a browser or starting a new observer after close.
+        _windowLifetimeCancellation?.Cancel();
 
         if (!DesktopInstallLinkingRuntime.IsClaimed(_state) && !_loginVideoPreview)
         {
@@ -1419,12 +1513,29 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private async Task ShowManualBrowserFallbackAsync(string loginUrl, string? failureReason)
     {
+        CancellationToken lifetime = _windowLifetimeCancellation?.Token ?? CancellationToken.None;
         ShowManualBrowserFallback(loginUrl, failureReason);
         if (Clipboard is not null && !string.IsNullOrWhiteSpace(loginUrl))
         {
             try
             {
-                await Clipboard.SetTextAsync(loginUrl);
+                if (ClipboardWriteOverride is { } clipboardWriteOverride)
+                {
+                    await clipboardWriteOverride(loginUrl, lifetime);
+                }
+                else
+                {
+                    await Clipboard.SetTextAsync(loginUrl);
+                }
+                // The clipboard await is an asynchronous boundary: the window
+                // may have closed while it was pending. Do not touch controls
+                // afterwards - and let the caller's post-await guard decide
+                // whether an observer may still be started.
+                if (lifetime.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 SetStatus(BuildBrowserFallbackStatus(_language, copiedToClipboard: true));
                 return;
             }

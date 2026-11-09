@@ -65,6 +65,9 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
         DesktopInstallLinkingWindow.ObservationLifetime = static () =>
             DesktopInstallLinkingRuntime.ResolveRemoteCallbackObservationLifetime();
         DesktopInstallLinkingWindow.ObservationMaxSteps = int.MaxValue;
+        DesktopInstallLinkingWindow.HandoffDelay = static (ms, ct) => Task.Delay(ms, ct);
+        DesktopInstallLinkingWindow.PortalOpenOverride = null;
+        DesktopInstallLinkingWindow.ClipboardWriteOverride = null;
         Environment.SetEnvironmentVariable(StateRootEnv, _priorStateRoot);
         Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", _priorApiBase);
         try
@@ -556,6 +559,8 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
         private readonly bool _pendingFirst;
         private readonly bool _holdBody;
         private Task? _listenerTask;
+        private readonly List<Task> _handlerTasks = new();
+        private readonly object _handlerLock = new();
         private readonly List<TaskCompletionSource<bool>> _gates = new();
         private readonly object _gateLock = new();
         private readonly string _completedBody;
@@ -601,7 +606,7 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
                 while (true)
                 {
                     System.Net.Sockets.Socket connection = await _listener.AcceptAsync();
-                    _ = Task.Run(async () =>
+                    Task handler = Task.Run(async () =>
                     {
                         try
                         {
@@ -648,6 +653,7 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
                         {
                         }
                     });
+                    lock (_handlerLock) { _handlerTasks.Add(handler); }
                 }
             });
         }
@@ -678,12 +684,52 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
 
         public void Dispose()
         {
+            // Audit-required teardown order (test isolation): request bounded
+            // shutdown, stop accepting, finish accepted handlers, await the
+            // runtime worker, THEN restore shared configuration and state.
             ReleaseResponses();
+            try { _listener.Dispose(); _listenerTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+
+            Task[] handlers;
+            lock (_handlerLock) { handlers = _handlerTasks.ToArray(); }
+            try { Task.WhenAll(handlers).Wait(TimeSpan.FromSeconds(5)); } catch { }
+            int unfinishedHandlers = handlers.Count(h => !h.IsCompleted);
+            int unfinishedGates;
+            lock (_gateLock) { unfinishedGates = _gates.Count; }
+
+            // Join every still-registered runtime worker (bounded) BEFORE
+            // touching process-wide environment or state.
+            System.Collections.Concurrent.ConcurrentDictionary<string, Task> pollTasks =
+                (System.Collections.Concurrent.ConcurrentDictionary<string, Task>)
+                (typeof(DesktopInstallLinkingRuntime).GetField("RemoteCallbackPollTasks",
+                        System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+                    ?? throw new AssertFailedException("RemoteCallbackPollTasks missing"))
+                .GetValue(null)!;
+            Task workerJoin = Task.CompletedTask;
+            Task[] running = pollTasks.Values.ToArray();
+            if (running.Length > 0)
+            {
+                workerJoin = Task.WhenAll(running);
+            }
+
+            Task finished = Task.WhenAny(workerJoin, Task.Delay(TimeSpan.FromSeconds(5)));
+            try { finished.GetAwaiter().GetResult(); } catch { }
+            int remainingWorkers = pollTasks?.Count ?? 0;
+
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", _priorStateRoot);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", _priorApiBase);
             Environment.SetEnvironmentVariable("CHUMMER_PROOF_REUSE_SECONDS", _priorProofReuse);
-            try { _listener.Dispose(); _listenerTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
             try { if (Directory.Exists(_stateRoot)) Directory.Delete(_stateRoot, recursive: true); } catch { }
+
+            // Teardown acceptance (audit §3): no fixture-owned work may
+            // survive shared-state restoration. An assert here turns any
+            // leaked handler/worker into a deterministic red, in any order.
+            if (unfinishedHandlers != 0 || unfinishedGates != 0 || remainingWorkers != 0)
+            {
+                throw new AssertFailedException(
+                    $"fixture leaked work at teardown: {unfinishedHandlers} unfinished connection handler(s), "
+                    + $"{unfinishedGates} unresolved response gate(s), {remainingWorkers} registered poll worker(s)");
+            }
         }
     }
 
@@ -794,17 +840,40 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
 
             // And a genuinely pending operation with a readable retained
             // request must still be resumable - the guard is narrow, not a
-            // blanket veto.
+            // blanket veto. The positive case runs against a CONTROLLED
+            // completing Hub response (audit §3B): the worker finishes inside
+            // the test, and teardown never races a live worker against
+            // environment restoration.
             SaveState(LoadState() with
             {
                 BrowserApprovalTerminal = false,
                 UpdatedAtUtc = DateTimeOffset.UtcNow
             });
             Assert.IsFalse(LoadState().BrowserApprovalTerminal, "precondition: pending state");
+            using InflightHubFixture positiveCase = new(pendingFirst: false, holdBody: false);
+            SaveState(PrepareRetainedApproval());
             bool resumed = DesktopInstallLinkingRuntime.TryResumeRemoteCallbackPolling(LoadState());
             Assert.IsTrue(resumed, "a pending operation with a retained request must be resumable");
             Assert.IsTrue(DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(LoadState().InstallationId),
                 "resume must actually start the network worker");
+
+            // Bounded shutdown: the controlled response completes the
+            // operation, the worker exits, and it must be UNREGISTERED before
+            // the fixture's Dispose restores shared state.
+            for (int i = 0; i < 400; i++)
+            {
+                Thread.Sleep(25);
+                Dispatcher.UIThread.RunJobs();
+                if (!DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(LoadState().InstallationId))
+                {
+                    break;
+                }
+            }
+
+            Assert.IsFalse(DesktopInstallLinkingRuntime.IsRemoteCallbackPollActive(LoadState().InstallationId),
+                "the worker must have finished and unregistered before cleanup");
+            Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(LoadState()),
+                "the controlled response must have completed the same operation");
         });
     }
 
@@ -837,6 +906,272 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
 
             StringAssert.Contains(GetStatus(window), "cannot be resumed", StringComparison.Ordinal);
             StringAssert.Contains(GetMatrixHandoffState(window), "Recovery unavailable", StringComparison.Ordinal);
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Window-lifetime regressions (9 Nov re-audit P2 #2): closing the
+    // optional linking window (or choosing "continue unlinked") must cancel
+    // a not-yet-started automatic handoff and must not start new work after
+    // asynchronous boundaries - while an already-dispatched operation stays
+    // safely retained.
+    // ------------------------------------------------------------------
+
+    private static void InvokeBeginAutomaticHandoff(Window window)
+    {
+        MethodInfo begin = typeof(DesktopInstallLinkingWindow).GetMethod(
+                "BeginAutomaticHandoffAsync", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("BeginAutomaticHandoffAsync missing");
+        begin.Invoke(window, null);
+    }
+
+    [TestMethod]
+    public async Task Close_during_initial_handoff_delay_prevents_browser_dispatch()
+    {
+        // Audit regression row 1: close while the initial handoff delay is
+        // held -> no browser dispatch and no newly started approval.
+        TaskCompletionSource<bool> delayGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        DesktopInstallLinkingWindow.HandoffDelay = (_, _) => delayGate.Task;
+        int dispatches = 0;
+        DesktopInstallLinkingWindow.PortalOpenOverride = _ =>
+        {
+            Interlocked.Increment(ref dispatches);
+            return (true, "https://chummer.run/claim/never", null);
+        };
+
+        DesktopInstallLinkingState before = PrepareRetainedApproval();
+        await WithWindowAsync(async window =>
+        {
+            InvokeBeginAutomaticHandoff(window);
+            await StepLoopAsync(maxSteps: 6);
+            Assert.AreEqual("Preparing local callback", GetMatrixHandoffState(window),
+                "precondition: the handoff is waiting at its start delay");
+
+            window.Close();
+            PumpUi();
+
+            // COMPLETE (do not cancel) the delay AFTER the close: the
+            // continuation really resumes and must be stopped by the
+            // lifetime recheck - the exact race the audit flagged. (The
+            // cancelled-delay path is covered by the real-delay test below.)
+            delayGate.TrySetResult(true);
+            await StepLoopAsync(maxSteps: 30);
+
+            Assert.AreEqual(0, dispatches, "a closed window must never dispatch the browser");
+            StringAssert.DoesNotMatch(GetMatrixHandoffState(window),
+                new System.Text.RegularExpressions.Regex("Browser fallback ready"),
+                "cancellation must not be reported as a browser fallback outcome");
+            AssertNoReplacementApproval(before);
+        });
+    }
+
+    [TestMethod]
+    public async Task Continue_unlinked_before_handoff_resumes_prevents_browser_dispatch()
+    {
+        // Audit regression row 2: select Continue unlinked before the handoff
+        // resumes -> same result (no dispatch, no new approval).
+        TaskCompletionSource<bool> delayGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        DesktopInstallLinkingWindow.HandoffDelay = (_, _) => delayGate.Task;
+        int dispatches = 0;
+        DesktopInstallLinkingWindow.PortalOpenOverride = _ =>
+        {
+            Interlocked.Increment(ref dispatches);
+            return (true, "https://chummer.run/claim/never", null);
+        };
+
+        DesktopInstallLinkingState before = PrepareRetainedApproval();
+        await WithWindowAsync(async window =>
+        {
+            InvokeBeginAutomaticHandoff(window);
+            await StepLoopAsync(maxSteps: 6);
+
+            MethodInfo continueUnlinked = typeof(DesktopInstallLinkingWindow).GetMethod(
+                    "ContinueUnlinkedAsync", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("ContinueUnlinkedAsync missing");
+            await (Task)continueUnlinked.Invoke(window, null)!;
+
+            // Release the delay NORMALLY: the continuation resumes and must
+            // still refuse to dispatch because the lifetime token is
+            // cancelled (post-boundary guard, not the delay itself).
+            delayGate.TrySetResult(true);
+            await StepLoopAsync(maxSteps: 30);
+
+            Assert.AreEqual(0, dispatches, "continue-unlinked must cancel the pending handoff");
+            AssertNoReplacementApproval(before);
+        });
+    }
+
+    [TestMethod]
+    public async Task Close_during_clipboard_boundary_does_not_start_new_observer()
+    {
+        // Audit regression row 3: close while the clipboard completion is
+        // held -> no new window observer after closure (and no post-close
+        // control updates).
+        TaskCompletionSource<bool> clipboardGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        DesktopInstallLinkingWindow.ClipboardWriteOverride = (_, _) => clipboardGate.Task;
+
+        await WithWindowAsync(async window =>
+        {
+            DesktopInstallLinkingState before = PrepareRetainedApproval();
+            string url = DesktopInstallLinkingRuntime.BuildClaimPortalAbsoluteUriForInstall(before);
+            // Fire, don't await: the handler stays suspended inside the held
+            // clipboard write, so awaiting it here would deadlock the test
+            // body (the gate only completes after the close below).
+            Task handlerTask = InvokeHandlerAsync(window, opened: false, url, "browser launch failed");
+            for (int i = 0; i < 200; i++)
+            {
+                Thread.Sleep(10);
+                Dispatcher.UIThread.RunJobs();
+                if (GetPrivateField<bool>(window, "_browserFallbackVisible"))
+                {
+                    break;
+                }
+            }
+
+            AssertFallbackShown(window, url);
+
+            // The observer token is null until the first StartClaimPolling;
+            // read it null-safely and require it to be UNCHANGED after close
+            // (a replaced token would mean a new observer started).
+            FieldInfo tokenField = typeof(DesktopInstallLinkingWindow).GetField(
+                    "_handoffPollCancellation", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("_handoffPollCancellation missing");
+            object? observerTokenBefore = tokenField.GetValue(window);
+            await StepLoopAsync(maxSteps: 6);
+
+            window.Close();
+            PumpUi();
+
+            clipboardGate.TrySetResult(true);
+            await StepLoopAsync(maxSteps: 30);
+            await handlerTask;
+
+            StringAssert.DoesNotMatch(GetStatus(window), new System.Text.RegularExpressions.Regex("Copied"),
+                "a closed window must not run the clipboard continuation's control updates");
+            StringAssert.DoesNotMatch(GetMatrixHandoffState(window),
+                new System.Text.RegularExpressions.Regex("Waiting for browser callback"),
+                "a closed window must not start a new observer");
+            object? observerTokenAfter = tokenField.GetValue(window);
+            Assert.AreSame(observerTokenBefore, observerTokenAfter,
+                "StartClaimPolling must not have replaced the observer token after close");
+        });
+    }
+
+    [TestMethod]
+    public async Task Close_while_real_delay_pending_cancels_the_handoff_as_cancellation()
+    {
+        // The default delay seam honors the lifetime token: closing the
+        // window cancels the pending delay, the continuation surfaces as
+        // cancellation ("Handoff cancelled", never "Browser fallback ready"),
+        // and no dispatch happens.
+        int dispatches = 0;
+        DesktopInstallLinkingWindow.PortalOpenOverride = _ =>
+        {
+            Interlocked.Increment(ref dispatches);
+            return (true, "https://chummer.run/claim/never", null);
+        };
+
+        DesktopInstallLinkingState before = PrepareRetainedApproval();
+        await WithWindowAsync(async window =>
+        {
+            InvokeBeginAutomaticHandoff(window);
+            await StepLoopAsync(maxSteps: 6);
+            Assert.AreEqual("Preparing local callback", GetMatrixHandoffState(window),
+                "precondition: the handoff is waiting at its real 250 ms delay");
+
+            window.Close();
+            PumpUi();
+
+            // Give the real delay time to fire or be cancelled.
+            await StepLoopAsync(maxSteps: 30);
+
+            Assert.AreEqual(0, dispatches, "a closed window must never dispatch the browser");
+            StringAssert.Contains(GetMatrixHandoffState(window), "Handoff cancelled", StringComparison.Ordinal);
+            StringAssert.DoesNotMatch(GetMatrixHandoffState(window),
+                new System.Text.RegularExpressions.Regex("Browser fallback ready"),
+                "cancellation must not be reported as a browser fallback outcome");
+            AssertNoReplacementApproval(before);
+        });
+    }
+
+    [TestMethod]
+    public async Task Close_after_dispatch_retains_original_operation()
+    {
+        // Audit regression row 4: close after a request was dispatched -> the
+        // original operation remains safely retained (no false rejection, no
+        // replacement approval). The lifetime token cancels window-owned
+        // work; the runtime operation's identity and outcome are untouched.
+        TaskCompletionSource<bool> delayGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        DesktopInstallLinkingWindow.HandoffDelay = (_, _) => delayGate.Task;
+        int dispatches = 0;
+        DesktopInstallLinkingWindow.PortalOpenOverride = _ =>
+        {
+            Interlocked.Increment(ref dispatches);
+            return (true, "https://chummer.run/claim/dispatched", null);
+        };
+
+        DesktopInstallLinkingState before = PrepareRetainedApproval();
+        await WithWindowAsync(async window =>
+        {
+            InvokeBeginAutomaticHandoff(window);
+            delayGate.TrySetResult(true);
+            await StepLoopAsync(maxSteps: 30);
+            Assert.AreEqual(1, dispatches, "precondition: the handoff dispatched");
+            StringAssert.Contains(GetMatrixHandoffState(window), "Waiting for browser callback",
+                StringComparison.Ordinal);
+
+            window.Close();
+            PumpUi();
+            await StepLoopAsync(maxSteps: 30);
+
+            // The dispatched operation is preserved: same retained request,
+            // same installation, no replacement approval, no false terminal.
+            Assert.AreEqual(before.BrowserApprovalRequest, LoadState().BrowserApprovalRequest,
+                "the dispatched operation's retained approval must be unchanged after close");
+            Assert.AreEqual(before.InstallationId, LoadState().InstallationId);
+            Assert.IsFalse(LoadState().BrowserApprovalTerminal,
+                "closing the window must not mark the dispatched operation rejected");
+        });
+    }
+
+    [TestMethod]
+    public async Task StartClaimPolling_refuses_new_observer_on_closed_window()
+    {
+        // Mutation F kill: the central guard in StartClaimPolling is the last
+        // line of defense - the recovery_pending branch (no fallback, no URL)
+        // reaches it without any other closure check, so closing the window
+        // first must make it refuse to start a new observation loop.
+        await WithWindowAsync(async window =>
+        {
+            PrepareRetainedApproval();
+
+            FieldInfo tokenField = typeof(DesktopInstallLinkingWindow).GetField(
+                    "_handoffPollCancellation", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("_handoffPollCancellation missing");
+            object? tokenBefore = tokenField.GetValue(window);
+
+            window.Close();
+            PumpUi();
+
+            // URL-less recovery path: falls straight through to
+            // StartClaimPolling - which must refuse on the closed window.
+            Task handlerTask = InvokeHandlerAsync(window, opened: false, "", "browser launch failed");
+            for (int i = 0; i < 200; i++)
+            {
+                Thread.Sleep(10);
+                Dispatcher.UIThread.RunJobs();
+                if (handlerTask.IsCompleted)
+                {
+                    break;
+                }
+            }
+
+            await handlerTask;
+            Assert.AreSame(tokenBefore, tokenField.GetValue(window),
+                "StartClaimPolling must not have replaced the observer token on a closed window");
+            StringAssert.DoesNotMatch(GetMatrixHandoffState(window),
+                new System.Text.RegularExpressions.Regex("Waiting for browser callback"),
+                "no new observer may run for a closed window");
         });
     }
 
