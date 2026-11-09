@@ -2,11 +2,11 @@
 
 ## Remote Windows work with Friday Code
 
-Read [the current Windows handoff](docs/agents/WINDOWS_SCOPE.md) first. The latest
-3 November 2026 re-audit closes the Quality replacement defect in merged PR #517.
-Prioritize fresh Attributes entry, the asynchronous Quality-display context guard,
-and bundled runtime content. Keep AI Finish gated; qualify restart/account recovery
-and the clean-machine manual SR5 beta without narrowing the full Windows mission.
+Read [the current Windows handoff](docs/agents/WINDOWS_SCOPE.md) first, including
+the 9 November 2026 controller update. Reconcile the current Teable assignment
+and merged PR #577 before resuming; the older audits below that update are
+historical findings, not a current bug list. Keep AI Finish gated and preserve
+the full Windows mission and the existing account, package and recovery boundaries.
 
 For a user-started Friday Code session on another Windows host, read
 `docs/agents/WINDOWS_REMOTE.md`, `docs/agents/WINDOWS_SCOPE.md` and
