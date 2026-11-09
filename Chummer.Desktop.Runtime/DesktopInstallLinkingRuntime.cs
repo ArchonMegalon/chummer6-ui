@@ -156,6 +156,16 @@ public static class DesktopInstallLinkingRuntime
     private static readonly object AppLocalCallbackListenerSync = new();
     private static readonly ConcurrentDictionary<string, byte> RemoteCallbackPolls =
         new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Observation registry: maps each poll worker to its running Task.
+    /// Registered before the worker can start and removed after its final
+    /// state access. <see cref="RemoteCallbackPolls"/> keeps the atomic-claim
+    /// role. Test teardown joins these tasks so no
+    /// test-owned network work survives shared-state restoration.
+    /// </summary>
+    internal static readonly ConcurrentDictionary<string, Task> RemoteCallbackPollTasks =
+        new(StringComparer.OrdinalIgnoreCase);
     private static AppLocalCallbackListenerState? _appLocalCallbackListener;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -2707,21 +2717,40 @@ public static class DesktopInstallLinkingRuntime
             return;
         }
 
-        _ = Task.Run(async () =>
+        // A predecessor can still be finishing while the next generation
+        // starts. Retain both handles until their own final state access ends.
+        string pollTaskId = state.InstallationId + "/" + Guid.NewGuid().ToString("N");
+        TaskCompletionSource registered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task pollTask = null!;
+        pollTask = Task.Run(async () =>
         {
+            // The worker cannot observe the captured Task before assignment,
+            // and callers can join it as soon as start returns.
+            await registered.Task.ConfigureAwait(false);
             try
             {
                 await PollRemoteBrowserCallbackAsync(state, CancellationToken.None).ConfigureAwait(false);
             }
             finally
             {
-                RemoteCallbackPolls.TryRemove(state.InstallationId, out _);
-                DesktopInstallLinkingState latest = LoadOrCreateState(state.HeadId);
-                if (IsSameOwnerAuthority(latest, state) && !IsClaimed(latest)
-                    && latest.BrowserApprovalReturnState != state.BrowserApprovalReturnState)
-                    StartRemoteBrowserCallbackPolling(latest);
+                try
+                {
+                    RemoteCallbackPolls.TryRemove(state.InstallationId, out _);
+                    DesktopInstallLinkingState latest = LoadOrCreateState(state.HeadId);
+                    if (IsSameOwnerAuthority(latest, state) && !IsClaimed(latest)
+                        && latest.BrowserApprovalReturnState != state.BrowserApprovalReturnState)
+                        StartRemoteBrowserCallbackPolling(latest);
+                }
+                finally
+                {
+                    // Remove only this worker; a successor may still be active.
+                    RemoteCallbackPollTasks.TryRemove(
+                        new KeyValuePair<string, Task>(pollTaskId, pollTask));
+                }
             }
         });
+        RemoteCallbackPollTasks[pollTaskId] = pollTask;
+        registered.SetResult();
     }
 
     private static async Task PollRemoteBrowserCallbackAsync(

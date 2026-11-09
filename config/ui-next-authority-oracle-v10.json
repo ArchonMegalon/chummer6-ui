@@ -98,7 +98,7 @@
       "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewFinalizationOwnerTests.cs": "bb88d86b86e356716d796cf1126eaa5afc57a8406b46c497026b0e247a04591a",
       "Chummer.CreationWizard.Presentation.Tests/WorkspaceOverviewPreparationTests.cs": "36a11f46faee9ffa71598023b34aacb3a64a6ac1598765a1660172c699c94ede",
       "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj": "11eea6a26eefb061486fda4afae665750675321fa5e23f023db43d410cd548f8",
-      "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs": "50ec60d5d840d142ffcb752554889b37abfabe6fbc054c26a7f73ee63c10eb7c",
+      "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs": "6496897678813c31bc8bce5e5cfc9a5c3dd26620ddd7b0e65bb7f42fbc124f42",
       "Chummer.Desktop.Runtime/DesktopInstallOwnerContextAccessor.cs": "432000f74109257192aba4e1caa3d3aeb2848d56bb6bb809671219da7fe67bc3",
       "Chummer.Desktop.Runtime/DesktopUpdateManifest.cs": "c4ef8f08cc1bb38a0b68dcbb108cb13a45e4056c2575e10dbaf76eaae61e3a8c",
       "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs": "062a0eaeaf2ffc4f91e3442262fa59918155960b44cf02b19c9316c3aefad669",
