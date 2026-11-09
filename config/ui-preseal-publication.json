@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "a507a9a82efdb47cdc143c593a52fe12ece0cb0e",
-  "baseTree": "e417678b52b3871c13a646e8170098db7e5fc6ff",
+  "baseCommit": "4b22392da9ecf8a1bb0f6f739e434d4dfb8e5b85",
+  "baseTree": "437f9b0b980727ab5288e037ec30d7bb61af0dc1",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,20 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "58891b6a8b69c46acee438f5228a0c8e5579adc3",
+      "blob": "d4c2c17fef00e192a6999bc030e2755f49d6a879",
       "path": "AGENTS.md",
-      "sha256": "3a3a6304a40e649ad9a6885b5d2ba37853635e03fc407c81af1aabf3d8cf1b7b",
-      "sizeBytes": 6975,
+      "sha256": "a9f5fdac8d18d42bc39ea7c067d66ad850758587268c5b2fe89f1e8b7ea4f79f",
+      "sizeBytes": 7616,
       "status": "M"
     },
     {
-      "blob": "5381c63aff92469a03902b60c68848a4cc0259a6",
+      "blob": "4d88c620c1de49c475f2cc41f6fc1db1b391037f",
       "path": "docs/agents/WINDOWS_SCOPE.md",
-      "sha256": "3e279e9a84f706b79b6885b4f5e8814abf419658b3b2dcbf1e75ded710a521cf",
-      "sizeBytes": 22505,
+      "sha256": "09f57ec5a48f9673168da7112aed37fc92cd25daa0c4318140574eda829c84d0",
+      "sizeBytes": 26494,
       "status": "M"
     }
   ],
-  "recipeTree": "56aff9b40128a0c741259963caf34bb25a641c18",
+  "recipeTree": "f621f9e0f28ef016a16091219b3a123eb4d6e032",
   "releaseClaim": false
 }
