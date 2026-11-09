@@ -1,7 +1,94 @@
 # Windows delivery scope and Friday handoff
 
+## Controller update — 9 November 2026
+
+This update supersedes the old starting base and priority list below. Retain the
+older audit as history; first check current source and existing evidence before
+reopening any of its findings. The full Windows mission remains unchanged.
+
+### Integration status
+
+Friday's [PR #576](https://github.com/ArchonMegalon/chummer6-ui/pull/576) was
+corrected and integrated through [PR #577](https://github.com/ArchonMegalon/chummer6-ui/pull/577).
+PR #577 was rebase-merged on 9 November at 07:01 UTC. Its published product base is
+`a507a9a82efdb47cdc143c593a52fe12ece0cb0e`; its tree is
+`e417678b52b3871c13a646e8170098db7e5fc6ff`. PR #576 is closed as superseded, with
+Friday's branch retained. Do not resubmit that branch or transplant its old patch
+over the corrected integration.
+
+The controller corrections cover worker registration/cleanup across overlapping
+linking generations and clipboard errors arriving after the dialog closes.
+The pinned SDK 10.0.103 Linux application build, 44 focused managed/headless
+tests, the affected publication-control test and all six protected PR checks
+passed. Post-merge run
+[42576620214](https://github.com/ArchonMegalon/chummer6-ui/actions/runs/42576620214)
+passed split-preseal validation. That run skipped SDK/package-consumer
+qualification. These results do not establish native Windows installation,
+autonomous update, complete wizard acceptance or a release.
+
+The controller's 9 November inventory found no newer open Friday PR in UI, Core
+or Hub. The remaining August/September Core, Hub, Rook and tablet drafts are
+separate historical work; they are not an outstanding Friday merge queue. Do not
+revive or merge them merely because they are still open.
+
+### Resume the existing assignment
+
+1. Preserve uncommitted work and read the current Teable `WIN-006` assignment for
+   `friday-windows`, using the existing session `friday-windows-session-01`.
+   Re-read its generation, base and allowed paths; use that exact generation in
+   subsequent reports. The controller is refreshing the old October 31 base.
+   An old heartbeat or this handoff does not authorize a second Windows session.
+2. Fetch main and reconcile local branches with PR #577 and the handoff update.
+   Use the new controller-assigned base for subsequent work. Preserve unpublished
+   commits; report any overlap before changing their ownership. Do not reset or
+   force-push another session's branch, and do not replay an uncertain operation.
+3. Reconcile the latest `win079-lifecycle-p2s-20261109-b7cf61` report with the
+   integration above. It is a completed source milestone, not acceptance of the
+   entire broad `WIN-006` task or all older WIN-001 through WIN-005 claims.
+4. Continue useful Windows work within the existing assigned paths. Start by
+   checking which concrete native acceptance remains for the merged linking
+   lifecycle change; reuse existing valid results for unchanged inputs. Then
+   take the next demonstrated blocker in the manual SR5 install → Creation →
+   Career → save/new-process reopen → PDF → update journey. Do not repeat a
+   repaired audit finding or add release infrastructure without a concrete need.
+5. Report at milestones and at least every 15 minutes while active. Include repo,
+   branch, base/head SHA, actual tests, unresolved blockers and the PR URL in the
+   structured report fields, not only in prose. For stale/conflicting PRs, name
+   the intended successor and request review of the replacement. The controller
+   owns merge and acceptance; do not assume a request or old green badge is approval.
+
+### Shared Android/Windows boundary
+
+Android's current SR5 delivery target is the Before Run, Play, After Run/Career
+and applicable Downtime wizards. Windows owns comprehensive creation, advanced
+editing and amend authoring. Preserve complete character and source data across
+sync; the phone must calculate its actual wizard actions using the character's
+applied amends. A file import alone does not establish that contract.
+
+Where the existing assignment permits Windows sync work, coordinate a concrete
+paired acceptance case with the controller: Windows character with an applied
+amend → phone adoption and amended wizard calculation → offline save/reopen and
+restart → conflict handling → return sync to Windows. Report exact public source
+and package identities and the expected semantic change; keep private character
+content and credentials out of Git and Teable. Do not modify private Android
+overlays or invent Core contracts. Request a scoped shared Core/Hub assignment
+when an actual dependency requires it.
+
+Keep incomplete AI Finish gated; a future enabled action requires a linked
+account and qualified review/apply/recovery semantics. Android delivery does not
+wait for complete Windows parity, and Windows need not wait for Android, Linux,
+SR6 or Rook to finish a usable SR5 increment. Retain local Windows builds,
+existing provider/authentication, package integrity, owner checks and no-replay
+protection. No signing, public release, live deployment or provider activation
+is granted by this handoff.
+
+---
+
+## Historical audit — 3 November 2026
+
 Updated 3 November 2026 from the user's re-audit of the corrected, merged
-Quality editor. This replaces the previous work order. Read it before
+Quality editor. This historical work order is superseded by the controller update
+above where starting base, integration state or priorities differ. Read
 [WINDOWS_REMOTE.md](WINDOWS_REMOTE.md) and [COORDINATION.md](COORDINATION.md).
 Preserve existing assignments, Core authority, account/data boundaries, package
 controls and release permissions.
