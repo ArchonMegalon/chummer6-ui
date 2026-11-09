@@ -1,5 +1,70 @@
 # Windows delivery scope and Friday handoff
 
+## Controller authority and SR6 authorization — 9 November 2026
+
+The user has delegated sole Chummer delivery authority to the main controller:
+"accept it for me", "u are allone with friday from now on - dont reliy on me",
+and "u are the sole authority". The user also explicitly said "allow friday to
+finish sr6". This section supersedes any earlier need for the user to relay
+approvals or perform the remaining native/manual acceptance legs.
+
+Continue the existing Friday session and its provider/authentication. Reconcile
+Teable `WIN-006`, generation 2, worker `friday-windows`, session
+`friday-windows-session-01`; report against the live assignment. Do not spawn a
+second Windows session. The controller owns scope, acceptance, review, merge,
+build/release decisions and chummer.run publication. Work directly with the
+controller and keep useful work moving at ordinary milestones.
+
+### Accepted R80 milestone and current Windows download
+
+The controller accepts the bounded automated qualification milestone reported as
+`win080-qual-20261109-14a809`. Its source is already-merged
+`4b22392da9ecf8a1bb0f6f739e434d4dfb8e5b85`; no new product PR is required merely
+to repeat that unchanged-source qualification. The reported installed startup and
+two-process save/reopen results remain Friday-run evidence. They do not close
+the remaining browser/manual journeys, all Windows requirements or release
+qualification by themselves. `WIN-006` remains assigned for continuing work.
+
+The user requested a Windows build/download on chummer.run. Supply the exact
+`run-20261109-081355` installer and payload through the controller-assigned
+artifact handoff in Teable, including hashes, sizes, exact source/build commands,
+bundled Core-content identity and actual signing status. Keep private characters,
+environments, credentials and broad diagnostic archives out of the transfer.
+Reuse valid builds for unchanged inputs; rebuild when a concrete change requires
+it. Root verifies and publishes the selected distributable files, checks the
+served bytes and retains rollback. A draft artifact transfer is not public
+release approval; follow the specific Teable assignment.
+
+The real-browser account-link, interrupted/lost-response persistence and portable
+amend checks previously labelled "USER LEGS" are now controller/Friday work.
+Execute them through the actual native UI with approved synthetic fixtures and
+report their exact outcomes. Do not substitute direct handler calls or an
+unrelated successful test for the required route. Preserve uncertain-operation
+identity and reconcile before any retry.
+
+### Finish Windows SR6 now
+
+Friday is authorized to complete supported Windows SR6 creation, Career/play,
+edition-isolated rules/content, persistence/import/export and applicable
+amend/Origin/output workflows. Complete missing inputs and Core-backed actions;
+an unavailable-state label alone is not feature completion. Verify actual native
+save/reopen/process restart and retain working SR5 behavior.
+
+Do not wait for Android SR5, AI Finish or Linux before progressing Windows SR6.
+Do not postpone the current usable Windows SR5 download while doing that work.
+For shared Core or Hub changes, give the controller the exact repository,
+contract/path scope and dependent Windows acceptance; obtain its scoped
+assignment and use separate reviewable PRs. The controller can make these
+routine decisions without another user approval. Keep Core as rules authority,
+retain package integrity, account/privacy boundaries and no-replay protection,
+and do not duplicate a rules engine in the UI.
+
+Android's existing order and playtime-wizard/Windows-applied-amend-sync scope are
+unchanged. This authorization does not mark incomplete work accepted, expose
+unfinished AI actions, change provider accounts or promote Android outside the
+existing Play Internal scope. Ask the controller about concrete blockers while
+continuing independent work; do not use routine approval waits as a stopping point.
+
 ## Controller update — 9 November 2026
 
 This update supersedes the old starting base and priority list below. Retain the

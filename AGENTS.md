@@ -2,6 +2,15 @@
 
 ## Remote Windows work with Friday Code
 
+User authorization, 9 November 2026: the main Chummer controller is the sole
+delivery authority. Coordinate acceptance, assignments, integration and delivery
+directly with that controller through Teable and the handoff; do not wait for the
+user to relay routine approvals or perform manual acceptance legs. Continue the
+existing Friday session and preserve its provider/authentication and local work.
+Friday is explicitly authorized to finish Windows SR6 now, in parallel with
+Android, while preserving SR5 and the current Windows download delivery. Needed
+shared Core/Hub work is scoped with the controller, not deferred to user approval.
+
 Read [the current Windows handoff](docs/agents/WINDOWS_SCOPE.md) first, including
 the 9 November 2026 controller update. Reconcile the current Teable assignment
 and merged PR #577 before resuming; the older audits below that update are
