@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "db0ef97bff034e25557d0697e7bb65a67d12f198",
-  "baseTree": "b315a46c0555c65e4d71dddc29b8071a8d570f6c",
+  "baseCommit": "a507a9a82efdb47cdc143c593a52fe12ece0cb0e",
+  "baseTree": "e417678b52b3871c13a646e8170098db7e5fc6ff",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,55 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "31aeb058125d6c2c7a40618a458cb97a2cc6fcc8",
-      "path": "Chummer.Avalonia/DesktopInstallLinkingWindow.cs",
-      "sha256": "b945fd6a206efcfa490364820ca521d081d2611f662db3311abc0ae535f7edc5",
-      "sizeBytes": 77595,
+      "blob": "58891b6a8b69c46acee438f5228a0c8e5579adc3",
+      "path": "AGENTS.md",
+      "sha256": "3a3a6304a40e649ad9a6885b5d2ba37853635e03fc407c81af1aabf3d8cf1b7b",
+      "sizeBytes": 6975,
       "status": "M"
     },
     {
-      "blob": "6c5d6c93e3747323f1ae80330a2ab0b26579bb23",
-      "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
-      "sha256": "6496897678813c31bc8bce5e5cfc9a5c3dd26620ddd7b0e65bb7f42fbc124f42",
-      "sizeBytes": 182285,
-      "status": "M"
-    },
-    {
-      "blob": "5bdd5f141ac659c77b4262c4eb91168937d40778",
-      "path": "Chummer.Tests/Presentation/DesktopInstallLinkingOutcomeMatrixTests.cs",
-      "sha256": "44abfd43444c4d5670c53a47f37ac46707b7ef04f4167a4c856ba1e6a9e92457",
-      "sizeBytes": 69762,
-      "status": "M"
-    },
-    {
-      "blob": "fa57e44d27bba93d56839b8691b38e98c5c4057a",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "0ccfc7ab198b3b14c1b6e7b318bcdf65ba38e718665187ec734ce047d4ce309c",
-      "sizeBytes": 69811,
-      "status": "M"
-    },
-    {
-      "blob": "7411b2c1c0018c3a32740b84efe773d1251781c9",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "f4b508e7dc19d42659541bf71ecf7a14746fdebab48eaa3ea53d8d382e793313",
-      "sizeBytes": 297159,
-      "status": "M"
-    },
-    {
-      "blob": "3da532cc0219a228ceb65b25efea435bda60605e",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "a90de614333f78ae1d0ece6f79b72edaceb48231e55054f8ff2320536582f7e1",
-      "sizeBytes": 66219,
-      "status": "M"
-    },
-    {
-      "blob": "e578ad3978c2991afc49011f195ce950ad5002c2",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "02a33d1bcdc3dba6a9dfc206ccc072386cbfdeba2ec4ffd75e7dcfb9fff8948d",
-      "sizeBytes": 199225,
+      "blob": "5381c63aff92469a03902b60c68848a4cc0259a6",
+      "path": "docs/agents/WINDOWS_SCOPE.md",
+      "sha256": "3e279e9a84f706b79b6885b4f5e8814abf419658b3b2dcbf1e75ded710a521cf",
+      "sizeBytes": 22505,
       "status": "M"
     }
   ],
-  "recipeTree": "a49d36addba9b347a2f2969a314b7252a402f753",
+  "recipeTree": "56aff9b40128a0c741259963caf34bb25a641c18",
   "releaseClaim": false
 }
