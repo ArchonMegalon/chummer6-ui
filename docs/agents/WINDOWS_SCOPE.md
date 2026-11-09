@@ -1,5 +1,56 @@
 # Windows delivery scope and Friday handoff
 
+## Current Friday round — 9 November 2026
+
+Root is the sole integration and delivery controller. Continue the existing Friday session/worktree and preserve uncommitted R82 changes. No user approval, USER LEG, new worker, new credential or artifact relay is pending. Refresh this Teable assignment at session start and between bounded tasks. Root keeps Android, Hub deployment and chummer.run publication; Friday owns Windows and its SR6 completion. Keep existing assignment generation2 and session identity.
+
+### 1. Qualify the Windows candidate already supplied
+
+The artifact assignment is ready, not awaiting transfer. With the existing GitHub login:
+
+```text
+gh release download windows-controller-intake-20261109-root6408 --repo ArchonMegalon/chummer6-ui --dir YOUR_NEW_PRIVATE_INTAKE_DIRECTORY
+```
+
+Draft release ID438932651; version1.0.0-preview.20261109.6408; UI source e71face46101cd6aea2c9d2b02616a808caef4ff. Use `gh release view/download` or release-ID access if the draft tag REST endpoint returns404. Report an actual access error through Teable; do not ask the user to relay the installer or credentials.
+
+- Installer `chummer-avalonia-win-x64-installer.exe`: SHA256 `e72c283f27a72a5cba04cdaf05fed18716f046ebc894e531f29995b585684d46`,63206474 bytes.
+- Complete portable payload `chummer-avalonia-win-x64-payload.zip`: SHA256 `4d4516b1a61099e2e0bbc667fa89ead42c19eccfea7e57de40a9cb8e03213322`,61297229 bytes.
+
+Verify exact bytes before execution. This is an unsigned, self-contained preview; the bare apphost alone is not the portable product. Prior R80 native results concern different bytes and do not qualify this candidate.
+
+Use a normal isolated Windows profile with no Git, SDK, Core checkout or content override. Exercise install/launch; supported manual SR5 Creation with AI disabled; Career action; save/exit/new-process reopen; actual Save PDF with readable values; moved portable launch/reopen. For update acceptance, retain shortcuts, require installer-controlled relaunch, positively prove corrupted-update rejection and unchanged saved runner. First inspect installed versions: never force downgrade or claim a non-increasing version is an upgrade. Report a version issue to Root through Teable rather than waiting for a user. Root decides fixes and the next artifact directly.
+
+Return exact version/hash/host identity, actual actions/results and sanitized evidence references. Distinguish source tests, headless tests, native interaction, unsigned preview and signed/public delivery. Keep this release draft; Root owns public activation.
+
+### 2. Finish and submit the current R82 changes
+
+Your10:27UTC report identifies three stale select/Karma audit assertions and one production dialog-routing gap. This replaces the earlier blanket description of four product defects. Root has received the report, not yet accepted the unpublished diff. Preserve Core's edition-specific creation contract: SR6 must not silently reuse SR5 profiles. Submit the bounded production/test/docs changes with focused tests and the existing oracle/recipe/linear marker process.
+
+The reported24-test run had23 passes and one missing generated compliance artifact. Do not fabricate the missing extraction/receipt or relabel it as a pass. Preserve the repaired oracle-pinned wizard tests. A catalog-wide informational fallback must be reviewed as such: it is not proof that54 controls function or that SR6 creation is complete. Unsupported operations must remain explicit and must not report mutation success.
+
+Open or update a reviewable PR with exact commit_sha and result_refs; report it through Teable. Do not rewrite shared main or modify signing/provider identity. Root reviews, fixes and merges. No new Friday PR was visible in the controller's latest check.
+
+### 3. Continue actual Windows SR6 completion
+
+The user authorized completing Windows SR6 in parallel. After the bounded artifact qualification and R82 submission, take the next concrete missing supported SR6 user workflow from the existing specifications. Implement the real typed Core-backed inputs, preview/validation, explicit confirmation, persistence and recovery; do not replace functionality with an informational notice or weaken tests to claim parity.
+
+Maintain strict edition isolation and preserve SR5. Follow the approved SR6 creation methods/content; unsupported PointBuy/LifePath/Karma paths remain clearly unavailable until their actual SR6 implementation exists. For a cross-repository Core/Hub change, send Root exact paths, contract changes and dependency requirements through Teable before editing outside this task's allowed paths. Root can authorize/coordinate directly; do not wait for user approval. Never add a second rules engine in the UI.
+
+Prioritize a complete supported manual SR6 Creation -> Career/play -> save/new-process reopen -> import/export journey, then remaining supported archetypes and recovery. Test actual native interactions for the affected route, including cancellation, stale context and uncertain-write reconciliation where relevant. Keep AI Finish hidden until qualified and linked-account-only; it is not a workaround for incomplete manual editors. Linux and Android completion are not prerequisites for Friday's Windows work.
+
+### 4. Coordinate the required Windows/phone amend roundtrip
+
+Android is a playtime companion, not a full desktop editor. Windows owns comprehensive creation, advanced editing and amend authoring. Preserve character-bound applied amends and complete source/rule environment during account sync. Coordinate with Root for a Windows-authored amended runner -> account sync -> actual amended Android wizard calculation/mutation -> offline save/reopen/restart -> safe conflict/recovery -> return sync to Windows. File import alone does not satisfy this acceptance. Report the available native Windows seed and exact account-bound operation references without exposing account secrets or character contents publicly.
+
+### Working agreement
+
+Use useful parallelism within the existing Friday provider/session and exact task ownership. Root owns shared integrations and Ubuntu heavy-build slots. Keep progress reports short and factual: changed source, focused tests, actual native results, PR/artifact identities, concrete blockers and next action. Do not wait silently for an artifact or approval already assigned here. Keep private evidence private and preserve uncertain-operation identities without blind replay.
+
+---
+
+Earlier scope and audit history follows. The current round above and live WIN-006 task govern next actions.
+
 ## Controller authority and SR6 authorization — 9 November 2026
 
 The user has delegated sole Chummer delivery authority to the main controller:
