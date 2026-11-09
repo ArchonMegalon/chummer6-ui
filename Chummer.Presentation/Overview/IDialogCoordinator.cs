@@ -20,6 +20,7 @@ public sealed record DialogCoordinationContext(
     Func<string, CancellationToken, Task>? SetPreferredRulesetAsync = null,
     Func<WorkspaceQuickAddRequest, CancellationToken, Task>? ApplyQuickAddAsync = null,
     Func<string, CancellationToken, Task>? ExecuteCommandAsync = null,
+    Func<ConditionMonitorEditRequest, CancellationToken, Task>? ApplyConditionMonitorEditAsync = null,
     Func<CharacterCreationBootstrapRequest, CancellationToken,
         Task<CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>>>?
         CreateCharacterBootstrapAsync = null,

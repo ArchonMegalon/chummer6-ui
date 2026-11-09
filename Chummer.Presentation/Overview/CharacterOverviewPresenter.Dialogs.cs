@@ -123,6 +123,7 @@ public sealed partial class CharacterOverviewPresenter
             SetPreferredRulesetAsync: SetPreferredRulesetAsync,
             ApplyQuickAddAsync: ApplyQuickAddAsync,
             ExecuteCommandAsync: ExecuteCommandAsync,
+            ApplyConditionMonitorEditAsync: ApplyConditionMonitorEditAsync,
             CreateCharacterBootstrapAsync: (request, token) => CreateCharacterBootstrapAsync(request, token, creationAuthority),
             LoadWorkspaceAsync: (id, token) => isCreation
                 ? LoadCreatedWorkspaceAsync(id, creationAuthority, token)

@@ -39,6 +39,11 @@ public sealed class Sr5Sr6UiParityAuditComplianceTests
         StringAssert.Contains(scriptText, "unsupportedMappedCurrentIdCount");
         StringAssert.Contains(scriptText, "FullyQualifiedName~LegacySr5DesktopParityAuditTests|FullyQualifiedName~Sr5Sr6RulesetParityAuditTests");
         StringAssert.Contains(scriptText, "legacy utility-control dialog, utility-dialog action execution, workflow, and shared-command execution parity tests");
+        StringAssert.Contains(scriptText, "unavailableWorkflowSafetyTests");
+        StringAssert.Contains(scriptText, "functionalParityTests");
+        StringAssert.Contains(scriptText, "sr6_wizard_unavailable");
+        StringAssert.Contains(scriptText, "openWorkflows");
+        StringAssert.Contains(scriptText, "it does not prove those workflows exist, and they remain open scope");
         StringAssert.Contains(scriptText, "legacyTabs");
         StringAssert.Contains(scriptText, "legacyControls");
         StringAssert.Contains(scriptText, "providerParityTests");
@@ -94,6 +99,33 @@ public sealed class Sr5Sr6UiParityAuditComplianceTests
         Assert.AreEqual(0, evidence.GetProperty("nonPendantMappedCurrentIdCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("legacyElementsMissingExplicitSr6Pendants").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("unsupportedMappedCurrentIdCount").GetInt32());
+        Assert.IsTrue(
+            evidence.GetProperty("functionalParityTestCount").GetInt32() > 0,
+            "The audit must record functional parity tests separately from unavailable-workflow safety tests.");
+        Assert.IsTrue(
+            evidence.GetProperty("unavailableWorkflowSafetyTestCount").GetInt32() > 0,
+            "The unavailable-workflow safety tests must be classified explicitly.");
+        JsonElement openWorkflows = root.GetProperty("scope").GetProperty("openWorkflows");
+        bool karmaOpen = false;
+        bool pointBuyOpen = false;
+        bool lifePathOpen = false;
+        foreach (JsonElement row in openWorkflows.EnumerateArray())
+        {
+            string id = row.GetProperty("id").GetString() ?? string.Empty;
+            string status = row.GetProperty("status").GetString() ?? string.Empty;
+            Assert.AreEqual("unimplemented", status, $"Open workflow '{id}' must be recorded as unimplemented.");
+            if (id == "sr6-karma-creation") karmaOpen = true;
+            if (id == "sr6-pointbuy-creation") pointBuyOpen = true;
+            if (id == "sr6-lifepath-creation") lifePathOpen = true;
+        }
+
+        Assert.IsTrue(karmaOpen, "SR6 Karma must remain recorded as open/unimplemented scope.");
+        Assert.IsTrue(pointBuyOpen, "SR6 PointBuy must remain recorded as open/unimplemented scope.");
+        Assert.IsTrue(lifePathOpen, "SR6 LifePath must remain recorded as open/unimplemented scope.");
+        StringAssert.Contains(
+            root.GetProperty("summary").GetString() ?? string.Empty,
+            "remain unimplemented",
+            "The pass summary must state that the withheld SR6 workflows remain unimplemented.");
         Assert.AreEqual(0, evidence.GetProperty("testResult").GetProperty("exitCode").GetInt32());
         Assert.AreEqual(evidence.GetProperty("legacyTabCount").GetInt32(), legacyTabs.GetArrayLength());
         Assert.AreEqual(evidence.GetProperty("legacyControlCount").GetInt32(), legacyControls.GetArrayLength());

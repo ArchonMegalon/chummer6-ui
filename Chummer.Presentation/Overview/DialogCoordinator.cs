@@ -894,6 +894,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.combat_damage_track", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
+        {
+            await ApplyDamageTrackDialogAsync(dialog, context, ct);
+            return;
+        }
+
         if ((string.Equals(dialog.Id, "dialog.data_exporter", StringComparison.Ordinal)
             || string.Equals(dialog.Id, "dialog.export_character", StringComparison.Ordinal))
             && string.Equals(actionId, "download", StringComparison.Ordinal))
@@ -921,12 +927,103 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (dialog.Id.StartsWith("dialog.ui.", StringComparison.Ordinal)
+            && LegacyUiControlCatalog.IsKnown(dialog.Id["dialog.ui.".Length..]))
+        {
+            // Shared legacy UI controls are audited to never fall back to the
+            // generic execution notice. Any control/action combination without
+            // an explicit branch above is reported as unsupported: no notice
+            // may claim the action ran, because nothing executed here.
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = $"{dialog.Title}: action '{actionId}' is not supported by this build yet."
+            });
+            return;
+        }
+
         context.Publish(context.State with
         {
             ActiveDialog = null,
             Error = null,
             Notice = $"{dialog.Title}: action '{actionId}' executed."
         });
+    }
+
+    private static async Task ApplyDamageTrackDialogAsync(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        CancellationToken ct)
+    {
+        // The dialog factory currently supplies read-only sample values only.
+        // A mutation may be claimed only when the context carries the typed
+        // condition-monitor delegate AND the dialog carries an editable,
+        // parseable damage request; otherwise the apply reports read-only
+        // availability honestly and never claims a mutation.
+        if (context.ApplyConditionMonitorEditAsync is null
+            || !TryParseDamageTrackRequest(dialog, out ConditionMonitorEditRequest? request))
+        {
+            PublishRulesetAwareDialogNotice(
+                context,
+                $"{dialog.Title}: damage-track editing is read-only in this build; no change was applied.");
+            return;
+        }
+
+        try
+        {
+            await context.ApplyConditionMonitorEditAsync(request, ct).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            context.Publish(context.GetState() with
+            {
+                ActiveDialog = dialog,
+                Error = $"Damage track update failed: {ex.Message}"
+            });
+            return;
+        }
+
+        // Reload the authoritative state after the mutation and close the
+        // dialog only when the mutation did not report an error.
+        CharacterOverviewState stateAfterUpdate = context.GetState();
+        if (stateAfterUpdate.Error is not null)
+        {
+            context.Publish(stateAfterUpdate with { ActiveDialog = dialog });
+            return;
+        }
+
+        context.Publish(stateAfterUpdate with
+        {
+            ActiveDialog = null,
+            Error = null,
+            Notice = $"Damage track updated ({request.Track.ToString().ToLowerInvariant()} {request.Filled})."
+        });
+    }
+
+    private static bool TryParseDamageTrackRequest(
+        DesktopDialogState dialog,
+        out ConditionMonitorEditRequest? request)
+    {
+        request = null;
+        string? physical = DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackPhysical");
+        string? stun = DesktopDialogFieldValueParser.GetValue(dialog, "uiDamageTrackStun");
+        // Sample values ("3 / 10") are read-only display text, not editable
+        // inputs; a parseable request requires dedicated editable fields that
+        // the dialog contract does not expose yet.
+        if (string.IsNullOrWhiteSpace(physical) || string.IsNullOrWhiteSpace(stun))
+            return false;
+        if (physical.Contains('/') || stun.Contains('/'))
+            return false;
+        if (!int.TryParse(physical, out int physicalFilled)
+            || !int.TryParse(stun, out int stunFilled))
+            return false;
+        request = new ConditionMonitorEditRequest(
+            WorkspaceConditionMonitorTrack.Physical, physicalFilled);
+        return true;
     }
 
     private static async Task ApplyPreferredRulesetAsync(

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debuggable Release|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -340,6 +340,9 @@
     <Compile Include="Presentation\CareerKarmaExpenseEditParityTests.cs" />
     <Compile Include="Presentation\CareerCalendarParityTests.cs" />
     <Compile Include="Presentation\CreationMugshotParityTests.cs" />
+    <Compile Include="Presentation\Sr5Sr6RulesetParityAuditTests.cs" />
+    <Compile Include="Presentation\Sr6CreationWizardWindowTests.cs" />
+    <Compile Include="Compliance\Sr5Sr6UiParityAuditComplianceTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
