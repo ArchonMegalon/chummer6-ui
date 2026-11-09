@@ -29,6 +29,7 @@ Documentation map for the browser lane:
 - `scripts/ai/milestones/classic-dense-workbench-posture-gate.sh` for Avalonia default dense posture, reduced section-header scale, flat form panels, and anti-dashboard workbench chrome proof.
 - `scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh` for release-channel/install-media/startup-smoke truth across promoted desktop heads, including fail-honest blocker receipts when artifacts or platform proof are missing.
 - `scripts/ai/milestones/b15-localization-release-gate.sh` for shipping-locale truth, explicit fallback honesty, explain localization, and support/install/update language coverage.
+- `scripts/ai/milestones/sr5-sr6-ui-parity-audit-check.sh` for direct SR5/SR6 provider, dialog, workflow, and shared-command pendant parity backed by `SR5_SR6_UI_PARITY_AUDIT.generated.json`.
 
 Those checks are all part of the normal `scripts/ai/verify.sh` path, so release truth does not depend on ad hoc manual demos.
 

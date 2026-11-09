@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "fa57e44d27bba93d56839b8691b38e98c5c4057a",
+        "blob": "fa9d9b229bc7332921511a9ef2a2bedfa4a59425",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "0ccfc7ab198b3b14c1b6e7b318bcdf65ba38e718665187ec734ce047d4ce309c",
+        "rawSha256": "23db61adf66374b51a2dd625c275cb0926575f758e066ff718073d46100559a4",
         "rawSizeBytes": 69811,
-        "semanticCanonicalSha256": "0ccfc7ab198b3b14c1b6e7b318bcdf65ba38e718665187ec734ce047d4ce309c",
+        "semanticCanonicalSha256": "23db61adf66374b51a2dd625c275cb0926575f758e066ff718073d46100559a4",
         "semanticCanonicalSizeBytes": 69811,
-        "tree": "203e62667a838eeb8e5e016a3ad71788bcc8c4fb"
+        "tree": "72b8f11cbf9067a05f8a5ff3061cce7426dac24e"
     },
     "producerLock": {
         "absentAtCommit": True,

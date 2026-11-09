@@ -894,6 +894,12 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.ui.combat_damage_track", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
+        {
+            await ApplyDamageTrackDialogAsync(dialog, context, ct);
+            return;
+        }
+
         if ((string.Equals(dialog.Id, "dialog.data_exporter", StringComparison.Ordinal)
             || string.Equals(dialog.Id, "dialog.export_character", StringComparison.Ordinal))
             && string.Equals(actionId, "download", StringComparison.Ordinal))
@@ -921,12 +927,44 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (dialog.Id.StartsWith("dialog.ui.", StringComparison.Ordinal)
+            && LegacyUiControlCatalog.IsKnown(dialog.Id["dialog.ui.".Length..]))
+        {
+            // Shared legacy UI controls are audited to never fall back to the
+            // generic execution notice. Any control/action combination without
+            // an explicit branch above is reported as unsupported: no notice
+            // may claim the action ran, because nothing executed here.
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = $"{dialog.Title}: action '{actionId}' is not supported by this build yet."
+            });
+            return;
+        }
+
         context.Publish(context.State with
         {
             ActiveDialog = null,
             Error = null,
             Notice = $"{dialog.Title}: action '{actionId}' executed."
         });
+    }
+
+    private static async Task ApplyDamageTrackDialogAsync(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        CancellationToken ct)
+    {
+        // The dialog factory supplies read-only sample values only and the
+        // coordination context exposes no typed condition-monitor mutation.
+        // Until a deliberate track-selection contract with authoritative
+        // mutation and result checks exists, the apply reports read-only
+        // availability honestly and never claims a mutation. This
+        // containment is not SR6 completion.
+        await Task.CompletedTask.ConfigureAwait(true);
+        PublishRulesetAwareDialogNotice(
+            context,
+            $"{dialog.Title}: damage-track editing is read-only in this build; no change was applied.");
     }
 
     private static async Task ApplyPreferredRulesetAsync(
