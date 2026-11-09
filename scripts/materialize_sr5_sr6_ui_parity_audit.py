@@ -184,6 +184,75 @@ def ensure_test_runner() -> None:
         raise SystemExit(f"Test runner was not produced at {TEST_RUNNER_PATH}")
 
 
+UNAVAILABLE_WORKFLOW_MARKER = "sr6_wizard_unavailable"
+CONTAINMENT_EVIDENCE_MARKER = "reports_read_only_without"
+UNSUPPORTED_ACTION_MARKER = "report_unsupported"
+UNSUPPORTED_IDENTITY_MARKER = "unsupported_action_reports_exact_error_identity"
+
+# SR6-native creation workflows that are disclosed as unavailable today. The
+# safety disclosure proves refusal-to-substitute, not existence; each stays
+# open until a real Core-backed implementation lands.
+OPEN_SR6_WORKFLOWS = [
+    {
+        "id": "sr6-karma-creation",
+        "label": "SR6 Karma creation workflow",
+        "status": "unimplemented",
+        "disclosure": "sr6_wizard_unavailable",
+    },
+    {
+        "id": "sr6-pointbuy-creation",
+        "label": "SR6 PointBuy creation workflow",
+        "status": "unimplemented",
+        "disclosure": "sr6_wizard_unavailable",
+    },
+    {
+        "id": "sr6-lifepath-creation",
+        "label": "SR6 LifePath creation workflow",
+        "status": "unimplemented",
+        "disclosure": "sr6_wizard_unavailable",
+    },
+]
+
+
+def classify_provider_tests(text: str, names: list[str]) -> dict[str, list[str]]:
+    """Split provider parity tests into functional parity vs unavailable-workflow safety.
+
+    A test is classified as unavailable-workflow safety when its body asserts
+    the sr6_wizard_unavailable disclosure; those tests guarantee that SR6
+    refuses SR5 mechanics substitution but do not prove the withheld workflow
+    exists.
+    """
+    body_by_name: dict[str, str] = {}
+    for block in text.split("[TestMethod]"):
+        match = TEST_METHOD_PATTERN.search(block)
+        if match:
+            body_by_name[match.group("name")] = block
+    unavailable = [name for name in names if UNAVAILABLE_WORKFLOW_MARKER in body_by_name.get(name, "")]
+    # Containment / mocked-dispatch evidence (read-only reports, unsupported
+    # action errors) guarantees honest refusal behavior only; it must never
+    # be counted as proof that a persisted workflow exists.
+    containment = [
+        name
+        for name in names
+        if name not in set(unavailable)
+        and (
+            CONTAINMENT_EVIDENCE_MARKER in body_by_name.get(name, "")
+            or UNSUPPORTED_ACTION_MARKER in body_by_name.get(name, "")
+            or UNSUPPORTED_IDENTITY_MARKER in body_by_name.get(name, "")
+        )
+    ]
+    functional = [
+        name
+        for name in names
+        if name not in set(unavailable) and name not in set(containment)
+    ]
+    return {
+        "functionalParityTests": functional,
+        "unavailableWorkflowSafetyTests": unavailable,
+        "containmentEvidenceTests": containment,
+    }
+
+
 def run_filtered_tests() -> dict[str, object]:
     ensure_test_runner()
     command = [
@@ -217,6 +286,7 @@ def main() -> None:
     partial_controls = [row for row in legacy_controls if row["disposition"] == "Partial"]
     missing_controls = [row for row in legacy_controls if row["disposition"] == "Missing"]
     provider_tests = TEST_METHOD_PATTERN.findall(provider_audit_text)
+    provider_test_classification = classify_provider_tests(provider_audit_text, provider_tests)
     test_result = run_filtered_tests()
     legacy_element_dispositions = legacy_detail_receipt.get("legacyElementDispositions") or []
     if not isinstance(legacy_element_dispositions, list):
@@ -333,10 +403,24 @@ def main() -> None:
         "contract_name": "chummer6-ui.sr5_sr6_ui_parity_audit",
         "status": "pass" if not reasons else "fail",
         "summary": (
-            "SR5 legacy desktop surfaces, full-spectrum Chummer5a element dispositions, and direct SR5/SR6 provider, "
-            "dialog-contract, legacy utility-control dialog, utility-dialog action execution, workflow, and shared-command execution parity tests confirm that every audited SR5 UI element/function has an explicit SR6 pendant."
+            "SR5/SR6 UI contract audit passed for the tested scope. Functional parity claims are limited "
+            "to evidence.functionalParityTests; read-only and unsupported-action checks prove containment only. "
+            "SR6 Karma, PointBuy, and LifePath remain unimplemented and their "
+            "sr6_wizard_unavailable disclosures are safety-only guarantees, not proof those workflows exist."
             if not reasons
             else "SR5/SR6 UI parity audit found unresolved parity gaps."
+        ),
+        "functionalParitySummary": (
+            "Functional parity claims cover only the tests listed in evidence.functionalParityTests "
+            "(direct SR5/SR6 provider, dialog-contract, legacy utility-control dialog, utility-dialog action "
+            "execution, workflow, and shared-command execution parity). Read-only containment and "
+            "unsupported-action dispatch checks are recorded separately as safety evidence and prove "
+            "nothing about persisted workflow functionality."
+        ),
+        "unavailableWorkflowSafetySummary": (
+            "SR6-native creation workflows (Karma, PointBuy, LifePath) are not implemented. The "
+            "sr6_wizard_unavailable disclosure is a safety guarantee that refuses SR5 mechanics substitution; "
+            "it does not prove those workflows exist, and they remain open scope."
         ),
         "reasons": reasons,
         "evidence": {
@@ -360,6 +444,12 @@ def main() -> None:
             "missingControlCount": len(missing_controls),
             "providerParityTestCount": len(provider_tests),
             "providerParityTests": provider_tests,
+            "functionalParityTestCount": len(provider_test_classification["functionalParityTests"]),
+            "functionalParityTests": provider_test_classification["functionalParityTests"],
+            "unavailableWorkflowSafetyTestCount": len(provider_test_classification["unavailableWorkflowSafetyTests"]),
+            "unavailableWorkflowSafetyTests": provider_test_classification["unavailableWorkflowSafetyTests"],
+            "containmentEvidenceTestCount": len(provider_test_classification["containmentEvidenceTests"]),
+            "containmentEvidenceTests": provider_test_classification["containmentEvidenceTests"],
             "uniqueTabPendantCount": len(unique_pendants(legacy_tabs)),
             "uniqueControlPendantCount": len(unique_pendants(legacy_controls)),
             "legacyDetailReceiptStatus": legacy_detail_receipt.get("status"),
@@ -385,6 +475,21 @@ def main() -> None:
             "legacyElementsMissingExplicitSr6Pendants": len(legacy_element_pendant_gaps),
             "unsupportedMappedCurrentIdCount": len(unsupported_mapped_current_ids),
             "unsupportedMappedCurrentIds": unsupported_mapped_current_ids,
+        },
+        "scope": {
+            "functionalParity": (
+                "Claimed only for the specific behaviors proven by evidence.functionalParityTests; "
+                "containment and unsupported-action checks in evidence.containmentEvidenceTests and "
+                "unavailable-workflow disclosures in evidence.unavailableWorkflowSafetyTests are safety evidence only."
+            ),
+            "unavailableWorkflowSafety": (
+                "SR6 Karma/PointBuy/LifePath requests surface the sr6_wizard_unavailable disclosure instead of SR5 mechanics. Safety-only; not functional parity."
+            ),
+            "containmentEvidence": (
+                "Damage-track read-only containment and legacy-control unsupported-action reporting prove honest refusal only; "
+                "they are not persisted-workflow parity and leave the affected workflows open."
+            ),
+            "openWorkflows": OPEN_SR6_WORKFLOWS,
         },
         "legacyTabs": legacy_tabs,
         "legacyControls": legacy_controls,

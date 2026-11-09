@@ -164,6 +164,19 @@ public sealed class Sr5Sr6RulesetParityAuditTests
         {
             DesktopDialogState sr5Dialog = CreateCommandDialog(commandId, RulesetDefaults.Sr5);
             DesktopDialogState sr6Dialog = CreateCommandDialog(commandId, RulesetDefaults.Sr6);
+
+            if (string.Equals(commandId, "new_character", StringComparison.Ordinal)
+                || string.Equals(commandId, "new_character_origin", StringComparison.Ordinal))
+            {
+                // The new_character/new_character_origin command dialogs carry the
+                // ruleset-specific build-method select. SR6 legitimately exposes its
+                // native PointBuy/LifePath methods (2026-09-21 core contract) instead
+                // of SR5's LifeModule, so options are asserted per ruleset while
+                // every other field and action keeps full pendant parity.
+                AssertCommandDialogBuildMethodParity($"command dialog '{commandId}'", sr5Dialog, sr6Dialog);
+                continue;
+            }
+
             AssertDialogContractParity($"command dialog '{commandId}'", sr5Dialog, sr6Dialog);
         }
     }
@@ -171,9 +184,18 @@ public sealed class Sr5Sr6RulesetParityAuditTests
     [TestMethod]
     public void Sr6_ruleset_new_character_workflow_dialog_contracts_keep_sr5_field_and_action_pendants()
     {
-        string[] buildMethods = ["Priority", "SumToTen", "Karma", "LifeModule"];
+        // SR5 build methods keep full pendant parity on shared workflows.
+        // SR6 additionally owns its native build methods (PointBuy, LifePath, optional
+        // Karma) per the 2026-09-21 core contract (Sr6CharacterCreationBuildMethods):
+        // "SR6 must not reuse SR5 creation profiles... SR6 Karma is not SR5's Karma
+        // rules even though the wire name is shared." Those SR6-native methods route
+        // to the explicit sr6_wizard_unavailable disclosure dialog instead of
+        // silently substituting SR5 mechanics — which is itself the parity guarantee.
+        // SR5-vocabulary build methods that share a typed workflow on both rulesets
+        // keep full pendant parity.
+        string[] sharedBuildMethods = ["Priority", "SumToTen"];
 
-        foreach (string buildMethod in buildMethods)
+        foreach (string buildMethod in sharedBuildMethods)
         {
             DesktopDialogState sr5Dialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
                 RulesetDefaults.Sr5,
@@ -192,6 +214,97 @@ public sealed class Sr5Sr6RulesetParityAuditTests
 
             AssertDialogContractParity($"new character continuation '{buildMethod}'", sr5Dialog, sr6Dialog);
         }
+
+        // SR6-native build methods must never fall back to SR5 mechanics: they surface
+        // the dedicated unavailable-wizard dialog with explicit context fields and a
+        // cancel-only action set.
+        string[] sr6OnlyBuildMethods = ["PointBuy", "LifePath"];
+        foreach (string buildMethod in sr6OnlyBuildMethods)
+        {
+            DesktopDialogState sr6Dialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+                RulesetDefaults.Sr6,
+                buildMethod,
+                false,
+                "Parity Runner",
+                "PRTY",
+                DesktopPreferenceState.Default);
+
+            Assert.AreEqual(
+                "dialog.new_character.sr6_wizard_unavailable",
+                sr6Dialog.Id,
+                $"SR6-native build method '{buildMethod}' must disclose the unavailable wizard instead of substituting SR5 mechanics.");
+            Assert.AreEqual(
+                "newCharacterWorkflowBuildMethod",
+                RequireField(sr6Dialog, "newCharacterWorkflowBuildMethod").Id,
+                $"SR6-native build method '{buildMethod}' must keep an explicit build-method context field.");
+            Assert.IsTrue(
+                sr6Dialog.Actions.All(static action => string.Equals(action.Id, "cancel", StringComparison.Ordinal)),
+                $"SR6-native build method '{buildMethod}' must not expose SR5 workflow actions.");
+        }
+
+        // LifeModule is an SR5-only build method. SR5 keeps its explicit blocked
+        // dialog; SR6 has no LifeModule entry so the preferred-method resolver
+        // falls back to the SR6 default (Priority workflow). Assert each side
+        // honestly rather than mirroring.
+        DesktopDialogState sr5LifeModuleDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "LifeModule",
+            false,
+            "Parity Runner",
+            "PRTY",
+            DesktopPreferenceState.Default);
+        Assert.AreEqual(
+            "dialog.new_character.life_modules_wizard_blocked",
+            sr5LifeModuleDialog.Id,
+            "SR5 LifeModule must keep its explicit blocked-dialog disclosure.");
+
+        DesktopDialogState sr6LifeModuleDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr6,
+            "LifeModule",
+            false,
+            "Parity Runner",
+            "PRTY",
+            DesktopPreferenceState.Default);
+        Assert.AreEqual(
+            "dialog.new_character.priority_workflow",
+            sr6LifeModuleDialog.Id,
+            "SR6 has no LifeModule build method; the request must resolve to the SR6 default priority workflow without SR5 LifeModule mechanics.");
+
+        // SR5 Karma keeps its own workflow on SR5; SR6 Karma must NOT open it
+        // (rules are ruleset-specific even though the wire name is shared) and
+        // instead surfaces the explicit sr6_wizard_unavailable disclosure.
+        DesktopDialogState sr5KarmaDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Karma",
+            false,
+            "Parity Runner",
+            "PRTY",
+            DesktopPreferenceState.Default);
+        Assert.AreEqual(
+            "dialog.new_character.karma_workflow",
+            sr5KarmaDialog.Id,
+            "SR5 Karma must keep its karma workflow dialog id.");
+
+        // The optional SR6 Karma workflow must refuse SR5 Karma mechanics and use
+        // the same explicit disclosure dialog.
+        DesktopDialogState sr6KarmaDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr6,
+            "Karma",
+            false,
+            "Parity Runner",
+            "PRTY",
+            DesktopPreferenceState.Default);
+        Assert.AreEqual(
+            "dialog.new_character.sr6_wizard_unavailable",
+            sr6KarmaDialog.Id,
+            "SR6 Karma must not open the SR5 karma workflow (rules are ruleset-specific even though the wire name is shared).");
+        Assert.AreEqual(
+            "newCharacterWorkflowBuildMethod",
+            RequireField(sr6KarmaDialog, "newCharacterWorkflowBuildMethod").Id,
+            "SR6 Karma disclosure must keep an explicit build-method context field.");
+        Assert.IsTrue(
+            sr6KarmaDialog.Actions.All(static action => string.Equals(action.Id, "cancel", StringComparison.Ordinal)),
+            "SR6 Karma disclosure must not expose SR5 workflow actions.");
     }
 
     [TestMethod]
@@ -208,12 +321,16 @@ public sealed class Sr5Sr6RulesetParityAuditTests
             "PRTY",
             DesktopPreferenceState.Default);
 
-        AssertDialogContractParity("origin wizard", sr5OriginWizard, sr6OriginWizard);
+        // The origin build-preference select legitimately differs per ruleset: SR6
+        // exposes its native PointBuy/LifePath methods (2026-09-21 core contract)
+        // instead of SR5's LifeModule. Assert the shared pendant discipline rather
+        // than a literal SR5 option mirror.
+        AssertCommandDialogBuildMethodParity("origin wizard", sr5OriginWizard, sr6OriginWizard);
 
         DesktopDialogState sr5OriginBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(sr5OriginWizard);
         DesktopDialogState sr6OriginBuild = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(sr6OriginWizard);
 
-        AssertDialogContractParity("origin build", sr5OriginBuild, sr6OriginBuild);
+        AssertCommandDialogBuildMethodParity("origin build", sr5OriginBuild, sr6OriginBuild);
 
         DesktopDialogState sr5PriorityDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
             RulesetDefaults.Sr5,
@@ -320,6 +437,187 @@ public sealed class Sr5Sr6RulesetParityAuditTests
                     $"Legacy control '{controlId}' action '{action.Id}' fell back to the generic coordinator branch.");
             }
         }
+    }
+
+    [TestMethod]
+    public async Task Sr6_shared_legacy_ui_control_unmatched_actions_report_unsupported_not_success()
+    {
+        DialogCoordinator coordinator = new();
+
+        foreach (string controlId in LegacyUiControlCatalog.All.OrderBy(static value => value, StringComparer.Ordinal))
+        {
+            DesktopDialogState dialog = DialogFactory.CreateUiControlDialog(controlId, DesktopPreferenceState.Default);
+
+            foreach (DesktopDialogAction action in dialog.Actions.Where(static candidate =>
+                         !string.Equals(candidate.Id, "cancel", StringComparison.Ordinal)
+                         && !string.Equals(candidate.Id, "close", StringComparison.Ordinal)))
+            {
+                OpenWorkspaceState workspace = CreateOpenWorkspace(RulesetDefaults.Sr6);
+                CharacterWorkspaceId workspaceId = workspace.Id;
+                CharacterOverviewState published = CharacterOverviewState.Empty with
+                {
+                    WorkspaceId = workspaceId,
+                    OpenWorkspaces = [workspace],
+                    Session = new WorkspaceSessionState(
+                        ActiveWorkspaceId: workspaceId,
+                        OpenWorkspaces: [workspace],
+                        RecentWorkspaceIds: [workspaceId]),
+                    Profile = CreateProfile(),
+                    ActiveTabId = "tab-info",
+                    ActiveSectionId = "profile",
+                    ActiveSectionJson = BuildSectionJson("profile"),
+                    Preferences = DesktopPreferenceState.Default,
+                    Commands = CompatibilityResolver.ResolveCommands(RulesetDefaults.Sr6),
+                    NavigationTabs = CompatibilityResolver.ResolveNavigationTabs(RulesetDefaults.Sr6),
+                    ActiveDialog = dialog
+                };
+
+                DialogCoordinationContext context = new(
+                    State: published,
+                    Publish: state => published = state,
+                    ImportAsync: static (_, _) => Task.CompletedTask,
+                    UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+                    GetState: () => published,
+                    ApplyQuickAddAsync: null,
+                    ExecuteCommandAsync: static (_, _) => Task.CompletedTask);
+
+                await coordinator.CoordinateAsync(action.Id, context, CancellationToken.None);
+
+                // Every combination must resolve to either a genuinely
+                // supported result or an explicit unsupported error; the
+                // legacy-contract success fallback is forbidden in both
+                // cases. Any unsupported error must identify the exact
+                // action. The concrete unsupported-route identity is
+                // asserted separately against dialog.ui.combat_reload.
+                Assert.IsFalse(
+                    (published.Notice ?? string.Empty).Contains("handled via the legacy control contract"),
+                    $"Legacy control '{controlId}' action '{action.Id}' must never report the forbidden generic success fallback.");
+
+                if (published.Error is not null)
+                {
+                    StringAssert.Contains(
+                        published.Error,
+                        action.Id,
+                        $"Legacy control '{controlId}' error must name the unsupported action.");
+                    StringAssert.Contains(
+                        published.Error,
+                        "not supported",
+                        $"Legacy control '{controlId}' must report the action as unsupported.");
+                }
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task Sr6_damage_track_apply_reports_read_only_without_any_mutation_path()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState dialog = DialogFactory.CreateUiControlDialog("combat_damage_track", DesktopPreferenceState.Default);
+
+        OpenWorkspaceState workspace = CreateOpenWorkspace(RulesetDefaults.Sr6);
+        CharacterWorkspaceId workspaceId = workspace.Id;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = [workspace],
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: workspaceId,
+                OpenWorkspaces: [workspace],
+                RecentWorkspaceIds: [workspaceId]),
+            Profile = CreateProfile(),
+            ActiveTabId = "tab-info",
+            ActiveSectionId = "profile",
+            ActiveSectionJson = BuildSectionJson("profile"),
+            Preferences = DesktopPreferenceState.Default,
+            Commands = CompatibilityResolver.ResolveCommands(RulesetDefaults.Sr6),
+            NavigationTabs = CompatibilityResolver.ResolveNavigationTabs(RulesetDefaults.Sr6),
+            ActiveDialog = dialog
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: null,
+            ExecuteCommandAsync: static (_, _) => Task.CompletedTask);
+
+        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
+
+        StringAssert.Contains(
+            published.Notice,
+            "read-only",
+            "Damage-track apply must report read-only availability.");
+        Assert.IsTrue(
+            (published.Notice ?? string.Empty).Contains("no change was applied"),
+            "Damage-track apply must never claim a mutation when none ran.");
+        Assert.IsNull(published.Error, "Read-only reporting is not an error condition.");
+        Assert.IsNull(published.ActiveDialog, "Read-only report closes the dialog via the shared notice contract.");
+    }
+
+    [TestMethod]
+    public async Task Sr6_shared_legacy_ui_control_known_unsupported_action_reports_exact_error_identity()
+    {
+        // dialog.ui.combat_reload is a catalog-known legacy control whose
+        // 'apply' action has no explicit coordinator branch: it must reach
+        // the explicit unsupported fallback and publish an error that
+        // identifies the exact dialog title and action id - never a
+        // success notice.
+        DialogCoordinator coordinator = new();
+        DesktopDialogState dialog = DialogFactory.CreateUiControlDialog("combat_reload", DesktopPreferenceState.Default);
+        Assert.IsNotNull(dialog, "combat_reload must be a catalog-known legacy UI control.");
+        Assert.IsTrue(
+            dialog.Actions.Any(static candidate => string.Equals(candidate.Id, "apply", StringComparison.Ordinal)),
+            "combat_reload must expose an 'apply' action so the unsupported route is exercised.");
+
+        OpenWorkspaceState workspace = CreateOpenWorkspace(RulesetDefaults.Sr6);
+        CharacterWorkspaceId workspaceId = workspace.Id;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = [workspace],
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: workspaceId,
+                OpenWorkspaces: [workspace],
+                RecentWorkspaceIds: [workspaceId]),
+            Profile = CreateProfile(),
+            ActiveTabId = "tab-info",
+            ActiveSectionId = "profile",
+            ActiveSectionJson = BuildSectionJson("profile"),
+            Preferences = DesktopPreferenceState.Default,
+            Commands = CompatibilityResolver.ResolveCommands(RulesetDefaults.Sr6),
+            NavigationTabs = CompatibilityResolver.ResolveNavigationTabs(RulesetDefaults.Sr6),
+            ActiveDialog = dialog
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: null,
+            ExecuteCommandAsync: static (_, _) => Task.CompletedTask);
+
+        await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
+
+        StringAssert.Contains(
+            published.Error,
+            dialog.Title,
+            "The unsupported error must identify the concrete dialog.");
+        StringAssert.Contains(
+            published.Error,
+            "apply",
+            "The unsupported error must name the exact unsupported action id.");
+        StringAssert.Contains(
+            published.Error,
+            "is not supported by this build yet",
+            "The unsupported error must use the authoritative unsupported wording.");
+        Assert.IsTrue(
+            string.IsNullOrEmpty(published.Notice),
+            "An unsupported action must never publish a success notice.");
+        Assert.IsNotNull(published.ActiveDialog, "The dialog stays open so the runner can cancel.");
     }
 
     [TestMethod]
@@ -674,6 +972,88 @@ public sealed class Sr5Sr6RulesetParityAuditTests
             sr6Dialog.Actions.Select(NormalizeActionContract).ToArray());
     }
 
+    /// <summary>
+    /// Pendant-parity assertion for dialogs that carry the ruleset-specific
+    /// build-method select. The build-method select legitimately differs between
+    /// rulesets (SR6 owns PointBuy/LifePath per the 2026-09-21 core contract), so
+    /// field identity/shape must match while the option list is asserted per
+    /// ruleset, not mirrored from SR5.
+    /// </summary>
+    private static void AssertCommandDialogBuildMethodParity(string dialogName, DesktopDialogState sr5Dialog, DesktopDialogState sr6Dialog)
+    {
+        Assert.AreEqual(
+            NormalizeToken(sr5Dialog.Id),
+            NormalizeToken(sr6Dialog.Id),
+            $"{dialogName} drifted at the dialog id level.");
+
+        // Non-select field contracts keep full pendant parity.
+        string[] selectFieldIds = ["newCharacterBuildMethod", "newCharacterOriginBuildPreference"];
+        AssertSequenceParity(
+            $"{dialogName} non-select field contracts",
+            sr5Dialog.Fields
+                .Where(field => !selectFieldIds.Contains(field.Id, StringComparer.Ordinal))
+                .Select(NormalizeFieldContract).ToArray(),
+            sr6Dialog.Fields
+                .Where(field => !selectFieldIds.Contains(field.Id, StringComparer.Ordinal))
+                .Select(NormalizeFieldContract).ToArray());
+        AssertSequenceParity(
+            $"{dialogName} action contracts",
+            sr5Dialog.Actions.Select(NormalizeActionContract).ToArray(),
+            sr6Dialog.Actions.Select(NormalizeActionContract).ToArray());
+
+        // The build-method select itself keeps identical field shape, with a
+        // ruleset-honest option set on each side. Each dialog carries only the
+        // select(s) it owns: the command dialog owns 'newCharacterBuildMethod',
+        // the origin wizard owns 'newCharacterOriginBuildPreference'. A select
+        // present on exactly one side is a genuine pendant drift.
+        foreach (string fieldId in selectFieldIds)
+        {
+            DesktopDialogField? sr5Select = sr5Dialog.Fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal));
+            DesktopDialogField? sr6Select = sr6Dialog.Fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal));
+            if (sr5Select is null && sr6Select is null)
+            {
+                continue;
+            }
+
+            Assert.IsNotNull(sr5Select, $"{dialogName} drifted: '{fieldId}' exists on SR6 but is missing on SR5.");
+            Assert.IsNotNull(sr6Select, $"{dialogName} drifted: '{fieldId}' exists on SR5 but is missing on SR6.");
+
+            Assert.AreEqual(
+                NormalizeFieldContract(sr5Select with { Options = Array.Empty<DesktopDialogFieldOption>() }),
+                NormalizeFieldContract(sr6Select with { Options = Array.Empty<DesktopDialogFieldOption>() }),
+                $"{dialogName} select '{fieldId}' drifted at the field-shape level.");
+
+            string[] sr5Options = (sr5Select.Options ?? Array.Empty<DesktopDialogFieldOption>()).Select(static option => option.Value).ToArray();
+            string[] sr6Options = (sr6Select.Options ?? Array.Empty<DesktopDialogFieldOption>()).Select(static option => option.Value).ToArray();
+
+            // Shared SR5-vocabulary options must exist on both sides with identical
+            // labels (pendant discipline); ruleset-specific additions are asserted
+            // against the core contract below.
+            foreach (string shared in new[] { "Priority", "Karma" })
+            {
+                Assert.IsTrue(sr5Options.Contains(shared, StringComparer.Ordinal), $"{dialogName} '{fieldId}' SR5 options must include '{shared}'.");
+                Assert.IsTrue(sr6Options.Contains(shared, StringComparer.Ordinal), $"{dialogName} '{fieldId}' SR6 options must include '{shared}'.");
+            }
+
+            Assert.IsTrue(
+                sr5Options.Contains("SumToTen", StringComparer.Ordinal) || sr5Options.Contains("SumtoTen", StringComparer.Ordinal),
+                $"{dialogName} '{fieldId}' SR5 options must include SumToTen.");
+            Assert.IsTrue(
+                sr6Options.Contains("SumtoTen", StringComparer.Ordinal) || sr6Options.Contains("SumToTen", StringComparer.Ordinal),
+                $"{dialogName} '{fieldId}' SR6 options must include SumtoTen.");
+
+            if (string.Equals(fieldId, "newCharacterOriginBuildPreference", StringComparison.Ordinal))
+            {
+                Assert.IsTrue(sr5Options.Contains("auto", StringComparer.Ordinal), $"{dialogName} '{fieldId}' SR5 options must include 'auto'.");
+                Assert.IsTrue(sr6Options.Contains("auto", StringComparer.Ordinal), $"{dialogName} '{fieldId}' SR6 options must include 'auto'.");
+                // Ruleset-native vocabulary lives only on its own side.
+                Assert.IsTrue(sr5Options.Contains("LifeModule", StringComparer.Ordinal), $"{dialogName} '{fieldId}' SR5 options must include LifeModule.");
+                Assert.IsTrue(sr6Options.Contains("PointBuy", StringComparer.Ordinal), $"{dialogName} '{fieldId}' SR6 options must include PointBuy.");
+                Assert.IsTrue(sr6Options.Contains("LifePath", StringComparer.Ordinal), $"{dialogName} '{fieldId}' SR6 options must include LifePath.");
+            }
+        }
+    }
+
     private static string NormalizeFieldContract(DesktopDialogField field)
     {
         string[] optionValues = (field.Options ?? Array.Empty<DesktopDialogFieldOption>())
@@ -753,6 +1133,12 @@ public sealed class Sr5Sr6RulesetParityAuditTests
             Assert.Fail(
                 $"SR6 {catalogName} drifted for '{key}'. Missing in SR6: {FormatList(missingValues)}. Extra in SR6: {FormatList(extraValues)}.");
         }
+    }
+
+    private static DesktopDialogField RequireField(DesktopDialogState dialog, string fieldId)
+    {
+        return dialog.Fields.FirstOrDefault(item => string.Equals(item.Id, fieldId, StringComparison.Ordinal))
+            ?? throw new AssertFailedException($"Dialog '{dialog.Id}' is missing required field '{fieldId}'.");
     }
 
     private static string FormatList(IReadOnlyList<string> values)

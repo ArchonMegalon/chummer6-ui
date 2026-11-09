@@ -444,6 +444,23 @@ ALLOWED_RECIPE_PATHS = frozenset(
         # covering both entry points and the observation lifetime.
         "Chummer.Tests/Presentation/DesktopInstallLinkingOutcomeMatrixTests.cs",
         "Chummer.Tests/Chummer.Tests.csproj",
+
+        # R83 (2026-11-09): SR6 dialog-contract parity drift closeout - SR6-native
+        # audit assertions per the 2026-09-21 core contract, explicit
+        # combat_damage_track branch plus catalog-level ruleset-aware fallback in
+        # the coordinator, oracle rotation for the pinned coordinator, and the
+        # release-signoff lane reference.
+        "Chummer.Presentation/Overview/DialogCoordinator.cs",
+        # R95 (2026-11-09): controller CHANGES_REQUESTED closeout on PR #581 -
+        # honest damage-track apply with a real typed condition-monitor mutation
+        # route, unsupported-action fallback honesty, and parity-vs-unavailable
+        # separation in the SR5/SR6 UI parity materializer plus its compliance
+        # lane and the interface file the typed delegate lands on.
+        "Chummer.Presentation/Overview/IDialogCoordinator.cs",
+        "Chummer.Tests/Compliance/Sr5Sr6UiParityAuditComplianceTests.cs",
+        "scripts/materialize_sr5_sr6_ui_parity_audit.py",
+        "Chummer.Tests/Presentation/Sr5Sr6RulesetParityAuditTests.cs",
+        "docs/WORKBENCH_RELEASE_SIGNOFF.md",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these
@@ -464,15 +481,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "fa57e44d27bba93d56839b8691b38e98c5c4057a",
+        "blob": "fa9d9b229bc7332921511a9ef2a2bedfa4a59425",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "0ccfc7ab198b3b14c1b6e7b318bcdf65ba38e718665187ec734ce047d4ce309c",
+        "rawSha256": "23db61adf66374b51a2dd625c275cb0926575f758e066ff718073d46100559a4",
         "rawSizeBytes": 69811,
-        "semanticCanonicalSha256": "0ccfc7ab198b3b14c1b6e7b318bcdf65ba38e718665187ec734ce047d4ce309c",
+        "semanticCanonicalSha256": "23db61adf66374b51a2dd625c275cb0926575f758e066ff718073d46100559a4",
         "semanticCanonicalSizeBytes": 69811,
-        "tree": "203e62667a838eeb8e5e016a3ad71788bcc8c4fb"
+        "tree": "72b8f11cbf9067a05f8a5ff3061cce7426dac24e"
     },
     "producerLock": {
         "absentAtCommit": True,
