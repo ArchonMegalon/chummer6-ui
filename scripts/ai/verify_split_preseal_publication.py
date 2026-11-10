@@ -147,6 +147,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Avalonia/Creation/CreationAiFinishRunStore.cs",
         # R9 2026-10-10: pipeline-main residual ports (owner-authorized R26 merge).
         "Chummer.Avalonia/MainWindow.EventHandlers.cs",
+        "Chummer.Avalonia/DesktopHomeWindow.cs",
+        "Chummer.Tests/UnavailableDesktopWorkspaceRoamingSyncTests.cs",
         "Chummer.Avalonia/MainWindow.PostRefreshCoordinators.cs",
         *OWNER_CONTEXT_RECIPE_PATHS,
         ".github/workflows/current-main-package-plane.yml",

@@ -143,7 +143,7 @@ namespace Chummer.Tests.Presentation;
     // ----- 1b. SR6 Improve / Burn Edge buttons (T66) -----
 
     [TestMethod]
-    public void Sr6_improve_button_click_raises_improve_event_with_optimistic_karma_deduction()
+    public void Sr6_improve_button_refuses_legacy_purchase_even_for_forced_routed_click()
     {
         WithHeadlessUi(() =>
         {
@@ -158,16 +158,16 @@ namespace Chummer.Tests.Presentation;
 
             Button? improve = FindButtonByName(host, "AttributeImprove_BOD");
             Assert.IsNotNull(improve, "SR6 career row must expose the Improve button.");
-            Assert.IsTrue(improve.IsEnabled, "Improve must be enabled when karma covers the computed cost.");
+            Assert.IsFalse(improve.IsEnabled, "SR6 requires the qualified Core advancement operation.");
             Assert.AreEqual("Improve", improve.Content);
 
+            string?[] valuesBefore = host.GetVisualDescendants().OfType<TextBlock>().Select(x => x.Text).ToArray();
             improve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
 
-            Assert.AreEqual(1, edits.Count, "Exactly one improve edit must be raised per click.");
-            Assert.AreEqual("BOD", edits[0].AttributeName, "The edit must target the clicked row.");
-            Assert.AreEqual("improve", edits[0].Bucket, "The edit must land in the improve bucket.");
-            Assert.AreEqual(3, edits[0].Value, "The improve edit must carry the incremented total value.");
+            Assert.AreEqual(0, edits.Count, "A forced routed click must not dispatch or optimistically spend Karma.");
+            CollectionAssert.AreEqual(valuesBefore,
+                host.GetVisualDescendants().OfType<TextBlock>().Select(x => x.Text).ToArray());
 
             hostWindow.Close();
             Dispatcher.UIThread.RunJobs();

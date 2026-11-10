@@ -632,9 +632,11 @@ public partial class SectionHostControl : UserControl
             }
 
             int improveCost = ComputeCareerAttributeUpgradeCost(baseValue + karmaValue, metatypeAugMax);
-            bool canImprove = careerMode && improveCost > 0 && availableKarma >= improveCost;
+            bool canImprove = !isSr6 && careerMode && improveCost > 0 && availableKarma >= improveCost;
             improveButton.IsEnabled = canImprove;
-            string helpText = canImprove
+            string helpText = isSr6
+                ? "SR6 attribute advancement is unavailable in this preview. Your attribute and Karma remain unchanged."
+                : canImprove
                 ? $"Improve {rowLabel} for {improveCost} Karma"
                 : improveCost <= 0
                     ? $"{rowLabel} is already at its current ceiling."

@@ -37,6 +37,29 @@ public class CharacterOverviewPresenterTests
     private const string CareerKarmaExpenseXml = "<character><name>Karma Runner</name><alias>KARMA</alias><metatype>Human</metatype><buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><created>True</created><karma>10</karma><nuyen>0</nuyen><expenses><expense><guid>65da27db-24a8-4b6e-b42c-30f4bb13a4f8</guid><date>2081-05-12T14:30:00</date><amount>1.9</amount><reason>Run reward</reason><type>Karma</type><refund>False</refund><forcecareervisible>False</forcecareervisible><undo><karmatype>ManualAdd</karmatype><extra>keep</extra></undo></expense></expenses></character>";
 
     [TestMethod]
+    public async Task Career_attribute_advancement_rejects_authoritative_SR6_even_when_summary_says_SR5()
+    {
+        var client = new FakeChummerClient();
+        var id = new CharacterWorkspaceId("ws-edition-guard");
+        client.SeedWorkspace(id.Value, "Edition runner", "SR6", rulesetId: RulesetDefaults.Sr5,
+            contentRevision: 7, savedRevision: 7);
+        client.SeedDocument(id.Value, CareerKarmaExpenseXml, RulesetDefaults.Sr6);
+        WorkspaceDocument before = client.GetDocument(id.Value);
+        using var presenter = new CharacterOverviewPresenter(client);
+        await presenter.LoadAsync(id, CancellationToken.None);
+
+        Assert.IsNull(await presenter.PrepareCareerAttributeAdvanceAsync(CancellationToken.None));
+        StringAssert.Contains(presenter.State.Error ?? "", "SR5 only");
+        var request = new CareerAttributeAdvanceRequest(id, 7, null!, "logical", "source", "rules",
+            true, Guid.NewGuid(), new DateTime(2081, 5, 12));
+        Assert.IsNull(await presenter.ApplyCareerAttributeAdvanceAsync(request, CancellationToken.None));
+        StringAssert.Contains(presenter.State.Error ?? "", "SR5 only");
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(before, client.GetDocument(id.Value));
+        Assert.AreEqual(7L, client.GetWorkspaceItem(id.Value).ContentRevision);
+    }
+
+    [TestMethod]
     public async Task Displayed_owner_context_is_issued_by_the_read_not_the_next_gesture()
     {
         OwnerBoundFakeChummerClient client = new();

@@ -651,6 +651,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _summaryText,
                 new TextBlock
                 {
+                    Name = "DesktopCharacterSyncAvailability",
+                    Text = UnavailableDesktopWorkspaceRoamingSync.AvailabilityMessage,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                new TextBlock
+                {
                     Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.heading", _language),
                     FontSize = 20,
                     FontWeight = FontWeight.SemiBold,

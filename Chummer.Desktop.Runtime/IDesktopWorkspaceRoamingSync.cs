@@ -41,6 +41,25 @@ public interface IDesktopWorkspaceRoamingSync
         CancellationToken ct);
 }
 
+/// <summary>Preserves local work while the desktop roaming contract is being qualified.</summary>
+public sealed class UnavailableDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync
+{
+    public const string AvailabilityMessage = "Automatic character sync is unavailable in this preview. Linking your account does not enable character sync.";
+
+    public Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable));
+    }
+
+    public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
+        OwnerScope owner, CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable, workspaceId));
+    }
+}
+
 public interface IOwnerBoundDesktopWorkspaceRoamingSync
 {
     Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
