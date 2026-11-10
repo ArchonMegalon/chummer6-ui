@@ -735,6 +735,7 @@ internal sealed class DesktopHomeWindow : Window
             lines.Add(F("desktop.home.install_summary.last_claim_attempt", lastClaimAttemptUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
         }
 
+        lines.Add(UnavailableDesktopWorkspaceRoamingSync.AvailabilityMessage);
         return string.Join("\n", lines);
     }
 

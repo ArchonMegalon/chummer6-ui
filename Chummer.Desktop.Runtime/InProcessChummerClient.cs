@@ -52,7 +52,7 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
     private readonly SerializedBackgroundExecutor _workspaceOperations = new();
 
     public DesktopWorkspaceRoamingResult LastWorkspaceRoamingResult { get; private set; }
-        = DesktopWorkspaceRoamingResult.AlreadyCurrent();
+        = new(DesktopWorkspaceRoamingOutcome.Unavailable);
 
     public InProcessChummerClient(
         IWorkspaceService workspaceService,
@@ -90,7 +90,7 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
         _shellPreferencesService = shellPreferencesService ?? new ShellPreferencesService(new InMemoryShellPreferencesStore());
         _shellSessionService = shellSessionService ?? new ShellSessionService(new InMemoryShellSessionStore());
         _ownerContextAccessor = ownerContextAccessor ?? new LocalOwnerContextAccessor();
-        _workspaceRoamingSync = workspaceRoamingSync ?? new NoOpDesktopWorkspaceRoamingSync();
+        _workspaceRoamingSync = workspaceRoamingSync ?? new UnavailableDesktopWorkspaceRoamingSync();
         _postCommitRoamingTimeout = postCommitRoamingTimeout
             ?? DesktopWorkspaceRoamingPolicy.DefaultOperationTimeout;
         if (_postCommitRoamingTimeout <= TimeSpan.Zero
