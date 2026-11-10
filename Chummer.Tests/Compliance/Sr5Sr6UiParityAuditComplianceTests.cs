@@ -44,6 +44,13 @@ public sealed class Sr5Sr6UiParityAuditComplianceTests
         StringAssert.Contains(scriptText, "functionalParityTests");
         StringAssert.Contains(scriptText, "containmentEvidenceTests");
         StringAssert.Contains(scriptText, "containmentEvidenceTestCount");
+        StringAssert.Contains(scriptText, "routingEvidenceTests");
+        StringAssert.Contains(scriptText, "do_not_fall_back_to_generic_execution");
+        StringAssert.Contains(scriptText, "unclassifiedTests");
+        StringAssert.Contains(scriptText, "EXPLICIT_TEST_CLASSIFICATIONS");
+        StringAssert.Contains(scriptText, "--no-incremental");
+        StringAssert.Contains(scriptText, "testRunnerSha256");
+        StringAssert.Contains(scriptText, "testRunnerReused");
         StringAssert.Contains(scriptText, "containmentEvidence");
         StringAssert.Contains(scriptText, "safety evidence and prove");
         StringAssert.Contains(scriptText, "sr6_wizard_unavailable");

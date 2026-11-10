@@ -150,7 +150,7 @@
       "Chummer.Presentation/Overview/CharacterOverviewState.cs": "ace8e9fe23179512ed106ee765140a0b58d9427f351a8093fbf03bdf4e16d568",
       "Chummer.Presentation/Overview/DesktopDialogFactory.cs": "61d5f82b044c8eca954878df9d81ae32fd7cb4f1d6ffac94b7e4cbb939b4bbd6",
       "Chummer.Presentation/Overview/DesktopDialogModels.cs": "18f4f428c396423d09adce918683305e90f14154843d53ca7c2666a1fdbd83ab",
-      "Chummer.Presentation/Overview/DialogCoordinator.cs": "1942fb140ce028cb2e5ebed5df96501270c1f910b29024ebfc37e53ba5792d9d",
+      "Chummer.Presentation/Overview/DialogCoordinator.cs": "a4ed549be6beaa6271644991352831f1cc6d2ca66c3e762483d1ecf97d1ca14b",
       "Chummer.Presentation/Overview/IDialogCoordinator.cs": "15a3a7a9c875030ed56dd0501173cfa8d21749a0ec36ef1e014592a623cb3fa4",
       "Chummer.Presentation/Overview/IOwnerBoundWorkspaceCleanupPresenter.cs": "de88e4b98487e5eb9b175dea9d59e572e9b197c02ce7de222412c271a16b8b0d",
       "Chummer.Presentation/Overview/IOwnerBoundWorkspaceContinuationPresenter.cs": "23e736842926b8f371ac7756888c8ad2d933a8e34c2d5c3001ad6103a8e49ddd",
