@@ -103,6 +103,8 @@
 # Hosted release evidence is byte-custody material. Preserve captured bytes so
 # the adjacent SHA-256 index remains valid on every checkout.
 release-evidence/** -text whitespace=cr-at-eol
+# Agent evidence handoffs are byte-custody material (same rule as release-evidence).
+docs/agents/evidence/** -text whitespace=cr-at-eol
 #
 # Exclude files from exporting
 .gitattributes export-ignore

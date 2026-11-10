@@ -1,0 +1,16 @@
+{
+  "label": "win094-corrupt-update-rejection",
+  "payloadPath": "D:\\sources\\chummer\\portable-qual\\runs\\win094\\corrupt-state\\chummer-avalonia-win-x64-corrupt.zip",
+  "payloadSizeBytes": 1048576,
+  "payloadActualSha256": "de7b03337147871981967a1d0b9104a3ec5cb3294964ccb494e7cde04cfdcede",
+  "manifestClaimedSha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "manifestPath": "D:\\sources\\chummer\\portable-qual\\runs\\win094\\corrupt-state\\update-manifest-corrupt.json",
+  "processId": 22180,
+  "appExitedOnItsOwn": false,
+  "statePath": "D:\\sources\\chummer\\portable-qual\\runs\\win094\\corrupt-state\\Chummer6\\desktop-update\\avalonia\\windows\\x64\\state.json",
+  "stateContent": "{\n  \"HeadId\": \"avalonia\",\n  \"Platform\": \"windows\",\n  \"Arch\": \"x64\",\n  \"InstalledVersion\": \"1.0.0-preview.20261109.6408\",\n  \"ChannelId\": \"preview\",\n  \"LastCheckedAt\": \"2026-11-09T14:30:59.7748709+00:00\",\n  \"LastManifestVersion\": \"9.9.9-corrupt-proof\",\n  \"LastManifestPublishedAt\": \"2026-11-09T12:00:00+00:00\",\n  \"LastError\": \"chummer-avalonia-win-x64.zip: Update preparation failed: InvalidOperationException: Desktop update artifact \\u0027chummer-avalonia-win-x64.zip\\u0027 failed checksum validation. Expected \\u0027bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\\u0027, observed \\u0027de7b03337147871981967a1d0b9104a3ec5cb3294964ccb494e7cde04cfdcede\\u0027.\",\n  \"LastRolloutState\": null,\n  \"LastRolloutReason\": null,\n  \"LastSupportabilityState\": null,\n  \"LastSupportabilitySummary\": null,\n  \"LastKnownIssueSummary\": null,\n  \"LastFixAvailabilitySummary\": null,\n  \"LastProofStatus\": null,\n  \"LastProofGeneratedAt\": null,\n  \"LastInstallAccessClass\": null,\n  \"LastDesktopChannelRef\": null,\n  \"LastInstallGuidanceRef\": null,\n  \"LastParticipationReceiptRef\": null,\n  \"LastRewardPublicationRef\": null,\n  \"LastDesktopPublicInstallRoute\": null,\n  \"LastDesktopSurfaceRationale\": null,\n  \"LastFailureReason\": \"update_apply_failed\",\n  \"LastFailureAtUtc\": \"2026-11-09T14:30:59.7748709+00:00\",\n  \"RetryAttempt\": 1,\n  \"NextRetryAtUtc\": \"2026-11-09T14:35:59.854628+00:00\",\n  \"PendingUpdateVersion\": null,\n  \"PendingUpdateChannelId\": null,\n  \"PendingUpdatePreparedAtUtc\": null,\n  \"PendingInstallerPath\": null,\n  \"LastUpdateLaunchAttemptAtUtc\": null,\n  \"RollbackWindowStartedAtUtc\": null,\n  \"RollbackWindowExpiresAtUtc\": null,\n  \"LastStartupPromptedManifestVersion\": null,\n  \"LastStartupPromptedAtUtc\": null,\n  \"LastManifestChannelId\": \"preview\"\n}",
+  "failureReason": "update_apply_failed",
+  "lastError": "chummer-avalonia-win-x64.zip: Update preparation failed: InvalidOperationException: Desktop update artifact 'chummer-avalonia-win-x64.zip' failed checksum validation. Expected 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', observed 'de7b03337147871981967a1d0b9104a3ec5cb3294964ccb494e7cde04cfdcede'.",
+  "rejected": true,
+  "succeeded": true
+}

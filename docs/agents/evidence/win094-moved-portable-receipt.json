@@ -1,0 +1,12 @@
+﻿{
+    "label":  "win094-moved-portable",
+    "appRoot":  "D:\\sources\\chummer\\portable-qual\\runs\\win094\\moved-app",
+    "saveProcessId":  11764,
+    "reopenProcessId":  20100,
+    "saveExitCode":  null,
+    "reopenExitCode":  null,
+    "workspaceId":  "4c8d4fb3b20144fa91e84d2a0d178f35",
+    "profileSha256":  "39B11D5F517B1520C2C7E8F97DCA05CA16E1EC59CDD40D5B5418200EA7917300",
+    "workspaceFileSha256":  "3DA9AFCDEEF785072EE1FFEA6DE404B1CCE9A84B3E3A79504F3F6E1A9FFE9C69",
+    "succeeded":  true
+}
