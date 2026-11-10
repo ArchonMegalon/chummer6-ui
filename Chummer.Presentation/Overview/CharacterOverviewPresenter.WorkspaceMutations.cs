@@ -3453,6 +3453,12 @@ public sealed partial class CharacterOverviewPresenter
                 return null;
             }
 
+            if (!string.Equals(read.Value.Document.RulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal))
+            {
+                Publish(State with { Error = "This attribute advancement editor supports SR5 only. SR6 advancement is unavailable in this preview." });
+                return null;
+            }
+
             CareerAttributeAdvanceEditorState editor =
                 CareerAttributeAdvanceEditorProjector.Project(
                     read.Value.Document.Content,
@@ -3508,7 +3514,7 @@ public sealed partial class CharacterOverviewPresenter
                 return prepared.Xml;
             },
             ct,
-            () => committed = prepared?.Receipt).ConfigureAwait(false);
+            () => committed = prepared?.Receipt, requiredRulesetId: RulesetDefaults.Sr5).ConfigureAwait(false);
         return committed;
     }
 
@@ -3546,7 +3552,7 @@ public sealed partial class CharacterOverviewPresenter
                 return prepared.Xml;
             },
             ct,
-            () => committed = prepared?.Correction).ConfigureAwait(false);
+            () => committed = prepared?.Correction, requiredRulesetId: RulesetDefaults.Sr5).ConfigureAwait(false);
         return committed;
     }
 
@@ -4432,7 +4438,8 @@ public sealed partial class CharacterOverviewPresenter
         Action? onCommitted = null,
         OwnerContextStamp? expectedOwner = null,
         Action? onDispatch = null,
-        Action<CommandResult<WorkspaceRevisionReceipt>>? observeCanonical = null)
+        Action<CommandResult<WorkspaceRevisionReceipt>>? observeCanonical = null,
+        string? requiredRulesetId = null)
     {
         ArgumentNullException.ThrowIfNull(mutateXml);
         CharacterOverviewState originalState = State;
@@ -4543,6 +4550,14 @@ public sealed partial class CharacterOverviewPresenter
                             null,
                             "This edit requires a native XML dossier.",
                             WorkspaceOperationOutcome.Corrupt);
+                    }
+
+                    if (requiredRulesetId is not null
+                        && !string.Equals(read.Value.Document.RulesetId, requiredRulesetId, StringComparison.Ordinal))
+                    {
+                        return new CommandResult<WorkspaceRevisionReceipt>(false, null,
+                            "This advancement action supports SR5 only. The runner's edition requires its own Core advancement operation.",
+                            WorkspaceOperationOutcome.Conflict);
                     }
 
                     string mutatedXml = mutateXml(read.Value.Document.Content);

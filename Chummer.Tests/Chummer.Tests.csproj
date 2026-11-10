@@ -217,6 +217,9 @@
     <Compile Include="SessionServiceTests.cs" />
     <Compile Include="SessionOfflineCacheServiceTests.cs" />
     <Compile Include="ServiceCollectionDesktopRuntimeExtensionsTests.cs" />
+    <Compile Include="UnavailableDesktopWorkspaceRoamingSyncTests.cs" />
+    <Compile Include="Presentation\CareerAttributeAdvanceUiTests.cs" />
+    <Compile Include="Presentation\CareerAttributeAdvanceParityTests.cs" />
     <Compile Include="ShellOwnerScopeTests.cs" />
     <Compile Include="SettingsStoreTests.cs" />
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />

@@ -149,38 +149,8 @@ internal static class WorkspaceXmlMutationCatalog
                 currentKarmaValue = Math.Clamp(requestedValue, 0, Math.Max(0, metatypeAugMax - currentBaseValue));
                 break;
             case "improve":
-                if (!created)
-                {
-                    throw new InvalidOperationException($"Attribute '{request.AttributeName}' can only be improved from a created/career workspace.");
-                }
-
-                int improveCost = ComputeCareerAttributeUpgradeCost(currentBaseValue + currentKarmaValue, metatypeAugMax);
-                if (improveCost <= 0)
-                {
-                    throw new InvalidOperationException($"Attribute '{request.AttributeName}' is already at its current ceiling.");
-                }
-
-                XElement totalKarmaElement = EnsureElement(root, "karma");
-                decimal availableKarma = ParseDecimal(totalKarmaElement.Value);
-                if (availableKarma < improveCost)
-                {
-                    throw new InvalidOperationException($"Attribute '{request.AttributeName}' requires {improveCost} Karma but only {availableKarma.ToString(CultureInfo.InvariantCulture)} is available.");
-                }
-
-                availableKarma -= improveCost;
-                if (isEdgeAttribute && metatypeMin < 1 && currentBaseValue == metatypeMin && currentKarmaValue == 0)
-                {
-                    metatypeMin += 1;
-                    currentBaseValue += 1;
-                }
-                else
-                {
-                    currentKarmaValue += 1;
-                }
-
-                totalKarmaElement.Value = availableKarma.ToString(CultureInfo.InvariantCulture);
-                AppendKarmaExpense(root, improveCost, $"Improve {AttributeWorkbenchProjector.FormatFullLabel(attributeName)}");
-                break;
+                // Natural attribute purchases require edition-specific Core quotation and atomic advancement.
+                throw new InvalidOperationException("Attribute advancement is unavailable through the legacy Improve action. Use a supported Core-backed advancement action.");
             case "burn":
                 if (!isEdgeAttribute)
                 {

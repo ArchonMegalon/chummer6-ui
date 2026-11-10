@@ -2771,7 +2771,7 @@ public sealed class WorkspaceXmlMutationCatalogTests
     }
 
     [TestMethod]
-    public void ApplyAttributeEdit_improve_spends_root_karma_and_appends_expense()
+    public void ApplyAttributeEdit_legacy_improve_refuses_purchase_without_Core_authority()
     {
         const string xml = """
 <character>
@@ -2792,26 +2792,14 @@ public sealed class WorkspaceXmlMutationCatalogTests
 </character>
 """;
 
-        string improvedXml = WorkspaceXmlMutationCatalog.ApplyAttributeEdit(
-            xml,
-            new AttributeEditRequest("Body", "improve", 2));
-        XDocument document = XDocument.Parse(improvedXml);
-        XElement root = document.Root!;
-        XElement attribute = root.Element("attributes")!.Elements("attribute").Single();
-        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+        InvalidOperationException error = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyAttributeEdit(xml, new AttributeEditRequest("Body", "improve", 1)));
+        StringAssert.Contains(error.Message, "Core-backed advancement");
 
-        Assert.AreEqual("5", root.Element("karma")!.Value);
-        Assert.AreEqual("1", attribute.Element("base")!.Value);
-        Assert.AreEqual("1", attribute.Element("karma")!.Value);
-        Assert.AreEqual("2", attribute.Element("totalvalue")!.Value);
-        Assert.AreEqual("10", expense.Element("amount")!.Value);
-        Assert.AreEqual("Improve Body", expense.Element("reason")!.Value);
-        Assert.AreEqual("Karma", expense.Element("type")!.Value);
-        Assert.AreEqual("False", expense.Element("refund")!.Value);
     }
 
     [TestMethod]
-    public void ApplyAttributeEdit_improve_restores_burned_edge_before_adding_karma()
+    public void ApplyAttributeEdit_legacy_improve_cannot_bypass_Core_for_burned_edge()
     {
         const string xml = """
 <character>
@@ -2832,21 +2820,10 @@ public sealed class WorkspaceXmlMutationCatalogTests
 </character>
 """;
 
-        string restoredXml = WorkspaceXmlMutationCatalog.ApplyAttributeEdit(
-            xml,
-            new AttributeEditRequest("Edge", "improve", 1));
-        XDocument document = XDocument.Parse(restoredXml);
-        XElement root = document.Root!;
-        XElement attribute = root.Element("attributes")!.Elements("attribute").Single();
-        XElement expense = root.Element("expenses")!.Elements("expense").Single();
+        InvalidOperationException error = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            WorkspaceXmlMutationCatalog.ApplyAttributeEdit(xml, new AttributeEditRequest("Edge", "improve", 1)));
+        StringAssert.Contains(error.Message, "Core-backed advancement");
 
-        Assert.AreEqual("10", root.Element("karma")!.Value);
-        Assert.AreEqual("1", attribute.Element("base")!.Value);
-        Assert.AreEqual("0", attribute.Element("karma")!.Value);
-        Assert.AreEqual("1", attribute.Element("metatypemin")!.Value);
-        Assert.AreEqual("1", attribute.Element("totalvalue")!.Value);
-        Assert.AreEqual("5", expense.Element("amount")!.Value);
-        Assert.AreEqual("Improve Edge", expense.Element("reason")!.Value);
     }
 
     [TestMethod]

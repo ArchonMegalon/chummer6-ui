@@ -75,7 +75,7 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                         provider.GetRequiredService<ICharacterCareerQualityAuthorityResolver>());
                     Assert.IsNotNull(provider.GetRequiredService<OwnerBoundCharacterCareerQualityService>());
                     Assert.IsInstanceOfType<InProcessSessionClient>(sessionClient);
-                    Assert.IsInstanceOfType<NoOpDesktopWorkspaceRoamingSync>(roamingSync);
+                    Assert.IsInstanceOfType<UnavailableDesktopWorkspaceRoamingSync>(roamingSync);
                     Assert.IsTrue(ReferenceEquals(workspaceStore, workspaceReadiness));
                     Assert.AreEqual(OwnerScope.LocalSingleUser.NormalizedValue, ownerContextAccessor.Current.NormalizedValue);
                     Assert.IsTrue(plugins.Any(plugin => string.Equals(plugin.Id.NormalizedValue, RulesetDefaults.Sr4, StringComparison.Ordinal)));
@@ -114,7 +114,7 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                     IDesktopWorkspaceRoamingSync roamingSync = provider.GetRequiredService<IDesktopWorkspaceRoamingSync>();
 
                     Assert.AreEqual("install-account:subject-alpha", ownerContextAccessor.Current.NormalizedValue);
-                    Assert.IsInstanceOfType<GrantBoundDesktopWorkspaceRoamingSync>(roamingSync);
+                    Assert.IsInstanceOfType<UnavailableDesktopWorkspaceRoamingSync>(roamingSync);
                     Assert.AreEqual(
                         Path.Combine(desktopStateRoot, "Chummer6", "state"),
                         Environment.GetEnvironmentVariable(StatePathEnvironmentVariable));

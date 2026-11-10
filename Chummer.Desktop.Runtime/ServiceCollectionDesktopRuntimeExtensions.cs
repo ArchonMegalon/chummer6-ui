@@ -52,26 +52,15 @@ public static class ServiceCollectionDesktopRuntimeExtensions
         if (UseHttpClientMode())
         {
             services.TryAddSingleton(CreateApiHttpClient());
-            services.TryAddSingleton<IDesktopWorkspaceRoamingSync, NoOpDesktopWorkspaceRoamingSync>();
+            services.TryAddSingleton<IDesktopWorkspaceRoamingSync, UnavailableDesktopWorkspaceRoamingSync>();
             services.TryAddSingleton<IChummerClient, HttpChummerClient>();
             services.TryAddSingleton(static provider => (IOriginDossierPublicationClient)provider.GetRequiredService<IChummerClient>());
             services.TryAddSingleton<ISessionClient, HttpSessionClient>();
             return services;
         }
 
-        if (!string.IsNullOrWhiteSpace(desktopHeadId))
-        {
-            services.TryAddSingleton<IDesktopWorkspaceRoamingSync>(provider => new GrantBoundDesktopWorkspaceRoamingSync(
-                desktopHeadId,
-                provider.GetRequiredService<Chummer.Application.Workspaces.IWorkspaceStore>(),
-                provider.GetRequiredService<Chummer.Application.Workspaces.IWorkspaceService>(),
-                ownerContext: provider.GetRequiredService<IOwnerContextAccessor>() as IOwnerContextLeaseAccessor
-                    ?? throw new InvalidOperationException("Desktop roaming requires the shared owner's live lease capability.")));
-        }
-        else
-        {
-            services.TryAddSingleton<IDesktopWorkspaceRoamingSync, NoOpDesktopWorkspaceRoamingSync>();
-        }
+        // Re-enable after common-base conflict preservation and the Hub contract are qualified.
+        services.TryAddSingleton<IDesktopWorkspaceRoamingSync, UnavailableDesktopWorkspaceRoamingSync>();
 
         services.TryAddSingleton<WorkspaceContinuationExportService>();
         services.TryAddSingleton<ICharacterCareerQualityAuthorityResolver, OwnerManagedCareerQualityAuthorityResolver>();
