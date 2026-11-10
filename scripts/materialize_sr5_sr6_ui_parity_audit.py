@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from datetime import datetime, timezone
@@ -161,13 +162,15 @@ def unique_pendants(rows: list[dict[str, object]]) -> list[str]:
 
 
 def ensure_test_runner() -> None:
-    if TEST_RUNNER_PATH.is_file():
-        return
-
+    """Rebuild before each audit; a source-only stamp cannot qualify existing binaries."""
+    # Remove only this generated executable so a failed/incomplete build cannot
+    # silently fall back to the previous runner.
+    TEST_RUNNER_PATH.unlink(missing_ok=True)
     build_command = [
         "dotnet",
         "build",
         str(TEST_PROJECT_PATH),
+        "--no-incremental",
         "--nologo",
         "--verbosity",
         "quiet",
@@ -188,6 +191,32 @@ UNAVAILABLE_WORKFLOW_MARKER = "sr6_wizard_unavailable"
 CONTAINMENT_EVIDENCE_MARKER = "reports_read_only_without"
 UNSUPPORTED_ACTION_MARKER = "report_unsupported"
 UNSUPPORTED_IDENTITY_MARKER = "unsupported_action_reports_exact_error_identity"
+# R97 P2-3: negative-only routing evidence (the legacy-utility-control
+# no-generic-fallback sweep) is neither functional parity nor refusal
+# wording evidence; it proves only that no action reaches the generic
+# success fallback, so it is classified separately.
+ROUTING_EVIDENCE_MARKER = "do_not_fall_back_to_generic_execution"
+# Explicit functional-parity marker: every positive-parity provider test
+# name carries keeps_sr5; anything else must carry one of the markers
+# above or the materializer refuses to publish (see unclassifiedTests).
+FUNCTIONAL_PARITY_MARKER = "keeps_sr5"
+
+# R97 P2-3: the explicit classification list. Every provider parity test
+# must be classified as exactly one of "functional", "unavailable",
+# "containment", or "routing" — either by a marker (see above) or by an
+# entry here. Tests that match neither are reported in
+# evidence.unclassifiedTests and the materializer refuses to publish a
+# pass until the list below (or a test marker) covers them. The list is
+# deliberately explicit so parity claims can only grow by a reviewed edit.
+EXPLICIT_TEST_CLASSIFICATIONS: dict[str, str] = {
+    "Sr6_ruleset_quick_action_pendants_exist_for_every_sr5_workspace_section": "functional",
+    "Sr6_ruleset_rendered_section_surfaces_keep_sr5_pendants_without_placeholder_fallback": "functional",
+    "Sr6_ruleset_command_dialog_contracts_keep_sr5_field_and_action_pendants": "functional",
+    "Sr6_ruleset_origin_and_priority_rebuild_dialog_contracts_keep_sr5_field_and_action_pendants": "functional",
+    "Sr6_shared_legacy_ui_control_dialogs_keep_explicit_sr5_pendants": "functional",
+    "Sr6_ruleset_shared_command_execution_contracts_keep_sr5_function_pendants": "functional",
+    "Governed_data_surface_commands_open_explicit_dialogs_instead_of_shared_error_fallback": "functional",
+}
 
 # SR6-native creation workflows that are disclosed as unavailable today. The
 # safety disclosure proves refusal-to-substitute, not existence; each stays
@@ -228,33 +257,63 @@ def classify_provider_tests(text: str, names: list[str]) -> dict[str, list[str]]
         if match:
             body_by_name[match.group("name")] = block
     unavailable = [name for name in names if UNAVAILABLE_WORKFLOW_MARKER in body_by_name.get(name, "")]
+    taken = set(unavailable)
+    routing = [
+        name
+        for name in names
+        if name not in taken and ROUTING_EVIDENCE_MARKER in body_by_name.get(name, "")
+    ]
+    taken.update(routing)
     # Containment / mocked-dispatch evidence (read-only reports, unsupported
     # action errors) guarantees honest refusal behavior only; it must never
     # be counted as proof that a persisted workflow exists.
     containment = [
         name
         for name in names
-        if name not in set(unavailable)
+        if name not in taken
         and (
             CONTAINMENT_EVIDENCE_MARKER in body_by_name.get(name, "")
             or UNSUPPORTED_ACTION_MARKER in body_by_name.get(name, "")
             or UNSUPPORTED_IDENTITY_MARKER in body_by_name.get(name, "")
         )
     ]
+    taken.update(containment)
+    # R97 P2-3: functional parity is explicit too (keeps_sr5 in the test
+    # name). Anything that matches no marker lands in unclassifiedTests and
+    # the materializer refuses to publish a pass until it is classified.
     functional = [
         name
         for name in names
-        if name not in set(unavailable) and name not in set(containment)
+        if name not in taken and FUNCTIONAL_PARITY_MARKER in name
     ]
+    taken.update(functional)
+    unclassified: list[str] = []
+    for name in names:
+        if name in taken:
+            continue
+        explicit = EXPLICIT_TEST_CLASSIFICATIONS.get(name)
+        if explicit == "functional":
+            functional.append(name)
+        elif explicit == "unavailable":
+            unavailable.append(name)
+        elif explicit == "containment":
+            containment.append(name)
+        elif explicit == "routing":
+            routing.append(name)
+        else:
+            unclassified.append(name)
     return {
         "functionalParityTests": functional,
         "unavailableWorkflowSafetyTests": unavailable,
         "containmentEvidenceTests": containment,
+        "routingEvidenceTests": routing,
+        "unclassifiedTests": unclassified,
     }
 
 
 def run_filtered_tests() -> dict[str, object]:
     ensure_test_runner()
+    runner_sha256 = hashlib.sha256(TEST_RUNNER_PATH.read_bytes()).hexdigest()
     command = [
         str(TEST_RUNNER_PATH),
         "--filter",
@@ -264,11 +323,15 @@ def run_filtered_tests() -> dict[str, object]:
         "--no-progress",
     ]
     result = subprocess.run(command, cwd=REPO_ROOT, text=True, capture_output=True)
+    if hashlib.sha256(TEST_RUNNER_PATH.read_bytes()).hexdigest() != runner_sha256:
+        raise SystemExit("Test runner changed during the SR5/SR6 UI parity audit.")
     combined = (result.stdout or "") + "\n" + (result.stderr or "")
     return {
         "command": command,
         "exitCode": result.returncode,
         "outputTail": tail_lines(combined),
+        "testRunnerSha256": runner_sha256,
+        "testRunnerReused": False,
     }
 
 
@@ -397,6 +460,13 @@ def main() -> None:
         reasons.append("Some full-spectrum SR5 legacy elements still lack an explicit SR6 pendant.")
     if int(test_result["exitCode"]) != 0:
         reasons.append("Direct SR5/SR6 provider, dialog-contract, workflow, or shared-command execution parity tests failed.")
+    unclassified_tests = provider_test_classification["unclassifiedTests"]
+    if unclassified_tests:
+        reasons.append(
+            "SR5/SR6 provider parity audit contains tests without an explicit classification: "
+            + ", ".join(unclassified_tests)
+            + ". Classify them with keeps_sr5, sr6_wizard_unavailable, do_not_fall_back_to_generic_execution, or a containment marker before publishing."
+        )
 
     payload = {
         "generatedAt": now_iso(),
@@ -404,7 +474,7 @@ def main() -> None:
         "status": "pass" if not reasons else "fail",
         "summary": (
             "SR5/SR6 UI contract audit passed for the tested scope. Functional parity claims are limited "
-            "to evidence.functionalParityTests; read-only and unsupported-action checks prove containment only. "
+            "to evidence.functionalParityTests; containment and routing checks do not establish persisted workflows. "
             "SR6 Karma, PointBuy, and LifePath remain unimplemented and their "
             "sr6_wizard_unavailable disclosures are safety-only guarantees, not proof those workflows exist."
             if not reasons
@@ -413,9 +483,9 @@ def main() -> None:
         "functionalParitySummary": (
             "Functional parity claims cover only the tests listed in evidence.functionalParityTests "
             "(direct SR5/SR6 provider, dialog-contract, legacy utility-control dialog, utility-dialog action "
-            "execution, workflow, and shared-command execution parity). Read-only containment and "
-            "unsupported-action dispatch checks are recorded separately as safety evidence and prove "
-            "nothing about persisted workflow functionality."
+            "execution, workflow, and shared-command execution parity). Read-only containment, "
+            "unsupported-action dispatch, and negative-only routing checks are recorded separately as "
+            "safety evidence and prove nothing about persisted workflow functionality."
         ),
         "unavailableWorkflowSafetySummary": (
             "SR6-native creation workflows (Karma, PointBuy, LifePath) are not implemented. The "
@@ -450,6 +520,10 @@ def main() -> None:
             "unavailableWorkflowSafetyTests": provider_test_classification["unavailableWorkflowSafetyTests"],
             "containmentEvidenceTestCount": len(provider_test_classification["containmentEvidenceTests"]),
             "containmentEvidenceTests": provider_test_classification["containmentEvidenceTests"],
+            "routingEvidenceTestCount": len(provider_test_classification["routingEvidenceTests"]),
+            "routingEvidenceTests": provider_test_classification["routingEvidenceTests"],
+            "unclassifiedTestCount": len(provider_test_classification["unclassifiedTests"]),
+            "unclassifiedTests": provider_test_classification["unclassifiedTests"],
             "uniqueTabPendantCount": len(unique_pendants(legacy_tabs)),
             "uniqueControlPendantCount": len(unique_pendants(legacy_controls)),
             "legacyDetailReceiptStatus": legacy_detail_receipt.get("status"),
@@ -488,6 +562,10 @@ def main() -> None:
             "containmentEvidence": (
                 "Damage-track read-only containment and legacy-control unsupported-action reporting prove honest refusal only; "
                 "they are not persisted-workflow parity and leave the affected workflows open."
+            ),
+            "routingEvidence": (
+                "The legacy-utility-control routing sweep proves negative-only behavior: no dialog action reaches the "
+                "generic success fallback. It is not functional parity evidence and does not prove any workflow exists."
             ),
             "openWorkflows": OPEN_SR6_WORKFLOWS,
         },

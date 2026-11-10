@@ -1,5 +1,45 @@
 # Windows delivery scope and Friday handoff
 
+## Current Friday round — 10 November 2026
+
+Read the current WIN-006 Teable assignment before starting; its live generation and base supersede the older rounds below. Continue the existing Friday session. Root owns integration, acceptance and release, so no routine user approval or artifact relay is pending.
+
+### Integrated R97 and controller correction
+
+The R97 work removes false success notices for unimplemented legacy dialog actions and separates functional, unavailable, containment, routing and unclassified test evidence. The controller correction rebuilds the audit runner before every run, discards its old generated executable, records the new executable hash, and rejects a runner changed during execution. A matching source stamp cannot authorize binary reuse. The audit summary remains limited to the tested contracts and does not claim that every persisted desktop workflow exists.
+
+These are source and focused-test corrections. They do not establish native Windows acceptance or complete SR6. Preserve the two reported baseline failures as separately classified debt; do not change assertions solely to obtain a passing count.
+
+### 1. Close the existing evidence handoff, then move on
+
+Provide authenticated, controller-reachable references for the four already reported R94 receipts, with exact artifact/source identities and the actions each receipt establishes. Use the existing authorized handoff channel. Keep private character contents, account details and credentials out of public reports. Do not rerun unchanged native or installer cases just to refresh timestamps. If the evidence cannot be retrieved, report that exact gap and continue the independent product tasks below.
+
+### 2. Deliver the Windows half of the amended account-sync journey
+
+Prepare one real Windows-authored SR5 runner with a character-bound amend that visibly affects a phone playtime-wizard calculation. Use the linked account sync route, preserve the complete original character and frozen rule environment, and provide Root the safe operation/artifact references needed to locate the synced runner. A local file export alone does not satisfy this task.
+
+Coordinate directly with Root for amended Android calculation/mutation, offline save/reopen/restart, conflict handling and return sync. On return, verify in a fresh Windows process that the phone change and exact amend environment are retained. Preserve uncertain-operation identities; reconcile a lost response before another upload or mutation. Report which legs actually ran on which host.
+
+### 3. Implement the missing SR6 creation workflows as real vertical slices
+
+The materializer still lists SR6 Karma, PointBuy and LifePath as open workflows. Complete them in that order unless the current authoritative specification requires a different dependency order. For each supported method, deliver typed native inputs, Core-owned eligibility and budgets, preview, explicit confirmation, finalization, Career entry and save/new-process reopen. Include cancellation and stale-context rejection for the changed route. Preserve SR5 and edition isolation.
+
+Inspect the actual current Core contracts first. Where a required Core or package change falls outside the assignment, send Root a concise request naming the repository, base, exact files/contracts and dependency order. Root can assign that work directly; do not wait for the user or implement rules math or copied contracts in Avalonia. Keep unsupported methods honestly unavailable until their real workflow works. Containment and routing tests are not functional completion.
+
+### 4. Qualify the candidate that is actually being delivered
+
+The existing supplied unsigned installer and portable payload remain identified in the 9 November round below. Reuse evidence only for the exact unchanged inputs it covers. Complete any genuinely missing clean-profile manual SR5, native Save PDF, moved-portable, or autonomous-update leg on the selected artifact. Keep shortcuts during update, require installer-controlled relaunch, positively observe checksum rejection and verify the saved runner. Do not downgrade an installed version to force an upgrade test. Send version/dependency issues to Root through Teable and continue independent work.
+
+### Working agreement
+
+Submit a small reviewable PR for each completed slice using the existing linear recipe/marker publication procedure. Report progress and exact blockers through Teable at least every 15 minutes while active, and reread the assignment after each milestone. Root reviews, fixes and merges. Keep AI Finish gated and linked-account-only. Windows work proceeds independently of Android delivery; Android remains a playtime companion, while Windows owns full editing and amend authoring. Do not claim gold/replacement parity from catalog coverage, refusal messages or package checks.
+
+Compute source pins from the exact Git blob bytes and validate the publication in a clean checkout with those bytes. R97 originally pinned a CRLF working copy while Git contained LF bytes; the controller corrected that mismatch. Preserve the active worktree and its uncommitted changes rather than resetting it to perform this check.
+
+---
+
+The rounds below are retained history. The current round and live Teable assignment govern new work.
+
 ## Current Friday round — 9 November 2026
 
 Root is the sole integration and delivery controller. Continue the existing Friday session/worktree and preserve uncommitted R82 changes. No user approval, USER LEG, new worker, new credential or artifact relay is pending. Refresh this Teable assignment at session start and between bounded tasks. Root keeps Android, Hub deployment and chummer.run publication; Friday owns Windows and its SR6 completion. Keep existing assignment generation2 and session identity.

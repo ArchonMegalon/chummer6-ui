@@ -1378,6 +1378,7 @@ public class DialogCoordinatorTests
     {
         DialogCoordinator coordinator = new();
         DesktopDialogFactory factory = new();
+        WorkspaceQuickAddRequest? captured = null;
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
             Preferences = DesktopPreferenceState.Default,
@@ -1399,8 +1400,12 @@ public class DialogCoordinatorTests
             Publish: state => published = state,
             ImportAsync: static (_, _) => Task.CompletedTask,
             UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
+GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
         await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
 
         Assert.IsNotNull(published.ActiveDialog);
@@ -1410,6 +1415,7 @@ public class DialogCoordinatorTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearSelectionDetails"), "Cost | ¥653");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearLiveRecalc"), "Add Again | Stays open");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiGearLiveRecalc"), "Black Market | Yes");
+        Assert.IsNotNull(captured, "add_more must route through the quick-add mutation delegate.");
         StringAssert.Contains(published.Notice ?? string.Empty, "Gear 'Ares Predator V' added.");
     }
 
@@ -1418,6 +1424,7 @@ public class DialogCoordinatorTests
     {
         DialogCoordinator coordinator = new();
         DesktopDialogFactory factory = new();
+        WorkspaceQuickAddRequest? captured = null;
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
             Preferences = DesktopPreferenceState.Default,
@@ -1434,11 +1441,16 @@ public class DialogCoordinatorTests
             Publish: state => published = state,
             ImportAsync: static (_, _) => Task.CompletedTask,
             UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
+GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
         await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
 
         StringAssert.Contains(published.Notice ?? string.Empty, "SR4 import tools:");
+        Assert.IsNotNull(captured, "add_more must route through the quick-add mutation delegate.");
         StringAssert.Contains(published.Notice ?? string.Empty, "Gear 'Ares Predator V' added.");
     }
 
@@ -1528,6 +1540,7 @@ public class DialogCoordinatorTests
     {
         DialogCoordinator coordinator = new();
         DesktopDialogFactory factory = new();
+        WorkspaceQuickAddRequest? captured = null;
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
             Preferences = DesktopPreferenceState.Default,
@@ -1550,8 +1563,12 @@ public class DialogCoordinatorTests
             Publish: state => published = state,
             ImportAsync: static (_, _) => Task.CompletedTask,
             UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
+GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
         await coordinator.CoordinateAsync("add_more", context, CancellationToken.None);
 
         Assert.IsNotNull(published.ActiveDialog);
@@ -1561,6 +1578,7 @@ public class DialogCoordinatorTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareSelectionDetails"), "Cost | ¥160,920");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareLiveRecalc"), "Black Market | Yes");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog, "uiCyberwareLiveRecalc"), "Recalculated Cost | ¥160,920");
+        Assert.IsNotNull(captured, "add_more must route through the quick-add mutation delegate.");
         StringAssert.Contains(published.Notice ?? string.Empty, "Cyberware 'Wired Reflexes 2' added.");
     }
 
@@ -1723,6 +1741,7 @@ public class DialogCoordinatorTests
     {
         DialogCoordinator coordinator = new();
         DesktopDialogFactory factory = new();
+        WorkspaceQuickAddRequest? captured = null;
         CharacterOverviewState published = CharacterOverviewState.Empty with
         {
             Preferences = DesktopPreferenceState.Default,
@@ -1739,11 +1758,16 @@ public class DialogCoordinatorTests
             Publish: state => published = state,
             ImportAsync: static (_, _) => Task.CompletedTask,
             UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
-
+GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                captured = request;
+                return Task.CompletedTask;
+            });
         await coordinator.CoordinateAsync("add", context, CancellationToken.None);
 
         StringAssert.Contains(published.Notice ?? string.Empty, "SR6 editor:");
+        Assert.IsNotNull(captured, "add must route through the quick-add mutation delegate.");
         StringAssert.Contains(published.Notice ?? string.Empty, "Program 'Armor' added.");
     }
 
@@ -1863,7 +1887,7 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_add_gear_adds_item_and_closes_dialog()
+    public async Task CoordinateAsync_add_gear_without_quick_add_delegate_reports_unsupported()
     {
         DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
@@ -1891,8 +1915,9 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("add", context, CancellationToken.None);
 
-        Assert.IsNull(published.ActiveDialog);
-        Assert.AreEqual("Gear 'Ares Alpha' added.", published.Notice);
+        Assert.IsNotNull(published.ActiveDialog, "the dialog must stay open when nothing mutated.");
+        StringAssert.Contains(published.Error ?? string.Empty, "action 'add' is not supported by this build yet.");
+        Assert.IsTrue(string.IsNullOrEmpty(published.Notice), "no success notice may be published without a mutation.");
     }
 
     [TestMethod]
@@ -2187,7 +2212,7 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
-    public async Task CoordinateAsync_apply_contact_edit_updates_notice_and_closes_dialog()
+    public async Task CoordinateAsync_apply_contact_edit_without_mutation_delegate_reports_unsupported()
     {
         DialogCoordinator coordinator = new();
         CharacterOverviewState published = CharacterOverviewState.Empty with
@@ -2215,21 +2240,22 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("apply", context, CancellationToken.None);
 
-        Assert.IsNull(published.ActiveDialog);
-        Assert.AreEqual("Contact renamed to 'Nines'.", published.Notice);
+        Assert.IsNotNull(published.ActiveDialog, "the dialog must stay open when nothing mutated.");
+        StringAssert.Contains(published.Error ?? string.Empty, "action 'apply' is not supported by this build yet.");
+        Assert.IsTrue(string.IsNullOrEmpty(published.Notice), "no success notice may be published without a mutation.");
     }
 
     [DataTestMethod]
-    [DataRow("delete_entry", "Entry 'Current Entry' removed.")]
-    [DataRow("gear_delete", "Gear 'Armor Jacket' removed.")]
-    [DataRow("cyberware_delete", "Cyberware 'Cybereyes Rating 4' removed.")]
-    [DataRow("drug_delete", "Drug 'Jazz' removed.")]
-    [DataRow("magic_delete", "Spell/power 'Stunbolt' removed.")]
-    [DataRow("skill_remove", "Skill 'Perception' removed.")]
-    [DataRow("vehicle_delete", "Vehicle 'GMC Roadmaster' removed.")]
-    [DataRow("contact_remove", "Contact 'Mr. Johnson' removed.")]
-    [DataRow("quality_delete", "Quality 'First Impression' removed.")]
-    public async Task CoordinateAsync_delete_legacy_utility_dialogs_close_with_targeted_notice(string controlId, string expectedNotice)
+    [DataRow("delete_entry")]
+    [DataRow("gear_delete")]
+    [DataRow("cyberware_delete")]
+    [DataRow("drug_delete")]
+    [DataRow("magic_delete")]
+    [DataRow("skill_remove")]
+    [DataRow("vehicle_delete")]
+    [DataRow("contact_remove")]
+    [DataRow("quality_delete")]
+    public async Task CoordinateAsync_delete_legacy_utility_dialogs_without_mutation_delegate_report_unsupported(string controlId)
     {
         DialogCoordinator coordinator = new();
         DesktopDialogFactory factory = new();
@@ -2247,8 +2273,9 @@ public class DialogCoordinatorTests
 
         await coordinator.CoordinateAsync("delete", context, CancellationToken.None);
 
-        Assert.IsNull(published.ActiveDialog);
-        Assert.AreEqual(expectedNotice, published.Notice);
+        Assert.IsNotNull(published.ActiveDialog, "the dialog must stay open when nothing mutated.");
+        StringAssert.Contains(published.Error ?? string.Empty, "action 'delete' is not supported by this build yet.");
+        Assert.IsTrue(string.IsNullOrEmpty(published.Notice), "no success notice may be published without a mutation.");
     }
 
     [TestMethod]

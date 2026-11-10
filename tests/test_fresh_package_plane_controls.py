@@ -36,6 +36,103 @@ def load_module() -> ModuleType:
 package_plane = load_module()
 
 
+@pytest.fixture
+def parity_materializer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> ModuleType:
+    path = REPO_ROOT / "scripts" / "materialize_sr5_sr6_ui_parity_audit.py"
+    spec = importlib.util.spec_from_file_location("parity_materializer", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    runner = tmp_path / "bin" / "Chummer.Tests"
+    runner.parent.mkdir()
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "TEST_PROJECT_PATH", tmp_path / "Chummer.Tests.csproj")
+    monkeypatch.setattr(module, "TEST_RUNNER_PATH", runner)
+    return module
+
+
+@pytest.mark.parametrize("old_bytes", [b"original runner", b"replaced runner"])
+def test_parity_materializer_rebuilds_even_with_matching_source_stamp(
+    parity_materializer: ModuleType, monkeypatch: pytest.MonkeyPatch, old_bytes: bytes
+) -> None:
+    module = parity_materializer
+    runner = module.TEST_RUNNER_PATH
+    runner.write_bytes(old_bytes)
+    (runner.parent / "parity_audit_runner.fingerprint").write_text("same-source\n")
+    calls = []
+
+    def run(command: list[str], **kwargs: object) -> SimpleNamespace:
+        calls.append(command)
+        assert kwargs["cwd"] == module.REPO_ROOT
+        if command[:2] == ["dotnet", "build"]:
+            assert "--no-incremental" in command
+            assert not runner.exists()
+            runner.write_bytes(b"fresh build")
+        else:
+            assert command[0] == str(runner)
+            assert runner.read_bytes() == b"fresh build"
+        return SimpleNamespace(returncode=0, stdout="passed", stderr="")
+
+    monkeypatch.setattr(module.subprocess, "run", run)
+    receipt = module.run_filtered_tests()
+    assert len(calls) == 2
+    assert receipt["testRunnerReused"] is False
+    assert receipt["testRunnerSha256"] == hashlib.sha256(b"fresh build").hexdigest()
+
+
+@pytest.mark.parametrize("build_exit", [0, 1])
+def test_parity_materializer_never_executes_stale_runner_after_incomplete_build(
+    parity_materializer: ModuleType, monkeypatch: pytest.MonkeyPatch, build_exit: int
+) -> None:
+    module = parity_materializer
+    module.TEST_RUNNER_PATH.write_bytes(b"stale runner")
+    calls = []
+
+    def run(command: list[str], **kwargs: object) -> SimpleNamespace:
+        calls.append(command)
+        assert command[:2] == ["dotnet", "build"]
+        return SimpleNamespace(returncode=build_exit, stdout="", stderr="build unavailable")
+
+    monkeypatch.setattr(module.subprocess, "run", run)
+    with pytest.raises(SystemExit, match="Unable to build|was not produced"):
+        module.run_filtered_tests()
+    assert len(calls) == 1
+    assert not module.TEST_RUNNER_PATH.exists()
+
+
+def test_parity_materializer_rejects_runner_changed_during_audit(
+    parity_materializer: ModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = parity_materializer
+
+    def run(command: list[str], **kwargs: object) -> SimpleNamespace:
+        module.TEST_RUNNER_PATH.write_bytes(
+            b"fresh build" if command[:2] == ["dotnet", "build"] else b"replaced while running"
+        )
+        return SimpleNamespace(returncode=0, stdout="passed", stderr="")
+
+    monkeypatch.setattr(module.subprocess, "run", run)
+    with pytest.raises(SystemExit, match="Test runner changed"):
+        module.run_filtered_tests()
+
+
+def test_parity_materializer_keeps_unclassified_and_routing_tests_out_of_functional_claims(
+    parity_materializer: ModuleType,
+) -> None:
+    names = ["Unknown_test", "Routing_test", "Behavior_keeps_sr5"]
+    text = """[TestMethod]
+    public void Unknown_test() { }
+    [TestMethod]
+    public void Routing_test() { /* do_not_fall_back_to_generic_execution */ }
+    [TestMethod]
+    public void Behavior_keeps_sr5() { }
+    """
+    result = parity_materializer.classify_provider_tests(text, names)
+    assert result["unclassifiedTests"] == ["Unknown_test"]
+    assert result["routingEvidenceTests"] == ["Routing_test"]
+    assert result["functionalParityTests"] == ["Behavior_keeps_sr5"]
+
+
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
@@ -441,13 +538,13 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "fa9d9b229bc7332921511a9ef2a2bedfa4a59425",
+            "blob": "824340325db1b66af790d50e956095c65a3d50fd",
             "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "23db61adf66374b51a2dd625c275cb0926575f758e066ff718073d46100559a4",
+            "rawSha256": "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41",
             "rawSizeBytes": 69811,
-            "semanticCanonicalSha256": "23db61adf66374b51a2dd625c275cb0926575f758e066ff718073d46100559a4",
+            "semanticCanonicalSha256": "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41",
             "semanticCanonicalSizeBytes": 69811,
             "tree": "72b8f11cbf9067a05f8a5ff3061cce7426dac24e",
         },
@@ -458,7 +555,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 69811
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "23db61adf66374b51a2dd625c275cb0926575f758e066ff718073d46100559a4"
+        "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)

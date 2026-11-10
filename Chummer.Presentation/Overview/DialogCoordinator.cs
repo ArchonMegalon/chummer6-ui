@@ -378,11 +378,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (TryCoordinateLegacyDeleteAction(dialog, actionId, context))
-        {
-            return;
-        }
-
         if (string.Equals(dialog.Id, "dialog.ui.open_notes", StringComparison.Ordinal) && string.Equals(actionId, "save", StringComparison.Ordinal))
         {
             string notes = DesktopDialogFieldValueParser.GetValue(dialog, "uiNotesEditor") ?? string.Empty;
@@ -406,26 +401,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 },
                 Notice = "Notes saved."
             });
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.create_entry", StringComparison.Ordinal) && string.Equals(actionId, "add", StringComparison.Ordinal))
-        {
-            string entryName = ReadDialogValue(dialog, "uiCreateEntryName", "New entry");
-            PublishRulesetAwareDialogNotice(context, $"Entry '{entryName}' added.");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.create_entry", StringComparison.Ordinal) && string.Equals(actionId, "add_more", StringComparison.Ordinal))
-        {
-            PublishRulesetAwareDialogAddMore(context, dialog, "Entry added. Editor remains open for another entry.", "uiCreateEntryName");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.edit_entry", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
-        {
-            string entryName = ReadDialogValue(dialog, "uiEditEntryName", "Current Entry");
-            PublishRulesetAwareDialogNotice(context, $"Entry renamed to '{entryName}'.");
             return;
         }
 
@@ -453,13 +428,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 "uiGearQuantity",
                 "uiGearMarkup",
                 "uiGearFreeItem");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.gear_edit", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
-        {
-            string gearName = ReadDialogValue(dialog, "uiGearEditName", "Selected Gear");
-            PublishRulesetAwareDialogNotice(context, $"Gear renamed to '{gearName}'.");
             return;
         }
 
@@ -637,13 +605,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 $"Skill '{skillName}' added. Dialog remains open for another skill.",
                 ct,
                 "uiSkillRating");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.skill_specialize", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
-        {
-            string specialization = ReadDialogValue(dialog, "uiSkillSpec", "Visual");
-            PublishRulesetAwareDialogNotice(context, $"Skill specialization set to '{specialization}'.");
             return;
         }
 
@@ -879,21 +840,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
-        if (string.Equals(dialog.Id, "dialog.ui.contact_edit", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
-        {
-            string contactName = ReadDialogValue(dialog, "uiContactEditName", "Selected Contact");
-            PublishRulesetAwareDialogNotice(context, $"Contact renamed to '{contactName}'.");
-            return;
-        }
-
-        if (string.Equals(dialog.Id, "dialog.ui.contact_connection", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
-        {
-            string connection = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactConnection") ?? "0";
-            string loyalty = DesktopDialogFieldValueParser.GetValue(dialog, "uiContactLoyalty") ?? "0";
-            PublishRulesetAwareDialogNotice(context, $"Contact connection/loyalty applied ({connection}/{loyalty}).");
-            return;
-        }
-
         if (string.Equals(dialog.Id, "dialog.ui.combat_damage_track", StringComparison.Ordinal) && string.Equals(actionId, "apply", StringComparison.Ordinal))
         {
             await ApplyDamageTrackDialogAsync(dialog, context, ct);
@@ -906,7 +852,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             if (context.ExportAsync is null)
             {
-                PublishDialogNotice(context, "Export bundle prepared for download.");
+                context.Publish(context.State with
+                {
+                    ActiveDialog = dialog,
+                    Error = $"{dialog.Title}: action 'export' is not supported by this build yet."
+                });
                 return;
             }
 
@@ -919,7 +869,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
         {
             if (context.PrintAsync is null)
             {
-                PublishDialogNotice(context, "Print preview prepared.");
+                context.Publish(context.State with
+                {
+                    ActiveDialog = dialog,
+                    Error = $"{dialog.Title}: action 'print' is not supported by this build yet."
+                });
                 return;
             }
 
@@ -978,7 +932,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
         if (context.SetPreferredRulesetAsync is null)
         {
-            PublishDialogNotice(context, $"Preferred ruleset set to '{rulesetId}'.");
+            // No ruleset mutation delegate is wired in this host; claiming
+            // the ruleset was set would report success without a mutation.
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = $"{dialog.Title}: action 'apply' is not supported by this build yet."
+            });
             return;
         }
 
@@ -1909,43 +1869,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
         DesktopPreferenceState? preferences = null)
         => PublishDialogNotice(context, RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice), preferences);
 
-    private static void PublishDialogAddMore(
-        DialogCoordinationContext context,
-        DesktopDialogState dialog,
-        string notice,
-        params string[] fieldIdsToReset)
-    {
-        DesktopDialogState resetDialog = dialog with
-        {
-            Fields = dialog.Fields
-                .Select(field => fieldIdsToReset.Contains(field.Id, StringComparer.Ordinal)
-                    ? field with { Value = field.Placeholder }
-                    : field)
-                .ToArray(),
-            Message = "Previous selection added. Add & More keeps the classic selector open for the next entry."
-        };
-
-        resetDialog = DesktopDialogFactory.RebuildDynamicDialog(resetDialog, context.State.Preferences);
-
-        context.Publish(context.State with
-        {
-            ActiveDialog = resetDialog,
-            Error = null,
-            Notice = notice
-        });
-    }
-
-    private static void PublishRulesetAwareDialogAddMore(
-        DialogCoordinationContext context,
-        DesktopDialogState dialog,
-        string notice,
-        params string[] fieldIdsToReset)
-        => PublishDialogAddMore(
-            context,
-            dialog,
-            RulesetUiDirectiveCatalog.FormatDialogNotice(ResolveContextRulesetId(context.State), notice),
-            fieldIdsToReset);
-
     private static async Task ApplyQuickAddDialogAsync(
         DialogCoordinationContext context,
         DesktopDialogState dialog,
@@ -1955,7 +1878,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         if (context.ApplyQuickAddAsync is null)
         {
-            PublishRulesetAwareDialogNotice(context, notice);
+            // No quick-add mutation delegate is wired in this host; claiming
+            // the item was added would report success without a mutation.
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = $"{dialog.Title}: action 'add' is not supported by this build yet."
+            });
             return;
         }
 
@@ -1984,7 +1913,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
     {
         if (context.ApplyQuickAddAsync is null)
         {
-            PublishRulesetAwareDialogAddMore(context, dialog, notice, fieldIdsToReset);
+            // No quick-add mutation delegate is wired in this host; claiming
+            // the item was added would report success without a mutation.
+            context.Publish(context.State with
+            {
+                ActiveDialog = dialog,
+                Error = $"{dialog.Title}: action 'add_more' is not supported by this build yet."
+            });
             return;
         }
 
@@ -2270,64 +2205,6 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
         string category = ReadDialogValue(dialog, categoryFieldId, fallback);
         return IsShowAllSelectionCategory(category) ? fallback : category;
-    }
-
-    private static bool TryCoordinateLegacyDeleteAction(
-        DesktopDialogState dialog,
-        string actionId,
-        DialogCoordinationContext context)
-    {
-        if (!string.Equals(actionId, "delete", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (!TryGetLegacyDeleteNotice(dialog, out string notice))
-        {
-            return false;
-        }
-
-        PublishRulesetAwareDialogNotice(context, notice);
-        return true;
-    }
-
-    private static bool TryGetLegacyDeleteNotice(DesktopDialogState dialog, out string notice)
-    {
-        string target = ReadDialogValue(dialog, "uiDeleteTarget", "Selected Entry");
-
-        switch (dialog.Id)
-        {
-            case "dialog.ui.delete_entry":
-                notice = $"Entry '{target}' removed.";
-                return true;
-            case "dialog.ui.gear_delete":
-                notice = $"Gear '{target}' removed.";
-                return true;
-            case "dialog.ui.cyberware_delete":
-                notice = $"Cyberware '{target}' removed.";
-                return true;
-            case "dialog.ui.drug_delete":
-                notice = $"Drug '{target}' removed.";
-                return true;
-            case "dialog.ui.magic_delete":
-                notice = $"Spell/power '{target}' removed.";
-                return true;
-            case "dialog.ui.skill_remove":
-                notice = $"Skill '{target}' removed.";
-                return true;
-            case "dialog.ui.vehicle_delete":
-                notice = $"Vehicle '{target}' removed.";
-                return true;
-            case "dialog.ui.contact_remove":
-                notice = $"Contact '{target}' removed.";
-                return true;
-            case "dialog.ui.quality_delete":
-                notice = $"Quality '{target}' removed.";
-                return true;
-            default:
-                notice = string.Empty;
-                return false;
-        }
     }
 
     private static bool TryCoordinateLegacySelectionAction(
