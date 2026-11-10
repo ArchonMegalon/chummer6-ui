@@ -1,0 +1,56 @@
+{
+  "schema": "win094-qualification/v1",
+  "candidate": {
+    "release": "windows-controller-intake-20261109-root6408",
+    "version": "1.0.0-preview.20261109.6408",
+    "installerSha256": "E72C283F27A72A5CBA04CDAF05FED18716F046EB",
+    "payloadSha256": "4D4516B1A61099E",
+    "intakeDir": "D:\\sources\\chummer\\intake-6408"
+  },
+  "install": {
+    "registryKey": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Chummer6.avalonia",
+    "displayVersion": "1.0.0-preview.20261109.6408",
+    "installRoot": "C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64",
+    "fileCount": 574,
+    "coreContentFiles": 332,
+    "embeddedContentDigestMatch": true,
+    "note": "NoDefaultCurrentDirectoryInExePath=1 (agent shell hardening) must be cleared for the installer checksum-verify cmd; checksum itself ran and passed."
+  },
+  "legs": {
+    "sr5_creation_journey": {
+      "status": "pass",
+      "scenarioId": "win094-sr5-priority-native",
+      "hasSavedWorkspace": true,
+      "workspaceId": "0c0f0094c84e4f7ea32d1b010a51fbc8",
+      "steps": 154,
+      "pointerActions": 38,
+      "disclosure": "Career Award-Karma modal did not open (presenter governed limitation, disclosed in journey steps)."
+    },
+    "print_export_pdf": {
+      "status": "pass",
+      "pdfPath": "C:\\Users\\tibor\\AppData\\Local\\Temp\\chummer-journey-exportkh42ianh.nos\\Soma-print.pdf",
+      "pdfSha256": "D776A0E16958DBFEF240215959618C7028228762570125D8E8A55D219084E9F6",
+      "pdfSizeBytes": 2645,
+      "pdfHeader": "%PDF-",
+      "exportBundle": "Soma-export.json (43434 B)",
+      "evidence": "journey steps: print preview materialized; composed PDF with EOF marker; export bundle materialized after retry."
+    },
+    "portable_move": {
+      "status": "pass",
+      "movedAppRoot": "D:\\sources\\chummer\\portable-qual\\runs\\win094\\moved-app",
+      "saveProcessId": 11764,
+      "reopenProcessId": 20100,
+      "workspaceId": "4c8d4fb3b20144fa91e84d2a0d178f35",
+      "profileSha256": "39B11D5F517B1520C2C7E8F97DCA05CA16E1EC59CDD40D5B5418200EA7917300",
+      "workspaceFileSha256": "3DA9AFCDEEF785072EE1FFEA6DE404B1CCE9A84B3E3A79504F3F6E1A9FFE9C69",
+      "note": "Moved bundle (574 files) from installed root to D:; exe byte-identical; save/reopen through real app from moved location."
+    },
+    "installed_persistence": {
+      "status": "covered-by-portable-move",
+      "detail": "installed-root save/reopen proven by installed-probe in T411 (workspace 21a297f3..., profileSha 39B11D5F...)"
+    }
+  },
+  "profileShaBaseline": "39B11D5F517B1520C2C7E8F97DCA05CA16E1EC59CDD40D5B5418200EA7917300",
+  "profileBaselineMatch": true,
+  "succeeded": true
+}

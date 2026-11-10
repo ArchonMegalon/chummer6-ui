@@ -364,6 +364,17 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/Presentation/FakeCharacterOverviewPresenter.cs",
         "Chummer.Tests/Presentation/CharacterCreationContactsAvaloniaTests.cs",
         "docs/agents/WIN-006-CONTROLLER-FOLLOWUP-EVIDENCE.md",
+        # R99 2026-11-10: byte-custody attribute for docs/agents/evidence/**
+        # (mirrors the existing release-evidence/** rule; receipts must stay
+        # byte-identical to on-host artifacts so the SHA-256 index holds).
+        ".gitattributes",
+        # R99 2026-11-10: WIN-006 gen-6 item 1 — authenticated R94 evidence handoff
+        # (four verbatim qualification receipts + index, no claims extended).
+        "docs/agents/evidence/WIN-006-R94-EVIDENCE-HANDOFF.md",
+        "docs/agents/evidence/win094-qual-receipt.json",
+        "docs/agents/evidence/journey_receipt.json",
+        "docs/agents/evidence/win094-moved-portable-receipt.json",
+        "docs/agents/evidence/corrupt_proof.json",
         "scripts/win004-start-failure-diagnostics.ps1",
         "tests/test_win004_start_failure_diag_privacy.py",
         "scripts/win004-acceptance.ps1",
@@ -589,7 +600,11 @@ def secure_worktree_bytes(path: Path) -> bytes:
     metadata = path.lstat()
     if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
         raise PresealError(f"{path} is not a single-link regular file")
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    # O_BINARY is REQUIRED on Windows: without it the CRT opens in text mode
+    # and silently translates CRLF to LF, corrupting byte-custody reads
+    # (-text attribute files hash differently than their committed blobs).
+    # No-op on POSIX. Same defect class as the 2026-11-02 PNG truncation.
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
     try:
         opened = os.fstat(descriptor)
         if (metadata.st_dev, metadata.st_ino) != (opened.st_dev, opened.st_ino):

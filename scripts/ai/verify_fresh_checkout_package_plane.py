@@ -1540,9 +1540,12 @@ def secure_regular_file_inventory(
 ) -> dict[str, Any]:
     try:
         path_metadata = path.lstat()
+        # O_BINARY is REQUIRED on Windows: text-mode opens silently translate
+        # CRLF to LF (and truncate binary reads at 0x1A), corrupting byte
+        # custody. No-op on POSIX. Defect class seen 2026-11-02 and 2026-11-10.
         descriptor = os.open(
             path,
-            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0),
+            os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0),
         )
     except OSError as exc:
         raise VerificationError(f"{label} is unavailable: {path}") from exc

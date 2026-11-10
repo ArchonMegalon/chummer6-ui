@@ -4,6 +4,42 @@
 
 Read the current WIN-006 Teable assignment before starting; its live generation and base supersede the older rounds below. Continue the existing Friday session. Root owns integration, acceptance and release, so no routine user approval or artifact relay is pending.
 
+### Audit repair priority and R99 controller review
+
+R99 makes the four R94 receipts available and fixes binary reads in the two
+publication verifiers. The evidence handoff is accepted only within the limits
+in `evidence/WIN-006-R94-EVIDENCE-HANDOFF.md`: manual Creation did not reach
+Review/finalization, several clicks used routed-event fallbacks, and later
+output/Career checks used the bundled demo runner. Do not report this as a
+complete manual Creation-to-Career journey or rerun unchanged evidence merely
+to refresh its timestamp.
+
+The 10 November cross-repository audit changes the immediate work order:
+
+1. Repair desktop roaming data preservation and its real Hub transport contract.
+   Persist the acknowledged common base, retain divergent local/remote work,
+   decode nested snapshot authority, send revision/token preconditions, and
+   preserve the complete continuation and frozen amended rules environment.
+   Treat 409/428 and uncertain responses as reconciliation states. Verify actual
+   producer/consumer serialization and two-device offline edits/restart before
+   performing another live amended-sync acceptance run.
+2. Wire SR6 natural-attribute advancement to the Core-owned quote/apply operation
+   being implemented by Root. Augmented limits must not authorize natural Karma
+   purchases. Coordinate exact package/API availability through Teable; do not
+   add UI-local rules or use the existing shared XML mutation as a fallback.
+3. Repair remaining XML Editor/Print Setup false-success paths. Apply through an
+   explicit handler with a verified result, or retain input and visibly explain
+   that the action is unavailable.
+4. Complete the unfinished manual Creation/editor/Career journey on a supported
+   SR5 runner with AI disabled and ordinary interactions. Retain the concrete
+   blocker when it cannot finish; do not substitute a demo runner for acceptance.
+
+Continue the existing Windows SR6 and candidate-delivery work below after these
+blockers. Root owns Registry, Play-host ledger, identity, media, Core rules and
+portable-verifier repairs separately. Keep the same Friday session and provider,
+send scoped shared-dependency requests directly, and continue independent work
+without waiting for user approval or another tooling-only seal.
+
 ### Integrated R97 and controller correction
 
 The R97 work removes false success notices for unimplemented legacy dialog actions and separates functional, unavailable, containment, routing and unclassified test evidence. The controller correction rebuilds the audit runner before every run, discards its old generated executable, records the new executable hash, and rejects a runner changed during execution. A matching source stamp cannot authorize binary reuse. The audit summary remains limited to the tested contracts and does not claim that every persisted desktop workflow exists.
