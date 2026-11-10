@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "a2020b9a353584f47e111764683011abe1d4710c",
-  "baseTree": "2762c9364e98a6e24c155746404c921333ece11c",
+  "baseCommit": "d155197553345c8109bd3e210883033cf166920c",
+  "baseTree": "ea5d71c99b6dcd1362db0849e48567aa39e2407f",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,69 +44,111 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "6360bae74452ccf44ac1fb2d4a001566c39d3472",
-      "path": ".gitattributes",
-      "sha256": "d4b3f952a5efd5d8f89822e6c577ed7eadd5c995da3a497298d7c3942bdac27b",
-      "sizeBytes": 5100,
+      "blob": "2600d2b8bc213bafae84acceecaab3bd2f5a6acb",
+      "path": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+      "sha256": "dacc070a5fd29cd4b1683c0a46351deecc3ac391152ab1dc15d247eadc0198f5",
+      "sizeBytes": 141323,
       "status": "M"
     },
     {
-      "blob": "8408174085025d55038281f53621adaade846c39",
-      "path": "docs/agents/WINDOWS_SCOPE.md",
-      "sha256": "07244606042b063b2cdf245d8e4dd43840240bda509a1da5dcf9c729cbc3850a",
-      "sizeBytes": 40649,
+      "blob": "c947a39a7ac6e91132c84dbbe8ba9511cb846c72",
+      "path": "Chummer.Avalonia/DesktopHomeWindow.cs",
+      "sha256": "d6d32c7c8d7770f6c6b779769dc4eef0f210dcdc776b91fe1acc60d46e640cb8",
+      "sizeBytes": 71018,
       "status": "M"
     },
     {
-      "blob": "b8c723f1ea59959c58e78c76f23a60fff9ffc014",
-      "path": "docs/agents/evidence/WIN-006-R94-EVIDENCE-HANDOFF.md",
-      "sha256": "8392d30ff96bc8028a59b747dd8faf04304685e4fb84ef62c2143497e59db4de",
-      "sizeBytes": 6291,
-      "status": "A"
-    },
-    {
-      "blob": "2bc75c56180ef14fdd250f041cf7ec8e3c0ae5ba",
-      "path": "docs/agents/evidence/corrupt_proof.json",
-      "sha256": "45ae7967cafe7979c35505f04b2172eff48eaf8d2a9b5931b9a0b2153ae3f4bb",
-      "sizeBytes": 3063,
-      "status": "A"
-    },
-    {
-      "blob": "93b5c854924a8ba62a729394f032988c0d0a69b2",
-      "path": "docs/agents/evidence/journey_receipt.json",
-      "sha256": "a3241064c1fcc4c1e3de55adbffe0308d66b5cfe0c263a8713154b86c851acdc",
-      "sizeBytes": 89499,
-      "status": "A"
-    },
-    {
-      "blob": "29b3df08ed227c2b2e4d0369a9228a88cbe46ea3",
-      "path": "docs/agents/evidence/win094-moved-portable-receipt.json",
-      "sha256": "9a40de440a9c88d2e87dfda4de16fa491daf53e61a7c391af326c0c936b92e44",
-      "sizeBytes": 519,
-      "status": "A"
-    },
-    {
-      "blob": "7580cd7690c613250e09b29531c13d40a8bcdfe1",
-      "path": "docs/agents/evidence/win094-qual-receipt.json",
-      "sha256": "71589decdfb71fa8ab6ed8e969198ff0dcb584ba180bf11826f0e52672557cad",
-      "sizeBytes": 2736,
-      "status": "A"
-    },
-    {
-      "blob": "f8275d091d82c5401025eb794b9b463c6e4d9f16",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "3bf3bde42ecca6c708ecddc06a7aa327fdc0135cdc29e718707c6ea57759cddd",
-      "sizeBytes": 297420,
+      "blob": "d905f076878137801c90023a3c4e2f4313769b2b",
+      "path": "Chummer.Avalonia/DesktopInstallLinkingWindow.cs",
+      "sha256": "a400630c43e9b4813434c1cc3378ce4e32acb92a38d56f78b4c7cbe1582dcf1d",
+      "sizeBytes": 77865,
       "status": "M"
     },
     {
-      "blob": "91fa22a0c685b862c4cd720fd80f847d461da43d",
+      "blob": "521b5ff8a9a6f394deb0a5ad57b4626c941d509a",
+      "path": "Chummer.Desktop.Runtime/IDesktopWorkspaceRoamingSync.cs",
+      "sha256": "8c0db791ca408a3f8fe199bc6fe4c101e2060f551e89de88a8169b44d23046aa",
+      "sizeBytes": 3611,
+      "status": "M"
+    },
+    {
+      "blob": "d7dfa97f1c35c8f53741afc12608ce97e9ef0c74",
+      "path": "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
+      "sha256": "3b59dcb9899eb7bbe687a532fa38469b11e3f41a2854295772656457596ae567",
+      "sizeBytes": 46099,
+      "status": "M"
+    },
+    {
+      "blob": "045fdfb1523b276f48b8f7169dfb29d3dd799e03",
+      "path": "Chummer.Desktop.Runtime/ServiceCollectionDesktopRuntimeExtensions.cs",
+      "sha256": "39d2b59b76eb14dce54da73a566348548d20873e33b07ac11acf1712611a50e1",
+      "sizeBytes": 6704,
+      "status": "M"
+    },
+    {
+      "blob": "6d6074cacb082552c88b47d85d140505ac13c0c8",
+      "path": "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceMutations.cs",
+      "sha256": "4bc9ed23f32ee81b1926475daae2b42faf83bf8836b49adb105e342fd02dcb4b",
+      "sizeBytes": 203849,
+      "status": "M"
+    },
+    {
+      "blob": "b72eac0e0182512ba12595b34613e64a8b01bec3",
+      "path": "Chummer.Presentation/Overview/WorkspaceXmlMutationCatalog.cs",
+      "sha256": "10af027a6771e05dd55cd0214af94574424e1d7348087c08d709cc7a9893550b",
+      "sizeBytes": 306969,
+      "status": "M"
+    },
+    {
+      "blob": "f3a61f5f7a302fbc74d31cfefee34ac7f753db46",
+      "path": "Chummer.Tests/Chummer.Tests.csproj",
+      "sha256": "f008f5a2a6b23165a2f82ff3568d2c36c5944d2176b95233cd22b342bc903936",
+      "sizeBytes": 36600,
+      "status": "M"
+    },
+    {
+      "blob": "8e5f628d1092fead9abc6ee12ff7869712153df7",
+      "path": "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
+      "sha256": "dd155465e56afd151c2ecc1f786db2987300a5313d881902c7babc0a65a6e5d8",
+      "sizeBytes": 72454,
+      "status": "M"
+    },
+    {
+      "blob": "c3348a2e442a3f88e35aa10dc24047de5fb46eab",
+      "path": "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "sha256": "3515624a0c5b9360b8c9aaa583e3d4546a0e601389f177dab95e93bdba846857",
+      "sizeBytes": 329730,
+      "status": "M"
+    },
+    {
+      "blob": "3378902482d01cd9abc5033da240d8cbb0ffe37e",
+      "path": "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
+      "sha256": "b22a231d00403e6caa6b1455093d49005910348c6072df2cadfe88dcd08e24bb",
+      "sizeBytes": 196363,
+      "status": "M"
+    },
+    {
+      "blob": "c295caaabdffeaf894d9771fac9d6abba579a077",
+      "path": "Chummer.Tests/ServiceCollectionDesktopRuntimeExtensionsTests.cs",
+      "sha256": "af2d58de5b3eb62c9452e4d2d347b2786f00c839c4c9ea1c6a8bc003724d7070",
+      "sizeBytes": 26821,
+      "status": "M"
+    },
+    {
+      "blob": "febe717a1d4707ae7e6af90adfe71c14fc35b961",
+      "path": "Chummer.Tests/UnavailableDesktopWorkspaceRoamingSyncTests.cs",
+      "sha256": "a2af5887e0b988b3f319dfe3e5ac0eeeff8c1bc28adb0a68fff298484d0b32f7",
+      "sizeBytes": 1850,
+      "status": "A"
+    },
+    {
+      "blob": "2d368da80cf12aee6995503ddefec7d2116a88d2",
       "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "4cee5fb56e16b1646943affe21479181df8ffdc880d4cb93841fdd0396ca6316",
-      "sizeBytes": 68373,
+      "sha256": "ad2113ef8ed704c91891ed35bb4736c719d421ae1a38710c620dae6011d74c18",
+      "sizeBytes": 68494,
       "status": "M"
     }
   ],
-  "recipeTree": "05335356fcedebe3612503cbb72d66df44ab27e0",
+  "recipeTree": "ce4d1102b9d4ca18364b6e697c881d7432193a39",
   "releaseClaim": false
 }
