@@ -1,0 +1,13 @@
+{
+  "succeeded": true,
+  "phase": "reopen",
+  "processId": 11120,
+  "workspaceId": "42c41273cc8e41c4b17277ded5c6c801",
+  "name": "Cerri",
+  "profileSha256": "39B11D5F517B1520C2C7E8F97DCA05CA16E1EC59CDD40D5B5418200EA7917300",
+  "stateRoot": "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legC-6940-state",
+  "saved": true,
+  "dirty": false,
+  "os": "Microsoft Windows 10.0.26200",
+  "timestamp": "2026-11-11T09:18:46.4267677+00:00"
+}

@@ -1,0 +1,7 @@
+2026-11-11T10:13:28 LEG A start; installer=D:\sources\chummer\_scratch\qual6940-dl\chummer-avalonia-win-x64-installer.exe payload=D:\sources\chummer\_scratch\qual6940-dl\chummer-avalonia-win-x64-payload.zip run=D:\sources\chummer\portable-qual\runs\win106-6940\legA-20261111-101328
+2026-11-11T10:13:36 installer exit=0
+2026-11-11T10:13:36 installer trace captured from C:\Users\tibor\AppData\Local\Temp\Chummer6\installer-temp\chummer-desktop-installer-progress.log
+2026-11-11T10:13:36 launch target ready: D:\sources\chummer\portable-qual\runs\win106-6940\legA-20261111-101328\smoke-install-root\Chummer.Avalonia.exe
+2026-11-11T10:13:37 startup smoke exit=0
+2026-11-11T10:13:37 startup smoke receipt present
+2026-11-11T10:13:37 annotate rc=0

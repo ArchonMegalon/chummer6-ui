@@ -1,0 +1,1838 @@
+{
+  "status": "pass",
+  "journeyMode": "mouse_first_live_binary",
+  "headId": "avalonia",
+  "version": "1.0.0-preview.20261110.6940",
+  "releaseVersion": "1.0.0-preview.20261110.6940",
+  "channelId": "off",
+  "platform": "windows",
+  "arch": "x64",
+  "rid": "win-x64",
+  "hostClass": "NUC",
+  "scenarioId": "win106-6940-sr5-priority-native",
+  "processPath": "Chummer.Avalonia.exe",
+  "processPathDisclosure": "file_name_only",
+  "artifactDigest": "sha256:93ec81711d9e5574333de11304d1f785f032a84ae3d5f5799d8d66dd0be0a286",
+  "artifactDigestSource": "process_path",
+  "framework": ".NET 10.0.3",
+  "operatingSystem": "Microsoft Windows 10.0.26200",
+  "startedAtUtc": "2026-11-11T09:20:17.6456951+00:00",
+  "completedAtUtc": "2026-11-11T09:22:03.2459766+00:00",
+  "recordedAtUtc": "2026-11-11T09:22:03.2459766+00:00",
+  "screenshotDirectory": "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots",
+  "tracePath": "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_trace.log",
+  "steps": [
+    "start mouse-first live binary journey (win106-6940-sr5-priority-native)",
+    "wait success: desktop shell initialized",
+    "open authentication portal (success)",
+    "click tools menu",
+    "wait success: tools menu commands visible",
+    "wait success: menu command master_index available",
+    "click tools menu command master_index",
+    "wait success: dialog dialog.master_index visible",
+    "wait success: master index search field visible",
+    "type Master Index search prefix \u0027ade\u0027 through routed text input",
+    "wait success: master index search prefix committed",
+    "wait success: master index search focus restored after prefix update",
+    "append Master Index search suffix \u0027pt\u0027 through routed text input",
+    "wait success: master index search text accumulated",
+    "wait success: master index search focus restored after accumulated input",
+    "wait success: Master Index dialog closed after routed search workflow",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command new_character available",
+    "click file menu command new_character",
+    "wait success: dialog dialog.new_character visible",
+    "wait success: dialog field newCharacterName available",
+    "type dialog field newCharacterName = Win106 Qualifier",
+    "wait success: dialog field newCharacterAlias available",
+    "type dialog field newCharacterAlias = W106Q",
+    "wait success: dialog select field newCharacterRulesetId available",
+    "confirm dialog field newCharacterRulesetId = sr5",
+    "wait success: dialog select field newCharacterBuildMethod available",
+    "confirm dialog field newCharacterBuildMethod = Priority",
+    "wait success: dialog action create_character available",
+    "click dialog action create_character; delivered=True; enabled=True",
+    "wait success: workspace published after create_character",
+    "wait success: creation wizard host visible after create_character",
+    "wait success: priority confirm affordance available on the method step",
+    "wait success: wizard button creation-wizard-priority-heritage-A available",
+    "click wizard button creation-wizard-priority-heritage-A (attempt 1); resolved=True;delivered=True;pressedId=7;enabled=True;visible=True;",
+    "wait success: priority selection recorded for heritage=A",
+    "wait success: wizard button creation-wizard-priority-talent-E available",
+    "click wizard button creation-wizard-priority-talent-E (attempt 1); resolved=True;delivered=True;pressedId=8;enabled=True;visible=True;",
+    "wait success: priority selection recorded for talent=E",
+    "wait success: wizard button creation-wizard-priority-attributes-B available",
+    "click wizard button creation-wizard-priority-attributes-B (attempt 1); resolved=True;delivered=True;pressedId=9;enabled=True;visible=True;",
+    "wait success: priority selection recorded for attributes=B",
+    "wait success: wizard button creation-wizard-priority-skills-C available",
+    "click wizard button creation-wizard-priority-skills-C (attempt 1); resolved=True;delivered=False;pressedId=10;enabled=True;visible=True;",
+    "selection fallback: raised Click routed event for creation-wizard-priority-skills-C after swallowed pointer clicks",
+    "wait success: priority selection recorded for skills=C",
+    "wait success: wizard button creation-wizard-priority-resources-D available",
+    "click wizard button creation-wizard-priority-resources-D (attempt 1); resolved=True;delivered=False;pressedId=11;enabled=True;visible=True;",
+    "selection fallback: raised Click routed event for creation-wizard-priority-resources-D after swallowed pointer clicks",
+    "wait success: priority selection recorded for resources=D",
+    "wait success: priority confirm affordance enabled with a complete assignment",
+    "wait success: heritage choices rendered for the assigned heritage rank",
+    "wait success: wizard button creation-wizard-priority-heritage-choice-55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4 available",
+    "click wizard button creation-wizard-priority-heritage-choice-55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4 (attempt 1); resolved=True;delivered=False;pressedId=12;enabled=True;visible=True;",
+    "selection fallback: raised Click routed event for creation-wizard-priority-heritage-choice-55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4 after swallowed pointer clicks",
+    "wait success: heritage choice recorded",
+    "wait success: talent choices rendered for the assigned talent rank",
+    "wait success: wizard button creation-wizard-priority-talent-choice-9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0 available",
+    "click wizard button creation-wizard-priority-talent-choice-9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0 (attempt 1); resolved=True;delivered=False;pressedId=13;enabled=True;visible=True;",
+    "selection fallback: raised Click routed event for creation-wizard-priority-talent-choice-9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0 after swallowed pointer clicks",
+    "wait success: talent choice recorded",
+    "wait success: wizard button creation-wizard-priority-confirm available",
+    "click wizard button creation-wizard-priority-confirm (attempt 1); resolved=True;delivered=False;pressedId=14;enabled=True;visible=True;",
+    "selection fallback: raised Click routed event for creation-wizard-priority-confirm after swallowed pointer clicks",
+    "wait success: priority assignment recorded as the authoritative draft",
+    "wizard step graph after authoritative priority draft: basics=complete, method=complete, foundation=not-started, life-modules=not-started, attributes=in-progress, qualities=blocked, skills=blocked, magic-resonance=complete, resources=in-progress, contacts-lifestyles=complete, identity-story=complete, review=blocked",
+    "ai-finish leg skipped (env gate off)",
+    "ordinary Next walk timed out before review (deep stages pending; ai-finish leg off)",
+    "review entry authoritatively blocked (deep stages pending); wizard state: basics=complete, method=complete, foundation=not-started, life-modules=not-started, attributes=in-progress, qualities=blocked, skills=blocked, magic-resonance=complete, resources=in-progress, contacts-lifestyles=complete, identity-story=complete, review=blocked",
+    "finalize not attempted: review gated by deep stages; profileCreated=False, wizardVisible=True",
+    "wait success: wizard button creation-wizard-step-resources available",
+    "click wizard button creation-wizard-step-resources (attempt 1); resolved=True;delivered=True;pressedId=15;enabled=True;visible=True;",
+    "wait success: wizard entered the resources step",
+    "wait success: wizard button creation-wizard-option-karma:0 available",
+    "click wizard button creation-wizard-option-karma:0 (attempt 1); resolved=True;delivered=True;pressedId=16;enabled=True;visible=True;",
+    "wait success: resources option prepared an exact Core preview",
+    "wait success: wizard button creation-wizard-resources-confirm available",
+    "click wizard button creation-wizard-resources-confirm (attempt 1); resolved=True;delivered=False;pressedId=17;enabled=True;visible=True;",
+    "selection fallback: raised Click routed event for creation-wizard-resources-confirm after swallowed pointer clicks",
+    "wait success: resources allocation confirmed with an idempotent Core receipt",
+    "wait success: character workspace published after mouse-first creation flow",
+    "workspace strip stayed stable while live shell content confirmed opened character Win106 Qualifier (sr5)",
+    "wait success: seeded character workspace projection visible",
+    "file-new evidence: workspace_id=present; visible_active=true; character_loaded=true; visible_open_count=0; profile_identity=true; total_attributes=0; state_open_count=1; session_open_count=1",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command save_character available",
+    "click file menu command save_character",
+    "wait success: workspace saved after pointer-first flow",
+    "workspace strip stayed stable while visible shell state confirmed saved workspace (missing)",
+    "press routed Ctrl\u002BR refresh shortcut to reload the saved current workspace",
+    "wait success: saved workspace reloaded through refresh_character presenter route",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command save_character available",
+    "click file menu command save_character",
+    "wait success: workspace saved (last command save_character)",
+    "click Windows menu",
+    "wait success: Windows menu commands visible",
+    "wait success: menu command close_all available",
+    "click Windows menu command close_all",
+    "wait success: workspace closed (no active workspace)",
+    "wait success: bundled demo button visible (no workspace open)",
+    "wait success: toolstrip button LoadDemoRunnerButton available",
+    "click toolstrip button LoadDemoRunnerButton (attempt 1); resolved=True;delivered=False;pressedId=24;enabled=True;visible=False;",
+    "toolstrip fallback: raised Click routed event for LoadDemoRunnerButton after swallowed pointer clicks",
+    "wait success: career sample import triggered (WorkspaceId assigned)",
+    "clicked bundled demo runner button",
+    "wait success: career sample document revision stable",
+    "wait success: workspace document revision stable before print prep 1",
+    "click visible toolbar print button (prep 1)",
+    "wait success: print preview materialized through the desktop file coordinator (prep 1)",
+    "print produced a composed PDF (2645 bytes, EOF marker present: True)",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command export_character available",
+    "click file menu command export_character",
+    "wait success: dialog dialog.export_character visible",
+    "wait success: dialog action download available",
+    "click dialog action download; delivered=False; enabled=True",
+    "retry dialog action download after attempt 1 did not trigger export bundle materialized through the desktop file coordinator",
+    "wait success: dialog action download available",
+    "click dialog action download; delivered=True; enabled=True",
+    "wait success: export bundle materialized through the desktop file coordinator",
+    "wait success: toolstrip button RuleEnvironmentStudioButton available",
+    "click toolstrip button RuleEnvironmentStudioButton (attempt 1); resolved=True;delivered=True;pressedId=30;enabled=True;visible=True;",
+    "wait success: rule environment studio window opened",
+    "wait success: toolstrip button RuleEnvironmentStudioButton available",
+    "click toolstrip button RuleEnvironmentStudioButton (attempt 1); resolved=True;delivered=True;pressedId=31;enabled=True;visible=True;",
+    "wait success: amend round trip completed with both portability receipts",
+    "wait success: rule environment studio window closed",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command save_character available",
+    "click file menu command save_character",
+    "wait success: workspace saved (last command save_character)",
+    "click Windows menu",
+    "wait success: Windows menu commands visible",
+    "wait success: menu command close_all available",
+    "click Windows menu command close_all",
+    "wait success: workspace closed (no active workspace)",
+    "wait success: bundled demo button visible (no workspace open)",
+    "wait success: toolstrip button LoadDemoRunnerButton available",
+    "click toolstrip button LoadDemoRunnerButton (attempt 1); resolved=True;delivered=False;pressedId=36;enabled=True;visible=False;",
+    "toolstrip fallback: raised Click routed event for LoadDemoRunnerButton after swallowed pointer clicks",
+    "wait success: career sample import triggered (WorkspaceId assigned)",
+    "clicked bundled demo runner button",
+    "wait success: career sample document revision stable",
+    "click career Award Karma button; clickEventObserved=True; success gated on modal opening",
+    "career rewards leg skipped: Award Karma click did not open the CareerRewardsWindow modal; notice=Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.; presenterError=The saved runner and settings profile do not prove the exact Chummer5 manual-Karma exchange rules.; windows=Chummer Desktop Classic[visible=True]"
+  ],
+  "screenshotPaths": [
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\master_index_search_focus_stability-before.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\master_index_search_focus_stability-after.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\01-new-character-dialog.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\file_new_character_visible_workspace-before.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\02-creation-wizard-open.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\02a-priority-confirmed.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\03-priority-graph-evidence.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\03c-resources-entered.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\03d-resources-preview.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\03e-resources-confirmed.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\04-workspace-opened.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\file_new_character_visible_workspace-after.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\05-workspace-saved.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\minimal_character_build_save_reload-before.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\minimal_character_build_save_reload-after.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\major_navigation_sanity-guarded.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\validation_or_export_smoke-guarded.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\print_export-before.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\rule_environment_studio.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\rule_environment_studio_amend.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\print_export-after.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\06a-career-sample-loaded.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\06a-career-rewards-strip.png",
+    "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD\\journey_screenshots\\06b-career-rewards-dialog-missing.png"
+  ],
+  "pointerActionCount": 37,
+  "textEntryActionCount": 4,
+  "directTextMutationCount": 0,
+  "usedForcedComboDropdownOpen": false,
+  "usedComboSelectionFallback": false,
+  "observedInputEvents": [
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:18.7231938+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:18.9219802+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:18.9227118+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:18.9238959+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:18.9242805+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "ToolsMenuButton",
+      "controlTag": "tools",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:18.924322+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:19.2176569+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:19.2198704+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:19.2199316+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "master_index",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:20.1105431+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-11-11T09:20:21.0163163+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-11-11T09:20:21.0203591+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-11-11T09:20:21.0204601+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-11-11T09:20:21.022996+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "TextBox",
+      "controlName": "DialogFieldInput_masterIndexSearch",
+      "controlTag": null,
+      "dialogId": "dialog.master_index",
+      "recordedAtUtc": "2026-11-11T09:20:21.0231233+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.3751944+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.4615626+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.4617759+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.4618653+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.4618814+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.4618896+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.6451805+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.6467551+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.6468111+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "new_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:23.7628531+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-11T09:20:27.5433947+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-11T09:20:27.5484583+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-11T09:20:27.5484902+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-11T09:20:27.5630765+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-11T09:20:27.5631109+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "DialogAction_create_character",
+      "controlTag": "create_character",
+      "dialogId": "dialog.new_character",
+      "recordedAtUtc": "2026-11-11T09:20:27.5631145+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.7755429+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.7757537+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.7757714+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.7982098+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.7982524+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = heritage, CategoryName = Heritage, Rank = A, SourceId = 55bc32fb-e097-4234-bdd5-a70e4f043b3d, Label = A - Any metatype, SumToTenValue = 4, BaseNormalAttributePoints = , SourceNodeDigest = sha256:3052edc28bedba4bee578ba7dc7820b79792e3ec8ab5d6a3933c36a61298a76a, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.7982584+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.9035706+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.9036963+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.9037179+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.9463823+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.9464072+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = talent, CategoryName = Talent, Rank = E, SourceId = 9753a254-94b0-46e8-83f4-e7627bdb8571, Label = E - Mundane, SumToTenValue = 0, BaseNormalAttributePoints = , SourceNodeDigest = sha256:4c279190f157d66e1adb60ffeb7f0d80db28ed377e3eb3d81f229a6b6b239641, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:39.9464118+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.0047336+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.0048441+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.0048555+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.0514593+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.0514853+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = attributes, CategoryName = Attributes, Rank = B, SourceId = 521c1f60-f382-479e-af3b-a3eda5201f22, Label = B - 20 (10) Attributes, SumToTenValue = 3, BaseNormalAttributePoints = 20, SourceNodeDigest = sha256:b5a60688302370b247471597a7247b9a7046847bab10857136cc66ca74304e30, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.0514894+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.1155314+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.1156527+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.115671+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.1157085+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.1157172+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = skills, CategoryName = Skills, Rank = C, SourceId = 57c52154-489e-4e8a-b885-13b341700deb, Label = C - 28 Skills/2 Skill Groups, SumToTenValue = 2, BaseNormalAttributePoints = , SourceNodeDigest = sha256:a35f216af27942d18f82a1dc137bf7ce85b87387cf6053832fbddb0c3a8431d5, SourceAnchorIds = System.String[], BaseActiveSkillPoints = 28, BaseSkillGroupPoints = 2, BaseResourceNuyen = , HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:40.1157208+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:41.8124361+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:41.812559+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:41.8125721+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:41.8126137+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:41.8126225+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationPriorityOptionProjection { CategoryId = resources, CategoryName = Resources, Rank = D, SourceId = b977475b-9728-45a0-9873-a77bb036fb99, Label = D - 50,000\u00A5, SumToTenValue = 1, BaseNormalAttributePoints = , SourceNodeDigest = sha256:c71b36d9f4fe92ce1104c3990414d6d22987d7ac5fd3f99f70982dfc855751ab, SourceAnchorIds = System.String[], BaseActiveSkillPoints = , BaseSkillGroupPoints = , BaseResourceNuyen = 50000, HeritageOptions = Chummer.Contracts.Characters.CharacterCreationPriorityHeritageOptionProjection[], TalentOptions = Chummer.Contracts.Characters.CharacterCreationPriorityTalentOptionProjection[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:41.8126286+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:43.5151395+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:43.515296+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:43.5153164+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:43.5153934+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:43.5154041+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "55bc32fb-e097-4234-bdd5-a70e4f043b3d:heritage:4",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:43.5154082+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:45.1720988+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:45.1723782+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:45.1723911+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:45.1724248+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:45.1724316+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "9753a254-94b0-46e8-83f4-e7627bdb8571:talent:0",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:45.1724342+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:46.8114778+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:46.8115777+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:46.8115904+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:46.8116284+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:46.8116358+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "PriorityConfirmButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:20:46.8116388+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "resources",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.0144337+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "resources",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.0145602+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "resources",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.0145732+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "resources",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.0308311+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationWizardDesktopOption { OptionId = karma:0, VersionId = , Label = 50000\u00A5 from priority, IsEnabled = True, DisableReasonKey = , DisableReasonArguments = System.Collections.Generic.Dictionary\u00602[System.String,System.String], Costs = Chummer.Contracts.Characters.CharacterCreationChoiceCost[], Consequences = Chummer.Contracts.Characters.CharacterCreationChoiceConsequence[], SourceAnchorIds = System.String[], SourceId = , SourcePage = , FollowUps = Chummer.Contracts.LifeModules.LifeModuleFollowUpPromptDto[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.1671963+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationWizardDesktopOption { OptionId = karma:0, VersionId = , Label = 50000\u00A5 from priority, IsEnabled = True, DisableReasonKey = , DisableReasonArguments = System.Collections.Generic.Dictionary\u00602[System.String,System.String], Costs = Chummer.Contracts.Characters.CharacterCreationChoiceCost[], Consequences = Chummer.Contracts.Characters.CharacterCreationChoiceConsequence[], SourceAnchorIds = System.String[], SourceId = , SourcePage = , FollowUps = Chummer.Contracts.LifeModules.LifeModuleFollowUpPromptDto[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.1688423+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationWizardDesktopOption { OptionId = karma:0, VersionId = , Label = 50000\u00A5 from priority, IsEnabled = True, DisableReasonKey = , DisableReasonArguments = System.Collections.Generic.Dictionary\u00602[System.String,System.String], Costs = Chummer.Contracts.Characters.CharacterCreationChoiceCost[], Consequences = Chummer.Contracts.Characters.CharacterCreationChoiceConsequence[], SourceAnchorIds = System.String[], SourceId = , SourcePage = , FollowUps = Chummer.Contracts.LifeModules.LifeModuleFollowUpPromptDto[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.168873+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": "CharacterCreationWizardDesktopOption { OptionId = karma:0, VersionId = , Label = 50000\u00A5 from priority, IsEnabled = True, DisableReasonKey = , DisableReasonArguments = System.Collections.Generic.Dictionary\u00602[System.String,System.String], Costs = Chummer.Contracts.Characters.CharacterCreationChoiceCost[], Consequences = Chummer.Contracts.Characters.CharacterCreationChoiceConsequence[], SourceAnchorIds = System.String[], SourceId = , SourcePage = , FollowUps = Chummer.Contracts.LifeModules.LifeModuleFollowUpPromptDto[] }",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.5044618+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.5946621+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.5947871+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.5948022+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.5948405+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.5948483+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": null,
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:05.5948509+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:08.7192572+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:08.777537+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:08.7775839+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:08.7776161+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:08.7776295+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:08.7776342+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:10.9397228+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:10.9409367+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:10.9409658+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:10.9821909+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:18.4868823+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:18.4986935+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:18.4987168+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:18.4987343+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:18.4987434+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:18.4987454+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:19.3507669+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:19.3521191+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:19.3521475+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:19.3884906+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:21.8984336+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:21.9075876+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:21.9076299+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:21.9076518+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:21.9076613+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:21.907664+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.6221009+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.6232425+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.623274+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.7315706+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.9291303+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.9292433+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.9292556+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.9292791+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.9292881+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:22.9292903+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "PrintButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:24.8607407+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "PrintButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:24.8608614+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "PrintButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:24.8608775+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "PrintButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:24.8692694+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "PrintButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:24.8692903+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "PrintButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:24.869297+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.3595586+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.3730871+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.3731205+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.3731482+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.3731593+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.3731623+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.4946383+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.4957705+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.4957886+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:25.5142897+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.380702+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.3807804+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.38079+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.3890456+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.3890751+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.3890783+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.5988286+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.5989657+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.5989823+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.6008321+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.6008545+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "RuleEnvironmentStudioButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.6008579+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:28.9968099+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.0082825+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.0083311+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.0083502+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.0083641+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.0083664+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.1124686+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.1136198+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.1136418+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.1696174+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.5857148+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.5939754+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.5940325+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.5940644+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.5940691+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "WindowsMenuButton",
+      "controlTag": "windows",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.5940713+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.7126682+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.7138435+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.7138663+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "close_all",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:29.7948508+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:30.0303847+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:30.030473+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:30.0304795+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:30.0305027+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:30.0305085+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "LoadDemoRunnerButton",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:30.030511+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:31.0954197+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:31.0955243+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:31.0955307+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:31.1002286+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:31.1002451+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:31.1002477+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:39.1026233+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:39.1027561+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:39.1027635+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:39.1039363+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:39.1039644+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:39.1039684+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:47.1102479+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:47.1103957+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:47.1104046+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:47.111675+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:47.1116928+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "Button",
+      "controlName": "CareerAwardKarma",
+      "controlTag": null,
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-11T09:21:47.1117007+00:00"
+    }
+  ],
+  "workspaceId": "54964872f9d044d38d9239d3031986a0",
+  "characterName": "Win106 Qualifier",
+  "characterAlias": "W106Q",
+  "rulesetId": "sr5",
+  "buildMethod": "Priority",
+  "metatypeCategory": null,
+  "priorityHeritage": "C",
+  "metatype": null,
+  "priorityTalent": "A",
+  "priorityTalentChoice": "magician",
+  "hasSavedWorkspace": true,
+  "authenticationPortalOpened": true,
+  "authenticationPortalUri": "https://chummer.run/login?next=%2Faccount%2Faccess%2Finstall-link%3FinstallationId%3Dins-30d208aeb5cc4171a0883ed204442fd1%26headId%3Davalonia%26applicationVersion%3D1.0.0-preview.20261110.6940%26releaseChannel%3Doff%26platform%3Dwindows%26arch%3Dx64%26installLinkMode%3Dbrowser_callback%26installLinkTransport%3Dproof_poll%26installLinkCallbackUri%3Dchummer%253A%252F%252Finstall-link%26publicKey%3DMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqKlfO17aQGo7Ksn8YbhywtaJ5dCnhd5IxXiO%252F05Ek4ljEADY81XOXdByX3gcA69IoZfDvyQD69MZnwfE1UIyQU8VnlY2NKt46Snf0hEw4PwmJkzTkdl%252Fr%252B8nNo2vjatx%252BP0lixZQuLX0SILjpJTVi5wmLiy5k7sqT512WsjQn0OGLk8KmL8MSPcjDcL5Vz9neSq0QkUXzXpcWJFnFSn6etABf3UI2UPSR%252BZoIRxX4VbA%252BJ6%252BeOej3dtLceuFbS%252BuMXYH8Jp0pH21Aci5arIlXo6IVzD7Mlg3pd1p9xYTRB3NutPV7X3Go88f1ZT0pyCAug9zgSWTc5GZXYd5cNuLDQIDAQAB",
+  "activeDialogId": null,
+  "verificationNotes": [
+    "Binary was launched in mouse-first live journey mode.",
+    "Character creation used menu clicks, dialog clicks, and only rare text entry for name/alias.",
+    "Workspace save/reload proof used the registered routed Ctrl\u002BR keyboard shortcut; the presenter reloaded the current workspace and preserved identity."
+  ],
+  "error": null
+}
