@@ -1,4 +1,6 @@
 using System;
+using Chummer.Application.Owners;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -179,6 +181,13 @@ public partial class MainWindow
 
     private async Task OpenCareerAttributeAdvanceDialogAsync(string attributeName)
     {
+        // SR6 runners route through Core's owner-bound advancement service
+        // (dedicated dialog); the SR5 XML-mutation editor below stays SR5-only.
+        if (await TryOpenSr6CareerAttributeAdvanceDialogAsync(attributeName).ConfigureAwait(true))
+        {
+            return;
+        }
+
         CareerAttributeAdvanceEditorState? editor = await _interactionCoordinator
             .PrepareCareerAttributeAdvanceAsync(CancellationToken.None)
             .ConfigureAwait(true);
@@ -231,6 +240,101 @@ public partial class MainWindow
             if (reopened is null)
             {
                 return;
+            }
+
+            editor = reopened;
+        }
+    }
+
+    /// <summary>
+    /// Opens the SR6 attribute advancement dialog for the currently open SR6
+    /// runner. Returns false (without publishing an error) when the dossier is
+    /// not SR6 or the client surface is unavailable, so the caller falls back
+    /// to the SR5 editor route.
+    /// </summary>
+    private async Task<bool> TryOpenSr6CareerAttributeAdvanceDialogAsync(string attributeName)
+    {
+        // R109 fix 4: the entire dialog loop is bound to the owner/workspace/
+        // revision context captured BEFORE the first await. After every await
+        // (quote, dialog, apply, requote) the window rechecks that context and
+        // silently abandons the loop when the displayed runner moved on, so a
+        // committed receipt is never published into a different runner or a
+        // stale owner display (A-to-B, A-to-B-to-A).
+        CharacterOverviewState entryState = _interactionCoordinator.PeekState();
+        if (entryState.WorkspaceId is not { } entryWorkspaceId)
+        {
+            return false;
+        }
+        long entryRevision = entryState.ContentRevision;
+        OwnerContextStamp? entryOwner = entryState.DisplayOwnerContext;
+
+        bool ContextStillCurrent()
+        {
+            CharacterOverviewState now = _interactionCoordinator.PeekState();
+            return now.WorkspaceId == entryWorkspaceId
+                && now.ContentRevision == entryRevision
+                && EqualityComparer<OwnerContextStamp?>.Default.Equals(now.DisplayOwnerContext, entryOwner);
+        }
+
+        Sr6CareerAttributeAdvanceEditorSnapshot? editor = await _interactionCoordinator
+            .PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None)
+            .ConfigureAwait(true);
+        if (editor is null)
+        {
+            return false;
+        }
+        if (!ContextStillCurrent())
+        {
+            // The quote was prepared for a runner that is no longer displayed.
+            return true;
+        }
+
+        while (true)
+        {
+            var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
+            object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
+            if (!ContextStillCurrent())
+            {
+                // Owner/workspace/revision moved while the dialog was open; the
+                // quote-borne stamps inside it are stale by construction.
+                return true;
+            }
+            if (outcome is not Sr6CareerAttributeAdvanceWindow.Sr6CareerAttributeAdvanceOutcome advance)
+            {
+                return true;
+            }
+
+            Sr6CareerAttributeReceipt? receipt = await _interactionCoordinator
+                .ApplySr6CareerAttributeAdvanceAsync(advance.Owner, advance.Command, CancellationToken.None)
+                .ConfigureAwait(true);
+            if (receipt is null)
+            {
+                return true;
+            }
+            if (!ContextStillCurrent())
+            {
+                // The commit itself is durable and retained, but this window is
+                // no longer showing the runner it was made against: keep the
+                // commit, never display it in another context.
+                return true;
+            }
+
+            PublishCareerEditNotice(
+                "advanced " + advance.DisplayAttribute + " to natural rating "
+                + advance.TargetNaturalRating.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + " for " + receipt.ExpenseAmount.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + " karma (remaining " + receipt.KarmaAfter + ").");
+
+            Sr6CareerAttributeAdvanceEditorSnapshot? reopened = await _interactionCoordinator
+                .PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None)
+                .ConfigureAwait(true);
+            if (reopened is null)
+            {
+                return true;
+            }
+            if (!ContextStillCurrent())
+            {
+                return true;
             }
 
             editor = reopened;

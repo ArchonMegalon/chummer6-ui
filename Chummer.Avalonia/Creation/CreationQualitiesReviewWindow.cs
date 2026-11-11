@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Automation;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Contracts.Characters;
@@ -27,6 +28,8 @@ public sealed class CreationQualitiesReviewWindow : Window
         CharacterCreationQualitiesState state, Func<CharacterOverviewState> current,
         string? optionId = null, bool remove = false)
     {
+        AutomationProperties.SetAutomationId(_confirm, "creation-qualities-review-confirm");
+        AutomationProperties.SetAutomationId(_review, "creation-qualities-review-review");
         _session = session;
         _current = current;
         _selected = CharacterCreationQualitiesInteraction.SelectedIds(state).ToHashSet(StringComparer.Ordinal);

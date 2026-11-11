@@ -87,7 +87,10 @@ public partial class CharacterCreationWizardProjectorAuthorityTests
             PrerequisiteAuthorityDigest: string.Empty,
             AttributesDraftRevision: 0,
             AttributesDraftDigest: string.Empty,
-            SkillsAuthorityDigest: authority.EffectiveSkillsInputsDigest,
+            // Core canonical rule (CharacterCreationSkillsDraftIntegrity.
+            // IsValidStateProjection): the binding digest is the authority
+            // identity digest, not the catalog inputs digest.
+            SkillsAuthorityDigest: authority.AuthorityDigest,
             RuntimeDigest: Digest('b'),
             ContributionInputsDigest: Digest('d'));
         var state = new CharacterCreationSkillsState(

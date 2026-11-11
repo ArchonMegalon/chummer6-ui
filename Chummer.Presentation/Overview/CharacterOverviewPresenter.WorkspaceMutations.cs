@@ -3518,6 +3518,270 @@ public sealed partial class CharacterOverviewPresenter
         return committed;
     }
 
+    /// <summary>
+    /// Quotes Core's owner-bound SR6 attribute advancement service for the
+    /// currently open SR6 dossier and returns the dedicated SR6 editor
+    /// snapshot, or null (with an honest error published) when the ruleset
+    /// is not SR6 or the client surface is unavailable.
+    /// </summary>
+    public async Task<Sr6CareerAttributeAdvanceEditorSnapshot?> PrepareSr6CareerAttributeAdvanceAsync(CancellationToken ct)
+    {
+        CharacterOverviewState state = State;
+        if (state.WorkspaceId is not { } workspaceId)
+        {
+            Publish(State with { Error = "Open a saved career runner before advancing an attribute." });
+            return null;
+        }
+
+        CommandResult<WorkspaceDocumentSnapshot> read = await _client
+            .GetWorkspaceAsync(workspaceId, ct)
+            .ConfigureAwait(false);
+        if (!read.Success || read.Value is null)
+        {
+            Publish(State with { Error = read.Error ?? "Dossier could not be read for attribute advancement." });
+            return null;
+        }
+        if (read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+        {
+            Publish(State with { Error = "Attribute advancement requires a native XML dossier." });
+            return null;
+        }
+        if (!string.Equals(read.Value.Document.RulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
+        {
+            Publish(State with { Error = "The SR6 advancement dialog requires an SR6 runner." });
+            return null;
+        }
+
+        Sr6CareerAttributeAdvanceEditorSnapshot? editor = await _client
+            .QuoteSr6CareerAttributeAsync(workspaceId, ct)
+            .ConfigureAwait(false);
+        if (editor is null)
+        {
+            Publish(State with { Error = "SR6 attribute advancement is unavailable in this mode." });
+            return null;
+        }
+        if (editor.ContentRevision != read.Value.ContentRevision)
+        {
+            Publish(State with { Error = "This runner changed while quoting advancement. Reopen the dialog." });
+            return null;
+        }
+        Publish(State with { Error = null });
+        return editor;
+    }
+
+    /// <summary>
+    /// Retained recovery state for an SR6 advancement whose commit was not
+    /// observed (unknown outcome). Non-null blocks further purchases for the
+    /// runner until <see cref="RecoverPendingSr6AdvancementAsync"/> resolves
+    /// it via the Lookup-only replay probe.
+    /// </summary>
+    public Sr6CareerAttributePendingRecovery? PendingSr6Recovery { get; private set; }
+
+    /// Advances one SR6 attribute with karma through Core's owner-bound
+    /// service (Core performs the atomic graph/expense/receipt commit).
+    /// Publishes the Core receipt outcome honestly and leaves the dossier
+    /// revision sync to the caller (the desktop surface re-reads on return).
+    /// </summary>
+    public async Task<Sr6CareerAttributeReceipt?> ApplySr6CareerAttributeAdvanceAsync(
+        OwnerContextStamp owner,
+        Sr6CareerAttributeCommand command,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(owner);
+        CharacterOverviewState state = State;
+        if (PendingSr6Recovery is { } pending && pending.WorkspaceId == state.WorkspaceId)
+        {
+            Publish(State with
+            {
+                Error = "An earlier advancement is still unresolved for this runner. Recover it before purchasing again."
+            });
+            return null;
+        }
+        if (!owner.IsValid)
+        {
+            Publish(State with { Error = "The advancement dialog's owner authority is stale. Reopen the dialog." });
+            return null;
+        }
+        if (state.WorkspaceId is not { } workspaceId)
+        {
+            Publish(State with { Error = "Open a saved career runner before advancing an attribute." });
+            return null;
+        }
+        if (!string.Equals(command.Quote.WorkspaceId.Value, workspaceId.Value, StringComparison.Ordinal))
+        {
+            Publish(State with { Error = "This runner changed before the advancement could begin. Reopen the dialog." });
+            return null;
+        }
+        if (command.Quote.WorkspaceRevision != state.ContentRevision)
+        {
+            Publish(State with { Error = "This runner changed after the quote was prepared. Reopen the dialog." });
+            return null;
+        }
+        if (!command.ExplicitlyConfirmed)
+        {
+            Publish(State with { Error = "The advancement must be explicitly confirmed before it can commit." });
+            return null;
+        }
+        // The quote-borne owner stamp must still be the displayed authority: a
+        // stale dialog must never dispatch with recaptured authority after an
+        // owner A -> B -> A transition.
+        if (state.DisplayOwnerContext is { } displayed && displayed != owner)
+        {
+            Publish(State with { Error = "The displayed runner's owner authority changed after the quote was prepared. Reopen the dialog." });
+            return null;
+        }
+        if (state.DisplayOwnerContext is null && !owner.Owner.IsLocalSingleUser)
+        {
+            Publish(State with { Error = "The displayed runner has no matching owner-bound read. Reopen the dialog." });
+            return null;
+        }
+
+        long displayGeneration = CaptureDisplayGeneration();
+        Sr6CareerAttributeAdvanceDispatchResult? dispatched = await _client
+            .AdvanceSr6CareerAttributeAsync(owner, command, workspaceId, ct)
+            .ConfigureAwait(false);
+        if (dispatched is null)
+        {
+            // The client surface is unavailable in this mode. Retain the
+            // exact command so Lookup-only recovery can run when the
+            // surface returns (R109).
+            PendingSr6Recovery = new Sr6CareerAttributePendingRecovery(
+                workspaceId,
+                command,
+                Sr6CareerAttributeOutcome.Unavailable,
+                null);
+            Publish(State with { Error = "SR6 attribute advancement is unavailable in this mode. The attempted advancement is held for recovery; no new purchase will run until it is resolved." });
+            return null;
+        }
+        if (!dispatched.CommitResolved || dispatched.Receipt is null)
+        {
+            // Honest typed outcome. The exact command and its operation id
+            // are retained in presenter state (R109) so a later session can
+            // run Lookup-only recovery; a lost response is never resolved by
+            // purchasing again. New purchases stay blocked until the pending
+            // recovery is resolved.
+            PendingSr6Recovery = new Sr6CareerAttributePendingRecovery(
+                workspaceId,
+                command,
+                dispatched.Outcome,
+                dispatched.Error);
+            Publish(State with
+            {
+                Error = dispatched.Outcome switch
+                {
+                    Sr6CareerAttributeOutcome.Blocked => "SR6 blocked the advancement: "
+                        + (dispatched.Error ?? "the attribute cannot advance now."),
+                    Sr6CareerAttributeOutcome.Conflict or Sr6CareerAttributeOutcome.IdempotencyConflict =>
+                        "This advancement conflicts with the runner's current state. Reopen the dialog and requote.",
+                    Sr6CareerAttributeOutcome.Missing or Sr6CareerAttributeOutcome.NotFound =>
+                        "The quoted attribute is no longer present in this runner. Reopen the dialog.",
+                    _ => "The advancement could not be confirmed. It is held for recovery; reopen the dialog - no new purchase was attempted.",
+                },
+            });
+            return null;
+        }
+
+        // The commit resolved: any pending recovery for this runner is now
+        // resolved by the receipt itself.
+        PendingSr6Recovery = null;
+        Sr6CareerAttributeReceipt receipt = dispatched.Receipt;
+        string notice = "advanced " + command.Quote.AttributeId
+            + " to natural rating " + command.Quote.TargetNaturalRating.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            + " for " + receipt.ExpenseAmount.ToString(System.Globalization.CultureInfo.InvariantCulture) + " karma.";
+
+        // Refresh the original workspace under the existing owner/display guards
+        // BEFORE reporting the new state, so the visible attributes, karma and
+        // revision match the committed dossier.
+        if (!IsDisplayGenerationCurrent(displayGeneration)) return receipt;
+        if (!IsOriginalPersistenceOwnerCurrent(owner))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, state, committed: true);
+            return receipt;
+        }
+
+        using var postCommitBudget = new CancellationTokenSource(PostCommitRecoveryBudget);
+        WorkspaceOverviewLifecycleResult? reloaded = null;
+        try
+        {
+            reloaded = _workspaceOverviewLifecycleCoordinator is IOwnerBoundWorkspaceOverviewLifecycleCoordinator boundLifecycle
+                ? await boundLifecycle.LoadAsync(State, owner, workspaceId, postCommitBudget.Token).ConfigureAwait(false)
+                : owner.Owner.IsLocalSingleUser
+                    ? await _workspaceOverviewLifecycleCoordinator.LoadAsync(State, workspaceId, postCommitBudget.Token).ConfigureAwait(false)
+                    : null;
+        }
+        catch
+        {
+            // The durable commit and its receipt are retained; a bounded refresh
+            // failure is review-gated below rather than failing the mutation.
+        }
+
+        if (!IsDisplayGenerationCurrent(displayGeneration)) return receipt;
+        if (!IsOriginalPersistenceOwnerCurrent(owner))
+        {
+            AbandonOriginalPersistenceView(displayGeneration, state, committed: true);
+            return receipt;
+        }
+        if (reloaded is null || !reloaded.CanPublish)
+        {
+            Publish(State with
+            {
+                IsBusy = false,
+                Error = null,
+                Notice = notice + " The refreshed view needs review; keep this runner open.",
+            });
+            return receipt;
+        }
+
+        if (!PublishPostCommitState(reloaded.State with { Notice = notice }, displayGeneration)) return receipt;
+        return receipt;
+    }
+
+
+    /// <summary>
+    /// Runs Lookup-only recovery for a retained uncertain advancement:
+    /// replays the exact submitted command through the read-only probe
+    /// (never purchases) and clears the pending recovery when the durable
+    /// receipt is observed. Further purchases stay blocked until then.
+    /// </summary>
+    public async Task<Sr6CareerAttributeReceipt?> RecoverPendingSr6AdvancementAsync(
+        OwnerContextStamp owner,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        if (PendingSr6Recovery is not { } pending)
+        {
+            Publish(State with { Error = "No unresolved advancement is held for recovery." });
+            return null;
+        }
+        if (State.WorkspaceId is not { } openId || openId != pending.WorkspaceId)
+        {
+            Publish(State with { Error = "Open the runner that holds the unresolved advancement before recovering it." });
+            return null;
+        }
+        if (!owner.IsValid)
+        {
+            Publish(State with { Error = "The recovery owner authority is stale. Reopen the dialog." });
+            return null;
+        }
+
+        Sr6CareerAttributeReceipt? receipt = await _client
+            .LookupSr6CareerAttributeAsync(owner, pending.Command, ct)
+            .ConfigureAwait(false);
+        if (receipt is null)
+        {
+            Publish(State with
+            {
+                Error = "The unresolved advancement could not be confirmed yet; it stays held for recovery and further purchases remain blocked."
+            });
+            return null;
+        }
+
+        PendingSr6Recovery = null;
+        Publish(State with { Notice = "The held advancement was confirmed and the runner is current again." });
+        return receipt;
+    }
+
     public async Task<CharacterCareerAttributeCorrectionPlan?> CorrectCareerAttributeAdvanceAsync(
         CareerAttributeCorrectionRequest request,
         CancellationToken ct)

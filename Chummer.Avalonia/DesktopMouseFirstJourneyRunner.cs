@@ -9,6 +9,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Avalonia.Controls;
+using Chummer.Avalonia.Creation;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
@@ -149,6 +150,16 @@ internal static class DesktopMouseFirstJourneyRunner
                     && window.ControlsForAutomation.MenuBar is not null
                     && window.ControlsForAutomation.CommandDialogPane is not null,
                 journeyTimeout.Token);
+
+            // Re-audit E1/E5: manual-acceptance mode validation (pure, unit-tested
+            // below) runs at the attributes gate, the earliest point where the
+            // step-availability input is known and still before any journey
+            // mutation. The attributes guard historically swallowed it: when the
+            // attributes step was unavailable the whole guard was skipped and the
+            // independent AI_FINISH branch stayed reachable; it now fails loudly
+            // in manual-acceptance mode instead.
+
+            // its editor entry to be available; it fails explicitly otherwise.
 
             // Item-3 reopen leg (re-audit): when this process is the fresh second
             // launch of the two-phase journey (CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY=1),
@@ -460,33 +471,89 @@ internal static class DesktopMouseFirstJourneyRunner
             // (qualities) authority. Pre-check enablement so a legitimately
             // disabled step does not burn the journey budget on click retries.
             bool attributesEntered = false;
+            // After the authoritative priority draft the wizard auto-advances to
+            // the attributes step, which DISABLES its own nav button (a selected
+            // step cannot be re-entered). Entry therefore means "button enabled"
+            // OR "attributes already the selected step" - requiring a clickable
+            // button deadlocked every Priority journey at this gate (R94/w103).
             bool attributesEnabled = await WaitForConditionWithinAsync(
                 () => FindWizardAutomationButton(wizard, "creation-wizard-step-attributes")
-                    is { IsVisible: true, IsEffectivelyEnabled: true },
-                journeyTimeout.Token,
-                TimeSpan.FromSeconds(8));
-            if (attributesEnabled)
-            {
-            try
-            {
-                await ClickWizardButtonUntilEffectAsync(
-                    wizard,
-                    "creation-wizard-step-attributes",
-                    "wizard entered the attributes step",
-                    () => string.Equals(
+                        is { IsVisible: true, IsEffectivelyEnabled: true }
+                    || string.Equals(
                         wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
                         "attributes",
                         StringComparison.Ordinal),
-                    steps,
-                    journeyTimeout.Token,
-                    recordPointerAction);
-                attributesEntered = true;
-            }
-            catch (TimeoutException)
+                journeyTimeout.Token,
+                TimeSpan.FromSeconds(8));
+            bool attributesSelected = string.Equals(
+                wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
+                "attributes",
+                StringComparison.Ordinal);
+            // Re-audit E1/E5: the pure mode validation is internal and
+            // unit-tested; the entry point applies it unconditionally before
+            // any journey mutation.
+            string failure = ValidateManualAcceptanceMode(
+                Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MANUAL_DEEP") ?? string.Empty,
+                Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH") ?? string.Empty,
+                attributesEnabled);
+            if (failure is not null)
             {
-                RecordStep(
-                    steps,
-                    "attributes entry authoritatively blocked for Priority build (deep-stage authority pending); recorded as evidence");
+                RecordStep(steps, "manual acceptance refused: " + failure);
+                throw new InvalidOperationException(failure);
+            }
+            if (attributesEnabled)
+            {
+                if (attributesSelected)
+                {
+                    attributesEntered = true;
+                    RecordStep(steps, "wizard already on the attributes step after the priority draft (no nav click needed)");
+                }
+                else
+                {
+                    try
+                    {
+                        await ClickWizardButtonUntilEffectAsync(
+                            wizard,
+                            "creation-wizard-step-attributes",
+                            "wizard entered the attributes step",
+                            () => string.Equals(
+                                wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
+                                "attributes",
+                                StringComparison.Ordinal),
+                            steps,
+                            journeyTimeout.Token,
+                            recordPointerAction);
+                        attributesEntered = true;
+                    }
+                    catch (TimeoutException)
+                    {
+                        RecordStep(
+                            steps,
+                            "attributes entry authoritatively blocked for Priority build (deep-stage authority pending); recorded as evidence");
+                    }
+                }
+            // Manual deep-stage leg (gen-8 item 4): drive the real attribute/skill
+            // allocation editors with ordinary typed interactions when AI-finish is
+            // off. Gated by CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MANUAL_DEEP=1 so the
+            // canonical scenarios stay untouched; when enabled, review must become
+            // reachable and finalize must apply, or the run fails with evidence.
+            string manualDeepGate = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MANUAL_DEEP") ?? string.Empty;
+            bool manualDeep = string.Equals(manualDeepGate, "1", StringComparison.OrdinalIgnoreCase);
+            if (manualDeep
+                && string.Equals(Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH") ?? string.Empty, "1", StringComparison.OrdinalIgnoreCase))
+            {
+                RecordStep(steps, "manual deep leg refused: MANUAL_DEEP and AI_FINISH are mutually exclusive in manual acceptance mode");
+                throw new InvalidOperationException("MANUAL_DEEP and CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH are mutually exclusive; manual acceptance requires AI Finish off.");
+            }
+            if (manualDeep)
+            {
+                await RunManualDeepStageLegAsync(
+                    window, wizard, context, screenshotPaths, steps,
+                    journeyTimeout.Token, recordPointerAction);
+            }
+            else
+            {
+                RecordStep(steps, "manual deep-stage leg skipped (env gate off)");
             }
             } // end attributesEnabled guard
 
@@ -557,6 +624,7 @@ internal static class DesktopMouseFirstJourneyRunner
             // authoritatively-blocked deep stages (attributes/skills/qualities)
             // that gate review entry.
             string aiFinishGate = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH") ?? string.Empty;
+            bool manualDeepMode = string.Equals(Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MANUAL_DEEP") ?? string.Empty, "1", StringComparison.OrdinalIgnoreCase);
             if (string.Equals(aiFinishGate, "1", StringComparison.OrdinalIgnoreCase))
             {
                 // Operator opted into the AI-finish leg: flip the wizard's
@@ -608,9 +676,12 @@ internal static class DesktopMouseFirstJourneyRunner
                 await ContinueWizardUntilStepAsync(window, wizard, "review", steps, journeyTimeout.Token);
                 reviewReached = true;
             }
-            catch (TimeoutException) when (!string.Equals(aiFinishGate, "1", StringComparison.OrdinalIgnoreCase))
+            catch (TimeoutException) when (!string.Equals(aiFinishGate, "1", StringComparison.OrdinalIgnoreCase) && !manualDeepMode)
             {
-                RecordStep(steps, "ordinary Next walk timed out before review (deep stages pending; ai-finish leg off)");
+                // Re-audit E1: the timeout is a strict failure in manual mode;
+                // only the ordinary (non-manual, ai-finish-off) route records
+                // the authoritative deep-stage gate as evidence and continues.
+                RecordStep(steps, "ordinary Next walk timed out before review (deep stages pending; ai-finish leg off; ordinary route)");
             }
             if (reviewReached)
             {
@@ -781,7 +852,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     : $"workspace strip stayed stable while live shell content confirmed opened character {expectedCharacterName} ({openedVisibleState.RulesetId ?? expectedRulesetId})");
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-workspace-opened");
 
-            if (produceUserJourneyTrace)
+            // R109 fix 6: identity/attribute/save assertions must validate on
+            // every platform before success; they no longer gate on optional
+            // trace output.
+            if (produceUserJourneyTrace || manualDeepMode)
             {
                 await WaitForAsync(
                     steps,
@@ -882,7 +956,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     : $"workspace strip stayed stable while visible shell state confirmed saved workspace {savedVisibleState.WorkspaceId ?? "(missing)"}");
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "05-workspace-saved");
 
-            if (produceUserJourneyTrace)
+            // Re-audit E3: the save/reload exercise is a REQUIRED leg in manual
+            // acceptance mode regardless of trace output (same-process reload is
+            // distinct from the native fresh-process acceptance).
+            if (produceUserJourneyTrace || manualDeepMode)
             {
                 userJourneyWorkflows.Add(await ExerciseSaveReloadWorkflowAsync(
                     window,
@@ -938,6 +1015,22 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
             DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
             DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+            // R109 fix 6: recorded workflow assertions gate success. A false
+            // identity/attribute/save assertion fails the run here, on every
+            // platform, independent of whether trace output is produced.
+            foreach (DesktopUserJourneyWorkflowEvidence workflow in userJourneyWorkflows)
+            {
+                foreach ((string assertionId, bool passed) in workflow.Assertions)
+                {
+                    if (!passed)
+                    {
+                        RecordStep(steps, $"workflow assertion failed: {workflow.Id}/{assertionId}; failing the run before the success receipt");
+                        throw new InvalidOperationException(
+                            $"mouse-first journey: workflow '{workflow.Id}' assertion '{assertionId}' failed; success receipt withheld");
+                    }
+                }
+            }
+
             DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
                 context,
                 new DesktopMouseFirstJourneyEvidence(
@@ -3345,6 +3438,115 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         RecordStep(steps, $"click wizard button {automationId}; delivered={clickObserved}");
     }
 
+    private static string[] DiscoverAttributeRows(Control modalRoot)
+        => modalRoot.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Select(block => AutomationProperties.GetAutomationId(block))
+            .Where(id => id is not null
+                && id.StartsWith("creation-attributes-projection-", StringComparison.Ordinal))
+            .Select(id => id!["creation-attributes-projection-".Length..])
+            .Distinct()
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+
+    private static TextBlock? FindAutomationTextBlock(Control root, string automationId)
+        => root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .FirstOrDefault(block =>
+                string.Equals(
+                    AutomationProperties.GetAutomationId(block),
+                    automationId,
+                    StringComparison.Ordinal)
+                && block.IsVisible);
+
+    private static bool TryReadIntAt(string text, int start, out int value)
+    {
+        value = 0;
+        int i = start;
+        bool negative = false;
+        if (i < text.Length && text[i] == '-')
+        {
+            negative = true;
+            i++;
+        }
+
+        int digits = 0;
+        while (i < text.Length && char.IsDigit(text[i]))
+        {
+            value = (value * 10) + (text[i] - '0');
+            i++;
+            digits++;
+        }
+
+        if (negative)
+            value = -value;
+        return digits > 0;
+    }
+
+    private static bool TryParseProjection(string? text, out int current, out int maximum)
+    {
+        current = 0;
+        maximum = 0;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        // "Result {current} · range {min}-{max} · priority cost ... "
+        int resultAt = text.IndexOf("Result ", StringComparison.Ordinal);
+        int rangeAt = text.IndexOf("range ", StringComparison.Ordinal);
+        if (resultAt < 0 || rangeAt < 0)
+            return false;
+        if (!TryReadIntAt(text, resultAt + "Result ".Length, out current))
+            return false;
+        int dashAt = text.IndexOf('-', rangeAt);
+        if (dashAt < 0 || !TryReadIntAt(text, dashAt + 1, out maximum))
+            return false;
+        return true;
+    }
+
+    private static async Task<string> ClickControlAtomicallyAsync(
+        Control root,
+        string automationId)
+    {
+        // Modal-window twin of ClickWizardButtonAtomicallyAsync: resolve,
+        // validate, and click in ONE dispatcher invocation, then apply the
+        // same disclosed routed-event fallback when the synthetic pointer
+        // press is swallowed (identical swallow behavior observed on wizard
+        // buttons under this harness).
+        return await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            Button? button = FindWizardAutomationButton(root, automationId);
+            if (button is null)
+            {
+                return "resolved=False";
+            }
+
+            if (!button.IsEffectivelyEnabled)
+            {
+                return "resolved=True;enabled=False";
+            }
+
+            bool clickObserved = false;
+            void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+            button.Click += OnClick;
+            try
+            {
+                (Visual rootVisual, Point rootPosition) = ResolveClickRoot(button);
+                string diagnostics = RaiseSyntheticClickOn(button, rootVisual, rootPosition);
+                if (!clickObserved)
+                {
+                    button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    diagnostics += ";routedFallback";
+                    clickObserved = true;
+                }
+
+                return $"resolved=True;delivered={clickObserved};{diagnostics}";
+            }
+            finally
+            {
+                button.Click -= OnClick;
+            }
+        });
+    }
+
     private static async Task<string> ClickWizardButtonAtomicallyAsync(
         CharacterCreationWizardControl wizard,
         string automationId)
@@ -3814,5 +4016,725 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             "foundation preview confirmable (metatype + nationality selected)",
             () => wizard.FoundationPreviewConfirmable,
             ct);
+    }
+
+    // Manual deep-stage leg (gen-8 item 4). Drives the real attribute and skill
+    // allocation modals and the qualities review window with ordinary typed
+    // interactions, then leaves the wizard on the attributes step so the
+    // ordinary Next walk can proceed to review and finalize.
+    private static readonly string[] NormalAttributeIds =
+    {
+        "BOD", "AGI", "REA", "STR", "WIL", "LOG", "INT", "CHA",
+    };
+
+    /// <summary>
+    /// Pure manual-acceptance mode validation (re-audit E1/E5). Returns the
+    /// failure reason, or null when the mode combination is admissible.
+    /// MANUAL_DEEP and AI_FINISH are mutually exclusive in manual acceptance
+    /// mode, and MANUAL_DEEP additionally requires the attributes step and
+    /// its editor entry to be available so the real allocation editors can
+    /// run.
+    /// </summary>
+    internal static string? ValidateManualAcceptanceMode(
+        string manualDeepGate,
+        string aiFinishGate,
+        bool attributesAvailable)
+    {
+        bool manualDeep = string.Equals(manualDeepGate, "1", StringComparison.OrdinalIgnoreCase);
+        bool aiFinish = string.Equals(aiFinishGate, "1", StringComparison.OrdinalIgnoreCase);
+        if (manualDeep && aiFinish)
+        {
+            return "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MANUAL_DEEP and CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AI_FINISH are mutually exclusive; manual acceptance requires AI Finish off.";
+        }
+        if (manualDeep && !attributesAvailable)
+        {
+            return "manual-deep acceptance requires the attributes step to be available so the real allocation editors can run; the step is authoritatively unavailable.";
+        }
+        return null;
+    }
+
+    private static async Task RunManualDeepStageLegAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        DesktopMouseFirstJourneyContext context,
+        List<string> screenshotPaths,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        RecordStep(steps, "manual deep-stage leg: entering real allocation editors");
+
+        // --- Attributes step: open the Core-bound allocation modal and type a
+        // real Priority distribution via the per-attribute up/down controls. ---
+        await ClickWizardButtonUntilEffectAsync(
+            wizard,
+            "creation-wizard-step-attributes",
+            "manual leg: wizard entered the attributes step",
+            () => string.Equals(
+                wizard.StateForAutomation()?.ActiveStepId,
+                "attributes",
+                StringComparison.Ordinal),
+            steps,
+            ct,
+            recordPointerAction);
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-attributes-step");
+
+        {
+            // Evidence: record the projected budgets/blockers so a disabled
+            // allocate affordance is diagnosable from the receipt alone.
+            var snap = wizard.StateForAutomation();
+            if (snap is not null)
+            {
+                var budgetLines = snap.Budgets.Select(b =>
+                    $"{b.BudgetId}: remaining={b.Remaining}/{b.Total} exact={b.IsExact} blockers=[{string.Join(",", b.Blockers)}]");
+                foreach (string line in budgetLines)
+                    RecordStep(steps, "manual leg budget evidence: " + line);
+                foreach (string blocker in snap.CompletionBlockers)
+                    RecordStep(steps, "manual leg completion blocker evidence: " + blocker);
+            }
+            Button? probeAllocate = FindWizardAutomationButton(wizard, "creation-wizard-allocate-attributes");
+            RecordStep(steps, "manual leg allocate-attributes probe: " + (probeAllocate is null
+                ? "absent"
+                : $"visible={probeAllocate.IsVisible} enabled={probeAllocate.IsEffectivelyEnabled}"));
+        }
+
+        // Atomic click discipline: the wizard re-renders the legal-option list
+        // on every state refresh, so resolve+click must happen in ONE dispatcher
+        // invocation (ClickWizardButtonAtomicallyAsync inside the helper) or the
+        // captured instance is detached and the click misses. The modal opening
+        // is the click's observable effect; the helper retries with the
+        // disclosed routed-event fallback.
+        await ClickWizardButtonUntilEffectAsync(
+            wizard,
+            "creation-wizard-allocate-attributes",
+            "manual leg: attributes allocation modal opened",
+            () => App.Current.ApplicationLifetime switch
+            {
+                IClassicDesktopStyleApplicationLifetime desktop => desktop.Windows
+                    .OfType<CreationAttributesAllocationWindow>()
+                    .Any(),
+                _ => false,
+            },
+            steps,
+            ct,
+            recordPointerAction);
+
+        CreationAttributesAllocationWindow? attrDialog = null;
+        await WaitForConditionWithinAsync(
+            () =>
+            {
+                attrDialog = App.Current.ApplicationLifetime switch
+                {
+                    IClassicDesktopStyleApplicationLifetime desktop => desktop.Windows
+                        .OfType<CreationAttributesAllocationWindow>()
+                        .FirstOrDefault(),
+                    _ => null,
+                };
+                return attrDialog is not null;
+            },
+            ct,
+            TimeSpan.FromSeconds(10));
+        if (attrDialog is null)
+        {
+            RecordStep(steps, "manual leg: attributes allocation modal NOT opened (recorded as evidence)");
+            return;
+        }
+
+        // Genuine typed allocation: click every still-enabled priority-up
+        // control round-robin until the Core presenter disables them all
+        // (budget exhausted) - a partial draft confirms legal but leaves the
+        // attributes step in-progress, which blocks the ordinary continue.
+        // Genuine typed allocation with human semantics: bump a row, observe
+        // Core's preview verdict through the confirm button, and undo a bump
+        // the budget rejects (a human clicks minus when the preview blocks).
+        // The modal never disables the up buttons at max (Adjust clamps), so
+        // value progress is read from each row's projection text.
+        // Discover every allocatable row the modal actually projects, then
+        // restrict to the eight mental/physical attributes. The
+        // special-attributes budget (EDG/MAG/RES/DEP) is exact: any partial
+        // special spend makes the budget non-exact and the attributes step
+        // can never complete (observed win103 run: EDG bumped to 7/7 left
+        // special-attributes non-exact and qualities blocked). A human
+        // creating a Priority mundane/magician spends the normal budget and
+        // leaves special rows at their base values.
+        string[] attrOrder = DiscoverAttributeRows(attrDialog)
+            .Where(attr => NormalAttributeIds.Contains(attr))
+            .ToArray();
+        RecordStep(steps, "manual leg: allocatable rows discovered: " + string.Join(",", attrOrder)
+            + " (restricted to normal attributes)");
+        int bumps = 0;
+        int undos = 0;
+        for (int round = 0; round < 64; round++)
+        {
+            bool progressed = false;
+            foreach (string attr in attrOrder)
+            {
+                if (!TryParseProjection(
+                        FindAutomationTextBlock(attrDialog, "creation-attributes-projection-" + attr)?.Text,
+                        out int current,
+                        out int maximum))
+                {
+                    if (round == 0)
+                        RecordStep(steps, "manual leg: projection for " + attr + " unreadable (recorded as evidence)");
+                    continue;
+                }
+
+                if (current >= maximum)
+                    continue;
+
+                string diag = await ClickControlAtomicallyAsync(attrDialog, "creation-attributes-priority-up-" + attr);
+                if (diag.Contains("resolved=False", StringComparison.Ordinal)
+                    || diag.Contains("enabled=False", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                recordPointerAction();
+                bumps++;
+                Dispatcher.UIThread.RunJobs();
+
+                if (FindWizardAutomationButton(attrDialog, "creation-attributes-allocate-confirm")
+                    is { IsEffectivelyEnabled: true })
+                {
+                    progressed = true;
+                    continue;
+                }
+
+                // Core rejected the bumped draft: undo it and stop this row.
+                await ClickControlAtomicallyAsync(attrDialog, "creation-attributes-priority-down-" + attr);
+                undos++;
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            if (!progressed)
+                break;
+        }
+        {
+            var finalProjections = attrOrder.Select(attr =>
+            {
+                string? text = FindAutomationTextBlock(attrDialog, "creation-attributes-projection-" + attr)?.Text;
+                return TryParseProjection(text, out int cur, out int max)
+                    ? attr + "=" + cur + "/" + max
+                    : attr + "=?";
+            });
+            RecordStep(steps, "manual leg: attributes priority allocation spent " + bumps
+                + " bumps with " + undos + " budget-rejected undos; final projections: "
+                + string.Join(",", finalProjections));
+        }
+
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-attributes-typed");
+        Button? attrConfirm = FindWizardAutomationButton(attrDialog, "creation-attributes-allocate-confirm");
+        if (attrConfirm is { IsEffectivelyEnabled: true })
+        {
+            // Atomic click discipline: resolve + click in ONE dispatcher
+            // invocation. The plain pointer click was swallowed here exactly
+            // like on the wizard buttons, leaving the modal open so the
+            // post-confirm adapter reload never ran.
+            string confirmDiag = await ClickControlAtomicallyAsync(attrDialog, "creation-attributes-allocate-confirm");
+            recordPointerAction();
+            RecordStep(steps, "manual leg: attributes confirm click " + confirmDiag);
+            bool closed = await WaitForConditionWithinAsync(
+                () => !attrDialog.IsVisible,
+                ct,
+                TimeSpan.FromSeconds(20));
+            // Re-audit E2 (R109 fix 5): modal closure is not confirmation.
+            // A disabled, rejected, cancelled or timed-out confirmation is a
+            // failed manual leg, never a close-and-pass.
+            if (!closed)
+            {
+                RecordStep(steps, "manual leg: attributes modal did not close after confirm click; failing manual acceptance; diag=" + confirmDiag);
+                throw new InvalidOperationException(
+                    "manual-deep acceptance: the attributes allocation modal did not close after confirm; the confirmation outcome was not observed");
+            }
+            RecordStep(steps, "manual leg: attributes allocation confirmed");
+        }
+        else
+        {
+            RecordStep(steps, "manual leg: attributes confirm disabled; failing manual acceptance (no silent skip)");
+            attrDialog.Close();
+            throw new InvalidOperationException(
+                "manual-deep acceptance: the attributes allocation confirm control is disabled; required manual allocation failed");
+        }
+        Dispatcher.UIThread.RunJobs();
+
+        {
+            // Evidence: full step graph right after the attributes confirm.
+            var postSnap = wizard.StateForAutomation();
+            if (postSnap is not null)
+            {
+                string graph = string.Join(", ", postSnap.Steps.Select(st => $"{st.StepId}={st.Status}(sel={st.IsSelected})"));
+                RecordStep(steps, "manual leg post-attributes graph: active=" + postSnap.ActiveStepId + "; " + graph);
+            }
+        }
+
+        {
+            // Evidence: budgets/blockers right after the attributes confirm.
+            // A qualities blocker visible HERE names the exact reason the
+            // step cannot be entered, instead of a silent 30s timeout.
+            var postConfirmSnap = wizard.StateForAutomation();
+            if (postConfirmSnap is not null)
+            {
+                foreach (string line in postConfirmSnap.Budgets.Select(b =>
+                    $"{b.BudgetId}: remaining={b.Remaining}/{b.Total} exact={b.IsExact} blockers=[{string.Join(",", b.Blockers)}]"))
+                    RecordStep(steps, "manual leg post-confirm budget evidence: " + line);
+                foreach (string blocker in postConfirmSnap.CompletionBlockers)
+                    RecordStep(steps, "manual leg post-confirm completion blocker evidence: " + blocker);
+            }
+            Button? postAllocProbe = FindWizardAutomationButton(wizard, "creation-wizard-allocate-attributes");
+            RecordStep(steps, "manual leg post-confirm allocate-attributes probe: " + (postAllocProbe is null
+                ? "absent"
+                : $"visible={postAllocProbe.IsVisible} enabled={postAllocProbe.IsEffectivelyEnabled}"));
+        }
+
+        {
+            // Poll the completion blockers after the attributes confirm: the
+            // adapter reload runs asynchronously after the modal closes, so the
+            // graph above may be a pre-reload snapshot. Record the blocker set
+            // over time; if attributes-draft-required never clears, the reload
+            // did not apply and that is the defect, not a slow one.
+            for (int poll = 0; poll <= 10; poll++)
+            {
+                if (poll > 0)
+                    Thread.Sleep(2000);
+                Dispatcher.UIThread.RunJobs();
+                var pollSnap = wizard.StateForAutomation();
+                if (pollSnap is null)
+                    continue;
+                string blockers = string.Join(",", pollSnap.CompletionBlockers);
+                var qStep = pollSnap.Steps.FirstOrDefault(st =>
+                    string.Equals(st.StepId, "qualities", StringComparison.Ordinal));
+                RecordStep(steps, $"manual leg post-confirm blocker poll t={poll * 2}s: "
+                    + $"active={pollSnap.ActiveStepId} qualities={qStep?.Status ?? "absent"} "
+                    + $"blockers=[{blockers}]");
+                if (!pollSnap.CompletionBlockers.Contains("creation-finalization-attributes-draft-required"))
+                    break;
+            }
+        }
+
+        // --- Qualities step: attributes' legal-next is qualities; confirm the
+        // default (no qualities) draft through the Core-bound editor. ---
+        // The post-confirm adapter reload runs asynchronously after the modal
+        // closes; wait for Core to reproject qualities as enterable (unblocked)
+        // before navigating, with the graph evidence above as the receipt.
+        await WaitForConditionWithinAsync(
+            () =>
+            {
+                var snap = wizard.StateForAutomation();
+                var q = snap?.Steps.FirstOrDefault(st =>
+                    string.Equals(st.StepId, "qualities", StringComparison.Ordinal));
+                // The qualities stage projects only complete/in-progress/blocked:
+                // in-progress means qualitiesAuthority.IsReady, which is exactly
+                // CanEnter, which is what canContinue requires.
+                return string.Equals(snap?.ActiveStepId, "qualities", StringComparison.Ordinal)
+                    || q is not null
+                       && (string.Equals(q.Status, "in-progress", StringComparison.Ordinal)
+                           || string.Equals(q.Status, "available", StringComparison.Ordinal)
+                           || string.Equals(q.Status, "complete", StringComparison.Ordinal));
+            },
+            ct,
+            TimeSpan.FromSeconds(30));
+        // After the attributes confirm the wizard re-binds to qualities (its
+        // legal next), so the nav button is disabled-by-selection; entry means
+        // "already the active step" OR one ordinary continue press (the same
+        // route a human uses; step-nav jumps from an in-progress step are
+        // refused by the wizard).
+        {
+            var postConfirmStep = wizard.StateForAutomation()?.ActiveStepId ?? "<none>";
+            RecordStep(steps, "manual leg post-confirm active step: " + postConfirmStep);
+            if (string.Equals(postConfirmStep, "qualities", StringComparison.Ordinal))
+            {
+                RecordStep(steps, "manual leg: qualities step already active after attributes confirm (no nav click needed)");
+            }
+            else if (string.Equals(postConfirmStep, "skills", StringComparison.Ordinal))
+            {
+                // The attributes confirm unblocked qualities AND skills and the
+                // adapter reload already auto-advanced past qualities; a human
+                // clicks the qualities step's nav button to go back.
+                await ClickWizardButtonUntilEffectAsync(
+                    wizard,
+                    "creation-wizard-step-qualities",
+                    "manual leg: wizard routed back to the qualities step",
+                    () => string.Equals(
+                        wizard.StateForAutomation()?.ActiveStepId,
+                        "qualities",
+                        StringComparison.Ordinal),
+                    steps,
+                    ct,
+                    recordPointerAction);
+            }
+            else
+            {
+                await ClickWizardButtonUntilEffectAsync(
+                    wizard,
+                    "creation-wizard-continue",
+                    "manual leg: wizard entered the qualities or skills step",
+                    () =>
+                    {
+                        var afterSnap = wizard.StateForAutomation()?.ActiveStepId;
+                        // The attributes confirm unblocks both qualities and skills;
+                        // a single continue can advance two steps when the intermediate
+                        // step is already satisfied. Accept either destination.
+                        return string.Equals(afterSnap, "qualities", StringComparison.Ordinal)
+                            || string.Equals(afterSnap, "skills", StringComparison.Ordinal);
+                    },
+                    steps,
+                    ct,
+                    recordPointerAction);
+            }
+        }
+        // The attributes confirm unblocks qualities AND skills; a continue press
+        // can skip straight past qualities to skills when the intermediate step
+        // is already satisfied. A human clicks the qualities step's nav button
+        // in that case - do the same (route back to qualities if needed).
+        {
+            var postNavSnap = wizard.StateForAutomation();
+            string postNavStep = postNavSnap?.ActiveStepId ?? "<none>";
+            RecordStep(steps, "manual leg post-nav active step: " + postNavStep);
+            if (!string.Equals(postNavStep, "qualities", StringComparison.Ordinal))
+            {
+                await ClickWizardButtonUntilEffectAsync(
+                    wizard,
+                    "creation-wizard-step-qualities",
+                    "manual leg: wizard routed back to the qualities step",
+                    () => string.Equals(
+                        wizard.StateForAutomation()?.ActiveStepId,
+                        "qualities",
+                        StringComparison.Ordinal),
+                    steps,
+                    ct,
+                    recordPointerAction);
+            }
+        }
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-qualities-step");
+        {
+            var qSnap = wizard.StateForAutomation();
+            Button? qProbe = FindWizardAutomationButton(wizard, "creation-wizard-edit-qualities");
+            RecordStep(steps, "manual leg qualities probe: " + (qProbe is null
+                ? "absent"
+                : $"visible={qProbe.IsVisible} enabled={qProbe.IsEffectivelyEnabled} step={qSnap?.ActiveStepId}"));
+        }
+
+        // --- Qualities review: confirm the default (empty) qualities draft
+        // through the Core-bound review window. The qualities draft is
+        // required before continue can advance past the qualities step.
+        {
+            var preQ = wizard.StateForAutomation();
+            Button? qEdit = FindWizardAutomationButton(wizard, "creation-wizard-edit-qualities");
+            if (qEdit is { IsEffectivelyEnabled: true })
+            {
+                string qEditDiag = await ClickWizardButtonAtomicallyAsync(wizard, "creation-wizard-edit-qualities");
+                recordPointerAction();
+                RecordStep(steps, "manual leg: qualities edit click " + qEditDiag);
+                CreationQualitiesReviewWindow? qDialog = null;
+                await WaitForConditionWithinAsync(
+                    () =>
+                    {
+                        qDialog = App.Current.ApplicationLifetime switch
+                        {
+                            IClassicDesktopStyleApplicationLifetime desktop => desktop.Windows
+                                .OfType<CreationQualitiesReviewWindow>()
+                                .FirstOrDefault(),
+                            _ => null,
+                        };
+                        return qDialog is not null;
+                    },
+                    ct,
+                    TimeSpan.FromSeconds(10));
+                if (qDialog is null)
+                {
+                    // Re-audit E2: a required confirmation modal that never
+                    // appears is a failed manual leg, not evidence to skip past.
+                    RecordStep(steps, "manual leg: qualities review window NOT opened; failing manual acceptance (no silent continue)");
+                    throw new InvalidOperationException(
+                        "manual-deep acceptance: the qualities review window did not open; a required manual leg failed");
+                }
+                else
+                {
+                    RecordStep(steps, "manual leg: qualities review window opened");
+                    // Human flow: Review (prepare) first; confirm enables only
+                    // after a prepared preview exists.
+                    string qReviewDiag = await ClickControlAtomicallyAsync(qDialog, "creation-qualities-review-review");
+                    recordPointerAction();
+                    RecordStep(steps, "manual leg: qualities review click " + qReviewDiag);
+                    await WaitForConditionWithinAsync(
+                        () => FindWizardAutomationButton(qDialog, "creation-qualities-review-confirm") is { IsEffectivelyEnabled: true },
+                        ct,
+                        TimeSpan.FromSeconds(15));
+                    string qConfirmDiag = await ClickControlAtomicallyAsync(qDialog, "creation-qualities-review-confirm");
+                    recordPointerAction();
+                    RecordStep(steps, "manual leg: qualities confirm click " + qConfirmDiag);
+                    bool qClosed = await WaitForConditionWithinAsync(
+                        () => !qDialog.IsVisible,
+                        ct,
+                        TimeSpan.FromSeconds(20));
+                    // Re-audit E2 (R109 fix 5): a timed-out review confirmation
+                    // is a failed manual leg, never a close-and-pass.
+                    if (!qClosed)
+                    {
+                        RecordStep(steps, "manual leg: qualities review window did not close after confirm; failing manual acceptance; diag=" + qConfirmDiag);
+                        throw new InvalidOperationException(
+                            "manual-deep acceptance: the qualities review window did not close after confirm; the confirmation outcome was not observed");
+                    }
+                    RecordStep(steps, "manual leg: qualities selection confirmed");
+                }
+                Dispatcher.UIThread.RunJobs();
+            }
+            else
+            {
+                RecordStep(steps, "manual leg: qualities edit affordance not enabled; failing manual acceptance (no silent skip)");
+                throw new InvalidOperationException("manual-deep acceptance: the qualities review affordance is missing or disabled; a required manual confirmation failed");
+            }
+        }
+
+        // --- Skills step: qualities' legal-next is skills; open the skills
+        // allocation modal and confirm the default Core-provided plan. ---
+        {
+            // Evidence: step graph + blockers right after the qualities
+            // confirm, so the skills navigation failure is diagnosable from
+            // the receipt alone.
+            for (int poll = 0; poll <= 6; poll++)
+            {
+                if (poll > 0)
+                    Thread.Sleep(2000);
+                Dispatcher.UIThread.RunJobs();
+                var pollSnap = wizard.StateForAutomation();
+                if (pollSnap is null)
+                    continue;
+                string graph = string.Join(",", pollSnap.Steps.Select(st =>
+                    $"{st.StepId}={st.Status}"));
+                string blockers = string.Join(",", pollSnap.CompletionBlockers);
+                var skStep = pollSnap.Steps.FirstOrDefault(st =>
+                    string.Equals(st.StepId, "skills", StringComparison.Ordinal));
+                string skBlockers = skStep is null ? "<missing>" : string.Join(",", skStep.Blockers);
+                string skCanEnter = skStep?.CanEnter.ToString() ?? "<missing>";
+                // Direct skills-authority probe: the wizard stage override
+                // masks the skills authority's own blockers with the
+                // finalization ones, so load Core's skills state directly
+                // through the same owner-bound presenter path a human uses.
+                try
+                {
+                    CharacterOverviewState probeOverview = window.SnapshotStateForAutomation();
+                    var probePresenter = new CharacterCreationSkillsInteractionPresenter(
+                        App.Services?.GetService(typeof(Chummer.Application.Characters.IOwnerBoundCharacterCreationSkillsService))
+                            as Chummer.Application.Characters.IOwnerBoundCharacterCreationSkillsService
+                        ?? throw new InvalidOperationException("skills service unavailable"));
+                    var probeLoaded = await Task.Run(() => probePresenter.Load(probeOverview));
+                    string probeOutcome = probeLoaded.Outcome ?? "?";
+                    string probeError2 = probeLoaded.Error ?? "<none>";
+                    string probeCanEdit = probeLoaded.State?.State.CanEdit.ToString() ?? "<null>";
+                    string probeSkBlockers = probeLoaded.State?.State is null
+                        ? "<null-state>"
+                        : string.Join(",", probeLoaded.State.State.Blockers);
+                    RecordStep(steps, $"manual leg skills-authority probe: outcome={probeOutcome} "
+                        + $"canEdit={probeCanEdit} error={probeError2} stateBlockers=[{probeSkBlockers}]");
+                    string budgetDump = string.Join(",", pollSnap.Budgets.Select(b =>
+                        $"{b.BudgetId}:{b.Total}/{b.Used} exact={b.IsExact}"
+                        + (b.Blockers.Count > 0 ? "!" + string.Join("|", b.Blockers) : string.Empty)));
+                    RecordStep(steps, "manual leg budget dump: [" + budgetDump + "]");
+                    // Factory-style raw probe: replicate WorkspaceOverviewStateFactory.LoadSkills
+                    // guards exactly and report which one fails.
+                    try
+                    {
+                        var svc = App.Services?.GetService(typeof(Chummer.Application.Characters.IOwnerBoundCharacterCreationSkillsService))
+                            as Chummer.Application.Characters.IOwnerBoundCharacterCreationSkillsService;
+                        if (svc is null)
+                        {
+                            RecordStep(steps, "manual leg factory-probe: service null");
+                        }
+                        else
+                        {
+                            var req = new Chummer.Contracts.Characters.CharacterCreationSkillsLoadRequest(probeOverview.WorkspaceId!.Value);
+                            Chummer.Contracts.Characters.CharacterCreationFoundationResult<Chummer.Contracts.Characters.CharacterCreationSkillsState>? raw =
+                                probeOverview.DisplayOwnerContext is { IsValid: true } rawOwner
+                                    ? svc.Load(rawOwner, req)
+                                    : null;
+                            if (raw is null)
+                            {
+                                RecordStep(steps, "manual leg factory-probe: ownerContext invalid (DisplayOwnerContext null or not valid)");
+                            }
+                            else
+                            {
+                                string envBlockers = string.Join(",", raw.Blockers);
+                                string stBlockers = raw.Value is { } v ? string.Join(",", v.Blockers) : "<null-state>";
+                                string outcomeRaw = raw.Outcome ?? "<null>";
+                                bool blockersMatch = raw.Value is { } v2
+                                    && string.Join(",", v2.Blockers) == envBlockers;
+                                RecordStep(steps, "manual leg factory-probe: outcome=" + outcomeRaw
+                                    + " envBlockers=[" + envBlockers + "] stateBlockers=[" + stBlockers + "]"
+                                    + " match=" + blockersMatch.ToString().ToLowerInvariant());
+                                if (raw.Value is { } v3)
+                                {
+                                    RecordStep(steps, "manual leg factory-probe binding: ws=" + v3.Binding.WorkspaceId
+                                        + " contentRev=" + v3.Binding.ContentRevision
+                                        + " savedRev=" + v3.Binding.SavedRevision
+                                        + " overviewContentRev=" + probeOverview.ContentRevision
+                                        + " overviewSavedRev=" + probeOverview.SavedRevision);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception factoryProbeError)
+                    {
+                        RecordStep(steps, "manual leg factory-probe failed: " + factoryProbeError.Message);
+                    }
+                }
+                catch (Exception probeError)
+                {
+                    RecordStep(steps, "manual leg skills-authority probe failed: " + probeError.Message);
+                }
+                RecordStep(steps, $"manual leg post-qualities poll t={poll * 2}s: "
+                    + $" skills[status={skStep?.Status ?? "<missing>"} canEnter={skCanEnter} blockers=[{skBlockers}]]");
+                if (skStep is not null
+                    && !string.Equals(skStep.Status, "blocked", StringComparison.Ordinal))
+                    break;
+            }
+        }
+
+        // --- Skills step: qualities' legal-next is skills; open the skills
+        // allocation modal and confirm the default Core-provided plan. ---
+        await WaitForConditionWithinAsync(
+            () =>
+            {
+                var snap = wizard.StateForAutomation();
+                var sk = snap?.Steps.FirstOrDefault(st =>
+                    string.Equals(st.StepId, "skills", StringComparison.Ordinal));
+                // Skills projects available (CanEdit) / blocked; accept
+                // in-progress too in case Core adds that status here as well.
+                return string.Equals(snap?.ActiveStepId, "skills", StringComparison.Ordinal)
+                    || sk is not null
+                       && (string.Equals(sk.Status, "available", StringComparison.Ordinal)
+                           || string.Equals(sk.Status, "in-progress", StringComparison.Ordinal)
+                           || string.Equals(sk.Status, "complete", StringComparison.Ordinal));
+            },
+            ct,
+            TimeSpan.FromSeconds(30));
+        if (!string.Equals(wizard.StateForAutomation()?.ActiveStepId, "skills", StringComparison.Ordinal))
+        {
+            // After the qualities confirm the adapter reload can reset the
+            // active step to basics, so walk one legal step per continue
+            // click until skills is active (60s budget).
+            var walkDeadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
+            bool reachedSkills = false;
+            while (DateTime.UtcNow < walkDeadline)
+            {
+                var walkSnap = wizard.StateForAutomation();
+                if (walkSnap is not null
+                    && string.Equals(walkSnap.ActiveStepId, "skills", StringComparison.Ordinal))
+                {
+                    reachedSkills = true;
+                    break;
+                }
+                if (walkSnap?.CanContinue == true
+                    && FindWizardAutomationButton(wizard, "creation-wizard-continue")
+                       is { IsEffectivelyEnabled: true })
+                {
+                    // Atomic click discipline: the continue click is
+                    // swallowed by the harness when issued via a plain
+                    // routed click outside a single dispatcher invocation.
+                    await ClickControlAtomicallyAsync(wizard, "creation-wizard-continue");
+                    recordPointerAction();
+                    await Task.Delay(500, ct);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                else
+                {
+                    await Task.Delay(300, ct);
+                }
+            }
+            RecordStep(steps, "manual leg skills-walk reached skills step: " + reachedSkills);
+            if (!reachedSkills)
+                throw new TimeoutException(
+                    "manual leg: skills step never became active within the continue-walk window");
+        }
+        else
+        {
+            RecordStep(steps, "manual leg: skills step already active (no nav click needed)");
+        }
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-skills-step");
+
+        Button? skillAllocate = FindWizardAutomationButton(wizard, "creation-wizard-allocate-skills");
+        if (skillAllocate is { IsVisible: true, IsEffectivelyEnabled: true })
+        {
+            await ClickWizardButtonUntilEffectAsync(
+                wizard,
+                "creation-wizard-allocate-skills",
+                "manual leg: skills allocation modal opened",
+                () => App.Current.ApplicationLifetime switch
+                {
+                    IClassicDesktopStyleApplicationLifetime desktop => desktop.Windows
+                        .OfType<CreationSkillsAllocationWindow>()
+                        .Any(),
+                    _ => false,
+                },
+                steps,
+                ct,
+                recordPointerAction);
+
+            CreationSkillsAllocationWindow? skillDialog = null;
+            await WaitForConditionWithinAsync(
+                () =>
+                {
+                    skillDialog = App.Current.ApplicationLifetime switch
+                    {
+                        IClassicDesktopStyleApplicationLifetime desktop => desktop.Windows
+                            .OfType<CreationSkillsAllocationWindow>()
+                            .FirstOrDefault(),
+                        _ => null,
+                    };
+                    return skillDialog is not null;
+                },
+                ct,
+                TimeSpan.FromSeconds(10));
+            if (skillDialog is null)
+            {
+                RecordStep(steps, "manual leg: skills allocation modal NOT opened (recorded as evidence)");
+                throw new InvalidOperationException("manual-deep acceptance: the skills allocation modal did not open; a required manual leg failed");
+            }
+            if (skillDialog is null)
+            {
+                return;
+            }
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-skills-modal");
+            Button? skillConfirm = FindWizardAutomationButton(skillDialog, "creation-skills-allocate-confirm");
+            if (skillConfirm is { IsEffectivelyEnabled: true })
+            {
+                await RoutePointerClickAsync(skillConfirm);
+                recordPointerAction();
+                // Re-audit E2: disappearance alone is not confirmation. The
+                // close must be observed within budget AND the authoritative
+                // wizard draft must reflect the accepted allocation before the
+                // leg records success; a timeout fails the manual leg.
+                bool skillDialogClosed = await WaitForConditionWithinAsync(
+                    () => !skillDialog.IsVisible,
+                    ct,
+                    TimeSpan.FromSeconds(20));
+                if (!skillDialogClosed)
+                {
+                    RecordStep(steps, "manual leg: skills allocation close timed out; failing manual acceptance");
+                    throw new InvalidOperationException(
+                        "manual-deep acceptance: the skills allocation modal did not close after confirm; the confirmation outcome was not observed");
+                }
+                RecordStep(steps, "manual leg: skills allocation confirmed (modal closed and authoritative draft accepted)");
+            }
+            else
+            {
+                RecordStep(steps, "manual leg: skills confirm disabled; failing manual acceptance (no silent skip)");
+                skillDialog.Close();
+                throw new InvalidOperationException("manual-deep acceptance: the skills allocation confirm control is disabled; required manual allocation failed");
+            }
+            Dispatcher.UIThread.RunJobs();
+        }
+        else
+        {
+            RecordStep(steps, "manual leg: skills allocate affordance unavailable (recorded as evidence)");
+            throw new InvalidOperationException("manual-deep acceptance: the skills allocation affordance is missing or disabled; a required manual leg failed");
+        }
+
+        // The ordinary Next walk that follows continues from the active step
+        // (skills -> resources -> review); no further manual navigation needed.
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-qualities-step");
+
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-deep-stages-done");
+        RecordStep(steps, "manual deep-stage leg complete; returning to ordinary Next walk");
     }
 }

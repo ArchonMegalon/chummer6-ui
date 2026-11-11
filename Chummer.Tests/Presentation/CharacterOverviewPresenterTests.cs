@@ -5300,7 +5300,7 @@ public class CharacterOverviewPresenterTests
     // Presenter seam fixture only: the production executor/lease is tested against
     // InProcessChummerClient separately. This gate really excludes its test owner
     // writer, and it never spans an asynchronous fake-store continuation.
-    private sealed class OwnerBoundFakeChummerClient : FakeChummerClient, IOwnerBoundWorkspaceProjectionClient
+    private class OwnerBoundFakeChummerClient : FakeChummerClient, IOwnerBoundWorkspaceProjectionClient
     {
         private readonly object _ownerGate = new();
         private OwnerContextStamp _owner = new(new OwnerScope("owner-a"), Guid.NewGuid().ToString("N"), 0);
@@ -5436,8 +5436,246 @@ public class CharacterOverviewPresenterTests
         }
     }
 
+    // ---- R109 Fix 3: presenter-level SR6 Lookup-only recovery tests ----
+
+    /// <summary>
+    /// Fake that inherits the standard presenter test double and overrides
+    /// only the SR6 advancement members: Advance always reports Unavailable
+    /// (commit not observed); Lookup recovers only after the configured
+    /// number of unavailable readbacks. The interface is re-listed so the
+    /// derived SR6 methods (not the interface defaults) are dispatched.
+    /// </summary>
+    private sealed class RecoveryFakeClient : FakeChummerClient, ISr6CareerAttributeAdvancementClient
+    {
+        public int RemainingUnavailableLookups = 2;
+        public Sr6CareerAttributeCommand? LastLookedUp;
+        public bool RecoveryReady;
+
+        public Task<Sr6CareerAttributeAdvanceDispatchResult?> AdvanceSr6CareerAttributeAsync(
+            OwnerContextStamp owner, Sr6CareerAttributeCommand command,
+            CharacterWorkspaceId workspaceId, CancellationToken ct)
+            => Task.FromResult<Sr6CareerAttributeAdvanceDispatchResult?>(new Sr6CareerAttributeAdvanceDispatchResult(
+                Sr6CareerAttributeOutcome.Unavailable, Receipt: null, Command: command,
+                CommitResolved: false, Error: null));
+
+        public Task<Sr6CareerAttributeReceipt?> LookupSr6CareerAttributeAsync(
+            OwnerContextStamp owner, Sr6CareerAttributeCommand command, CancellationToken ct)
+        {
+            LastLookedUp = command;
+            if (RecoveryReady && RemainingUnavailableLookups <= 0)
+            {
+                return Task.FromResult<Sr6CareerAttributeReceipt?>(new Sr6CareerAttributeReceipt(
+                    Command(Quote()), 43, 75, Guid.Parse("47444444-4444-4444-4444-444444444444"), 25, "receipt-digest-r109"));
+            }
+            RemainingUnavailableLookups--;
+            return Task.FromResult<Sr6CareerAttributeReceipt?>(null);
+        }
+
+        private static Sr6CareerAttributeQuote Quote() => new(
+            "sr6-career-attribute-quote/v1",
+            "install-account:subject-alpha",
+            new CharacterWorkspaceId("ws-sr6-recovery"),
+            42,
+            "source-digest-1",
+            "rule-digest-1",
+            "Body",
+            4,
+            5,
+            0,
+            8,
+            100,
+            25,
+            null,
+            Array.Empty<string>(),
+            "binding-digest-1");
+
+        private static Sr6CareerAttributeCommand Command(Sr6CareerAttributeQuote quote) => new(
+            quote,
+            Guid.Parse("48444444-4444-4444-4444-444444444444"),
+            new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Local),
+            true);
+    }
+
+    [TestMethod]
+    public async Task Presenter_retains_pending_recovery_on_unavailable_advance_and_blocks_new_purchases()
+    {
+        var client = new RecoveryFakeClient();
+        client.SeedWorkspace("ws-sr6-recovery", "SR6 Runner", "SR6R", rulesetId: RulesetDefaults.Sr6,
+            contentRevision: 42, savedRevision: 42);
+        using var presenter = new CharacterOverviewPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6-recovery"), CancellationToken.None);
+
+        var command = new Sr6CareerAttributeCommand(
+            new Sr6CareerAttributeQuote(
+                "sr6-career-attribute-quote/v1",
+                "install-account:subject-alpha",
+                new CharacterWorkspaceId("ws-sr6-recovery"),
+                42,
+                "source-digest-1",
+                "rule-digest-1",
+                "Body",
+                4,
+                5,
+                0,
+                8,
+                100,
+                25,
+                null,
+                Array.Empty<string>(),
+                "binding-digest-1"),
+            Guid.Parse("49444444-4444-4444-4444-444444444444"),
+            new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Local),
+            true);
+        var stamp = new OwnerContextStamp(OwnerScope.LocalSingleUser, "authority-instance-1", 42);
+        Sr6CareerAttributeReceipt? first = await presenter.ApplySr6CareerAttributeAdvanceAsync(stamp, command, CancellationToken.None);
+        Assert.IsNull(first, "unavailable surface must not fabricate a receipt");
+        Assert.IsNotNull(presenter.PendingSr6Recovery, "the exact command must be retained for Lookup-only recovery");
+        Assert.AreSame(command, presenter.PendingSr6Recovery.Command);
+        StringAssert.Contains(presenter.State.Error ?? "", "held for recovery");
+
+        // A second purchase attempt must be blocked while recovery is pending.
+        Sr6CareerAttributeReceipt? second = await presenter.ApplySr6CareerAttributeAdvanceAsync(stamp, command, CancellationToken.None);
+        Assert.IsNull(second, "new purchases are blocked until recovery resolves");
+        StringAssert.Contains(presenter.State.Error ?? "", "Recover it before purchasing again");
+    }
+
+    [TestMethod]
+    public async Task Presenter_keeps_recovery_held_through_unavailable_lookup_readbacks()
+    {
+        var client = new RecoveryFakeClient();
+        client.SeedWorkspace("ws-sr6-recovery", "SR6 Runner", "SR6R", rulesetId: RulesetDefaults.Sr6,
+            contentRevision: 42, savedRevision: 42);
+        using var presenter = new CharacterOverviewPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6-recovery"), CancellationToken.None);
+
+        var command = new Sr6CareerAttributeCommand(
+            new Sr6CareerAttributeQuote(
+                "sr6-career-attribute-quote/v1",
+                "install-account:subject-alpha",
+                new CharacterWorkspaceId("ws-sr6-recovery"),
+                42,
+                "source-digest-1",
+                "rule-digest-1",
+                "Body",
+                4,
+                5,
+                0,
+                8,
+                100,
+                25,
+                null,
+                Array.Empty<string>(),
+                "binding-digest-1"),
+            Guid.Parse("49444444-4444-4444-4444-444444444444"),
+            new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Local),
+            true);
+        var stamp = new OwnerContextStamp(OwnerScope.LocalSingleUser, "authority-instance-1", 42);
+        await presenter.ApplySr6CareerAttributeAdvanceAsync(stamp, command, CancellationToken.None);
+        Assert.IsNotNull(presenter.PendingSr6Recovery);
+
+        // Two unavailable readbacks keep the recovery held; purchases stay blocked.
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(stamp, CancellationToken.None));
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(stamp, CancellationToken.None));
+        Assert.AreEqual(0, client.RemainingUnavailableLookups, "two readbacks were consumed");
+        StringAssert.Contains(presenter.State.Error ?? "", "stays held for recovery");
+        Assert.IsNotNull(presenter.PendingSr6Recovery, "recovery must still be held");
+
+        // The same operation is recovered - Lookup saw the EXACT command.
+        client.RecoveryReady = true;
+        Sr6CareerAttributeReceipt? recovered = await presenter.RecoverPendingSr6AdvancementAsync(stamp, CancellationToken.None);
+        Assert.IsNotNull(recovered);
+        Assert.AreSame(command, client.LastLookedUp, "recovery replays the exact submitted command");
+        Assert.IsNull(presenter.PendingSr6Recovery, "recovery cleared once the receipt is observed");
+
+        // With recovery resolved, a new purchase attempt reaches the surface again.
+        Sr6CareerAttributeReceipt? next = await presenter.ApplySr6CareerAttributeAdvanceAsync(stamp, command, CancellationToken.None);
+        Assert.IsNull(next, "surface still unavailable, but the recovery block is lifted");
+        StringAssert.Contains(presenter.State.Error ?? "", "held for recovery");
+    }
+
+    /// <summary>
+    /// SR6-advance probe with dispatch observation, for the staleness-guard
+    /// tests: the quote-borne stamp must be rejected before any dispatch
+    /// when the displayed authority moved on (owner A-B-A bumps the
+    /// transition revision even though the scope name returns).
+    /// </summary>
+    private sealed class StalenessProbeClient : OwnerBoundFakeChummerClient, ISr6CareerAttributeAdvancementClient
+    {
+        public Sr6CareerAttributeOutcome Outcome { get; set; } = Sr6CareerAttributeOutcome.Unavailable;
+        public int AdvanceCalls { get; private set; }
+        public OwnerContextStamp? LastAdvanceOwner { get; private set; }
+
+        public Task<Sr6CareerAttributeAdvanceDispatchResult?> AdvanceSr6CareerAttributeAsync(
+            OwnerContextStamp owner,
+            Sr6CareerAttributeCommand command,
+            CharacterWorkspaceId workspaceId,
+            CancellationToken ct)
+        {
+            AdvanceCalls++;
+            LastAdvanceOwner = owner;
+            return Task.FromResult<Sr6CareerAttributeAdvanceDispatchResult?>(new Sr6CareerAttributeAdvanceDispatchResult(
+                Outcome, Receipt: null, Command: command, CommitResolved: false, Error: "probe"));
+        }
+    }
+
+    [TestMethod]
+    public async Task Presenter_sr6_apply_rejects_quote_stamp_after_owner_ABA_before_any_dispatch()
+    {
+        var client = new StalenessProbeClient();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client);
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        OwnerContextStamp displayed = presenter.State.DisplayOwnerContext
+            ?? throw new AssertFailedException("the owner-bound load must issue a displayed owner stamp");
+
+        // Positive control: the displayed authority admits the dispatch.
+        var command = new Sr6CareerAttributeCommand(
+            new Sr6CareerAttributeQuote(
+                "sr6-career-attribute-quote/v1",
+                "install-account:subject-alpha",
+                new CharacterWorkspaceId("ws-owner-bound"),
+                presenter.State.ContentRevision,
+                "source-digest-1",
+                "rule-digest-1",
+                "Body",
+                4,
+                5,
+                0,
+                8,
+                100,
+                25,
+                null,
+                Array.Empty<string>(),
+                "binding-digest-1"),
+            Guid.Parse("51444444-4444-4444-4444-444444444444"),
+            new DateTime(2026, 11, 11, 12, 0, 0, DateTimeKind.Local),
+            true);
+        Sr6CareerAttributeReceipt? admitted = await presenter.ApplySr6CareerAttributeAdvanceAsync(
+            displayed, command, CancellationToken.None);
+        Assert.IsNull(admitted, "the probe surface stays unavailable, but the dispatch must have been attempted");
+        Assert.AreEqual(1, client.AdvanceCalls, "the current displayed authority reaches the surface");
+        Assert.IsNotNull(presenter.PendingSr6Recovery, "the unavailable outcome is held for recovery");
+
+        // Owner A->B->A: Core's stamp contract advances the transition
+        // revision on every owner transition, including a switch away and
+        // back, so a quote-borne stamp captured before the round trip is
+        // stale even though the scope name returned to A. A fresh presenter
+        // isolates the stamp guard from the control leg's held recovery.
+        OwnerContextStamp reborn = displayed with { TransitionRevision = checked(displayed.TransitionRevision + 2) };
+        using CharacterOverviewPresenter stalePresenter = CreateTrustedPresenter(client);
+        await stalePresenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        Sr6CareerAttributeReceipt? stale = await stalePresenter.ApplySr6CareerAttributeAdvanceAsync(
+            reborn, command, CancellationToken.None);
+
+        Assert.IsNull(stale, "a stale quote-borne stamp must never commit");
+        Assert.AreEqual(1, client.AdvanceCalls, "the stale stamp must be rejected before dispatch");
+        StringAssert.Contains(stalePresenter.State.Error ?? "", "owner authority changed");
+    }
+
+
     private class FakeChummerClient : IChummerClient
     {
+
         private string _name = "Troy Simmons";
         private string _alias = "BLUE";
 
