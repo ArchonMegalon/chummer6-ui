@@ -1,0 +1,102 @@
+{
+  "task": "T470 native qualification of draft release 6940",
+  "date": "2026-11-11",
+  "download": {
+    "directory": "D:\\sources\\chummer\\_scratch\\qual6940-dl",
+    "files": {
+      "chummer-avalonia-win-x64-installer.exe": {
+        "size": 63207343,
+        "sha256": "8C20B3AC5D932F604E64766CFB59CEF22A757438C8D2FF2988F88FACD86AEAA0"
+      },
+      "chummer-avalonia-win-x64-payload.zip": {
+        "size": 61297391,
+        "sha256": "286EA7260365D7F0AAC169E518669BDB7AAF4DB6E99FB9BB8B56E222AED858F4"
+      },
+      "chummer-avalonia-win-x64-payload.zip.json": {
+        "size": 470,
+        "sha256": "072C3467436807458AAC35373391472142D2832A48454984CC30ED4E7BBD868F"
+      }
+    },
+    "note": "all three files byte-verified before execution (T469)"
+  },
+  "legA": {
+    "description": "isolated smoke install + --startup-smoke installer-bound startup receipt",
+    "run": "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legA-20261111-101328",
+    "result": "PASS",
+    "receipt": "startup-receipt.json (pre_ui_event_loop, executionEnvironment=native_windows)"
+  },
+  "legB": {
+    "description": "--unattended real install after uninstalling 6408 with its own installer binary",
+    "run": "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legB-20261111",
+    "result": "PASS",
+    "registry": {
+      "registry": {
+        "DisplayName": "Chummer6 Avalonia Desktop",
+        "DisplayVersion": "1.0.0-preview.20261110.6940",
+        "Publisher": "ArchonMegalon",
+        "InstallLocation": "C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64",
+        "DisplayIcon": "C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64\\Chummer.Avalonia.exe",
+        "UninstallString": "\"C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64\\Chummer6Installer-avalonia-win-x64.exe\" --uninstall",
+        "QuietUninstallString": "\"C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64\\Chummer6Installer-avalonia-win-x64.exe\" --uninstall",
+        "NoModify": 1,
+        "NoRepair": 1
+      },
+      "fileCount": 574,
+      "launchExe": true,
+      "exeSha256": "93EC81711D9E5574333DE11304D1F785F032A84AE3D5F5799D8D66DD0BE0A286"
+    },
+    "ordinaryLaunch": {
+      "pid": 20780,
+      "aliveAfter30s": true,
+      "visibleWindows": [
+        "Claim your copy"
+      ]
+    }
+  },
+  "legC": {
+    "description": "fixture save + fresh-process reopen (persistence probe, isolated state root)",
+    "receipt": "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legC-6940-receipt.json",
+    "result": "PASS (PORTABLE_PERSISTENCE_OK, workspaceId=42c41273cc8e41c4b17277ded5c6c801)"
+  },
+  "legD": {
+    "description": "SR5 Creation->Career mouse-first journey (no AI Finish), sync-unavailable disclosure, legacy Improve disabled",
+    "run": "D:\\sources\\chummer\\portable-qual\\runs\\win106-6940\\legD",
+    "result": "PASS",
+    "journeyReceipt": "journey_receipt.json (status=pass, 151 steps)",
+    "journeyScenario": "win106-6940-sr5-priority-native",
+    "syncDisclosure": {
+      "evidence": "disclosure-home.png screenshot + Gemini read: \"Email sign-in is unavailable on this host right now.\"",
+      "note": "guest/local mode; no roaming; update/channel disabled"
+    },
+    "legacyImproveDisabled": {
+      "evidence": "WorkspaceXmlMutationCatalog.cs line ~151-153: improve bucket throws \"Attribute advancement is unavailable through the legacy Improve action. Use a supported Core-backed advance\"",
+      "note": "SR6 attribute advancement routes to Sr6CareerAttributeAdvanceWindow (MainWindow.CareerEdit.cs TryOpenSr6CareerAttributeAdvanceDialogAsync); SR5 editor route untouched"
+    }
+  },
+  "constraintsHonored": [
+    "no AI Finish (journey receipt journeyMode + no AI_FINISH env)",
+    "no roaming (update disabled, release channel off, isolated state roots)",
+    "no Core-content override (payload from draft release 6940, byte-verified)",
+    "6408 uninstalled with its own installer binary before leg B"
+  ],
+  "visualEvidence": {
+    "interactiveInstallerUi": {
+      "run": "legB2-screenshots",
+      "summary": "Installer run in INTERACTIVE mode (no --unattended) over the installed 6940: real wizard UI captured at 1.5s intervals (117 screenshots).",
+      "midInstall": {
+        "file": "installer-ui-06.png",
+        "shows": "Chummer6 Avalonia Desktop Installer: Installing; progress log (Remove folder / Delete file entries for the previous install dir); Cancel/Close disabled"
+      },
+      "progress100": {
+        "file": "installer-ui-100.png",
+        "shows": "progress bar 100% green; status \"Install complete\"; log \"Create shortcut... Install complete\"; modal prompt \"Open Chummer now?\" (Yes/No)"
+      },
+      "completed": {
+        "file": "installer-completed-window.png",
+        "shows": "window title \"...: Completed\"; status \"Completed\"; progress bar fully green; then closed via Close button (process exited cleanly)"
+      },
+      "registryAfterInteractive": "1.0.0-preview.20261110.6940 retained; 574 files; Chummer.Avalonia.exe sha256 93EC8171..."
+    },
+    "silentSmokeNote": "Smoke-install mode is SetSilent silent by design (installer.nsi line ~406) \u2014 no window is shown in that mode; the interactive-mode run above provides the visible progress/completion evidence."
+  }
+}

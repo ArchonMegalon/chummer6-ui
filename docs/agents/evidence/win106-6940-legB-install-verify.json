@@ -1,0 +1,16 @@
+{
+  "registry": {
+    "DisplayName": "Chummer6 Avalonia Desktop",
+    "DisplayVersion": "1.0.0-preview.20261110.6940",
+    "Publisher": "ArchonMegalon",
+    "InstallLocation": "C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64",
+    "DisplayIcon": "C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64\\Chummer.Avalonia.exe",
+    "UninstallString": "\"C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64\\Chummer6Installer-avalonia-win-x64.exe\" --uninstall",
+    "QuietUninstallString": "\"C:\\Users\\tibor\\AppData\\Local\\Programs\\Chummer6\\AvaloniaDesktop-win-x64\\Chummer6Installer-avalonia-win-x64.exe\" --uninstall",
+    "NoModify": 1,
+    "NoRepair": 1
+  },
+  "fileCount": 574,
+  "launchExe": true,
+  "exeSha256": "93EC81711D9E5574333DE11304D1F785F032A84AE3D5F5799D8D66DD0BE0A286"
+}

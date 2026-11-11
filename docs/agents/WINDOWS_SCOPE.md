@@ -1,3 +1,33 @@
+## Controller7266 — next Friday round, 11 November 2026
+
+Continue the existing WIN-006 generation 8 / `friday-windows-session-01` and read
+its refreshed Teable assignment. PR #585 at `95aa16e5f3925b96d262bf9b301500c392b5db2e`
+is not accepted. The [current controller review](https://github.com/ArchonMegalon/chummer6-ui/pull/585#pullrequestreview-5860575202)
+assigns six bounded corrections:
+
+1. Enable the real SR6 attribute-row route while retaining SR5 and Core authority.
+2. Align the oracle hash and Core owner pins across consumers, builders and tests.
+3. Retain unresolved advancement commands and recover by Lookup before another purchase.
+4. Recheck owner, workspace and display generation after every asynchronous step.
+5. Require successful Core confirmation, not modal closure, in manual editor acceptance.
+6. Make manual save/reload assertions mandatory independently of trace/platform.
+
+Preserve the corrected Grid rows, requested attribute normalization and original
+dispatch owner stamp. Test the actual production paths and verify native SR6
+row/quote/confirm/save/new-process behavior. Consolidate against actual current
+main with the existing recipe/marker process. Preseal is not native acceptance.
+
+Root owns integration of the separate 6940 evidence and the exact unsigned
+preview download. That older binary does not include PR #585's newer SR6 work.
+Its browser sign-in screenshot is not an app sync-disclosure test. Do not rebuild
+or substitute its bytes, duplicate Root's publication, or widen its release claim.
+
+After these fixes, complete full Core continuation/rules/receipt sync and KeepLocal
+using the reviewed pending remote revision/token, then the real amended-account
+Windows/Android round trip. Keep production roaming disabled until qualified.
+Continue supported SR6 Creation/Career breadth in the retained assignment. No
+user relay or routine approval is needed; report milestones through Teable.
+
 # Windows delivery scope and Friday handoff
 
 ## Current Friday round — 10 November 2026

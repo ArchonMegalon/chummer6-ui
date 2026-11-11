@@ -1,0 +1,10 @@
+# Chummer installer trace
+Bootstrap temp root: C:\Users\tibor\AppData\Local\Temp\Chummer6\installer-temp
+Smoke install target: D:\sources\chummer\portable-qual\runs\win106-6940\legA-20261111-101328\smoke-install-root
+Payload acquisition mode: embedded
+Payload acquisition target: C:\Users\tibor\AppData\Local\Temp\Chummer6\installer-temp\chummer-avalonia-win-x64-payload.zip
+Using embedded payload C:\Users\tibor\AppData\Local\Temp\Chummer6\installer-temp\chummer-avalonia-win-x64-payload.zip
+Verifying payload size
+Verifying payload checksum
+Extracting application files
+Install complete
