@@ -144,12 +144,14 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.open_origin_dossier"] = "Open clean Origin Dossier route",
         ["desktop.install_link.button.open_work"] = "Open Linked Dossier",
         ["desktop.install_link.button.open_account"] = "Open Account",
-        ["desktop.install_link.button.link_copy"] = "Claim your copy",
+        ["desktop.install_link.button.link_copy"] = "Link installation",
+        ["desktop.install_link.status.return_checking"] = "Browser return received. Checking the saved approval with Hub...",
+        ["desktop.install_link.status.return_refused"] = "This browser return could not be confirmed. In the Chummer window where you started linking, choose Refresh result. If it is closed, reopen it. Check linked installations in your account before starting another approval.",
         ["desktop.install_link.button.copy_login_url"] = "Copy Claim Link",
         ["desktop.install_link.button.open_claim_link"] = "Open Claim Link",
         ["desktop.install_link.button.check_previous_approval"] = "Check Previous Approval",        ["desktop.install_link.button.redeem_claim_code"] = "Use Fallback Code",
         ["desktop.install_link.button.unlink_copy"] = "Unlink this copy",
-        ["desktop.install_link.button.login_website"] = "Claim your copy",
+        ["desktop.install_link.button.login_website"] = "Link installation",
         ["desktop.install_link.button.continue_unlinked"] = "Continue unlinked",
         ["desktop.install_link.button.exit_desktop"] = "Exit desktop",
         ["desktop.home.language_summary"] = "Language: {0}\nShipping locales: {1}\nLanguage changes apply fully on restart during the current desktop wave.",
@@ -660,11 +662,13 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_origin_dossier"] = "Saubere Origin-Dossier-Route öffnen";
             localized["desktop.install_link.button.open_work"] = "Verknüpftes Dossier öffnen";
             localized["desktop.install_link.button.open_account"] = "Konto öffnen";
-            localized["desktop.install_link.button.link_copy"] = "Diese Kopie beanspruchen";
+            localized["desktop.install_link.button.link_copy"] = "Installation verlinken";
+            localized["desktop.install_link.status.return_checking"] = "Browser-Rückkehr empfangen. Die gespeicherte Freigabe wird bei Hub geprüft...";
+            localized["desktop.install_link.status.return_refused"] = "Diese Browser-Rückkehr konnte nicht bestätigt werden. Wählen Sie im Chummer-Fenster, in dem Sie die Verknüpfung gestartet haben, Ergebnis aktualisieren. Öffnen Sie es erneut, falls es geschlossen ist. Prüfen Sie vor einer neuen Freigabe die verknüpften Installationen in Ihrem Konto.";
             localized["desktop.install_link.button.open_claim_link"] = "Claim-Link offnen";
             localized["desktop.install_link.button.check_previous_approval"] = "Fruehere Freigabe pruefen";            localized["desktop.install_link.button.redeem_claim_code"] = "Fallback-Code nutzen";
             localized["desktop.install_link.button.unlink_copy"] = "Diese Kopie trennen";
-            localized["desktop.install_link.button.login_website"] = "Diese Kopie beanspruchen";
+            localized["desktop.install_link.button.login_website"] = "Installation verlinken";
             localized["desktop.install_link.button.continue_unlinked"] = "Ohne Verknuepfung fortfahren";
             localized["desktop.install_link.button.exit_desktop"] = "Desktop beenden";
             localized["desktop.install_link.shipping_locales"] = "Verfügbare Sprachen: {0}.";

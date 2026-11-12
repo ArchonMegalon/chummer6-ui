@@ -8,6 +8,16 @@ namespace Chummer.Tests.Presentation;
 public class DesktopLocalizationCatalogTests
 {
     [TestMethod]
+    public void Installation_link_buttons_use_the_requested_plain_language_labels()
+    {
+        foreach (string key in new[] { "desktop.install_link.button.link_copy", "desktop.install_link.button.login_website" })
+        {
+            Assert.AreEqual("Link installation", DesktopLocalizationCatalog.GetRequiredString(key, "en-us"));
+            Assert.AreEqual("Installation verlinken", DesktopLocalizationCatalog.GetRequiredString(key, "de-de"));
+        }
+    }
+
+    [TestMethod]
     public void NormalizeOrDefault_uses_shipping_language_and_falls_back_to_english()
     {
         Assert.AreEqual("de-de", DesktopLocalizationCatalog.NormalizeOrDefault("de-DE"));

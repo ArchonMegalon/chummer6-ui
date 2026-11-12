@@ -193,6 +193,11 @@ public static class DesktopInstallLinkingRuntime
             });
 
         DesktopInstallLinkingState preClaimState = state;
+        if (TryExtractBrowserApprovalReturn(args, out string? approvalReturn))
+        {
+            return HandleBrowserApprovalReturn(headId, approvalReturn!);
+        }
+
         string? startupBrowserCallbackCode = ExtractStartupBrowserCallbackCode(args, state);
         string? startupClaimCode = ExtractStartupClaimCode(args, state);
         DesktopInstallClaimResult? claimResult = null;
@@ -252,6 +257,121 @@ public static class DesktopInstallLinkingRuntime
         => Task.Run(() => InitializeForStartupAsync(headId, args, cancellationToken), cancellationToken)
             .GetAwaiter()
             .GetResult();
+
+    // A proof-poll return is only a wake-up hint. The saved, signed operation and
+    // the Hub response remain the sole authority for completing the link.
+    public static bool TryExtractBrowserApprovalReturn(IReadOnlyList<string> args, out string? callbackUri)
+    {
+        callbackUri = null;
+        for (int index = 0; index < args.Count; index++)
+        {
+            string candidate = args[index].Trim().Trim('"');
+            string option = candidate.TrimStart('-', '/');
+            bool explicitCallback = option.Equals("install-link-callback", StringComparison.OrdinalIgnoreCase)
+                || option.StartsWith("install-link-callback=", StringComparison.OrdinalIgnoreCase)
+                || option.StartsWith("install-link-callback:", StringComparison.OrdinalIgnoreCase);
+            if (string.Equals(option, "install-link-callback", StringComparison.OrdinalIgnoreCase))
+                candidate = index + 1 < args.Count ? args[++index] : string.Empty;
+            else if (option.StartsWith("install-link-callback=", StringComparison.OrdinalIgnoreCase)
+                || option.StartsWith("install-link-callback:", StringComparison.OrdinalIgnoreCase))
+                candidate = option["install-link-callback=".Length..];
+            else if (!candidate.StartsWith("chummer:", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            candidate = candidate.Trim().Trim('"');
+            if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri? uri))
+            {
+                if (!explicitCallback) continue;
+                callbackUri = string.Empty;
+                return true;
+            }
+            if (IsStartupAccountLaunchUri(uri)) continue;
+            // Legacy code-bearing callbacks keep their existing exchange path.
+            // A code added to a proof return must not bypass its state check.
+            bool proofReturnState = string.Equals(uri.Scheme, "chummer", StringComparison.OrdinalIgnoreCase)
+                && ParseQueryParameters(uri.Query).ContainsKey("state");
+            if (!proofReturnState && (TryExtractBrowserCallbackCodeFromCallbackUri(candidate, out _)
+                || TryExtractClaimCodeFromCallbackUri(candidate, out _)))
+                continue;
+            if (callbackUri is not null)
+            {
+                callbackUri = string.Empty; // Multiple returns are ambiguous: refuse all.
+                return true;
+            }
+            callbackUri = candidate;
+        }
+        return callbackUri is not null;
+    }
+
+    public static bool IsCurrentBrowserApprovalReturn(DesktopInstallLinkingState state, string callbackUri)
+    {
+        if (callbackUri.Length > 2048
+            || !Uri.TryCreate(callbackUri, UriKind.Absolute, out Uri? uri)
+            || !string.Equals(uri.Scheme, "chummer", StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(uri.Host, "install-link", StringComparison.OrdinalIgnoreCase)
+            || uri.AbsolutePath.Trim('/').Length != 0 || uri.UserInfo.Length != 0
+            || !uri.IsDefaultPort || uri.Fragment.Length != 0)
+            return false;
+        // Exactly one parameter prevents duplicate-state and mixed code/state
+        // ambiguity. This is the exact URI emitted by the proof-poll contract.
+        string[] parts = uri.Query.TrimStart('?').Split('&');
+        if (parts.Length != 1 || !parts[0].StartsWith("state=", StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(state.BrowserApprovalReturnState))
+            return false;
+        string returnedState = Uri.UnescapeDataString(parts[0][6..]);
+        if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(returnedState), Encoding.UTF8.GetBytes(state.BrowserApprovalReturnState)))
+            return false;
+        try
+        {
+            return ReadRetainedRemoteCallbackRequest(state) is not null;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or JsonException)
+        {
+            return false;
+        }
+    }
+
+    public static bool IsSameBrowserApprovalOperation(DesktopInstallLinkingState current, DesktopInstallLinkingState observed)
+    {
+        try
+        {
+            RemoteCallbackPollRequest? currentRequest = ReadRetainedRemoteCallbackRequest(current);
+            RemoteCallbackPollRequest? observedRequest = ReadRetainedRemoteCallbackRequest(observed);
+            // A definitively pending operation may renew its proof while the
+            // window is opening. Its immutable target and operation must still
+            // match; only the proof timestamp and signature may have changed.
+            return currentRequest is not null && observedRequest is not null
+                && (currentRequest with { IssuedAtUnixSeconds = 0, Signature = string.Empty })
+                    == (observedRequest with { IssuedAtUnixSeconds = 0, Signature = string.Empty });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or JsonException)
+        {
+            return false;
+        }
+    }
+
+    public static DesktopInstallLinkingStartupContext HandleBrowserApprovalReturn(string headId, string callbackUri)
+    {
+        DesktopInstallLinkingState current = LoadOrCreateState(headId);
+        string reason = "browser_return_rejected";
+        if (IsCurrentBrowserApprovalReturn(current, callbackUri))
+        {
+            reason = DescribeRemoteCallbackRecovery(current) switch
+            {
+                DesktopRemoteCallbackRecoveryProjection.Linked => "browser_return_linked",
+                DesktopRemoteCallbackRecoveryProjection.Terminal => "browser_return_terminal",
+                DesktopRemoteCallbackRecoveryProjection.Stopped => "browser_return_stopped",
+                _ => "browser_return_pending"
+            };
+            if (reason == "browser_return_pending")
+                TryResumeRemoteCallbackPolling(current);
+        }
+        return new(current, null, null, true, reason);
+    }
+
+    public static string GetBrowserApprovalActivationLockPath(string headId)
+        => DesktopInstallLinkingPaths.Create(headId, DesktopRuntimePlatformIdentity.Current()).StateFilePath + ".activation";
 
     public static bool TryExtractStartupAccountLaunchFromArguments(
         IReadOnlyList<string> args,
@@ -321,6 +441,12 @@ public static class DesktopInstallLinkingRuntime
         if (!IsHeadlessInstallLinkRequested(args))
         {
             return null;
+        }
+
+        if (startupContext.PromptReason == "browser_return_rejected")
+        {
+            await error.WriteLineAsync("The browser return does not match the saved approval. Reopen Chummer and refresh the original approval.").ConfigureAwait(false);
+            return 1;
         }
 
         DesktopInstallLinkingState state = startupContext.State;
@@ -1980,7 +2106,7 @@ public static class DesktopInstallLinkingRuntime
         return null;
     }
 
-    private static bool IsHeadlessInstallLinkRequested(IReadOnlyList<string> args)
+    public static bool IsHeadlessInstallLinkRequested(IReadOnlyList<string> args)
     {
         for (int i = 0; i < args.Count; i++)
         {
@@ -2729,7 +2855,12 @@ public static class DesktopInstallLinkingRuntime
             await registered.Task.ConfigureAwait(false);
             try
             {
-                await PollRemoteBrowserCallbackAsync(state, CancellationToken.None).ConfigureAwait(false);
+                // Multiple workspace processes may share the installation. A
+                // callback must not introduce a second proof sender while a
+                // different window still owns an uncertain in-flight request.
+                using FileStream? pollLease = TryAcquireRemoteCallbackPollLease(state);
+                if (pollLease is not null)
+                    await PollRemoteBrowserCallbackAsync(state, CancellationToken.None).ConfigureAwait(false);
             }
             finally
             {
@@ -2751,6 +2882,23 @@ public static class DesktopInstallLinkingRuntime
         });
         RemoteCallbackPollTasks[pollTaskId] = pollTask;
         registered.SetResult();
+    }
+
+    private static FileStream? TryAcquireRemoteCallbackPollLease(DesktopInstallLinkingState state)
+    {
+        DesktopInstallLinkingPaths paths = DesktopInstallLinkingPaths.Create(state.HeadId,
+            new DesktopRuntimePlatformIdentity(state.Platform, state.Arch));
+        try
+        {
+            return new FileStream(paths.StateFilePath + ".poll", FileMode.OpenOrCreate,
+                FileAccess.ReadWrite, FileShare.None);
+        }
+        catch (IOException)
+        {
+            // Another process keeps the sole send authority. UI observation of
+            // the durable state can continue; never queue a blind claim replay.
+            return null;
+        }
     }
 
     private static async Task PollRemoteBrowserCallbackAsync(
