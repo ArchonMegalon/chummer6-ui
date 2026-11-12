@@ -136,26 +136,26 @@ def test_parity_materializer_keeps_unclassified_and_routing_tests_out_of_functio
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "167504363779b38b033ab975e88da76e880abb96"
-    runtime = "c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c"
-    version = "0.0.0-packageplane.candidate.v20261107.1.shc28c87a1abb6e"
+    recipe = "0751145891d84e124825c59a968c499eb22d2875"
+    runtime = "2057d3160122608339884cddc129bb6a4abdb6bb"
+    version = "0.0.0-packageplane.candidate.v20261110.1.sh2057d31601226"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 8553795
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 8590175
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "f8bde1d28d1383d6a0baf5d164d4802940377233426ce355fccd80b1371f46aa"
+        "77e9acadd835fb9f896191a5059dad00adac5f1bf422aa43653ec4f6aa13a28c"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "a60eb68fd40256978ba0ce940490d136ce87fd191f8d7b240c5be7bc6272d31b"
-    assert metadata["lockSha256"] == "e4c6c30cf4a3c8f761de3790719e989a5bd66d15bae040e73a1c1c39fb290c4f"
-    assert metadata["receiptSha256"] == "e4fd73c7077e794bf85cdf9a96c41ec022bc7c7a8531f4bffbd5948f42c74169"
+    assert metadata["inventorySha256"] == "15fa79069a4496add2cf7b965f7a74e9cde78059a80f6cf98bd52a06ad142a63"
+    assert metadata["lockSha256"] == "d9cdef723e9f3e84e589db7b22cdea05f1c3a6933625bc8ee00156205e5c7687"
+    assert metadata["receiptSha256"] == "f35064fc85555d10881ebd5eed66b3fcfd01d217003d57f6066250da229e4580"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -259,8 +259,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-167504363779b38b033ab975e88da76e880abb96/"
-        "chummer-core-runtime-package-plane-167504363779b38b033ab975e88da76e880abb96.zip",
+        "core-runtime-package-plane-0751145891d84e124825c59a968c499eb22d2875/"
+        "chummer-core-runtime-package-plane-0751145891d84e124825c59a968c499eb22d2875.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -525,10 +525,10 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "167504363779b38b033ab975e88da76e880abb96"
+        "0751145891d84e124825c59a968c499eb22d2875"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c"
+        "2057d3160122608339884cddc129bb6a4abdb6bb"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
         "c77395de9f733427ef952c851f4a95b063cb5573"
@@ -538,24 +538,24 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "824340325db1b66af790d50e956095c65a3d50fd",
+            "blob": "e26f9fe703197484728cb71bd54d50aebbd41158",
             "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41",
-            "rawSizeBytes": 69811,
-            "semanticCanonicalSha256": "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41",
-            "semanticCanonicalSizeBytes": 69811,
-            "tree": "72b8f11cbf9067a05f8a5ff3061cce7426dac24e",
+            "rawSha256": "29aa11fefb6f1a31be7c5375edd11ad98007c077f886e9014131dde39fcfa64e",
+            "rawSizeBytes": 73211,
+            "semanticCanonicalSha256": "29aa11fefb6f1a31be7c5375edd11ad98007c077f886e9014131dde39fcfa64e",
+            "semanticCanonicalSizeBytes": 73211,
+            "tree": "4823d979664453398bc492c1897dc3a2f5f229f0",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 69811
+    assert len(package_plane.encoded_json(next_lock)) == 73211
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41"
+        "29aa11fefb6f1a31be7c5375edd11ad98007c077f886e9014131dde39fcfa64e"
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -2364,8 +2364,8 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
     # Attribute and knowledge Career regressions are now explicit consumer inputs.
-    assert len(oracle["consumer"]["sourceFiles"]) == 159
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 160
+    assert len(oracle["consumer"]["sourceFiles"]) == 184
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 185
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2677,10 +2677,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "c77395de9f733427ef952c851f4a95b063cb5573"
     )
     assert core["packageRecipeCommit"] == (
-        "167504363779b38b033ab975e88da76e880abb96"
+        "0751145891d84e124825c59a968c499eb22d2875"
     )
     assert core["runtimeSourceCommit"] == (
-        "c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c"
+        "2057d3160122608339884cddc129bb6a4abdb6bb"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -3135,7 +3135,7 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 160
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 185
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -3274,7 +3274,7 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
     # Include all thirteen Foundation shared-read/method-exclusion cases while
     # retaining the previous 47 owner cases and seven adoption/roster cases.
     assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 65 + 7 + 2 + 8 + 10 + 102 + 9
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 160
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 185
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"

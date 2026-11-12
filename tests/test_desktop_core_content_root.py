@@ -12,8 +12,8 @@ REPO = Path(__file__).resolve().parents[1]
 RESOLVER = REPO / "Chummer.Avalonia" / "DesktopCoreContentRootResolver.cs"
 APP = REPO / "Chummer.Avalonia" / "App.axaml.cs"
 
-RUNTIME_COMMIT = "c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c"
-RECIPE_COMMIT = "167504363779b38b033ab975e88da76e880abb96"
+RUNTIME_COMMIT = "2057d3160122608339884cddc129bb6a4abdb6bb"
+RECIPE_COMMIT = "0751145891d84e124825c59a968c499eb22d2875"
 
 
 class DesktopCoreContentRootResolverContractTests(unittest.TestCase):
@@ -67,6 +67,13 @@ class DesktopCoreContentRootResolverContractTests(unittest.TestCase):
         authority = verifier.read_text(encoding="utf-8")
         self.assertIn(RUNTIME_COMMIT, authority)
         self.assertIn(RECIPE_COMMIT, authority)
+
+    def test_bundle_builder_and_desktop_facade_share_content_authority(self):
+        builder = (REPO / "scripts/build-core-content-bundle.py").read_text()
+        for commit in (RUNTIME_COMMIT, RECIPE_COMMIT):
+            self.assertIn(commit, builder)
+            self.assertIn(commit, self.resolver)
+            self.assertIn(commit, self.discovery)
 
 
 if __name__ == "__main__":

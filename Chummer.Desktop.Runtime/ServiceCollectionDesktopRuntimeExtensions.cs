@@ -4,6 +4,7 @@ using Chummer.Application.LifeModules;
 using Chummer.Application.Workspaces;
 using Chummer.Infrastructure.DependencyInjection;
 using Chummer.Presentation;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.OriginBooks;
 using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr5;
@@ -65,6 +66,17 @@ public static class ServiceCollectionDesktopRuntimeExtensions
         services.TryAddSingleton<WorkspaceContinuationExportService>();
         services.TryAddSingleton<ICharacterCareerQualityAuthorityResolver, OwnerManagedCareerQualityAuthorityResolver>();
         services.TryAddSingleton<OwnerBoundCharacterCareerQualityService>();
+        services.TryAddSingleton<ISr6CareerAttributeAdvancementService, Sr6CareerAttributeAdvancementService>();
+        // All local desktop heads sharing the workspace store share its pending
+        // map as well. Do not persist process-local owner authorization stamps.
+        services.TryAddSingleton<ISr6CareerAttributeRecoveryStore>(_ =>
+        {
+            string? configured = Environment.GetEnvironmentVariable(StatePathEnvironmentVariable);
+            string statePath = string.IsNullOrWhiteSpace(configured)
+                ? Path.Combine(DesktopStateRootResolver.Resolve("Chummer6", "Chummer6"), "state")
+                : configured;
+            return new FileSr6CareerAttributeRecoveryStore(Path.Combine(statePath, "sr6-attribute-recovery"));
+        });
         services.TryAddSingleton<WorkspaceContinuationRestoreService>(provider => new(
             provider.GetRequiredService<IWorkspaceStore>(),
             provider.GetRequiredService<IOwnerContextAccessor>(),

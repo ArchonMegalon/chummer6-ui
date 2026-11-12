@@ -1,3 +1,4 @@
+
 #nullable enable annotations
 
 using System.Net;
@@ -7,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Application.Workspaces;
+using Chummer.Application.Owners;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Owners;
 using Chummer.Contracts.Workspaces;
@@ -172,6 +174,116 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
             }
         }
     }
+    [TestMethod]
+    public async Task SynchronizeOutboundAsync_sends_hub_preconditions_from_acknowledged_base()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", TestStateRoot());
+            try
+            {
+                InMemoryWorkspaceStore store = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Precondition Runner</name></character>",
+                        RulesetId: "sr5",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
+                RecordingWorkspaceService workspaceService = new();
+                workspaceService.SummaryByWorkspaceId[workspaceId.Value] = new CharacterFileSummary(
+                    Name: "Precondition Runner",
+                    Alias: "Precondition Runner",
+                    Metatype: "Human",
+                    BuildMethod: "Priority",
+                    CreatedVersion: "5",
+                    AppVersion: "5",
+                    Karma: 0,
+                    Nuyen: 0,
+                    Created: true);
+
+                int upsertCalls = 0;
+                string? capturedPayload = null;
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
+                    {
+                        // Byte-equivalent remote: converges and establishes the
+                        // acknowledged base with revision 4 / token srv-t-4.
+                        return JsonResponse($$"""
+                            {
+                              "snapshots": [
+                                {
+                                  "workspaceId": "{{workspaceId.Value}}",
+                                  "rulesetId": "sr5",
+                                  "format": "NativeXml",
+                                  "schemaVersion": 1,
+                                  "payloadKind": "workspace",
+                                  "payload": "<character><name>Precondition Runner</name></character>",
+                                  "updatedAtUtc": "2026-06-03T14:00:00Z",
+                                  "originInstallationId": "ins-a",
+                                  "remoteRevision": 4,
+                                  "serverToken": "srv-t-4"
+                                }
+                              ]
+                            }
+                            """);
+                    }
+
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/upsert", StringComparison.Ordinal) == true)
+                    {
+                        Interlocked.Increment(ref upsertCalls);
+                        capturedPayload = request.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+                        return JsonResponse("""
+                            {
+                              "snapshot": {
+                                "workspaceId": "ignored",
+                                "rulesetId": "sr5",
+                                "format": "NativeXml",
+                                "schemaVersion": 1,
+                                "payloadKind": "workspace",
+                                "payload": "<character />",
+                                "updatedAtUtc": "2026-06-03T15:00:00Z",
+                                "originInstallationId": "ins-a",
+                                "remoteRevision": 9,
+                                "serverToken": "srv-t-9"
+                              }
+                            }
+                            """);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    workspaceService,
+                    client,
+                    () => ClaimedState(),
+                    FakeLeaseAccessor.Create(owner));
+
+                DesktopWorkspaceRoamingResult converged = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, converged.Outcome);
+
+                await sync.SynchronizeOutboundAsync(owner, workspaceId, CancellationToken.None);
+
+                Assert.IsNotNull(capturedPayload);
+                StringAssert.Contains(capturedPayload, "\"expectedRemoteRevision\":4");
+                StringAssert.Contains(capturedPayload, "\"expectedServerToken\":\"srv-t-4\"");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            }
+        }
+    }
+
 
     [TestMethod]
     public async Task SynchronizeInboundAsync_noops_without_configured_hub_base_url()
@@ -1152,5 +1264,446 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSyncTests
         public CommandResult<WorkspacePrintReceipt> Print(CharacterWorkspaceId id) => throw new NotSupportedException();
 
         public CommandResult<WorkspacePrintReceipt> Print(OwnerScope owner, CharacterWorkspaceId id) => throw new NotSupportedException();
+    }
+
+    [TestMethod]
+    public async Task SynchronizeInboundAsync_never_discards_divergent_unsynced_local_content()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", TestStateRoot());
+            try
+            {
+                InMemoryWorkspaceStore store = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Local Diverged</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
+                RecordingWorkspaceService workspaceService = new();
+                workspaceService.SummaryByWorkspaceId[workspaceId.Value] = new CharacterFileSummary(
+                    Name: "Local Diverged",
+                    Alias: "Local Diverged",
+                    Metatype: "Human",
+                    BuildMethod: "Priority",
+                    CreatedVersion: "5",
+                    AppVersion: "5",
+                    Karma: 0,
+                    Nuyen: 0,
+                    Created: true);
+
+                int listCalls = 0;
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
+                    {
+                        listCalls++;
+                        if (listCalls == 1)
+                        {
+                            // Convergence: remote equals local. This acknowledges the common base.
+                            return JsonResponse($$"""
+                                {
+                                  "snapshots": [
+                                    {
+                                      "workspaceId": "{{workspaceId.Value}}",
+                                      "rulesetId": "sr6",
+                                      "format": "NativeXml",
+                                      "schemaVersion": 1,
+                                      "payloadKind": "workspace",
+                                      "payload": "<character><name>Local Diverged</name></character>",
+                                      "updatedAtUtc": "2026-06-03T14:00:00Z",
+                                      "remoteRevision": 10,
+                                      "serverToken": "remote-10"
+                                    }
+                                  ]
+                                }
+                                """);
+                        }
+
+                        // Divergence: remote changed AND local changed since the base. The remote
+                        // timestamp is newer, but timestamps are not ancestry.
+                        return JsonResponse($$"""
+                            {
+                              "snapshots": [
+                                {
+                                  "workspaceId": "{{workspaceId.Value}}",
+                                  "rulesetId": "sr6",
+                                  "format": "NativeXml",
+                                  "schemaVersion": 1,
+                                  "payloadKind": "workspace",
+                                  "payload": "<character><name>Remote Diverged</name></character>",
+                                  "updatedAtUtc": "2026-06-04T14:00:00Z",
+                                  "remoteRevision": 11,
+                                  "serverToken": "remote-11"
+                                }
+                              ]
+                            }
+                            """);
+                    }
+
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/upsert", StringComparison.Ordinal) == true)
+                    {
+                        return JsonResponse($$"""
+                            {
+                              "snapshot": {
+                                "workspaceId": "{{workspaceId.Value}}",
+                                "rulesetId": "sr6",
+                                "format": "NativeXml",
+                                "schemaVersion": 1,
+                                "payloadKind": "workspace",
+                                "payload": "<character><name>Local Diverged v2</name></character>",
+                                "updatedAtUtc": "2026-06-05T14:00:00Z",
+                                "originInstallationId": "ins-a",
+                                "remoteRevision": 12,
+                                "serverToken": "remote-12"
+                              }
+                            }
+                            """);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    workspaceService,
+                    client,
+                    () => ClaimedState(),
+                    FakeLeaseAccessor.Create(owner));
+
+                DesktopWorkspaceRoamingResult converged = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, converged.Outcome);
+
+                // Local diverges from the acknowledged base while remote also moved on.
+                WorkspaceStoreMutationResult edited = store.ReplaceWorkspaceDocument(
+                    owner,
+                    workspaceId,
+                    store.Get(owner, workspaceId).Value!.ContentRevision,
+                    new WorkspaceDocument(
+                        "<character><name>Local Diverged v2</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml));
+                Assert.IsTrue(edited.Success, edited.Error);
+
+                // Remote-newer snapshot arrives: it must NOT overwrite the divergent local
+                // content. The conflict is retained for an explicit decision.
+                DesktopWorkspaceRoamingResult divergent = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Conflict, divergent.Outcome);
+
+                WorkspaceStoreReadResult after = store.Get(owner, workspaceId);
+                Assert.IsTrue(after.Success, after.Error);
+                StringAssert.Contains(after.Value!.Document.Content, "Local Diverged v2");
+                Assert.AreEqual(2L, after.Value.ContentRevision);
+
+                // Explicit keep-local reconciliation pushes the retained local version.
+                DesktopWorkspaceRoamingResult keepLocal = await sync.ResolveRoamingConflictAsync(
+                    owner, workspaceId, DesktopWorkspaceRoamingConflictResolution.KeepLocal, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Applied, keepLocal.Outcome);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task SynchronizeInboundAsync_lost_outbound_response_does_not_replay_uncertain_write()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", TestStateRoot());
+            try
+            {
+                InMemoryWorkspaceStore store = new();
+                RecordingWorkspaceService workspaceService = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Outbound Runner</name></character>",
+                        RulesetId: "sr5",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
+                workspaceService.SummaryByWorkspaceId[workspaceId.Value] = new CharacterFileSummary(
+                    Name: "Outbound Runner",
+                    Alias: "Outbound Runner",
+                    Metatype: "Human",
+                    BuildMethod: "Priority",
+                    CreatedVersion: "5",
+                    AppVersion: "5",
+                    Karma: 0,
+                    Nuyen: 0,
+                    Created: true);
+
+                int upsertCalls = 0;
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/upsert", StringComparison.Ordinal) == true)
+                    {
+                        Interlocked.Increment(ref upsertCalls);
+                        // First call: the response is lost in transit (transport fault).
+                        if (upsertCalls == 1)
+                        {
+                            throw new HttpRequestException("connection reset after send");
+                        }
+
+                        return JsonResponse($$"""
+                            {
+                              "snapshot": {
+                                "workspaceId": "{{workspaceId.Value}}",
+                                "rulesetId": "sr5",
+                                "format": "NativeXml",
+                                "schemaVersion": 1,
+                                "payloadKind": "workspace",
+                                "payload": "<character><name>Outbound Runner</name></character>",
+                                "updatedAtUtc": "2026-06-05T14:00:00Z",
+                                "originInstallationId": "ins-a",
+                                "remoteRevision": 7,
+                                "serverToken": "remote-7"
+                              }
+                            }
+                            """);
+                    }
+
+                    return JsonResponse("""{"snapshots": []}""");
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    workspaceService,
+                    client,
+                    () => ClaimedState(),
+                    FakeLeaseAccessor.Create(owner));
+
+                DesktopWorkspaceRoamingResult lost = await sync.SynchronizeOutboundAsync(owner, workspaceId, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Unavailable, lost.Outcome);
+                Assert.AreEqual(1, upsertCalls);
+
+                // A later sync must reconcile the uncertainty against the authoritative list
+                // (workspace absent from the Hub -> the write never landed) before pushing.
+                DesktopWorkspaceRoamingResult reconcile = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Applied, reconcile.Outcome);
+                Assert.AreEqual(2, upsertCalls);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task SynchronizeInboundAsync_keeps_remote_on_explicit_reconciliation()
+    {
+        using (await EnterEnvironmentLockAsync().ConfigureAwait(false))
+        {
+            string? previousApiBase = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+            string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+            Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, "https://hub.example/");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", TestStateRoot());
+            try
+            {
+                InMemoryWorkspaceStore store = new();
+                OwnerScope owner = new("install-account:subject-alpha");
+                CharacterWorkspaceId workspaceId = store.CreateWorkspaceDocument(owner, new WorkspaceDocument(
+                        "<character><name>Common Base</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml))
+                    .Entry!.Value.Id;
+                RecordingWorkspaceService workspaceService = new();
+                workspaceService.SummaryByWorkspaceId[workspaceId.Value] = new CharacterFileSummary(
+                    Name: "Common Base",
+                    Alias: "Common Base",
+                    Metatype: "Human",
+                    BuildMethod: "Priority",
+                    CreatedVersion: "5",
+                    AppVersion: "5",
+                    Karma: 0,
+                    Nuyen: 0,
+                    Created: true);
+
+                int listCalls = 0;
+                HttpClient client = new(new StubHandler(request =>
+                {
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/list", StringComparison.Ordinal) == true)
+                    {
+                        listCalls++;
+                        if (listCalls == 1)
+                        {
+                            return JsonResponse($$"""
+                                {
+                                  "snapshots": [
+                                    {
+                                      "workspaceId": "{{workspaceId.Value}}",
+                                      "rulesetId": "sr6",
+                                      "format": "NativeXml",
+                                      "schemaVersion": 1,
+                                      "payloadKind": "workspace",
+                                      "payload": "<character><name>Common Base</name></character>",
+                                      "updatedAtUtc": "2026-06-03T14:00:00Z",
+                                      "remoteRevision": 10,
+                                      "serverToken": "remote-10"
+                                    }
+                                  ]
+                                }
+                                """);
+                        }
+
+                        return JsonResponse($$"""
+                            {
+                              "snapshots": [
+                                {
+                                  "workspaceId": "{{workspaceId.Value}}",
+                                  "rulesetId": "sr6",
+                                  "format": "NativeXml",
+                                  "schemaVersion": 1,
+                                  "payloadKind": "workspace",
+                                  "payload": "<character><name>Remote Diverged</name></character>",
+                                  "updatedAtUtc": "2026-06-04T14:00:00Z",
+                                  "remoteRevision": 11,
+                                  "serverToken": "remote-11"
+                                }
+                              ]
+                            }
+                            """);
+                    }
+
+                    if (request.RequestUri?.AbsolutePath.EndsWith("/api/v1/install-linking/continuation/workspaces/upsert", StringComparison.Ordinal) == true)
+                    {
+                        return JsonResponse($$"""
+                            {
+                              "snapshot": {
+                                "workspaceId": "{{workspaceId.Value}}",
+                                "rulesetId": "sr6",
+                                "format": "NativeXml",
+                                "schemaVersion": 1,
+                                "payloadKind": "workspace",
+                                "payload": "<character><name>Local Diverged v2</name></character>",
+                                "updatedAtUtc": "2026-06-05T14:00:00Z",
+                                "originInstallationId": "ins-a",
+                                "remoteRevision": 12,
+                                "serverToken": "remote-12"
+                              }
+                            }
+                            """);
+                    }
+
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }))
+                {
+                    BaseAddress = new Uri("https://hub.example/")
+                };
+
+                GrantBoundDesktopWorkspaceRoamingSync sync = new(
+                    "avalonia",
+                    store,
+                    workspaceService,
+                    client,
+                    () => ClaimedState(),
+                    FakeLeaseAccessor.Create(owner));
+
+                DesktopWorkspaceRoamingResult converged = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, converged.Outcome);
+
+                WorkspaceStoreMutationResult edited = store.ReplaceWorkspaceDocument(
+                    owner,
+                    workspaceId,
+                    store.Get(owner, workspaceId).Value!.ContentRevision,
+                    new WorkspaceDocument(
+                        "<character><name>Local Diverged v2</name></character>",
+                        RulesetId: "sr6",
+                        Format: WorkspaceDocumentFormat.NativeXml));
+                Assert.IsTrue(edited.Success, edited.Error);
+
+                DesktopWorkspaceRoamingResult divergent = await sync.SynchronizeInboundAsync(owner, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Conflict, divergent.Outcome);
+
+                // Explicit keep-remote: the remote payload replaces local (the superseded local
+                // version is archived in the ledger), and the acknowledged base advances.
+                DesktopWorkspaceRoamingResult keepRemote = await sync.ResolveRoamingConflictAsync(
+                    owner, workspaceId, DesktopWorkspaceRoamingConflictResolution.KeepRemote, CancellationToken.None);
+                Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Applied, keepRemote.Outcome);
+
+                WorkspaceStoreReadResult after = store.Get(owner, workspaceId);
+                Assert.IsTrue(after.Success, after.Error);
+                StringAssert.Contains(after.Value!.Document.Content, "Remote Diverged");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ApiBaseUrlEnvironmentVariable, previousApiBase);
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            }
+        }
+    }
+
+    private static string TestStateRoot()
+        => Path.Combine(Path.GetTempPath(), "chummer-t449-tests", Guid.NewGuid().ToString("N"));
+
+    private sealed class FakeLeaseAccessor : IOwnerContextLeaseAccessor
+    {
+        private readonly OwnerContextStamp _stamp;
+        private int _leased;
+
+        private FakeLeaseAccessor(OwnerContextStamp stamp)
+        {
+            _stamp = stamp;
+        }
+
+        public static FakeLeaseAccessor Create(OwnerScope owner)
+            => new(new OwnerContextStamp(owner, "ins-a", 0));
+
+        public OwnerScope Current => _stamp.Owner;
+
+        public OwnerContextStamp Capture() => _stamp;
+
+        public bool TryAcquire(OwnerContextStamp expected, out IOwnerContextLease? lease)
+        {
+            lease = null;
+            if (expected != _stamp || Interlocked.Exchange(ref _leased, 1) == 1)
+            {
+                return false;
+            }
+
+            lease = new FakeLease(_stamp, () => Interlocked.Exchange(ref _leased, 0));
+            return true;
+        }
+
+        private sealed class FakeLease : IOwnerContextLease
+        {
+            private readonly Action _release;
+            private int _disposed;
+
+            public FakeLease(OwnerContextStamp stamp, Action release)
+            {
+                Stamp = stamp;
+                _release = release;
+            }
+
+            public OwnerContextStamp Stamp { get; }
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                {
+                    _release();
+                }
+            }
+        }
     }
 }

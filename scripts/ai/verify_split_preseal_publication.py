@@ -136,6 +136,9 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
 )
 ALLOWED_RECIPE_PATHS = frozenset(
     {
+        "Chummer.Desktop.Runtime/FileSr6CareerAttributeRecoveryStore.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.Sr6Recovery.cs",
+        "Chummer.Tests/Presentation/Sr6CareerAttributeRecoveryStoreTests.cs",
         "Chummer.CreationWizard.Presentation.Tests/CharacterCreationWizardDesktopSessionTests.cs",
         "Chummer.Tests/Presentation/AvaloniaHeadlessSmokeTests.cs",
         "Chummer.Avalonia/Chummer.Avalonia.csproj",
@@ -150,6 +153,38 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Avalonia/DesktopHomeWindow.cs",
         "Chummer.Tests/UnavailableDesktopWorkspaceRoamingSyncTests.cs",
         "Chummer.Avalonia/MainWindow.PostRefreshCoordinators.cs",
+        # R108 2026-11-11: consolidated gen-8 recipe (R105 closeout + R106
+        # adoption + restored R104 ledger sync (C1-C7) + SR6/presentation
+        # repairs D1-D8/E1-E5) on base 33764033a; owner oracle rotated to
+        # 0751145891d84e124825c59a968c499eb22d2875.
+        "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+        "Chummer.Avalonia/Controls/Sr6CareerAttributeAdvanceWindow.cs",
+        "Chummer.Avalonia/Creation/CreationQualitiesReviewWindow.cs",
+        "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs",
+        "Chummer.Avalonia/MainWindow.CareerEdit.cs",
+        "Chummer.Avalonia/MainWindow.InteractionCoordinator.cs",
+        "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.cs",
+        "Chummer.Desktop.Runtime/GrantBoundRoamingSyncLedger.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.Sr6CareerAttribute.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
+        "Chummer.Desktop.Runtime/ServiceCollectionDesktopRuntimeExtensions.cs",
+        "Chummer.Presentation/IChummerClient.cs",
+        "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceMutations.cs",
+        "Chummer.Presentation/Overview/ICharacterOverviewPresenter.cs",
+        "Chummer.Presentation/Overview/Sr6CareerAttributeAdvanceSurface.cs",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "Chummer.Tests/GrantBoundDesktopWorkspaceRoamingSyncTests.cs",
+        "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityFixtures.cs",
+        "Chummer.Tests/Presentation/DesktopMouseFirstJourneyManualModeTests.cs",
+        "Chummer.Tests/Presentation/Sr6CareerAttributeAdvanceFlowTests.cs",
+        "Directory.Build.props",
+        "config/ui-next-authority-oracle-v10.json",
+        "docs/agents/WINDOWS_SCOPE.md",
+        "scripts/ai/verify_fresh_checkout_package_plane.py",
+        "scripts/ai/verify_split_preseal_publication.py",
+        "scripts/ai/with-package-plane.sh",
+        "tests/test_fresh_package_plane_controls.py",
         *OWNER_CONTEXT_RECIPE_PATHS,
         ".github/workflows/current-main-package-plane.yml",
         ".github/workflows/pull-request-ci.yml",
@@ -377,7 +412,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "docs/agents/evidence/journey_receipt.json",
         "docs/agents/evidence/win094-moved-portable-receipt.json",
         "docs/agents/evidence/corrupt_proof.json",
-        # R107 2026-11-11: WIN-006 gen-8 windows_unsigned_preview_v1 — native
+        # R107 2026-11-11: WIN-006 gen-8 windows_unsigned_preview_v1 - native
         # qualification of draft release 6940 (installer-bound startup receipt,
         # four-leg qualification, curated installer UI visuals + hash index).
         "docs/agents/evidence/WIN-006-6940-EVIDENCE-HANDOFF.md",
@@ -495,6 +530,15 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "scripts/materialize_sr5_sr6_ui_parity_audit.py",
         "Chummer.Tests/Presentation/Sr5Sr6RulesetParityAuditTests.cs",
         "docs/WORKBENCH_RELEASE_SIGNOFF.md",
+        # R106 (2026-11-11): gen-8 item 4 - Core172 package-plane adoption and
+        # SR6 career attribute advancement (Quote/Advance/Lookup via Core's
+        # owner-bound service): new client surface, in-process partial, DI
+        # registration, presenter route, coordinator forwards, and the
+        # dedicated Avalonia window.
+        "Chummer.Avalonia/Controls/Sr6CareerAttributeAdvanceWindow.cs",
+        "Chummer.Desktop.Runtime/InProcessChummerClient.Sr6CareerAttribute.cs",
+        "Chummer.Presentation/Overview/Sr6CareerAttributeAdvanceSurface.cs",
+        "Chummer.Presentation/IChummerClient.cs",
     }
 )
 # Retirement authority is separate from recipe A/M membership: only these
@@ -515,15 +559,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "824340325db1b66af790d50e956095c65a3d50fd",
+        "blob": "e26f9fe703197484728cb71bd54d50aebbd41158",
         "commit": "2538ce0ad3ad7c3a59164203525613b5b237044b",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41",
-        "rawSizeBytes": 69811,
-        "semanticCanonicalSha256": "0dfe57199a771cb3aa6bc1cf512084ab753cc5980ce27f0bc8d9c665a4749c41",
-        "semanticCanonicalSizeBytes": 69811,
-        "tree": "72b8f11cbf9067a05f8a5ff3061cce7426dac24e"
+        "rawSha256": "29aa11fefb6f1a31be7c5375edd11ad98007c077f886e9014131dde39fcfa64e",
+        "rawSizeBytes": 73211,
+        "semanticCanonicalSha256": "29aa11fefb6f1a31be7c5375edd11ad98007c077f886e9014131dde39fcfa64e",
+        "semanticCanonicalSizeBytes": 73211,
+        "tree": "4823d979664453398bc492c1897dc3a2f5f229f0"
     },
     "producerLock": {
         "absentAtCommit": True,

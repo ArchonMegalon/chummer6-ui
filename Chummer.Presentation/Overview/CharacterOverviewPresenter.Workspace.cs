@@ -317,6 +317,10 @@ public sealed partial class CharacterOverviewPresenter
             if (!IsDisplayGenerationCurrent(displayGeneration)) return;
             CaptureRecoveryPayload(result);
             if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
+            // Default-section loading begins another display generation. Resolve
+            // this owner's retained operation while the load's own view is current.
+            await RecoverSr6AdvancementOnOpenAsync(displayGeneration, ct);
+            if (!IsDisplayGenerationCurrent(displayGeneration)) return;
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
             if (synchronizeShell) await SyncShellWorkspaceContextAsync(ct);
@@ -365,6 +369,8 @@ public sealed partial class CharacterOverviewPresenter
         if (!IsDisplayGenerationCurrent(displayGeneration)) return;
         CaptureRecoveryPayload(result);
         if (!TryPublishDisplayTransition(displayGeneration, result.State)) return;
+        await RecoverSr6AdvancementOnOpenAsync(displayGeneration, ct);
+        if (!IsDisplayGenerationCurrent(displayGeneration)) return;
         await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
         await SyncShellWorkspaceContextAsync(ct);
     }

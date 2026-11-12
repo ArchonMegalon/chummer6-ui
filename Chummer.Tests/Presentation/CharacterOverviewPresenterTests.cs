@@ -933,7 +933,8 @@ public class CharacterOverviewPresenterTests
         IRulesetCapabilityHost? engineEvaluator = null,
         IWorkspaceOperationCoordinator? workspaceOperationCoordinator = null,
         IWorkspaceRecoveryPayloadStore? workspaceRecoveryPayloadStore = null,
-        TimeSpan? deletionNotificationBudget = null)
+        TimeSpan? deletionNotificationBudget = null,
+        ISr6CareerAttributeRecoveryStore? sr6RecoveryStore = null)
         => new CharacterOverviewPresenter(
             client,
             workspaceSessionManager,
@@ -956,7 +957,8 @@ public class CharacterOverviewPresenterTests
             engineEvaluator,
             workspaceOperationCoordinator,
             workspaceRecoveryPayloadStore,
-            deletionNotificationBudget);
+            deletionNotificationBudget,
+            sr6CareerAttributeRecoveryStore: sr6RecoveryStore);
 
     [TestMethod]
     [DataRow(WorkspaceCollectionKind.Contact)]
@@ -5300,7 +5302,7 @@ public class CharacterOverviewPresenterTests
     // Presenter seam fixture only: the production executor/lease is tested against
     // InProcessChummerClient separately. This gate really excludes its test owner
     // writer, and it never spans an asynchronous fake-store continuation.
-    private sealed class OwnerBoundFakeChummerClient : FakeChummerClient, IOwnerBoundWorkspaceProjectionClient
+    private class OwnerBoundFakeChummerClient : FakeChummerClient, IOwnerBoundWorkspaceProjectionClient
     {
         private readonly object _ownerGate = new();
         private OwnerContextStamp _owner = new(new OwnerScope("owner-a"), Guid.NewGuid().ToString("N"), 0);
@@ -5436,8 +5438,321 @@ public class CharacterOverviewPresenterTests
         }
     }
 
+    // R110 R3: real file ledger with a presenter/client seam, not native restart proof.
+    private sealed class RecoveryFakeClient : OwnerBoundFakeChummerClient, ISr6CareerAttributeAdvancementClient
+    {
+        public int AdvanceCalls;
+        public int LookupCalls;
+        public int QuoteCalls;
+        public bool RecoveryReady;
+        public bool ReturnSuccess;
+        public bool LoseResponse;
+        public Action? BeforeAdvance;
+        public Sr6CareerAttributeCommand? LastLookedUp;
+        public OwnerContextStamp? LastLookupOwner;
+        public Sr6CareerAttributeReceipt? StoredReceipt;
+        public Func<Task>? BeforeQuoteReturn;
+
+        public async Task<Sr6CareerAttributeAdvanceEditorSnapshot?> QuoteSr6CareerAttributeAsync(CharacterWorkspaceId id, CancellationToken ct)
+        {
+            QuoteCalls++;
+            if (BeforeQuoteReturn is { } wait) await wait().ConfigureAwait(false);
+            return null;
+        }
+
+        public Task<Sr6CareerAttributeAdvanceDispatchResult?> AdvanceSr6CareerAttributeAsync(
+            OwnerContextStamp owner, Sr6CareerAttributeCommand command, CharacterWorkspaceId workspaceId, CancellationToken ct)
+        {
+            AdvanceCalls++;
+            BeforeAdvance?.Invoke();
+            StoredReceipt = Sr6RecoveryTestData.Receipt(command);
+            if (LoseResponse) throw new IOException("commit response lost");
+            return Task.FromResult<Sr6CareerAttributeAdvanceDispatchResult?>(new(
+                ReturnSuccess ? Sr6CareerAttributeOutcome.Applied : Sr6CareerAttributeOutcome.Unavailable,
+                ReturnSuccess ? StoredReceipt : null, command, ReturnSuccess, null));
+        }
+
+        public Task<Sr6CareerAttributeReceipt?> LookupSr6CareerAttributeAsync(
+            OwnerContextStamp owner, Sr6CareerAttributeCommand command, CancellationToken ct)
+        {
+            LookupCalls++;
+            LastLookupOwner = owner;
+            LastLookedUp = command;
+            Assert.AreEqual(CaptureOwnerContext(), owner, "Lookup must use currently issued authority.");
+            Assert.AreEqual(command.Quote.OwnerId, owner.Owner.NormalizedValue);
+            return Task.FromResult(RecoveryReady ? StoredReceipt : null);
+        }
+    }
+
+    private static void SeedSr6RecoveryWorkspace(RecoveryFakeClient client, string id = "ws-sr6-recovery", long revision = 42)
+        => client.SeedWorkspace(id, "SR6 runner", "SR6", rulesetId: RulesetDefaults.Sr6,
+            contentRevision: revision, savedRevision: revision);
+
+    [TestMethod]
+    [DataRow(false, false)]
+    [DataRow(false, true)]
+    [DataRow(true, false)]
+    [DataRow(true, true)]
+    public async Task Sr6_prepare_discards_late_read_or_quote_after_workspace_or_owner_return(bool delayQuote, bool changeOwner)
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        SeedSr6RecoveryWorkspace(client, "ws-sr6-b");
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var workspace = new CharacterWorkspaceId("ws-sr6-recovery");
+        await presenter.LoadAsync(workspace, CancellationToken.None);
+        var quoteStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseQuote = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (delayQuote)
+        {
+            client.BeforeQuoteReturn = async () =>
+            {
+                quoteStarted.TrySetResult(true);
+                await releaseQuote.Task;
+            };
+        }
+        else client.BlockNextWorkspaceRead(workspace.Value);
+
+        Task<Sr6CareerAttributeAdvanceEditorSnapshot?> preparation = presenter.PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None);
+        try
+        {
+            await (delayQuote ? quoteStarted.Task : client.WorkspaceReadStarted.Task).WaitAsync(TimeSpan.FromSeconds(2));
+            if (changeOwner)
+            {
+                client.TransitionToOwnerB();
+                await presenter.LoadAsync(workspace, CancellationToken.None);
+                client.TransitionAwayAndBack();
+            }
+            else await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6-b"), CancellationToken.None);
+            await presenter.LoadAsync(workspace, CancellationToken.None);
+            CharacterOverviewState returnedState = presenter.State;
+            releaseQuote.TrySetResult(true);
+            client.ReleaseWorkspaceRead.TrySetResult(true);
+
+            Assert.IsNull(await preparation.WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.AreSame(returnedState, presenter.State, "A late result must not publish even after returning to the original runner/account.");
+            Assert.AreEqual(delayQuote ? 1 : 0, client.QuoteCalls);
+        }
+        finally
+        {
+            releaseQuote.TrySetResult(true);
+            client.ReleaseWorkspaceRead.TrySetResult(true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Presenter_restart_recovers_original_command_with_fresh_owner_without_quote_or_advance()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient { LoseResponse = true };
+        SeedSr6RecoveryWorkspace(client);
+        var command = Sr6RecoveryTestData.Command();
+        string originalCommandDigest = Sr6CareerAttributeIntegrity.Digest(command);
+        OwnerContextStamp originalOwner;
+        using (var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore()))
+        {
+            await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+            originalOwner = presenter.State.DisplayOwnerContext!.Value;
+            client.BeforeAdvance = () =>
+            {
+                Assert.IsTrue(directory.OpenStore().TryRead(originalOwner.Owner, command.Quote.WorkspaceId, out var saved));
+                Assert.AreEqual(originalCommandDigest, saved!.CommandDigest, "Intent must survive before dispatch.");
+                ((string[])command.Quote.SourceAnchorIds)[0] = "a later caller edit";
+            };
+            Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(originalOwner, command, CancellationToken.None));
+            Assert.AreEqual(1, client.AdvanceCalls);
+        }
+        // New presenter, store and authority instance. Core's durable receipt is
+        // simulated independently, and the runner has since advanced again.
+        var restartedClient = new RecoveryFakeClient { StoredReceipt = client.StoredReceipt, RecoveryReady = true };
+        SeedSr6RecoveryWorkspace(restartedClient, revision: 57);
+        using var reopened = CreateTrustedPresenter(restartedClient, sr6RecoveryStore: directory.OpenStore());
+        await reopened.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        Assert.AreEqual(1, restartedClient.LookupCalls);
+        Assert.AreEqual(0, restartedClient.QuoteCalls);
+        Assert.AreEqual(0, restartedClient.AdvanceCalls);
+        Assert.AreEqual(originalCommandDigest, Sr6CareerAttributeIntegrity.Digest(restartedClient.LastLookedUp));
+        Assert.AreEqual(42L, restartedClient.LastLookedUp!.Quote.WorkspaceRevision);
+        Assert.AreEqual(originalOwner.Owner, restartedClient.LastLookupOwner!.Value.Owner);
+        Assert.AreNotEqual(originalOwner, restartedClient.LastLookupOwner.Value);
+        Assert.IsNull(reopened.PendingSr6Recovery);
+        string ledger = File.ReadAllText(Directory.GetFiles(directory.Path, "*.json").Single());
+        Assert.IsFalse(ledger.Contains(originalOwner.AuthorityInstanceId, StringComparison.Ordinal));
+        Assert.IsFalse(ledger.Contains("transitionRevision", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public async Task Success_on_workspace_B_preserves_workspace_A_and_later_commands_cannot_replace_it()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        SeedSr6RecoveryWorkspace(client, "ws-sr6-b");
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var original = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(original.Quote.WorkspaceId, CancellationToken.None);
+        var owner = presenter.State.DisplayOwnerContext!.Value;
+        await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, original, CancellationToken.None);
+        var pending = presenter.PendingSr6Recovery!;
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6-b"), CancellationToken.None);
+        client.ReturnSuccess = true;
+        Assert.IsNotNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, Sr6RecoveryTestData.Command("ws-sr6-b"), CancellationToken.None));
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, original.Quote.WorkspaceId, out var held));
+        Assert.AreEqual(pending.EntryId, held!.EntryId);
+        SeedSr6RecoveryWorkspace(client, revision: 55);
+        await presenter.LoadAsync(original.Quote.WorkspaceId, CancellationToken.None);
+        Assert.IsNull(await presenter.PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None));
+        Assert.AreEqual(0, client.QuoteCalls, "Unresolved command must be probed before any quote.");
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, Sr6RecoveryTestData.Command(revision: 55), CancellationToken.None));
+        Assert.AreEqual(2, client.AdvanceCalls);
+        Assert.AreEqual(pending.CommandDigest, presenter.PendingSr6Recovery!.CommandDigest);
+    }
+
+    [TestMethod]
+    public async Task Account_transition_cannot_recover_another_owner_and_returning_owner_gets_fresh_authorization()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var command = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        var originalOwner = presenter.State.DisplayOwnerContext!.Value;
+        await presenter.ApplySr6CareerAttributeAdvanceAsync(originalOwner, command, CancellationToken.None);
+        client.RecoveryReady = true;
+        client.TransitionToOwnerB();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        Assert.IsNull(presenter.PendingSr6Recovery);
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(originalOwner, CancellationToken.None));
+        Assert.AreEqual(0, client.LookupCalls);
+        client.TransitionAwayAndBack();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        Assert.AreEqual(1, client.LookupCalls);
+        Assert.AreEqual(originalOwner.Owner, client.LastLookupOwner!.Value.Owner);
+        Assert.AreNotEqual(originalOwner, client.LastLookupOwner.Value);
+        Assert.IsNull(presenter.PendingSr6Recovery);
+    }
+
+    [TestMethod]
+    public async Task Failed_durable_write_or_corrupt_ledger_prevents_advance()
+    {
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        var command = Sr6RecoveryTestData.Command();
+        using (var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: new WriteFailingSr6RecoveryStore()))
+        {
+            await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+            Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(presenter.State.DisplayOwnerContext!.Value, command, CancellationToken.None));
+            Assert.AreEqual(0, client.AdvanceCalls);
+        }
+        using var directory = new Sr6RecoveryTestDirectory();
+        Assert.IsTrue(directory.OpenStore().TryAdd(Sr6RecoveryTestData.Pending()));
+        File.WriteAllText(Directory.GetFiles(directory.Path, "*.json").Single(), "null");
+        using var corrupt = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        await corrupt.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        Assert.IsNull(await corrupt.ApplySr6CareerAttributeAdvanceAsync(corrupt.State.DisplayOwnerContext!.Value, command, CancellationToken.None));
+        Assert.AreEqual(0, client.AdvanceCalls);
+        Assert.AreEqual(0, client.LookupCalls);
+    }
+
+    [TestMethod]
+    public async Task Unrelated_receipt_does_not_resolve_or_requote_the_held_operation()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var command = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        var owner = presenter.State.DisplayOwnerContext!.Value;
+        await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, command, CancellationToken.None);
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(Sr6RecoveryTestData.Command());
+        client.RecoveryReady = true;
+        Assert.IsNull(await presenter.PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None));
+        Assert.IsNotNull(presenter.PendingSr6Recovery);
+        Assert.AreEqual(0, client.QuoteCalls);
+        Assert.AreEqual(1, client.AdvanceCalls);
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(command);
+        Assert.IsNotNull(await presenter.RecoverPendingSr6AdvancementAsync(owner, CancellationToken.None));
+        Assert.IsNull(presenter.PendingSr6Recovery);
+    }
+
+    private sealed class WriteFailingSr6RecoveryStore : ISr6CareerAttributeRecoveryStore
+    {
+        public bool TryRead(OwnerScope owner, CharacterWorkspaceId id, out Sr6CareerAttributePendingRecovery? pending)
+        {
+            pending = null;
+            return true;
+        }
+        public bool TryAdd(Sr6CareerAttributePendingRecovery pending) => false;
+        public bool TryClear(Sr6CareerAttributePendingRecovery pending) => false;
+    }
+
+    /// <summary>
+    /// SR6-advance probe with dispatch observation, for the staleness-guard
+    /// tests: the quote-borne stamp must be rejected before any dispatch
+    /// when the displayed authority moved on (owner A-B-A bumps the
+    /// transition revision even though the scope name returns).
+    /// </summary>
+    private sealed class StalenessProbeClient : OwnerBoundFakeChummerClient, ISr6CareerAttributeAdvancementClient
+    {
+        public Sr6CareerAttributeOutcome Outcome { get; set; } = Sr6CareerAttributeOutcome.Unavailable;
+        public int AdvanceCalls { get; private set; }
+        public OwnerContextStamp? LastAdvanceOwner { get; private set; }
+
+        public Task<Sr6CareerAttributeAdvanceDispatchResult?> AdvanceSr6CareerAttributeAsync(
+            OwnerContextStamp owner,
+            Sr6CareerAttributeCommand command,
+            CharacterWorkspaceId workspaceId,
+            CancellationToken ct)
+        {
+            AdvanceCalls++;
+            LastAdvanceOwner = owner;
+            return Task.FromResult<Sr6CareerAttributeAdvanceDispatchResult?>(new Sr6CareerAttributeAdvanceDispatchResult(
+                Outcome, Receipt: null, Command: command, CommitResolved: false, Error: "probe"));
+        }
+    }
+
+    [TestMethod]
+    public async Task Presenter_sr6_apply_rejects_quote_stamp_after_owner_ABA_before_any_dispatch()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new StalenessProbeClient();
+        SeedOwnerBoundWorkspace(client);
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        OwnerContextStamp displayed = presenter.State.DisplayOwnerContext
+            ?? throw new AssertFailedException("the owner-bound load must issue a displayed owner stamp");
+
+        // Positive control: the displayed authority admits the dispatch.
+        var command = Sr6RecoveryTestData.Command("ws-owner-bound", presenter.State.ContentRevision, displayed.Owner.NormalizedValue);
+        Sr6CareerAttributeReceipt? admitted = await presenter.ApplySr6CareerAttributeAdvanceAsync(
+            displayed, command, CancellationToken.None);
+        Assert.IsNull(admitted, "the probe surface stays unavailable, but the dispatch must have been attempted");
+        Assert.AreEqual(1, client.AdvanceCalls, "the current displayed authority reaches the surface");
+        Assert.IsNotNull(presenter.PendingSr6Recovery, "the unavailable outcome is held for recovery");
+
+        // Owner A->B->A: Core's stamp contract advances the transition
+        // revision on every owner transition, including a switch away and
+        // back, so a quote-borne stamp captured before the round trip is
+        // stale even though the scope name returned to A. A fresh presenter
+        // isolates the stamp guard from the control leg's held recovery.
+        OwnerContextStamp reborn = displayed with { TransitionRevision = checked(displayed.TransitionRevision + 2) };
+        using CharacterOverviewPresenter stalePresenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        await stalePresenter.LoadAsync(new CharacterWorkspaceId("ws-owner-bound"), CancellationToken.None);
+        Sr6CareerAttributeReceipt? stale = await stalePresenter.ApplySr6CareerAttributeAdvanceAsync(
+            reborn, command, CancellationToken.None);
+
+        Assert.IsNull(stale, "a stale quote-borne stamp must never commit");
+        Assert.AreEqual(1, client.AdvanceCalls, "the stale stamp must be rejected before dispatch");
+        StringAssert.Contains(stalePresenter.State.Error ?? "", "owner authority changed");
+    }
+
+
     private class FakeChummerClient : IChummerClient
     {
+
         private string _name = "Troy Simmons";
         private string _alias = "BLUE";
 
@@ -6683,5 +6998,39 @@ public class CharacterOverviewPresenterTests
         {
             LastOverviewFeedback = feedback;
         }
+    }
+}
+
+internal sealed class Sr6RecoveryTestDirectory : IDisposable
+{
+    public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "chummer-sr6-recovery-" + Guid.NewGuid().ToString("N"));
+    public Sr6RecoveryTestDirectory() => Directory.CreateDirectory(Path);
+    public Chummer.Desktop.Runtime.FileSr6CareerAttributeRecoveryStore OpenStore() => new(Path);
+    public void Dispose() => Directory.Delete(Path, recursive: true);
+}
+
+internal static class Sr6RecoveryTestData
+{
+    public static Sr6CareerAttributeCommand Command(string workspace = "ws-sr6-recovery", long revision = 42, string owner = "owner-a")
+    {
+        var quote = new Sr6CareerAttributeQuote(Sr6CareerAttributeSchemas.QuoteV1, owner, new CharacterWorkspaceId(workspace), revision,
+            Sr6CareerAttributeIntegrity.Digest("source"), Sr6CareerAttributeIntegrity.Digest("rules"),
+            "Body", 4, 5, 0, 8, 100, 25, null, new[] { "sr6:body" }, "");
+        quote = quote with { BindingDigest = Sr6CareerAttributeIntegrity.BindingDigest(quote) };
+        return new(quote, Guid.NewGuid(), new DateTime(2081, 5, 12, 12, 0, 0, DateTimeKind.Unspecified), true);
+    }
+
+    public static Sr6CareerAttributePendingRecovery Pending()
+    {
+        var command = Command();
+        return new(Guid.NewGuid(), command.Quote.OwnerId, false, command.Quote.WorkspaceId, command,
+            Sr6CareerAttributeIntegrity.Digest(command));
+    }
+
+    public static Sr6CareerAttributeReceipt Receipt(Sr6CareerAttributeCommand command)
+    {
+        var receipt = new Sr6CareerAttributeReceipt(command, command.Quote.WorkspaceRevision + 1,
+            command.Quote.AvailableKarma - command.Quote.KarmaCost, command.OperationId, -command.Quote.KarmaCost, "");
+        return receipt with { ReceiptDigest = Sr6CareerAttributeIntegrity.ReceiptDigest(receipt) };
     }
 }

@@ -70,6 +70,8 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                     IReadOnlyList<IRulesetPlugin> plugins = provider.GetServices<IRulesetPlugin>().ToArray();
 
                     Assert.IsInstanceOfType<InProcessChummerClient>(client);
+                    Assert.IsInstanceOfType<FileSr6CareerAttributeRecoveryStore>(
+                        provider.GetRequiredService<Chummer.Presentation.Overview.ISr6CareerAttributeRecoveryStore>());
                     Assert.IsInstanceOfType<Chummer.Presentation.Overview.ICareerQualityAtomicWorkspace>(client);
                     Assert.IsInstanceOfType<OwnerManagedCareerQualityAuthorityResolver>(
                         provider.GetRequiredService<ICharacterCareerQualityAuthorityResolver>());

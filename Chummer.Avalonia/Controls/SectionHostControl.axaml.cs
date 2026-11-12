@@ -633,9 +633,15 @@ public partial class SectionHostControl : UserControl
 
             int improveCost = ComputeCareerAttributeUpgradeCost(baseValue + karmaValue, metatypeAugMax);
             bool canImprove = !isSr6 && careerMode && improveCost > 0 && availableKarma >= improveCost;
-            improveButton.IsEnabled = canImprove;
+            bool canImproveSr6 = isSr6 && careerMode && improveCost > 0;
+            // R109: SR6 rows must expose the REAL eligibility. The quote-time
+            // Core review governs the actual purchase; the row click routes to
+            // the advancement dialog (never the legacy SR5 karma edit).
+            improveButton.IsEnabled = canImprove || canImproveSr6;
             string helpText = isSr6
-                ? "SR6 attribute advancement is unavailable in this preview. Your attribute and Karma remain unchanged."
+                ? canImproveSr6
+                    ? $"Open SR6 attribute advancement for {rowLabel}."
+                    : "SR6 attribute advancement is unavailable for this attribute right now. Your attribute and Karma remain unchanged."
                 : canImprove
                 ? $"Improve {rowLabel} for {improveCost} Karma"
                 : improveCost <= 0
@@ -740,6 +746,16 @@ public partial class SectionHostControl : UserControl
         {
             improveButton.Click += (_, _) =>
             {
+                if (isSr6)
+                {
+                    // SR6 advancement goes through Core's owner-bound service via
+                    // the dedicated dialog; the SR5 karma-improve math below must
+                    // not run for SR6 rows (the legacy XML mutation is refused).
+                    CancelPendingAttributeCommits();
+                    CareerAttributeAdvanceRequested?.Invoke(this, row.AttributeName);
+                    return;
+                }
+
                 int improveCost = ComputeCareerAttributeUpgradeCost(baseValue + karmaValue, metatypeAugMax);
                 if (!improveButton.IsEnabled || improveCost <= 0)
                 {

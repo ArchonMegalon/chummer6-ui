@@ -7,7 +7,7 @@ public static class CoreContentRootDiscovery
     public const string BundleDirectoryName = "core-content";
     public const string EnvironmentVariable = "CHUMMER_CORE_CONTENT_ROOT";
     public static readonly string[] PinnedCommits =
-    ["c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c", "167504363779b38b033ab975e88da76e880abb96"];
+    ["2057d3160122608339884cddc129bb6a4abdb6bb", "0751145891d84e124825c59a968c499eb22d2875"];
 
     public static bool TryResolve(string repoRoot, out string coreContentRoot,
         Func<string, string?>? resolveHeadCommit = null, string? appBaseDirectory = null,

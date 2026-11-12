@@ -36,6 +36,7 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
     private readonly IWorkspaceService _workspaceService;
     private readonly IWorkspaceStore? _workspaceStore;
     private readonly OwnerBoundCharacterCareerQualityService? _careerQualityService;
+    private readonly ISr6CareerAttributeAdvancementService? _sr6CareerAttributeAdvancementService;
     private readonly IRulesetShellCatalogResolver _shellCatalogResolver;
     private readonly IBuildKitRegistryService? _buildKitRegistryService;
     private readonly IHubProjectCompatibilityService? _hubProjectCompatibilityService;
@@ -72,11 +73,13 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
         IWorkspaceStore? workspaceStore = null,
         WorkspaceContinuationExportService? continuationExportService = null,
         WorkspaceContinuationRestoreService? continuationRestoreService = null,
-        OwnerBoundCharacterCareerQualityService? careerQualityService = null)
+        OwnerBoundCharacterCareerQualityService? careerQualityService = null,
+    ISr6CareerAttributeAdvancementService? sr6CareerAttributeAdvancementService = null)
     {
         _workspaceService = workspaceService;
         _workspaceStore = workspaceStore;
         _careerQualityService = careerQualityService;
+        _sr6CareerAttributeAdvancementService = sr6CareerAttributeAdvancementService;
         _continuationExportService = continuationExportService;
         _continuationRestoreService = continuationRestoreService;
         _shellCatalogResolver = shellCatalogResolver;

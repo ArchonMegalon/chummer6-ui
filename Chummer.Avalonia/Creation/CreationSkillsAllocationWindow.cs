@@ -49,6 +49,8 @@ namespace Chummer.Avalonia.Creation
         /// <summary>True when Core accepted the final confirm.</summary>
         public bool Confirmed { get; private set; }
 
+        internal CharacterCreationSkillsReceipt? ConfirmationReceipt { get; private set; }
+
         /// <summary>Last interaction status, mirrored to the wizard status line.</summary>
         public string Status { get; private set; } = "Skills loaded.";
 
@@ -488,6 +490,7 @@ namespace Chummer.Avalonia.Creation
             CharacterCreationSkillsInteractionConfirmResult result = _presenter.Confirm(overview, confirmation);
             if (result is { Outcome: "ok", Receipt: { } receipt })
             {
+                ConfirmationReceipt = receipt;
                 Confirmed = true;
                 Status = "Skills confirmed (revision " + receipt.ContentRevision.ToString(CultureInfo.InvariantCulture) + ").";
                 Close();
