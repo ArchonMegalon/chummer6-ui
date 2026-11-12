@@ -1,3 +1,111 @@
+## Controller7477 — Windows UI improvements, 12 November 2026
+
+PR #585 is merged at `5ce0c95c578edf51b750047f2c4f960c3de9a8b5`, tree
+`273188e9b78c5f1c10fda6373c0bd4b8cc5b7c8c`. The controller's 07:53 UTC check
+found no newer ready Friday PR. Continue the existing WIN-006 / Friday session
+and read the live Teable generation; do not start a duplicate worker. Routine
+implementation, review and native acceptance need no user relay or approval.
+
+The user requested a UI analysis and concrete improvement tasks. The controller
+reviewed the six source findings below against this exact tree. These are
+implementation tasks, not a claim that the current Windows UI was executed.
+The retained 1 November Creation screenshots are historical: do not reopen the
+already corrected SR6 Grid or AI-gate findings merely because an older image
+shows them. R110's recovery, owner/revision and manual-confirmation fixes remain
+accepted in source. Preserve the existing genuinely manual SR5/SR6, durable
+recovery and amended-account sync assignments after these bounded repairs.
+
+### Repair queue
+
+1. **UX-01 / P1: Make the SR5 Career attribute review usable.**
+   `Chummer.Avalonia/Controls/CareerAttributeAdvanceWindow.cs`, constructor:
+   five children are added to a five-row Grid without row assignments, so each
+   uses row 0. Assign the heading, selection title, scrollable quote list,
+   details and action footer to their intended rows. Preserve Core quotation,
+   confirmation and correction semantics; this is separate from the repaired
+   SR6 dialog. On the fixed native candidate at 620 x 520 and Windows 150%
+   scaling, verify readable cost/target/blocker text, visible enabled actions,
+   keyboard focus and Close without mutation. Include it in the SR5 journey.
+
+2. **UX-02 / P1: Never save HTML under a PDF filename or overwrite a good PDF
+   after composition fails.** `MainWindow.DesktopFileCoordinator.cs`,
+   `SavePrintPayloadAsync`, currently selects HTML when `pdfReady` is false,
+   opens/truncates the chosen `.pdf` file and returns Completed. Resolve the
+   requested format and composition failure before opening the destination.
+   Offer an explicit HTML save with an appropriate filename, or Cancel; do not
+   report PDF success. Exercise the real native Save dialog with a controlled
+   failure and a disposable existing PDF: its bytes stay intact on refusal or
+   cancellation; explicit HTML saves as HTML; normal PDF opens readably. The
+   existing journey's overridden picker alone does not qualify this route.
+
+3. **UX-03 / P2: Retain reward input after a refused save.**
+   `Controls/CareerRewardsWindow.cs` closes with the request before the
+   authoritative result; `MainWindow.CareerEdit.cs`,
+   `OpenCareerRewardsDialogAsync`, returns on refusal and loses the entered
+   amount, direction and notes. Preserve a dialog-local draft and explain the
+   refusal beside it. Reprepare/review stale authority as required, retaining
+   user input; require another explicit confirmation and never replay an
+   uncertain write. Test distinctive run notes with an invalid SR5 spend: no
+   expense is added, all input remains, then a corrected explicit submission
+   creates exactly one expense that survives reopening. This grants no new
+   SR6 reward authority or UI-local Karma calculation.
+
+4. **UX-04 / P2: Keep all Priority ranks and descriptions reachable.**
+   `Controls/CharacterCreationWizardControl.axaml.cs`, `RenderPrioritySurface`,
+   uses five fixed 92-DIP cells in a non-wrapping row and caps labels at 28 DIPs;
+   the wizard reserves 230/280-DIP side columns while the shell permits 960-DIP
+   width. Reflow the choices or secondary panels to fit the available center
+   width and expose complete Core descriptions. Preserve rank exclusivity and
+   authoritative confirmation. At 960-DIP shell width, every rank including E,
+   its full description and the confirmation/navigation controls must be
+   reachable by mouse and keyboard without enlarging the window. Check 150%
+   scaling on the same supported manual Priority route with AI disabled.
+
+5. **UX-05 / P2: Explain actual Quality blockers.**
+   `Creation/CreationQualitiesReviewWindow.cs`, `Describe`, collapses every
+   nonempty Core blocker list into a generic statement. Display the supplied
+   actionable reasons with the retained/added/removed selection and budgets.
+   Keep the existing disabled Confirm and uncertain-outcome recovery controls;
+   do not recreate rules in the UI. A selectable combination rejected by Core
+   must show its specific reasons without clearing choices. Editing and
+   reviewing again clears only resolved reasons; Cancel does not mutate.
+
+6. **UX-06 / P2: Make manual account-code submission visibly single-flight.**
+   `DesktopInstallLinkingWindow.cs`, `RedeemClaimCodeAsync`, currently permits
+   re-entry and editing during redemption; a delayed refusal restores the old
+   captured text. Guard the operation, disable conflicting controls while
+   pending, show progress and restore editing with a clear result. Preserve
+   runtime owner/currentness and uncertain-outcome handling; no automatic
+   retry, token logging or production roaming enablement. A delayed response
+   plus two rapid native clicks must issue one request. Refusal preserves the
+   input and never claims linked or synchronized success. Use the existing
+   authorized account workflow; do not create a new account or change security.
+
+### Execution and delivery
+
+Keep changes reviewable: first fix UX-01/02, then input/review feedback and
+viewport behavior. Use the smallest affected existing tests, including focused
+negative checks for output preservation and duplicate account submission. Run
+the listed short native checks on the exact resulting candidate. Record actual
+mouse/keyboard behavior; a routed-event fallback is not that acceptance. Do not
+build another receipt framework or repeat unrelated complete suites for these
+changes. Existing Windows SR6 completion and the real amended Windows/Android
+round trip remain required; keep AI Finish and unqualified roaming gated.
+
+After the repairs are integrated, build the Windows candidate on the existing
+Windows host using the pinned toolchain, verify installed/manual-save-reopen
+behavior and supply the selected installer with its source/tree, exact hash,
+version and honest native results to the controller. The downloadable unsigned
+6940 preview comes from older source `1aa273c4`; it does not contain #585 or this
+future UI work. Do not rename or replace those old bytes as evidence of the new
+candidate. Root owns review, merge and chummer.run publication; no user artifact
+relay is needed. Signing, native qualification and preview publication remain
+separate claims.
+
+Scope/boundary/contract/design-mirror/milestone fit: these repairs stay in the
+existing desktop presentation and platform adapters. Core retains rule authority,
+UI-kit ownership is unchanged, and no design-repository amendment is needed.
+
 ## Controller7462 — R110 integration and next native work, 12 November 2026
 
 Continue the existing WIN-006 generation 9 / `friday-windows-session-01` and its
