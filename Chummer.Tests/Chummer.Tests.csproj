@@ -217,6 +217,7 @@
     <Compile Include="SessionServiceTests.cs" />
     <Compile Include="SessionOfflineCacheServiceTests.cs" />
     <Compile Include="ServiceCollectionDesktopRuntimeExtensionsTests.cs" />
+    <Compile Include="GrantBoundDesktopWorkspaceRoamingSyncTests.cs" />
     <Compile Include="UnavailableDesktopWorkspaceRoamingSyncTests.cs" />
     <Compile Include="Presentation\CareerAttributeAdvanceUiTests.cs" />
     <Compile Include="Presentation\CareerAttributeAdvanceParityTests.cs" />
@@ -241,6 +242,7 @@
     <Compile Include="Presentation\CharacterOverviewStateBridgeTests.cs" />
     <Compile Include="Presentation\CharacterOverviewViewModelAdapterTests.cs" />
     <Compile Include="Presentation\CharacterOverviewPresenterTests.cs" />
+    <Compile Include="Presentation\Sr6CareerAttributeRecoveryStoreTests.cs" />
     <Compile Include="Presentation\CareerQualityWorkflowTests.cs" />
     <Compile Include="Presentation\ApplicationDeleteConfirmationPresenterTests.cs" />
     <Compile Include="Presentation\Chummer5CharacterSettingsProfilesTests.cs" />
@@ -345,6 +347,8 @@
     <Compile Include="Presentation\CreationMugshotParityTests.cs" />
     <Compile Include="Presentation\Sr5Sr6RulesetParityAuditTests.cs" />
     <Compile Include="Presentation\Sr6CreationWizardWindowTests.cs" />
+    <Compile Include="Presentation\DesktopMouseFirstJourneyManualModeTests.cs" />
+    <Compile Include="Presentation\Sr6CareerAttributeAdvanceFlowTests.cs" />
     <Compile Include="Compliance\Sr5Sr6UiParityAuditComplianceTests.cs" />
   </ItemGroup>
   <ItemGroup>

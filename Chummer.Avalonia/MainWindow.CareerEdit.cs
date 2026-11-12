@@ -1,10 +1,13 @@
 using System;
+using Chummer.Application.Owners;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
@@ -12,6 +15,13 @@ namespace Chummer.Avalonia;
 public partial class MainWindow
 {
     private const string CareerEditNoticePrefix = "Career advancement: ";
+    private readonly CareerDisplayContext _careerDisplayContext = new();
+
+    private void ObserveCareerDisplayContext(object? sender, EventArgs args)
+    {
+        CharacterOverviewState state = _adapter.State;
+        _careerDisplayContext.Observe(state.WorkspaceId, state.DisplayOwnerContext);
+    }
 
     private async void SectionHost_OnCareerKarmaAwardRequested(object? sender, object? e)
     {
@@ -179,6 +189,13 @@ public partial class MainWindow
 
     private async Task OpenCareerAttributeAdvanceDialogAsync(string attributeName)
     {
+        // SR6 runners route through Core's owner-bound advancement service
+        // (dedicated dialog); the SR5 XML-mutation editor below stays SR5-only.
+        if (await TryOpenSr6CareerAttributeAdvanceDialogAsync(attributeName).ConfigureAwait(true))
+        {
+            return;
+        }
+
         CareerAttributeAdvanceEditorState? editor = await _interactionCoordinator
             .PrepareCareerAttributeAdvanceAsync(CancellationToken.None)
             .ConfigureAwait(true);
@@ -237,12 +254,119 @@ public partial class MainWindow
         }
     }
 
-    private void PublishCareerEditNotice(string message)
+    /// <summary>
+    /// Opens the SR6 attribute advancement dialog for the currently open SR6
+    /// runner. Returns false (without publishing an error) when the dossier is
+    /// not SR6 or the client surface is unavailable, so the caller falls back
+    /// to the SR5 editor route.
+    /// </summary>
+    private async Task<bool> TryOpenSr6CareerAttributeAdvanceDialogAsync(string attributeName)
+    {
+        // Observe transitions synchronously, before queued UI refreshes can
+        // coalesce a workspace switch away and back into the same identity.
+        CharacterOverviewState entryState = _interactionCoordinator.PeekState();
+        if (entryState.WorkspaceId is not { } entryWorkspaceId)
+        {
+            return false;
+        }
+        long entryRevision = entryState.ContentRevision;
+        OwnerContextStamp? entryOwner = entryState.DisplayOwnerContext;
+        long entryGeneration = _careerDisplayContext.Capture(entryWorkspaceId, entryOwner);
+
+        bool DisplayStillCurrent()
+        {
+            CharacterOverviewState now = _interactionCoordinator.PeekState();
+            return now.WorkspaceId == entryWorkspaceId
+                && EqualityComparer<OwnerContextStamp?>.Default.Equals(now.DisplayOwnerContext, entryOwner)
+                && _careerDisplayContext.IsCurrent(entryGeneration, now.WorkspaceId, now.DisplayOwnerContext);
+        }
+
+        bool ContextStillCurrent() => DisplayStillCurrent()
+            && _interactionCoordinator.PeekState().ContentRevision == entryRevision;
+
+        Sr6CareerAttributeAdvanceEditorSnapshot? editor = await _interactionCoordinator
+            .PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None)
+            .ConfigureAwait(true);
+        if (!ContextStillCurrent())
+        {
+            // The quote was prepared for a runner that is no longer displayed.
+            return true;
+        }
+        if (editor is null)
+        {
+            return false;
+        }
+
+        while (true)
+        {
+            if (!ContextStillCurrent()) return true;
+            var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
+            object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
+            if (!ContextStillCurrent())
+            {
+                // Owner/workspace/revision moved while the dialog was open; the
+                // quote-borne stamps inside it are stale by construction.
+                return true;
+            }
+            if (outcome is not Sr6CareerAttributeAdvanceWindow.Sr6CareerAttributeAdvanceOutcome advance)
+            {
+                return true;
+            }
+
+            Sr6CareerAttributeReceipt? receipt = await _interactionCoordinator
+                .ApplySr6CareerAttributeAdvanceAsync(advance.Owner, advance.Command, CancellationToken.None)
+                .ConfigureAwait(true);
+            if (receipt is null)
+            {
+                return true;
+            }
+            // Only the exact committed receipt may advance the expected view
+            // revision. An unrelated write or a display transition still ends
+            // this interaction, including a switch away and back.
+            if (!DisplayStillCurrent()
+                || receipt.Command.OperationId != advance.Command.OperationId
+                || receipt.Command.Quote.WorkspaceId != entryWorkspaceId
+                || receipt.CommittedRevision <= entryRevision
+                || _interactionCoordinator.PeekState().ContentRevision != receipt.CommittedRevision)
+            {
+                // The commit itself is durable and retained, but this window is
+                // no longer showing the runner it was made against: keep the
+                // commit, never display it in another context.
+                return true;
+            }
+
+            entryRevision = receipt.CommittedRevision;
+            long noticeRevision = receipt.CommittedRevision;
+
+            PublishCareerEditNotice(
+                "advanced " + advance.DisplayAttribute + " to natural rating "
+                + advance.TargetNaturalRating.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + " for " + advance.Command.Quote.KarmaCost.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + " karma (remaining " + receipt.KarmaAfter + ").", () => DisplayStillCurrent()
+                    && _interactionCoordinator.PeekState().ContentRevision == noticeRevision);
+
+            Sr6CareerAttributeAdvanceEditorSnapshot? reopened = await _interactionCoordinator
+                .PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None)
+                .ConfigureAwait(true);
+            if (reopened is null)
+            {
+                return true;
+            }
+            if (!ContextStillCurrent())
+            {
+                return true;
+            }
+
+            editor = reopened;
+        }
+    }
+
+    private void PublishCareerEditNotice(string message, Func<bool>? contextStillCurrent = null)
     {
         string notice = CareerEditNoticePrefix + message;
         try
         {
-            Dispatcher.UIThread.Post(() =>
+            CareerDisplayContext.PostIfCurrent(callback => Dispatcher.UIThread.Post(callback), contextStillCurrent ?? (() => true), () =>
             {
                 try
                 {
@@ -258,5 +382,52 @@ public partial class MainWindow
         {
             // Same best-effort contract when the dispatcher itself is unavailable.
         }
+    }
+}
+
+internal sealed class CareerDisplayContext
+{
+    private readonly object _gate = new();
+    private long _generation;
+    private CharacterWorkspaceId? _workspaceId;
+    private OwnerContextStamp? _owner;
+
+    public void Observe(CharacterWorkspaceId? workspaceId, OwnerContextStamp? owner)
+    {
+        lock (_gate)
+        {
+            if (_workspaceId == workspaceId && _owner == owner) return;
+            _workspaceId = workspaceId;
+            _owner = owner;
+            _generation++;
+        }
+    }
+
+    public long Capture(CharacterWorkspaceId? workspaceId, OwnerContextStamp? owner)
+    {
+        lock (_gate)
+        {
+            Observe(workspaceId, owner);
+            return _generation;
+        }
+    }
+
+    public bool IsCurrent(long generation, CharacterWorkspaceId? workspaceId, OwnerContextStamp? owner)
+    {
+        lock (_gate)
+        {
+            return generation == _generation && workspaceId == _workspaceId && owner == _owner;
+        }
+    }
+
+    public void Invalidate()
+    {
+        lock (_gate) _generation++;
+    }
+
+    internal static void PostIfCurrent(Action<Action> post, Func<bool> current, Action publish)
+    {
+        if (!current()) return;
+        post(() => { if (current()) publish(); });
     }
 }

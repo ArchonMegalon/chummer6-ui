@@ -8,7 +8,7 @@ namespace Chummer.CreationWizard.Presentation.Tests;
 [TestClass]
 public sealed class CharacterCreationCoreContentBundleTests
 {
-    private const string Pinned = "c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c";
+    private const string Pinned = "2057d3160122608339884cddc129bb6a4abdb6bb";
     private readonly List<string> _temporary = [];
     [TestCleanup] public void Cleanup() { foreach (string path in _temporary) if (Directory.Exists(path)) Directory.Delete(path, true); }
 
@@ -49,7 +49,7 @@ public sealed class CharacterCreationCoreContentBundleTests
     [TestMethod]
     [DataRow("[]")]
     [DataRow("null")]
-    [DataRow("{\"schemaVersion\":\"2\",\"contentCommit\":\"c28c87a1abb6e72f8a3db45a2a2f9ae578fd103c\"}")]
+    [DataRow("{\"schemaVersion\":\"2\",\"contentCommit\":\"2057d3160122608339884cddc129bb6a4abdb6bb\"}")]
     [DataRow("{\"schemaVersion\":1,\"contentCommit\":\"short\"}")]
     [DataRow("{broken")]
     public void Malformed_manifests_fail_without_throwing_or_git_fallback(string text)

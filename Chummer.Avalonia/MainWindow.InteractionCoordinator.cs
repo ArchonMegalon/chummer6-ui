@@ -1,3 +1,4 @@
+using Chummer.Application.Owners;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
@@ -30,6 +31,19 @@ internal sealed class MainWindowInteractionCoordinator
     public Task<CareerAttributeAdvanceEditorState?> PrepareCareerAttributeAdvanceAsync(CancellationToken ct)
     {
         return _presenter.PrepareCareerAttributeAdvanceAsync(ct);
+    }
+
+    public Task<Sr6CareerAttributeAdvanceEditorSnapshot?> PrepareSr6CareerAttributeAdvanceAsync(CancellationToken ct)
+    {
+        return _presenter.PrepareSr6CareerAttributeAdvanceAsync(ct);
+    }
+
+    public Task<Sr6CareerAttributeReceipt?> ApplySr6CareerAttributeAdvanceAsync(
+        OwnerContextStamp owner,
+        Sr6CareerAttributeCommand command,
+        CancellationToken ct)
+    {
+        return _presenter.ApplySr6CareerAttributeAdvanceAsync(owner, command, ct);
     }
 
     public Task<CharacterCareerAttributeAdvanceReceipt?> ApplyCareerAttributeAdvanceAsync(

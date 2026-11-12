@@ -24,6 +24,7 @@ public sealed partial class CharacterOverviewPresenter :
     private static readonly TimeSpan PostCommitShellSyncBudget = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan PostCommitRecoveryBudget = TimeSpan.FromSeconds(5);
     private readonly IChummerClient _client;
+    private readonly ISr6CareerAttributeRecoveryStore _sr6CareerAttributeRecoveryStore;
     private readonly IWorkspaceSessionPresenter _workspaceSessionPresenter;
     private readonly IDesktopDialogFactory _dialogFactory;
     private readonly IOverviewCommandDispatcher _commandDispatcher;
@@ -84,9 +85,11 @@ public sealed partial class CharacterOverviewPresenter :
         ICharacterSourceDataResolver? characterSourceDataResolver = null,
         ICharacterCreationBootstrapService? characterCreationBootstrapService = null,
         ICharacterCreationBootstrapActivationService? characterCreationBootstrapActivationService = null,
-        IOwnerBoundCharacterCreationBootstrapService? ownerBoundCharacterCreationBootstrapService = null)
+        IOwnerBoundCharacterCreationBootstrapService? ownerBoundCharacterCreationBootstrapService = null,
+        ISr6CareerAttributeRecoveryStore? sr6CareerAttributeRecoveryStore = null)
     {
         _client = client;
+        _sr6CareerAttributeRecoveryStore = sr6CareerAttributeRecoveryStore ?? new UnavailableSr6CareerAttributeRecoveryStore();
         IWorkspaceSessionManager manager = workspaceSessionManager ?? new WorkspaceSessionManager();
         _workspaceSessionPresenter = workspaceSessionPresenter ?? new WorkspaceSessionPresenter(manager);
         _dialogFactory = dialogFactory ?? new DesktopDialogFactory();

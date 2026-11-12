@@ -15,7 +15,8 @@ public sealed record BuildGhostAnalysisClientContext(
     IReadOnlyList<string> SupportedLocales,
     string DeterministicFallbackText);
 
-public interface IChummerClient
+public interface IChummerClient :
+    Chummer.Presentation.Overview.ISr6CareerAttributeAdvancementClient
 {
     Task<ShellPreferences> GetShellPreferencesAsync(CancellationToken ct);
 

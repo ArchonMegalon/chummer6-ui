@@ -143,7 +143,7 @@ namespace Chummer.Tests.Presentation;
     // ----- 1b. SR6 Improve / Burn Edge buttons (T66) -----
 
     [TestMethod]
-    public void Sr6_improve_button_refuses_legacy_purchase_even_for_forced_routed_click()
+        public void Sr6_improve_button_routes_to_advancement_and_refuses_legacy_purchase()
     {
         WithHeadlessUi(() =>
         {
@@ -158,7 +158,7 @@ namespace Chummer.Tests.Presentation;
 
             Button? improve = FindButtonByName(host, "AttributeImprove_BOD");
             Assert.IsNotNull(improve, "SR6 career row must expose the Improve button.");
-            Assert.IsFalse(improve.IsEnabled, "SR6 requires the qualified Core advancement operation.");
+            Assert.IsTrue(improve.IsEnabled, "R109: SR6 Improve must be enabled in career mode so an ordinary row click reaches the SR6 advancement quote.");
             Assert.AreEqual("Improve", improve.Content);
 
             string?[] valuesBefore = host.GetVisualDescendants().OfType<TextBlock>().Select(x => x.Text).ToArray();
@@ -168,6 +168,36 @@ namespace Chummer.Tests.Presentation;
             Assert.AreEqual(0, edits.Count, "A forced routed click must not dispatch or optimistically spend Karma.");
             CollectionAssert.AreEqual(valuesBefore,
                 host.GetVisualDescendants().OfType<TextBlock>().Select(x => x.Text).ToArray());
+
+            hostWindow.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+    [TestMethod]
+    public void Sr6_improve_row_click_reaches_the_requested_advancement_quote()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window hostWindow = ShowHost(new SectionHostControl());
+            var host = (SectionHostControl)hostWindow.Content!;
+            host.SetState(BuildHostState("sr6", careerMode: true));
+            PumpLayout(host);
+
+            List<string> requested = [];
+            List<AttributeEditRequest> edits = [];
+            host.CareerAttributeAdvanceRequested += (_, attributeName) => requested.Add(attributeName);
+            host.AttributeEditRequested += (_, request) => edits.Add(request);
+
+            Button? improve = FindButtonByName(host, "AttributeImprove_BOD");
+            Assert.IsNotNull(improve, "SR6 career row must expose the Improve button.");
+            Assert.IsTrue(improve.IsEnabled, "An ordinary SR6 row click must be enabled.");
+            improve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            CollectionAssert.AreEqual(new[] { "BOD" }, requested,
+                "The ordinary row click must route to the requested SR6 advancement quote.");
+            Assert.AreEqual(0, edits.Count, "The SR6 row click must not fire the legacy SR5 karma edit.");
 
             hostWindow.Close();
             Dispatcher.UIThread.RunJobs();
@@ -206,13 +236,14 @@ namespace Chummer.Tests.Presentation;
     }
 
     [TestMethod]
-    public void Sr6_improve_button_disables_when_karma_cannot_cover_the_cost()
+        public void Sr6_improve_button_routes_to_advancement_quote_regardless_of_local_karma()
     {
         WithHeadlessUi(() =>
         {
             Window hostWindow = ShowHost(new SectionHostControl());
             var host = (SectionHostControl)hostWindow.Content!;
-            // Cost 15 vs 5 karma: canImprove false; no click may fire an edit.
+            // R109: SR6 eligibility no longer keys on availableKarma (the Core
+            // quote/review governs the purchase); the click routes to the dialog.
             host.SetState(BuildHostState("sr6", careerMode: true, availableKarmaOverride: 5));
             PumpLayout(host);
 
@@ -221,12 +252,18 @@ namespace Chummer.Tests.Presentation;
 
             Button? improve = FindButtonByName(host, "AttributeImprove_BOD");
             Assert.IsNotNull(improve, "SR6 career row must still render the Improve button.");
-            Assert.IsFalse(improve.IsEnabled, "Improve must disable when available karma cannot cover the cost.");
+            Assert.IsTrue(improve.IsEnabled, "R109: SR6 Improve stays enabled; the Core quote decides affordability, not local karma.");
 
+            string?[] valuesBefore = host.GetVisualDescendants().OfType<TextBlock>().Select(x => x.Text).ToArray();
+            List<string> requested = [];
+            host.CareerAttributeAdvanceRequested += (_, attributeName) => requested.Add(attributeName);
             improve.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
 
-            Assert.AreEqual(0, edits.Count, "A disabled Improve button must not raise an edit.");
+            Assert.AreEqual(0, edits.Count, "The SR6 click must not fire the legacy SR5 karma edit.");
+            CollectionAssert.AreEqual(new[] { "BOD" }, requested, "The SR6 click must route to the advancement dialog.");
+            CollectionAssert.AreEqual(valuesBefore,
+                host.GetVisualDescendants().OfType<TextBlock>().Select(x => x.Text).ToArray());
 
             hostWindow.Close();
             Dispatcher.UIThread.RunJobs();

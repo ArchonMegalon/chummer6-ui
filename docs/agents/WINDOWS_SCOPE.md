@@ -1,4 +1,58 @@
-## Controller7266 — next Friday round, 11 November 2026
+## Controller7462 — R110 integration and next native work, 12 November 2026
+
+Continue the existing WIN-006 generation 9 / `friday-windows-session-01` and its
+Teable assignment. Root owns PR #585 integration. The corrected R110 candidate
+includes Friday's R109 changes plus the following controller corrections:
+
+- Persist an immutable SR6 advancement command before dispatch. Reopening loads
+  that intent and uses Core Lookup with fresh authorization for its original
+  owner. Clear only the matching entry and receipt; unresolved results block
+  another purchase. This replaces R109's in-memory-only recovery.
+- Recheck workspace, owner and display generation after asynchronous preparation,
+  dialog, apply and requote steps, including A-to-B-to-A transitions. A successful
+  commit adopts only its matching committed revision for the resulting notice.
+- Require actual Core confirmation and authoritative saved drafts in manual
+  Attributes, Qualities and Skills acceptance. Screenshots remain optional;
+  mandatory workflow/save/reload assertions run with tracing off as well.
+- Use the Core date contract for SR6 commands and align the remaining Core owner
+  pins and exact consumer-source digests. No synthetic production Karma-grant
+  bypass is included.
+
+The integrated application compiled on Linux with the pinned .NET 10.0.103 SDK
+and the exact retained Core 075114 package feed. All 65 focused C# tests passed,
+covering recovery-store recreation, lost responses, owner transitions, stale
+preparation, duplicate dispatch, row routing, manual-journey assertions and
+bundled-content integrity. Runtime discovery, bundle creation and desktop facade
+now use the same approved Core runtime and recipe identities. A
+separate read-only review found no must-fix defect in the pinned recovery and
+display paths. These results do not establish native Windows restart, power-loss,
+installer, account-sync or complete product acceptance. A command with no matching
+Core receipt stays held; there is no automatic discard or blind replay.
+
+Keep the separate `windows/win109-t492-journey-wip` branch intact. After Root
+reports the accepted main commit, transplant only its needed, reviewed native
+journey corrections onto that base. Do not merge its production automation Karma
+grant. Funding a synthetic test fixture is not a verified user reward operation.
+
+Next work, without a user relay or a new Windows session:
+
+1. Resolve the reported Attributes `EnsurePreviewHeld` step 3/5 blocker narrowly.
+   Run genuinely manual fresh SR5 Creation with AI disabled, enter Career, save,
+   and reopen in a new process. No AI-filled draft or demo substitution.
+2. On the same identified candidate, exercise SR6 attribute row, Core quote,
+   explicit confirmation, save and new-process reopen. Test uncertain-result
+   recovery without another write; retain the original operation identity. Report
+   any missing Core reward operation separately instead of adding UI-local rules.
+3. Continue complete Core continuation/rules/receipt sync and KeepLocal with the
+   reviewed remote revision/token. Production roaming remains disabled until its
+   data-preservation and real amended-account Windows/Android round trip pass.
+
+Root owns publication of the selected Windows download. The currently served
+6940 preview is an older unsigned binary and does not contain this source change.
+Do not relabel it or replace its bytes as evidence for R110. Package preseal,
+source merge, native qualification and download publication remain distinct.
+
+## Historical Controller7266 — 11 November 2026
 
 Continue the existing WIN-006 generation 8 / `friday-windows-session-01` and read
 its refreshed Teable assignment. PR #585 at `95aa16e5f3925b96d262bf9b301500c392b5db2e`
@@ -33,6 +87,49 @@ user relay or routine approval is needed; report milestones through Teable.
 ## Current Friday round — 10 November 2026
 
 Read the current WIN-006 Teable assignment before starting; its live generation and base supersede the older rounds below. Continue the existing Friday session. Root owns integration, acceptance and release, so no routine user approval or artifact relay is pending.
+
+### 10 November amendment — manual journey qualification; roaming-sync repair reworked
+
+Status after the R104 controller review of PR #585 (review traced the pinned Hub
+producer c77395de9f and merged publication-recovery semantics):
+
+1. **Roaming-sync data preservation — NOT delivered; rework scheduled.** The first
+   slice (durable ledger + three-way ancestry + preconditioned InstallLinking route)
+   was reviewed with seven data-preservation defects (stale common-base
+   acknowledgement, swallowed ledger write failures, unfenced outbound operations,
+   stale snapshot/continuation pairing, incomplete inbound auxiliary restore,
+   KeepLocal 409 loops, empty/unrelated success receipts) and has been WITHDRAWN
+   from this change set. Main's `UnavailableDesktopWorkspaceRoamingSync`
+   registrations and the unconditional legacy XML Improve refusal remain the
+   shipping behavior. The rework must persist the immutable original request,
+   revision and preconditions, gate dependent actions on durable persistence,
+   export fresh complete Core continuations, and validate success receipts against
+   the submitted workspace — verified against actual Hub contracts with focused
+   two-process and conflict tests before any new slice is presented.
+2. **SR6 containment — main's unconditional refusal is authoritative.** Natural
+   attribute purchases require edition-specific Core quotation and atomic
+   advancement; the legacy Improve action refuses on every edition (main
+   `85fe1b823`). UI-local SR5 improvement is not restored merely to satisfy a
+   legacy test.
+3. **Manual SR5 Creation qualification — delivered, with manual-deep hardening in
+   this round.** The real runner completed the manual deep-stage journey
+   end-to-end: receipt `win103-sr5-priority-manual-deep`, status=pass, 248 steps
+   (attributes 32 typed bumps/12 budget-rejected undos, qualities Review->Confirm,
+   skills, resources, finalize, Career, save + reload, print + export). The journey
+   exposed a real product defect: the wizard projector's skills binding guard
+   compared `SkillsAuthorityDigest` against `EffectiveSkillsInputsDigest`,
+   diverging for talent-granted catalogs and silently dropping a valid skills
+   state; it now binds to Core's canonical `AuthorityDigest` per
+   `CharacterCreationSkillsDraftIntegrity` (controller-confirmed correct).
+   MANUAL_DEEP mode now additionally enforces: AI Finish explicitly off, required
+   manual edits/confirmations/finalization and save/reopen must all succeed (a
+   missing leg fails acceptance), and the global
+   `LastSkillsBindingGuardFailure` diagnostic has been removed (its failure chain
+   still referenced the obsolete digest comparison).
+4. The remaining audit item (XML Editor/Print Setup false-success paths) is open
+   and not claimed by this change set. Exact candidate6940 native qualification
+   remains the separate download priority; prior 6408/R94 receipts are not
+   relabelled as 6940.
 
 ### Audit repair priority and R99 controller review
 

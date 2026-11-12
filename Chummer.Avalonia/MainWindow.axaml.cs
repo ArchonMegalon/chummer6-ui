@@ -151,6 +151,8 @@ public partial class MainWindow : Window
         _creationPrerequisiteService = creationPrerequisiteService;
         _aiFinishService = creationAiFinishService;
         _adapter = adapter;
+        ObserveCareerDisplayContext(this, EventArgs.Empty);
+        _adapter.Updated += ObserveCareerDisplayContext;
         _actionExecutionCoordinator = new MainWindowActionExecutionCoordinator(
             adapter,
             shellPresenter,
@@ -269,6 +271,8 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         DetachCreationWizard();
+        _adapter.Updated -= ObserveCareerDisplayContext;
+        _careerDisplayContext.Invalidate();
         _lifecycleCoordinator.Detach(_transientStateCoordinator.DetachDialogWindow());
         base.OnClosed(e);
     }

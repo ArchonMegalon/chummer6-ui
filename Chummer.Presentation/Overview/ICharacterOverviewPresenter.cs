@@ -2,6 +2,8 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Characters;
 
+using Chummer.Application.Owners;
+
 namespace Chummer.Presentation.Overview;
 
 public interface ICharacterOverviewPresenter
@@ -408,6 +410,15 @@ public interface ICharacterOverviewPresenter
         CareerAttributeAdvanceRequest request,
         CancellationToken ct)
         => Task.FromResult<CharacterCareerAttributeAdvanceReceipt?>(null);
+
+    Task<Sr6CareerAttributeAdvanceEditorSnapshot?> PrepareSr6CareerAttributeAdvanceAsync(CancellationToken ct)
+        => Task.FromResult<Sr6CareerAttributeAdvanceEditorSnapshot?>(null);
+
+    Task<Sr6CareerAttributeReceipt?> ApplySr6CareerAttributeAdvanceAsync(
+        OwnerContextStamp owner,
+        Sr6CareerAttributeCommand command,
+        CancellationToken ct)
+        => Task.FromResult<Sr6CareerAttributeReceipt?>(null);
 
     Task<CharacterCareerAttributeCorrectionPlan?> CorrectCareerAttributeAdvanceAsync(
         CareerAttributeCorrectionRequest request,

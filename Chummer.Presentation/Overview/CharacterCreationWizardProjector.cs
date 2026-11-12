@@ -1431,7 +1431,8 @@ public static class CharacterCreationWizardProjector
         ArgumentNullException.ThrowIfNull(loadedOverview);
         ArgumentNullException.ThrowIfNull(skills);
         string rawDigest = ComputeContentDigest(loadedOverview.Document);
-        return loadedOverview.Document is not null
+        string guard = null;
+        bool result = loadedOverview.Document is not null
                && !loadedOverview.Profile.Created
                && skills.Binding.WorkspaceId == workspaceId
                && skills.Binding.ContentRevision == loadedOverview.ContentRevision
@@ -1439,12 +1440,19 @@ public static class CharacterCreationWizardProjector
                && CharacterCreationSkillsDigest.EqualsFixedTime(
                    skills.Binding.RawCharacterXmlDigest,
                    rawDigest)
+               // Binding digest must match Core's canonical integrity rule
+               // (CharacterCreationSkillsDraftIntegrity.IsValidStateProjection):
+               // SkillsAuthorityDigest binds to AuthorityDigest, the authority's
+               // identity digest - NOT EffectiveSkillsInputsDigest (the catalog
+               // inputs digest), which diverges whenever the talent grants a
+               // context-bound skill catalog.
                && CharacterCreationSkillsDigest.EqualsFixedTime(
                    skills.Binding.SkillsAuthorityDigest,
-                   skills.Authority.EffectiveSkillsInputsDigest)
+                   skills.Authority.AuthorityDigest)
                && CharacterCreationSkillsDigest.EqualsFixedTime(
                    skills.SnapshotDigest,
                    CharacterCreationSkillsDigest.Compute(skills with { SnapshotDigest = string.Empty }));
+        return result;
     }
 
     /// <summary>Determines whether a loaded resources state is bound to the loaded overview document.
