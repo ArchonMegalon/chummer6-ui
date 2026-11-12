@@ -26,7 +26,8 @@
                    VerticalAlignment="Center"
                    TextWrapping="Wrap"
                    MaxWidth="480"
-                   TextAlignment="Right" />
+                   TextAlignment="Right"
+                   AutomationProperties.AutomationId="sr6-wizard-authority-status" />
       </Grid>
     </Border>
 
@@ -75,7 +76,8 @@
                    Classes="shell-caption"
                    VerticalAlignment="Center"
                    TextWrapping="Wrap"
-                   MaxWidth="560" />
+                   MaxWidth="560"
+                   AutomationProperties.AutomationId="sr6-wizard-footer-status" />
         <Button x:Name="BackButton"
                 Grid.Column="1"
                 Content="&lt; Back"

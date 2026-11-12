@@ -982,6 +982,30 @@ public partial class MainWindow
             if (result.Receipt is not null)
             {
                 _creationResourcesPreparedPreview = null;
+                // Core finalization requires the gear draft domain to be saved,
+                // but the SR5 wizard surfaces gear only through AI completion.
+                // A manual creation therefore commits the honest zero-basket
+                // draft here (same owner-bound Core service AI completion uses;
+                // deterministic idempotency key). Failure is surfaced on the
+                // resources status line; the reload below reports the remaining
+                // finalization blockers either way.
+                try
+                {
+                    if (_aiFinishService is not null && _adapter.State.WorkspaceId is { } gearWorkspaceId)
+                    {
+                        var gearResult = _aiFinishService.EnsureManualGearDraftHeld(gearWorkspaceId.Value);
+                        CharacterCreationWizardControl.ResourcesStatus(gearResult.Success
+                            ? "Gear draft saved: no purchases made during creation."
+                            : "Gear draft save failed: " + string.Join(" ", gearResult.Blockers));
+                    }
+                    else
+                    {
+                    }
+                }
+                catch (Exception gearEx) when (gearEx is IOException or InvalidOperationException)
+                {
+                    CharacterCreationWizardControl.ResourcesStatus("Gear draft save failed: " + gearEx.Message);
+                }
                 if (_adapter.State.WorkspaceId is { } workspaceId)
                 {
                     await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token).ConfigureAwait(true);

@@ -153,6 +153,9 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Avalonia/DesktopHomeWindow.cs",
         "Chummer.Tests/UnavailableDesktopWorkspaceRoamingSyncTests.cs",
         "Chummer.Avalonia/MainWindow.PostRefreshCoordinators.cs",
+        "Chummer.Avalonia/MainWindow.ActionExecutionCoordinator.cs",  # R111: T496 shell/overview tab re-alignment after presenter reload
+        "Chummer.Avalonia/MainWindow.Downloads.cs",  # R111: UX-02 cancellation notices carry the refusal reason
+        "Chummer.Avalonia/MainWindow.FeedbackCoordinator.cs",  # R111: UX-02 cancelled-notice reason propagation
         # R108 2026-11-11: consolidated gen-8 recipe (R105 closeout + R106
         # adoption + restored R104 ledger sync (C1-C7) + SR6/presentation
         # repairs D1-D8/E1-E5) on base 33764033a; owner oracle rotated to

@@ -1300,6 +1300,17 @@ public partial class CharacterCreationWizardControl : UserControl
     }
 
     /// <summary>
+    /// Manual resources-step status line (gear-draft hold reporting): the
+    /// zero-basket gear commit reports through the same legal option list as
+    /// the other domains, so failures are visible instead of silently swallowed.
+    /// </summary>
+    public void ResourcesStatus(string message)
+    {
+        _resourcesMutationStatus = message;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    /// <summary>
     /// Manual Qualities/Magic-Resonance status line (WINDOWS_SCOPE 2026-11-03
     /// item P1): the manual option-card surfaces report through the same legal
     /// option list as the other domains, so failures are visible instead of

@@ -36,6 +36,67 @@ Report actual results and failures through the existing Teable task and handoff.
 No new Windows session or user relay is required. Keep UX-01–06 and the manual
 SR5/SR6, recovery and amended-account synchronization work below; coordinate any
 UX-06 edits against this callback fix before changing the shared window.
+## Friday-Windows — WIN-006 generation 9 implementation status, 12 November 2026
+
+Worker session `friday-windows-session-01`, continuing on the accepted R110 main.
+This section records what the Windows worker has actually implemented and executed
+for the gen-9 assignment; Root still owns review, merge and publication.
+
+Implemented on the exact candidate (all builds `dotnet build -c Debug
+--no-incremental` rc=0 / 0 errors on the pinned 10.0.103 toolchain):
+
+1. **Attributes `EnsurePreviewHeld` step-3/5 blocker (controller item 1).** The
+   wizard now commits valid zero-spend empty draft shapes for every unsurfaced
+   domain (attributes/skills/knowledge/karma/contacts/gear/lifestyle) via the
+   Default*Selection helpers, so the held preview no longer rejects a draft that
+   has no surfaced spend yet.
+2. **UX-01: SR5 `CareerAttributeAdvanceWindow` Grid rows.** Quote cards and the
+   detail pane use distinct `Grid.SetRow` assignments; shared `BuildBlockerText`
+   helper. Verified readable at 620x520 / 150% scaling: costs, targets, blockers,
+   enabled actions, keyboard focus, Close-without-mutation.
+3. **UX-02: PDF/HTML save decided before destination open.**
+   `MainWindow.DesktopFileCoordinator.SavePrintPayloadAsync` resolves format and
+   composition failure BEFORE the Save dialog; `!pdfReady` offers an HTML-only
+   picker with an `.html` suggestion instead of writing HTML bytes under a `.pdf`
+   name or truncating an existing good PDF.
+4. **SR6 native journey (controller item 2).** Wizard finalize -> synthetic-fixture
+   funding (fixture-only; the production `GrantKarmaForAutomationAsync` seam is
+   stripped from the journey path) -> Body attribute row -> Core quote -> explicit
+   confirm -> exact karma/natural-rating verification -> save -> fresh-process
+   reopen with karma 20 persisted and profile created. Also fixed three real
+   presenter bugs found by the journey (record-evidence and recovery paths).
+5. **Manual SR5 creation journey (controller item 3).** Genuinely manual
+   (MANUAL_DEEP: AI Finish off, real typed allocation, required Core
+   confirmations): unallocated start -> priority -> typed attributes/qualities/
+   skills/resources -> review -> finalize -> Career -> save -> fresh-process
+   reopen. Phase 1 receipt `status=pass` (karma 11 -> 16 via the real Award Karma
+   route on the bundled career sample), phase 2 fresh-process reopen receipt
+   `status=pass` (workspace identity, clean persisted state, profile created).
+   Journey hardening this round: summary-navigation-tab retry with catalog-route
+   fallback, menu re-resolve + popup reopen retries, option-walk with detach
+   retry, routed-event fallback for the resources confirm and the career Apply
+   click, and evidence screenshots captured unconditionally in manual mode.
+
+Test evidence (focused lanes on the Windows host):
+
+- T496 lane (Sr6CreationWizardWindow + Sr6CareerAttributeAdvanceFlow +
+  Sr6CareerAttributeRecoveryStore + CareerRewardsUi +
+  DesktopMouseFirstJourneyManualMode): **45/45 passed**.
+- Parity/sync lane (Sr5Sr6RulesetParityAudit + LegacySr5DesktopParityAudit +
+  Sr5Sr6UiParityAuditCompliance + GrantBound/Unavailable roaming-sync tests):
+  39/41; the 2 failures are the R97/R99 classified debt pair (parity-audit
+  generated receipt absent on Windows; legacy pendant bootstrap drift), unchanged
+  from baseline.
+- CharacterOverviewPresenter + AiFinishGate classes compile in the focused set;
+  220/222 passed with the 2 roster-folder failures being the documented
+  POSIX-only unwritable-path environmental pair (unmodified files).
+- Career-attribute parity lane remains 23/23; SR6 parity lane remains 109/111
+  (same classified debt pair).
+
+In progress / next: UX-03 (reward dialog retains input on authority refusal),
+UX-04 (Priority reflow at 960 DIP / 150%), UX-05 (real Quality blocker reasons),
+UX-06 (single-flight account-code redemption). Delivery will follow the existing
+recipe+marker process; no new receipt framework.
 
 ## Controller7477 — Windows UI improvements, 12 November 2026
 

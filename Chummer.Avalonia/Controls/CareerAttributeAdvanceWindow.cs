@@ -65,13 +65,45 @@ public sealed class CareerAttributeAdvanceWindow : Window
             Classes = { "shell-section-title" },
             Text = selected is null ? "No advanceable attribute found" : "Advance " + selected.DisplayName,
         };
-        var detailBody = new TextBlock
+        // UX-01: the selected-quote summary is a Grid with distinct rows (the
+        // pipe-separated single line overlapped at 150% scaling).
+        string detailTransition = selected is null
+            ? "This runner has no karma-advanceable attributes (or none matched the requested one)."
+            : "Current " + selected.EffectiveValue + " -> target " + selected.TargetValue
+                + "  |  cost " + selected.KarmaCost + " karma";
+        string detailBudget = selected is null
+            ? string.Empty
+            : "Available karma " + selected.AvailableKarma
+                + (selected.RepairsBurnedEdge ? "  |  repairs burned Edge" : string.Empty);
+        string detailBlocker = selected is null
+            ? string.Empty
+            : BuildBlockerText(selected);
+        var detailTransitionText = new TextBlock
         {
             Classes = { "shell-caption" },
-            Text = selected is null
-                ? "This runner has no karma-advanceable attributes (or none matched the requested one)."
-                : BuildQuoteSummaryText(selected),
+            Text = detailTransition,
             TextWrapping = TextWrapping.Wrap,
+        };
+        var detailBudgetText = new TextBlock
+        {
+            Classes = { "shell-caption" },
+            Text = detailBudget,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var detailBlockerText = new TextBlock
+        {
+            Classes = { "shell-caption" },
+            Text = detailBlocker,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        Grid.SetRow(detailTransitionText, 0);
+        Grid.SetRow(detailBudgetText, 1);
+        Grid.SetRow(detailBlockerText, 2);
+        var detailBody = new Grid
+        {
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
+            RowSpacing = 2,
+            Children = { detailTransitionText, detailBudgetText, detailBlockerText },
         };
 
         var applyButton = new Button
@@ -206,17 +238,7 @@ public sealed class CareerAttributeAdvanceWindow : Window
 
     private static string BuildQuoteSummaryText(CharacterCareerAttributeAdvanceQuote quote)
     {
-        string blockerText = quote.Blocker switch
-        {
-            CharacterCareerAttributeAdvanceBlocker.None => "Ready to advance.",
-            CharacterCareerAttributeAdvanceBlocker.NotCareerCharacter => "Open a saved career runner before advancing attributes.",
-            CharacterCareerAttributeAdvanceBlocker.UnsupportedRuleset => "This ruleset does not support karma advancement here.",
-            CharacterCareerAttributeAdvanceBlocker.ForeignTarget => "This attribute belongs to another runner.",
-            CharacterCareerAttributeAdvanceBlocker.SpecialAttributeDisabled => "Special attribute advancement is not enabled for this runner.",
-            CharacterCareerAttributeAdvanceBlocker.AtNaturalMaximum => "Already at the natural maximum for this metatype.",
-            CharacterCareerAttributeAdvanceBlocker.InsufficientKarma => "Not enough unspent karma for this advance.",
-            _ => quote.Blocker.ToString(),
-        };
+        string blockerText = BuildBlockerText(quote);
 
         return "Current " + quote.EffectiveValue + " -> target " + quote.TargetValue
             + "  |  cost " + quote.KarmaCost + " karma"
@@ -241,6 +263,22 @@ public sealed class CareerAttributeAdvanceWindow : Window
             DateTime.Now);
     }
 
+    /// <summary>UX-01: shared blocker-reason text for quote rows and the detail pane.</summary>
+    private static string BuildBlockerText(CharacterCareerAttributeAdvanceQuote quote)
+    {
+        return quote.Blocker switch
+        {
+            CharacterCareerAttributeAdvanceBlocker.None => "Ready to advance.",
+            CharacterCareerAttributeAdvanceBlocker.NotCareerCharacter => "Open a saved career runner before advancing attributes.",
+            CharacterCareerAttributeAdvanceBlocker.UnsupportedRuleset => "This ruleset does not support karma advancement here.",
+            CharacterCareerAttributeAdvanceBlocker.ForeignTarget => "This attribute belongs to another runner.",
+            CharacterCareerAttributeAdvanceBlocker.SpecialAttributeDisabled => "Special attribute advancement is not enabled for this runner.",
+            CharacterCareerAttributeAdvanceBlocker.AtNaturalMaximum => "Already at the natural maximum for this metatype.",
+            CharacterCareerAttributeAdvanceBlocker.InsufficientKarma => "Not enough unspent karma for this advance.",
+            _ => quote.Blocker.ToString(),
+        };
+    }
+
     private static Control BuildQuoteCard(
         CharacterCareerAttributeAdvanceQuote quote,
         CharacterCareerAttributeAdvanceQuote? selected)
@@ -249,31 +287,48 @@ public sealed class CareerAttributeAdvanceWindow : Window
             selected.Identity.Abbreviation,
             quote.Identity.Abbreviation,
             StringComparison.OrdinalIgnoreCase);
+        // UX-01: each quote renders as a Grid with DISTINCT rows so the name,
+        // the current->target transition, the karma cost and the blocker
+        // reason never share a row. At 620x520 and Windows 150% text scaling
+        // each row grows independently instead of overlapping.
+        var cardName = new TextBlock
+        {
+            Classes = { "shell-section-title" },
+            Text = (isSelected ? "> " : string.Empty) + quote.DisplayName,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var cardTransition = new TextBlock
+        {
+            Classes = { "shell-caption" },
+            Text = "Current " + quote.EffectiveValue + " -> target " + quote.TargetValue,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var cardCost = new TextBlock
+        {
+            Classes = { "shell-caption" },
+            Text = "Cost " + quote.KarmaCost + " karma"
+                + (quote.RepairsBurnedEdge ? "  |  repairs burned Edge" : string.Empty),
+            TextWrapping = TextWrapping.Wrap,
+        };
+        var cardBlocker = new TextBlock
+        {
+            Classes = { "shell-caption" },
+            Text = quote.CanAdvance ? "Ready" : "Blocked: " + quote.Blocker,
+            TextWrapping = TextWrapping.Wrap,
+        };
+        Grid.SetRow(cardName, 0);
+        Grid.SetRow(cardTransition, 1);
+        Grid.SetRow(cardCost, 2);
+        Grid.SetRow(cardBlocker, 3);
         var card = new Border
         {
             Classes = { "shell-card" },
             Padding = new Thickness(10, 8),
-            Child = new StackPanel
+            Child = new Grid
             {
-                Spacing = 2,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Classes = { "shell-section-title" },
-                        Text = (isSelected ? "> " : string.Empty) + quote.DisplayName
-                            + "  |  " + quote.EffectiveValue + " -> " + quote.TargetValue
-                            + "  |  " + quote.KarmaCost + " karma",
-                        TextWrapping = TextWrapping.Wrap,
-                    },
-                    new TextBlock
-                    {
-                        Classes = { "shell-caption" },
-                        Text = (quote.CanAdvance ? "Ready" : "Blocked: " + quote.Blocker)
-                            + (quote.RepairsBurnedEdge ? "  |  repairs burned Edge" : string.Empty),
-                        TextWrapping = TextWrapping.Wrap,
-                    },
-                },
+                RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto"),
+                RowSpacing = 2,
+                Children = { cardName, cardTransition, cardCost, cardBlocker },
             },
         };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(

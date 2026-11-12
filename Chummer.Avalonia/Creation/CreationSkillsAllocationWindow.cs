@@ -144,6 +144,78 @@ namespace Chummer.Avalonia.Creation
                 }
             }
 
+            // First-open catalog backfill: Core projects skill rows only for skills
+            // that already carry an allocation, so a fresh draft rendered an empty
+            // modal with no way to make the first allocation. Backfill zero-rating
+            // rows from the authoritative catalog so every catalogued skill stays
+            // reachable; Core's preview remains the sole authority for costs,
+            // blockers and confirmation.
+            var knownSkillIds = new HashSet<string>(
+                core.Skills.Select(row => row.SourceSkillId), StringComparer.Ordinal);
+            foreach (CharacterCreationSkillCatalogEntry entry in core.Authority.ActiveSkills)
+            {
+                if (knownSkillIds.Add(entry.SourceSkillId))
+                {
+                    active.Add(new CharacterCreationSkillProjection(
+                        entry.SourceSkillId,
+                        CharacterCreationSkillKinds.Active,
+                        entry.Name,
+                        entry.Category,
+                        entry.DefaultAttribute,
+                        entry.SkillGroup,
+                        null,
+                        null,
+                        0,
+                        null,
+                        null,
+                        false,
+                        true,
+                        Array.Empty<string>(),
+                        entry.SourceAnchorIds));
+                }
+            }
+            foreach (CharacterCreationSkillCatalogEntry entry in core.Authority.KnowledgeSkills)
+            {
+                if (knownSkillIds.Add(entry.SourceSkillId))
+                {
+                    knowledge.Add(new CharacterCreationSkillProjection(
+                        entry.SourceSkillId,
+                        CharacterCreationSkillKinds.Knowledge,
+                        entry.Name,
+                        entry.Category,
+                        entry.DefaultAttribute,
+                        entry.SkillGroup,
+                        null,
+                        null,
+                        0,
+                        null,
+                        null,
+                        false,
+                        true,
+                        Array.Empty<string>(),
+                        entry.SourceAnchorIds));
+                }
+            }
+
+            var groupRows = new List<CharacterCreationSkillGroupProjection>(core.SkillGroups);
+            var knownGroupIds = new HashSet<string>(
+                core.SkillGroups.Select(row => row.GroupId), StringComparer.Ordinal);
+            foreach (CharacterCreationSkillGroupCatalogEntry entry in core.Authority.SkillGroups)
+            {
+                if (knownGroupIds.Add(entry.GroupId))
+                {
+                    groupRows.Add(new CharacterCreationSkillGroupProjection(
+                        entry.GroupId,
+                        entry.Name,
+                        0,
+                        0,
+                        entry.MemberSkillSourceIds,
+                        true,
+                        Array.Empty<string>(),
+                        entry.SourceAnchorIds));
+                }
+            }
+
             int activeMax = Math.Max(1, core.Authority.MaxActiveSkillRatingCreate);
             int knowledgeMax = Math.Max(1, core.Authority.MaxKnowledgeSkillRatingCreate);
             int groupMax = Math.Max(1, core.Authority.MaxSkillGroupRatingCreate);
@@ -169,11 +241,11 @@ namespace Chummer.Avalonia.Creation
             }
 
             panel.Children.Add(SectionHeader("Skill groups"));
-            if (core.SkillGroups.Count == 0)
+            if (groupRows.Count == 0)
             {
                 panel.Children.Add(Caption("No authoritative skill-group rows are available for this workspace."));
             }
-            foreach (CharacterCreationSkillGroupProjection row in core.SkillGroups)
+            foreach (CharacterCreationSkillGroupProjection row in groupRows)
             {
                 panel.Children.Add(BuildGroupRow(row, groupMax, draft));
             }
