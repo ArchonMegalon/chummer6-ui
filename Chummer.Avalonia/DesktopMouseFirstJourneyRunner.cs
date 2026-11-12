@@ -2178,6 +2178,46 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             for (int i = 0; i < categories.Length; i++)
             {
                 string comboId = $"sr6-priority-{categories[i]}";
+                // The active wizard instance can be replaced between the
+                // existence wait and this lookup (presenter republish on
+                // snapshot-digest change); wait for the combo on whichever
+                // window is currently visible instead of throwing on the
+                // first miss. Retry across close/reopen cycles and record
+                // which wizard windows are visible on each miss so a final
+                // timeout is diagnosable.
+                bool comboFound = false;
+                for (int attempt = 0; attempt < 3 && !comboFound; attempt++)
+                {
+                    // WaitForConditionWithinAsync returns false on timeout
+                    // (it does not throw); retry across close/reopen cycles
+                    // and record which wizard windows are visible on each miss.
+                    comboFound = await WaitForConditionWithinAsync(
+                        () => Active().GetVisualDescendants().OfType<ComboBox>().Any(b => string.Equals(
+                            AutomationProperties.GetAutomationId(b),
+                            comboId,
+                            StringComparison.Ordinal)),
+                        ct,
+                        TimeSpan.FromSeconds(15));
+                    if (comboFound)
+                    {
+                        break;
+                    }
+                    string wizardDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        var counterId = "sr6-creation-wizard-step-counter";
+                        var visibleWizards = ((global::Avalonia.Application.Current?.ApplicationLifetime
+                            is IClassicDesktopStyleApplicationLifetime desktop)
+                            ? desktop.Windows.OfType<Sr6CreationWizardWindow>() : []).
+                            Select(w =>
+                            {
+                                var counterText = w.GetVisualDescendants().OfType<TextBlock>()
+                                    .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), counterId, StringComparison.Ordinal))?.Text ?? "?";
+                                return w.IsVisible.ToString() + "/" + counterText;
+                            });
+                        return "attempt " + attempt.ToString() + ": wizards=[" + string.Join(",", visibleWizards) + "]";
+                    });
+                    RecordStep(steps, $"sr6 wizard: {comboId} wait miss {wizardDiag}");
+                }
                 await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
                     var box = Active().GetVisualDescendants().OfType<ComboBox>()
@@ -2185,14 +2225,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             AutomationProperties.GetAutomationId(b),
                             comboId,
                             StringComparison.Ordinal))
-                        ?? throw new InvalidOperationException($"sr6 wizard: priority combo {comboId} not found");
+                        ?? throw new InvalidOperationException($"sr6 wizard: priority combo {comboId} not found after wait");
                     box.SelectedItem = ranks[i];
                 });
                 recordPointerAction();
             }
 
             RecordStep(steps, "sr6 wizard: priority ranks assigned (A-E)");
-            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-next", steps, ct, recordPointerAction);
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
 
             // Step 2 (foundation): select the first metatype and the first talent.
             await Dispatcher.UIThread.InvokeAsync(async () =>
@@ -2205,14 +2245,50 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             });
             recordPointerAction();
             RecordStep(steps, "sr6 wizard: foundation metatype + talent selected");
-            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-next", steps, ct, recordPointerAction);
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
 
             // Step 3 (attributes): retain the wizard's default spends; just walk on.
-            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-next", steps, ct, recordPointerAction);
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
 
-            // Step 4 (confirm): tick the confirm checkbox (mints the preview
-            // digest acknowledgement), then Finish dispatches the foundation
-            // commit and auto-jumps to the finalize step.
+            bool confirmReady = false;
+            for (int confirmAttempt = 0; confirmAttempt < 3 && !confirmReady; confirmAttempt++)
+            {
+                // WaitForConditionWithinAsync returns false on timeout; the
+                // checkbox only renders when a preview was minted — otherwise
+                // the step shows the no-preview note. Diagnose on each miss.
+                confirmReady = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)),
+                    ct,
+                    TimeSpan.FromSeconds(20));
+                if (confirmReady)
+                {
+                    break;
+                }
+                string confirmDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    bool noPreview = Active().GetVisualDescendants().OfType<TextBlock>().Any(b => string.Equals(
+                        AutomationProperties.GetAutomationId(b), "sr6-confirm-no-preview", StringComparison.Ordinal));
+                    string? authority = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text;
+                    string? footer = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text;
+                    var counterId = "sr6-creation-wizard-step-counter";
+                    var visibleWizards = ((global::Avalonia.Application.Current?.ApplicationLifetime
+                        is IClassicDesktopStyleApplicationLifetime diagDesktop)
+                        ? diagDesktop.Windows.OfType<Sr6CreationWizardWindow>() : []).
+                        Select(w =>
+                        {
+                            var counterText = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), counterId, StringComparison.Ordinal))?.Text ?? "?";
+                            return w.IsVisible.ToString() + "/" + counterText;
+                        });
+                    return "noPreview=" + noPreview.ToString() + "; authority=" + (authority ?? "?") + "; footer=" + (footer ?? "?") + "; wizards=[" + string.Join(",", visibleWizards) + "]";
+                });
+                RecordStep(steps, $"sr6 wizard: confirm wait miss {confirmDiag}");
+            }
             await Dispatcher.UIThread.InvokeAsync(async () =>
             {
                 var check = Active().GetVisualDescendants().OfType<CheckBox>()
@@ -2220,12 +2296,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         AutomationProperties.GetAutomationId(c),
                         "sr6-confirm-checkbox",
                         StringComparison.Ordinal))
-                    ?? throw new InvalidOperationException("sr6 wizard: confirm checkbox not found");
+                    ?? throw new InvalidOperationException("sr6 wizard: confirm checkbox not found after wait");
                 check.IsChecked = true;
             });
             recordPointerAction();
             RecordStep(steps, "sr6 wizard: preview confirmed");
-            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-finish", steps, ct, recordPointerAction);
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-finish", steps, ct, recordPointerAction);
 
             // The confirm dispatch jumps the wizard to the finalize step
             // (one-way career transition). Tick the loss acknowledgement if the
@@ -2252,21 +2328,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 RecordStep(steps, "sr6 wizard: unspent-balance loss acknowledged");
             }
 
-            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-finish", steps, ct, recordPointerAction);
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-finish", steps, ct, recordPointerAction);
         }
 
         // Clicks an SR6 wizard footer button by automation id and waits for the
         // step counter to publish a new "Step N of 5" value (footer state can
         // lag the click by a dispatcher cycle).
         private static async Task ClickSr6WizardFooterAsync(
-            Sr6CreationWizardWindow wizard,
+            Func<Sr6CreationWizardWindow> resolveWizard,
             string automationId,
             List<string> steps,
             CancellationToken ct,
             Action recordPointerAction)
         {
-            Sr6CreationWizardWindow W() =>
-                wizard.IsVisible ? wizard : (FindVisibleSr6WizardWindow() ?? wizard);
+            Sr6CreationWizardWindow W() => resolveWizard();
             string before = await Dispatcher.UIThread.InvokeAsync(() =>
                 W().GetVisualDescendants().OfType<TextBlock>()
                     .FirstOrDefault(b => string.Equals(
@@ -2286,7 +2361,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             try
             {
                 await WaitForConditionWithinAsync(
-                    () => Dispatcher.UIThread.InvokeAsync(() =>
+                    () =>
                     {
                         string now = W().GetVisualDescendants().OfType<TextBlock>()
                             .FirstOrDefault(b => string.Equals(
@@ -2294,7 +2369,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 "sr6-creation-wizard-step-counter",
                                 StringComparison.Ordinal))?.Text ?? string.Empty;
                         return !string.Equals(now, before, StringComparison.Ordinal) || !W().IsVisible;
-                    }).GetTask().Result,
+                    },
                     ct,
                     TimeSpan.FromSeconds(8));
             }
