@@ -181,7 +181,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(text, "desktop.install_link.button.continue_unlinked");
         StringAssert.Contains(text, "ContinueUnlinkedAsync");
         StringAssert.Contains(text, "DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId)");
-        StringAssert.Contains(text, "desktop.install_link.button.login_website");
+        StringAssert.Contains(text, "desktop.install_link.button.link_copy");
         Assert.IsFalse(
             text.Contains("e.Cancel = true;", StringComparison.Ordinal),
             "Closing the unlinked install-link window should continue locally instead of trapping the user in the dialog.");
@@ -261,7 +261,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(text, "BuildBrowserFallbackSummary");
         StringAssert.Contains(text, "BuildBrowserFallbackDetail");
         StringAssert.Contains(text, "BuildAccountButtonLabel");
-        StringAssert.Contains(text, "desktop.install_link.button.open_claim_link");
+        StringAssert.Contains(text, "desktop.install_link.button.link_copy");
         StringAssert.Contains(text, "desktop.install_link.fallback.heading");
         StringAssert.Contains(text, "desktop.install_link.fallback.summary");
         StringAssert.Contains(text, "desktop.install_link.fallback.detail_with_reason");
@@ -336,7 +336,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
             "German Devices and Access copy should use the current claim-copy wording instead of old login/link wording.");
         StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.title\"] = \"Diese Kopie beanspruchen\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.heading\"] = \"Diese Desktop-Kopie beanspruchen\"");
-        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.button.link_copy\"] = \"Diese Kopie beanspruchen\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.button.link_copy\"] = \"Installation verlinken\"");
         StringAssert.Contains(localizationSource, "Downloads bleiben unverandert. Beanspruchen Sie diese Kopie online");
         Assert.IsFalse(
             localizationSource.Contains("localized[\"desktop.install_link.title\"] = \"Diese Kopie verkn", StringComparison.Ordinal)
@@ -471,13 +471,13 @@ public sealed class DesktopInstallLinkingShellChromeTests
             DesktopInstallLinkingWindow.BuildBrowserFallbackDetail(DesktopLocalizationCatalog.DefaultLanguage, null),
             "browser");
         Assert.AreEqual(
-            "Open Claim Link",
+            "Link installation",
             DesktopInstallLinkingWindow.BuildAccountButtonLabel(
                 claimed: false,
                 browserFallbackVisible: true,
                 DesktopLocalizationCatalog.DefaultLanguage));
         Assert.AreEqual(
-            "Claim your copy",
+            "Link installation",
             DesktopInstallLinkingWindow.BuildAccountButtonLabel(
                 claimed: false,
                 browserFallbackVisible: false,
@@ -493,7 +493,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
                 CreateInstallState(status: "guest", lastClaimError: null) with { LastBrowserDispatchFailure = "Operation not supported" },
                 DesktopLocalizationCatalog.DefaultLanguage));
         Assert.AreEqual(
-            "Claim your copy",
+            "Link installation",
             DesktopDevicesAccessWindow.BuildInstallLinkEntryButtonLabel(
                 CreateInstallState(status: "guest"),
                 DesktopLocalizationCatalog.DefaultLanguage));
@@ -546,9 +546,9 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(windowSource, "if (!string.IsNullOrWhiteSpace(accountUrl))");
         StringAssert.Contains(windowSource, "Recovering a retained approval without a browser URL");
 
-        // The account button label reflects the recovery state before fallback labels.
+        // The account action keeps the requested label; status text describes recovery.
         Assert.AreEqual(
-            "Check Previous Approval",
+            "Link installation",
             DesktopInstallLinkingWindow.BuildAccountButtonLabel(
                 claimed: false,
                 browserFallbackVisible: false,

@@ -26,6 +26,71 @@ namespace Chummer.Tests;
 [TestClass]
 public sealed class DesktopInstallLinkingRuntimeTests
 {
+    [TestMethod]
+    public void Browser_approval_return_arguments_preserve_state_only_and_legacy_code_paths()
+    {
+        const string uri = "chummer://install-link?state=synthetic-return-state";
+        foreach (string[] arguments in new[]
+        {
+            new[] { uri }, new[] { "--install-link-callback", uri },
+            new[] { "--install-link-callback=" + uri }, new[] { "/install-link-callback:" + uri }
+        })
+        {
+            Assert.IsTrue(DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn(arguments, out string? extracted));
+            Assert.AreEqual(uri, extracted);
+        }
+        Assert.IsFalse(DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn(
+            ["--install-link-callback", "chummer://install-link?callbackCode=synthetic-code"], out _));
+        Assert.IsFalse(DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn(
+            ["chummer://install-link?claimCode=synthetic-claim"], out _));
+        Assert.IsFalse(DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn(["chummer://open?kind=workspace"], out _));
+        Assert.IsTrue(DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn([uri + "&callbackCode=synthetic"], out _));
+        Assert.IsTrue(DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn(["--install-link-callback", "invalid"], out string? malformed));
+        Assert.AreEqual(string.Empty, malformed);
+        Assert.IsTrue(DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn([uri, uri], out string? ambiguous));
+        Assert.AreEqual(string.Empty, ambiguous);
+    }
+
+    [TestMethod]
+    public void Remote_callback_send_lease_is_exclusive_until_released()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "desktop-callback-lease", Guid.NewGuid().ToString("N"));
+        string? previous = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", root);
+            DesktopInstallLinkingState state = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            MethodInfo acquire = typeof(DesktopInstallLinkingRuntime).GetMethod("TryAcquireRemoteCallbackPollLease",
+                BindingFlags.Static | BindingFlags.NonPublic)!;
+            using (FileStream? first = (FileStream?)acquire.Invoke(null, [state]))
+            {
+                Assert.IsNotNull(first);
+                using FileStream? second = (FileStream?)acquire.Invoke(null, [state]);
+                Assert.IsNull(second, "Another process must observe, not send a competing proof.");
+            }
+            using FileStream? successor = (FileStream?)acquire.Invoke(null, [state]);
+            Assert.IsNotNull(successor);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previous);
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [TestMethod]
+    public async Task Rejected_browser_return_in_headless_mode_does_not_print_account_or_start_a_new_approval()
+    {
+        using StringWriter output = new();
+        using StringWriter error = new();
+        DesktopInstallLinkingStartupContext context = new(CreateState(), null, null, true, "browser_return_rejected");
+        int? result = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+            "avalonia", ["--install-link-headless"], context, output, error, CancellationToken.None);
+        Assert.AreEqual(1, result);
+        Assert.AreEqual(string.Empty, output.ToString());
+        StringAssert.Contains(error.ToString(), "does not match the saved approval", StringComparison.Ordinal);
+    }
+
     private static readonly string[] LongFormSeparate = ["--install-claim-code", "claim-123"];
     private static readonly string[] SlashSeparate = ["/install-claim-code", "claim-123"];
     private static readonly string[] LongFormEquals = ["--install-claim-code=claim-123"];

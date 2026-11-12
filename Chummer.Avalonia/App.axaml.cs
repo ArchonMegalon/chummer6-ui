@@ -2,6 +2,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Chummer.Desktop.Runtime;
 using Chummer.Application.AI;
 using Chummer.Application.Characters;
@@ -21,6 +22,98 @@ public partial class App : global::Avalonia.Application
     internal static IServiceProvider? Services { get; private set; }
     internal static DesktopInstallLinkingStartupContext? InstallLinkingStartupContext { get; set; }
     internal static string[] StartupArguments { get; set; } = [];
+    internal static bool InstallLinkReturnRefused { get; set; }
+    private static readonly TaskCompletionSource<MainWindow> InstallLinkActivationReady =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    internal static async Task<bool> ReceiveInstallLinkReturnAsync(string callbackUri, CancellationToken cancellationToken)
+    {
+        if (!DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(
+                DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia"), callbackUri))
+            return false;
+        MainWindow owner;
+        try
+        {
+            owner = await InstallLinkActivationReady.Task.WaitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+        return await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            // Recheck after readiness/dispatch: an unlink or a replacement
+            // operation while this message was queued invalidates the return.
+            if (cancellationToken.IsCancellationRequested || !owner.IsVisible) return false;
+            DesktopInstallLinkingStartupContext context =
+                DesktopInstallLinkingRuntime.HandleBrowserApprovalReturn("avalonia", callbackUri);
+            if (context.PromptReason == "browser_return_rejected" || !owner.IsVisible)
+                return false;
+            if (!DesktopInstallLinkingWindow.IsCurrentBrowserReturnContext(
+                    DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia"), context)) return false;
+            owner.ApplyInstallLinkingChrome(context.State);
+            if (owner.WindowState == WindowState.Minimized)
+                owner.WindowState = WindowState.Normal;
+            owner.Activate();
+            _ = ObserveInstallLinkReturnPresentationAsync(owner, context);
+            return true;
+        });
+    }
+
+    private static async Task ObserveInstallLinkReturnPresentationAsync(Window owner, DesktopInstallLinkingStartupContext context)
+    {
+        try
+        {
+            // The pipe acknowledges dispatch, not modal closure. This task
+            // observes later presentation failures without holding the pipe.
+            await DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, context);
+        }
+        catch (Exception)
+        {
+            ShowInstallLinkReturnRefusal(owner);
+        }
+    }
+
+    internal static void ShowInstallLinkReturnRefusal(Window? owner)
+    {
+        try
+        {
+            Window refusal = CreateInstallLinkReturnRefusalWindow();
+            if (owner?.IsVisible == true) refusal.Show(owner);
+            else refusal.Show();
+        }
+        catch (Exception)
+        {
+            Console.Error.WriteLine("The install-link return could not be displayed. Reopen Chummer and refresh the saved approval.");
+        }
+    }
+
+    private static Window CreateInstallLinkReturnRefusalWindow()
+    {
+        string language = DesktopPreferenceRuntime.LoadOrCreateState("avalonia").Language;
+        Window window = new()
+        {
+            Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", language),
+            Width = 560, Height = 240, CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen
+        };
+        Button close = new() { Content = "OK" };
+        close.Click += (_, _) => window.Close();
+        window.Content = new StackPanel
+        {
+            Margin = new Thickness(24), Spacing = 20,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.return_refused", language),
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                },
+                close
+            }
+        };
+        return window;
+    }
 
     public override void Initialize()
     {
@@ -31,6 +124,18 @@ public partial class App : global::Avalonia.Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            if (DesktopInstallLinkingRuntime.TryExtractBrowserApprovalReturn(StartupArguments, out string? callbackUri)
+                && !DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(
+                    DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia"), callbackUri!))
+                InstallLinkReturnRefused = true;
+            if (InstallLinkReturnRefused)
+            {
+                // An unrecognized return must never open the workspace or any
+                // account data. Only this generic, actionable refusal is shown.
+                desktop.MainWindow = CreateInstallLinkReturnRefusalWindow();
+                base.OnFrameworkInitializationCompleted();
+                return;
+            }
             _serviceProvider = BuildServiceProvider();
             Services = _serviceProvider;
             desktop.MainWindow = CreateDesktopWindow(_serviceProvider);
@@ -281,6 +386,7 @@ public partial class App : global::Avalonia.Application
 
         DesktopInstallLinkingStartupContext? installLinkingContext = InstallLinkingStartupContext;
         InstallLinkingStartupContext = null;
+        InstallLinkActivationReady.TrySetResult(owner);
         if (installLinkingContext is not null)
         {
             try

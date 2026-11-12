@@ -15,7 +15,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private DesktopInstallLinkingState _state;
     private readonly DesktopUpdateClientStatus _updateStatus;
     private DesktopPreferenceState _preferences;
-    private readonly string _language;
+    private string _language;
     private readonly TextBlock _summaryText;
     private readonly TextBlock _linkStateText;
     private readonly TextBlock _statusText;
@@ -44,6 +44,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly WrapPanel _moreToolsPanel;
     private readonly Button _followThroughButton;
     private readonly Button _accountButton;
+    private readonly Button _moreToolsAccountButton;
     private readonly Button _copyLoginUrlButton;
     private readonly Button _redeemClaimCodeButton;
     private readonly Button _unlinkButton;
@@ -65,6 +66,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private Task? _automaticHandoffTask;
     private readonly bool _loginVideoPreview;
     private bool _automaticHandoffStarted;
+    private bool _browserReturnReceived;
     private bool _browserFallbackVisible;
     private string? _lastLoginUrl;
     private DesktopInstallLinkingState? _observedOperation;
@@ -195,6 +197,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         _followThroughButton = CreateButton(string.Empty, OpenFollowThroughAsync, isDefault: true);
         _accountButton = CreateButton(string.Empty, OpenAccountAsync);
+        _moreToolsAccountButton = CreateButton(string.Empty, OpenAccountAsync);
         _copyLoginUrlButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_login_url", _language),
             CopyLoginUrlAsync);
@@ -325,7 +328,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ItemHeight = 32,
             Children =
             {
-                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language), OpenAccountAsync),
+                _moreToolsAccountButton,
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_origin_dossier", _language), OpenOriginDossierPortalAsync),
                 _unlinkButton,
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
@@ -355,7 +358,16 @@ internal sealed class DesktopInstallLinkingWindow : Window
         Closing += OnClosing;
         Opened += (_, _) =>
         {
-            if (context.ClaimResult is not null)
+            if (context.PromptReason.StartsWith("browser_return_", StringComparison.Ordinal))
+            {
+                if (!ApplyBrowserReturn(context))
+                {
+                    Window? owner = Owner as Window;
+                    Close();
+                    App.ShowInstallLinkReturnRefusal(owner);
+                }
+            }
+            else if (context.ClaimResult is not null)
             {
                 SetStatus(context.ClaimResult.Message);
                 _state = context.ClaimResult.State;
@@ -422,9 +434,74 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return;
         }
 
+        if (context.PromptReason.StartsWith("browser_return_", StringComparison.Ordinal))
+        {
+            DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(context.State.HeadId);
+            if (!IsCurrentBrowserReturnContext(current, context))
+            {
+                App.ShowInstallLinkReturnRefusal(owner);
+                return;
+            }
+            context = context with { State = current };
+        }
+
+        if (context.PromptReason.StartsWith("browser_return_", StringComparison.Ordinal)
+            && global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.Windows.OfType<DesktopInstallLinkingWindow>().FirstOrDefault(window =>
+                window._state.HeadId == context.State.HeadId && window.IsVisible) is { } existing)
+        {
+            if (!existing.ApplyBrowserReturn(context)) App.ShowInstallLinkReturnRefusal(owner);
+            return;
+        }
         DesktopInstallLinkingWindow dialog = new(context);
         await dialog.ShowDialog(owner);
     }
+
+    internal bool ApplyBrowserReturn(DesktopInstallLinkingStartupContext context)
+    {
+        DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(context.State.HeadId);
+        // Check before any control refresh: a different process may have
+        // unlinked/replaced this operation since the callback was admitted.
+        if (!IsCurrentBrowserReturnContext(current, context)) return false;
+        // No automatic browser launch or fresh approval on a protocol return.
+        _automaticHandoffStarted = true;
+        _browserReturnReceived = true;
+        _state = current;
+        _browserFallbackVisible = false;
+        RefreshSummary();
+        RefreshActionState();
+        DesktopRemoteCallbackRecoveryProjection projection = DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(_state);
+        if (projection == DesktopRemoteCallbackRecoveryProjection.Linked)
+        {
+            _handoffPollCancellation?.Cancel();
+            SetStatus(FormatClaimStatus(_state, _language));
+            if (Owner is MainWindow owner) owner.ApplyInstallLinkingChrome(_state);
+        }
+        else if (projection is DesktopRemoteCallbackRecoveryProjection.Terminal or DesktopRemoteCallbackRecoveryProjection.Stopped)
+        {
+            _handoffPollCancellation?.Cancel();
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString(projection == DesktopRemoteCallbackRecoveryProjection.Terminal
+                ? "desktop.install_link.status.recovery_terminal" : "desktop.install_link.status.recovery_stopped", _language));
+        }
+        else
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.return_checking", _language));
+            StartClaimPolling(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.return_checking", _language));
+        }
+        if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+        Activate();
+        return true;
+    }
+
+    internal static bool IsCurrentBrowserReturnContext(DesktopInstallLinkingState current, DesktopInstallLinkingStartupContext context)
+        => context.PromptReason.StartsWith("browser_return_", StringComparison.Ordinal)
+            && context.PromptReason != "browser_return_rejected"
+            && IsSameObservedOperation(current, context.State)
+            && current.Platform == context.State.Platform && current.Arch == context.State.Arch
+            && DesktopInstallLinkingRuntime.IsSameBrowserApprovalOperation(current, context.State)
+            && DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(current,
+                "chummer://install-link?state=" + Uri.EscapeDataString(context.State.BrowserApprovalReturnState ?? string.Empty));
 
     private Control CreateMatrixUplinkHero()
     {
@@ -852,7 +929,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             // The start delay MUST observe the lifetime token: cancelling an
             // unrelated observer token does not cancel this wait (audit P2).
             await HandoffDelay(250, lifetime).ConfigureAwait(true);
-            if (lifetime.IsCancellationRequested || DesktopInstallLinkingRuntime.IsClaimed(_state))
+            if (lifetime.IsCancellationRequested || _browserReturnReceived || DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
                 return;
             }
@@ -1447,6 +1524,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private void RefreshActionState()
     {
+        _language = DesktopPreferenceRuntime.LoadOrCreateState(_state.HeadId).Language;
         bool claimed = DesktopInstallLinkingRuntime.IsClaimed(_state);
         DesktopRemoteCallbackRecoveryProjection recovery = DesktopInstallLinkingRuntime.DescribeRemoteCallbackRecovery(_state);
         _linkStateText.Text = FormatClaimStatus(_state, _language);
@@ -1458,6 +1536,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _accountButton.Content = BuildAccountButtonLabel(claimed, _browserFallbackVisible, _language,
             recovery is DesktopRemoteCallbackRecoveryProjection.Running
                 or DesktopRemoteCallbackRecoveryProjection.InFlight);
+        _moreToolsAccountButton.Content = BuildAccountButtonLabel(claimed, false, _language);
         _followThroughButton.IsVisible = claimed;
         _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
         _unlinkButton.IsVisible = claimed;
@@ -1473,6 +1552,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         RefreshButtonTip(_followThroughButton);
         RefreshButtonTip(_accountButton);
+        RefreshButtonTip(_moreToolsAccountButton);
         RefreshButtonTip(_copyLoginUrlButton);
         RefreshButtonTip(_unlinkButton);
         RefreshButtonTip(_exitButton);
@@ -1611,24 +1691,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
         => DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_terminal", language);
 
     internal static string BuildAccountButtonLabel(bool claimed, bool browserFallbackVisible, string language, bool recoveringRetainedApproval = false)
-    {
-        if (claimed)
-        {
-            return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", language);
-        }
-
-        // "Check previous approval" is only honest while the recovery is
-        // actually running; a stopped or terminal recovery shows a neutral
-        // claim label instead (audit P2: label must match the action).
-        if (recoveringRetainedApproval)
-        {
-            return DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.check_previous_approval", language);
-        }
-
-        return browserFallbackVisible
-            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_claim_link", language)
-            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", language);
-    }
+        => DesktopLocalizationCatalog.GetRequiredString(claimed
+            ? "desktop.install_link.button.open_account"
+            : "desktop.install_link.button.link_copy", language);
 
     private static void RefreshButtonTip(Button button)
     {

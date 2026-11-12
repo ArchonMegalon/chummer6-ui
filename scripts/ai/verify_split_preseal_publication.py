@@ -169,6 +169,11 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
         "Chummer.Desktop.Runtime/ServiceCollectionDesktopRuntimeExtensions.cs",
         "Chummer.Presentation/IChummerClient.cs",
+        # Controller7488: reviewed browser-return activation and its labels.
+        # Exact source membership only; this grants no native/release claim.
+        "Chummer.Avalonia/Program.cs",
+        "Chummer.Avalonia/DesktopInstallLinkActivation.cs",
+        "Chummer.Tests/Presentation/DesktopLocalizationCatalogTests.cs",
         "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.WorkspaceMutations.cs",
         "Chummer.Presentation/Overview/ICharacterOverviewPresenter.cs",

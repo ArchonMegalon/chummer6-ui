@@ -14,6 +14,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Chummer.Avalonia;
 using Chummer.Desktop.Runtime;
+using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -87,6 +88,225 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
     // ------------------------------------------------------------------
     // §4 matrix — driven through the real shared handler.
     // ------------------------------------------------------------------
+
+    [TestMethod]
+    public async Task Browser_return_cold_start_resumes_same_proof_and_refreshes_existing_window()
+    {
+        await WithWindowAsync(async window =>
+        {
+            using InflightHubFixture fixture = new(pendingFirst: false, holdBody: true);
+            DesktopInstallLinkingState before = PrepareRetainedApproval();
+            string uri = "chummer://install-link?state=" + before.BrowserApprovalReturnState;
+            DesktopInstallLinkingStartupContext context = await DesktopInstallLinkingRuntime.InitializeForStartupAsync(
+                HeadId, ["--install-link-callback", uri], CancellationToken.None);
+            Assert.AreEqual("browser_return_pending", context.PromptReason);
+            Assert.IsTrue(context.ShouldPrompt);
+            Assert.IsFalse(DesktopInstallLinkingRuntime.IsClaimed(context.State), "A return is not approval.");
+            Assert.AreEqual(before.BrowserApprovalRequest, context.State.BrowserApprovalRequest);
+            Assert.AreEqual(1, PollTasks.Count);
+            Task poll = System.Linq.Enumerable.Single(PollTasks.Values);
+
+            ((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(context);
+            StringAssert.Contains(GetStatus(window), "Checking the saved approval", StringComparison.Ordinal);
+            DesktopInstallLinkingStartupContext repeated = DesktopInstallLinkingRuntime.HandleBrowserApprovalReturn(HeadId, uri);
+            ((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(repeated);
+            Assert.AreEqual(1, PollTasks.Count, "Repeated activation must not create a second proof sender.");
+            Assert.AreSame(poll, System.Linq.Enumerable.Single(PollTasks.Values));
+
+            fixture.ReleaseResponses();
+            Assert.IsTrue(poll.Wait(TimeSpan.FromSeconds(5)));
+            poll.GetAwaiter().GetResult();
+            await StepLoopAsync(10);
+            Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(LoadState()));
+            StringAssert.Contains(GetStatus(window), "linked", StringComparison.OrdinalIgnoreCase);
+            Assert.AreEqual(before.BrowserApprovalReturnState, LoadState().BrowserApprovalReturnState);
+            DesktopInstallLinkingStartupContext completedRepeat = DesktopInstallLinkingRuntime.HandleBrowserApprovalReturn(HeadId, uri);
+            Assert.AreEqual("browser_return_linked", completedRepeat.PromptReason);
+            Assert.AreEqual(0, PollTasks.Count);
+        });
+    }
+
+    [TestMethod]
+    public async Task Browser_return_stopped_or_terminal_never_replays_and_shows_recovery_guidance()
+    {
+        await WithWindowAsync(window =>
+        {
+            DesktopInstallLinkingState before = PrepareRetainedApproval();
+            string uri = "chummer://install-link?state=" + before.BrowserApprovalReturnState;
+            AgeRetainedProof();
+            string? retained = LoadState().BrowserApprovalRequest;
+            DesktopInstallLinkingStartupContext stopped = DesktopInstallLinkingRuntime.HandleBrowserApprovalReturn(HeadId, uri);
+            Assert.AreEqual("browser_return_stopped", stopped.PromptReason);
+            ((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(stopped);
+            StringAssert.Contains(GetStatus(window), "has stopped", StringComparison.Ordinal);
+            Assert.AreEqual(0, PollTasks.Count);
+            Assert.AreEqual(retained, LoadState().BrowserApprovalRequest);
+
+            MarkTerminal();
+            DesktopInstallLinkingStartupContext terminal = DesktopInstallLinkingRuntime.HandleBrowserApprovalReturn(HeadId, uri);
+            Assert.AreEqual("browser_return_terminal", terminal.PromptReason);
+            ((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(terminal);
+            StringAssert.Contains(GetStatus(window), "rejected", StringComparison.Ordinal);
+            Assert.AreEqual(0, PollTasks.Count);
+            Assert.IsFalse(DesktopInstallLinkingRuntime.IsClaimed(LoadState()));
+            return Task.CompletedTask;
+        });
+    }
+
+    [TestMethod]
+    public async Task Browser_return_pipe_routes_only_current_state_and_has_one_listener()
+    {
+        DesktopInstallLinkingState before = PrepareRetainedApproval();
+        string uri = "chummer://install-link?state=" + before.BrowserApprovalReturnState;
+        int received = 0;
+        using DesktopInstallLinkActivation? primary = DesktopInstallLinkActivation.TryRegister(HeadId, (value, token) =>
+        {
+            Assert.AreEqual(uri, value);
+            Interlocked.Increment(ref received);
+            return Task.FromResult(DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(LoadState(), value));
+        });
+        Assert.IsNotNull(primary);
+        using DesktopInstallLinkActivation? second = DesktopInstallLinkActivation.TryRegister(HeadId, (_, _) => Task.FromResult(false));
+        Assert.IsNull(second);
+        Assert.IsTrue(await DesktopInstallLinkActivation.TryForwardAsync(HeadId, uri));
+        Assert.IsTrue(await DesktopInstallLinkActivation.TryForwardAsync(HeadId, uri));
+        Assert.AreEqual(2, received);
+        Assert.IsFalse(await DesktopInstallLinkActivation.TryForwardAsync(HeadId, "chummer://install-link?state=stale"));
+        Assert.AreEqual(2, received, "Invalid returns must never activate the owning window.");
+        Assert.AreEqual(0, PollTasks.Count, "IPC is a wake-up path, not claim authority.");
+        AssertNoReplacementApproval(before);
+    }
+
+    [TestMethod]
+    public void Browser_return_rejects_stale_cross_install_and_unlinked_owner_without_mutation()
+    {
+        DesktopInstallLinkingState before = PrepareRetainedApproval();
+        string uri = "chummer://install-link?state=" + before.BrowserApprovalReturnState;
+        Assert.IsTrue(DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(before, uri));
+        foreach (string invalid in new[]
+        {
+            "chummer://install-link?state=stale",
+            uri + "&state=stale", uri + "#state=stale", uri + "&callbackCode=synthetic",
+            uri.Replace("install-link", "open"), "chummer://install-link"
+        })
+        {
+            Assert.AreEqual("browser_return_rejected",
+                DesktopInstallLinkingRuntime.HandleBrowserApprovalReturn(HeadId, invalid).PromptReason);
+        }
+        Assert.IsFalse(DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(before with { InstallationId = "other-install" }, uri));
+        Assert.IsFalse(DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(before with { HeadId = "other-head" }, uri));
+        Assert.IsFalse(DesktopInstallLinkingRuntime.IsCurrentBrowserApprovalReturn(before with { PublicKey = "other-key" }, uri));
+        Assert.AreEqual(before.StateRevision, LoadState().StateRevision, "Rejected returns must not mutate saved authority.");
+        Assert.AreEqual(0, PollTasks.Count);
+
+        DesktopInstallLinkingRuntime.UnlinkInstall(HeadId);
+        DesktopInstallLinkingState unlinked = LoadState();
+        Assert.AreEqual("browser_return_rejected", DesktopInstallLinkingRuntime.HandleBrowserApprovalReturn(HeadId, uri).PromptReason);
+        Assert.AreEqual(unlinked.StateRevision, LoadState().StateRevision);
+        Assert.AreEqual(0, PollTasks.Count);
+    }
+
+    [TestMethod]
+    public async Task Browser_return_accepts_renewed_proof_only_for_the_original_operation()
+    {
+        await WithWindowAsync(window =>
+        {
+            DesktopInstallLinkingState prepared = PrepareRetainedApproval();
+            JsonObject oldProof = JsonNode.Parse(prepared.BrowserApprovalRequest!)!.AsObject();
+            oldProof["issuedAtUnixSeconds"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 60;
+            DesktopInstallLinkingState before = prepared with
+            {
+                BrowserApprovalRequest = oldProof.ToJsonString(),
+                BrowserApprovalUncertain = false
+            };
+            DesktopInstallLinkingStartupContext accepted = new(before, null, null, true, "browser_return_pending");
+            MethodInfo sign = typeof(DesktopInstallLinkingRuntime).GetMethod("CreateRemoteCallbackPollRequest",
+                BindingFlags.Static | BindingFlags.NonPublic)!;
+            object renewedProof = sign.Invoke(null, [before])!;
+            string Serialize(object proof) => System.Text.Json.JsonSerializer.Serialize(proof, proof.GetType(),
+                new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+            DesktopInstallLinkingState renewed = before with { BrowserApprovalRequest = Serialize(renewedProof) };
+            SaveState(renewed);
+            Assert.AreNotEqual(before.BrowserApprovalRequest, LoadState().BrowserApprovalRequest);
+            Assert.IsTrue(DesktopInstallLinkingWindow.IsCurrentBrowserReturnContext(LoadState(), accepted));
+            Assert.IsTrue(((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(accepted));
+
+            object differentProof = sign.Invoke(null, [before with { BrowserApprovalRequest = null }])!;
+            DesktopInstallLinkingState different = renewed with { BrowserApprovalRequest = Serialize(differentProof) };
+            Assert.IsFalse(DesktopInstallLinkingWindow.IsCurrentBrowserReturnContext(different, accepted),
+                "A fresh operation must not inherit an earlier return even if its installation and return state match.");
+            Assert.IsFalse(DesktopInstallLinkingRuntime.IsSameBrowserApprovalOperation(
+                renewed with { BrowserApprovalRequest = "invalid json" }, before));
+            Assert.AreEqual(0, PollTasks.Count, "Rendering a renewed proof must not dispatch another claim.");
+            return Task.CompletedTask;
+        });
+    }
+
+    [TestMethod]
+    public async Task Browser_return_revalidates_before_rendering_after_an_owner_change()
+    {
+        await WithWindowAsync(window =>
+        {
+            DesktopInstallLinkingState before = PrepareRetainedApproval();
+            DesktopInstallLinkingStartupContext accepted = new(before, null, null, true, "browser_return_pending");
+            string status = GetStatus(window);
+            DesktopInstallLinkingRuntime.UnlinkInstall(HeadId);
+            Assert.IsFalse(((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(accepted));
+            Assert.AreEqual(status, GetStatus(window), "A stale return must not render another operation's state.");
+            Assert.AreEqual(0, PollTasks.Count);
+            return Task.CompletedTask;
+        });
+    }
+
+    [TestMethod]
+    public async Task Both_account_buttons_update_for_linked_state_and_language()
+    {
+        await WithWindowAsync(window =>
+        {
+            DesktopInstallLinkingState before = PrepareRetainedApproval();
+            DesktopInstallLinkingStartupContext accepted = new(before, null, null, true, "browser_return_pending");
+            DesktopPreferenceState preferences = DesktopPreferenceRuntime.LoadOrCreateState(HeadId);
+            DesktopPreferenceRuntime.SaveState(HeadId, preferences with { Language = "de-de" });
+            Assert.IsTrue(((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(accepted));
+            foreach (string field in new[] { "_accountButton", "_moreToolsAccountButton" })
+                Assert.AreEqual("Installation verlinken", GetPrivateField<Button>(window, field).Content);
+            SaveState(ClaimedState());
+            DesktopInstallLinkingStartupContext linked = new(LoadState(), null, null, true, "browser_return_linked");
+            Assert.IsTrue(((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(linked));
+            foreach (string field in new[] { "_accountButton", "_moreToolsAccountButton" })
+                Assert.AreEqual("Konto öffnen", GetPrivateField<Button>(window, field).Content);
+            DesktopPreferenceRuntime.SaveState(HeadId, preferences with { Language = "en-us" });
+            Assert.IsTrue(((DesktopInstallLinkingWindow)window).ApplyBrowserReturn(linked));
+            foreach (string field in new[] { "_accountButton", "_moreToolsAccountButton" })
+                Assert.AreEqual("Open Account", GetPrivateField<Button>(window, field).Content);
+            return Task.CompletedTask;
+        });
+    }
+
+    [TestMethod]
+    public void Callback_listener_registration_preserves_normal_GUI_argument_modes()
+    {
+        string? prior = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS", null);
+            Assert.IsTrue(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation([]));
+            Assert.IsTrue(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["--install-claim-code", "synthetic"]));
+            Assert.IsTrue(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["--desktop-mode=modern"]));
+            Assert.IsTrue(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["chummer://open?kind=workspace"]));
+            Assert.IsFalse(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["--install-link-headless"]));
+            Assert.IsFalse(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["/install-link-console"]));
+            Assert.IsFalse(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["--startup-smoke"]));
+            Assert.IsFalse(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["--windows-persistence-probe"]));
+            Assert.IsFalse(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation(["--mouse-first-user-journey"]));
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS", "1");
+            Assert.IsFalse(global::Chummer.Avalonia.Program.ShouldRegisterInstallLinkActivation([]));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS", prior);
+        }
+    }
 
     [TestMethod]
     public async Task Matrix_browser_opened_shows_waiting_status()

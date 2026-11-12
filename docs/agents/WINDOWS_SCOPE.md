@@ -1,3 +1,42 @@
+## Controller7488 — Browser return and installation-link wording, 12 November 2026
+
+The user reports that returning from the browser to Windows does nothing and
+requests **Installation verlinken** for the installation-link action. This fix
+recognizes the existing proof-poll state-only return, resumes its saved operation,
+and forwards a warm return to the existing Windows process. The URI itself never
+grants an account. Stale returns are rejected before account/workspace display;
+proof renewal preserves the original operation rather than creating another one.
+Both unlinked account buttons now use the requested wording. Linked account
+management retains its separate label.
+
+Controller validation: the affected Linux build and all 172 focused runtime,
+headless Avalonia, shell and localization cases passed. An actual compiled
+headless startup rejected a stale return without graphics or account output.
+These results do not establish native Windows protocol registration, foreground
+activation or authenticated browser completion. The existing public 6940 package
+does not contain this fix. Use only the controller's identified new candidate
+and record its exact executable/version/hash; do not reuse 6940 native evidence.
+
+Friday's next native task in the existing WIN-006 session is:
+
+1. Verify the installed `chummer` protocol target and quoted callback argument.
+   Use the existing authorized test account; never retain callback URIs, states,
+   login codes, grants or keys in shareable evidence.
+2. With the app open (also minimized and opened with a character-file argument),
+   use **Installation verlinken**, approve in the browser and return. The existing
+   app must become visible, show checking/completion and keep the same installation
+   and character. A second return must not create a competing claim or window.
+3. Repeat after closing the app while approval is pending. The cold return must
+   recover the same operation. An uncertain stopped operation must offer honest
+   recovery, never silently create another approval.
+4. Reject stale/replaced and post-unlink returns without showing another account's
+   data. Verify both button labels in German and English, including after unlink.
+
+Report actual results and failures through the existing Teable task and handoff.
+No new Windows session or user relay is required. Keep UX-01–06 and the manual
+SR5/SR6, recovery and amended-account synchronization work below; coordinate any
+UX-06 edits against this callback fix before changing the shared window.
+
 ## Controller7477 — Windows UI improvements, 12 November 2026
 
 PR #585 is merged at `5ce0c95c578edf51b750047f2c4f960c3de9a8b5`, tree
