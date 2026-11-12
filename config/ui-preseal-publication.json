@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "5ce0c95c578edf51b750047f2c4f960c3de9a8b5",
-  "baseTree": "273188e9b78c5f1c10fda6373c0bd4b8cc5b7c8c",
+  "baseCommit": "6c74a2e3f4cbc4e4d9cc7d9c3fb2f8dfec7c1a13",
+  "baseTree": "73521256bd31369c2dbf1fa725d48bcdaf163545",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,13 +44,90 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "50181f12b6010f731aab9e2a0bbdcc7f6d4dfc80",
+      "blob": "5a3317e9e4eb66927e0b285604246317563bfd38",
+      "path": "Chummer.Avalonia/App.axaml.cs",
+      "sha256": "47a902ce14f0b15826b6b15f77bbfbb914d1f9f78aca13fdf8ee1508cee22ba7",
+      "sizeBytes": 28701,
+      "status": "M"
+    },
+    {
+      "blob": "99aa78090c71ef7c58394bdc23b54cae1c4601c6",
+      "path": "Chummer.Avalonia/DesktopInstallLinkActivation.cs",
+      "sha256": "b1b1468b2b7ef0f54dcc886a858b87d23c89c39e63fe53a08d52186002dc256e",
+      "sizeBytes": 6501,
+      "status": "A"
+    },
+    {
+      "blob": "7215bef7b2c363e0a8a4f45e98311dfed6569998",
+      "path": "Chummer.Avalonia/DesktopInstallLinkingWindow.cs",
+      "sha256": "3158e9edd69cce5b7e8886cdcc78aad8fbb5ca85860a3f1d174c4613e28c4e19",
+      "sizeBytes": 81713,
+      "status": "M"
+    },
+    {
+      "blob": "b2cca58ae4d25a6e49af0fc8dab05770bd6f27a7",
+      "path": "Chummer.Avalonia/Program.cs",
+      "sha256": "58835c8dde78139bacf883786c19fa020d28fda9ec0554f3881aadffc5ede9a9",
+      "sizeBytes": 4172,
+      "status": "M"
+    },
+    {
+      "blob": "0888872f5771e3b391f66a32f341a0c5742ccfd4",
+      "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
+      "sha256": "156a9f2fc2f3f829ed1b4f4d1db678f4cdf0a804538588d29cee754401964ce1",
+      "sizeBytes": 189971,
+      "status": "M"
+    },
+    {
+      "blob": "2c3e2d6f502001bfd80cdbd7cd19b7997cc6ed6c",
+      "path": "Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs",
+      "sha256": "4c33f42a93bbf80d2314ae7dfdc0f4a2a08a069b74014dee0d7a177ba9e8cbb7",
+      "sizeBytes": 301788,
+      "status": "M"
+    },
+    {
+      "blob": "753399dc89f97ac212303b2cd4ea34a9284db654",
+      "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
+      "sha256": "006a84b81537fed25e4355e720a5c1de1cbba0ea09d94c0793c05f9f111bc8ce",
+      "sizeBytes": 197597,
+      "status": "M"
+    },
+    {
+      "blob": "1b71b4d1b5b212c2c8bcef769b8db1820b86d352",
+      "path": "Chummer.Tests/Presentation/DesktopInstallLinkingOutcomeMatrixTests.cs",
+      "sha256": "66ac466cfdb7e4c7fc6ad848ad6203df4ba6852353de503eb7b5f6d1b5f65809",
+      "sizeBytes": 83760,
+      "status": "M"
+    },
+    {
+      "blob": "6440e901c3a6e8fabdb6711751701d925b8115fd",
+      "path": "Chummer.Tests/Presentation/DesktopInstallLinkingShellChromeTests.cs",
+      "sha256": "058d6f74009004592eb15e4054b1123e8b7a9bca10967ba2ca96830278ccb1cd",
+      "sizeBytes": 50127,
+      "status": "M"
+    },
+    {
+      "blob": "853ae7d28e1c417a330d35311f149bad53ee545d",
+      "path": "Chummer.Tests/Presentation/DesktopLocalizationCatalogTests.cs",
+      "sha256": "0960e5b8985e8314adc42d2fcc5b6312cc56aeafcb1fb46fe00834025c92d794",
+      "sizeBytes": 44923,
+      "status": "M"
+    },
+    {
+      "blob": "b4e8549a25d380e463b037e170f2a578acd1911d",
       "path": "docs/agents/WINDOWS_SCOPE.md",
-      "sha256": "19b5a838f0c8e2df0ec14c7bcb99b7f84431a50eb51750929e490caed1adc8d0",
-      "sizeBytes": 56046,
+      "sha256": "e9d961e0c4ab3c0c6932f730efdb25d6a9562a884221fad78d03f0b1da57c4e7",
+      "sizeBytes": 58580,
+      "status": "M"
+    },
+    {
+      "blob": "98f1d3aa68d0cb58426bf35daca5b404654ee4f4",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "12bb10bdcd241323814b962c1c6540e774d253529fcbe69335f424314bab74d6",
+      "sizeBytes": 73208,
       "status": "M"
     }
   ],
-  "recipeTree": "4cdc8dbdaee51d166d91b5f5eb6364bdd9f5891b",
+  "recipeTree": "f4974948f9319a7bdf63fd8816c3c95bd73f18b6",
   "releaseClaim": false
 }
