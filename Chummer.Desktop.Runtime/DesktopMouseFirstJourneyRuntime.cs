@@ -34,6 +34,20 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string UserJourneyTraceOutputEnvironmentVariable = "CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT";
     public const string UserJourneyTesterShardIdEnvironmentVariable = "CHUMMER_DESKTOP_USER_JOURNEY_TESTER_SHARD_ID";
     public const string UserJourneyFixShardIdEnvironmentVariable = "CHUMMER_DESKTOP_USER_JOURNEY_FIX_SHARD_ID";
+    public const string Sr6AdvanceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE";
+    public const string Sr6AdvanceReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE_RECEIPT";
+
+    /// <summary>
+    /// T492 native SR6 verification: when the journey head is launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE=1, the runner appends the
+    /// SR6 row-to-confirm leg (fixture import, AttributeImprove row click,
+    /// quote-modal confirmation, authoritative apply, karma-debit assertion,
+    /// save) to the ordinary journey workflows.
+    /// </summary>
+    public static bool Sr6AdvanceRequested => string.Equals(
+        Environment.GetEnvironmentVariable(Sr6AdvanceEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
 
     private const string UserJourneyTraceContractName = "chummer6-ui.user_journey_tester_trace";
     private const string CanonicalUserJourneyTraceFileName = "USER_JOURNEY_TESTER_TRACE.generated.json";
@@ -168,6 +182,41 @@ public static class DesktopMouseFirstJourneyRuntime
             Metatype: metatype,
             PriorityTalent: priorityTalent,
             PriorityTalentChoice: priorityTalentChoice);
+    }
+
+    /// <summary>
+    /// T492: appends the SR6 row-to-confirm leg's durable facts to the journey
+    /// receipt directory so a fresh-process reopen leg can assert the advanced
+    /// attribute rank and debited karma survived persistence. No-op when no
+    /// SR6 advance receipt path is configured.
+    /// </summary>
+    public static void WriteSr6AdvanceReceipt(
+        decimal karmaBefore,
+        decimal karmaAfter,
+        bool debited,
+        string? workspaceId)
+    {
+        string? path = Environment.GetEnvironmentVariable(Sr6AdvanceReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            workspaceId,
+            karmaBefore,
+            karmaAfter,
+            debited,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
     }
 
     public static void WriteSuccessReceipt(

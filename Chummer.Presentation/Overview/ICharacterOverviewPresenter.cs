@@ -341,6 +341,10 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerEdgeUseEditAsync(CareerEdgeUseEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    // T492: automation-only Karma grant for the SR6 advancement journey
+    // (the manual-Karma editor cannot open for SR6 runners - product gap).
+    Task GrantKarmaForAutomationAsync(int amount, CancellationToken ct);
+
     Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
         => Task.FromResult<CareerManualKarmaEditorState?>(null);
 

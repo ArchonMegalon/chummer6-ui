@@ -249,6 +249,17 @@ public sealed class Sr6CreationFoundationInteractionPresenter
         }
         catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
         {
+            // T492DIAG3: capture the refresh exception detail.
+            try
+            {
+                System.IO.File.AppendAllText(
+                    @"D:\sources\chummer\_scratch\t492_cm_diag.txt",
+                    "T492DIAG3 refresh threw " + error.GetType().FullName
+                        + ": " + error.Message
+                        + " | stack=" + error.StackTrace
+                        + Environment.NewLine);
+            }
+            catch { }
             return new Sr6CreationFoundationInteractionConfirmResult(
                 CharacterCreationFoundationOutcomes.Conflict,
                 prepared,
@@ -260,6 +271,18 @@ public sealed class Sr6CreationFoundationInteractionPresenter
             || refresh.Value is not Sr6CreationFoundationState refreshed
             || !RefreshedStateMatches(commit, refreshed))
         {
+            // T492DIAG4: capture the refresh mismatch detail.
+            try
+            {
+                System.IO.File.AppendAllText(
+                    @"D:\sources\chummer\_scratch\t492_cm_diag.txt",
+                    "T492DIAG4 refresh outcome=" + refresh.Outcome
+                    + " blockers=" + string.Join(",", refresh.Blockers ?? new string[0])
+                    + " refreshed=" + (refresh.Value as Sr6CreationFoundationState)?.Binding
+                    + " commitRev=" + commit.Decision.CommittedContentRevision
+                    + Environment.NewLine);
+            }
+            catch { }
             return new Sr6CreationFoundationInteractionConfirmResult(
                 CharacterCreationFoundationOutcomes.Conflict,
                 prepared,
@@ -269,6 +292,18 @@ public sealed class Sr6CreationFoundationInteractionPresenter
                     Sr6CreationFoundationInteractionBlockers.RefreshAuthorityRequired)));
         }
 
+            // T492DIAG2: capture the refresh failure detail.
+            try
+            {
+                System.IO.File.AppendAllText(
+                    @"D:\sources\chummer\_scratch\t492_cm_diag.txt",
+                    "T492DIAG2 refresh outcome=" + refresh.Outcome
+                    + " blockers=" + string.Join(",", refresh.Blockers ?? new string[0])
+                    + " refreshedBinding=" + (refresh.Value as Sr6CreationFoundationState)?.Binding
+                    + " commitRev=" + commit.Decision.CommittedContentRevision
+                    + Environment.NewLine);
+            }
+            catch { }
         return new Sr6CreationFoundationInteractionConfirmResult(
             CharacterCreationFoundationOutcomes.Success,
             prepared,
@@ -440,6 +475,13 @@ public sealed class Sr6CreationFoundationInteractionPresenter
         Sr6CreationFoundationCommit commit, Guid operationId)
     {
         Sr6CreationFoundationDecision decision = commit.Decision;
+        // T492 fix: Sr6CreationFoundationSelection.Assignments is
+        // IReadOnlyList<T>, so record equality compares it by reference - a
+        // List<T> built by the wizard never equals the frozen T[] the
+        // decision carries, even with identical content. Compare the
+        // command selection and the preview by content instead of record
+        // equality so a legitimate commit is not rejected as a
+        // receipt mismatch.
         return string.Equals(decision.Schema, Sr6CreationFoundationDecision.SchemaV1, StringComparison.Ordinal)
                && string.Equals(
                    Sr6CreationFoundationIntegrity.DecisionDigest(decision),
@@ -450,21 +492,131 @@ public sealed class Sr6CreationFoundationInteractionPresenter
                    decision.Command.PreviewDigest,
                    prepared.PreviewDigest,
                    StringComparison.Ordinal)
-               && decision.Command.Selection.Equals(prepared.Preview.Selection)
+               && SelectionEquals(decision.Command.Selection, prepared.Preview.Selection)
                && decision.Command.OperationId == operationId
                && decision.Command.ExplicitlyConfirmed
-               && decision.Preview.Equals(prepared.Preview)
+               && PreviewEquals(decision.Preview, prepared.Preview)
                && decision.CommittedContentRevision > prepared.Foundation.Binding.ContentRevision
                && IsDigest(decision.DecisionDigest);
     }
+
+    // T492 fix: content-based selection comparison. The assignments sequence
+    // is compared element-wise (order-sensitive; Core freezes it into the
+    // canonical category order, and the wizard builds it in the same order),
+    // and every sub-selection record uses reference-safe comparison.
+    private static bool SelectionEquals(
+        Sr6CreationFoundationSelection? left, Sr6CreationFoundationSelection? right)
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        return string.Equals(left.MetatypeId, right.MetatypeId, StringComparison.Ordinal)
+               && string.Equals(left.TalentId, right.TalentId, StringComparison.Ordinal)
+               && SequenceEquals(left.Assignments, right.Assignments)
+               && NullableEquals(left.Attributes, right.Attributes)
+               && NullableEquals(left.Skills, right.Skills)
+               && NullableEquals(left.Knowledge, right.Knowledge)
+               && NullableEquals(left.PointBuy, right.PointBuy)
+               && NullableEquals(left.TalentAllocation, right.TalentAllocation)
+               && NullableEquals(left.ComplexForms, right.ComplexForms)
+               && NullableEquals(left.Spells, right.Spells)
+               && NullableEquals(left.AdeptPowers, right.AdeptPowers)
+               && NullableEquals(left.Karma, right.Karma)
+               && NullableEquals(left.Qualities, right.Qualities)
+               && NullableEquals(left.Contacts, right.Contacts)
+               && NullableEquals(left.Gear, right.Gear)
+               && NullableEquals(left.Lifestyle, right.Lifestyle);
+    }
+
+    private static bool SequenceEquals(
+        IReadOnlyList<Sr6CreationPriorityChoice>? left, IReadOnlyList<Sr6CreationPriorityChoice>? right)
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < left.Count; i++)
+        {
+            if (!left[i].Equals(right[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool PreviewEquals(
+        Sr6CreationFoundationPreview? left, Sr6CreationFoundationPreview? right)
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        return BindingEquals(left.Binding, right.Binding)
+               && SelectionEquals(left.Selection, right.Selection)
+               && string.Equals(left.PreviewDigest, right.PreviewDigest, StringComparison.Ordinal)
+               && NullableEquals(left.Attributes, right.Attributes)
+               && NullableEquals(left.Skills, right.Skills)
+               && NullableEquals(left.Knowledge, right.Knowledge)
+               && NullableEquals(left.PointBuy, right.PointBuy)
+               && NullableEquals(left.TalentAllocation, right.TalentAllocation)
+               && NullableEquals(left.ComplexForms, right.ComplexForms)
+               && NullableEquals(left.Spells, right.Spells)
+               && NullableEquals(left.AdeptPowers, right.AdeptPowers)
+               && NullableEquals(left.Karma, right.Karma)
+               && NullableEquals(left.Qualities, right.Qualities)
+               && NullableEquals(left.Contacts, right.Contacts)
+               && NullableEquals(left.Gear, right.Gear)
+               && NullableEquals(left.Lifestyle, right.Lifestyle);
+    }
+
+    // T492 fix: content-based comparison for the optional sub-selection
+    // records. Several carry IReadOnlyList<T> members, whose record
+    // equality compares by reference - a List<T> built by the wizard
+    // never equals the frozen T[] the decision carries, even with
+    // identical content. JSON round-trips both shapes to the same
+    // token stream, so serialize-and-compare is shape-independent.
+    private static bool NullableEquals<T>(T? left, T? right) where T : class
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        return string.Equals(
+            System.Text.Json.JsonSerializer.Serialize(left, JsonOptions),
+            System.Text.Json.JsonSerializer.Serialize(right, JsonOptions),
+            StringComparison.Ordinal);
+    }
+
+    // T492 fix: shared serializer options so the JSON comparison is
+    // deterministic across calls (camelCase would also work, but the
+    // default PascalCase keeps the payload compact and stable).
+    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new();
 
     private static bool RefreshedStateMatches(
         Sr6CreationFoundationCommit commit,
         Sr6CreationFoundationState refreshed)
         => BindingWorkspaceMatches(commit, refreshed)
            && refreshed.Binding.ContentRevision == commit.Decision.CommittedContentRevision
-           && refreshed.Binding.ContentRevision > refreshed.Binding.SavedRevision
-           && IsDigest(refreshed.Binding.AuxiliaryStateDigest)
+           // T492 fix: Core's FileWorkspaceStore persists a foundation commit with
+           // SavedRevision equal to CommittedContentRevision, so the post-commit
+           // refresh binding satisfies ContentRevision >= SavedRevision (equality,
+           // not a strict inequality).
+           && refreshed.Binding.ContentRevision >= refreshed.Binding.SavedRevision
+           // T492 fix: Core's Load emits the AuxiliaryStateDigest as bare 64-hex
+           // (only AuthorityDigest carries the sha256: prefix), so accept both.
+           && (IsDigest(refreshed.Binding.AuxiliaryStateDigest) || IsBareDigest(refreshed.Binding.AuxiliaryStateDigest))
            && IsDigest(refreshed.Binding.AuthorityDigest);
 
     private static bool BindingWorkspaceMatches(
@@ -474,6 +626,12 @@ public sealed class Sr6CreationFoundationInteractionPresenter
             refreshed.Binding.WorkspaceId.Value,
             commit.Decision.Command.Binding.WorkspaceId.Value,
             StringComparison.Ordinal);
+
+    // T492 fix: bare 64-hex digest (Core's Load emits AuxiliaryStateDigest without the sha256: prefix).
+    private static bool IsBareDigest(string? value)
+        => value is { Length: 64 }
+           && value.All(static character =>
+               character is >= '0' and <= '9' or >= 'a' and <= 'f' or >= 'A' and <= 'F');
 
     private static bool IsDigest(string? value)
         => value is { Length: 71 }

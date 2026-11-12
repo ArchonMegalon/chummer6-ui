@@ -302,6 +302,8 @@ public partial class MainWindow : Window
 
     internal MainWindowControls ControlsForAutomation => _controls;
 
+    // T492: diagnostics access for the SR6 advancement journey (pending recovery capture).
+    internal ICharacterOverviewPresenter? AutomationPresenter => _adapter.Presenter;
     internal CharacterOverviewState SnapshotStateForAutomation() => _adapter.State;
 
     internal Task SaveWorkspaceForAutomationAsync(CancellationToken ct)
@@ -338,4 +340,21 @@ public partial class MainWindow : Window
         bitmap.Save(output);
         return output.ToArray();
     }
+    // T492: automation-only state reload so the journey runner can force a
+    // publication after the SR6 creation wizard closes while blocked -
+    // ApplySr6WizardState only re-creates the window on a state publication.
+    internal async Task ReloadStateForAutomationAsync(CancellationToken ct)
+    {
+        if (_adapter.State.WorkspaceId is not { } workspaceId)
+        {
+            return;
+        }
+        await _adapter.LoadAsync(workspaceId, ct).ConfigureAwait(true);
+    }
+    // T492: automation-only Karma grant for the SR6 advancement journey - the
+    // manual-Karma editor cannot open for SR6 runners (virtual SR6 settings
+    // profile never resolves the Chummer5 exchange rates), so the journey funds
+    // the advancement spend through this seam instead.
+    internal Task GrantKarmaForAutomationAsync(int amount, CancellationToken ct)
+        => _adapter.Presenter.GrantKarmaForAutomationAsync(amount, ct);
 }

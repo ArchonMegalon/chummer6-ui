@@ -2713,6 +2713,26 @@ public sealed partial class CharacterOverviewPresenter
             ct).ConfigureAwait(false);
     }
 
+    // T492: automation-only Karma grant. The manual-Karma editor gates on
+    // Chummer5-exact exchange rates resolved from the settings profile, and
+    // natively-created SR6 runners carry a virtual SR6 settings profile that
+    // never selects an SR5 settings.xml row, so the gate can never pass. This
+    // seam writes the Karma element and a matching manual expense directly so
+    // the SR6 advancement journey can fund a spend. Product gap filed separately.
+    public async Task GrantKarmaForAutomationAsync(int amount, CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        if (amount is < 1 or > CharacterCareerManualKarmaRules.MaximumAmount)
+        {
+            Publish(State with { Error = "Automation Karma grant amount is out of range." });
+            return;
+        }
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyKarmaGrantForAutomation(xml, amount),
+            ct).ConfigureAwait(false);
+    }
+
     public async Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);

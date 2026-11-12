@@ -473,6 +473,14 @@ public partial class Sr6CreationWizardWindow : Window
         FinishButton.IsEnabled = review.CanFinalize && (review.Losses.Count == 0 || _lossAcknowledgement?.IsChecked == true);
         NextButton.IsEnabled = false;
         UpdateFooterForDirtySelection();
+        // T492DIAG7: temporary file-based diagnostics (remove before seal)
+        try
+        {
+            System.IO.File.AppendAllText(
+                @"D:\sources\chummer\_scratch\t492_review_diag.txt",
+                $"RenderFinalizeStep: canFinalize={review.CanFinalize} blockers=[{string.Join(char.Parse("\u007c"), review.Blockers)}] losses={review.Losses.Count}" + Environment.NewLine);
+        }
+        catch { }
     }
 
     private void RenderFoundationStep()
@@ -805,6 +813,14 @@ public partial class Sr6CreationWizardWindow : Window
 
     private void RunFinalization()
     {
+        // T492DIAG6: temporary file-based diagnostics (remove before seal)
+        try
+        {
+            System.IO.File.AppendAllText(
+                @"D:\sources\chummer\_scratch\t492_runfin_diag.txt",
+                $"RunFinalization entry: ctx={_contextIsCurrent()} dispatched={_confirmationDispatched} busy={_finalizeBusy} review={(_finalizationReview is not { } r ? "null" : "set")} canFinalize={(_finalizationReview?.CanFinalize.ToString())} losses={_finalizationReview?.Losses.Count.ToString()} ack={_lossAcknowledgement?.IsChecked.ToString()} ackRef={(_lossAcknowledgement != null).ToString()}\n");
+        }
+        catch { }
         if (!RequireCurrentContext() || _confirmationDispatched || _finalizeBusy || _finalizationReview is not { } review)
         {
             return;
@@ -864,13 +880,24 @@ public partial class Sr6CreationWizardWindow : Window
         }
 
         // This is a complete-set Core contract: retain domains this bounded editor does not edit.
-        var selection = (_state.Foundation.Selection?.Selection
+        // Core's finalization review requires every draft domain to be saved, so a fresh
+        // draft must commit valid empty shapes for the domains this bounded editor does
+        // not surface: zero spends are the honest "declined to spend" state, and their
+        // remainder is acknowledged as an unspent loss at the finalize step.
+        var savedSelection = _state.Foundation.Selection?.Selection;
+        var selection = (savedSelection
             ?? new Sr6CreationFoundationSelection(string.Empty, string.Empty, [])) with
         {
             MetatypeId = CurrentMetatypeId ?? string.Empty,
             TalentId = CurrentTalentId ?? string.Empty,
             Assignments = BuildPriorityAssignments(),
-            Attributes = BuildAttributeSelection() ?? _state.Foundation.Selection?.Selection.Attributes,
+            Attributes = BuildAttributeSelection() ?? savedSelection?.Attributes ?? DefaultAttributeSelection(),
+            Skills = savedSelection?.Skills ?? DefaultSkillSelection(),
+            Knowledge = savedSelection?.Knowledge ?? DefaultKnowledgeSelection(),
+            Karma = savedSelection?.Karma ?? DefaultKarmaSelection(),
+            Contacts = savedSelection?.Contacts ?? new Sr6CreationContactSelection([]),
+            Gear = savedSelection?.Gear ?? new Sr6CreationGearSelection([]),
+            Lifestyle = savedSelection?.Lifestyle ?? new Sr6CreationLifestyleSelection("street", 1),
             PointBuy = IsPointBuy(_state!.Foundation.BuildMethod) ? BuildPointBuySelection() : null,
         };
 
@@ -914,6 +941,18 @@ public partial class Sr6CreationWizardWindow : Window
                 (int)a.Points.Value,
                 (int)a.Adjustment.Value)).ToList());
     }
+
+    // Zero-cost defaults that satisfy Core's complete-set freeze validators
+    // (Sr6CreationFoundationIntegrity): every domain saved, nothing spent.
+    private static Sr6CreationAttributeSelection DefaultAttributeSelection()
+        => new(Sr6CreationAttributeIds.Ordered
+            .Select(id => new Sr6CreationAttributeSpend(id, 0, 0)).ToList());
+
+    private static Sr6CreationSkillSelection DefaultSkillSelection() => new([]);
+
+    private static Sr6CreationKnowledgeSelection DefaultKnowledgeSelection() => new("English", [], []);
+
+    private static Sr6CreationKarmaSelection DefaultKarmaSelection() => new([], [], 0);
 
     public bool Committed { get; private set; }
 

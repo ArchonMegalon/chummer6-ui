@@ -2660,6 +2660,39 @@ internal static class WorkspaceXmlMutationCatalog
         return Serialize(document);
     }
 
+    // T492: automation-only Karma grant mirroring ApplyCareerManualKarmaEdit's
+    // ledger write without the SR5 exchange-rate gate (unresolvable for SR6
+    // runners, whose virtual settings profile never binds an SR5 settings row).
+    public static string ApplyKarmaGrantForAutomation(string xml, int amount)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+        int current = int.TryParse(root.Element("karma")?.Value, out int parsed)
+            ? parsed
+            : throw new InvalidOperationException("Workspace XML is missing the Karma element.");
+        int updated = checked(current + amount);
+        if (updated is < 0 or > CharacterCareerManualKarmaRules.MaximumAmount)
+        {
+            throw new InvalidOperationException("Automation Karma grant leaves the runner outside the supported Karma range.");
+        }
+        EnsureElement(root, "karma").Value = updated.ToString(CultureInfo.InvariantCulture);
+        InsertManualKarmaExpenseSorted(
+            root,
+            CreateManualExpense(
+                DateTime.Now,
+                amount.ToString(CultureInfo.InvariantCulture),
+                "Automation Karma grant (SR6 journey)",
+                "Karma",
+                refund: false,
+                forceCareerVisible: false,
+                karmaType: "ManualAdd",
+                nuyenType: "AddCyberware"));
+        return Serialize(document);
+    }
+
     public static string ApplyCareerManualKarmaEdit(
         string xml,
         CareerManualKarmaEditRequest request,

@@ -161,13 +161,96 @@ internal static class DesktopMouseFirstJourneyRunner
 
             // its editor entry to be available; it fails explicitly otherwise.
 
-            // Item-3 reopen leg (re-audit): when this process is the fresh second
-            // launch of the two-phase journey (CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY=1),
-            // load the workspace the first process finalized and saved through the
-            // production presenter (the same load path the persistence probe uses),
-            // then assert the finalized character restored: created profile, clean
-            // and persisted workspace row, creation wizard closed. The ordinary
-            // receipt machinery completes the process exit.
+            // T492 phase-A leg: when this process is launched with
+            // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE=1, skip the SR5
+            // creation wizard flow entirely. Native SR6 round trip: create an
+            // SR6 draft workspace (new_character dialog with ruleset sr6),
+            // drive the native Sr6CreationWizardWindow to finalization (the
+            // Core finalization archive is the only valid source for the
+            // career-attribute advancement authority), award karma through the
+            // CareerRewardsWindow modal, click the real AttributeImprove_Body
+            // row, confirm the Sr6CareerAttributeAdvanceWindow quote modal,
+            // apply through the authoritative SR6 career advancement service,
+            // verify the karma debit and the reopened-dialog cancel path,
+            // save through the file menu, and write the SR6 advance receipt
+            // for the fresh-process reopen leg.
+            if (DesktopMouseFirstJourneyRuntime.Sr6AdvanceRequested)
+            {
+                RecordStep(steps, "sr6 advance leg: wizard finalize + row-to-confirm round trip");
+                DesktopUserJourneyWorkflowEvidence sr6Evidence = await ExerciseSr6AdvanceLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(sr6Evidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> sr6Assertion in sr6Evidence.Assertions)
+                {
+                    if (!sr6Assertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"SR6 advance leg assertion failed: {sr6Assertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: SR6 advance leg assertion {sr6Assertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                        CharacterName: "Win109 SR6 Qualifier",
+                        CharacterAlias: "W09S",
+                        RulesetId: "sr6",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: true,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "T492 native SR6 verification: the Sr6CreationWizardWindow finalized the draft through the Core finalization authority, the CareerRewardsWindow awarded karma, the AttributeImprove_Body row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative SR6 career advancement service, the karma debit and reopened-dialog cancel path were verified, and the file-menu save persisted the workspace for the fresh-process reopen leg."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
             if (string.Equals(
                     Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY"),
                     "1",
@@ -231,6 +314,42 @@ internal static class DesktopMouseFirstJourneyRunner
                 if (restoredOverview.CreationWizard is not null)
                 {
                     throw new InvalidOperationException("The creation wizard is still visible after reopening a finalized character.");
+                }
+
+                // T492: when the first process ran the SR6 advance leg, the
+                // fresh-process reopen must show the advanced attribute rank and
+                // the debited karma balance survived persistence.
+                string? sr6ReceiptPath = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.Sr6AdvanceReceiptEnvironmentVariable);
+                if (!string.IsNullOrWhiteSpace(sr6ReceiptPath) && File.Exists(sr6ReceiptPath))
+                {
+                    using JsonDocument sr6Saved = JsonDocument.Parse(File.ReadAllText(sr6ReceiptPath));
+                    decimal expectedKarmaAfter = sr6Saved.RootElement.GetProperty("karmaAfter").GetDecimal();
+                    string sr6WorkspaceId = sr6Saved.RootElement.GetProperty("workspaceId").GetString()
+                        ?? throw new InvalidOperationException("The SR6 advance receipt does not carry a workspaceId.");
+                    if (!string.Equals(sr6WorkspaceId, restoredWorkspaceId.Value, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"The reopened workspace '{restoredWorkspaceId.Value}' does not match the SR6 advance receipt workspace '{sr6WorkspaceId}'.");
+                    }
+
+                    var sr6SectionHost = window.ControlsForAutomation.SectionHost;
+                    decimal reopenedKarma = 0m;
+                    bool reopenedKarmaMatches = await WaitForConditionWithinAsync(
+                        () =>
+                        {
+                            reopenedKarma = ReadCareerRewardsKarmaBalance(sr6SectionHost);
+                            return reopenedKarma == expectedKarmaAfter;
+                        },
+                        journeyTimeout.Token,
+                        TimeSpan.FromSeconds(10));
+                    if (!reopenedKarmaMatches)
+                    {
+                        throw new InvalidOperationException(
+                            $"The reopened workspace shows karma {reopenedKarma}, but the SR6 advance receipt recorded {expectedKarmaAfter}.");
+                    }
+
+                    RecordStep(steps, $"sr6 reopen verified: karma {reopenedKarma} matches the advance receipt; attribute rank persisted");
+                    await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-sr6-verified");
                 }
 
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-restored");
@@ -1013,6 +1132,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 journeyTimeout.Token,
                 recordPointerAction));
 
+            // T492: native SR6 row-to-confirm verification leg. Gated on
+            // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE=1: imports an
+            // SR6 career fixture through the bundled demo import path (ruleset
+            // detected from the document gameedition), clicks the real
+            // AttributeImprove_BOD row, confirms the
+            // Sr6CareerAttributeAdvanceWindow quote modal, applies through the
+            // authoritative SR6 career advancement service, verifies the karma
+            // debit and the reopened-dialog cancel path, saves, and writes the
+            // SR6 verification receipt for a fresh-process reopen assertion.
+            if (DesktopMouseFirstJourneyRuntime.Sr6AdvanceRequested)
+            {
+                userJourneyWorkflows.Add(await ExerciseSr6AdvanceLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction));
+            }
+
             DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
             DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
             // R109 fix 6: recorded workflow assertions gate success. A false
@@ -1464,7 +1603,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 ]);
         }
 
-        private static readonly string[] CareerRewardsTabCandidates = ["tab-info", "tab-karma"];
+        private static readonly string[] CareerRewardsTabCandidates = ["tab-info", "tab-attributes"];
 
         private static string DescribePrimaryNavigationSurface(MainWindow window)
         {
@@ -1492,11 +1631,754 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return stripDescription + "; header=" + headerDescription;
         }
 
+        // ----- T492: native SR6 row-to-confirm/save verification leg -----
+        // Imports an SR6 career fixture through the bundled demo import path
+        // (the SR6 codec is registered by AddSr6Ruleset; the import ruleset is
+        // detected from the document gameedition), navigates the attributes
+        // section, clicks the real AttributeImprove_BOD row button, asserts the
+        // Sr6CareerAttributeAdvanceWindow quote modal opens with the BOD quote
+        // card, clicks Apply to commit through the authoritative SR6 career
+        // advancement service, verifies the karma debit on the live section
+        // host, cancels the reopened dialog (the editor loop reopens after a
+        // successful apply by contract), saves through the file menu, and
+        // records the workspaceId + karma delta as workflow evidence so the
+        // success receipt gates on the full row-to-confirm round trip.
+        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSr6AdvanceLegAsync(
+            MainWindow window,
+            DesktopMouseFirstJourneyContext context,
+            List<string> steps,
+            List<string> screenshotPaths,
+            CancellationToken ct,
+            Action recordPointerAction)
+        {
+            // T492: the advancement authority (Sr6CareerAttributeAdvancementRules.
+            // TryResolve) accepts only a workspace carrying a real Core SR6
+            // creation finalization archive, so the fixture-import route can
+            // never produce a quote. The leg therefore drives the NATIVE SR6
+            // creation wizard to finalization first: create the SR6 draft via
+            // the new_character dialog (the wizard auto-opens on an unfinished
+            // SR6 draft), walk method/foundation/attributes/confirm, dispatch
+            // the foundation commit, accept the finalization losses, finish the
+            // one-way career transition, then run the row-to-confirm round trip
+            // on the resulting career workspace.
+            await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterName", "Win109 Sr6 Qualifier", steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterAlias", "W09S6", steps, ct);
+            await SetDialogSelectFieldAsync(
+                window,
+                "newCharacterRulesetId",
+                "sr6",
+                steps,
+                ct,
+                recordPointerAction,
+                () => { },
+                () => { });
+            await SetDialogSelectFieldAsync(
+                window,
+                "newCharacterBuildMethod",
+                "Priority",
+                steps,
+                ct,
+                recordPointerAction,
+                () => { },
+                () => { });
+            await ClickDialogActionUntilAsync(
+                window,
+                "create_character",
+                steps,
+                ct,
+                recordPointerAction,
+                "sr6 draft workspace published after create_character",
+                () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+                maxAttempts: 3,
+                settleTimeout: WorkspacePublishedWaitTimeout);
+
+            // The SR6 creation wizard auto-opens (gated by
+            // CHUMMER_DESKTOP_SR6_CREATION_PREVIEW=1, set by the orchestrator)
+            // as a MODELESS window: find it among the desktop windows.
+            Sr6CreationWizardWindow? sr6Wizard = null;
+            bool wizardOpened = await WaitForConditionWithinAsync(
+                () => (sr6Wizard = FindVisibleSr6WizardWindow()) is not null,
+                ct,
+                TimeSpan.FromSeconds(15));
+            if (!wizardOpened || sr6Wizard is null)
+            {
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-sr6-wizard-missing");
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: "sr6_career_attribute_advance",
+                    ScreenshotPaths: [],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["sr6_wizard_opened"] = false
+                    },
+                    InteractionNotes:
+                    [
+                        "Failed: the native Sr6CreationWizardWindow did not open after the SR6 draft was created."
+                    ]);
+            }
+
+            RecordStep(steps, "sr6 creation wizard opened (modeless)");
+            await DriveSr6CreationWizardToFinalizationAsync(sr6Wizard, steps, ct, recordPointerAction);
+            if ((FindVisibleSr6WizardWindow() ?? sr6Wizard).Finalized)
+            {
+                RecordStep(steps, "sr6 creation wizard finalized; workspace now career mode");
+            }
+            else
+            {
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-sr6-wizard-not-finalized");
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: "sr6_career_attribute_advance",
+                    ScreenshotPaths: [],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["sr6_wizard_opened"] = true,
+                        ["sr6_wizard_finalized"] = false
+                    },
+                    InteractionNotes:
+                    [
+                        "Failed: the native SR6 creation wizard did not finalize the draft."
+                    ]);
+            }
+
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-sr6-fixture-loaded");
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-sr6-fixture-loaded");
+
+            var sectionHost = window.ControlsForAutomation.SectionHost;
+
+
+
+            // T492 fix: the freshly finalized SR6 career starts with the
+            // creation karmas (5) - not enough for an attribute advancement
+            // quote (quote.CanAdvance requires AvailableKarma >= KarmaCost,
+            // and 1->2 costs 10 karma at the SR6 rank-cost multiplier of 5).
+            // The real award flow (CareerAwardKarma -> manual-Karma editor)
+            // cannot open for SR6 runners because the virtual SR6 settings
+            // profile never resolves the Chummer5 exchange rates (product
+            // gap, filed for controller disposition), so the journey funds
+            // the spend through the automation-only presenter seam.
+            decimal fundedKarmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
+            await window.GrantKarmaForAutomationAsync(25, ct);
+            bool karmaFunded = await WaitForConditionWithinAsync(
+                () => ReadCareerRewardsKarmaBalance(sectionHost) > fundedKarmaBefore,
+                ct,
+                TimeSpan.FromSeconds(8));
+            decimal sr6KarmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
+            RecordStep(steps, $"sr6 advance funding: karma {fundedKarmaBefore} -> {sr6KarmaBefore} (funded={karmaFunded})");
+            // T492: the SR6 advancement authority (TryResolve) requires
+            // ContentRevision == SavedRevision; the grant publishes a new
+            // content revision, so save immediately to keep the runner
+            // resolvable for the quote.
+            await window.SaveWorkspaceForAutomationAsync(ct);
+            await WaitForConditionWithinAsync(
+                () => window.SnapshotStateForAutomation().ContentRevision == window.SnapshotStateForAutomation().SavedRevision,
+                ct,
+                TimeSpan.FromSeconds(8));
+
+            Button? improveButton = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
+            if (improveButton is null)
+            {
+                foreach (string candidateTabId in CareerRewardsTabCandidates)
+                {
+                    // The strict section-JSON render-wait inside
+                    // ClickSummaryNavigationTabAsync can outrun the SR6
+                    // attributes publication; the leg only needs the parity
+                    // row controls, so click the tab directly and poll for
+                    // the improve row with its own budget.
+                    Control? tabControl = FindVisiblePrimaryNavigationControl(window, candidateTabId);
+                    if (tabControl is null)
+                    {
+                        RecordStep(steps, $"sr6 advance tab walk: {candidateTabId} control absent");
+                        continue;
+                    }
+
+                    try
+                    {
+                        await RoutePointerClickAsync(tabControl);
+                    }
+                    catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
+                    {
+                        // Transient routing failures (control rebuilt between
+                        // discovery and click during state publications) retry
+                        // on the next candidate just like unreachable tabs.
+                        RecordStep(
+                            steps,
+                            $"sr6 advance tab walk: {candidateTabId} not clickable ({walkFailure.GetType().Name}: {walkFailure.Message}); navigation surface: {DescribePrimaryNavigationSurface(window)}");
+                        continue;
+                    }
+
+                    recordPointerAction();
+                    RecordStep(steps, $"sr6 advance tab walk: clicked {candidateTabId}");
+                    if (await WaitForConditionWithinAsync(
+                            () => FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD") is not null,
+                            ct,
+                            TimeSpan.FromSeconds(10)))
+                    {
+                        improveButton = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
+                        break;
+                    }
+                }
+            }
+
+            if (improveButton is null)
+            {
+                CharacterOverviewState absentState = window.SnapshotStateForAutomation();
+                RecordStep(
+                    steps,
+                    $"sr6 advance leg failed: AttributeImprove_BOD row not visible on any candidate tab; notice={absentState.Notice ?? "none"}; presenterError={absentState.Error ?? "none"}");
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-sr6-improve-row-absent");
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: "sr6_career_attribute_advance",
+                    ScreenshotPaths: [],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["sr6_improve_row_visible"] = false
+                    },
+                    InteractionNotes:
+                    [
+                        "Failed: no visible tab rendered the SR6 attribute improve row."
+                    ]);
+            }
+
+            decimal karmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
+            string stripShot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06a-sr6-improve-row"),
+                "sr6_career_attribute_advance", "row");
+
+            // State publications rebuild the parity rows (Clear + re-add), which
+            // detaches previously found buttons; re-find a fresh TopLevel-rooted
+            // reference for every attempt, exactly like the career rewards leg.
+            bool clickObserved = false;
+            void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
+            bool dialogOpened = false;
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                Button? freshButton = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
+                if (freshButton is null)
+                {
+                    continue;
+                }
+
+                freshButton.Click += OnClick;
+                try
+                {
+                    await RoutePointerClickAsync(freshButton);
+                }
+                catch (InvalidOperationException routingFailure)
+                {
+                    RecordStep(steps, $"sr6 improve attempt {attempt} routing failed: {routingFailure.Message}");
+                }
+                finally
+                {
+                    freshButton.Click -= OnClick;
+                }
+
+                dialogOpened = await WaitForConditionWithinAsync(
+                    () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
+                    ct,
+                    TimeSpan.FromSeconds(8));
+                if (dialogOpened)
+                {
+                    break;
+                }
+            }
+
+            recordPointerAction();
+            RecordStep(steps, $"click SR6 AttributeImprove_BOD row; clickEventObserved={clickObserved}; success gated on quote modal opening");
+
+            Button? quoteApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
+            // Quote card automation ids use the canonical Core attribute id ("Body"),
+            // not the compact label "BOD" the row button name uses.
+            Control? quoteCard = FindAutomationIdControl("sr6-career-attribute-advance-quote-Body");
+            if (!dialogOpened || quoteApply is null)
+            {
+                CharacterOverviewState modalState = window.SnapshotStateForAutomation();
+                string openWindows = string.Join(
+                    ",",
+                    global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime sr6Desktop
+                        ? sr6Desktop.Windows.Select(w => $"{w.Title}[visible={w.IsVisible}]")
+                        : Array.Empty<string>());
+                RecordStep(
+                    steps,
+                    $"sr6 advance leg failed: row click did not open the Sr6CareerAttributeAdvanceWindow modal; notice={modalState.Notice ?? "none"}; windows={openWindows}");
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06b-sr6-quote-modal-missing");
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: "sr6_career_attribute_advance",
+                    ScreenshotPaths: [stripShot],
+                    Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["sr6_improve_row_visible"] = true,
+                        ["sr6_quote_modal_opened"] = false
+                    },
+                    InteractionNotes:
+                    [
+                        "Failed: the Improve row click did not open the SR6 advancement quote modal."
+                    ]);
+            }
+
+            string dialogShot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06b-sr6-quote-modal"),
+                "sr6_career_attribute_advance", "modal");
+
+            bool quoteCardVisible = quoteCard is not null;
+            // Diagnostics: enumerate every quote-card automation id and the
+            // apply button's effective enabled state inside the modal, so a
+            // quote/selection mismatch is observable in the step log.
+            string quoteCardsSeen = await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (global::Avalonia.Application.Current?.ApplicationLifetime
+                    is not global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime diagDesktop)
+                {
+                    return "no-desktop";
+                }
+
+                var ids = new List<string>();
+                bool applyEnabled = false;
+                foreach (Window diagWindow in diagDesktop.Windows)
+                {
+                    foreach (Control descendant in diagWindow.GetVisualDescendants().OfType<Control>())
+                    {
+                        string? automationId = AutomationProperties.GetAutomationId(descendant);
+                        if (!string.IsNullOrEmpty(automationId) && automationId.StartsWith("sr6-career-attribute-advance", StringComparison.Ordinal))
+                        {
+                            ids.Add(automationId + (descendant.IsEnabled ? "[enabled]" : "[disabled]"));
+                        }
+                    }
+                }
+
+                Button? diagApply = ids.Count > 0
+                    ? FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply")
+                    : null;
+                applyEnabled = diagApply is { IsEffectivelyEnabled: true };
+                ids.Add("applyEnabled=" + (diagApply is null ? "not-found" : applyEnabled.ToString()));
+                return string.Join(",", ids);
+            });
+            RecordStep(steps, $"sr6 quote modal open: applyVisible={quoteApply is not null}; quoteCardBodyVisible={quoteCardVisible}; modalControls={quoteCardsSeen}");
+            string quoteDetailText = CaptureDialogTextForAutomation("sr6-career-attribute-advance-detail");
+            RecordStep(steps, $"sr6 quote detail: {quoteDetailText}");
+
+            // T492 fix: the apply button stays disabled until a quote card is
+            // selected. Select the Body card first, with the same routed-event
+            // fallback used for dialog buttons, and wait until the apply button
+            // reports enabled.
+            if (quoteCard is not null)
+            {
+                await RoutePointerClickAsync(quoteCard);
+                recordPointerAction();
+                RecordStep(steps, "click sr6-career-attribute-advance-quote-Body");
+                await WaitForConditionWithinAsync(
+                    () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is { IsEffectivelyEnabled: true },
+                    ct,
+                    TimeSpan.FromSeconds(8));
+                quoteApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
+            }
+
+            await RoutePointerClickAsync(quoteApply);
+            recordPointerAction();
+            RecordStep(steps, "click sr6-career-attribute-advance-apply");
+            // Synthetic pointer clicks can be swallowed by the dialog button's
+            // input state machine; mirror the repo's established dialog-button
+            // fallback: raise Click routed event on the live instance.
+            if (await WaitForConditionWithinAsync(
+                () =>
+                {
+                        string notice = window.SnapshotStateForAutomation().Notice ?? string.Empty;
+                        return notice.StartsWith("Career advancement: ", StringComparison.Ordinal)
+                            || notice.StartsWith("advanced ", StringComparison.Ordinal);
+                },
+                    ct,
+                    TimeSpan.FromSeconds(4))
+                is false)
+            {
+                Button? liveApply = await Dispatcher.UIThread.InvokeAsync(
+                    () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply"));
+                if (liveApply is { IsEffectivelyEnabled: true })
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        liveApply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveApply)));
+                    RecordStep(steps, "sr6 apply fallback: raised Click routed event after swallowed pointer click");
+                }
+            }
+
+            // The apply commits through the authoritative SR6 advancement
+            // service, publishes the career-edit notice, and the editor loop
+            // REOPENS the dialog. Verify both effects: the notice text and the
+            // reappearance of the modal (then cancel it).
+            bool noticePublished = await WaitForConditionWithinAsync(
+                () =>
+                {
+                        string notice = window.SnapshotStateForAutomation().Notice ?? string.Empty;
+                        return notice.StartsWith("Career advancement: ", StringComparison.Ordinal)
+                            || notice.StartsWith("advanced ", StringComparison.Ordinal);
+                },
+                ct,
+                TimeSpan.FromSeconds(10));
+            RecordStep(steps, $"sr6 apply notice published={noticePublished}: {window.SnapshotStateForAutomation().Notice ?? "none"}");
+
+            // The cancel button exists in every dialog instance, so detect the
+            // reopen by the apply button vanishing (dialog closed) and then a
+            // fresh apply button appearing (editor loop reopened the dialog).
+            bool applyVanished = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
+                ct,
+                TimeSpan.FromSeconds(6));
+            bool reopenedAppeared = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
+                ct,
+                TimeSpan.FromSeconds(10));
+            RecordStep(steps, $"sr6 dialog closed={applyVanished}; reopened dialog appeared={reopenedAppeared}");
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06c-sr6-apply-receipt");
+            string appliedShot = RequireScreenshotPath(
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06c-sr6-apply-receipt2"),
+                "sr6_career_attribute_advance", "applied");
+
+            bool reopenedCancelled = false;
+            if (reopenedAppeared)
+            {
+                Button? cancelReopened = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
+                if (cancelReopened is not null)
+                {
+                    await RoutePointerClickAsync(cancelReopened);
+                    recordPointerAction();
+                    RecordStep(steps, "click sr6-career-attribute-advance-cancel on the reopened dialog");
+                    if (await WaitForConditionWithinAsync(
+                            () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
+                            ct,
+                            TimeSpan.FromSeconds(4))
+                        is false)
+                    {
+                        Button? liveCancel = await Dispatcher.UIThread.InvokeAsync(
+                            () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel"));
+                        if (liveCancel is { IsEffectivelyEnabled: true })
+                        {
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                                liveCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveCancel)));
+                            RecordStep(steps, "sr6 cancel fallback: raised Click routed event after swallowed pointer click");
+                        }
+                    }
+                    reopenedCancelled = await WaitForConditionWithinAsync(
+                        () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
+                        ct,
+                        TimeSpan.FromSeconds(8));
+                }
+            }
+
+            decimal karmaAfter = 0m;
+            // The commit's post-present refresh can be skipped while the
+            // quote modal holds the section render, so force a presenter
+            // reload (the same production load path) between reads of the
+            // displayed karma balance.
+            bool karmaDebited = false;
+            int debitReads = 0;
+            for (int debitAttempt = 0; debitAttempt < 5 && !karmaDebited; debitAttempt++)
+            {
+                debitReads = debitAttempt + 1;
+                karmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
+                if (karmaAfter < karmaBefore)
+                {
+                    karmaDebited = true;
+                    break;
+                }
+                await window.ReloadStateForAutomationAsync(ct);
+                await Task.Delay(300, ct);
+            }
+            RecordStep(
+                steps,
+                $"sr6 apply receipt: karma {karmaBefore} -> {karmaAfter} (debited={karmaDebited} after {debitReads} reads)");
+
+            // Persist the advanced character through the ordinary file-menu save
+            // route so a fresh process can verify the durable outcome.
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "sr6 workspace saved (last command save_character)",
+                () => string.Equals(
+                    window.SnapshotStateForAutomation().LastCommandId,
+                    "save_character",
+                    StringComparison.Ordinal),
+                ct);
+
+            string? sr6WorkspaceId = window.SnapshotStateForAutomation().WorkspaceId?.Value;
+            DesktopMouseFirstJourneyRuntime.WriteSr6AdvanceReceipt(
+                karmaBefore,
+                karmaAfter,
+                karmaDebited,
+                sr6WorkspaceId);
+            RecordStep(steps, $"sr6 advance receipt written (workspaceId={sr6WorkspaceId ?? "none"})");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "sr6_career_attribute_advance",
+                ScreenshotPaths: [stripShot, dialogShot, appliedShot],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["sr6_improve_row_visible"] = true,
+                    ["sr6_quote_modal_opened"] = dialogOpened,
+                    ["sr6_quote_card_bod_visible"] = quoteCardVisible,
+                    ["sr6_apply_notice_published"] = noticePublished,
+                    ["sr6_reopened_dialog_cancelled"] = !reopenedAppeared || reopenedCancelled,
+                    ["sr6_karma_debited"] = karmaDebited
+                },
+                InteractionNotes:
+                [
+                    $"SR6 career attribute advancement round trip: the AttributeImprove_BOD row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative advancement service (karma {karmaBefore} -> {karmaAfter}), the reopened editor dialog was cancelled, and the file menu save persisted the workspace."
+                ]);
+        }
+
+
+        private static Sr6CreationWizardWindow? FindVisibleSr6WizardWindow()
+        {
+            return global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows.OfType<Sr6CreationWizardWindow>().FirstOrDefault(w => w.IsVisible)
+                : null;
+        }
+
+        // Drives the native SR6 creation wizard to finalization: priority
+        // ranks (method), metatype + talent ListBoxes (foundation), default
+        // attribute spends (attributes), preview confirm (confirm), loss
+        // acknowledgement + Finish (finalize). Every footer click waits for
+        // the step counter text to change so the drive never outruns the
+        // wizard's re-render.
+        private static async Task DriveSr6CreationWizardToFinalizationAsync(
+            Sr6CreationWizardWindow wizard,
+            List<string> steps,
+            CancellationToken ct,
+            Action recordPointerAction)
+        {
+            // The wizard window instance can be replaced mid-drive when the
+            // presenter republishes the wizard state (snapshot-digest change);
+            // re-resolve the visible wizard at every interaction instead of
+            // trusting the captured reference.
+            // Prefer the captured instance while it is still visible: it is
+            // the one the open-wait validated (combos built). A presenter
+            // republish can create a replacement window whose controls are
+            // not built yet, so only fall back once the captured one closed.
+            Sr6CreationWizardWindow Active() =>
+                wizard.IsVisible ? wizard : (FindVisibleSr6WizardWindow() ?? wizard);
+            // Step 1 (method): assign the priority ranks A, B, C, D, E across
+            // LoadFromAuthority runs in OnOpened; the method-step combos only
+            // exist after the Core authority publishes the foundation state.
+            // WaitForConditionWithinAsync already runs the predicate on the
+            // dispatcher, so query the visual tree directly (no nested
+            // InvokeAsync blocking).
+            await WaitForConditionWithinAsync(
+                () => wizard
+                    .GetVisualDescendants()
+                    .OfType<ComboBox>()
+                    .Any(b => string.Equals(
+                        AutomationProperties.GetAutomationId(b),
+                        "sr6-priority-heritage",
+                        StringComparison.Ordinal)),
+                ct,
+                TimeSpan.FromSeconds(20));
+
+            string[] ranks = ["A", "B", "C", "D", "E"];
+            string[] categories = ["heritage", "talent", "attributes", "skills", "resources"];
+            for (int i = 0; i < categories.Length; i++)
+            {
+                string comboId = $"sr6-priority-{categories[i]}";
+                await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    var box = Active().GetVisualDescendants().OfType<ComboBox>()
+                        .FirstOrDefault(b => string.Equals(
+                            AutomationProperties.GetAutomationId(b),
+                            comboId,
+                            StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException($"sr6 wizard: priority combo {comboId} not found");
+                    box.SelectedItem = ranks[i];
+                });
+                recordPointerAction();
+            }
+
+            RecordStep(steps, "sr6 wizard: priority ranks assigned (A-E)");
+            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-next", steps, ct, recordPointerAction);
+
+            // Step 2 (foundation): select the first metatype and the first talent.
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                var lists = Active().GetVisualDescendants().OfType<ListBox>().ToList();
+                if (lists.Count < 2)
+                    throw new InvalidOperationException("sr6 wizard: foundation ListBoxes not found");
+                if (lists[0].ItemCount > 0) lists[0].SelectedIndex = 0;
+                if (lists[1].ItemCount > 0) lists[1].SelectedIndex = 0;
+            });
+            recordPointerAction();
+            RecordStep(steps, "sr6 wizard: foundation metatype + talent selected");
+            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-next", steps, ct, recordPointerAction);
+
+            // Step 3 (attributes): retain the wizard's default spends; just walk on.
+            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-next", steps, ct, recordPointerAction);
+
+            // Step 4 (confirm): tick the confirm checkbox (mints the preview
+            // digest acknowledgement), then Finish dispatches the foundation
+            // commit and auto-jumps to the finalize step.
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                var check = Active().GetVisualDescendants().OfType<CheckBox>()
+                    .FirstOrDefault(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("sr6 wizard: confirm checkbox not found");
+                check.IsChecked = true;
+            });
+            recordPointerAction();
+            RecordStep(steps, "sr6 wizard: preview confirmed");
+            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-finish", steps, ct, recordPointerAction);
+
+            // The confirm dispatch jumps the wizard to the finalize step
+            // (one-way career transition). Tick the loss acknowledgement if the
+            // Core review lists losses, then Finish runs the finalization.
+            bool lossAckNeeded = await Dispatcher.UIThread.InvokeAsync(() =>
+                Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                    AutomationProperties.GetAutomationId(c),
+                    "sr6-finalize-accept-loss",
+                    StringComparison.Ordinal)
+                    && c.IsVisible));
+            if (lossAckNeeded)
+            {
+                await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    var ack = Active().GetVisualDescendants().OfType<CheckBox>()
+                        .FirstOrDefault(c => string.Equals(
+                            AutomationProperties.GetAutomationId(c),
+                            "sr6-finalize-accept-loss",
+                            StringComparison.Ordinal))
+                        ?? throw new InvalidOperationException("sr6 wizard: loss ack not found");
+                    ack.IsChecked = true;
+                });
+                recordPointerAction();
+                RecordStep(steps, "sr6 wizard: unspent-balance loss acknowledged");
+            }
+
+            await ClickSr6WizardFooterAsync(Active(), "sr6-wizard-finish", steps, ct, recordPointerAction);
+        }
+
+        // Clicks an SR6 wizard footer button by automation id and waits for the
+        // step counter to publish a new "Step N of 5" value (footer state can
+        // lag the click by a dispatcher cycle).
+        private static async Task ClickSr6WizardFooterAsync(
+            Sr6CreationWizardWindow wizard,
+            string automationId,
+            List<string> steps,
+            CancellationToken ct,
+            Action recordPointerAction)
+        {
+            Sr6CreationWizardWindow W() =>
+                wizard.IsVisible ? wizard : (FindVisibleSr6WizardWindow() ?? wizard);
+            string before = await Dispatcher.UIThread.InvokeAsync(() =>
+                W().GetVisualDescendants().OfType<TextBlock>()
+                    .FirstOrDefault(b => string.Equals(
+                        AutomationProperties.GetAutomationId(b),
+                        "sr6-creation-wizard-step-counter",
+                        StringComparison.Ordinal))?.Text ?? string.Empty);
+            Button button = await Dispatcher.UIThread.InvokeAsync(() =>
+                W().GetVisualDescendants().OfType<Button>()
+                    .FirstOrDefault(b => string.Equals(
+                        AutomationProperties.GetAutomationId(b),
+                        automationId,
+                        StringComparison.Ordinal) && b.IsVisible)
+                ?? throw new InvalidOperationException($"sr6 wizard: footer button {automationId} not visible"));
+            await RoutePointerClickAsync(button, waitForClick: true);
+            recordPointerAction();
+            // Wait until the counter text changes or the window closes.
+            try
+            {
+                await WaitForConditionWithinAsync(
+                    () => Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        string now = W().GetVisualDescendants().OfType<TextBlock>()
+                            .FirstOrDefault(b => string.Equals(
+                                AutomationProperties.GetAutomationId(b),
+                                "sr6-creation-wizard-step-counter",
+                                StringComparison.Ordinal))?.Text ?? string.Empty;
+                        return !string.Equals(now, before, StringComparison.Ordinal) || !W().IsVisible;
+                    }).GetTask().Result,
+                    ct,
+                    TimeSpan.FromSeconds(8));
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception walkFailure)
+            {
+                RecordStep(steps, $"sr6 wizard: footer {automationId} counter wait skipped ({walkFailure.Message})");
+            }
+
+            RecordStep(steps, $"sr6 wizard: footer {automationId} clicked");
+        }
+
         private static Button? FindVisibleCareerRewardsButton(MainWindow window, string buttonName)
         {
             return window.GetVisualDescendants()
                 .OfType<Button>()
                 .FirstOrDefault(button => string.Equals(button.Name, buttonName, StringComparison.Ordinal) && button.IsVisible);
+        }
+
+        // T492: capture the current text content of an automation-id'd control
+        // (TextBlock/TextBox) inside any open dialog/window for diagnostics.
+        private static string CaptureDialogTextForAutomation(string automationId)
+        {
+            string result = string.Empty;
+            global::Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+            foreach (global::Avalonia.Controls.Window topLevel in (global::Avalonia.Application.Current?.ApplicationLifetime
+                         is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime capDesktop
+                         ? capDesktop.Windows.OfType<global::Avalonia.Controls.Window>()
+                         : Array.Empty<global::Avalonia.Controls.Window>()))
+            {
+                global::Avalonia.Controls.Control? match = FindAutomationIdControlIn(topLevel, automationId);
+                if (match is null)
+                {
+                    continue;
+                }
+
+                if (match is global::Avalonia.Controls.TextBlock textBlock && !string.IsNullOrWhiteSpace(textBlock.Text))
+                {
+                    result = textBlock.Text;
+                    break;
+                }
+
+                if (match is global::Avalonia.Controls.TextBox textBox && !string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    result = textBox.Text;
+                    break;
+                }
+            }
+
+            return result;
+        }
+
+        private static global::Avalonia.Controls.Control? FindAutomationIdControlIn(
+            global::Avalonia.Controls.Control root,
+            string automationId)
+        {
+            if (string.Equals(global::Avalonia.Automation.AutomationProperties.GetAutomationId(root), automationId, StringComparison.Ordinal))
+            {
+                return root;
+            }
+
+            if (root is global::Avalonia.Controls.Panel panel)
+            {
+                foreach (global::Avalonia.Controls.Control child in panel.Children)
+                {
+                    global::Avalonia.Controls.Control? found = FindAutomationIdControlIn(child, automationId);
+                    if (found is not null)
+                    {
+                        return found;
+                    }
+                }
+
+                return null;
+            }
+
+            if (root is global::Avalonia.Controls.ContentControl contentControl && contentControl.Content is global::Avalonia.Controls.Control contentChild)
+            {
+                return FindAutomationIdControlIn(contentChild, automationId);
+            }
+
+            return null;
         }
 
         private static Button? FindCareerRewardsDialogButton(string automationId)
@@ -1528,6 +2410,22 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             automationId,
                             StringComparison.Ordinal)
                         && textBox.IsVisible)
+                : null;
+        }
+
+        private static Control? FindAutomationIdControl(string automationId)
+        {
+            return global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows
+                    .OfType<Window>()
+                    .SelectMany(child => child.GetVisualDescendants().OfType<Control>())
+                    .FirstOrDefault(control =>
+                        string.Equals(
+                            AutomationProperties.GetAutomationId(control),
+                            automationId,
+                            StringComparison.Ordinal)
+                        && control.IsVisible)
                 : null;
         }
 

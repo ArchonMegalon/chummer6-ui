@@ -89,6 +89,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             Classes = { "shell-action quiet" },
             MinWidth = 90,
         };
+        // T492: diagnostics - the runner captures the quote summary (incl. any blocker).
+        global::Avalonia.Automation.AutomationProperties.SetAutomationId(detailBody, "sr6-career-attribute-advance-detail");
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(applyButton, "sr6-career-attribute-advance-apply");
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(cancelButton, "sr6-career-attribute-advance-cancel");
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(this, "sr6-career-attribute-advance-window");
@@ -219,7 +221,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         return new Sr6CareerAttributeCommand(
             quote,
             Guid.NewGuid(),
-            DateTime.Now,
+            // Core's Sr6CareerAttributeIntegrity.IsConfirmed requires ExpenseDateLocal.Kind == Unspecified; a Local-kind DateTime fails validation (R109 finding).
+            DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
             ExplicitlyConfirmed: false);
     }
 

@@ -17,6 +17,9 @@ public sealed class CharacterOverviewViewModelAdapter : IDisposable
 
     public event EventHandler? Updated;
 
+
+    // T492: automation-only access for the SR6 advancement journey.
+    public ICharacterOverviewPresenter Presenter => _presenter;
     public CharacterOverviewState State => _presenter.State;
 
     public Task InitializeAsync(CancellationToken ct)
@@ -28,6 +31,12 @@ public sealed class CharacterOverviewViewModelAdapter : IDisposable
     {
         return _presenter.LoadAsync(workspaceId, ct);
     }
+    // T492: automation-only Karma grant for the SR6 advancement journey.
+    public Task GrantKarmaForAutomationAsync(int amount, CancellationToken ct)
+    {
+        return _presenter.GrantKarmaForAutomationAsync(amount, ct);
+    }
+
 
     public Task SwitchWorkspaceAsync(CharacterWorkspaceId workspaceId, CancellationToken ct)
     {
