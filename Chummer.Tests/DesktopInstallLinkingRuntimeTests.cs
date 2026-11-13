@@ -1029,6 +1029,32 @@ public sealed class DesktopInstallLinkingRuntimeTests
                     // Handler tasks never surface failures; the fixture observes them.
                 }
             }
+            // R75 teardown contract: the headless handler above registered a
+            // remote-callback poll worker that holds the exclusive
+            // state.json.poll lease until its observation lifetime ends. Mark
+            // the retained operation terminal so the worker exits on its next
+            // state observation, then bounded-join every registered worker
+            // BEFORE shared environment is restored and the temp root is
+            // removed - otherwise the lease outlives this test and a later
+            // test's cleanup fails with an unrelated IOException.
+            DesktopInstallLinkingState teardownState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            PersistInstallLinkingState(teardownState with
+            {
+                Status = "claimed",
+                ClaimedAtUtc = DateTimeOffset.UtcNow,
+                GrantId = "teardown-grant",
+                GrantToken = "teardown-token"
+            });
+            System.Collections.Concurrent.ConcurrentDictionary<string, Task> teardownPollTasks =
+                (System.Collections.Concurrent.ConcurrentDictionary<string, Task>)typeof(
+                    DesktopInstallLinkingRuntime).GetField(
+                    "RemoteCallbackPollTasks", BindingFlags.NonPublic | BindingFlags.Static)!
+                .GetValue(null)!;
+            Task[] teardownWorkers = teardownPollTasks.Values.ToArray();
+            if (teardownWorkers.Length > 0)
+            {
+                try { Task.WhenAll(teardownWorkers).Wait(TimeSpan.FromSeconds(10)); } catch { }
+            }
 
         }
         finally
@@ -1397,6 +1423,32 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
+            // R75 teardown contract: the headless handler above registered a
+            // remote-callback poll worker that holds the exclusive
+            // state.json.poll lease until its observation lifetime ends. Mark
+            // the retained operation terminal so the worker exits on its next
+            // state observation, then bounded-join every registered worker
+            // BEFORE shared environment is restored and the temp root is
+            // removed - otherwise the lease outlives this test and a later
+            // test's cleanup fails with an unrelated IOException.
+            DesktopInstallLinkingState teardownState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            PersistInstallLinkingState(teardownState with
+            {
+                Status = "claimed",
+                ClaimedAtUtc = DateTimeOffset.UtcNow,
+                GrantId = "teardown-grant",
+                GrantToken = "teardown-token"
+            });
+            System.Collections.Concurrent.ConcurrentDictionary<string, Task> teardownPollTasks =
+                (System.Collections.Concurrent.ConcurrentDictionary<string, Task>)typeof(
+                    DesktopInstallLinkingRuntime).GetField(
+                    "RemoteCallbackPollTasks", BindingFlags.NonPublic | BindingFlags.Static)!
+                .GetValue(null)!;
+            Task[] teardownWorkers = teardownPollTasks.Values.ToArray();
+            if (teardownWorkers.Length > 0)
+            {
+                try { Task.WhenAll(teardownWorkers).Wait(TimeSpan.FromSeconds(10)); } catch { }
+            }
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousRoot);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);

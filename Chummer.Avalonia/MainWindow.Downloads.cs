@@ -21,7 +21,7 @@ public partial class MainWindow
 
         if (saveResult.Outcome == DesktopFileOperationOutcome.Cancelled)
         {
-            MainWindowFeedbackCoordinator.ShowDownloadCancelled(_controls.SectionHost);
+            MainWindowFeedbackCoordinator.ShowDownloadCancelled(_controls.SectionHost, saveResult.Notice);
             return;
         }
 
@@ -48,7 +48,7 @@ public partial class MainWindow
 
         if (saveResult.Outcome == DesktopFileOperationOutcome.Cancelled)
         {
-            MainWindowFeedbackCoordinator.ShowExportCancelled(_controls.SectionHost);
+            MainWindowFeedbackCoordinator.ShowExportCancelled(_controls.SectionHost, saveResult.Notice);
             return;
         }
 
@@ -75,7 +75,7 @@ public partial class MainWindow
 
         if (saveResult.Outcome == DesktopFileOperationOutcome.Cancelled)
         {
-            MainWindowFeedbackCoordinator.ShowPrintCancelled(_controls.SectionHost);
+            MainWindowFeedbackCoordinator.ShowPrintCancelled(_controls.SectionHost, saveResult.Notice);
             return;
         }
 
