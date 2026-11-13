@@ -50,6 +50,14 @@ public partial class Sr6CreationWizardWindow : Window
         LoadFromAuthority();
     }
 
+    // A fresh wizard can open while the draft workspace is still being
+    // published (file not yet durable or operation lease held). Those loads
+    // surface as workspace-unavailable and are safe to retry briefly.
+    private static bool IsTransientWorkspaceLoad(Sr6CreationFoundationInteractionLoadResult result)
+        => (result.Outcome != CharacterCreationFoundationOutcomes.Success || result.State is null)
+            && result.Blockers.Any(b =>
+                b.Contains("workspace-unavailable", StringComparison.Ordinal));
+
     private bool RequireCurrentContext()
     {
         if (!_closed && _contextIsCurrent())
@@ -66,6 +74,16 @@ public partial class Sr6CreationWizardWindow : Window
         try
         {
             result = _presenter.Load(_overview);
+            // The draft publication event can precede the durable workspace
+            // write, or the writer can still hold the workspace operation
+            // lease when the wizard opens. Retry a bounded number of times
+            // before surfacing the transient blocker to the user.
+            for (int attempt = 0; attempt < 3 && IsTransientWorkspaceLoad(result); attempt++)
+            {
+                Thread.Sleep(250);
+                if (!RequireCurrentContext()) return;
+                result = _presenter.Load(_overview);
+            }
         }
         catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
         {
@@ -729,7 +747,8 @@ public partial class Sr6CreationWizardWindow : Window
 
     private void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (!RequireCurrentContext() || _confirmationDispatched) return;
+        bool ctx = RequireCurrentContext();
+        if (!ctx || _confirmationDispatched) return;
         if (ActiveStepId == "finalize")
         {
             RunFinalization();
@@ -812,12 +831,14 @@ public partial class Sr6CreationWizardWindow : Window
     {
         if (!RequireCurrentContext() || _confirmationDispatched || _finalizeBusy || _finalizationReview is not { } review)
         {
+            Console.Error.WriteLine($"[T505FIN] guard1: ctx={!RequireCurrentContext()} dispatched={_confirmationDispatched} busy={_finalizeBusy} review={(_finalizationReview is null ? "null" : "set")}");
             return;
         }
 
         if (!review.CanFinalize
             || (review.Losses.Count > 0 && _lossAcknowledgement?.IsChecked != true))
         {
+            Console.Error.WriteLine($"[T505FIN] guard2: canFinalize={review.CanFinalize} losses={review.Losses.Count} ackChecked={_lossAcknowledgement?.IsChecked.ToString() ?? "null"}");
             return;
         }
 
@@ -886,6 +907,20 @@ public partial class Sr6CreationWizardWindow : Window
             Contacts = savedSelection?.Contacts ?? new Sr6CreationContactSelection([]),
             Gear = savedSelection?.Gear ?? new Sr6CreationGearSelection([]),
             Lifestyle = savedSelection?.Lifestyle ?? new Sr6CreationLifestyleSelection("street", 1),
+            // The talent-dependent domains must also be saved for Core's finalization
+            // review (Sr6CreationDraftSummaryRules marks missing talent/spells/forms
+            // steps as incomplete). A zero power-point budget and empty catalog lists
+            // are the honest "declined to spend" shapes; their remainders surface as
+            // acknowledged unspent losses at the finalize step. Only the domain that
+            // matches the chosen talent is committed: Core's preview evaluation
+            // rejects a domain that requires a different talent class.
+            TalentAllocation = savedSelection?.TalentAllocation ?? new Sr6CreationTalentSelection(0),
+            AdeptPowers = savedSelection?.AdeptPowers ?? (CurrentTalentId is "adept" or "mystic-adept"
+                ? new Sr6CreationAdeptPowerSelection([]) : null),
+            Spells = savedSelection?.Spells ?? (CurrentTalentId is "magician" or "mystic-adept" or "aspected-magician"
+                ? new Sr6CreationSpellSelection([]) : null),
+            ComplexForms = savedSelection?.ComplexForms ?? (CurrentTalentId == "technomancer"
+                ? new Sr6CreationComplexFormSelection([]) : null),
             PointBuy = IsPointBuy(_state!.Foundation.BuildMethod) ? BuildPointBuySelection() : null,
         };
 

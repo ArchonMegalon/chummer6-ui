@@ -185,6 +185,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/GrantBoundDesktopWorkspaceRoamingSyncTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityFixtures.cs",
         "Chummer.Tests/Presentation/DesktopMouseFirstJourneyManualModeTests.cs",
+        "Chummer.Tests/Presentation/CharacterCreationWizardPriorityReflowTests.cs",  # R112 2026-11-13: UX-04 priority reflow coverage (gen-9)
+        "Chummer.Tests/Presentation/CreationQualitiesReviewBlockersTests.cs",  # R112 2026-11-13: UX-05 quality blocker-reason coverage (gen-9)
         "Chummer.Tests/Presentation/Sr6CareerAttributeAdvanceFlowTests.cs",
         "Directory.Build.props",
         "config/ui-next-authority-oracle-v10.json",

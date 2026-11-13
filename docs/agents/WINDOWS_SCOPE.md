@@ -93,10 +93,48 @@ Test evidence (focused lanes on the Windows host):
 - Career-attribute parity lane remains 23/23; SR6 parity lane remains 109/111
   (same classified debt pair).
 
-In progress / next: UX-03 (reward dialog retains input on authority refusal),
-UX-04 (Priority reflow at 960 DIP / 150%), UX-05 (real Quality blocker reasons),
-UX-06 (single-flight account-code redemption). Delivery will follow the existing
-recipe+marker process; no new receipt framework.
+**Update (13 November 2026): UX-03..UX-06 delivered, journeys re-proven.**
+All six UX repairs are implemented and verified on the exact candidate (builds
+rc=0 / 0 errors):
+
+- UX-03: `CareerRewardsWindow` inline-apply constructor; on authority refusal the
+  dialog stays open with amount/direction/notes intact, shows the refusal reason
+  and requires an explicit re-confirm ("Record again").
+- UX-04: Priority rank rows reflow via `UniformGrid` (columns = option count) in
+  `CharacterCreationWizardControl` - every rank including E is usable at 960 DIP /
+  150% scaling; covered by `CharacterCreationWizardPriorityReflowTests`.
+- UX-05: `CreationQualitiesReviewWindow` aggregates preview + budget blocker
+  reasons ("Rule blockers reported by Core (N): ...") into the review and
+  blocked-review texts; covered by `CreationQualitiesReviewBlockersTests`.
+- UX-06: `DesktopInstallLinkingWindow` single-flight claim redemption
+  (`_redeemInFlight`, disabled redeem button + claim box, localized progress);
+  covered by a new outcome-matrix single-flight test.
+
+Journey evidence this round (live binary, hermetic per-run state roots):
+
+- SR6 native advance journey, natural-cap leg: phase 1 pass - 10 committed
+  advances with exact per-quote debits (10+15+20+20+25+25+30+30+35+35 karma),
+  Body 1->7 at the dwarf natural cap, funding rounds via the real Award Karma
+  route, then Core's refusal proven by state evidence (delivered row clicks open
+  no quote dialog at the cap; workspace revision stable across reload;
+  `06d-sr6-natural-cap-refusal.png`). Phase 2 fresh-process reopen pass (karma 20
+  persisted, rank persisted). Screenshots-OFF pass also green (gen-10 finding 4).
+  Presenter fix: the advance continuation now re-anchors its entry context after
+  each commit (previously any second advance in one session silently dropped).
+- Manual SR5 creation journey: phase 1 + phase 2 fresh-process reopen both pass
+  on the final tree. Runner hardening: native-language checkbox uses a disclosed
+  property-set fallback (a raised Click never toggles a CheckBox), resources
+  option cards route through the atomic click helper with routed fallback, and
+  the journey honors
+  `CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TIMEOUT_SECONDS` (both watchdogs) for the
+  long funding/advance cycles.
+
+Focused-lane test pass (13 November, current tree): 234/237 - the only failures
+are the R97/R99 classified debt pair (parity-audit generated receipt absent on
+Windows; legacy pendant bootstrap drift), unchanged from baseline. New tests
+added: priority reflow, quality blocker reasons, UX-06 single-flight.
+
+Delivery will follow the existing recipe+marker process; no new receipt framework.
 
 ## Controller7477 — Windows UI improvements, 12 November 2026
 

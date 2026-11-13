@@ -59,33 +59,59 @@ public partial class MainWindow
 
         while (true)
         {
-            var dialog = new CareerRewardsWindow(isKarmaMode, karmaState, nuyenState);
+            // Inline-apply mode (UX-03): the dialog applies the mutation itself
+            // so an authority refusal keeps the amount, direction and notes on
+            // screen, discloses the reason and re-prepares a fresh editor
+            // state; the next Record press is the explicit re-confirm.
+            string? PeekRefusal() => PeekCareerEditError();
+            var dialog = new CareerRewardsWindow(
+                isKarmaMode,
+                karmaState,
+                nuyenState,
+                applyKarma: async (request, _) =>
+                {
+                    await _interactionCoordinator
+                        .ApplyCareerManualKarmaEditAsync(request, CancellationToken.None)
+                        .ConfigureAwait(true);
+                    return PeekRefusal();
+                },
+                applyNuyen: async (request, _) =>
+                {
+                    await _interactionCoordinator
+                        .ApplyCareerManualNuyenEditAsync(request, CancellationToken.None)
+                        .ConfigureAwait(true);
+                    return PeekRefusal();
+                },
+                reprepare: async _ =>
+                {
+                    CareerManualKarmaEditorState? freshKarma = await _interactionCoordinator
+                        .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
+                        .ConfigureAwait(true);
+                    CareerManualNuyenEditorState? freshNuyen = isKarmaMode
+                        ? null
+                        : await _interactionCoordinator
+                            .PrepareCareerManualNuyenEditAsync(CancellationToken.None)
+                            .ConfigureAwait(true);
+                    return (freshKarma, freshNuyen);
+                });
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
+            if (outcome is null)
+            {
+                if (dialog.LastRefusal is { } abandonedRefusal)
+                {
+                    PublishCareerEditNotice("karma award not recorded: " + abandonedRefusal + " The dialog was closed; re-enter the entry when ready.");
+                }
+
+                return;
+            }
+
             switch (outcome)
             {
                 case CareerRewardsWindow.CareerKarmaAwardOutcome karma:
-                    await _interactionCoordinator
-                        .ApplyCareerManualKarmaEditAsync(karma.Request, CancellationToken.None)
-                        .ConfigureAwait(true);
-                    if (PeekCareerEditError() is { } karmaError)
-                    {
-                        PublishCareerEditNotice("karma award failed: " + karmaError);
-                        return;
-                    }
-
                     PublishCareerEditNotice("recorded karma award " + karma.DisplayLabel + ".");
                     break;
 
                 case CareerRewardsWindow.CareerNuyenAdjustOutcome nuyen:
-                    await _interactionCoordinator
-                        .ApplyCareerManualNuyenEditAsync(nuyen.Request, CancellationToken.None)
-                        .ConfigureAwait(true);
-                    if (PeekCareerEditError() is { } nuyenError)
-                    {
-                        PublishCareerEditNotice("nuyen adjustment failed: " + nuyenError);
-                        return;
-                    }
-
                     PublishCareerEditNotice("recorded nuyen adjustment " + nuyen.DisplayLabel + ".");
                     break;
 
@@ -93,7 +119,6 @@ public partial class MainWindow
                     return;
             }
 
-            // Reopen with a fresh prepare so consecutive awards chain cleanly.
             CareerManualKarmaEditorState? reopenedKarma = await _interactionCoordinator
                 .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
                 .ConfigureAwait(true);
@@ -299,13 +324,17 @@ public partial class MainWindow
 
         while (true)
         {
-            if (!ContextStillCurrent()) return true;
+            if (!ContextStillCurrent())
+            {
+                return true;
+            }
             var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
             if (!ContextStillCurrent())
             {
                 // Owner/workspace/revision moved while the dialog was open; the
                 // quote-borne stamps inside it are stale by construction.
+                var staleNow = _interactionCoordinator.PeekState();
                 return true;
             }
             if (outcome is not Sr6CareerAttributeAdvanceWindow.Sr6CareerAttributeAdvanceOutcome advance)
@@ -319,6 +348,21 @@ public partial class MainWindow
             if (receipt is null)
             {
                 return true;
+            }
+
+            // The commit moved the workspace revision. The reopened dialog in
+            // the next loop iteration is built from a FRESH editor snapshot
+            // prepared after this commit, so the entry revision must be
+            // re-anchored to the post-commit state (the original entry anchor
+            // describes a revision that no longer exists; holding it would
+            // make any second advance in one editor session impossible).
+            CharacterOverviewState postCommitState = _interactionCoordinator.PeekState();
+            entryRevision = postCommitState.ContentRevision;
+            entryOwner = postCommitState.DisplayOwnerContext;
+            if (postCommitState.WorkspaceId is { } postCommitWorkspaceId)
+            {
+                entryWorkspaceId = postCommitWorkspaceId;
+                entryGeneration = _careerDisplayContext.Capture(postCommitWorkspaceId, entryOwner);
             }
             // Only the exact committed receipt may advance the expected view
             // revision. An unrelated write or a display transition still ends

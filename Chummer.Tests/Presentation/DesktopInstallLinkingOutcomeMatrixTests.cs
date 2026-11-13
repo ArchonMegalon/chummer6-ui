@@ -771,6 +771,88 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
     /// ReleaseResponses, realizing an in-flight response across the
     /// proof-reuse boundary.
     /// </summary>
+    [TestMethod]
+    public async Task Redeem_claim_code_is_single_flight_with_visible_progress()
+    {
+        // UX-06: a second redeem activation while the first redemption is
+        // in flight must be a no-op (no parallel Hub request), the redeem
+        // button must show the in-progress copy with the inputs disabled,
+        // and the original affordances must be restored once the flight
+        // ends - whatever the outcome.
+        //
+        // Pumping note: the headless session only runs ConfigureAwait(true)
+        // continuations while the test body pumps the dispatcher, so the
+        // flight is joined by pumping (StepLoopAsync) instead of awaiting
+        // its task from the UI thread - awaiting it directly would
+        // deadlock against the very continuation it is waiting for.
+        await WithWindowAsync(async window =>
+        {
+            using InflightHubFixture fixture = new(pendingFirst: false, holdBody: true);
+            string language = GetPrivateField<string>(window, "_language");
+            string progressText = DesktopLocalizationCatalog.GetRequiredString(
+                "desktop.install_link.status.linking", language);
+            string redeemText = DesktopLocalizationCatalog.GetRequiredString(
+                "desktop.install_link.button.redeem_claim_code", language);
+            GetPrivateField<TextBox>(window, "_claimCodeTextBox").Text = "claim code 123";
+
+            MethodInfo redeem = typeof(DesktopInstallLinkingWindow).GetMethod(
+                    "RedeemClaimCodeAsync", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("RedeemClaimCodeAsync missing");
+            object? firstInvoked = redeem.Invoke(window, [])
+                ?? throw new AssertFailedException("redeem returned null");
+            Task first = (Task)firstInvoked;
+
+            // Mid-flight: progress copy is visible and the inputs are disabled.
+            Button redeemButton = GetPrivateField<Button>(window, "_redeemClaimCodeButton");
+            TextBox codeBox = GetPrivateField<TextBox>(window, "_claimCodeTextBox");
+            Assert.IsFalse(first.IsCompleted,
+                "the gated response keeps the first redemption in flight");
+            Assert.AreEqual(progressText, redeemButton.Content,
+                "the redeem button must show the in-progress copy during the flight");
+            Assert.IsFalse(redeemButton.IsEnabled,
+                "the redeem button must be disabled during the flight");
+            Assert.IsFalse(codeBox.IsEnabled,
+                "the claim-code box must be disabled during the flight");
+            Assert.AreEqual(progressText, GetStatus(window),
+                "the status line must show the in-progress copy during the flight");
+
+            // A second activation during the flight is ignored: it must not
+            // send another Hub request nor disturb the in-flight affordances.
+            object? secondInvoked = redeem.Invoke(window, [])
+                ?? throw new AssertFailedException("second redeem returned null");
+            Task second = (Task)secondInvoked;
+            Assert.IsTrue(second.IsCompleted,
+                "the guarded second activation must return synchronously");
+            Assert.AreEqual(progressText, redeemButton.Content,
+                "the second activation must not disturb the in-flight progress copy");
+            Assert.IsFalse(redeemButton.IsEnabled,
+                "the second activation must not re-enable the redeem button");
+
+            fixture.ReleaseResponses();
+            // Pump the UI thread so the redeem continuation (its state save,
+            // status update, and finally-block restoration) actually runs.
+            await StepLoopAsync(maxSteps: 120);
+            Assert.IsTrue(first.IsCompletedSuccessfully,
+                "the first redemption must complete once the response is released");
+
+            // After the flight the affordances are restored, exactly one
+            // redemption reached the Hub, and the deterministic completion
+            // status is surfaced instead of the progress copy.
+            Assert.AreEqual(1, fixture.RequestCount,
+                "only one redemption may reach the Hub during a single flight");
+            Assert.AreEqual(redeemText, redeemButton.Content,
+                "the redeem button label must be restored after the flight");
+            Assert.IsTrue(redeemButton.IsEnabled,
+                "the redeem button must be re-enabled after the flight");
+            Assert.IsTrue(codeBox.IsEnabled,
+                "the claim-code box must be re-enabled after the flight");
+            string status = GetStatus(window);
+            Assert.IsTrue(status.Contains("unreadable payload", StringComparison.OrdinalIgnoreCase),
+                "expected the deterministic unreadable-payload failure status, got: " + status);
+            System.IO.File.AppendAllText(@"D:\sources\chummer\_scratch\t504_pollcount.txt",
+                "after-test PollTasks=" + PollTasks.Count + "\n");
+        });
+    }
     private sealed class InflightHubFixture : IDisposable
     {
         private readonly System.Net.Sockets.Socket _listener;
@@ -905,6 +987,9 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
         /// the retained approval (it always serves one in this fixture); the
         /// point is that it became available only AFTER the worker ended.
         /// </summary>
+        /// <summary>Requests that reached the loopback Hub.</summary>
+        public int RequestCount => _requests;
+
         public void MarkApprovalAvailableRemotely()
         {
             _approvalAvailable = true;
@@ -1714,3 +1799,6 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
             PromptReason: "fresh_install");
     }
 }
+
+
+
