@@ -342,4 +342,14 @@ public partial class MainWindow : Window
         bitmap.Save(output);
         return output.ToArray();
     }
+
+    internal async Task ReloadStateForAutomationAsync(CancellationToken ct)
+    {
+        if (_adapter.State.WorkspaceId is not { } workspaceId)
+        {
+            return;
+        }
+
+        await _adapter.LoadAsync(workspaceId, ct).ConfigureAwait(true);
+    }
 }

@@ -47,6 +47,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _moreToolsAccountButton;
     private readonly Button _copyLoginUrlButton;
     private readonly Button _redeemClaimCodeButton;
+    private bool _redeemInFlight;
     private readonly Button _unlinkButton;
     private readonly Button _exitButton;
     private CancellationTokenSource? _handoffPollCancellation;
@@ -1364,6 +1365,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private async Task RedeemClaimCodeAsync()
     {
+        if (_redeemInFlight || _windowLifetimeCancellation?.IsCancellationRequested == true)
+        {
+            return;
+        }
+
         string claimCode = _claimCodeTextBox.Text?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(claimCode))
         {
@@ -1371,22 +1377,63 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return;
         }
 
-        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language));
-        DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
-            _state.HeadId,
-            claimCode,
-            CancellationToken.None).ConfigureAwait(true);
-
-        _state = result.State;
-        _claimCodeTextBox.Text = result.Succeeded ? string.Empty : claimCode;
-        RefreshSummary();
-        RefreshActionState();
-        if (Owner is MainWindow ownerWindow)
+        DesktopInstallLinkingState redemptionState = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+        if (redemptionState.OwnerTransitionRevision != _state.OwnerTransitionRevision
+            || !IsSameObservedOperation(redemptionState, _state))
         {
-            ownerWindow.ApplyInstallLinkingChrome(_state);
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
+            return;
         }
 
-        SetStatus(result.Message);
+        // UX-06: single-flight claim redemption with visible progress.
+        _redeemInFlight = true;
+        string originalRedeemText = _redeemClaimCodeButton.Content as string ?? string.Empty;
+        _redeemClaimCodeButton.IsEnabled = false;
+        _claimCodeTextBox.IsEnabled = false;
+        _redeemClaimCodeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language);
+        try
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language));
+            DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
+                _state.HeadId,
+                claimCode,
+                CancellationToken.None).ConfigureAwait(true);
+
+            // A dispatched redemption retains its runtime outcome after close,
+            // but a closed window must never repaint another owner or its shell.
+            if (_windowLifetimeCancellation?.IsCancellationRequested == true)
+                return;
+            DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+            if (!IsSameObservedOperation(result.State, redemptionState)
+                || (!result.Succeeded && result.State.OwnerTransitionRevision != redemptionState.OwnerTransitionRevision)
+                || current.OwnerTransitionRevision != result.State.OwnerTransitionRevision
+                || !IsSameObservedOperation(current, result.State))
+            {
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
+                return;
+            }
+
+            _state = result.State;
+            _claimCodeTextBox.Text = result.Succeeded ? string.Empty : claimCode;
+            RefreshSummary();
+            RefreshActionState();
+            if (Owner is MainWindow ownerWindow)
+            {
+                ownerWindow.ApplyInstallLinkingChrome(_state);
+            }
+
+            SetStatus(result.Message);
+        }
+        finally
+        {
+            _redeemInFlight = false;
+            if (_windowLifetimeCancellation?.IsCancellationRequested != true)
+            {
+                _redeemClaimCodeButton.Content = originalRedeemText;
+                _redeemClaimCodeButton.IsEnabled = true;
+                _claimCodeTextBox.IsEnabled = true;
+            }
+        }
     }
 
     private Task OpenFollowThroughAsync()
