@@ -1,5 +1,7 @@
 using System;
 using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -33,18 +35,41 @@ public sealed class CareerRewardsWindow : Window
     private const string SpendRadioAutomationId = "career-rewards-spend";
 
     private readonly bool _isKarmaMode;
-    private readonly CareerManualKarmaEditorState _karmaState;
-    private readonly CareerManualNuyenEditorState? _nuyenState;
+    private CareerManualKarmaEditorState _karmaState;
+    private CareerManualNuyenEditorState? _nuyenState;
+    private readonly Func<CareerManualKarmaEditRequest, CancellationToken, Task<string?>>? _applyKarma;
+    private readonly Func<CareerManualNuyenEditRequest, CancellationToken, Task<string?>>? _applyNuyen;
+    private readonly Func<CancellationToken, Task<(CareerManualKarmaEditorState? Karma, CareerManualNuyenEditorState? Nuyen)>>? _reprepare;
     private readonly TextBox _amountBox;
     private readonly TextBox _reasonBox;
     private readonly RadioButton _gainRadio;
     private readonly TextBlock _balanceText;
 
     public CareerRewardsWindow(bool isKarmaMode, CareerManualKarmaEditorState karmaState, CareerManualNuyenEditorState? nuyenState)
+        : this(isKarmaMode, karmaState, nuyenState, applyKarma: null, applyNuyen: null, reprepare: null)
+    {
+    }
+
+    /// <summary>
+    /// Inline-apply constructor (UX-03): the dialog applies the mutation itself,
+    /// so an authority refusal keeps the dialog open with the amount, direction
+    /// and notes intact, discloses the refusal reason, swaps in a freshly
+    /// prepared editor state, and requires an explicit second Record press.
+    /// </summary>
+    public CareerRewardsWindow(
+        bool isKarmaMode,
+        CareerManualKarmaEditorState karmaState,
+        CareerManualNuyenEditorState? nuyenState,
+        Func<CareerManualKarmaEditRequest, CancellationToken, Task<string?>>? applyKarma,
+        Func<CareerManualNuyenEditRequest, CancellationToken, Task<string?>>? applyNuyen,
+        Func<CancellationToken, Task<(CareerManualKarmaEditorState? Karma, CareerManualNuyenEditorState? Nuyen)>>? reprepare)
     {
         _isKarmaMode = isKarmaMode;
         _karmaState = karmaState;
         _nuyenState = nuyenState;
+        _applyKarma = applyKarma;
+        _applyNuyen = applyNuyen;
+        _reprepare = reprepare;
         Title = isKarmaMode ? "Award Karma" : "Adjust Nuyen";
         Width = 420;
         MinHeight = 300;
@@ -52,27 +77,16 @@ public sealed class CareerRewardsWindow : Window
         CanResize = false;
         ShowInTaskbar = false;
 
-        decimal availableNuyen = isKarmaMode
-            ? karmaState.Karma.AvailableNuyen
-            : (nuyenState?.Nuyen.AvailableNuyen ?? 0m);
-        int availableKarma = isKarmaMode
-            ? karmaState.Karma.AvailableKarma
-            : (nuyenState?.Nuyen.AvailableKarma ?? 0);
-
         StackPanel root = new() { Margin = new Thickness(14), Spacing = 10 };
 
         _balanceText = new TextBlock
         {
-            Text = isKarmaMode
-                ? "Available karma: " + availableKarma.ToString(CultureInfo.InvariantCulture)
-                    + "   ·   Nuyen: ¥" + availableNuyen.ToString("N0", CultureInfo.InvariantCulture)
-                : "Available nuyen: ¥" + availableNuyen.ToString("N0", CultureInfo.InvariantCulture)
-                    + "   ·   Karma: " + availableKarma.ToString(CultureInfo.InvariantCulture),
             FontSize = 12,
             Foreground = Brushes.Gray
         };
-        root.Children.Add(_balanceText);
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(_balanceText, "career-rewards-balance");
+        RenderBalance();
+        root.Children.Add(_balanceText);
 
         StackPanel actionRow = new() { Orientation = Orientation.Horizontal, Spacing = 14 };
         _gainRadio = new RadioButton
@@ -115,7 +129,7 @@ public sealed class CareerRewardsWindow : Window
             Height = 26,
         };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(applyButton, ApplyAutomationId);
-        applyButton.Click += (_, _) => Apply();
+        applyButton.Click += (_, _) => _ = ApplyInlineAsync();
 
         Button cancelButton = new()
         {
@@ -141,58 +155,147 @@ public sealed class CareerRewardsWindow : Window
         _amountBox.AttachedToVisualTree += (_, _) => _amountBox.Focus();
     }
 
-    private void Apply()
+    /// <summary>
+    /// True when this dialog applies mutations inline (UX-03): a refused apply
+    /// keeps the dialog open instead of discarding the reviewed entry.
+    /// </summary>
+    public bool AppliesInline => _applyKarma is not null || _applyNuyen is not null;
+
+    /// <summary>The most recent authority-refusal reason, cleared on the next Record press.</summary>
+    public string? LastRefusal { get; private set; }
+
+    private void RenderBalance()
     {
-        string amountText = _amountBox.Text?.Trim() ?? string.Empty;
-        if (!int.TryParse(amountText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount)
-            || amount <= 0)
-        {
-            _balanceText.Text = "Enter a positive whole-number amount.";
-            return;
-        }
+        decimal availableNuyen = _isKarmaMode
+            ? _karmaState.Karma.AvailableNuyen
+            : (_nuyenState?.Nuyen.AvailableNuyen ?? 0m);
+        int availableKarma = _isKarmaMode
+            ? _karmaState.Karma.AvailableKarma
+            : (_nuyenState?.Nuyen.AvailableKarma ?? 0);
+        _balanceText.Text = _isKarmaMode
+            ? "Available karma: " + availableKarma.ToString(CultureInfo.InvariantCulture)
+                + "   \u00b7   Nuyen: \u00a5" + availableNuyen.ToString("N0", CultureInfo.InvariantCulture)
+            : "Available nuyen: \u00a5" + availableNuyen.ToString("N0", CultureInfo.InvariantCulture)
+                + "   \u00b7   Karma: " + availableKarma.ToString(CultureInfo.InvariantCulture);
+    }
 
-        bool gain = _gainRadio.IsChecked == true;
-        string reason = _reasonBox.Text?.Trim() ?? string.Empty;
-        DateTime expenseDate = DateTime.Now.Date;
-
-        if (_isKarmaMode)
+    private async Task ApplyInlineAsync()
+    {
+        try
         {
-            // The dialog binds to the prepared editor state: workspace id,
-            // expected content revision and the projected karma state are all
-            // carried from Prepare, so the mutation validates against what
-            // the user reviewed.
-            var request = new CareerManualKarmaEditRequest(
-                _karmaState.WorkspaceId,
-                _karmaState.ContentRevision,
-                _karmaState.Karma,
-                gain ? CharacterCareerManualKarmaAction.Gain : CharacterCareerManualKarmaAction.Spend,
+            string amountText = _amountBox.Text?.Trim() ?? string.Empty;
+            if (!int.TryParse(amountText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount)
+                || amount <= 0)
+            {
+                RenderBalance();
+                _balanceText.Text = "Enter a positive whole-number amount.";
+                return;
+            }
+
+            bool gain = _gainRadio.IsChecked == true;
+            string reason = _reasonBox.Text?.Trim() ?? string.Empty;
+            DateTime expenseDate = DateTime.Now.Date;
+
+            if (_isKarmaMode)
+            {
+                // The dialog binds to the prepared editor state: workspace id,
+                // expected content revision and the projected karma state are all
+                // carried from Prepare, so the mutation validates against what
+                // the user reviewed.
+                var request = new CareerManualKarmaEditRequest(
+                    _karmaState.WorkspaceId,
+                    _karmaState.ContentRevision,
+                    _karmaState.Karma,
+                    gain ? CharacterCareerManualKarmaAction.Gain : CharacterCareerManualKarmaAction.Spend,
+                    amount,
+                    reason,
+                    expenseDate,
+                    Refund: false,
+                    KarmaNuyenExchange: false,
+                    ForceCareerVisible: false);
+                var outcome = new CareerKarmaAwardOutcome(
+                    (gain ? "+" : "-") + amount + " karma" + (reason.Length > 0 ? " (" + reason + ")" : string.Empty),
+                    request);
+                if (_applyKarma is null)
+                {
+                    Close(outcome);
+                    return;
+                }
+
+                await ApplyPreparedOutcomeAsync(outcome, _applyKarma(request, CancellationToken.None)).ConfigureAwait(true);
+                return;
+            }
+
+            var nuyenRequest = new CareerManualNuyenEditRequest(
+                _nuyenState!.WorkspaceId,
+                _nuyenState.ContentRevision,
+                _nuyenState.Nuyen,
+                gain ? CharacterCareerManualNuyenAction.Gain : CharacterCareerManualNuyenAction.Spend,
                 amount,
+                Percent: 0m,
                 reason,
                 expenseDate,
                 Refund: false,
                 KarmaNuyenExchange: false,
                 ForceCareerVisible: false);
-            Close(new CareerKarmaAwardOutcome(
-                (gain ? "+" : "-") + amount + " karma" + (reason.Length > 0 ? " (" + reason + ")" : string.Empty),
-                request));
+            var nuyenOutcome = new CareerNuyenAdjustOutcome(
+                (gain ? "+" : "-") + "\u00a5" + amount.ToString("N0", CultureInfo.InvariantCulture)
+                    + (reason.Length > 0 ? " (" + reason + ")" : string.Empty),
+                nuyenRequest);
+            if (_applyNuyen is null)
+            {
+                Close(nuyenOutcome);
+                return;
+            }
+
+            await ApplyPreparedOutcomeAsync(nuyenOutcome, _applyNuyen(nuyenRequest, CancellationToken.None)).ConfigureAwait(true);
+        }
+        catch (Exception applicationFailure)
+        {
+            _balanceText.Text = "Not recorded: " + applicationFailure.Message;
+        }
+    }
+
+    private async Task ApplyPreparedOutcomeAsync(object outcome, Task<string?> applyTask)
+    {
+        _balanceText.Text = "Recording...";
+        LastRefusal = null;
+        string? refusal = await applyTask.ConfigureAwait(true);
+        if (string.IsNullOrWhiteSpace(refusal))
+        {
+            Close(outcome);
             return;
         }
 
-        var nuyenRequest = new CareerManualNuyenEditRequest(
-            _nuyenState!.WorkspaceId,
-            _nuyenState.ContentRevision,
-            _nuyenState.Nuyen,
-            gain ? CharacterCareerManualNuyenAction.Gain : CharacterCareerManualNuyenAction.Spend,
-            amount,
-            Percent: 0m,
-            reason,
-            expenseDate,
-            Refund: false,
-            KarmaNuyenExchange: false,
-            ForceCareerVisible: false);
-        Close(new CareerNuyenAdjustOutcome(
-            (gain ? "+" : "-") + "¥" + amount.ToString("N0", CultureInfo.InvariantCulture)
-                + (reason.Length > 0 ? " (" + reason + ")" : string.Empty),
-            nuyenRequest));
+        // Authority refusal (UX-03): keep the dialog open with the amount,
+        // direction and notes intact, disclose the refusal reason, swap in a
+        // freshly prepared editor state, and require an explicit second Record
+        // press before anything else is committed.
+        await ReprepareAfterRefusalAsync().ConfigureAwait(true);
+        LastRefusal = refusal.Trim();
+        _balanceText.Text = "Not recorded: " + refusal.Trim()
+            + " Review the entry and press Record again to confirm.";
+    }
+
+    private async Task ReprepareAfterRefusalAsync()
+    {
+        if (_reprepare is null)
+        {
+            return;
+        }
+
+        (CareerManualKarmaEditorState? karma, CareerManualNuyenEditorState? nuyen) =
+            await _reprepare(CancellationToken.None).ConfigureAwait(true);
+        if (karma is not null)
+        {
+            _karmaState = karma;
+        }
+
+        if (!_isKarmaMode && nuyen is not null)
+        {
+            _nuyenState = nuyen;
+        }
+
+        RenderBalance();
     }
 }

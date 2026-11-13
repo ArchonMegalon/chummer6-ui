@@ -47,6 +47,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _moreToolsAccountButton;
     private readonly Button _copyLoginUrlButton;
     private readonly Button _redeemClaimCodeButton;
+    private bool _redeemInFlight;
     private readonly Button _unlinkButton;
     private readonly Button _exitButton;
     private CancellationTokenSource? _handoffPollCancellation;
@@ -1364,6 +1365,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private async Task RedeemClaimCodeAsync()
     {
+        if (_redeemInFlight)
+        {
+            return;
+        }
+
         string claimCode = _claimCodeTextBox.Text?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(claimCode))
         {
@@ -1371,22 +1377,38 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return;
         }
 
-        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language));
-        DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
-            _state.HeadId,
-            claimCode,
-            CancellationToken.None).ConfigureAwait(true);
-
-        _state = result.State;
-        _claimCodeTextBox.Text = result.Succeeded ? string.Empty : claimCode;
-        RefreshSummary();
-        RefreshActionState();
-        if (Owner is MainWindow ownerWindow)
+        // UX-06: single-flight claim redemption with visible progress.
+        _redeemInFlight = true;
+        string originalRedeemText = _redeemClaimCodeButton.Content as string ?? string.Empty;
+        _redeemClaimCodeButton.IsEnabled = false;
+        _claimCodeTextBox.IsEnabled = false;
+        _redeemClaimCodeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language);
+        try
         {
-            ownerWindow.ApplyInstallLinkingChrome(_state);
-        }
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language));
+            DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
+                _state.HeadId,
+                claimCode,
+                CancellationToken.None).ConfigureAwait(true);
 
-        SetStatus(result.Message);
+            _state = result.State;
+            _claimCodeTextBox.Text = result.Succeeded ? string.Empty : claimCode;
+            RefreshSummary();
+            RefreshActionState();
+            if (Owner is MainWindow ownerWindow)
+            {
+            ownerWindow.ApplyInstallLinkingChrome(_state);
+            }
+
+            SetStatus(result.Message);
+        }
+        finally
+        {
+            _redeemInFlight = false;
+            _redeemClaimCodeButton.Content = originalRedeemText;
+            _redeemClaimCodeButton.IsEnabled = true;
+            _claimCodeTextBox.IsEnabled = true;
+        }
     }
 
     private Task OpenFollowThroughAsync()

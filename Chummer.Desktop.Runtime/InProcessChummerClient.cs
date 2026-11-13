@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 using Chummer.Application.BuildGhost;
 using Chummer.Application.Characters;
 using Chummer.Application.Content;
@@ -240,7 +241,7 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
     {
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
-        return _workspaceOperations.Execute(() => _workspaceService.GetOverview(owner, id), ct);
+        return _workspaceOperations.Execute(() => WithDerivedOverviewAttributeTotals(_workspaceService.GetOverview(owner, id)), ct);
     }
 
     public Task<CommandResult<WorkspaceOverviewProjection>> GetWorkspaceOverviewAsync(
@@ -248,7 +249,41 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
     {
         ct.ThrowIfCancellationRequested();
         return _workspaceOperations.Execute(
-            () => WithOwnerLease(expectedOwner, owner => _workspaceService.GetOverview(owner, id)), ct);
+            () => WithOwnerLease(
+                expectedOwner,
+                owner => WithDerivedOverviewAttributeTotals(_workspaceService.GetOverview(owner, id))), ct);
+    }
+
+    private CommandResult<WorkspaceOverviewProjection> WithDerivedOverviewAttributeTotals(
+        CommandResult<WorkspaceOverviewProjection> result)
+    {
+        if (!result.Success || result.Value is null)
+        {
+            return result;
+        }
+
+        WorkspaceOverviewProjection projection = result.Value;
+        if (projection.Overview.Build.TotalAttributes != 0)
+        {
+            return result;
+        }
+
+        int derived = DeriveTotalAttributes(
+            projection.Workspace.Document.Content,
+            projection.Workspace.Document.RulesetId);
+        if (derived <= 0)
+        {
+            return result;
+        }
+
+        WorkspaceOverviewProjection patched = projection with
+        {
+            Overview = projection.Overview with
+            {
+                Build = projection.Overview.Build with { TotalAttributes = derived },
+            },
+        };
+        return result with { Value = patched };
     }
 
     public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
@@ -638,8 +673,104 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
         ct.ThrowIfCancellationRequested();
         OwnerScope owner = _ownerContextAccessor.Current;
         return _workspaceOperations.Execute(
-            () => RequireWorkspacePayload(id, _workspaceService.GetBuild(owner, id), "Build"),
+            () => WithDerivedAttributeTotals(
+                id,
+                RequireWorkspacePayload(id, _workspaceService.GetBuild(owner, id), "Build"),
+                owner),
             ct);
+    }
+
+    // T496 (gen-9 item 1): Core's creation finalization projector writes the
+    // per-attribute <totalvalue> elements but not the legacy <totalattributes>
+    // summary, so ParseBuild projects 0 for freshly finalized characters and
+    // the Build section renders a zero total. The pinned Core parse is
+    // immutable, so the desktop runtime derives the total from the stored
+    // document when the summary is absent: sum of the canonical chargen
+    // attribute totals (the legacy writer's TotalAttributes semantic for
+    // priority/sum-to-ten builds). Documents that already carry the summary
+    // are returned untouched.
+    private CharacterBuildSection WithDerivedAttributeTotals(
+        CharacterWorkspaceId id,
+        CharacterBuildSection build,
+        OwnerScope owner)
+    {
+        if (build.TotalAttributes != 0)
+        {
+            return build;
+        }
+
+        CommandResult<WorkspaceDocumentSnapshot> workspaceResult = _workspaceService.GetWorkspace(owner, id);
+        if (!workspaceResult.Success || workspaceResult.Value is null)
+        {
+            return build;
+        }
+
+        int derived = DeriveTotalAttributes(workspaceResult.Value.Document.Content, workspaceResult.Value.Document.RulesetId);
+        if (derived <= 0)
+        {
+            return build;
+        }
+
+        return build with { TotalAttributes = derived };
+    }
+
+    internal static int DeriveTotalAttributes(string documentContent, string rulesetId)
+    {
+        if (string.IsNullOrWhiteSpace(documentContent))
+        {
+            return 0;
+        }
+
+        // Canonical chargen attribute ids per ruleset (mirror of the legacy
+        // TotalAttributes semantics: priority-rank attribute pools only).
+        bool isSr6 = string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal);
+        bool isSr5 = string.Equals(rulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal);
+        if (!isSr5 && !isSr6)
+        {
+            return 0;
+        }
+
+        IReadOnlyList<string> canonicalAttributeIds = isSr6
+            ? Sr6CareerAttributeIds
+            : new[]
+            {
+                "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL",
+            };
+        try
+        {
+            XDocument document = XDocument.Parse(documentContent);
+            if (document.Root is null)
+            {
+                return 0;
+            }
+
+            int total = 0;
+            foreach (XElement attribute in document.Root.Descendants("attribute"))
+            {
+                string? attributeId = attribute.Element("name")?.Value.Trim();
+                if (string.IsNullOrWhiteSpace(attributeId)
+                    || !canonicalAttributeIds.Contains(attributeId, StringComparer.Ordinal))
+                {
+                    continue;
+                }
+
+                if (int.TryParse(
+                        attribute.Element("totalvalue")?.Value.Trim(),
+                        System.Globalization.NumberStyles.Integer,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out int totalValue))
+                {
+                    total += totalValue;
+                }
+            }
+
+            return total;
+        }
+        catch (System.Xml.XmlException)
+        {
+            // Non-XML payloads keep the unparsed summary value (0).
+            return 0;
+        }
     }
 
     public Task<CharacterMovementSection> GetMovementAsync(CharacterWorkspaceId id, CancellationToken ct)

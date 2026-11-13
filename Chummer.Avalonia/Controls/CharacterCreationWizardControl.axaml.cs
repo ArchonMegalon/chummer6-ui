@@ -376,24 +376,26 @@ public partial class CharacterCreationWizardControl : UserControl
                 FontWeight = global::Avalonia.Media.FontWeight.SemiBold,
                 FontSize = 12,
             });
-            var ranksPanel = new StackPanel
+            // UX-04: the rank cells must share the available width instead of a
+            // fixed 92 DIP each — at 960 DIP / 150% scaling a fixed row cannot
+            // fit all five ranks and the low ranks (e.g. E) clip out of reach.
+            var ranksPanel = new global::Avalonia.Controls.Primitives.UniformGrid
             {
-                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
-                Spacing = 3,
+                Columns = options.Count,
             };
             foreach (var option in options)
             {
                 var cellPanel = new StackPanel
                 {
-                    Width = 92,
                     Spacing = 2,
+                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
                 };
                 var rankButton = new Button
                 {
                     Content = option.Rank,
                     Tag = option,
-                    MinWidth = 92,
                     HorizontalContentAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
                     Padding = new global::Avalonia.Thickness(4, 1),
                 };
                 AutomationProperties.SetAutomationId(
@@ -1296,6 +1298,17 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetResourcesMutationBusy(bool busy)
     {
         _resourcesMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    /// <summary>
+    /// Manual resources-step status line (gear-draft hold reporting): the
+    /// zero-basket gear commit reports through the same legal option list as
+    /// the other domains, so failures are visible instead of silently swallowed.
+    /// </summary>
+    public void ResourcesStatus(string message)
+    {
+        _resourcesMutationStatus = message;
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
