@@ -50,6 +50,14 @@ public partial class Sr6CreationWizardWindow : Window
         LoadFromAuthority();
     }
 
+    // A fresh wizard can open while the draft workspace is still being
+    // published (file not yet durable or operation lease held). Those loads
+    // surface as workspace-unavailable and are safe to retry briefly.
+    private static bool IsTransientWorkspaceLoad(Sr6CreationFoundationInteractionLoadResult result)
+        => (result.Outcome != CharacterCreationFoundationOutcomes.Success || result.State is null)
+            && result.Blockers.Any(b =>
+                b.Contains("workspace-unavailable", StringComparison.Ordinal));
+
     private bool RequireCurrentContext()
     {
         if (!_closed && _contextIsCurrent())
@@ -66,6 +74,16 @@ public partial class Sr6CreationWizardWindow : Window
         try
         {
             result = _presenter.Load(_overview);
+            // The draft publication event can precede the durable workspace
+            // write, or the writer can still hold the workspace operation
+            // lease when the wizard opens. Retry a bounded number of times
+            // before surfacing the transient blocker to the user.
+            for (int attempt = 0; attempt < 3 && IsTransientWorkspaceLoad(result); attempt++)
+            {
+                Thread.Sleep(250);
+                if (!RequireCurrentContext()) return;
+                result = _presenter.Load(_overview);
+            }
         }
         catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
         {
@@ -729,7 +747,8 @@ public partial class Sr6CreationWizardWindow : Window
 
     private void FinishButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (!RequireCurrentContext() || _confirmationDispatched) return;
+        bool ctx = RequireCurrentContext();
+        if (!ctx || _confirmationDispatched) return;
         if (ActiveStepId == "finalize")
         {
             RunFinalization();
@@ -780,6 +799,11 @@ public partial class Sr6CreationWizardWindow : Window
                 return;
             }
             ShowBlockers(result.Blockers, result.Outcome);
+            if (result.Commit is not null
+                && (result.Blockers.Contains(Sr6CreationFoundationInteractionBlockers.ReceiptMismatch)
+                    || result.Blockers.Contains(Sr6CreationFoundationInteractionBlockers.RefreshAuthorityRequired)))
+            {
+            }
             if (result.RefreshedState is not null)
             {
                 _state = result.RefreshedState;
@@ -807,12 +831,14 @@ public partial class Sr6CreationWizardWindow : Window
     {
         if (!RequireCurrentContext() || _confirmationDispatched || _finalizeBusy || _finalizationReview is not { } review)
         {
+            Console.Error.WriteLine($"[T505FIN] guard1: ctx={!RequireCurrentContext()} dispatched={_confirmationDispatched} busy={_finalizeBusy} review={(_finalizationReview is null ? "null" : "set")}");
             return;
         }
 
         if (!review.CanFinalize
             || (review.Losses.Count > 0 && _lossAcknowledgement?.IsChecked != true))
         {
+            Console.Error.WriteLine($"[T505FIN] guard2: canFinalize={review.CanFinalize} losses={review.Losses.Count} ackChecked={_lossAcknowledgement?.IsChecked.ToString() ?? "null"}");
             return;
         }
 
@@ -863,14 +889,38 @@ public partial class Sr6CreationWizardWindow : Window
             return true;
         }
 
-        // This is a complete-set Core contract: retain domains this bounded editor does not edit.
-        var selection = (_state.Foundation.Selection?.Selection
+        // Core's finalization review requires every draft domain to be saved, so a fresh
+        // draft must commit valid empty shapes for the domains this bounded editor does
+        // not surface: zero spends are the honest "declined to spend" state, and their
+        // remainder is acknowledged as an unspent loss at the finalize step.
+        var savedSelection = _state.Foundation.Selection?.Selection;
+        var selection = (savedSelection
             ?? new Sr6CreationFoundationSelection(string.Empty, string.Empty, [])) with
         {
             MetatypeId = CurrentMetatypeId ?? string.Empty,
             TalentId = CurrentTalentId ?? string.Empty,
             Assignments = BuildPriorityAssignments(),
-            Attributes = BuildAttributeSelection() ?? _state.Foundation.Selection?.Selection.Attributes,
+            Attributes = BuildAttributeSelection() ?? savedSelection?.Attributes ?? DefaultAttributeSelection(),
+            Skills = savedSelection?.Skills ?? DefaultSkillSelection(),
+            Knowledge = savedSelection?.Knowledge ?? DefaultKnowledgeSelection(),
+            Karma = savedSelection?.Karma ?? DefaultKarmaSelection(),
+            Contacts = savedSelection?.Contacts ?? new Sr6CreationContactSelection([]),
+            Gear = savedSelection?.Gear ?? new Sr6CreationGearSelection([]),
+            Lifestyle = savedSelection?.Lifestyle ?? new Sr6CreationLifestyleSelection("street", 1),
+            // The talent-dependent domains must also be saved for Core's finalization
+            // review (Sr6CreationDraftSummaryRules marks missing talent/spells/forms
+            // steps as incomplete). A zero power-point budget and empty catalog lists
+            // are the honest "declined to spend" shapes; their remainders surface as
+            // acknowledged unspent losses at the finalize step. Only the domain that
+            // matches the chosen talent is committed: Core's preview evaluation
+            // rejects a domain that requires a different talent class.
+            TalentAllocation = savedSelection?.TalentAllocation ?? new Sr6CreationTalentSelection(0),
+            AdeptPowers = savedSelection?.AdeptPowers ?? (CurrentTalentId is "adept" or "mystic-adept"
+                ? new Sr6CreationAdeptPowerSelection([]) : null),
+            Spells = savedSelection?.Spells ?? (CurrentTalentId is "magician" or "mystic-adept" or "aspected-magician"
+                ? new Sr6CreationSpellSelection([]) : null),
+            ComplexForms = savedSelection?.ComplexForms ?? (CurrentTalentId == "technomancer"
+                ? new Sr6CreationComplexFormSelection([]) : null),
             PointBuy = IsPointBuy(_state!.Foundation.BuildMethod) ? BuildPointBuySelection() : null,
         };
 
@@ -914,6 +964,18 @@ public partial class Sr6CreationWizardWindow : Window
                 (int)a.Points.Value,
                 (int)a.Adjustment.Value)).ToList());
     }
+
+    // Zero-cost defaults that satisfy Core's complete-set freeze validators
+    // (Sr6CreationFoundationIntegrity): every domain saved, nothing spent.
+    private static Sr6CreationAttributeSelection DefaultAttributeSelection()
+        => new(Sr6CreationAttributeIds.Ordered
+            .Select(id => new Sr6CreationAttributeSpend(id, 0, 0)).ToList());
+
+    private static Sr6CreationSkillSelection DefaultSkillSelection() => new([]);
+
+    private static Sr6CreationKnowledgeSelection DefaultKnowledgeSelection() => new("English", [], []);
+
+    private static Sr6CreationKarmaSelection DefaultKarmaSelection() => new([], [], 0);
 
     public bool Committed { get; private set; }
 

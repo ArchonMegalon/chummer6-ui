@@ -44,7 +44,8 @@ public sealed record CharacterOverviewState(
     long PendingRecoveryExportVersion = 0,
     WorkspaceCollectionEditorState? ActiveCollectionEditor = null,
     ConditionMonitorEditorState? ActiveConditionMonitor = null,
-    WorkspaceLocationEditorState? ActiveLocationEditor = null)
+    WorkspaceLocationEditorState? ActiveLocationEditor = null,
+    bool? UncertainMutationError = null)
 {
     [System.Text.Json.Serialization.JsonIgnore]
     internal OverviewFeedbackProvenance? FeedbackProvenance { get; init; }

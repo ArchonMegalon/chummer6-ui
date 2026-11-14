@@ -39,10 +39,22 @@ public partial class MainWindow
 
     private async Task OpenCareerRewardsDialogAsync(bool isKarmaMode)
     {
+        CharacterOverviewState entry = _interactionCoordinator.PeekState();
+        if (entry.WorkspaceId is not { } entryWorkspaceId)
+            return;
+        long entryGeneration = _careerDisplayContext.Capture(entryWorkspaceId, entry.DisplayOwnerContext);
+        bool DisplayStillCurrent()
+        {
+            CharacterOverviewState current = _interactionCoordinator.PeekState();
+            return current.WorkspaceId == entryWorkspaceId
+                && current.DisplayOwnerContext == entry.DisplayOwnerContext
+                && _careerDisplayContext.IsCurrent(entryGeneration, current.WorkspaceId, current.DisplayOwnerContext);
+        }
+
         CareerManualKarmaEditorState? karmaState = await _interactionCoordinator
             .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
             .ConfigureAwait(true);
-        if (karmaState is null)
+        if (karmaState is null || !DisplayStillCurrent())
         {
             return;
         }
@@ -52,40 +64,80 @@ public partial class MainWindow
             : await _interactionCoordinator
                 .PrepareCareerManualNuyenEditAsync(CancellationToken.None)
                 .ConfigureAwait(true);
-        if (!isKarmaMode && nuyenState is null)
+        if (!DisplayStillCurrent() || (!isKarmaMode && nuyenState is null))
         {
             return;
         }
 
         while (true)
         {
-            var dialog = new CareerRewardsWindow(isKarmaMode, karmaState, nuyenState);
+            if (!DisplayStillCurrent())
+                return;
+            // Inline-apply mode (UX-03): the dialog applies the mutation itself
+            // so an authority refusal keeps the amount, direction and notes on
+            // screen, discloses the reason and re-prepares a fresh editor
+            // state; the next Record press is the explicit re-confirm.
+            string? PeekRefusal() => PeekCareerEditError();
+            var dialog = new CareerRewardsWindow(
+                isKarmaMode,
+                karmaState,
+                nuyenState,
+                applyKarma: async (request, _) =>
+                {
+                    await _interactionCoordinator
+                        .ApplyCareerManualKarmaEditAsync(request, CancellationToken.None)
+                        .ConfigureAwait(true);
+                    return PeekRefusal();
+                },
+                applyNuyen: async (request, _) =>
+                {
+                    await _interactionCoordinator
+                        .ApplyCareerManualNuyenEditAsync(request, CancellationToken.None)
+                        .ConfigureAwait(true);
+                    return PeekRefusal();
+                },
+                reprepare: async _ =>
+                {
+                    if (!DisplayStillCurrent())
+                        return (null, null);
+                    CareerManualKarmaEditorState? freshKarma = await _interactionCoordinator
+                        .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
+                        .ConfigureAwait(true);
+                    CareerManualNuyenEditorState? freshNuyen = isKarmaMode
+                        ? null
+                        : await _interactionCoordinator
+                            .PrepareCareerManualNuyenEditAsync(CancellationToken.None)
+                            .ConfigureAwait(true);
+                    return (freshKarma, freshNuyen);
+                },
+                contextIsCurrent: DisplayStillCurrent,
+                peekUncertain: PeekCareerEditUncertain);
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
+            if (!DisplayStillCurrent())
+                return;
+            if (outcome is null)
+            {
+                if (dialog.UncertainOutcome)
+                {
+                    PublishCareerEditNotice((isKarmaMode ? "karma award" : "nuyen adjustment")
+                        + " result uncertain: the award may already be recorded. Review the runner before recording again.");
+                }
+                else if (dialog.LastRefusal is { } abandonedRefusal)
+                {
+                    PublishCareerEditNotice((isKarmaMode ? "karma award" : "nuyen adjustment")
+                        + " not recorded: " + abandonedRefusal + " The dialog was closed; re-enter the entry when ready.");
+                }
+
+                return;
+            }
+
             switch (outcome)
             {
                 case CareerRewardsWindow.CareerKarmaAwardOutcome karma:
-                    await _interactionCoordinator
-                        .ApplyCareerManualKarmaEditAsync(karma.Request, CancellationToken.None)
-                        .ConfigureAwait(true);
-                    if (PeekCareerEditError() is { } karmaError)
-                    {
-                        PublishCareerEditNotice("karma award failed: " + karmaError);
-                        return;
-                    }
-
                     PublishCareerEditNotice("recorded karma award " + karma.DisplayLabel + ".");
                     break;
 
                 case CareerRewardsWindow.CareerNuyenAdjustOutcome nuyen:
-                    await _interactionCoordinator
-                        .ApplyCareerManualNuyenEditAsync(nuyen.Request, CancellationToken.None)
-                        .ConfigureAwait(true);
-                    if (PeekCareerEditError() is { } nuyenError)
-                    {
-                        PublishCareerEditNotice("nuyen adjustment failed: " + nuyenError);
-                        return;
-                    }
-
                     PublishCareerEditNotice("recorded nuyen adjustment " + nuyen.DisplayLabel + ".");
                     break;
 
@@ -93,7 +145,6 @@ public partial class MainWindow
                     return;
             }
 
-            // Reopen with a fresh prepare so consecutive awards chain cleanly.
             CareerManualKarmaEditorState? reopenedKarma = await _interactionCoordinator
                 .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
                 .ConfigureAwait(true);
@@ -179,6 +230,9 @@ public partial class MainWindow
         string? error = _interactionCoordinator.PeekState().Error;
         return string.IsNullOrWhiteSpace(error) ? null : error;
     }
+
+    private bool PeekCareerEditUncertain()
+        => _interactionCoordinator.PeekState().UncertainMutationError == true;
 
     private async void SectionHost_OnCareerAttributeAdvanceRequested(object? sender, string attributeName)
     {
@@ -299,7 +353,10 @@ public partial class MainWindow
 
         while (true)
         {
-            if (!ContextStillCurrent()) return true;
+            if (!ContextStillCurrent())
+            {
+                return true;
+            }
             var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
             if (!ContextStillCurrent())
@@ -320,6 +377,7 @@ public partial class MainWindow
             {
                 return true;
             }
+
             // Only the exact committed receipt may advance the expected view
             // revision. An unrelated write or a display transition still ends
             // this interaction, including a switch away and back.

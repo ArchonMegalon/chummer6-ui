@@ -100,9 +100,13 @@ internal static class MainWindowFeedbackCoordinator
         sectionHost.SetNotice(S("desktop.shell.notice.download_unavailable"));
     }
 
-    public static void ShowDownloadCancelled(SectionHostControl sectionHost)
+    public static void ShowDownloadCancelled(SectionHostControl sectionHost, string? notice = null)
     {
-        sectionHost.SetNotice(S("desktop.shell.notice.download_cancelled"));
+        // UX-02: a cancellation can carry a reason (e.g. refused .pdf destination
+        // while PDF composition failed) — show it instead of the generic text.
+        sectionHost.SetNotice(string.IsNullOrWhiteSpace(notice)
+            ? S("desktop.shell.notice.download_cancelled")
+            : notice);
     }
 
     public static void ShowDownloadCompleted(
@@ -118,9 +122,12 @@ internal static class MainWindowFeedbackCoordinator
         sectionHost.SetNotice(S("desktop.shell.notice.export_unavailable"));
     }
 
-    public static void ShowExportCancelled(SectionHostControl sectionHost)
+    public static void ShowExportCancelled(SectionHostControl sectionHost, string? notice = null)
     {
-        sectionHost.SetNotice(S("desktop.shell.notice.export_cancelled"));
+        // UX-02: cancellation may carry a reason (format/refusal detail).
+        sectionHost.SetNotice(string.IsNullOrWhiteSpace(notice)
+            ? S("desktop.shell.notice.export_cancelled")
+            : notice);
     }
 
     public static void ShowExportCompleted(
@@ -136,9 +143,13 @@ internal static class MainWindowFeedbackCoordinator
         sectionHost.SetNotice(S("desktop.shell.notice.print_unavailable"));
     }
 
-    public static void ShowPrintCancelled(SectionHostControl sectionHost)
+    public static void ShowPrintCancelled(SectionHostControl sectionHost, string? notice = null)
     {
-        sectionHost.SetNotice(S("desktop.shell.notice.print_cancelled"));
+        // UX-02: a refused .pdf destination (composition failure) must surface
+        // its reason rather than a bare "cancelled" line.
+        sectionHost.SetNotice(string.IsNullOrWhiteSpace(notice)
+            ? S("desktop.shell.notice.print_cancelled")
+            : notice);
     }
 
     public static void ShowPrintCompleted(

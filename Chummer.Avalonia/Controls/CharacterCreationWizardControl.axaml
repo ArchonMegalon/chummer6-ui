@@ -52,7 +52,7 @@
                    TextWrapping="Wrap"
                    MaxHeight="40"
                    TextTrimming="CharacterEllipsis" />
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MinHeight="140">
           <StackPanel Spacing="8">
             <StackPanel x:Name="PriorityPanel" Spacing="8" IsVisible="False">
               <TextBlock Classes="shell-section-title" Text="Creation method - Priority table" />
@@ -107,6 +107,9 @@
                    Grid.Row="4"
                    Classes="shell-caption"
                    TextWrapping="Wrap"
+                   MaxHeight="64"
+                   VerticalAlignment="Top"
+                   TextTrimming="CharacterEllipsis"
                    AutomationProperties.AutomationId="creation-wizard-finalize-status" />
       </Grid>
     </Border>

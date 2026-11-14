@@ -276,7 +276,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -448,7 +448,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -538,7 +538,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -629,7 +629,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -701,7 +701,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -770,7 +770,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -840,7 +840,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -914,7 +914,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -991,7 +991,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 armorId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1065,7 +1065,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 rootGearId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1139,7 +1139,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 rootWeaponId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1213,7 +1213,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 rootGearId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1292,7 +1292,7 @@ public sealed partial class CharacterOverviewPresenter
                 Publish(State with { Error = "Chummer5 exposes Gear Wireless only after the runner enters Career mode." });
                 return null;
             }
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1366,7 +1366,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 vehicleId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1440,7 +1440,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 rootGearId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1510,7 +1510,7 @@ public sealed partial class CharacterOverviewPresenter
 
             GearAttackSwapEditorState editor = GearAttackSwapEditorProjector.Project(
                 read.Value.Document.Content, currentWorkspace.Value, expectedContentRevision, rootGearId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1570,7 +1570,7 @@ public sealed partial class CharacterOverviewPresenter
             }
             GearSleazeSwapEditorState editor = GearSleazeSwapEditorProjector.Project(
                 read.Value.Document.Content, workspace.Value, revision, rootGearId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -1628,7 +1628,7 @@ public sealed partial class CharacterOverviewPresenter
             GearDataProcessingFirewallSwapEditorState editor =
                 GearDataProcessingFirewallSwapEditorProjector.Project(
                     read.Value.Document.Content, workspace.Value, revision, rootGearId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1694,7 +1694,7 @@ public sealed partial class CharacterOverviewPresenter
             VehicleDataProcessingFirewallSwapEditorState editor =
                 VehicleDataProcessingFirewallSwapEditorProjector.Project(
                     read.Value.Document.Content, workspace.Value, revision, vehicleId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -1753,7 +1753,7 @@ public sealed partial class CharacterOverviewPresenter
 
             CyberwareMatrixSwapEditorState editor = CyberwareMatrixSwapEditorProjector.Project(
                 read.Value.Document.Content, workspace.Value, revision, cyberwareId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -1828,7 +1828,7 @@ public sealed partial class CharacterOverviewPresenter
                 workspace.Value,
                 revision,
                 weaponId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1904,7 +1904,7 @@ public sealed partial class CharacterOverviewPresenter
                 workspace.Value,
                 revision,
                 weaponId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -1964,7 +1964,7 @@ public sealed partial class CharacterOverviewPresenter
                     read.Value.Document.Content,
                     workspace.Value,
                     revision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return catalog;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2038,7 +2038,7 @@ public sealed partial class CharacterOverviewPresenter
 
             VehicleWeaponFiringModeEditorState editor = VehicleWeaponFiringModeEditorProjector.Project(
                 read.Value.Document.Content, workspace.Value, revision, vehicleId);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -2109,7 +2109,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2181,7 +2181,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2253,7 +2253,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2325,7 +2325,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2397,7 +2397,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2468,7 +2468,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2538,7 +2538,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2613,7 +2613,7 @@ public sealed partial class CharacterOverviewPresenter
                 Publish(State with { Error = "Lifestyle deletion is available only during Creation." });
                 return null;
             }
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2683,7 +2683,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2753,7 +2753,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2826,7 +2826,7 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2902,7 +2902,7 @@ public sealed partial class CharacterOverviewPresenter
                 expectedContentRevision,
                 expenseOperation,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2974,7 +2974,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3048,7 +3048,7 @@ public sealed partial class CharacterOverviewPresenter
                 expectedContentRevision,
                 Chummer5CareerExpenseReasonNormalizationAuthority.ForLanguage(
                     reasonNormalizationLanguage));
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3132,7 +3132,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3244,7 +3244,7 @@ public sealed partial class CharacterOverviewPresenter
                     expectedContentRevision,
                     State.Preferences.CharacterSettingsCatalogJson,
                     _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3352,7 +3352,7 @@ public sealed partial class CharacterOverviewPresenter
                     expectedContentRevision,
                     State.Preferences.CharacterSettingsCatalogJson,
                     _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3467,7 +3467,7 @@ public sealed partial class CharacterOverviewPresenter
                     expectedContentRevision,
                     State.Preferences.CharacterSettingsCatalogJson,
                     _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3833,7 +3833,7 @@ public sealed partial class CharacterOverviewPresenter
                     expectedContentRevision,
                     State.Preferences.CharacterSettingsCatalogJson,
                     _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3926,7 +3926,7 @@ public sealed partial class CharacterOverviewPresenter
                     expectedContentRevision,
                     State.Preferences.CharacterSettingsCatalogJson,
                     _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -3989,7 +3989,7 @@ public sealed partial class CharacterOverviewPresenter
                     request.Selection,
                     requestState.Preferences.CharacterSettingsCatalogJson,
                     _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return quote;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -4078,7 +4078,7 @@ public sealed partial class CharacterOverviewPresenter
                 read.Value.Document.Content,
                 currentWorkspace.Value,
                 expectedContentRevision);
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -4570,7 +4570,7 @@ public sealed partial class CharacterOverviewPresenter
                 return null;
             }
 
-            Publish(State with { Error = null });
+            Publish(State with { Error = null, UncertainMutationError = null });
             return new CyberwareCommerceEditorState(
                 currentWorkspace.Value,
                 expectedContentRevision,
@@ -4709,6 +4709,7 @@ public sealed partial class CharacterOverviewPresenter
         string? returnSectionId = State.ActiveSectionId;
         long displayGeneration = CaptureDisplayGeneration();
         WorkspaceDocument? committedDocument = null;
+        bool dispatchInitiated = false;
         IWorkspaceRecoveryCaptureIntent? postCommitCaptureIntent = null;
         WorkspaceOperationExecution<CommandResult<WorkspaceRevisionReceipt>> execution;
         OwnerContextStamp? originalOwner = expectedOwner ?? originalState.DisplayOwnerContext;
@@ -4801,13 +4802,28 @@ public sealed partial class CharacterOverviewPresenter
                         State = read.Value.Document.State with { Payload = mutatedXml }
                     };
                     committedDocument = replacement;
-                    CommandResult<WorkspaceRevisionReceipt> replacementResult = await (boundClient is null
-                        ? _client.ReplaceWorkspaceDocumentAsync(
-                            expectedWorkspaceId, expectedContentRevision, replacement, token)
-                        : boundClient.ReplaceWorkspaceDocumentAsync(
+                    CommandResult<WorkspaceRevisionReceipt> replacementResult;
+                    if (boundClient is null)
+                    {
+                        // Unbound dispatch: the write is in flight from here on,
+                        // so a fault after this point cannot prove the write was
+                        // not committed; classification must stay uncertain.
+                        dispatchInitiated = true;
+                        replacementResult = await _client.ReplaceWorkspaceDocumentAsync(
+                            expectedWorkspaceId, expectedContentRevision, replacement, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        replacementResult = await boundClient.ReplaceWorkspaceDocumentAsync(
                             originalOwner ?? throw new InvalidOperationException("Owner authority was not captured."),
                             expectedWorkspaceId, expectedContentRevision, replacement,
-                            onDispatch ?? (static () => { }), token)).ConfigureAwait(false);
+                            () =>
+                            {
+                                dispatchInitiated = true;
+                                (onDispatch ?? (static () => { }))();
+                            },
+                            token).ConfigureAwait(false);
+                    }
                     observeCanonical?.Invoke(replacementResult);
                     return replacementResult;
                 },
@@ -4817,8 +4833,12 @@ public sealed partial class CharacterOverviewPresenter
         {
             postCommitCaptureIntent?.Dispose();
             if (!IsOriginalPersistenceOwnerCurrent(originalOwner))
-                AbandonOriginalPersistenceView(displayGeneration, originalState, committed: false);
-            else TryPublishDisplayTransition(displayGeneration, State with { Error = ex.Message }, originalState);
+                AbandonOriginalPersistenceView(displayGeneration, originalState, committed: dispatchInitiated);
+            else TryPublishDisplayTransition(displayGeneration, State with
+            {
+                Error = ex.Message,
+                UncertainMutationError = dispatchInitiated ? (bool?)true : null
+            }, originalState);
             return;
         }
 
@@ -4876,6 +4896,7 @@ public sealed partial class CharacterOverviewPresenter
             Publish(State with
             {
                 IsBusy = false,
+                UncertainMutationError = null,
                 Error = replaced.Error,
                 Notice = replaced.Outcome == WorkspaceOperationOutcome.Conflict
                     ? "Edit stopped because a newer dossier revision won. No overwrite or retry was attempted."
@@ -4892,6 +4913,7 @@ public sealed partial class CharacterOverviewPresenter
             Publish(State with
             {
                 IsBusy = false,
+                UncertainMutationError = null,
                 Error = null,
                 Notice = "The edit committed, but its exact postcommit document is unavailable. Keep this runner open for review."
             });
@@ -4927,7 +4949,8 @@ public sealed partial class CharacterOverviewPresenter
         {
             Session = session,
             OpenWorkspaces = session.OpenWorkspaces,
-            Error = null
+            Error = null,
+            UncertainMutationError = null
         };
         bool viewCaptureFailed = false;
         try

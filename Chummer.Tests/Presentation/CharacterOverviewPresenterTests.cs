@@ -238,6 +238,121 @@ public class CharacterOverviewPresenterTests
             new CharacterLinkedDocument("Linked", "Linked", string.Empty, "Human", string.Empty, string.Empty, string.Empty));
     }
 
+    private sealed class CareerExchangeTestResolver : ICharacterSourceDataResolver
+    {
+        public static CareerExchangeTestResolver Instance { get; } = new();
+
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new CareerExchangeTestContext();
+    }
+
+    private sealed class CareerExchangeTestContext : ICharacterSourceDataContext
+    {
+        public bool TryResolveKarmaNuyenExchangeRates(
+            out decimal workingForPeopleRate,
+            out decimal workingForManRate)
+        {
+            workingForPeopleRate = 1_500m;
+            workingForManRate = 2_000m;
+            return true;
+        }
+
+        public bool TryResolveCyberwareGradeDeviceRating(
+            string gradeName,
+            string improvementSource,
+            out int deviceRating)
+        {
+            deviceRating = 0;
+            return false;
+        }
+
+        public bool TryResolveVehicleModBonuses(
+            string sourceId,
+            string name,
+            out CharacterVehicleModSourceBonuses bonuses)
+        {
+            bonuses = CharacterVehicleModSourceBonuses.Empty;
+            return false;
+        }
+    }
+
+    private static void SeedCareerRewardsWorkspace(FakeChummerClient client)
+    {
+        const string xml = """
+            <character><name>Career</name><alias>CAREER</alias><created>True</created><metatype>Human</metatype>
+              <buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion>
+              <karma>30</karma><nuyen>15000</nuyen></character>
+            """;
+        client.SeedWorkspace("ws-career-rewards", "Career", "CAREER", rulesetId: RulesetDefaults.Sr5, contentRevision: 5, savedRevision: 3);
+        client.SeedDocument("ws-career-rewards", CanonicalizeRecoveryTestDocument(new WorkspaceDocument(xml, RulesetDefaults.Sr5)));
+    }
+
+    [TestMethod]
+    public async Task Career_karma_award_dispatched_then_faulted_publishes_uncertain_outcome()
+    {
+        // Presenter seam fixture: a dispatched award whose reply is lost must
+        // surface as an uncertain mutation, never as a retryable refusal.
+        OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+        SeedCareerRewardsWorkspace(client);
+        CharacterWorkspaceId id = new("ws-career-rewards");
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, characterSourceDataResolver: CareerExchangeTestResolver.Instance);
+        await presenter.LoadAsync(id, CancellationToken.None);
+        CharacterCareerManualKarmaState karma = new(30, 15_000m, 1_500m, 2_000m);
+        await presenter.ApplyCareerManualKarmaEditAsync(new CareerManualKarmaEditRequest(
+            id, 5L, karma, CharacterCareerManualKarmaAction.Gain, 5, "uncertain karma",
+            new DateTime(2072, 1, 1), Refund: false, KarmaNuyenExchange: false, ForceCareerVisible: false),
+            CancellationToken.None);
+
+        Assert.IsTrue(presenter.State.UncertainMutationError == true,
+            "a dispatched-then-faulted karma award must publish the uncertain marker.");
+        Assert.IsTrue((presenter.State.Error ?? string.Empty).Contains("post-commit"),
+            $"the fault reason must remain disclosed, got: {presenter.State.Error}");
+        Assert.AreEqual(6L, client.GetWorkspaceItem(id.Value).ContentRevision,
+            "the mutation actually committed before its reply was lost.");
+    }
+
+    [TestMethod]
+    public async Task Career_nuyen_adjustment_dispatched_then_faulted_publishes_uncertain_outcome()
+    {
+        OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "core-failure" };
+        SeedCareerRewardsWorkspace(client);
+        CharacterWorkspaceId id = new("ws-career-rewards");
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, characterSourceDataResolver: CareerExchangeTestResolver.Instance);
+        await presenter.LoadAsync(id, CancellationToken.None);
+        CharacterCareerManualNuyenState nuyen = new(30, 15_000m, 1_500m, 2_000m);
+        await presenter.ApplyCareerManualNuyenEditAsync(new CareerManualNuyenEditRequest(
+            id, 5L, nuyen, CharacterCareerManualNuyenAction.Gain, 500, 0m, "uncertain nuyen",
+            new DateTime(2072, 1, 1), Refund: false, KarmaNuyenExchange: false, ForceCareerVisible: false),
+            CancellationToken.None);
+
+        Assert.IsTrue(presenter.State.UncertainMutationError == true,
+            "a dispatched-then-faulted nuyen adjustment must publish the uncertain marker.");
+        Assert.IsNotNull(presenter.State.Error, "the fault reason must remain disclosed.");
+    }
+
+    [TestMethod]
+    public async Task Career_reward_conflict_refusal_stays_definitive_without_uncertain_marker()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedCareerRewardsWorkspace(client);
+        CharacterWorkspaceId id = new("ws-career-rewards");
+        using CharacterOverviewPresenter presenter = CreateTrustedPresenter(client, characterSourceDataResolver: CareerExchangeTestResolver.Instance);
+        await presenter.LoadAsync(id, CancellationToken.None);
+        CharacterCareerManualKarmaState karma = new(30, 15_000m, 1_500m, 2_000m);
+        // A concurrent revision win: the store read inside the operation
+        // observes a newer revision and returns a definitive conflict refusal
+        // before any dispatch, so the uncertain marker must stay cleared.
+        client.SeedWorkspace(id.Value, "Career", "CAREER", rulesetId: RulesetDefaults.Sr5, contentRevision: 6, savedRevision: 3);
+        await presenter.ApplyCareerManualKarmaEditAsync(new CareerManualKarmaEditRequest(
+            id, 5L, karma, CharacterCareerManualKarmaAction.Gain, 5, "conflict karma",
+            new DateTime(2072, 1, 1), Refund: false, KarmaNuyenExchange: false, ForceCareerVisible: false),
+            CancellationToken.None);
+
+        Assert.IsTrue(presenter.State.UncertainMutationError is null,
+            "a definitive conflict refusal must not carry the uncertain marker.");
+        Assert.IsNotNull(presenter.State.Error, "the conflict must be disclosed as a refusal.");
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+    }
+
     [TestMethod]
     [DataRow("primary-arm", "same")]
     [DataRow("condition-monitor", "same")]
@@ -934,7 +1049,8 @@ public class CharacterOverviewPresenterTests
         IWorkspaceOperationCoordinator? workspaceOperationCoordinator = null,
         IWorkspaceRecoveryPayloadStore? workspaceRecoveryPayloadStore = null,
         TimeSpan? deletionNotificationBudget = null,
-        ISr6CareerAttributeRecoveryStore? sr6RecoveryStore = null)
+        ISr6CareerAttributeRecoveryStore? sr6RecoveryStore = null,
+        ICharacterSourceDataResolver? characterSourceDataResolver = null)
         => new CharacterOverviewPresenter(
             client,
             workspaceSessionManager,
@@ -958,7 +1074,8 @@ public class CharacterOverviewPresenterTests
             workspaceOperationCoordinator,
             workspaceRecoveryPayloadStore,
             deletionNotificationBudget,
-            sr6CareerAttributeRecoveryStore: sr6RecoveryStore);
+            sr6CareerAttributeRecoveryStore: sr6RecoveryStore,
+            characterSourceDataResolver: characterSourceDataResolver);
 
     [TestMethod]
     [DataRow(WorkspaceCollectionKind.Contact)]
