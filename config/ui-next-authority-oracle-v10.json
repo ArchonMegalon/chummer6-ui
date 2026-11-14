@@ -252,7 +252,7 @@
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
       "scripts/ai/verify.sh": "9b81ae41d22b7f74092e3f7a4bb498b624d7d7cf90df4b14f224e19e0b641a22",
-      "scripts/ai/with-package-plane.sh": "629ce2d0775461118179eb53aa1510cdf21e57ec0a60978b8eea7af162bbdcc7",
+      "scripts/ai/with-package-plane.sh": "b814b82a835094d88312cbc1b10018117a20a7f84c8efdef45791387184fb812",
       "scripts/build-core-content-bundle.py": "5c0a422762fb2cd92c3c3078eadc96679477b321680981563b6b93b8457f6b2a"
     },
     "testProjects": [

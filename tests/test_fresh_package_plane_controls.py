@@ -538,13 +538,13 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "53d00dac3761a84847029576d4c629a486b8bcab",
+            "blob": "1ed2e76bbd32c125fd7f3f774d2389eece4a2b62",
             "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "95f932343285b422aad6ff5ad1c553ebab0ed819b513836b628030444b966ea1",
+            "rawSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
             "rawSizeBytes": 73211,
-            "semanticCanonicalSha256": "95f932343285b422aad6ff5ad1c553ebab0ed819b513836b628030444b966ea1",
+            "semanticCanonicalSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
             "semanticCanonicalSizeBytes": 73211,
             "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71",
         },
@@ -555,7 +555,14 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 73211
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "95f932343285b422aad6ff5ad1c553ebab0ed819b513836b628030444b966ea1"
+        "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9"
+    )
+    assert package_plane.load_split_preseal_verifier().NEXT_AUTHORITY_ORACLE == (
+        package_plane.SEALED_NEXT_AUTHORITY_ORACLE
+    )
+    payload = package_plane.encoded_json(next_lock)
+    assert hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest() == (
+        package_plane.SEALED_NEXT_AUTHORITY_ORACLE["canonicalLock"]["blob"]
     )
     with pytest.raises(package_plane.VerificationError):
         package_plane.validate_lock(next_lock)
@@ -599,6 +606,46 @@ def test_sealed_next_transition_rejects_oracle_payload_or_metadata_substitution(
     )
     with pytest.raises(package_plane.VerificationError, match="raw bytes differ"):
         package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+
+
+@pytest.mark.parametrize("digest", [
+    "629ce2d0775461118179eb53aa1510cdf21e57ec0a60978b8eea7af162bbdcc7",
+    "0" * 64,
+])
+def test_sealed_next_transition_rejects_stale_or_changed_package_plane_shell(
+    monkeypatch: pytest.MonkeyPatch, digest: str
+) -> None:
+    relative = "scripts/ai/with-package-plane.sh"
+    actual_digest = package_plane.source_digest
+    assert actual_digest(REPO_ROOT / relative) == (
+        "b814b82a835094d88312cbc1b10018117a20a7f84c8efdef45791387184fb812"
+    )
+    monkeypatch.setattr(package_plane, "source_digest", lambda path:
+        digest if path == REPO_ROOT / relative else actual_digest(path))
+    previous = json.loads(LOCK.read_text(encoding="utf-8"))
+    previous_bytes = package_plane.encoded_json(previous)
+    with pytest.raises(
+        package_plane.VerificationError, match="differs from the fixed authority oracle"
+    ):
+        package_plane.build_next_unsealed_authority_lock(REPO_ROOT, previous)
+    assert package_plane.encoded_json(previous) == previous_bytes
+
+
+@pytest.mark.parametrize("change", ["source_digest", "whitespace"])
+def test_sealed_next_transition_rejects_changed_oracle_fixture(
+    tmp_path: Path, change: str
+) -> None:
+    oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    if change == "source_digest":
+        oracle["consumer"]["sourceFiles"]["scripts/ai/with-package-plane.sh"] = "0" * 64
+    payload = package_plane.encoded_json(oracle)
+    if change == "whitespace":
+        payload += b"\n"
+    fixture = tmp_path / package_plane.SEALED_NEXT_AUTHORITY_ORACLE_PATH
+    fixture.parent.mkdir(parents=True)
+    fixture.write_bytes(payload)
+    with pytest.raises(package_plane.VerificationError, match="raw bytes differ"):
+        package_plane.fixed_next_authority_oracle_lock(tmp_path)
 
 
 @pytest.mark.parametrize("reviewed_source", [
@@ -2318,6 +2365,12 @@ def test_reviewed_next_oracle_and_consumer_source_digests_are_current() -> None:
     package_plane.validate_test_compile_items(REPO_ROOT)
     rows = package_plane.verify_source_files(REPO_ROOT, lock["consumer"]["sourceFiles"])
     assert len(rows) == len(lock["consumer"]["sourceFiles"])
+    # Use actual checkout bytes here: substituting oracle digests would hide a
+    # reviewed shell change that was not carried into the fixed authority.
+    previous = json.loads(LOCK.read_text(encoding="utf-8"))
+    previous_bytes = package_plane.encoded_json(previous)
+    assert package_plane.build_next_unsealed_authority_lock(REPO_ROOT, previous) == lock
+    assert package_plane.encoded_json(previous) == previous_bytes
 
 
 def test_new_runner_method_regression_is_a_bound_package_consumer_input() -> None:
