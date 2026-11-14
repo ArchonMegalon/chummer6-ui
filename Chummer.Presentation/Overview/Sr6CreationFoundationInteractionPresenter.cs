@@ -435,6 +435,15 @@ public sealed class Sr6CreationFoundationInteractionPresenter
            && string.Equals(left.BootstrapBindingDigest, right.BootstrapBindingDigest, StringComparison.Ordinal)
            && string.Equals(left.AuthorityDigest, right.AuthorityDigest, StringComparison.Ordinal);
 
+    /// <summary>
+    /// Verifies the persisted decision against the prepared preview using the
+    /// same canonical-digest comparison Core's ledger validation uses. Record
+    /// equality cannot be used for the selection or preview members: their
+    /// list-typed properties compare by reference in C#, and the commit
+    /// decision is deserialized from the durable store, so structurally
+    /// identical (but freshly allocated) lists would report a false receipt
+    /// mismatch and block every real-store SR6 confirmation.
+    /// </summary>
     private static bool CommitMatches(
         Sr6CreationFoundationPreparedPreview prepared,
         Sr6CreationFoundationCommit commit, Guid operationId)
@@ -447,24 +456,39 @@ public sealed class Sr6CreationFoundationInteractionPresenter
                    StringComparison.Ordinal)
                && BindingEquals(decision.Command.Binding, prepared.Foundation.Binding)
                && string.Equals(
+                   Sr6CreationFoundationIntegrity.Digest(decision.Command.Selection),
+                   Sr6CreationFoundationIntegrity.Digest(prepared.Preview.Selection),
+                   StringComparison.Ordinal)
+               && string.Equals(
                    decision.Command.PreviewDigest,
                    prepared.PreviewDigest,
                    StringComparison.Ordinal)
-               && decision.Command.Selection.Equals(prepared.Preview.Selection)
                && decision.Command.OperationId == operationId
                && decision.Command.ExplicitlyConfirmed
-               && decision.Preview.Equals(prepared.Preview)
+               && string.Equals(
+                   Sr6CreationFoundationIntegrity.Digest(decision.Preview),
+                   Sr6CreationFoundationIntegrity.Digest(prepared.Preview),
+                   StringComparison.Ordinal)
                && decision.CommittedContentRevision > prepared.Foundation.Binding.ContentRevision
                && IsDigest(decision.DecisionDigest);
     }
 
+    /// <summary>
+    /// A durable commit persists content and saved revisions together
+    /// (FileWorkspaceStore.BuildPersistedRecord), so the refreshed state must
+    /// carry the committed revision with the saved revision already caught up.
+    /// Requiring ContentRevision &gt; SavedRevision here can never hold after a
+    /// successful save and would misreport every verified commit as a
+    /// refresh failure. The auxiliary-state digest is a bare 64-hex value
+    /// (Core ValidBinding), unlike the canonical sha256-prefixed digests.
+    /// </summary>
     private static bool RefreshedStateMatches(
         Sr6CreationFoundationCommit commit,
         Sr6CreationFoundationState refreshed)
         => BindingWorkspaceMatches(commit, refreshed)
            && refreshed.Binding.ContentRevision == commit.Decision.CommittedContentRevision
-           && refreshed.Binding.ContentRevision > refreshed.Binding.SavedRevision
-           && IsDigest(refreshed.Binding.AuxiliaryStateDigest)
+           && refreshed.Binding.SavedRevision == commit.Decision.CommittedContentRevision
+           && refreshed.Binding.AuxiliaryStateDigest is { Length: 64 }
            && IsDigest(refreshed.Binding.AuthorityDigest);
 
     private static bool BindingWorkspaceMatches(

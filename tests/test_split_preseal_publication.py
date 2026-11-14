@@ -717,6 +717,42 @@ def test_exact_unsealed_marker_can_be_superseded_once(tmp_path: Path) -> None:
     )
 
 
+def test_layered_round_does_not_validate_against_original_pr_base(tmp_path: Path) -> None:
+    repository, base, _, first_marker = fixture(tmp_path)
+    _, second_marker = unsealed_recovery(repository, first_marker)
+    assert preseal.validate_preseal(repository, base=first_marker, head=second_marker)["baseCommit"] == first_marker
+    with pytest.raises(preseal.PresealError, match="preseal recipe topology is not exact"):
+        preseal.validate_preseal(repository, base=base, head=second_marker)
+
+
+@pytest.mark.parametrize("retained_base_marker", [False, True])
+def test_consolidated_recipe_preserves_product_bytes_and_base_marker(tmp_path: Path, retained_base_marker: bool) -> None:
+    repository, original_base, _, first_marker = fixture(tmp_path)
+    base = first_marker if retained_base_marker else original_base
+    _, layered_head = unsealed_recovery(repository, first_marker)
+    paths = ("scripts/ai/verify_fresh_checkout_package_plane.py", preseal.ORACLE_FIXTURE_PATH)
+    reviewed = {path: preseal.commit_bytes(repository, layered_head, path) for path in paths}
+    checkout(repository, base)
+    for path, data in reviewed.items():
+        (repository / path).write_bytes(data)
+    recipe = commit(repository, f"consolidate reviewed changes from {layered_head}")
+    marker = preseal.expected_marker(repository, base, recipe)
+    preseal.write_or_refresh_marker(repository, recipe_commit=recipe,
+        output=repository / preseal.MARKER_PATH, payload=preseal.canonical_json_bytes(marker))
+    head = commit(repository, "fresh marker only")
+    receipt = preseal.validate_preseal(repository, base=base, head=head)
+    assert receipt["recipeCommitObserved"] == recipe
+    for key in ("authority", "publicationAuthorized", "packageConsumerClaim", "releaseClaim"):
+        assert receipt[key] is False
+    for path, data in reviewed.items():
+        assert preseal.commit_bytes(repository, head, path) == data
+    for path in preseal.CANONICAL_LOCK_PATHS:
+        assert preseal.commit_blob(repository, base, path) == preseal.commit_blob(repository, head, path)
+    assert preseal.parents(repository, head) == [recipe]
+    assert preseal.parents(repository, recipe) == [base]
+    assert git(repository, "diff", "--name-only", recipe, head) == preseal.MARKER_PATH
+
+
 @pytest.mark.parametrize("case", ("changed-lock", "extra-change", "tampered-marker"))
 def test_unsealed_supersession_rejects_malformed_first_marker(
     tmp_path: Path,

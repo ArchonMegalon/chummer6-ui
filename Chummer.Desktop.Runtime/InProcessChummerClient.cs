@@ -248,7 +248,9 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
     {
         ct.ThrowIfCancellationRequested();
         return _workspaceOperations.Execute(
-            () => WithOwnerLease(expectedOwner, owner => _workspaceService.GetOverview(owner, id)), ct);
+            () => WithOwnerLease(
+                expectedOwner,
+                owner => _workspaceService.GetOverview(owner, id)), ct);
     }
 
     public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)

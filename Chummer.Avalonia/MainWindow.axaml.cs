@@ -311,6 +311,9 @@ public partial class MainWindow : Window
     internal Task SaveWorkspaceForAutomationAsync(CancellationToken ct)
         => _interactionCoordinator.SaveAsync(ct);
 
+    internal Task ImportPayloadForAutomationAsync(byte[] payload, CancellationToken ct)
+        => RunUiActionAsync(() => _adapter.ImportAsync(payload, ct), "open bundled sample character");
+
     internal byte[] CaptureScreenshotBytesForAutomation()
     {
         TopLevel? dialogWindow = PeekDialogWindowForTesting();
@@ -341,5 +344,15 @@ public partial class MainWindow : Window
         using MemoryStream output = new();
         bitmap.Save(output);
         return output.ToArray();
+    }
+
+    internal async Task ReloadStateForAutomationAsync(CancellationToken ct)
+    {
+        if (_adapter.State.WorkspaceId is not { } workspaceId)
+        {
+            return;
+        }
+
+        await _adapter.LoadAsync(workspaceId, ct).ConfigureAwait(true);
     }
 }

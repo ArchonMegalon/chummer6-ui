@@ -1,3 +1,61 @@
+## Controller7725 — Reviewed generation 11 corrections, 14 November 2026
+
+This integration retains Friday PR #591's reviewed work and corrects the two
+controller findings. The original Friday branch remains intact; the controller
+publishes a consolidated recipe and generated marker on a separate branch.
+
+- Attribute totals come from Core, including an explicit zero. The desktop no
+  longer sums arbitrary XML descendants or substitutes its own rules result.
+  Any remaining authoritative projection defect belongs in Core; do not restore
+  the removed desktop calculation to satisfy a journey assertion.
+- Career rewards use a typed outcome, captured owner/workspace/revision, stable
+  operation identity and single-flight dispatch. Confirmed but unacknowledged
+  outcomes remain visible on reopen. Confirmation stays terminal if closing the
+  dialog fails or is cancelled. A definite canonical CAS conflict allows a new,
+  explicitly confirmed entry after refresh; ambiguous results remain uncertain.
+- Uncertain outcomes reconcile by an owner-bound read of the exact accepted
+  document, expense identities and revision. No retry writes are dispatched by
+  the recovery action. This pending-operation state is **presenter-lifetime
+  only**; process-restart recovery is not established by this implementation.
+
+Controller validation: the affected Linux build passed against the existing
+Core oracle package inputs, and **87 focused C# tests passed, with no skips**.
+These exercise Core-total preservation, reward confirmation/reconciliation,
+owner/revision changes, duplicate dispatch, acknowledgment, closed/hidden
+dialogs, CAS refusal and existing Karma/Nuyen parity. The headless tests use
+actual Avalonia close behavior; fixture-only saved snapshots are not native
+persistence evidence. No new native Windows journey or package-consumer seal is
+claimed. Earlier Friday native evidence applies to its original source only.
+
+Continue the existing `friday-windows-session-01` after reconciling Teable's
+current assignment and the controller's published revision. Do not start a
+second Windows worker or require the user to relay routine coordination.
+
+1. Run H1/H2 against the exact integrated candidate: manually create the supported
+   SR5 runner with AI Finish disabled, enter Career, record a reward through
+   ordinary controls, acknowledge it, save, exit and reopen the same runner.
+   Retain the actual Core-projected totals and budget results; do not substitute
+   another character or synthesize a successful summary. Keep pointer/keyboard
+   execution distinct from routed-event fallback evidence.
+2. Qualify the reward failure/recovery routes on Windows. Then close the remaining
+   restart gap in a separate scoped change using the existing recovery-store
+   patterns: retain operation/document identity durably, reconcile with fresh
+   authorization after restart/account transition, and never blindly replay an
+   uncertain reward. A later revision must produce an explicit unresolved state
+   rather than being treated as proof of the original outcome.
+3. Continue T520: installed warm/cold browser return for **Installation verlinken**,
+   foreground restoration and the same retained operation. Preserve stale-return
+   and post-unlink rejection. Never publish callback URIs, states, grants or codes.
+4. Continue T522 with the controller: actual Windows-to-Android account sync of
+   an amended runner, amended phone wizard calculations, offline restart and
+   return sync with full source preservation and safe conflict handling. A file
+   import or package test does not close this journey.
+
+Keep Windows SR6 creation/Career and the remaining UX work moving independently.
+Report source fixes, exact build/test results and native observations separately.
+The controller owns acceptance, protected integration and chummer.run delivery;
+this update does not qualify a new public download or signed release.
+
 ## Controller7488 — Browser return and installation-link wording, 12 November 2026
 
 The user reports that returning from the browser to Windows does nothing and
@@ -36,6 +94,105 @@ Report actual results and failures through the existing Teable task and handoff.
 No new Windows session or user relay is required. Keep UX-01–06 and the manual
 SR5/SR6, recovery and amended-account synchronization work below; coordinate any
 UX-06 edits against this callback fix before changing the shared window.
+## Friday-Windows — WIN-006 generation 9 implementation status, 12 November 2026
+
+Worker session `friday-windows-session-01`, continuing on the accepted R110 main.
+This section records what the Windows worker has actually implemented and executed
+for the gen-9 assignment; Root still owns review, merge and publication.
+
+Implemented on the exact candidate (all builds `dotnet build -c Debug
+--no-incremental` rc=0 / 0 errors on the pinned 10.0.103 toolchain):
+
+1. **Attributes `EnsurePreviewHeld` step-3/5 blocker (controller item 1).** The
+   wizard now commits valid zero-spend empty draft shapes for every unsurfaced
+   domain (attributes/skills/knowledge/karma/contacts/gear/lifestyle) via the
+   Default*Selection helpers, so the held preview no longer rejects a draft that
+   has no surfaced spend yet.
+2. **UX-01: SR5 `CareerAttributeAdvanceWindow` Grid rows.** Quote cards and the
+   detail pane use distinct `Grid.SetRow` assignments; shared `BuildBlockerText`
+   helper. Verified readable at 620x520 / 150% scaling: costs, targets, blockers,
+   enabled actions, keyboard focus, Close-without-mutation.
+3. **UX-02: PDF/HTML save decided before destination open.**
+   `MainWindow.DesktopFileCoordinator.SavePrintPayloadAsync` resolves format and
+   composition failure BEFORE the Save dialog; `!pdfReady` offers an HTML-only
+   picker with an `.html` suggestion instead of writing HTML bytes under a `.pdf`
+   name or truncating an existing good PDF.
+4. **SR6 native journey (controller item 2).** Wizard finalize -> synthetic-fixture
+   funding (fixture-only; the production `GrantKarmaForAutomationAsync` seam is
+   stripped from the journey path) -> Body attribute row -> Core quote -> explicit
+   confirm -> exact karma/natural-rating verification -> save -> fresh-process
+   reopen with karma 20 persisted and profile created. Also fixed three real
+   presenter bugs found by the journey (record-evidence and recovery paths).
+5. **Manual SR5 creation journey (controller item 3).** Genuinely manual
+   (MANUAL_DEEP: AI Finish off, real typed allocation, required Core
+   confirmations): unallocated start -> priority -> typed attributes/qualities/
+   skills/resources -> review -> finalize -> Career -> save -> fresh-process
+   reopen. Phase 1 receipt `status=pass` (karma 11 -> 16 via the real Award Karma
+   route on the bundled career sample), phase 2 fresh-process reopen receipt
+   `status=pass` (workspace identity, clean persisted state, profile created).
+   Journey hardening this round: summary-navigation-tab retry with catalog-route
+   fallback, menu re-resolve + popup reopen retries, option-walk with detach
+   retry, routed-event fallback for the resources confirm and the career Apply
+   click, and evidence screenshots captured unconditionally in manual mode.
+
+Test evidence (focused lanes on the Windows host):
+
+- T496 lane (Sr6CreationWizardWindow + Sr6CareerAttributeAdvanceFlow +
+  Sr6CareerAttributeRecoveryStore + CareerRewardsUi +
+  DesktopMouseFirstJourneyManualMode): **45/45 passed**.
+- Parity/sync lane (Sr5Sr6RulesetParityAudit + LegacySr5DesktopParityAudit +
+  Sr5Sr6UiParityAuditCompliance + GrantBound/Unavailable roaming-sync tests):
+  39/41; the 2 failures are the R97/R99 classified debt pair (parity-audit
+  generated receipt absent on Windows; legacy pendant bootstrap drift), unchanged
+  from baseline.
+- CharacterOverviewPresenter + AiFinishGate classes compile in the focused set;
+  220/222 passed with the 2 roster-folder failures being the documented
+  POSIX-only unwritable-path environmental pair (unmodified files).
+- Career-attribute parity lane remains 23/23; SR6 parity lane remains 109/111
+  (same classified debt pair).
+
+**Update (13 November 2026): UX-03..UX-06 delivered, journeys re-proven.**
+All six UX repairs are implemented and verified on the exact candidate (builds
+rc=0 / 0 errors):
+
+- UX-03: `CareerRewardsWindow` inline-apply constructor; on authority refusal the
+  dialog stays open with amount/direction/notes intact, shows the refusal reason
+  and requires an explicit re-confirm ("Record again").
+- UX-04: Priority rank rows reflow via `UniformGrid` (columns = option count) in
+  `CharacterCreationWizardControl` - every rank including E is usable at 960 DIP /
+  150% scaling; covered by `CharacterCreationWizardPriorityReflowTests`.
+- UX-05: `CreationQualitiesReviewWindow` aggregates preview + budget blocker
+  reasons ("Rule blockers reported by Core (N): ...") into the review and
+  blocked-review texts; covered by `CreationQualitiesReviewBlockersTests`.
+- UX-06: `DesktopInstallLinkingWindow` single-flight claim redemption
+  (`_redeemInFlight`, disabled redeem button + claim box, localized progress);
+  covered by a new outcome-matrix single-flight test.
+
+Journey evidence this round (live binary, hermetic per-run state roots):
+
+- SR6 native advance journey, natural-cap leg: phase 1 pass - 10 committed
+  advances with exact per-quote debits (10+15+20+20+25+25+30+30+35+35 karma),
+  Body 1->7 at the dwarf natural cap, funding rounds via the real Award Karma
+  route, then Core's refusal proven by state evidence (delivered row clicks open
+  no quote dialog at the cap; workspace revision stable across reload;
+  `06d-sr6-natural-cap-refusal.png`). Phase 2 fresh-process reopen pass (karma 20
+  persisted, rank persisted). Screenshots-OFF pass also green (gen-10 finding 4).
+  Presenter fix: the advance continuation now re-anchors its entry context after
+  each commit (previously any second advance in one session silently dropped).
+- Manual SR5 creation journey: phase 1 + phase 2 fresh-process reopen both pass
+  on the final tree. Runner hardening: native-language checkbox uses a disclosed
+  property-set fallback (a raised Click never toggles a CheckBox), resources
+  option cards route through the atomic click helper with routed fallback, and
+  the journey honors
+  `CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TIMEOUT_SECONDS` (both watchdogs) for the
+  long funding/advance cycles.
+
+Focused-lane test pass (13 November, current tree): 234/237 - the only failures
+are the R97/R99 classified debt pair (parity-audit generated receipt absent on
+Windows; legacy pendant bootstrap drift), unchanged from baseline. New tests
+added: priority reflow, quality blocker reasons, UX-06 single-flight.
+
+Delivery will follow the existing recipe+marker process; no new receipt framework.
 
 ## Controller7477 — Windows UI improvements, 12 November 2026
 

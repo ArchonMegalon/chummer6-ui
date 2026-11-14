@@ -290,8 +290,12 @@ internal static class MainWindowDesktopFileCoordinator
     }
 
     /// <summary>Saves a print receipt as a real PDF document composed from the print
-    /// HTML; HTML remains selectable in the picker. PDF compose failure falls back to
-    /// HTML-only with a notice instead of blocking the save.</summary>
+    /// HTML; HTML remains selectable in the picker. UX-02: PDF composition is
+    /// decided BEFORE the native Save dialog opens — when composition fails, the
+    /// picker offers HTML only (with an .html suggested filename), and a .pdf
+    /// destination is refused BEFORE the file is opened or truncated, so an
+    /// existing PDF is preserved exactly and PDF success is never reported for
+    /// HTML bytes.</summary>
     private static async Task<DesktopDownloadSaveResult> SavePrintPayloadAsync(
         IStorageProvider storageProvider,
         string pickerTitle,
@@ -305,6 +309,10 @@ internal static class MainWindowDesktopFileCoordinator
             return new DesktopDownloadSaveResult(DesktopFileOperationOutcome.Unavailable, Notice: null);
         }
 
+        // UX-02: decide the format BEFORE any destination is opened. Compose
+        // (or fail to compose) the PDF first; the failure reason travels to the
+        // user rather than being discovered after the destination file has
+        // already been truncated.
         string html = Encoding.UTF8.GetString(Convert.FromBase64String(contentBase64));
         bool pdfReady = WorkspacePrintPdfComposer.TryCompose(html, out byte[] pdfBytes, out string? composeError);
 
@@ -334,7 +342,7 @@ internal static class MainWindowDesktopFileCoordinator
         IStorageFile? targetFile = await storageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = pickerTitle,
-            SuggestedFileName = pdfReady ? baseName + WorkspacePrintPdfComposer.PdfFileExtension : suggestedFileName,
+            SuggestedFileName = pdfReady ? baseName + WorkspacePrintPdfComposer.PdfFileExtension : baseName + ".html",
             FileTypeChoices = choices,
             ShowOverwritePrompt = true
         });
@@ -346,7 +354,18 @@ internal static class MainWindowDesktopFileCoordinator
 
         string targetName = targetFile.Name;
         bool targetIsPdf = targetName.EndsWith(WorkspacePrintPdfComposer.PdfFileExtension, StringComparison.OrdinalIgnoreCase);
-        byte[] payloadBytes = targetIsPdf && pdfReady
+
+        // UX-02: a .pdf destination while PDF composition failed is refused
+        // BEFORE the destination file is opened or truncated. The existing
+        // file (if any) is preserved exactly, no HTML bytes are written under
+        // a .pdf name, and the compose failure reason is surfaced to the user.
+        if (targetIsPdf && !pdfReady)
+        {
+            string refusal = $"{CapitalizeNoticePrefix(noticePrefix)} was cancelled: PDF composition failed ({composeError}) and a .pdf destination was selected. The existing file was left unchanged. Save as HTML instead for a readable document.";
+            return new DesktopDownloadSaveResult(DesktopFileOperationOutcome.Cancelled, refusal);
+        }
+
+        byte[] payloadBytes = targetIsPdf
             ? pdfBytes
             : Convert.FromBase64String(contentBase64);
 
@@ -359,12 +378,15 @@ internal static class MainWindowDesktopFileCoordinator
         await output.WriteAsync(payloadBytes, ct);
         await output.FlushAsync(ct);
 
-        string notice = targetIsPdf && pdfReady
+        // UX-02: the notice always reflects the bytes actually written. PDF
+        // success is only reported for real PDF payloads.
+        string notice = targetIsPdf
             ? $"{CapitalizeNoticePrefix(noticePrefix)} as PDF document {targetName}."
-            : BuildSavedFileNotice(CapitalizeNoticePrefix(noticePrefix), suggestedFileName, targetName);
-        if (targetIsPdf && !pdfReady)
+            : BuildSavedFileNotice(CapitalizeNoticePrefix(noticePrefix), baseName + ".html", targetName);
+
+        if (!targetIsPdf && !pdfReady)
         {
-            notice += $" (PDF composition unavailable: {composeError}; wrote HTML instead.)";
+            notice += $" (PDF composition unavailable: {composeError}; saved as HTML.)";
         }
 
         return new DesktopDownloadSaveResult(DesktopFileOperationOutcome.Completed, notice);

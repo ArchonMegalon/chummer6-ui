@@ -376,24 +376,26 @@ public partial class CharacterCreationWizardControl : UserControl
                 FontWeight = global::Avalonia.Media.FontWeight.SemiBold,
                 FontSize = 12,
             });
-            var ranksPanel = new StackPanel
+            // UX-04: the rank cells must share the available width instead of a
+            // fixed 92 DIP each — at 960 DIP / 150% scaling a fixed row cannot
+            // fit all five ranks and the low ranks (e.g. E) clip out of reach.
+            var ranksPanel = new global::Avalonia.Controls.Primitives.UniformGrid
             {
-                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
-                Spacing = 3,
+                Columns = options.Count,
             };
             foreach (var option in options)
             {
                 var cellPanel = new StackPanel
                 {
-                    Width = 92,
                     Spacing = 2,
+                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
                 };
                 var rankButton = new Button
                 {
                     Content = option.Rank,
                     Tag = option,
-                    MinWidth = 92,
                     HorizontalContentAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
                     Padding = new global::Avalonia.Thickness(4, 1),
                 };
                 AutomationProperties.SetAutomationId(
@@ -865,6 +867,7 @@ public partial class CharacterCreationWizardControl : UserControl
             : active.Label;
         BackButton.IsEnabled = FindPreviousEnterableStep(state) is not null;
         _lastWizardState = state;
+        RefreshStartingCashVisibility();
         RenderPrioritySurface();
         ResumeStatusText.Text = state.Resume.Restored
             ? "Navigation restored for this exact workspace revision."
@@ -910,7 +913,7 @@ public partial class CharacterCreationWizardControl : UserControl
         {
             _startingCashRolled = false;
             _startingCashTotal = 0;
-            StartingCashPanel.IsVisible = false;
+            RefreshStartingCashVisibility();
             return;
         }
         if (sourceChanged || !_startingCashRolled)
@@ -918,7 +921,7 @@ public partial class CharacterCreationWizardControl : UserControl
             _startingCashTotal = RollStartingCash(source);
             _startingCashRolled = true;
         }
-        StartingCashPanel.IsVisible = true;
+        RefreshStartingCashVisibility();
         // Display shows the payable amount (dice sum x multiplier); the
         // choice payload in GetStartingCashChoice keeps submitting the raw
         // dice sum to Core, which applies the multiplier itself.
@@ -930,6 +933,30 @@ public partial class CharacterCreationWizardControl : UserControl
             source.Multiplier,
             _startingCashTotal,
             (long)_startingCashTotal * source.Multiplier);
+    }
+
+    /// <summary>
+    /// Projects StartingCashPanel visibility from the ACTIVE wizard step. The
+    /// starting-cash roll belongs to the finalize surface (see
+    /// <see cref="SetStartingCashState"/>); binding it on every overview bind
+    /// regardless of step squeezes the center card's scroll viewport on the
+    /// method step until priority rank buttons fall below the viewport clip
+    /// and real pointer input cannot reach them (gen-10 acceptance finding:
+    /// InputHitTest at the rank button's center returned the starting-cash
+    /// heading). Hiding the panel on non-finalize steps restores the scroll
+    /// row's space and genuine pointer reachability.
+    /// </summary>
+    private void RefreshStartingCashVisibility()
+    {
+        string? activeStepId = _lastWizardState?.Steps
+            .FirstOrDefault(step => step.IsSelected)?.StepId;
+        bool onFinalizeSurface = string.Equals(
+            activeStepId,
+            CharacterCreationWizardStepIds.Review,
+            StringComparison.Ordinal);
+        StartingCashPanel.IsVisible = onFinalizeSurface
+            && _startingCashSource is not null
+            && _startingCashRolled;
     }
 
     /// <summary>The rolled starting-cash choice, or null before the first roll.</summary>
@@ -1296,6 +1323,17 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetResourcesMutationBusy(bool busy)
     {
         _resourcesMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    /// <summary>
+    /// Manual resources-step status line (gear-draft hold reporting): the
+    /// zero-basket gear commit reports through the same legal option list as
+    /// the other domains, so failures are visible instead of silently swallowed.
+    /// </summary>
+    public void ResourcesStatus(string message)
+    {
+        _resourcesMutationStatus = message;
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 

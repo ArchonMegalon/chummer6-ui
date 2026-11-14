@@ -107,7 +107,9 @@ public sealed class CreationQualitiesReviewWindow : Window
             _session.RequireDisplayContext(_current());
             _prepared = prepared;
             _reviewText.Text = Describe(_prepared);
-            _status.Text = _prepared.Preview.CanConfirm ? "Review the additions and removals, then confirm." : "These choices are blocked. Adjust the selection before confirming.";
+            _status.Text = _prepared.Preview.CanConfirm
+                ? "Review the additions and removals, then confirm."
+                : "These choices are blocked: " + DescribeBlockers(_prepared) + " Adjust the selection before confirming.";
         }
         catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
         {
@@ -189,6 +191,29 @@ public sealed class CreationQualitiesReviewWindow : Window
             $"Negative quality Karma: {review.Before.Preview.NegativeQualityBudget.Used} → {review.Preview.NegativeQualityBudget.Used} / {review.Preview.NegativeQualityBudget.Total}",
             $"Karma remaining: {review.Before.Preview.KarmaRemaining} → {review.Preview.KarmaRemaining}",
             "Granted qualities remain unchanged: " + (review.Preview.GrantedQualities.Count == 0 ? "None" : string.Join(", ", review.Preview.GrantedQualities.Select(item => item.Name))),
-            review.Preview.Blockers.Count == 0 ? "No rule blockers." : "Core reports blockers for this selection; adjust it before confirming.");
+            DescribeBlockers(review));
+    }
+
+    /// <summary>
+    /// UX-05: Core Quality blocker reasons must be shown alongside the selection
+    /// and budget summary, not reduced to a generic "blocked" notice. Blockers
+    /// arrive from the preview itself and from the two quality budgets.
+    /// </summary>
+    internal static string DescribeBlockers(CharacterCreationQualitiesSelectionReview review)
+    {
+        if (review.Preview.Blockers.Count == 0
+            && review.Preview.PositiveQualityBudget.Blockers.Count == 0
+            && review.Preview.NegativeQualityBudget.Blockers.Count == 0)
+        {
+            return "No rule blockers.";
+        }
+
+        var reasons = new List<string>();
+        reasons.AddRange(review.Preview.Blockers);
+        reasons.AddRange(review.Preview.PositiveQualityBudget.Blockers);
+        reasons.AddRange(review.Preview.NegativeQualityBudget.Blockers);
+
+        return "Rule blockers reported by Core (" + reasons.Count + "): "
+            + string.Join("; ", reasons);
     }
 }
