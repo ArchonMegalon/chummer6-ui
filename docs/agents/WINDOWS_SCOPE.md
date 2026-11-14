@@ -35,7 +35,7 @@ on-host artifacts referenced by the generation-11 handoff heartbeat
    8c5aebec..., amended leg 605d6c62..., quadruple preserved end-to-end). This is
    setup, not completion: the amended-account carrier journey stays open with Root.
 5. Narrowed claims (gen-12 item 1 groundwork): every prior native claim is
-   reclassified in docs/agents/evidence/win006-t526-narrowed-claims.json. Key
+   reclassified in the retained worker register _scratch/gen11/t526/T526_NARROWED_CLAIMS.md (on-host, not recipe content). Key
    narrowings: the T519 SR5 journeys are diagnostic-class evidence bound to the
    win111-gen11 binary (fallback suppression disclosed, two sites logged
    SUPPRESSED); the win110 SR6 receipts bind to c64b5735... and carry a
@@ -46,14 +46,15 @@ on-host artifacts referenced by the generation-11 handoff heartbeat
 6. T520 remains blocked-with-evidence (Teable recvSzjawHsjHzHhbs9). The existing
    pending approval and installation stay unchanged per 7737; safe-locator-only
    coordination is respected.
-7. Core dependency (7737): the scoped Core selection-budget reader repair prepared
-   against 07511458 is not yet compiled/published/consumed. Journey projection waits
-   and total-attribute assertions are gated on it; recorded as a Core dependency in
-   the handoff heartbeat, not a Windows defect.
+7. Core dependency (7737), historical-at83d24d56: the scoped Core selection-budget
+   reader repair prepared against 07511458 was the gating dependency at the time of
+   the gen-11 handoff. Core173 has since merged (Core 80584eff, runtime 903be229)
+   and UI595 adopted it; the old unpublished-dependency blocker is removed. Native
+   H1/H2 acceptance on the integrated candidate remains open and is not claimed.
 
 No product source changed in this round; this is a scope/evidence recipe only.
-Preseal topology: this section + the evidence file are the sole recipe content on
-base 83d24d56d.
+Preseal topology: this section is the sole recipe content on base 83d24d56d; the
+narrowed-claims register stays on-host and is not part of the recipe.
 
 ## Controller7725 — Reviewed generation 11 corrections, 14 November 2026
 
