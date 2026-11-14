@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "24ff929533cb567ddcceb2534561cfda7318b532",
-  "baseTree": "1a2b3800c9dc9f29191bb17db4ee2c2c4e07b7d9",
+  "baseCommit": "e5874b7eaca47bfa7fac06fbea504d7ee8513abe",
+  "baseTree": "ae9027a8935adc572a92a0bfa5df7bc4f8e28520",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,62 +44,13 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "c72889c8b666195ceaf167cba89ddf9c25199396",
-      "path": ".github/workflows/pull-request-ci.yml",
-      "sha256": "bb2c9b2f53ccb5aed5afceeab89250c7c3fb4f080933abaa3e6cfa4cbc0e0b68",
-      "sizeBytes": 14412,
-      "status": "M"
-    },
-    {
-      "blob": "47bb82a542d03add9798385c3462718c82fec5aa",
+      "blob": "9a7dcc5e39c0544a1658278ccd311ea7f20fad52",
       "path": "docs/agents/WINDOWS_SCOPE.md",
-      "sha256": "9e6994c000f5b2d583325c1452c87db67f4e60f5543af9fc3f7ec9ff3db5c88d",
-      "sizeBytes": 73145,
-      "status": "M"
-    },
-    {
-      "blob": "28acbbe0a5797775a1e2a9fbd20cfd2f5fbd29fb",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "5456bd2351165b93c2815ea9892c32a3d8295e9b9192b6c75c6f465c5d636b61",
-      "sizeBytes": 74462,
-      "status": "M"
-    },
-    {
-      "blob": "5b0bb6a7b5ffdc67e6903356e64d211ae8a05c74",
-      "path": "tests/fixtures/keylocker-signer-v1/MANIFEST.json",
-      "sha256": "b267747b6010380b7dfdb613b627a84f3098ee670fa8ab0368f7803e35241b4b",
-      "sizeBytes": 2885,
-      "status": "M"
-    },
-    {
-      "blob": "efdf5cca65148de31f22ee15428d6a896d8152e1",
-      "path": "tests/test_keylocker_fixture_intake.py",
-      "sha256": "f76fc110ab98a23a84917b648b62c82e29d33220752c002afd9ee9ec55640c51",
-      "sizeBytes": 7096,
-      "status": "M"
-    },
-    {
-      "blob": "959fd4601ef25d3531218b775a62194fdb46b58e",
-      "path": "tests/test_preview_nightly_candidate_export.py",
-      "sha256": "a4bdd4995ca10663bda7da51e94a8e06f00f6058e16fcb4ae5327074c2dfddc6",
-      "sizeBytes": 60893,
-      "status": "M"
-    },
-    {
-      "blob": "f235553d145cc908e04f3bc3cd20ca5690792e2f",
-      "path": "tests/test_split_preseal_publication.py",
-      "sha256": "980d65217e5134aa6d12b9c0db8b87f1a3a8dadc7af0782e038f5e15047ed4a0",
-      "sizeBytes": 71772,
-      "status": "M"
-    },
-    {
-      "blob": "4c589e5b0b5c73e7c6fe62559975559d71977dcf",
-      "path": "tests/test_unsigned_windows_preview_native_evidence_workflows.py",
-      "sha256": "33c51f6571931e08725e667aa85b9d55390459e03b67c71e7b12911671552a42",
-      "sizeBytes": 72339,
+      "sha256": "253dfbded2cca777208bbbeb2db6d8c77d42b929fd1ca5c02ca53fe2450c8cbc",
+      "sizeBytes": 82820,
       "status": "M"
     }
   ],
-  "recipeTree": "9fc4196235b0c29e6b486799ee650f02e9b0b62b",
+  "recipeTree": "200a32d69c1a6333e19aa8185759328368ec6195",
   "releaseClaim": false
 }
