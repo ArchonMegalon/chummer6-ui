@@ -151,6 +151,331 @@ public sealed class CareerRewardsUiTests
         });
     }
 
+    [TestMethod]
+    public void Inline_apply_refusal_keeps_dialog_open_with_entry_intact_and_requires_reconfirm()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new() { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            CareerManualKarmaEditorState state = MakeKarmaEditor();
+            int applyCount = 0;
+            int reprepareCount = 0;
+            var dialog = new CareerRewardsWindow(
+                isKarmaMode: true,
+                state,
+                null,
+                applyKarma: (request, _) =>
+                {
+                    applyCount++;
+                    if (applyCount == 1)
+                    {
+                        return Task.FromResult<string?>("expected content revision 9 but the workspace is at 10");
+                    }
+
+                    return Task.FromResult<string?>(null);
+                },
+                applyNuyen: null,
+                reprepare: _ =>
+                {
+                    reprepareCount++;
+                    CareerManualKarmaEditorState? freshKarma = MakeKarmaEditor(revision: 10L);
+                    return Task.FromResult((freshKarma, (CareerManualNuyenEditorState?)null));
+                });
+            Task<object?> dialogTask = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+
+            TextBox amount = FindByAutomation<TextBox>(dialog, "career-rewards-amount")!;
+            amount.Text = "7";
+            TextBox reason = FindByAutomation<TextBox>(dialog, "career-rewards-reason")!;
+            reason.Text = "Refused run";
+            RadioButton spend = FindByAutomation<RadioButton>(dialog, "career-rewards-spend")!;
+            spend.IsChecked = true;
+
+            Button apply = FindByAutomation<Button>(dialog, "career-rewards-apply")!;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            // First press: refused. The dialog must stay open, keep the entry,
+            // disclose the reason and swap in the freshly prepared state.
+            Assert.AreEqual(1, applyCount);
+            Assert.AreEqual(1, reprepareCount, "a refusal must re-prepare a fresh editor state.");
+            Assert.IsFalse(dialogTask.IsCompleted, "a refused apply must not close the dialog.");
+            Assert.AreEqual("7", amount.Text, "the refused amount must be retained.");
+            Assert.AreEqual("Refused run", reason.Text, "the refused notes must be retained.");
+            Assert.IsTrue(spend.IsChecked == true, "the refused direction must be retained.");
+            TextBlock balance = FindByAutomation<TextBlock>(dialog, "career-rewards-balance")!;
+            string refusalText = balance.Text ?? string.Empty;
+            Assert.IsTrue(refusalText.Contains("Not recorded:"), $"status line must show the refusal, got: {refusalText}");
+            Assert.IsTrue(refusalText.Contains("expected content revision 9"), $"status line must show the reason, got: {refusalText}");
+            Assert.IsTrue(refusalText.Contains("press Record again"), $"status line must require an explicit re-confirm, got: {refusalText}");
+            Assert.AreEqual("expected content revision 9 but the workspace is at 10", dialog.LastRefusal);
+
+            // Second press: explicit re-confirm against the fresh state.
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.AreEqual(2, applyCount);
+            Assert.AreEqual(1, reprepareCount, "a successful re-confirm must not re-prepare again.");
+            WaitCompletion(dialogTask, timeoutMs: 3000);
+            var outcome = (CareerRewardsWindow.CareerKarmaAwardOutcome?)dialogTask.GetAwaiter().GetResult();
+            Assert.IsNotNull(outcome, "the re-confirmed apply must close with the outcome.");
+            Assert.AreEqual(CharacterCareerManualKarmaAction.Spend, outcome!.Request.Action);
+            Assert.AreEqual(7, outcome.Request.Amount);
+            Assert.AreEqual("Refused run", outcome.Request.Reason);
+            Assert.AreEqual(10L, outcome.Request.ExpectedContentRevision, "the re-confirm must bind to the freshly prepared revision.");
+            Assert.IsNull(dialog.LastRefusal, "a successful apply clears the refusal.");
+
+            owner.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+
+    [TestMethod]
+    public void Inline_apply_uncertain_outcome_disables_record_and_never_invites_reconfirm()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new() { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            int applies = 0;
+            int reprepares = 0;
+            bool uncertain = true;
+            var dialog = new CareerRewardsWindow(
+                isKarmaMode: true,
+                MakeKarmaEditor(),
+                null,
+                applyKarma: (_, _) => { applies++; return Task.FromResult<string?>("commit reply lost"); },
+                applyNuyen: null,
+                reprepare: _ => { reprepares++; return Task.FromResult(((CareerManualKarmaEditorState?)null, (CareerManualNuyenEditorState?)null)); },
+                contextIsCurrent: () => true,
+                peekUncertain: () => uncertain);
+            Task<object?> dialogTask = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+
+            FindByAutomation<TextBox>(dialog, "career-rewards-amount")!.Text = "7";
+            FindByAutomation<TextBox>(dialog, "career-rewards-reason")!.Text = "Uncertain run";
+            Button apply = FindByAutomation<Button>(dialog, "career-rewards-apply")!;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.AreEqual(1, applies);
+            Assert.IsFalse(dialogTask.IsCompleted, "an uncertain outcome must keep the dialog open.");
+            Assert.IsFalse(apply.IsEnabled, "Record must stay disabled after an uncertain outcome.");
+            Assert.IsTrue(dialog.UncertainOutcome);
+            Assert.AreEqual("commit reply lost", dialog.LastRefusal);
+            Assert.AreEqual(0, reprepares, "an uncertain outcome must not re-prepare a fresh editor state.");
+            string status = FindByAutomation<TextBlock>(dialog, "career-rewards-balance")!.Text ?? string.Empty;
+            Assert.IsTrue(status.Contains("Uncertain result:"), $"status must disclose uncertainty, got: {status}");
+            Assert.IsTrue(status.Contains("may already be recorded"), $"status must warn about a possible commit, got: {status}");
+            Assert.IsFalse(status.Contains("press Record again"), "an uncertain outcome must never invite a re-confirm.");
+
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(1, applies, "a disabled Record must not dispatch again.");
+
+            dialog.Close();
+            owner.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+    [TestMethod]
+    public void Inline_apply_uncertain_nuyen_outcome_keeps_reconciliation_read_only()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new() { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            int applies = 0;
+            bool uncertain = true;
+            var dialog = new CareerRewardsWindow(
+                isKarmaMode: false,
+                MakeKarmaEditor(),
+                MakeNuyenEditor(4200m),
+                applyKarma: null,
+                applyNuyen: (_, _) => { applies++; return Task.FromResult<string?>("commit reply lost"); },
+                reprepare: null,
+                contextIsCurrent: () => true,
+                peekUncertain: () => uncertain);
+            Task<object?> dialogTask = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+
+            FindByAutomation<TextBox>(dialog, "career-rewards-amount")!.Text = "800";
+            Button apply = FindByAutomation<Button>(dialog, "career-rewards-apply")!;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.AreEqual(1, applies);
+            Assert.IsFalse(dialogTask.IsCompleted, "an uncertain outcome must keep the dialog open.");
+            Assert.IsFalse(apply.IsEnabled, "Record must stay disabled after an uncertain outcome.");
+            Assert.IsTrue(dialog.UncertainOutcome);
+            string status = FindByAutomation<TextBlock>(dialog, "career-rewards-balance")!.Text ?? string.Empty;
+            Assert.IsTrue(status.Contains("Uncertain result:"), $"status must disclose uncertainty, got: {status}");
+            Assert.IsFalse(status.Contains("press Record again"), "an uncertain outcome must never invite a re-confirm.");
+
+            dialog.Close();
+            owner.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+    [TestMethod]
+    public void Inline_apply_success_closes_with_outcome_on_first_press()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new() { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            CareerManualKarmaEditRequest? captured = null;
+            var dialog = new CareerRewardsWindow(
+                isKarmaMode: true,
+                MakeKarmaEditor(),
+                null,
+                applyKarma: (request, _) =>
+                {
+                    captured = request;
+                    return Task.FromResult<string?>(null);
+                },
+                applyNuyen: null,
+                reprepare: null);
+            Task<object?> dialogTask = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+
+            TextBox amount = FindByAutomation<TextBox>(dialog, "career-rewards-amount")!;
+            amount.Text = "3";
+            Button apply = FindByAutomation<Button>(dialog, "career-rewards-apply")!;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+
+            WaitCompletion(dialogTask, timeoutMs: 3000);
+            var outcome = (CareerRewardsWindow.CareerKarmaAwardOutcome?)dialogTask.GetAwaiter().GetResult();
+            Assert.IsNotNull(outcome, "an accepted inline apply must close with the outcome.");
+            Assert.AreEqual("+3 karma", outcome!.DisplayLabel);
+            Assert.IsNotNull(captured);
+            Assert.AreEqual(3, captured!.Amount);
+
+            owner.Close();
+            Dispatcher.UIThread.RunJobs();
+        });
+    }
+
+    [TestMethod]
+    public void Inline_apply_is_single_flight_until_refusal_reprepare_finishes()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new();
+            owner.Show();
+            var applyGate = new TaskCompletionSource<string?>();
+            var prepareGate = new TaskCompletionSource<(CareerManualKarmaEditorState?, CareerManualNuyenEditorState?)>();
+            int applies = 0, prepares = 0;
+            long appliedRevision = 0;
+            var dialog = new CareerRewardsWindow(true, MakeKarmaEditor(), null,
+                (request, _) =>
+                {
+                    appliedRevision = request.ExpectedContentRevision;
+                    return ++applies == 1 ? applyGate.Task : Task.FromResult<string?>(null);
+                }, null,
+                _ => { prepares++; return prepareGate.Task; });
+            Task<object?> result = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            FindByAutomation<TextBox>(dialog, "career-rewards-amount")!.Text = "7";
+            Button apply = FindByAutomation<Button>(dialog, "career-rewards-apply")!;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual(1, applies);
+            Assert.IsFalse(apply.IsEnabled);
+            applyGate.SetResult("stale revision");
+            Dispatcher.UIThread.RunJobs();
+            Assert.AreEqual(1, prepares);
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual(1, applies, "reprepare is part of the same flight");
+            prepareGate.SetResult((MakeKarmaEditor(10), null));
+            Dispatcher.UIThread.RunJobs();
+            Assert.IsTrue(apply.IsEnabled);
+            Assert.IsFalse(result.IsCompleted);
+            Assert.AreEqual(1, applies, "refresh must never replay the entry");
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            WaitCompletion(result, 3000);
+            Assert.AreEqual(2, applies);
+            Assert.AreEqual(10L, appliedRevision);
+            owner.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Closed_rewards_dialog_does_not_reprepare_or_dispatch_again()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new();
+            owner.Show();
+            var pending = new TaskCompletionSource<string?>();
+            int applies = 0, prepares = 0;
+            var dialog = new CareerRewardsWindow(true, MakeKarmaEditor(), null,
+                (_, _) => { applies++; return pending.Task; }, null,
+                _ =>
+                {
+                    prepares++;
+                    return Task.FromResult(((CareerManualKarmaEditorState?)MakeKarmaEditor(10), (CareerManualNuyenEditorState?)null));
+                });
+            _ = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            FindByAutomation<TextBox>(dialog, "career-rewards-amount")!.Text = "7";
+            Button apply = FindByAutomation<Button>(dialog, "career-rewards-apply")!;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            dialog.Close();
+            pending.SetResult("stale revision");
+            Dispatcher.UIThread.RunJobs();
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual(1, applies);
+            Assert.AreEqual(0, prepares);
+            owner.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Refusal_cannot_rebind_retained_input_to_another_runner_or_owner()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new();
+            owner.Show();
+            bool current = true;
+            int applies = 0;
+            var dialog = new CareerRewardsWindow(true, MakeKarmaEditor(), null,
+                (_, _) => { applies++; return Task.FromResult<string?>("stale runner"); }, null,
+                _ => Task.FromResult(((CareerManualKarmaEditorState?)(MakeKarmaEditor(10) with
+                    { WorkspaceId = new CharacterWorkspaceId("another-runner") }), (CareerManualNuyenEditorState?)null)),
+                () => current);
+            Task<object?> result = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            TextBox amount = FindByAutomation<TextBox>(dialog, "career-rewards-amount")!;
+            amount.Text = "7";
+            Button apply = FindByAutomation<Button>(dialog, "career-rewards-apply")!;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.IsFalse(result.IsCompleted);
+            Assert.AreEqual("7", amount.Text);
+            StringAssert.Contains(FindByAutomation<TextBlock>(dialog, "career-rewards-balance")!.Text!, "original runner");
+            current = false;
+            apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.AreEqual(1, applies, "an owner transition requires a new editor gesture");
+            dialog.Close();
+            owner.Close();
+        });
+    }
+
     // ----- helpers -----
 
     private static CareerRewardsWindow.CareerKarmaAwardOutcome? _capturedKarmaOutcome;
@@ -193,10 +518,10 @@ public sealed class CareerRewardsUiTests
         return _capturedKarmaOutcome;
     }
 
-    private static CareerManualKarmaEditorState MakeKarmaEditor()
+    private static CareerManualKarmaEditorState MakeKarmaEditor(long revision = 9L)
         => new(
             new CharacterWorkspaceId("workspace-under-test"),
-            ContentRevision: 9L,
+            ContentRevision: revision,
             Karma: new CharacterCareerManualKarmaState(
                 AvailableKarma: 30,
                 AvailableNuyen: 15000m,

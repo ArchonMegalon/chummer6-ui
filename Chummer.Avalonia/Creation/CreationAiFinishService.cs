@@ -470,6 +470,52 @@ public sealed class CreationAiFinishService
         return new("gear", confirm.Value is not null, confirm.Outcome, confirm.Blockers.ToImmutableArray());
     }
 
+    /// <summary>
+    /// Commits the honest zero-basket gear draft ("declined to purchase") for a
+    /// manual SR5 creation workspace. Core finalization requires every draft
+    /// domain to be saved, but the SR5 wizard surfaces gear only through AI
+    /// completion, so a manual creator could never hold the gear domain and
+    /// finalization stayed permanently blocked. Uses the same owner-bound Core
+    /// gear service as ApplyGear: explicit preview + confirmation, deterministic
+    /// idempotency key (replay-safe per workspace), no synthetic funding. An
+    /// already-held draft is reported as success without re-confirming.
+    /// </summary>
+    public AiFinishDomainResult EnsureManualGearDraftHeld(string workspaceId)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceId))
+        {
+            throw new ArgumentException("Workspace id required.", nameof(workspaceId));
+        }
+
+        var expectedOwner = _ownerContextAccessor.Capture();
+        if (expectedOwner == default)
+        {
+            return new("gear", false, "no-owner-context", ImmutableArray<string>.Empty);
+        }
+        var service = new OwnerBoundCharacterCreationGearService(_store, _ownerContextAccessor, _resolver);
+        var state = service.Load(expectedOwner, new CharacterCreationGearLoadRequest(new CharacterWorkspaceId(workspaceId)));
+        if (state.Value is null)
+        {
+            return new("gear", false, state.Outcome, state.Blockers.ToImmutableArray());
+        }
+
+        if (state.Value.PendingDraft is not null)
+        {
+            return new("gear", true, "already-held", ImmutableArray<string>.Empty);
+        }
+
+        var preview = service.Preview(expectedOwner, new(state.Value.Binding, Array.Empty<CharacterCreationGearSelection>()));
+        if (preview.Value is null || !preview.Value.CanConfirm)
+        {
+            return new("gear", false, preview.Outcome, preview.Blockers.ToImmutableArray());
+        }
+
+        var confirm = service.Confirm(expectedOwner, new(
+            preview.Value.Binding, Array.Empty<CharacterCreationGearSelection>(), preview.Value.PreviewDigest,
+            "manual-gear-hold:" + workspaceId, true));
+        return new("gear", confirm.Value is not null, confirm.Outcome, confirm.Blockers.ToImmutableArray());
+    }
+
     // Stable command identities are retained for inspection, never blind replay.
     private static string OperationKey(string operationId, string domain) =>
         KeyPrefix + domain + ":" + operationId;

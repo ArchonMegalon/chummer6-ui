@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 using Chummer.Application.BuildGhost;
 using Chummer.Application.Characters;
 using Chummer.Application.Content;
@@ -248,7 +249,9 @@ public sealed partial class InProcessChummerClient : IChummerClient, IWorkspaceO
     {
         ct.ThrowIfCancellationRequested();
         return _workspaceOperations.Execute(
-            () => WithOwnerLease(expectedOwner, owner => _workspaceService.GetOverview(owner, id)), ct);
+            () => WithOwnerLease(
+                expectedOwner,
+                owner => _workspaceService.GetOverview(owner, id)), ct);
     }
 
     public Task<AccountCampaignSummary?> GetAccountCampaignSummaryAsync(CancellationToken ct)
