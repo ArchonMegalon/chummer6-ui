@@ -1,3 +1,60 @@
+## Friday-Worker — Generation 12 Windows readiness report, 14 November 2026
+
+Worker status against the generation-12 assignment and clarification 7737, on base
+main 83d24d56d49705057b2fa0a3c9a8537e889c486c. All evidence paths below are
+on-host artifacts referenced by the generation-11 handoff heartbeat
+(win-gen11-handoff-20261114-gen12-heartbeat-01, Teable recS0nBwQqH3ZTRhvoa).
+
+1. Generation-11 closure. The worker's consolidated recipe 2771d574f (sole direct
+   child of base c9552419d, 33 allowlisted paths) with fresh marker 9e0b98765 and
+   lock-seal merge 2dcb813cfa was validated (preseal_validated,
+   publicationAuthorized=false) and opened as PR #593, then closed as superseded:
+   the controller's own generation-11 publication (c4a553943 + 83d24d56d) landed
+   first with the same T524/T525 semantics. The two local product layout fixes the
+   worker carried (StartingCashPanel Review-step visibility gate; FinalizeStatusText
+   scroll row) are byte-identical on landed main - no further disposition needed.
+2. Qualification on landed main: focused MSTest lanes CareerRewardsUi 31/31,
+   DesktopInstallLinkingOutcomeMatrix 39/39, SR6 continuation 16/16
+   (runner _scratch/gen11/t517_lanes.py, receipt _scratch/gen11/t517_lanes_out.txt).
+3. Distributable (gen-12 item 5): a candidate was produced from main 83d24d56d -
+   installer e71dfd92... (174,765,955 B) + payload ddb610ca... (58,031,561 B), stamp
+   1.0.0-preview.20261114.83d24d56, payload gate PASS (bundled mode after the
+   CHUMMER6PAYLOAD1 append; EnableCompressionInSingleFile added to satisfy the
+   128 MiB entry ceiling), bundled content 331/331 byte-for-byte against core
+   07511458 (git-blob comparison), portable persistence smoke PASS (workspace
+   19ee5bb2...). Inventory: _scratch/t512/DISTRIBUTABLE_INVENTORY.md (gen-10 copy
+   retained as *_gen10.*). Selection for the private artifact route is the next
+   step and stays within the worker's staging authority; Root owns publication.
+4. T522 handoff (gen-12 item 4): the genuine T519 native journey character (Mouse
+   Journey Runner, workspace 3827e841..., SR5/NativeXml/1/sr5-chum5-xml, revision 8,
+   career karma 11->16 through the genuine dialog) is staged with a synthetic amend
+   package (alias MouseRoute -> MouseRoute-Android in the
+   WorkspaceExportResult.Receipt shape) at _scratch/t513/character_handoff/ +
+   _scratch/t513/T522_HANDOFF.md. Both payloads were proven to import and save
+   through the real gen-11 app on the distributable candidate (base leg workspace
+   8c5aebec..., amended leg 605d6c62..., quadruple preserved end-to-end). This is
+   setup, not completion: the amended-account carrier journey stays open with Root.
+5. Narrowed claims (gen-12 item 1 groundwork): every prior native claim is
+   reclassified in docs/agents/evidence/win006-t526-narrowed-claims.json. Key
+   narrowings: the T519 SR5 journeys are diagnostic-class evidence bound to the
+   win111-gen11 binary (fallback suppression disclosed, two sites logged
+   SUPPRESSED); the win110 SR6 receipts bind to c64b5735... and carry a
+   fixture-only funding leg plus a qualitative rank assertion, so they make no
+   current-candidate claim; no mouse-first journey has run against the T521
+   distributable. H1/H2 strict ordinary-input acceptance remains open and requires
+   the Core selection-budget reader repair (7737) for the projection waits.
+6. T520 remains blocked-with-evidence (Teable recvSzjawHsjHzHhbs9). The existing
+   pending approval and installation stay unchanged per 7737; safe-locator-only
+   coordination is respected.
+7. Core dependency (7737): the scoped Core selection-budget reader repair prepared
+   against 07511458 is not yet compiled/published/consumed. Journey projection waits
+   and total-attribute assertions are gated on it; recorded as a Core dependency in
+   the handoff heartbeat, not a Windows defect.
+
+No product source changed in this round; this is a scope/evidence recipe only.
+Preseal topology: this section + the evidence file are the sole recipe content on
+base 83d24d56d.
+
 ## Controller7725 — Reviewed generation 11 corrections, 14 November 2026
 
 This integration retains Friday PR #591's reviewed work and corrects the two
