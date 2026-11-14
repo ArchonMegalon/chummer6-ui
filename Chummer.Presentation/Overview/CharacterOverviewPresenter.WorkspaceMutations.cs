@@ -4703,7 +4703,7 @@ public sealed partial class CharacterOverviewPresenter
         Action? onDispatch = null,
         Action<CommandResult<WorkspaceRevisionReceipt>>? observeCanonical = null,
         string? requiredRulesetId = null,
-        Action<WorkspaceDocument>? observeReplacement = null)
+        Func<WorkspaceDocument, bool>? observeReplacement = null)
     {
         ArgumentNullException.ThrowIfNull(mutateXml);
         CharacterOverviewState originalState = State;
@@ -4830,7 +4830,18 @@ public sealed partial class CharacterOverviewPresenter
                         State = read.Value.Document.State with { Payload = mutatedXml }
                     };
                     committedDocument = replacement;
-                    observeReplacement?.Invoke(replacement);
+                    // The replacement must be durably recorded BEFORE the dispatch: if the
+                    // recovery store refuses, the intended bytes would be unattributable
+                    // after a restart. Abort with a definite pre-dispatch refusal; zero
+                    // mutation calls follow.
+                    if (observeReplacement is { } observer && !observer(replacement))
+                    {
+                        return new CommandResult<WorkspaceRevisionReceipt>(
+                            false,
+                            null,
+                            CareerRewardRecoveryMessages.PreDispatchRecoveryRefusal,
+                            WorkspaceOperationOutcome.Conflict);
+                    }
                     CommandResult<WorkspaceRevisionReceipt> replacementResult = await (boundClient is null
                         ? _client.ReplaceWorkspaceDocumentAsync(
                             expectedWorkspaceId, expectedContentRevision, replacement, token)

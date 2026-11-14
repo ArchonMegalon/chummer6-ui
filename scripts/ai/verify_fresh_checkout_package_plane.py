@@ -48,14 +48,14 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "1ed2e76bbd32c125fd7f3f774d2389eece4a2b62",
+        "blob": "2806347c6a3f3f86c6634ba090996939620c83c6",
         "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
-        "rawSizeBytes": 73211,
-        "semanticCanonicalSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
-        "semanticCanonicalSizeBytes": 73211,
+        "rawSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "rawSizeBytes": 73930,
+        "semanticCanonicalSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "semanticCanonicalSizeBytes": 73930,
         "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71"
     },
     "producerLock": {
@@ -310,7 +310,7 @@ FOCUSED_OWNER_SHELL_MINIMUM_TESTS = 26
 # Owner-regression classes require separate minimum gates: a missing class
 # must not be hidden by another class's data rows or the full-suite total.
 FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
-    ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 76),
+    ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 82),
     ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 27),
     ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
     ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),
@@ -330,7 +330,8 @@ FOCUSED_EXISTING_OWNER_REGRESSION_TESTS = (
 # Local adoption adds three cache/roster cases and four same-ID overview cases.
 # Two Lifestyle admission regressions cover missing/changed runtime owner stamps.
 # Finish-character links 102 completion cases and adds nine overview cases.
-FULL_PRODUCT_TEST_MINIMUM_TESTS = 950
+# Core attribute-total preservation adds six SR5/SR6 build and overview cases.
+FULL_PRODUCT_TEST_MINIMUM_TESTS = 956
 PRODUCT_TEST_ASSEMBLY = (
     "Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"
 )
@@ -399,6 +400,7 @@ EXPECTED_TEST_COMPILE_ITEMS = {
     "../Chummer.Tests/InProcessWorkspaceContinuationTests.cs": "InProcessWorkspaceContinuationTests.cs",
     "../Chummer.Tests/InProcessCareerQualityTests.cs": "InProcessCareerQualityTests.cs",
     "../Chummer.Tests/ServiceCollectionDesktopRuntimeExtensionsTests.cs": "ServiceCollectionDesktopRuntimeExtensionsTests.cs",
+    "../Chummer.Tests/Presentation/CareerRewardRecoveryStoreTests.cs": "Presentation/CareerRewardRecoveryStoreTests.cs",
     "../Chummer.Tests/InProcessShellOwnerContextTests.cs": "InProcessShellOwnerContextTests.cs",
     "../Chummer.Tests/Presentation/WorkspaceRecoveryOwnerTests.cs": "Presentation/WorkspaceRecoveryOwnerTests.cs",
     "../Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs": "InProcessChummerClientRulesetPluginTests.cs",
@@ -527,15 +529,20 @@ EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
         "Chummer.Avalonia/MainWindow.CareerEdit.cs",
         "Chummer.Avalonia/MainWindow.InteractionCoordinator.cs",
         "Chummer.Avalonia/MainWindow.axaml.cs",
+        "Chummer.Desktop.Runtime/FileCareerRewardRecoveryStore.cs",
         "Chummer.Desktop.Runtime/FileSr6CareerAttributeRecoveryStore.cs",
         "Chummer.Desktop.Runtime/GrantBoundRoamingSyncLedger.cs",
         "Chummer.Desktop.Runtime/InProcessChummerClient.Sr6CareerAttribute.cs",
         "Chummer.Presentation/IChummerClient.cs",
+        "Chummer.Presentation/Overview/CareerRewardRecoverySurface.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.CareerRewardRecovery.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.CareerRewards.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Sr6Recovery.cs",
         "Chummer.Presentation/Overview/ICharacterOverviewPresenter.cs",
         "Chummer.Presentation/Overview/Sr6CareerAttributeAdvanceSurface.cs",
         "Chummer.Tests/GrantBoundDesktopWorkspaceRoamingSyncTests.cs",
         "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
+        "Chummer.Tests/Presentation/CareerRewardRecoveryStoreTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityFixtures.cs",
         "Chummer.Tests/Presentation/DesktopMouseFirstJourneyManualModeTests.cs",
         "Chummer.Tests/Presentation/Sr6CareerAttributeAdvanceFlowTests.cs",

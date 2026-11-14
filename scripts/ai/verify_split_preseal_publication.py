@@ -172,7 +172,18 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Desktop.Runtime/InProcessChummerClient.cs",
         "Chummer.Desktop.Runtime/ServiceCollectionDesktopRuntimeExtensions.cs",
         "Chummer.Presentation/IChummerClient.cs",
-        # Controller PR591 review: typed reward outcome and owner-bound, single-flight
+
+        # R114 (2026-11-14): controller work order 7803 - reward restart recovery
+# repair: production wiring via ReconcileCareerRewardAsync durable fallback,
+# durable-until-acknowledged resolved state, pre-dispatch replacement
+# persistence gate, execution fence on unchanged revisions, supplied-owner
+# binding, and the store/lane test membership for the recovery contract.
+        "Chummer.Desktop.Runtime/FileCareerRewardRecoveryStore.cs",
+        "Chummer.Presentation/Overview/CareerRewardRecoverySurface.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.CareerRewardRecovery.cs",
+        "Chummer.Presentation/Overview/CharacterOverviewPresenter.cs",
+        "Chummer.Tests/Presentation/CareerRewardRecoveryStoreTests.cs",
+        "Chummer.Tests/ServiceCollectionDesktopRuntimeExtensionsTests.cs",        # Controller PR591 review: typed reward outcome and owner-bound, single-flight
         # same-session reconciliation. Exact paths only; no publication authority.
         "Chummer.Presentation/Overview/CareerManualKarmaEditRequest.cs",
         "Chummer.Presentation/Overview/CareerManualNuyenEditRequest.cs",
@@ -577,14 +588,14 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "1ed2e76bbd32c125fd7f3f774d2389eece4a2b62",
+        "blob": "2806347c6a3f3f86c6634ba090996939620c83c6",
         "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
-        "rawSizeBytes": 73211,
-        "semanticCanonicalSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
-        "semanticCanonicalSizeBytes": 73211,
+        "rawSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "rawSizeBytes": 73930,
+        "semanticCanonicalSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "semanticCanonicalSizeBytes": 73930,
         "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71"
     },
     "producerLock": {

@@ -86,10 +86,12 @@ public sealed partial class CharacterOverviewPresenter :
         ICharacterCreationBootstrapService? characterCreationBootstrapService = null,
         ICharacterCreationBootstrapActivationService? characterCreationBootstrapActivationService = null,
         IOwnerBoundCharacterCreationBootstrapService? ownerBoundCharacterCreationBootstrapService = null,
-        ISr6CareerAttributeRecoveryStore? sr6CareerAttributeRecoveryStore = null)
+        ISr6CareerAttributeRecoveryStore? sr6CareerAttributeRecoveryStore = null,
+        ICareerRewardRecoveryStore? careerRewardRecoveryStore = null)
     {
         _client = client;
         _sr6CareerAttributeRecoveryStore = sr6CareerAttributeRecoveryStore ?? new UnavailableSr6CareerAttributeRecoveryStore();
+        _careerRewardRecoveryStore = careerRewardRecoveryStore ?? new UnavailableCareerRewardRecoveryStore();
         IWorkspaceSessionManager manager = workspaceSessionManager ?? new WorkspaceSessionManager();
         _workspaceSessionPresenter = workspaceSessionPresenter ?? new WorkspaceSessionPresenter(manager);
         _dialogFactory = dialogFactory ?? new DesktopDialogFactory();
