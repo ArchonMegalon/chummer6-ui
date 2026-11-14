@@ -21,7 +21,10 @@ public sealed record CareerManualKarmaEditRequest(
     DateTime ExpenseDateLocal,
     bool Refund,
     bool KarmaNuyenExchange,
-    bool ForceCareerVisible);
+    bool ForceCareerVisible)
+{
+    public Guid OperationId { get; init; } = Guid.NewGuid();
+}
 
 internal static class CareerManualKarmaEditorProjector
 {

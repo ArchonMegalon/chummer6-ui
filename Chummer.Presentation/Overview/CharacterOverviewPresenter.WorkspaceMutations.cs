@@ -2718,6 +2718,9 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        CharacterOverviewState originalState = State;
+        OwnerContextStamp? originalOwner = originalState.DisplayOwnerContext;
+        long generation = CaptureDisplayGeneration();
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         long expectedContentRevision = State.ContentRevision;
         if (currentWorkspace is null || expectedContentRevision <= 0)
@@ -2726,11 +2729,16 @@ public sealed partial class CharacterOverviewPresenter
             return null;
         }
 
+        bool Current() => IsDisplayGenerationCurrent(generation)
+            && IsOriginalPersistenceOwnerCurrent(originalOwner)
+            && State.WorkspaceId == currentWorkspace && State.ContentRevision == expectedContentRevision;
+        if (!Current()) return null;
         try
         {
-            CommandResult<WorkspaceDocumentSnapshot> read = await _client
-                .GetWorkspaceAsync(currentWorkspace.Value, ct)
-                .ConfigureAwait(false);
+            CommandResult<WorkspaceDocumentSnapshot> read = await (originalOwner is { } owner
+                ? ((IOwnerBoundWorkspaceMutationClient)_client).GetWorkspaceAsync(owner, currentWorkspace.Value, ct)
+                : _client.GetWorkspaceAsync(currentWorkspace.Value, ct)).ConfigureAwait(false);
+            if (!Current()) return null;
             if (!read.Success || read.Value is null)
             {
                 Publish(State with { Error = read.Error ?? "Dossier could not be read for manual-Karma editing." });
@@ -2753,7 +2761,8 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            if (!Current()) return null;
+            if (!TryPublishDisplayTransition(generation, State with { Error = null }, originalState)) return null;
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2762,13 +2771,18 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch (Exception exception)
         {
-            Publish(State with { Error = exception.Message });
+            if (Current()) TryPublishDisplayTransition(generation, State with { Error = exception.Message }, originalState);
             return null;
         }
     }
 
     public async Task ApplyCareerManualKarmaEditAsync(CareerManualKarmaEditRequest request, CancellationToken ct)
     {
+        if (State.DisplayOwnerContext is { } owner)
+        {
+            await ApplyCareerManualKarmaEditAsync(request, owner, ct).ConfigureAwait(false);
+            return;
+        }
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ArgumentNullException.ThrowIfNull(request);
@@ -2791,6 +2805,9 @@ public sealed partial class CharacterOverviewPresenter
     {
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
+        CharacterOverviewState originalState = State;
+        OwnerContextStamp? originalOwner = originalState.DisplayOwnerContext;
+        long generation = CaptureDisplayGeneration();
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         long expectedContentRevision = State.ContentRevision;
         if (currentWorkspace is null || expectedContentRevision <= 0)
@@ -2799,11 +2816,16 @@ public sealed partial class CharacterOverviewPresenter
             return null;
         }
 
+        bool Current() => IsDisplayGenerationCurrent(generation)
+            && IsOriginalPersistenceOwnerCurrent(originalOwner)
+            && State.WorkspaceId == currentWorkspace && State.ContentRevision == expectedContentRevision;
+        if (!Current()) return null;
         try
         {
-            CommandResult<WorkspaceDocumentSnapshot> read = await _client
-                .GetWorkspaceAsync(currentWorkspace.Value, ct)
-                .ConfigureAwait(false);
+            CommandResult<WorkspaceDocumentSnapshot> read = await (originalOwner is { } owner
+                ? ((IOwnerBoundWorkspaceMutationClient)_client).GetWorkspaceAsync(owner, currentWorkspace.Value, ct)
+                : _client.GetWorkspaceAsync(currentWorkspace.Value, ct)).ConfigureAwait(false);
+            if (!Current()) return null;
             if (!read.Success || read.Value is null)
             {
                 Publish(State with { Error = read.Error ?? "Dossier could not be read for manual-Nuyen editing." });
@@ -2826,7 +2848,8 @@ public sealed partial class CharacterOverviewPresenter
                 currentWorkspace.Value,
                 expectedContentRevision,
                 _characterSourceDataResolver);
-            Publish(State with { Error = null });
+            if (!Current()) return null;
+            if (!TryPublishDisplayTransition(generation, State with { Error = null }, originalState)) return null;
             return editor;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -2835,13 +2858,18 @@ public sealed partial class CharacterOverviewPresenter
         }
         catch (Exception exception)
         {
-            Publish(State with { Error = exception.Message });
+            if (Current()) TryPublishDisplayTransition(generation, State with { Error = exception.Message }, originalState);
             return null;
         }
     }
 
     public async Task ApplyCareerManualNuyenEditAsync(CareerManualNuyenEditRequest request, CancellationToken ct)
     {
+        if (State.DisplayOwnerContext is { } owner)
+        {
+            await ApplyCareerManualNuyenEditAsync(request, owner, ct).ConfigureAwait(false);
+            return;
+        }
         using PresenterOperationLease operation = EnterPresenterOperation(ct);
         ct = operation.Token;
         ArgumentNullException.ThrowIfNull(request);
@@ -4674,7 +4702,8 @@ public sealed partial class CharacterOverviewPresenter
         OwnerContextStamp? expectedOwner = null,
         Action? onDispatch = null,
         Action<CommandResult<WorkspaceRevisionReceipt>>? observeCanonical = null,
-        string? requiredRulesetId = null)
+        string? requiredRulesetId = null,
+        Action<WorkspaceDocument>? observeReplacement = null)
     {
         ArgumentNullException.ThrowIfNull(mutateXml);
         CharacterOverviewState originalState = State;
@@ -4801,6 +4830,7 @@ public sealed partial class CharacterOverviewPresenter
                         State = read.Value.Document.State with { Payload = mutatedXml }
                     };
                     committedDocument = replacement;
+                    observeReplacement?.Invoke(replacement);
                     CommandResult<WorkspaceRevisionReceipt> replacementResult = await (boundClient is null
                         ? _client.ReplaceWorkspaceDocumentAsync(
                             expectedWorkspaceId, expectedContentRevision, replacement, token)

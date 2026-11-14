@@ -341,6 +341,27 @@ public interface ICharacterOverviewPresenter
     Task ApplyCareerEdgeUseEditAsync(CareerEdgeUseEditRequest request, CancellationToken ct)
         => Task.CompletedTask;
 
+    CareerRewardApplyResult? GetPendingCareerReward(Chummer.Application.Owners.OwnerContextStamp owner, CharacterWorkspaceId workspaceId)
+        => null;
+
+    bool AcknowledgeCareerReward(Chummer.Application.Owners.OwnerContextStamp owner, CharacterWorkspaceId workspaceId, Guid operationId)
+        => false;
+
+    Task<CareerRewardApplyResult> ApplyCareerManualKarmaEditAsync(
+        CareerManualKarmaEditRequest request, Chummer.Application.Owners.OwnerContextStamp owner, CancellationToken ct)
+        => Task.FromResult(new CareerRewardApplyResult(request.OperationId, CareerRewardApplyStatus.Refused,
+            "Recording rewards is unavailable in this view."));
+
+    Task<CareerRewardApplyResult> ApplyCareerManualNuyenEditAsync(
+        CareerManualNuyenEditRequest request, Chummer.Application.Owners.OwnerContextStamp owner, CancellationToken ct)
+        => Task.FromResult(new CareerRewardApplyResult(request.OperationId, CareerRewardApplyStatus.Refused,
+            "Recording rewards is unavailable in this view."));
+
+    Task<CareerRewardApplyResult> ReconcileCareerRewardAsync(
+        Chummer.Application.Owners.OwnerContextStamp owner, CharacterWorkspaceId workspaceId, Guid operationId, CancellationToken ct)
+        => Task.FromResult(new CareerRewardApplyResult(operationId, CareerRewardApplyStatus.Uncertain,
+            CareerRewardApplyResult.UncertainMessage));
+
     Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
         => Task.FromResult<CareerManualKarmaEditorState?>(null);
 

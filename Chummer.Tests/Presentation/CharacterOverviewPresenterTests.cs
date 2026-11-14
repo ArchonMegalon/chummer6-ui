@@ -222,6 +222,405 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual(5L, client.GetWorkspaceItem("ws-owner-bound").ContentRevision);
     }
 
+    [TestMethod]
+    [DataRow(true, "post-commit-failure")]
+    [DataRow(false, "post-commit-failure")]
+    [DataRow(true, "post-commit-cancel")]
+    [DataRow(false, "post-commit-cancel")]
+    public async Task Career_reward_committed_then_fault_retains_identity_and_reconciles_without_another_write(bool karma, string fault)
+    {
+        OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = fault };
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        Guid operationId = Guid.NewGuid();
+        CareerRewardApplyResult result = await ApplyReward(presenter, owner, id, 5, operationId, karma);
+
+        Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status);
+        Assert.AreEqual(operationId, result.OperationId);
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(owner, client.LastBoundReplaceOwner);
+        Assert.AreEqual(5L, client.LastReplaceExpectedContentRevision);
+        Assert.AreEqual(6L, client.GetWorkspaceItem(id.Value).ContentRevision);
+        var xml = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content);
+        Assert.AreEqual("3", xml.Root!.Element(karma ? "karma" : "nuyen")!.Value);
+        Assert.AreEqual(1, xml.Root.Element("expenses")!.Elements("expense").Count());
+
+        Assert.AreEqual(result, await ApplyReward(presenter, owner, id, 5, operationId, karma));
+        // Closing/reopening and preparing the newer revision must not permit a fresh reward.
+        await presenter.LoadAsync(id, CancellationToken.None);
+        Assert.AreEqual(result, presenter.GetPendingCareerReward(owner, id));
+        Assert.AreEqual(result, await ApplyReward(presenter, owner, id, 6, Guid.NewGuid(), karma));
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+
+        CareerRewardApplyResult checkedResult = await presenter.ReconcileCareerRewardAsync(owner, id, operationId, CancellationToken.None);
+        Assert.AreEqual(CareerRewardApplyStatus.Confirmed, checkedResult.Status);
+        Assert.AreEqual(operationId, checkedResult.OperationId);
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls, "Reconciliation is a read, never a replay.");
+        Assert.AreEqual(3L, client.GetWorkspaceItem(id.Value).SavedRevision, "No checkpoint was requested.");
+        Assert.AreEqual(checkedResult, await ApplyReward(presenter, owner, id, 5, operationId, karma));
+
+        // A read-only confirmation also remains pending until the current UI acknowledges it.
+        Assert.AreEqual(checkedResult, presenter.GetPendingCareerReward(owner, id));
+        Assert.AreEqual(checkedResult, await ApplyPreparedReward(presenter, owner, karma));
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        Assert.IsTrue(presenter.AcknowledgeCareerReward(owner, id, operationId));
+        Assert.IsFalse(presenter.AcknowledgeCareerReward(owner, id, operationId));
+        Assert.IsNull(presenter.GetPendingCareerReward(owner, id));
+        client.BoundReplacementOutcome = "success";
+        CareerRewardApplyResult next = await ApplyPreparedReward(presenter, owner, karma);
+        Assert.AreEqual(CareerRewardApplyStatus.Confirmed, next.Status);
+        Assert.AreNotEqual(operationId, next.OperationId);
+        Assert.AreEqual(next, presenter.GetPendingCareerReward(owner, id));
+        Assert.AreEqual(2, client.ReplaceWorkspaceCalls);
+        xml = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content);
+        Assert.AreEqual("6", xml.Root!.Element(karma ? "karma" : "nuyen")!.Value);
+        Assert.AreEqual(2, xml.Root.Element("expenses")!.Elements("expense").Count());
+    }
+
+    [TestMethod]
+    [DataRow(true, "validation")]
+    [DataRow(false, "validation")]
+    [DataRow(true, "cancel")]
+    [DataRow(false, "cancel")]
+    [DataRow(true, "revision")]
+    [DataRow(false, "revision")]
+    [DataRow(true, "owner")]
+    [DataRow(false, "owner")]
+    [DataRow(true, "workspace")]
+    [DataRow(false, "workspace")]
+    public async Task Career_reward_pre_dispatch_refusal_does_not_write(bool karma, string reason)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        WorkspaceDocument original = client.GetDocument(id.Value);
+        using CancellationTokenSource cancelled = new();
+        if (reason == "cancel") cancelled.Cancel();
+        if (reason == "owner") client.TransitionAwayAndBack();
+        CareerRewardApplyResult result = await ApplyReward(presenter, owner,
+            reason == "workspace" ? new("other-runner") : id,
+            reason == "revision" ? 4 : 5, Guid.NewGuid(), karma, cancelled.Token,
+            amount: reason == "validation" ? -1 : 3);
+        Assert.AreEqual(CareerRewardApplyStatus.Refused, result.Status);
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+        Assert.AreSame(original, client.GetDocument(id.Value));
+    }
+
+    [TestMethod]
+    [DataRow(true, "different-expense")]
+    [DataRow(false, "different-expense")]
+    [DataRow(true, "later-revision")]
+    [DataRow(false, "later-revision")]
+    [DataRow(true, "owner-aba")]
+    [DataRow(false, "owner-aba")]
+    [DataRow(true, "read-failure")]
+    [DataRow(false, "read-failure")]
+    public async Task Career_reward_inspection_without_exact_original_proof_remains_uncertain(bool karma, string change)
+    {
+        OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        Guid operationId = Guid.NewGuid();
+        await ApplyReward(presenter, owner, id, 5, operationId, karma);
+        if (change == "different-expense")
+        {
+            WorkspaceDocument document = client.GetDocument(id.Value);
+            var xml = System.Xml.Linq.XDocument.Parse(document.Content);
+            xml.Root!.Element("expenses")!.Element("expense")!.Element("guid")!.Value = Guid.NewGuid().ToString("D");
+            client.SeedDocument(id.Value, document with { State = document.State with { Payload = xml.ToString() } });
+        }
+        if (change == "later-revision")
+            client.SeedWorkspace(id.Value, "Owner", "OWNER", rulesetId: RulesetDefaults.Sr5, contentRevision: 7, savedRevision: 3);
+        if (change == "owner-aba") client.TransitionAwayAndBack();
+        if (change == "read-failure") client.ThrowGetWorkspaceId = id.Value;
+        CareerRewardApplyResult result = await presenter.ReconcileCareerRewardAsync(owner, id, operationId, CancellationToken.None);
+        Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status);
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        if (change == "owner-aba")
+        {
+            await presenter.LoadAsync(id, CancellationToken.None);
+            var freshOwner = presenter.State.DisplayOwnerContext!.Value;
+            result = await ApplyReward(presenter, freshOwner, id, 6, Guid.NewGuid(), karma);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status, "Owner ABA cannot erase the pending attempt.");
+            Assert.AreEqual(operationId, result.OperationId);
+            Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        }
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task Career_reward_single_flight_joins_duplicate_and_fresh_commands(bool karma)
+    {
+        OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        TaskCompletionSource<bool> entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.AfterBoundWorkspaceRead = async () => { entered.TrySetResult(true); await release.Task; };
+        Guid operationId = Guid.NewGuid();
+        Task<CareerRewardApplyResult> first = ApplyReward(presenter, owner, id, 5, operationId, karma);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Task<CareerRewardApplyResult> second = ApplyReward(presenter, owner, id, 5, Guid.NewGuid(), karma);
+        Assert.IsFalse(second.IsCompleted);
+        release.SetResult(true);
+        CareerRewardApplyResult result = await first.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.AreEqual(result, await second.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.AreEqual(operationId, result.OperationId);
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+    }
+
+    [TestMethod]
+    [DataRow(true, false)]
+    [DataRow(false, false)]
+    [DataRow(true, true)]
+    [DataRow(false, true)]
+    public async Task Career_reward_confirmed_receipt_survives_postcommit_cancellation_or_owner_change(bool karma, bool ownerChanged)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        using CancellationTokenSource cancelled = new();
+        client.AfterBoundReplace = ownerChanged ? client.TransitionToOwnerB : cancelled.Cancel;
+        CareerRewardApplyResult result = await ApplyReward(presenter, owner, id, 5, Guid.NewGuid(), karma, cancelled.Token);
+        Assert.AreEqual(CareerRewardApplyStatus.Confirmed, result.Status);
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(6L, client.GetWorkspaceItem(id.Value).ContentRevision);
+        if (ownerChanged) Assert.AreNotEqual(owner, presenter.State.DisplayOwnerContext);
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task Career_reward_prepare_does_not_publish_an_editor_after_owner_ABA(bool karma)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        client.AfterBoundRead = client.TransitionAwayAndBack;
+        object? editor = karma
+            ? await presenter.PrepareCareerManualKarmaEditAsync(CancellationToken.None)
+            : (object?)await presenter.PrepareCareerManualNuyenEditAsync(CancellationToken.None);
+        Assert.IsNull(editor);
+        Assert.AreEqual(owner, client.LastBoundReadOwner);
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls);
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task Career_reward_late_confirmation_requires_one_acknowledgment_before_a_distinct_reward(bool karma)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        TaskCompletionSource<bool> entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.AfterBoundReplacement = async () => { entered.TrySetResult(true); await release.Task; };
+        Guid firstId = Guid.NewGuid();
+        Task<CareerRewardApplyResult> pending = ApplyReward(presenter, owner, id, 5, firstId, karma);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.AreEqual(CareerRewardApplyStatus.Uncertain, presenter.GetPendingCareerReward(owner, id)!.Status);
+        Assert.IsFalse(presenter.AcknowledgeCareerReward(owner, id, firstId));
+        release.SetResult(true);
+        CareerRewardApplyResult confirmed = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.AreEqual(CareerRewardApplyStatus.Confirmed, confirmed.Status);
+
+        // Reopening/preparing the runner is not acknowledgment, even after a late receipt.
+        await presenter.LoadAsync(id, CancellationToken.None);
+        Assert.AreEqual(confirmed, presenter.GetPendingCareerReward(owner, id));
+        Assert.AreEqual(confirmed, await ApplyReward(presenter, owner, id, 6, Guid.NewGuid(), karma));
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        bool[] acknowledgments = await Task.WhenAll(Enumerable.Range(0, 8)
+            .Select(_ => Task.Run(() => presenter.AcknowledgeCareerReward(owner, id, firstId))));
+        Assert.AreEqual(1, acknowledgments.Count(accepted => accepted));
+        Assert.IsNull(presenter.GetPendingCareerReward(owner, id));
+        Assert.AreEqual(confirmed, await ApplyReward(presenter, owner, id, 5, firstId, karma));
+
+        client.AfterBoundReplacement = null;
+        CareerRewardApplyResult next = await ApplyPreparedReward(presenter, owner, karma);
+        Assert.AreEqual(CareerRewardApplyStatus.Confirmed, next.Status);
+        Assert.AreNotEqual(firstId, next.OperationId);
+        Assert.IsFalse(presenter.AcknowledgeCareerReward(owner, id, firstId), "A stale close/duplicate acknowledgment cannot clear the next entry.");
+        Assert.AreEqual(next, presenter.GetPendingCareerReward(owner, id));
+        Assert.AreEqual(2, client.ReplaceWorkspaceCalls);
+        var xml = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content);
+        Assert.AreEqual("6", xml.Root!.Element(karma ? "karma" : "nuyen")!.Value);
+        Assert.AreEqual(2, xml.Root.Element("expenses")!.Elements("expense").Count());
+    }
+
+    [TestMethod]
+    [DataRow("owner")]
+    [DataRow("workspace")]
+    public async Task Career_reward_acknowledgment_rejects_stale_context_without_losing_confirmation(string transition)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        CareerRewardApplyResult confirmed = await ApplyReward(presenter, owner, id, 5, Guid.NewGuid(), true);
+        if (transition == "owner")
+        {
+            client.TransitionAwayAndBack();
+            await presenter.LoadAsync(id, CancellationToken.None);
+        }
+        else
+        {
+            // Arrange a saved snapshot so the existing dirty-workspace guard permits
+            // switching. This presenter seam test covers acknowledgment, not saving.
+            WorkspaceListItem saved = client.GetWorkspaceItem(id.Value);
+            client.SeedWorkspace(id.Value, saved.Summary.Name, saved.Summary.Alias,
+                rulesetId: saved.RulesetId, contentRevision: saved.ContentRevision,
+                savedRevision: saved.ContentRevision);
+            await presenter.LoadAsync(id, CancellationToken.None);
+            client.SeedWorkspace("other-reward-runner", "Other", "OTHER", rulesetId: RulesetDefaults.Sr5);
+            client.SeedDocument("other-reward-runner", client.GetDocument(id.Value));
+            await presenter.LoadAsync(new CharacterWorkspaceId("other-reward-runner"), CancellationToken.None);
+            Assert.AreEqual(new CharacterWorkspaceId("other-reward-runner"), presenter.State.WorkspaceId,
+                "The stale-view test must successfully switch to the other runner before acknowledgment.");
+        }
+        Assert.IsFalse(presenter.AcknowledgeCareerReward(owner, id, confirmed.OperationId));
+        Assert.IsNull(presenter.GetPendingCareerReward(owner, id));
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp current = presenter.State.DisplayOwnerContext!.Value;
+        Assert.AreEqual(confirmed, presenter.GetPendingCareerReward(current, id));
+        Assert.IsFalse(presenter.AcknowledgeCareerReward(current, id, Guid.NewGuid()));
+        Assert.IsTrue(presenter.AcknowledgeCareerReward(current, id, confirmed.OperationId),
+            "A freshly authorized view of the same account may acknowledge its known commit.");
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task Career_reward_explicit_CAS_conflict_refreshes_without_replay_and_allows_new_confirmation(bool karma)
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        WorkspaceDocument original = client.GetDocument(id.Value);
+        client.AfterBoundRead = () =>
+        {
+            client.AfterBoundRead = null;
+            // A different writer wins between the bound read and the actual store CAS.
+            client.SeedWorkspace(id.Value, "Owner", "OWNER", rulesetId: RulesetDefaults.Sr5, contentRevision: 6, savedRevision: 3);
+        };
+        Guid refusedId = Guid.NewGuid();
+        CareerRewardApplyResult refused = await ApplyReward(presenter, owner, id, 5, refusedId, karma);
+        Assert.AreEqual(WorkspaceOperationOutcome.Conflict, client.LastBoundResult!.OperationOutcome);
+        Assert.AreEqual(CareerRewardApplyStatus.Refused, refused.Status);
+        Assert.AreSame(original, client.GetDocument(id.Value), "The rejected replacement did not commit.");
+        Assert.AreEqual(6L, presenter.State.ContentRevision, "The winning revision is refreshed for review.");
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls, "Refresh cannot replay the request.");
+        Assert.AreEqual(refused, await ApplyReward(presenter, owner, id, 5, refusedId, karma));
+        Assert.IsNull(presenter.GetPendingCareerReward(owner, id));
+        CareerRewardApplyResult next = await ApplyPreparedReward(presenter, owner, karma);
+        Assert.AreEqual(CareerRewardApplyStatus.Confirmed, next.Status);
+        Assert.AreNotEqual(refusedId, next.OperationId);
+        Assert.AreEqual(2, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(6L, client.LastReplaceExpectedContentRevision);
+        Assert.AreEqual(7L, client.GetWorkspaceItem(id.Value).ContentRevision);
+        var xml = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content);
+        Assert.AreEqual(1, xml.Root!.Element("expenses")!.Elements("expense").Count());
+    }
+
+    [TestMethod]
+    [DataRow("unknown-failure")]
+    [DataRow("unavailable")]
+    [DataRow("conflict-with-receipt")]
+    [DataRow("empty-success")]
+    [DataRow("wrong-workspace")]
+    [DataRow("wrong-revision")]
+    [DataRow("contradictory-success")]
+    public async Task Career_reward_unknown_or_malformed_canonical_result_stays_uncertain(string outcome)
+    {
+        OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = outcome };
+        SeedOwnerBoundWorkspace(client);
+        using var presenter = CreateRewardPresenter(client);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        CareerRewardApplyResult result = await ApplyReward(presenter, owner, id, 5, Guid.NewGuid(), true);
+        Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status);
+        Assert.AreEqual(6L, client.GetWorkspaceItem(id.Value).ContentRevision, "The store committed despite the ambiguous response.");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        Assert.IsFalse(presenter.AcknowledgeCareerReward(owner, id, result.OperationId));
+        Assert.AreEqual(result, await ApplyReward(presenter, owner, id, 5, Guid.NewGuid(), true));
+        Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        Assert.AreEqual(result, presenter.GetPendingCareerReward(owner, id));
+    }
+
+    private static async Task<CareerRewardApplyResult> ApplyPreparedReward(CharacterOverviewPresenter presenter, OwnerContextStamp owner, bool karma)
+    {
+        if (karma)
+        {
+            CareerManualKarmaEditorState? editor = await presenter.PrepareCareerManualKarmaEditAsync(CancellationToken.None);
+            Assert.IsNotNull(editor);
+            return await presenter.ApplyCareerManualKarmaEditAsync(new(editor.WorkspaceId, editor.ContentRevision, editor.Karma,
+                CharacterCareerManualKarmaAction.Gain, 3, "Next reward", new DateTime(2081, 5, 13), false, false, false), owner, CancellationToken.None);
+        }
+        CareerManualNuyenEditorState? nuyen = await presenter.PrepareCareerManualNuyenEditAsync(CancellationToken.None);
+        Assert.IsNotNull(nuyen);
+        return await presenter.ApplyCareerManualNuyenEditAsync(new(nuyen.WorkspaceId, nuyen.ContentRevision, nuyen.Nuyen,
+            CharacterCareerManualNuyenAction.Gain, 3, 100m, "Next reward", new DateTime(2081, 5, 13), false, false, false), owner, CancellationToken.None);
+    }
+
+    private static CharacterOverviewPresenter CreateRewardPresenter(IChummerClient client)
+        => new(client, workspaceOverviewLoader: WorkspaceOverviewLoader.CreateCompositionBound(client),
+            characterSourceDataResolver: new RewardSourceResolver());
+
+    private static Task<CareerRewardApplyResult> ApplyReward(CharacterOverviewPresenter presenter,
+        OwnerContextStamp owner, CharacterWorkspaceId id, long revision, Guid operationId, bool karma,
+        CancellationToken ct = default, int amount = 3)
+        => karma
+            ? presenter.ApplyCareerManualKarmaEditAsync(new CareerManualKarmaEditRequest(id, revision,
+                new(0, 0m, 2500m, 2500m), CharacterCareerManualKarmaAction.Gain, amount, "Run reward",
+                new DateTime(2081, 5, 12), false, false, false) { OperationId = operationId }, owner, ct)
+            : presenter.ApplyCareerManualNuyenEditAsync(new CareerManualNuyenEditRequest(id, revision,
+                new(0, 0m, 2500m, 2500m), CharacterCareerManualNuyenAction.Gain, amount, 100m, "Run reward",
+                new DateTime(2081, 5, 12), false, false, false) { OperationId = operationId }, owner, ct);
+
+    private sealed class RewardSourceResolver : ICharacterSourceDataResolver
+    {
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new RewardSourceContext();
+    }
+
+    private sealed class RewardSourceContext : ICharacterSourceDataContext
+    {
+        public bool TryResolveKarmaNuyenExchangeRates(out decimal workingForPeopleRate, out decimal workingForManRate)
+        { workingForPeopleRate = workingForManRate = 2500m; return true; }
+        public bool TryResolveCyberwareGradeDeviceRating(string gradeName, string improvementSource, out int deviceRating)
+        { deviceRating = 0; return false; }
+        public bool TryResolveVehicleModBonuses(string sourceId, string name, out CharacterVehicleModSourceBonuses bonuses)
+        { bonuses = CharacterVehicleModSourceBonuses.Empty; return false; }
+    }
+
     private static WorkspaceCollectionMutationRequest SeedOwnerBoundWorkspace(FakeChummerClient client)
     {
         const string xml = """
@@ -5312,13 +5711,14 @@ public class CharacterOverviewPresenterTests
         public Action? AfterBoundRead { get; set; }
         public Func<Task>? AfterBoundWorkspaceRead { get; set; }
         public Action? AfterBoundReplace { get; set; }
+        public Func<Task>? AfterBoundReplacement { get; set; }
         public CommandResult<WorkspaceRevisionReceipt>? LastBoundResult { get; private set; }
         public Func<Task>? AfterBoundOverview { get; set; }
         public Func<Task>? AfterBoundSection { get; set; }
         public Action? BeforeOwnerCapture { get; set; }
         public WorkspaceDocument? LastBoundOverviewDocument { get; private set; }
         public int BoundOverviewCalls { get; private set; }
-        public string BoundReplacementOutcome { get; init; } = "success";
+        public string BoundReplacementOutcome { get; set; } = "success";
 
         public void ClearBoundObservations()
         {
@@ -5410,7 +5810,7 @@ public class CharacterOverviewPresenterTests
             return snapshot;
         }
 
-        public Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
+        public async Task<CommandResult<WorkspaceRevisionReceipt>> ReplaceWorkspaceDocumentAsync(
             OwnerContextStamp expectedOwner, CharacterWorkspaceId id, long expectedContentRevision,
             WorkspaceDocument document, Action onDispatch, CancellationToken ct)
         {
@@ -5425,10 +5825,23 @@ public class CharacterOverviewPresenterTests
                 Assert.IsTrue(replace.IsCompleted, "This gated fixture does not support async store waits.");
                 result = replace.GetAwaiter().GetResult();
                 if (BoundReplacementOutcome == "post-commit-failure") throw new InvalidOperationException("Synthetic dispatched post-commit failure.");
+                if (BoundReplacementOutcome == "post-commit-cancel") throw new OperationCanceledException("Synthetic cancellation after commit.");
+                result = BoundReplacementOutcome switch
+                {
+                    "unknown-failure" => new(false, null, "Workspace revision changed."),
+                    "unavailable" => new(false, null, "Response unavailable.", WorkspaceOperationOutcome.Unavailable),
+                    "conflict-with-receipt" => new(false, result.Value, "Contradictory result.", WorkspaceOperationOutcome.Conflict),
+                    "empty-success" => new(true, null, null, WorkspaceOperationOutcome.Success),
+                    "wrong-workspace" => new(true, result.Value! with { Id = new CharacterWorkspaceId("different") }, null),
+                    "wrong-revision" => new(true, result.Value! with { ContentRevision = expectedContentRevision + 2 }, null),
+                    "contradictory-success" => result with { OperationOutcome = WorkspaceOperationOutcome.Conflict },
+                    _ => result
+                };
                 LastBoundResult = result;
             }
             AfterBoundReplace?.Invoke();
-            return Task.FromResult(result);
+            if (AfterBoundReplacement is { } wait) await wait().ConfigureAwait(false);
+            return result;
         }
 
         private void RequireCurrentOwner(OwnerContextStamp expected)

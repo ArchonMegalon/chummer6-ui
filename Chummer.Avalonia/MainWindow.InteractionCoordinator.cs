@@ -53,6 +53,24 @@ internal sealed class MainWindowInteractionCoordinator
         return _presenter.ApplyCareerAttributeAdvanceAsync(request, ct);
     }
 
+    public CareerRewardApplyResult? GetPendingCareerReward(OwnerContextStamp owner, CharacterWorkspaceId workspaceId)
+        => _presenter.GetPendingCareerReward(owner, workspaceId);
+
+    public bool AcknowledgeCareerReward(OwnerContextStamp owner, CharacterWorkspaceId workspaceId, Guid operationId)
+        => _presenter.AcknowledgeCareerReward(owner, workspaceId, operationId);
+
+    public Task<CareerRewardApplyResult> ApplyCareerManualKarmaEditAsync(
+        CareerManualKarmaEditRequest request, OwnerContextStamp owner, CancellationToken ct)
+        => _presenter.ApplyCareerManualKarmaEditAsync(request, owner, ct);
+
+    public Task<CareerRewardApplyResult> ApplyCareerManualNuyenEditAsync(
+        CareerManualNuyenEditRequest request, OwnerContextStamp owner, CancellationToken ct)
+        => _presenter.ApplyCareerManualNuyenEditAsync(request, owner, ct);
+
+    public Task<CareerRewardApplyResult> ReconcileCareerRewardAsync(
+        OwnerContextStamp owner, CharacterWorkspaceId workspaceId, Guid operationId, CancellationToken ct)
+        => _presenter.ReconcileCareerRewardAsync(owner, workspaceId, operationId, ct);
+
     public Task<CareerManualKarmaEditorState?> PrepareCareerManualKarmaEditAsync(CancellationToken ct)
         => _presenter.PrepareCareerManualKarmaEditAsync(ct);
 

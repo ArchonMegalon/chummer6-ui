@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Chummer.Application.Characters;
 using Chummer.Application.Content;
 using Chummer.Application.Owners;
 using Chummer.Application.Tools;
@@ -31,6 +32,42 @@ namespace Chummer.Tests;
 [TestClass]
 public sealed class InProcessChummerClientRulesetPluginTests
 {
+    [TestMethod]
+    [DataRow("sr5", 0, true)]
+    [DataRow("sr6", 0, true)]
+    [DataRow("sr5", 0, false)]
+    [DataRow("sr6", 0, false)]
+    [DataRow("sr5", 28, true)]
+    [DataRow("sr6", 28, true)]
+    public async Task Core_attribute_total_is_preserved_in_build_and_both_overview_reads(
+        string ruleset, int total, bool explicitSummary)
+    {
+        CharacterWorkspaceId id = new("core-attribute-total");
+        string xml = "<character>" + (explicitSummary ? $"<totalattributes>{total}</totalattributes>" : "")
+            + "<attributes><attribute><name>BOD</name><totalvalue>4</totalvalue></attribute></attributes>"
+            + "<customstate><attributes><attribute><name>BOD</name><totalvalue>900</totalvalue></attribute>"
+            + "<attribute><name>AGI</name><totalvalue>800</totalvalue></attribute></attributes></customstate></character>";
+        CharacterBuildSection build = new("Priority", "A", "B", "C", "D", "E", "Mundane",
+            10, 0, 0, total, 0, 0);
+        WorkspaceDocumentSnapshot snapshot = new(id, new WorkspaceDocument(xml, ruleset), DateTimeOffset.UtcNow, 7, 7);
+        WorkspaceOverviewProjection overview = new(snapshot,
+            new CharacterOverviewProjection(null!, null!, null!, null!, build, null!, null!), new(true, []));
+        NoOpWorkspaceService service = new()
+        {
+            BuildResult = build,
+            OverviewResult = new(true, overview, null),
+            SnapshotDocumentFactory = () => xml
+        };
+        StubOwnerContextAccessor owner = new(new OwnerScope("attribute-owner"));
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(), ownerContextAccessor: owner);
+
+        Assert.AreSame(build, await client.GetBuildAsync(id, CancellationToken.None));
+        Assert.AreSame(overview, (await client.GetWorkspaceOverviewAsync(id, CancellationToken.None)).Value);
+        Assert.AreSame(overview, (await client.GetWorkspaceOverviewAsync(client.CaptureOwnerContext(), id, CancellationToken.None)).Value);
+        Assert.AreEqual(total, overview.Overview.Build.TotalAttributes);
+        Assert.AreEqual(0, service.GetWorkspaceCallCount, "Presentation must not read XML to invent a replacement for Core's total.");
+    }
+
     [TestMethod]
     [DataRow("overview")]
     [DataRow("section")]
@@ -1751,10 +1788,13 @@ public sealed class InProcessChummerClientRulesetPluginTests
             return new(true, []);
         }
 
+        public CharacterBuildSection? BuildResult { get; init; }
+        public CommandResult<WorkspaceOverviewProjection>? OverviewResult { get; init; }
+
         public CommandResult<WorkspaceOverviewProjection> GetOverview(OwnerScope owner, CharacterWorkspaceId id)
         {
             BeforeRead?.Invoke();
-            return new(false, null, "This admission fixture does not synthesize a Core overview.", WorkspaceOperationOutcome.Unavailable);
+            return OverviewResult ?? new(false, null, "This admission fixture does not synthesize a Core overview.", WorkspaceOperationOutcome.Unavailable);
         }
 
         public CharacterProfileSection? GetProfile(CharacterWorkspaceId id) => throw new NotSupportedException();
@@ -1773,7 +1813,7 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public CharacterRulesSection? GetRules(OwnerScope owner, CharacterWorkspaceId id) => GetRules(id);
 
-        public CharacterBuildSection? GetBuild(CharacterWorkspaceId id) => throw new NotSupportedException();
+        public CharacterBuildSection? GetBuild(CharacterWorkspaceId id) => BuildResult ?? throw new NotSupportedException();
 
         public CharacterBuildSection? GetBuild(OwnerScope owner, CharacterWorkspaceId id) => GetBuild(id);
 

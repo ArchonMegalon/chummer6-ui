@@ -39,10 +39,22 @@ public partial class MainWindow
 
     private async Task OpenCareerRewardsDialogAsync(bool isKarmaMode)
     {
+        CharacterOverviewState entry = _interactionCoordinator.PeekState();
+        if (entry.WorkspaceId is not { } entryWorkspaceId || entry.DisplayOwnerContext is not { IsValid: true } entryOwner)
+            return;
+        long entryGeneration = _careerDisplayContext.Capture(entryWorkspaceId, entry.DisplayOwnerContext);
+        bool DisplayStillCurrent()
+        {
+            CharacterOverviewState current = _interactionCoordinator.PeekState();
+            return IsVisible && current.WorkspaceId == entryWorkspaceId
+                && current.DisplayOwnerContext == entry.DisplayOwnerContext
+                && _careerDisplayContext.IsCurrent(entryGeneration, current.WorkspaceId, current.DisplayOwnerContext);
+        }
+
         CareerManualKarmaEditorState? karmaState = await _interactionCoordinator
             .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
             .ConfigureAwait(true);
-        if (karmaState is null)
+        if (karmaState is null || !DisplayStillCurrent())
         {
             return;
         }
@@ -52,40 +64,65 @@ public partial class MainWindow
             : await _interactionCoordinator
                 .PrepareCareerManualNuyenEditAsync(CancellationToken.None)
                 .ConfigureAwait(true);
-        if (!isKarmaMode && nuyenState is null)
+        if (!DisplayStillCurrent() || (!isKarmaMode && nuyenState is null))
         {
             return;
         }
 
         while (true)
         {
-            var dialog = new CareerRewardsWindow(isKarmaMode, karmaState, nuyenState);
+            if (!DisplayStillCurrent())
+                return;
+            var dialog = new CareerRewardsWindow(
+                isKarmaMode,
+                karmaState,
+                nuyenState,
+                applyKarma: (request, ct) => _interactionCoordinator.ApplyCareerManualKarmaEditAsync(request, entryOwner, ct),
+                applyNuyen: (request, ct) => _interactionCoordinator.ApplyCareerManualNuyenEditAsync(request, entryOwner, ct),
+                reprepare: async _ =>
+                {
+                    if (!DisplayStillCurrent())
+                        return (null, null);
+                    CareerManualKarmaEditorState? freshKarma = await _interactionCoordinator
+                        .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
+                        .ConfigureAwait(true);
+                    CareerManualNuyenEditorState? freshNuyen = isKarmaMode
+                        ? null
+                        : await _interactionCoordinator
+                            .PrepareCareerManualNuyenEditAsync(CancellationToken.None)
+                            .ConfigureAwait(true);
+                    return (freshKarma, freshNuyen);
+                },
+                contextIsCurrent: DisplayStillCurrent,
+                reconcile: (operationId, ct) => _interactionCoordinator.ReconcileCareerRewardAsync(entryOwner, entryWorkspaceId, operationId, ct),
+                pendingResult: _interactionCoordinator.GetPendingCareerReward(entryOwner, entryWorkspaceId),
+                acknowledge: operationId => DisplayStillCurrent()
+                    && _interactionCoordinator.AcknowledgeCareerReward(entryOwner, entryWorkspaceId, operationId));
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
+            if (!DisplayStillCurrent())
+                return;
+            if (outcome is null)
+            {
+                if (dialog.CloseNotice is { } closeNotice)
+                    PublishCareerEditNotice(closeNotice);
+
+                return;
+            }
+
             switch (outcome)
             {
-                case CareerRewardsWindow.CareerKarmaAwardOutcome karma:
-                    await _interactionCoordinator
-                        .ApplyCareerManualKarmaEditAsync(karma.Request, CancellationToken.None)
-                        .ConfigureAwait(true);
-                    if (PeekCareerEditError() is { } karmaError)
-                    {
-                        PublishCareerEditNotice("karma award failed: " + karmaError);
-                        return;
-                    }
+                case CareerRewardsWindow.CareerRewardReconciledOutcome:
+                    PublishCareerEditNotice("The previous reward is confirmed recorded. Review the runner before entering another reward.");
+                    break;
 
+                case CareerRewardsWindow.CareerRewardAcknowledgedOutcome:
+                    break;
+
+                case CareerRewardsWindow.CareerKarmaAwardOutcome karma:
                     PublishCareerEditNotice("recorded karma award " + karma.DisplayLabel + ".");
                     break;
 
                 case CareerRewardsWindow.CareerNuyenAdjustOutcome nuyen:
-                    await _interactionCoordinator
-                        .ApplyCareerManualNuyenEditAsync(nuyen.Request, CancellationToken.None)
-                        .ConfigureAwait(true);
-                    if (PeekCareerEditError() is { } nuyenError)
-                    {
-                        PublishCareerEditNotice("nuyen adjustment failed: " + nuyenError);
-                        return;
-                    }
-
                     PublishCareerEditNotice("recorded nuyen adjustment " + nuyen.DisplayLabel + ".");
                     break;
 
@@ -93,7 +130,6 @@ public partial class MainWindow
                     return;
             }
 
-            // Reopen with a fresh prepare so consecutive awards chain cleanly.
             CareerManualKarmaEditorState? reopenedKarma = await _interactionCoordinator
                 .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
                 .ConfigureAwait(true);
@@ -299,7 +335,10 @@ public partial class MainWindow
 
         while (true)
         {
-            if (!ContextStillCurrent()) return true;
+            if (!ContextStillCurrent())
+            {
+                return true;
+            }
             var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
             if (!ContextStillCurrent())
@@ -320,6 +359,7 @@ public partial class MainWindow
             {
                 return true;
             }
+
             // Only the exact committed receipt may advance the expected view
             // revision. An unrelated write or a display transition still ends
             // this interaction, including a switch away and back.
