@@ -77,6 +77,17 @@ public static class ServiceCollectionDesktopRuntimeExtensions
                 : configured;
             return new FileSr6CareerAttributeRecoveryStore(Path.Combine(statePath, "sr6-attribute-recovery"));
         });
+        // Career reward pending intents share the same durability contract as the SR6
+        // advancement recovery ledger: one durable intent per owner/workspace, written
+        // before dispatch, cleared only by confirmed resolution or explicit review.
+        services.TryAddSingleton<ICareerRewardRecoveryStore>(_ =>
+        {
+            string? configured = Environment.GetEnvironmentVariable(StatePathEnvironmentVariable);
+            string statePath = string.IsNullOrWhiteSpace(configured)
+                ? Path.Combine(DesktopStateRootResolver.Resolve("Chummer6", "Chummer6"), "state")
+                : configured;
+            return new FileCareerRewardRecoveryStore(Path.Combine(statePath, "career-reward-recovery"));
+        });
         services.TryAddSingleton<WorkspaceContinuationRestoreService>(provider => new(
             provider.GetRequiredService<IWorkspaceStore>(),
             provider.GetRequiredService<IOwnerContextAccessor>(),

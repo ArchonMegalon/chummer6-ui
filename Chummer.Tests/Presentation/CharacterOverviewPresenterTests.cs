@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Chummer.Campaign.Contracts;
+using Chummer.Desktop.Runtime;
 using Chummer.Application.Owners;
 using Chummer.Application.Workspaces;
 using Chummer.Application.Characters;
@@ -591,9 +592,772 @@ public class CharacterOverviewPresenterTests
             CharacterCareerManualNuyenAction.Gain, 3, 100m, "Next reward", new DateTime(2081, 5, 13), false, false, false), owner, CancellationToken.None);
     }
 
-    private static CharacterOverviewPresenter CreateRewardPresenter(IChummerClient client)
+    [TestMethod]
+    public async Task Restart_with_unresolved_intent_surfaces_uncertain_without_replaying_and_new_dispatch_is_fresh()
+    {
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-restart-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            FileCareerRewardRecoveryStore store = new(ledgerDir);
+            using CharacterOverviewPresenter first = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = first.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+
+            CareerRewardApplyResult result = await ApplyReward(first, owner, id, 5, operationId, karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status);
+            Assert.AreEqual(1, client.ReplaceWorkspaceCalls, "Exactly one dispatch happened before the restart.");
+
+            // The intent must have been durable while the first presenter was alive.
+            Assert.IsTrue(store.TryRead(owner.Owner, id, out _), "The intent is durable, not only in memory.");
+
+            // Process restart: a new presenter over the same durable store; memory empty.
+            client.BoundReplacementOutcome = "success";
+            using CharacterOverviewPresenter restarted = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await restarted.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp restartedOwner = restarted.State.DisplayOwnerContext!.Value;
+            Assert.AreEqual(owner, restartedOwner);
+
+            // The uncertain dialog reappears from the durable surface, read-only.
+            CareerRewardApplyResult? surfaced = restarted.GetPendingCareerReward(restartedOwner, id);
+            Assert.IsNotNull(surfaced);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, surfaced.Status);
+            Assert.AreEqual(operationId, surfaced.OperationId);
+
+            // No blind replay: the lost operation is attributed read-only by the
+            // recovery flow (post-commit-failure left revision advanced to 6, but the
+            // replacement was recorded pre-dispatch, so attribution succeeds and
+            // clears the intent), and a fresh authorized dispatch may then proceed.
+            CareerRewardApplyResult? recovered = await restarted.RecoverPendingCareerRewardAsync(restartedOwner, CancellationToken.None);
+            Assert.IsNotNull(recovered);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, recovered.Status,
+                "The recorded replacement proves the original committed; recovery attributes it read-only.");
+            Assert.AreEqual(operationId, recovered.OperationId);
+
+            // The retained confirmed reward must be explicitly acknowledged before a
+            // fresh dispatch: while a confirmed-but-unacknowledged attempt exists,
+            // applying again returns that exact retained result (no double recording).
+            Assert.IsTrue(restarted.AcknowledgeCareerReward(restartedOwner, id, operationId),
+                "The recovered confirmed result is acknowledged.");
+
+            // A new, freshly authorized dispatch on the current revision is a new
+            // operation, not a replay of the lost one. Prepared flow binds the current
+            // editor state and revision.
+            CareerRewardApplyResult next = await ApplyPreparedReward(restarted, restartedOwner, karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, next.Status, next.Message ?? "(no message)");
+            Assert.AreNotEqual(operationId, next.OperationId);
+            Assert.AreEqual(2, client.ReplaceWorkspaceCalls, "The new dispatch is fresh; the uncertain one is never re-sent.");
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    public async Task Durable_intent_that_cannot_be_written_refuses_the_dispatch_entirely()
+    {
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        string blocked = Path.Combine(Path.GetTempPath(), "chummer-career-blocked-" + Guid.NewGuid().ToString("N") + "-file");
+        File.WriteAllText(blocked, "not a directory");
+        try
+        {
+            using CharacterOverviewPresenter presenter = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(blocked));
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await presenter.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+
+            CareerRewardApplyResult result = await ApplyReward(presenter, owner, id, 5, Guid.NewGuid(), karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Refused, result.Status);
+            Assert.AreEqual(0, client.ReplaceWorkspaceCalls, "No dispatch may happen without a durable intent.");
+        }
+        finally
+        {
+            try { File.Delete(blocked); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    public async Task Acknowledged_reward_clears_the_durable_intent_and_no_uncertain_resurrects_after_restart()
+    {
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-restart-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new();
+            SeedOwnerBoundWorkspace(client);
+            using CharacterOverviewPresenter presenter = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await presenter.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+
+            CareerRewardApplyResult confirmed = await ApplyReward(presenter, owner, id, 5, Guid.NewGuid(), karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, confirmed.Status);
+            Assert.IsTrue(presenter.AcknowledgeCareerReward(owner, id, confirmed.OperationId));
+            Assert.IsNull(presenter.GetPendingCareerReward(owner, id));
+
+            // Simulated restart: no stale uncertain dialog may reappear.
+            using CharacterOverviewPresenter restarted = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await restarted.LoadAsync(id, CancellationToken.None);
+            Assert.IsNull(restarted.GetPendingCareerReward(restarted.State.DisplayOwnerContext!.Value, id),
+                "A resolved intent must not resurrect an uncertain dialog after restart.");
+
+            // And a fresh dispatch on the new revision proceeds normally (prepared flow).
+            CareerRewardApplyResult next = await ApplyPreparedReward(restarted, restarted.State.DisplayOwnerContext!.Value, karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, next.Status, next.Message ?? "(no message)");
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    // ===================== Production dialog-route recovery tests (controller 7803) =====================
+
+    [TestMethod]
+    public async Task Production_reconcile_resolves_lost_response_after_restart_via_durable_route()
+    {
+        // Lost response plus restart: the dispatch is sent, the response is lost, and a
+        // fresh presenter (empty in-memory state) reconciles through the production
+        // ReconcileCareerRewardAsync dialog route with the exact original operation.
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-prod-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            FileCareerRewardRecoveryStore store = new(ledgerDir);
+            using CharacterOverviewPresenter first = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = first.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+
+            CareerRewardApplyResult lost = await ApplyReward(first, owner, id, 5, operationId, karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, lost.Status);
+
+            // Restart: the server (fake client) keeps its committed state; the client
+            // PROCESS restarts, so a fresh presenter + fresh store instance observe it
+            // with empty in-memory attempt state.
+            int dispatchesBeforeRestart = client.ReplaceWorkspaceCalls;
+            using CharacterOverviewPresenter restarted = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await restarted.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp restartedOwner = restarted.State.DisplayOwnerContext!.Value;
+            Assert.AreEqual(owner.Owner, restartedOwner.Owner,
+                "The same account scope is displayed; a fresh presenter mints a new AuthorityInstanceId.");
+
+            // Production dialog route: ReconcileCareerRewardAsync for the exact original
+            // (owner, workspace, operation). No in-memory attempt exists, so the durable
+            // recovery path must answer with the attributed receipt.
+            CareerRewardApplyResult reconciled = await restarted.ReconcileCareerRewardAsync(restartedOwner, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, reconciled.Status, reconciled.Message ?? "(no message)");
+            Assert.AreEqual(operationId, reconciled.OperationId);
+            Assert.AreEqual(dispatchesBeforeRestart, client.ReplaceWorkspaceCalls,
+                "Reconciliation is read-only; the uncertain op is never re-sent.");
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    public async Task Production_reconcile_retains_confirmed_recovery_until_explicit_acknowledgment()
+    {
+        // Crash before acknowledgment: after recovery confirms the entry, a fresh
+        // presenter must STILL surface the confirmed pending result (the resolved entry
+        // stays in the ledger until the exact acknowledgment clears it).
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-prod-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            FileCareerRewardRecoveryStore store = new(ledgerDir);
+            using CharacterOverviewPresenter first = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = first.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+            await ApplyReward(first, owner, id, 5, operationId, karma: true);
+
+            // Recovery confirms and marks the entry resolved (not cleared).
+            using CharacterOverviewPresenter recovered = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await recovered.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp recoveredOwner = recovered.State.DisplayOwnerContext!.Value;
+            CareerRewardApplyResult confirmed = await recovered.ReconcileCareerRewardAsync(recoveredOwner, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, confirmed.Status, confirmed.Message ?? "(no message)");
+
+            // Close/crash before acknowledgment, restart again: the confirmed result
+            // reappears from the durable resolved entry.
+            using CharacterOverviewPresenter again = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await again.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp againOwner = again.State.DisplayOwnerContext!.Value;
+            CareerRewardApplyResult? surfaced = again.GetPendingCareerReward(againOwner, id);
+            Assert.IsNotNull(surfaced, "A resolved-but-unacknowledged recovery survives restart.");
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, surfaced.Status);
+            Assert.AreEqual(operationId, surfaced.OperationId);
+
+            // Reconciliation after the crash is idempotent and read-only.
+            CareerRewardApplyResult reconfirmed = await again.ReconcileCareerRewardAsync(againOwner, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, reconfirmed.Status);
+            Assert.AreEqual(1, client.ReplaceWorkspaceCalls, "No additional dispatches across recovery cycles.");
+
+            // The explicit acknowledgment of the exact operation clears the durable entry.
+            Assert.IsTrue(again.AcknowledgeCareerReward(againOwner, id, operationId), "Acknowledgment must succeed for the restored confirmed attempt.");
+            Assert.IsFalse(again.AcknowledgeCareerReward(againOwner, id, operationId), "Acknowledgment is single-use.");
+            Assert.IsNull(again.GetPendingCareerReward(againOwner, id), "After acknowledgment the pending result is gone.");
+
+            // And a final restart proves nothing resurrects.
+            using CharacterOverviewPresenter final = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await final.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp finalOwner = final.State.DisplayOwnerContext!.Value;
+            Assert.IsNull(final.GetPendingCareerReward(finalOwner, id), "Nothing resurrects after the acknowledged clear.");
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    public async Task Failed_replacement_persistence_refuses_dispatch_with_zero_mutation_calls()
+    {
+        // Failed replacement persistence at the exact boundary the contract names:
+        // TryAdd (durable intent) succeeds, TryRecordReplacement (exact bytes before
+        // send) fails, so the dispatch is refused BEFORE any mutation call.
+        OwnerBoundFakeChummerClient client = new();
+        SeedOwnerBoundWorkspace(client);
+        ReplacementOnlyFailingStore store = new();
+        using CharacterOverviewPresenter presenter = CreateRewardPresenter(client, store);
+        CharacterWorkspaceId id = new("ws-owner-bound");
+        await presenter.LoadAsync(id, CancellationToken.None);
+        OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+        Guid operationId = Guid.NewGuid();
+
+        CareerRewardApplyResult result = await ApplyReward(presenter, owner, id, 5, operationId, karma: true);
+        Assert.AreEqual(CareerRewardApplyStatus.Refused, result.Status);
+        Assert.AreEqual(CareerRewardRecoveryMessages.PreDispatchRecoveryRefusal, result.Message);
+        Assert.AreEqual(1, store.TryAddCalls, "The durable intent was accepted first.");
+        Assert.AreEqual(1, store.TryRecordReplacementCalls, "The replacement boundary was reached.");
+        Assert.AreEqual(0, client.ReplaceWorkspaceCalls, "Zero mutation calls when the replacement cannot be made durable.");
+        Assert.IsNull(presenter.GetPendingCareerReward(owner, id), "A pre-dispatch refusal resolves the intent; later dispatches are not blocked.");
+    }
+
+    [TestMethod]
+    public async Task Unchanged_revision_during_reconciliation_keeps_intent_unresolved()
+    {
+        // A paused original dispatch in another process has the same observable state as
+        // a lost commit: intent with replacement recorded, observed revision unchanged.
+        // Reconciliation must treat that as NOT terminal: the intent stays held, no
+        // clear, no replay, and repeated reconciles are stable across restarts.
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-prod-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            FileCareerRewardRecoveryStore store = new(ledgerDir);
+            using CharacterOverviewPresenter first = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = first.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+
+            CareerRewardApplyResult lost = await ApplyReward(first, owner, id, 5, operationId, karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, lost.Status);
+
+            // A watcher presenter over the same ledger reconciles while the original
+            // dispatch is effectively parked: revision unchanged, replacement recorded.
+            OwnerBoundFakeChummerClient watcherClient = new() { BoundReplacementOutcome = "success" };
+            SeedOwnerBoundWorkspace(watcherClient);
+            using CharacterOverviewPresenter watcher = CreateRewardPresenter(watcherClient, new FileCareerRewardRecoveryStore(ledgerDir));
+            await watcher.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp watcherOwner = watcher.State.DisplayOwnerContext!.Value;
+            CareerRewardApplyResult firstReconcile = await watcher.ReconcileCareerRewardAsync(watcherOwner, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, firstReconcile.Status,
+                "An unchanged revision is not terminal; the intent stays held for review.");
+            Assert.AreEqual(0, watcherClient.ReplaceWorkspaceCalls, "No replay on the unresolved branch.");
+
+            // Repeated reconciliation is stable: still unresolved, still held.
+            CareerRewardApplyResult secondReconcile = await watcher.ReconcileCareerRewardAsync(watcherOwner, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, secondReconcile.Status);
+            Assert.AreEqual(0, watcherClient.ReplaceWorkspaceCalls);
+
+            // A fresh presenter still sees the held intent after a restart.
+            using CharacterOverviewPresenter afterRestart = CreateRewardPresenter(watcherClient, new FileCareerRewardRecoveryStore(ledgerDir));
+            await afterRestart.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp afterOwner = afterRestart.State.DisplayOwnerContext!.Value;
+            CareerRewardApplyResult third = await afterRestart.ReconcileCareerRewardAsync(afterOwner, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, third.Status, "The held intent survives restarts without replay.");
+            Assert.AreEqual(0, watcherClient.ReplaceWorkspaceCalls);
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>
+    /// Accepts the durable intent and read/write of pending records, but refuses
+    /// TryRecordReplacement - the exact boundary work order 7867 requires the
+    /// pre-dispatch refusal test to exercise.
+    /// </summary>
+    private sealed class ReplacementOnlyFailingStore : ICareerRewardRecoveryStore
+    {
+        public int TryAddCalls;
+        public int TryRecordReplacementCalls;
+
+        public bool TryRead(OwnerScope owner, CharacterWorkspaceId workspaceId, out CareerRewardPendingRecovery? pending)
+        {
+            pending = null;
+            return true;
+        }
+
+        public bool TryAdd(CareerRewardPendingRecovery pending)
+        {
+            TryAddCalls++;
+            return true;
+        }
+
+        public bool TryRecordReplacement(Guid entryId, WorkspaceDocumentFormat replacementFormat, string replacementRulesetId, string replacementContent)
+        {
+            TryRecordReplacementCalls++;
+            return false;
+        }
+
+        public bool TryMarkResolved(Guid entryId, Guid operationId) => false;
+
+        public bool TryClear(CareerRewardPendingRecovery expected) => true;
+    }
+
+    private sealed class GatedResolutionFailingStore(ICareerRewardRecoveryStore inner) : ICareerRewardRecoveryStore
+    {
+        public TaskCompletionSource<bool> MarkEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<bool> ReleaseMark { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool TryRead(OwnerScope owner, CharacterWorkspaceId workspaceId, out CareerRewardPendingRecovery? pending)
+            => inner.TryRead(owner, workspaceId, out pending);
+        public bool TryAdd(CareerRewardPendingRecovery pending) => inner.TryAdd(pending);
+        public bool TryRecordReplacement(Guid entryId, WorkspaceDocumentFormat format, string rulesetId, string content)
+            => inner.TryRecordReplacement(entryId, format, rulesetId, content);
+        public bool TryMarkResolved(Guid entryId, Guid operationId)
+        {
+            MarkEntered.TrySetResult(true);
+            ReleaseMark.Task.GetAwaiter().GetResult();
+            return false;
+        }
+        public bool TryClear(CareerRewardPendingRecovery expected) => inner.TryClear(expected);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task Career_reward_failed_durable_mark_never_publishes_confirmation_or_allows_replay(bool reconcile)
+    {
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-mark-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var durable = new FileCareerRewardRecoveryStore(ledgerDir);
+            var store = new GatedResolutionFailingStore(durable);
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = reconcile ? "post-commit-failure" : "success" };
+            SeedOwnerBoundWorkspace(client);
+            using var presenter = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await presenter.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = presenter.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+            if (reconcile)
+                Assert.AreEqual(CareerRewardApplyStatus.Uncertain,
+                    (await ApplyReward(presenter, owner, id, 5, operationId, karma: true)).Status);
+
+            Task<CareerRewardApplyResult> pending = Task.Run(() => reconcile
+                ? presenter.ReconcileCareerRewardAsync(owner, id, operationId, CancellationToken.None)
+                : ApplyReward(presenter, owner, id, 5, operationId, karma: true));
+            Task<CareerRewardApplyResult>? duplicate = null;
+            try
+            {
+                await store.MarkEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                Assert.IsFalse(pending.IsCompleted);
+                Assert.AreEqual(CareerRewardApplyStatus.Uncertain, presenter.GetPendingCareerReward(owner, id)!.Status);
+                Assert.IsFalse(presenter.AcknowledgeCareerReward(owner, id, operationId));
+                duplicate = ApplyReward(presenter, owner, id, 5, operationId, karma: true);
+                if (reconcile)
+                    Assert.AreEqual(CareerRewardApplyStatus.Uncertain, (await duplicate.WaitAsync(TimeSpan.FromSeconds(5))).Status);
+                else
+                    Assert.IsFalse(duplicate.IsCompleted, "Duplicate dispatch must join until the durable mark finishes.");
+                Assert.IsTrue(durable.TryRead(owner.Owner, id, out var held));
+                Assert.IsNotNull(held);
+                Assert.IsFalse(held.IsResolved);
+                Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+            }
+            finally
+            {
+                store.ReleaseMark.TrySetResult(true);
+                await pending.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+
+            CareerRewardApplyResult result = await pending;
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status);
+            Assert.AreEqual(result, await duplicate!.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.AreEqual(result, presenter.GetPendingCareerReward(owner, id));
+            Assert.AreEqual(result, await ApplyReward(presenter, owner, id, 6, Guid.NewGuid(), karma: true));
+            Assert.IsFalse(presenter.AcknowledgeCareerReward(owner, id, operationId));
+            Assert.AreEqual(1, client.ReplaceWorkspaceCalls, "Failed persistence cannot authorize a second reward.");
+            Assert.IsTrue(durable.TryRead(owner.Owner, id, out var afterFailure));
+            Assert.IsNotNull(afterFailure);
+            Assert.IsFalse(afterFailure.IsResolved);
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    public async Task Uncertain_attempt_after_owner_ABA_refreshes_under_fresh_authorization_and_acknowledges()
+    {
+        // Work order 7867 correction 2: a completed uncertain attempt with the same
+        // operation id must NOT be retained merely because the id matches after
+        // A -> B -> A; the old authority is dropped and recovery re-runs under fresh
+        // authorization. A truly in-flight dispatch stays guarded.
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-aba-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            FileCareerRewardRecoveryStore store = new(ledgerDir);
+            using CharacterOverviewPresenter first = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp ownerA = first.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+
+            CareerRewardApplyResult uncertain = await ApplyReward(first, ownerA, id, 5, operationId, karma: true);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, uncertain.Status);
+
+            // Keep the original dictionary/attempt through A -> B -> A.
+            client.TransitionToOwnerB();
+            await first.LoadAsync(id, CancellationToken.None);
+            Assert.AreNotEqual(ownerA.Owner, first.State.DisplayOwnerContext!.Value.Owner);
+            client.TransitionToOwnerBack();
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp freshA = first.State.DisplayOwnerContext!.Value;
+
+            // The same identity now has a fresh transition stamp.
+            Assert.AreNotEqual(ownerA, freshA, "Returning to A issues fresh authority, not the stale stamp.");
+            Assert.AreEqual(ownerA.Owner, freshA.Owner, "The identity is still owner A.");
+
+            // Recovery after returning to A must run under FRESH authorization and
+            // attribute the lost dispatch (post-commit-failure committed; replacement
+            // was recorded pre-dispatch), then restore the confirmed attempt.
+            CareerRewardApplyResult recovered = await first.ReconcileCareerRewardAsync(freshA, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, recovered.Status,
+                "Recovery after A->B->A succeeds under fresh authorization.");
+            Assert.AreEqual(operationId, recovered.OperationId);
+
+            // The offered acknowledgment succeeds with the FRESH stamp.
+            Assert.AreEqual(recovered, first.GetPendingCareerReward(freshA, id));
+            Assert.IsFalse(first.AcknowledgeCareerReward(ownerA, id, operationId), "The old stamp remains invalid.");
+            Assert.IsTrue(first.AcknowledgeCareerReward(freshA, id, operationId),
+                "Acknowledgment after returning to A uses fresh authorization.");
+            Assert.IsFalse(first.AcknowledgeCareerReward(freshA, id, operationId));
+            Assert.IsNull(first.GetPendingCareerReward(freshA, id));
+            Assert.IsTrue(store.TryRead(freshA.Owner, id, out var afterAck));
+            Assert.IsNull(afterAck);
+            Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    [DataRow("success")]
+    [DataRow("post-commit-failure")]
+    public async Task Confirmed_reward_survives_saved_edit_and_restart_then_acknowledges_durable_record(string outcome)
+    {
+        // Work order 7867 correction 3: normal success durably records the confirmed
+        // outcome; a later saved edit and a process restart must not lose it; the
+        // offered acknowledgment acts on the exact durable record without a second
+        // reward write or a reconcile.
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-confirm-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = outcome };
+            SeedOwnerBoundWorkspace(client);
+            FileCareerRewardRecoveryStore store = new(ledgerDir);
+            using CharacterOverviewPresenter first = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = first.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+
+            CareerRewardApplyResult result = await ApplyReward(first, owner, id, 5, operationId, karma: true);
+            if (outcome == "post-commit-failure")
+            {
+                Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status);
+                result = await first.ReconcileCareerRewardAsync(owner, id, operationId, CancellationToken.None);
+            }
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, result.Status);
+            Assert.AreEqual(result, first.GetPendingCareerReward(owner, id));
+            Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+
+            // Durable resolved record, not cleared.
+            Assert.IsTrue(store.TryRead(owner.Owner, id, out var resolvedPending) && resolvedPending is not null
+                && resolvedPending.OperationId == operationId && resolvedPending.IsResolved,
+                "The confirmed outcome is durably recorded until explicit acknowledgment.");
+
+            // A later SAVED edit advances the revision; it must not erase the proof.
+            await SaveUnrelatedEditAfterCareerReward(first, client, owner, id);
+            Assert.IsTrue(store.TryRead(owner.Owner, id, out var stillPending) && stillPending is not null && stillPending.IsResolved,
+                "A later saved edit does not infer anything from the newer revision.");
+
+            // Process restart: fresh presenter, same store, no in-memory attempt.
+            using CharacterOverviewPresenter restarted = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await restarted.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp restartedOwner = restarted.State.DisplayOwnerContext!.Value;
+
+            // The offered acknowledgment acts directly on the exact durable record:
+            // no reconcile call, no second reward write.
+            Assert.AreEqual(7L, restarted.State.ContentRevision);
+            Assert.AreEqual(7L, restarted.State.SavedRevision);
+            Assert.AreEqual(result, restarted.GetPendingCareerReward(restartedOwner, id));
+            int replacesBefore = client.ReplaceWorkspaceCalls;
+            Assert.IsTrue(restarted.AcknowledgeCareerReward(restartedOwner, id, operationId),
+                "The offered acknowledgment succeeds against the durable record after restart.");
+            Assert.AreEqual(replacesBefore, client.ReplaceWorkspaceCalls, "Acknowledgment never writes a reward.");
+            Assert.IsFalse(restarted.AcknowledgeCareerReward(restartedOwner, id, operationId),
+                "A second acknowledgment is refused: the record is gone.");
+            Assert.IsFalse(store.TryRead(owner.Owner, id, out var afterAck) && afterAck is not null,
+                "The acknowledged record is gone from the durable store.");
+            using CharacterOverviewPresenter later = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir));
+            await later.LoadAsync(id, CancellationToken.None);
+            Assert.IsNull(later.GetPendingCareerReward(later.State.DisplayOwnerContext!.Value, id));
+            Assert.AreEqual(replacesBefore, client.ReplaceWorkspaceCalls);
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    private static async Task SaveUnrelatedEditAfterCareerReward(CharacterOverviewPresenter presenter,
+        OwnerBoundFakeChummerClient client, OwnerContextStamp owner, CharacterWorkspaceId id)
+    {
+        await presenter.LoadAsync(id, CancellationToken.None);
+        Assert.AreEqual(6L, presenter.State.ContentRevision);
+        var before = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content).Root!;
+        string expenses = before.Element("expenses")!.ToString();
+        Assert.AreEqual("3", before.Element("karma")!.Value);
+        Assert.AreEqual("0", before.Element("nuyen")!.Value);
+        Assert.AreEqual(1, before.Element("expenses")!.Elements("expense").Count());
+        client.BoundReplacementOutcome = "success";
+        CommandResult<WorkspaceRevisionReceipt> edited = await ((IOwnerBoundWorkspaceMutationPresenter)presenter)
+            .ApplyPrimaryArmEditAsync(new(id, presenter.State.ContentRevision, "Left"), owner, CancellationToken.None);
+        Assert.IsTrue(edited.Success, edited.Error);
+        Assert.AreEqual(7L, edited.Value!.ContentRevision);
+        await presenter.SaveAsync(CancellationToken.None);
+        Assert.AreEqual(1, client.RevisionedSaveCalls, "The later edit must reach the revisioned Save implementation.");
+        Assert.AreEqual(owner, client.LastBoundSaveOwner);
+        Assert.IsNull(presenter.State.Error, presenter.State.Error);
+        Assert.AreEqual(7L, presenter.State.ContentRevision);
+        Assert.AreEqual(7L, presenter.State.SavedRevision);
+        Assert.AreEqual(7L, client.GetWorkspaceItem(id.Value).SavedRevision);
+        var after = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content).Root!;
+        Assert.AreEqual("Left", after.Element("primaryarm")!.Value);
+        Assert.AreEqual(before.Element("karma")!.Value, after.Element("karma")!.Value);
+        Assert.AreEqual(before.Element("nuyen")!.Value, after.Element("nuyen")!.Value);
+        Assert.AreEqual(expenses, after.Element("expenses")!.ToString(), "The unrelated saved edit preserves the exact reward expense.");
+    }
+
+    [TestMethod]
+    [DataRow(false, false)]
+    [DataRow(true, false)]
+    [DataRow(false, true)]
+    [DataRow(true, true)]
+    public async Task Career_reward_original_presenter_consumes_exact_confirmation_from_another_presenter(bool laterSavedEdit, bool recoveryRoute)
+    {
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-shared-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new FileCareerRewardRecoveryStore(ledgerDir);
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            using var original = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await original.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = original.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain,
+                (await ApplyReward(original, owner, id, 5, operationId, karma: true)).Status);
+            Assert.IsTrue(store.TryRead(owner.Owner, id, out var intent));
+            Assert.IsNotNull(intent);
+            using (var other = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir)))
+            {
+                await other.LoadAsync(id, CancellationToken.None);
+                var resolved = await other.ReconcileCareerRewardAsync(other.State.DisplayOwnerContext!.Value, id, operationId, CancellationToken.None);
+                Assert.AreEqual(CareerRewardApplyStatus.Confirmed, resolved.Status);
+                Assert.AreEqual(resolved, other.GetPendingCareerReward(other.State.DisplayOwnerContext!.Value, id));
+                // Close without ACK; the original presenter must consume this proof.
+            }
+            Assert.IsTrue(store.TryRead(owner.Owner, id, out var proof));
+            Assert.IsNotNull(proof);
+            Assert.IsTrue(proof.IsResolved);
+            Assert.AreEqual(intent.EntryId, proof.EntryId);
+            Assert.AreEqual(operationId, proof.OperationId);
+            Assert.IsFalse(original.AcknowledgeCareerReward(owner, id, operationId),
+                "The retained uncertain attempt must first consume the exact proof through Check.");
+            if (laterSavedEdit)
+                await SaveUnrelatedEditAfterCareerReward(original, client, owner, id);
+
+            CareerRewardApplyResult? result = recoveryRoute
+                ? await original.RecoverPendingCareerRewardAsync(owner, CancellationToken.None)
+                : await original.ReconcileCareerRewardAsync(owner, id, operationId, CancellationToken.None);
+            Assert.IsNotNull(result);
+            Assert.AreEqual(CareerRewardApplyStatus.Confirmed, result.Status);
+            Assert.AreEqual(operationId, result.OperationId);
+            Assert.AreEqual(result, original.GetPendingCareerReward(owner, id));
+            Assert.AreEqual(result, await original.ReconcileCareerRewardAsync(owner, id, operationId, CancellationToken.None)
+                .WaitAsync(TimeSpan.FromSeconds(5)), "Restored attempts must also have a completed single-flight result.");
+            bool[] acknowledgments = await Task.WhenAll(Enumerable.Range(0, 4)
+                .Select(_ => Task.Run(() => original.AcknowledgeCareerReward(owner, id, operationId))));
+            Assert.AreEqual(1, acknowledgments.Count(accepted => accepted));
+            Assert.IsNull(original.GetPendingCareerReward(owner, id));
+            Assert.IsTrue(store.TryRead(owner.Owner, id, out var afterAck));
+            Assert.IsNull(afterAck);
+            Assert.AreEqual(laterSavedEdit ? 2 : 1, client.ReplaceWorkspaceCalls, "Only the reward and optional unrelated edit mutate the document.");
+            var xml = System.Xml.Linq.XDocument.Parse(client.GetDocument(id.Value).Content).Root!;
+            Assert.AreEqual("3", xml.Element("karma")!.Value);
+            Assert.AreEqual("0", xml.Element("nuyen")!.Value);
+            Assert.AreEqual(1, xml.Element("expenses")!.Elements("expense").Count());
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    [DataRow("corrupt")]
+    [DataRow("unavailable")]
+    [DataRow("replaced")]
+    public async Task Career_reward_original_presenter_holds_when_exact_durable_proof_is_unusable(string fault)
+    {
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-proof-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new FileCareerRewardRecoveryStore(ledgerDir);
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            using var original = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await original.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp owner = original.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+            await ApplyReward(original, owner, id, 5, operationId, karma: true);
+            Assert.IsTrue(store.TryRead(owner.Owner, id, out var intent));
+            Assert.IsNotNull(intent);
+            using (var other = CreateRewardPresenter(client, new FileCareerRewardRecoveryStore(ledgerDir)))
+            {
+                await other.LoadAsync(id, CancellationToken.None);
+                Assert.AreEqual(CareerRewardApplyStatus.Confirmed,
+                    (await other.ReconcileCareerRewardAsync(other.State.DisplayOwnerContext!.Value, id, operationId, CancellationToken.None)).Status);
+            }
+
+            if (fault == "corrupt")
+                File.WriteAllText(Directory.GetFiles(ledgerDir, "*.json").Single(), "{truncated");
+            else if (fault == "replaced")
+            {
+                Assert.IsTrue(store.TryClear(intent));
+                Assert.IsTrue(store.TryAdd(intent with { EntryId = Guid.NewGuid() }));
+            }
+            using FileStream? locked = fault == "unavailable"
+                ? new FileStream(Directory.GetFiles(ledgerDir, "*.lock").Single(), FileMode.Open, FileAccess.ReadWrite, FileShare.None)
+                : null;
+            CareerRewardApplyResult result = await original.ReconcileCareerRewardAsync(owner, id, operationId, CancellationToken.None);
+            Assert.AreEqual(CareerRewardApplyStatus.Uncertain, result.Status);
+            Assert.AreEqual(result, original.GetPendingCareerReward(owner, id));
+            Assert.IsFalse(original.AcknowledgeCareerReward(owner, id, operationId));
+            Assert.AreEqual(result, await ApplyReward(original, owner, id, 6, Guid.NewGuid(), karma: true));
+            Assert.AreEqual(1, client.ReplaceWorkspaceCalls);
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    [TestMethod]
+    public async Task Delayed_reconcile_for_owner_a_after_switch_to_b_never_touches_b_record()
+    {
+        // Account switch: a delayed recovery request for A after the display switched
+        // to B must not inspect or clear B's pending record, and A's durable record
+        // stays intact for when A returns.
+        string ledgerDir = Path.Combine(Path.GetTempPath(), "chummer-career-prod-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            OwnerBoundFakeChummerClient client = new() { BoundReplacementOutcome = "post-commit-failure" };
+            SeedOwnerBoundWorkspace(client);
+            FileCareerRewardRecoveryStore store = new(ledgerDir);
+            using CharacterOverviewPresenter first = CreateRewardPresenter(client, store);
+            CharacterWorkspaceId id = new("ws-owner-bound");
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp ownerA = first.State.DisplayOwnerContext!.Value;
+            Guid operationId = Guid.NewGuid();
+            await ApplyReward(first, ownerA, id, 5, operationId, karma: true);
+
+            // Switch the displayed account to B and reload.
+            client.TransitionToOwnerB();
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp ownerB = first.State.DisplayOwnerContext!.Value;
+            Assert.AreNotEqual(ownerA.Owner, ownerB.Owner);
+
+            // A recovery request bound to A is refused while B is displayed, and B has
+            // no pending record of its own.
+            CareerRewardApplyResult? stale = await first.RecoverPendingCareerRewardAsync(ownerA, CancellationToken.None);
+            Assert.IsNull(stale, "A recovery for A is refused while B is displayed.");
+            Assert.IsNull(first.GetPendingCareerReward(ownerB, id), "B must not inherit A's pending result.");
+
+            // Back as A: the durable record is intact and still surfaces.
+            client.TransitionToOwnerBack();
+            await first.LoadAsync(id, CancellationToken.None);
+            OwnerContextStamp backToA = first.State.DisplayOwnerContext!.Value;
+            Assert.AreEqual(ownerA.Owner, backToA.Owner);
+            CareerRewardApplyResult? surfaced = first.GetPendingCareerReward(backToA, id);
+            Assert.IsNotNull(surfaced, "A's unresolved intent survives the account round-trip.");
+            Assert.AreEqual(operationId, surfaced.OperationId);
+        }
+        finally
+        {
+            try { Directory.Delete(ledgerDir, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    private static CharacterOverviewPresenter CreateRewardPresenter(IChummerClient client, ICareerRewardRecoveryStore? store = null)
         => new(client, workspaceOverviewLoader: WorkspaceOverviewLoader.CreateCompositionBound(client),
-            characterSourceDataResolver: new RewardSourceResolver());
+            characterSourceDataResolver: new RewardSourceResolver(), careerRewardRecoveryStore: store);
+
+
+    private static CharacterOverviewPresenter CreateRewardPresenter(IChummerClient client)
+    {
+        // Production parity: a dispatch requires a working durable store, so the
+        // default helper gets a real per-call file store (unique dir per call keeps
+        // tests isolated; stale dirs from previous runs are cleaned best-effort).
+        string root = Path.Combine(Path.GetTempPath(), "chummer-career-recovery-tests");
+        try
+        {
+            foreach (string stale in Directory.GetDirectories(root))
+                try { if (Directory.GetCreationTime(stale) < DateTime.UtcNow - TimeSpan.FromHours(1)) Directory.Delete(stale, recursive: true); }
+                catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException) { }
+        string ledger = Path.Combine(root, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(ledger);
+        return new(client, workspaceOverviewLoader: WorkspaceOverviewLoader.CreateCompositionBound(client),
+            characterSourceDataResolver: new RewardSourceResolver(),
+            careerRewardRecoveryStore: new FileCareerRewardRecoveryStore(ledger));
+    }
 
     private static Task<CareerRewardApplyResult> ApplyReward(CharacterOverviewPresenter presenter,
         OwnerContextStamp owner, CharacterWorkspaceId id, long revision, Guid operationId, bool karma,
@@ -5701,13 +6465,15 @@ public class CharacterOverviewPresenterTests
     // Presenter seam fixture only: the production executor/lease is tested against
     // InProcessChummerClient separately. This gate really excludes its test owner
     // writer, and it never spans an asynchronous fake-store continuation.
-    private class OwnerBoundFakeChummerClient : FakeChummerClient, IOwnerBoundWorkspaceProjectionClient
+    private class OwnerBoundFakeChummerClient : FakeChummerClient, IOwnerBoundWorkspaceProjectionClient,
+        IOwnerBoundWorkspacePersistenceClient
     {
         private readonly object _ownerGate = new();
         private OwnerContextStamp _owner = new(new OwnerScope("owner-a"), Guid.NewGuid().ToString("N"), 0);
         public int OwnerCaptureCalls { get; private set; }
         public OwnerContextStamp? LastBoundReadOwner { get; private set; }
         public OwnerContextStamp? LastBoundReplaceOwner { get; private set; }
+        public OwnerContextStamp? LastBoundSaveOwner { get; private set; }
         public Action? AfterBoundRead { get; set; }
         public Func<Task>? AfterBoundWorkspaceRead { get; set; }
         public Action? AfterBoundReplace { get; set; }
@@ -5741,6 +6507,11 @@ public class CharacterOverviewPresenterTests
         public void TransitionToOwnerB()
         {
             lock (_ownerGate) _owner = _owner with { Owner = new OwnerScope("owner-b"), TransitionRevision = checked(_owner.TransitionRevision + 1) };
+        }
+
+        public void TransitionToOwnerBack()
+        {
+            lock (_ownerGate) _owner = _owner with { Owner = new OwnerScope("owner-a"), TransitionRevision = checked(_owner.TransitionRevision + 1) };
         }
 
         public async Task<CommandResult<WorkspaceOverviewProjection>> GetWorkspaceOverviewAsync(
@@ -5786,6 +6557,32 @@ public class CharacterOverviewPresenterTests
         {
             lock (_ownerGate) { RequireCurrentOwner(expectedOwner); return Task.FromResult(Completed(base.ValidateAsync(id, ct))); }
         }
+
+        public Task<CommandResult<WorkspaceSaveReceipt>> SaveAsync(
+            OwnerContextStamp originalOwner, CharacterWorkspaceId workspaceId,
+            long expectedContentRevision, CancellationToken ct)
+        {
+            lock (_ownerGate)
+            {
+                RequireCurrentOwner(originalOwner);
+                LastBoundSaveOwner = originalOwner;
+                // Keep the same CAS, stored checkpoint and receipt as the existing
+                // revisioned fake Save; do not synthesize presenter state.
+                return Task.FromResult(Completed(base.SaveAsync(workspaceId, expectedContentRevision, ct)));
+            }
+        }
+
+        public Task<CommandResult<WorkspaceMetadataResult>> UpdateMetadataAsync(
+            OwnerContextStamp originalOwner, CharacterWorkspaceId workspaceId,
+            long expectedContentRevision, UpdateWorkspaceMetadata command, CancellationToken ct)
+            => Task.FromResult(new CommandResult<WorkspaceMetadataResult>(false, null,
+                "Original-owner metadata persistence is unavailable in this fixture.", WorkspaceOperationOutcome.Unavailable));
+
+        public Task<CommandResult<WorkspaceRevisionReceipt>> CloseWorkspaceAsync(
+            OwnerContextStamp originalOwner, CharacterWorkspaceId workspaceId,
+            long expectedContentRevision, CancellationToken ct)
+            => Task.FromResult(new CommandResult<WorkspaceRevisionReceipt>(false, null,
+                "Original-owner close persistence is unavailable in this fixture.", WorkspaceOperationOutcome.Unavailable));
 
         private static T Completed<T>(Task<T> operation)
         {

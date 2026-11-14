@@ -538,14 +538,14 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "1ed2e76bbd32c125fd7f3f774d2389eece4a2b62",
+            "blob": "2806347c6a3f3f86c6634ba090996939620c83c6",
             "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
-            "rawSizeBytes": 73211,
-            "semanticCanonicalSha256": "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9",
-            "semanticCanonicalSizeBytes": 73211,
+            "rawSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+            "rawSizeBytes": 73930,
+            "semanticCanonicalSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+            "semanticCanonicalSizeBytes": 73930,
             "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71",
         },
         "producerLock": {
@@ -553,9 +553,9 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 73211
+    assert len(package_plane.encoded_json(next_lock)) == 73930
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "9343b16690bec242796c5ad4d72be14f0d843e29e606568d004a074cae1486a9"
+        "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5"
     )
     assert package_plane.load_split_preseal_verifier().NEXT_AUTHORITY_ORACLE == (
         package_plane.SEALED_NEXT_AUTHORITY_ORACLE
@@ -649,6 +649,11 @@ def test_sealed_next_transition_rejects_changed_oracle_fixture(
 
 
 @pytest.mark.parametrize("reviewed_source", [
+    "Chummer.Desktop.Runtime/FileCareerRewardRecoveryStore.cs",
+    "Chummer.Presentation/Overview/CareerRewardRecoverySurface.cs",
+    "Chummer.Presentation/Overview/CharacterOverviewPresenter.CareerRewardRecovery.cs",
+    "Chummer.Presentation/Overview/CharacterOverviewPresenter.CareerRewards.cs",
+    "Chummer.Tests/Presentation/CareerRewardRecoveryStoreTests.cs",
     "Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs",
     "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
     "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
@@ -2380,7 +2385,7 @@ def test_new_runner_method_regression_is_a_bound_package_consumer_input() -> Non
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == "CreationWizard/NewRunnerBuildMethodTests.cs"
     package_plane.validate_test_compile_items(REPO_ROOT)
     assert (REPO_ROOT / relative).read_text(encoding="utf-8").count("[DataRow(") == 9
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 950
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 956
 
 
 def test_checked_in_locks_are_exact_retained_bytes_or_current_sealed_authority() -> None:
@@ -2416,9 +2421,9 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
     }
     assert sources.issubset(package_plane.EXPECTED_CONSUMER_SOURCE_FILES)
     oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
-    # Attribute and knowledge Career regressions are now explicit consumer inputs.
-    assert len(oracle["consumer"]["sourceFiles"]) == 184
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 185
+    # Career regressions and reward recovery are explicit consumer inputs.
+    assert len(oracle["consumer"]["sourceFiles"]) == 189
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 190
     for source in sources:
         assert oracle["consumer"]["sourceFiles"][source] == package_plane.source_digest(REPO_ROOT / source)
     for name in ("CharacterOverviewPresenterTests.cs", "WorkspaceXmlMutationCatalogTests.cs"):
@@ -2427,16 +2432,26 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
 
 
 @pytest.mark.parametrize("reviewed_source", [
+    "Chummer.Desktop.Runtime/FileCareerRewardRecoveryStore.cs",
+    "Chummer.Presentation/Overview/CareerRewardRecoverySurface.cs",
+    "Chummer.Presentation/Overview/CharacterOverviewPresenter.CareerRewardRecovery.cs",
+    "Chummer.Presentation/Overview/CharacterOverviewPresenter.CareerRewards.cs",
+    "Chummer.Tests/Presentation/CareerRewardRecoveryStoreTests.cs",
     "Chummer.Presentation/Overview/WorkspaceLinkedCharacterMutationPreview.cs",
     "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
     "Chummer.Tests/Presentation/WorkspaceXmlMutationCatalogTests.cs",
 ])
-def test_linked_character_source_digest_substitution_cannot_enter_next_authority(
+def test_reviewed_consumer_source_digest_substitution_cannot_enter_next_authority(
     monkeypatch: pytest.MonkeyPatch, reviewed_source: str
 ) -> None:
-    actual_digest = package_plane.source_digest
+    # Isolate this substitution from live P/Q edits against the frozen oracle.
+    reviewed_sources = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)[
+        "consumer"
+    ]["sourceFiles"]
     monkeypatch.setattr(package_plane, "source_digest", lambda path:
-        "a" * 64 if path == REPO_ROOT / reviewed_source else actual_digest(path))
+        "a" * 64 if path == REPO_ROOT / reviewed_source else reviewed_sources[
+            path.relative_to(REPO_ROOT).as_posix()
+        ])
     previous = json.loads(LOCK.read_text(encoding="utf-8"))
     with pytest.raises(package_plane.VerificationError, match="differs from the fixed authority oracle"):
         package_plane.build_next_unsealed_authority_lock(REPO_ROOT, previous)
@@ -2517,7 +2532,7 @@ def test_creation_wizard_sources_are_in_the_mandatory_product_suite() -> None:
     }
     assert completion_sources <= preseal.ALLOWED_RECIPE_PATHS
     assert sum(static_mstest_case_count(source) for source in completion_sources) == 102
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 950
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 956
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS["CreationWizardCoreProjectionTests.cs"] is None
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[
         "../Chummer.CreationWizard.CoreProjection.Tests/CoreCreationProjectionScenario.cs"
@@ -3097,7 +3112,7 @@ def test_full_product_test_compile_is_serialized_without_shared_compiler() -> No
     assert '"useSharedCompilation": False' in full_suite_execution
     assert '"compileRunner": "serialized-package-plane-build"' in full_suite_execution
     assert '"runner": "direct-exact-assembly"' in full_suite_execution
-    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 950' in source
+    assert 'FULL_PRODUCT_TEST_MINIMUM_TESTS = 956' in source
     full_suite_runner = full_suite_execution.split(
         'full_test_execution = {', 1
     )[1]
@@ -3188,7 +3203,7 @@ def test_owner_context_recipe_and_source_membership_are_exact_and_closed() -> No
     assert members == preseal.OWNER_CONTEXT_RECIPE_PATHS
     assert members <= preseal.ALLOWED_RECIPE_PATHS
     assert members <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 185
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 190
     for relative in members:
         assert relative.endswith(".cs") and not any(token in relative for token in ("*", "?", ".."))
         assert (REPO_ROOT / relative).is_file()
@@ -3264,7 +3279,7 @@ def test_new_owner_test_links_and_minimums_bind_actual_mstest_cases() -> None:
 
 def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependencies() -> None:
     expected = (
-        ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 76),
+        ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 82),
         ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 27),
         ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
         ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),
@@ -3281,8 +3296,8 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == relative.removeprefix("Chummer.Tests/")
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
-    assert sum(minimum for _, _, minimum in expected) == 218
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 216 + 2 + 65 + 4 + 2 + 8 + 10 + 102 + 9
+    assert sum(minimum for _, _, minimum in expected) == 224
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 222 + 2 + 65 + 4 + 2 + 8 + 10 + 102 + 9
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
         ("Chummer.Tests/Presentation/ShellPresenterTests.cs", "Chummer.Rulesets.Hosting.Presentation"),
@@ -3326,8 +3341,8 @@ def test_finalization_owner_focused_gate_binds_exact_additive_cases_and_source()
     assert static_mstest_case_count(relative) == 65
     # Include all thirteen Foundation shared-read/method-exclusion cases while
     # retaining the previous 47 owner cases and seven adoption/roster cases.
-    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 65 + 7 + 2 + 8 + 10 + 102 + 9
-    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 185
+    assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 747 + 65 + 7 + 2 + 8 + 10 + 102 + 9 + 6
+    assert len(package_plane.EXPECTED_CONSUMER_SOURCE_FILES) == 190
     assert relative in package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == (
         "CreationWizard/WorkspaceOverviewFinalizationOwnerTests.cs"

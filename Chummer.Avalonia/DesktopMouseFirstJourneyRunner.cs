@@ -226,6 +226,160 @@ internal static class DesktopMouseFirstJourneyRunner
             // verify the karma debit and the reopened-dialog cancel path,
             // save through the file menu, and write the SR6 advance receipt
             // for the fresh-process reopen leg.
+            if (DesktopMouseFirstJourneyRuntime.RewardHoldRequested)
+            {
+                RecordStep(steps, "reward hold leg: load saved career + award karma left confirmed-unacknowledged");
+                DesktopUserJourneyWorkflowEvidence holdEvidence = await ExerciseRewardHoldLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(holdEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> holdAssertion in holdEvidence.Assertions)
+                {
+                    if (!holdAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Reward hold leg assertion failed: {holdAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: reward hold leg assertion {holdAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                        CharacterName: "Mouse Journey Runner",
+                        CharacterAlias: null,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: true,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "T545/7867 reward hold leg: karma awarded through the real CareerRewardsWindow route and deliberately left CONFIRMED-UNACKNOWLEDGED; the workspace was saved through the file menu and the process exited so phase B can recover the durable record in a fresh process."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
+            if (DesktopMouseFirstJourneyRuntime.RewardAckRequested)
+            {
+                RecordStep(steps, "reward ack leg: fresh process recovers the confirmed reward from the durable record");
+                DesktopUserJourneyWorkflowEvidence ackEvidence = await ExerciseRewardAckLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(ackEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> ackAssertion in ackEvidence.Assertions)
+                {
+                    if (!ackAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Reward ack leg assertion failed: {ackAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: reward ack leg assertion {ackAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                        CharacterName: "Mouse Journey Runner",
+                        CharacterAlias: null,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: true,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "T545/7867 reward ack leg: a fresh process reloaded the saved workspace, the reward dialog surfaced the CONFIRMED result recovered from the durable record (correction 1), the offered career-rewards-acknowledge action cleared the durable record, and the karma balance was unchanged (no second reward write)."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
             if (DesktopMouseFirstJourneyRuntime.Sr6AdvanceRequested)
             {
                 RecordStep(steps, "sr6 advance leg: wizard finalize + row-to-confirm round trip");
@@ -1780,6 +1934,528 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     // reason, apply through the authoritative career manual-karma authority,
     // and verify the dialog closed. Throws when the route cannot complete (a
     // product gap must be surfaced, never masked with a synthetic grant).
+    // ----- T545 / controller 7867 correction-legs: two-process reward recovery -----
+
+    /// <summary>
+    /// Loads the saved career workspace passed via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_WORKSPACE, through the real
+    /// production presenter load path, and waits until the overview snapshot
+    /// reports it clean and persisted. Shared by both recovery legs.
+    /// </summary>
+    private static async Task<CharacterOverviewState> LoadSavedWorkspaceForRewardLegAsync(
+        MainWindow window,
+        List<string> steps,
+        CancellationToken ct)
+    {
+        string? savedWorkspaceId = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_WORKSPACE");
+        if (string.IsNullOrWhiteSpace(savedWorkspaceId))
+        {
+            throw new InvalidOperationException(
+                "The reward recovery legs require CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_WORKSPACE.");
+        }
+
+        await window.InitializationForAutomation.WaitAsync(ct);
+        ICharacterOverviewPresenter presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+        await presenter.LoadAsync(new CharacterWorkspaceId(savedWorkspaceId), ct);
+        await WaitForAsync(
+            steps,
+            "reward leg: loaded workspace visible in the automation snapshot",
+            () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+            ct,
+            TimeSpan.FromMinutes(1));
+
+        CharacterOverviewState restored = window.SnapshotStateForAutomation();
+        CharacterWorkspaceId loadedId = restored.WorkspaceId
+            ?? throw new InvalidOperationException("Reward leg did not leave a workspace loaded.");
+        if (!string.Equals(loadedId.Value, savedWorkspaceId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Reward leg loaded workspace '{loadedId.Value}' instead of the saved '{savedWorkspaceId}'.");
+        }
+
+        OpenWorkspaceState? workspace = restored.Session.FindWorkspace(loadedId);
+        if (workspace is null || !workspace.HasSavedWorkspace || workspace.IsDirty)
+        {
+            throw new InvalidOperationException("The reward leg's reopened workspace is not clean and persisted.");
+        }
+
+        return restored;
+    }
+
+    /// <summary>
+    /// Phase A: award +5 karma through the real CareerRewardsWindow route and
+    /// deliberately leave it CONFIRMED-UNACKNOWLEDGED, then save and exit so
+    /// the reward's confirmed outcome lives only in the durable recovery
+    /// record when the process ends.
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseRewardHoldLegAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        await LoadSavedWorkspaceForRewardLegAsync(window, steps, ct);
+        CharacterOverviewState state = window.SnapshotStateForAutomation();
+        var sectionHost = window.ControlsForAutomation.SectionHost;
+        decimal karmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
+        RecordStep(steps, $"reward hold: workspace {state.WorkspaceId?.Value} loaded; karma before={karmaBefore}");
+
+        // Open the real reward dialog (same walk as the SR6 funding leg).
+        Button? awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+        if (awardKarmaButton is null)
+        {
+            foreach (string candidateTabId in CareerRewardsTabCandidates)
+            {
+                bool tabReached = false;
+                for (int tabAttempt = 0; tabAttempt < 3 && !tabReached; tabAttempt++)
+                {
+                    try
+                    {
+                        await ClickSummaryNavigationTabAsync(window, candidateTabId, steps, ct, recordPointerAction);
+                        tabReached = true;
+                    }
+                    catch (TimeoutException timeout)
+                    {
+                        RecordStep(steps, $"reward hold tab walk: {candidateTabId} not reachable on attempt {tabAttempt} ({timeout.Message})");
+                    }
+                    catch (InvalidOperationException routingFailure)
+                    {
+                        RecordStep(steps, $"reward hold tab walk: {candidateTabId} routing failed on attempt {tabAttempt} ({routingFailure.Message})");
+                    }
+
+                    if (!tabReached)
+                    {
+                        await Task.Delay(500, ct);
+                    }
+                }
+
+                if (!tabReached)
+                {
+                    continue;
+                }
+
+                awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+                if (awardKarmaButton is not null)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (awardKarmaButton is null)
+        {
+            throw new InvalidOperationException(
+                "Reward hold failed: no tab rendered the career rewards Award Karma button (real route unavailable).");
+        }
+
+        bool dialogOpened = false;
+        for (int attempt = 1; attempt <= 3 && !dialogOpened; attempt++)
+        {
+            Button? freshButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+            if (freshButton is null)
+            {
+                await Task.Delay(250, ct);
+                continue;
+            }
+
+            try
+            {
+                await RoutePointerClickAsync(freshButton);
+            }
+            catch (InvalidOperationException routingFailure)
+            {
+                RecordStep(steps, $"reward hold award attempt {attempt} routing failed: {routingFailure.Message}");
+            }
+
+            dialogOpened = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
+                ct,
+                TimeSpan.FromSeconds(8));
+        }
+
+        if (!dialogOpened)
+        {
+            throw new InvalidOperationException(
+                "Reward hold failed: Award Karma click did not open the CareerRewardsWindow modal.");
+        }
+
+        TextBox? amountBox = FindCareerRewardsDialogTextBox("career-rewards-amount")
+            ?? throw new InvalidOperationException("Reward hold failed: the reward dialog has no amount field.");
+        amountBox.Text = "5";
+        Dispatcher.UIThread.RunJobs();
+        TextBox? reasonBox = FindCareerRewardsDialogTextBox("career-rewards-reason");
+        if (reasonBox is not null)
+        {
+            reasonBox.Text = "T545 recovery hold award";
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Button? applyButton = FindCareerRewardsDialogButton("career-rewards-apply")
+            ?? throw new InvalidOperationException("Reward hold failed: the apply button disappeared before the apply click.");
+        // T496/T546: the rewards dialog Apply is subject to the synthetic pointer
+        // swallow; observe the Click event, pump the fresh dialog scene, and use
+        // waitForClick so the press actually lands (bare RoutePointerClickAsync
+        // is silently refused here and the dialog stays open).
+        bool applyClickObserved = false;
+        void OnApplyClick(object? sender, RoutedEventArgs args) => applyClickObserved = true;
+        applyButton.Click += OnApplyClick;
+        string applyDiagnostics;
+        try
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                applyButton.BringIntoView();
+                ForceHeadlessLayoutPump(applyButton);
+            });
+            applyDiagnostics = await RoutePointerClickAsync(applyButton, waitForClick: true);
+            applyDiagnostics += $";clickObserved={applyClickObserved}";
+        }
+        finally
+        {
+            applyButton.Click -= OnApplyClick;
+        }
+        recordPointerAction();
+        RecordStep(steps, "reward hold: clicked career rewards Apply (+5 karma); " + applyDiagnostics);
+
+        // A FRESH apply with a Confirmed result closes the dialog immediately
+        // (CloseConfirmed on the apply path); the confirmed result stays
+        // UNACKNOWLEDGED in the presenter + durable store. That is exactly
+        // the state phase B must recover: do not acknowledge here.
+        bool dialogClosed = await WaitForConditionWithinAsync(
+            () => FindCareerRewardsDialogButton("career-rewards-apply") is null,
+            ct,
+            TimeSpan.FromSeconds(8));
+        if (!dialogClosed)
+        {
+            // Diagnostic capture BEFORE the failure handler closes dialogs: the
+            // dialog body carries the presenter's refusal/uncertain message.
+            string? dialogText = null;
+            try
+            {
+                var parts = new System.Collections.Generic.List<string>();
+                foreach (var wnd in (global::Avalonia.Application.Current?.ApplicationLifetime
+                        as global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime)?.Windows
+                    ?? [])
+                {
+                    foreach (var tb in wnd.GetVisualDescendants().OfType<global::Avalonia.Controls.TextBlock>())
+                    {
+                        string? id = global::Avalonia.Automation.AutomationProperties.GetAutomationId(tb);
+                        if (!string.IsNullOrWhiteSpace(tb.Text))
+                            parts.Add($"{id ?? "-"}={tb.Text}");
+                    }
+                    foreach (var box in wnd.GetVisualDescendants().OfType<global::Avalonia.Controls.TextBox>())
+                    {
+                        string? id = global::Avalonia.Automation.AutomationProperties.GetAutomationId(box);
+                        if (!string.IsNullOrWhiteSpace(box.Text))
+                            parts.Add($"box:{id ?? "-"}={box.Text}");
+                    }
+                }
+                dialogText = string.Join(" | ", parts);
+            }
+            catch { /* best effort */ }
+            var snap = window.SnapshotStateForAutomation();
+            string diag = "reward hold diagnostic: dialog stayed open after apply; "
+                + $"lastCommand={snap.LastCommandId ?? "none"}; "
+                + $"presenterError={snap.Error ?? "none"}; "
+                + $"dialogText={(dialogText ?? "unavailable").Replace("\r", " ").Replace("\n", " | ")}";
+            RecordStep(steps, diag);
+            Console.Error.WriteLine("[mouse-first-journey] " + diag);
+            DesktopMouseFirstJourneyRuntime.WriteRewardRecoveryReceipt(
+                stage: "hold-diagnostic",
+                workspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                karmaBalance: ReadCareerRewardsKarmaBalance(sectionHost),
+                operationId: null,
+                acknowledged: false,
+                recoveredFromDurableRecord: false);
+            throw new InvalidOperationException(
+                "Reward hold failed: the reward dialog did not close after the confirmed apply.");
+        }
+
+        decimal karmaAfter = 0m;
+        bool karmaIncreased = await WaitForConditionWithinAsync(
+            () =>
+            {
+                karmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
+                return karmaAfter > karmaBefore;
+            },
+            ct,
+            TimeSpan.FromSeconds(8));
+        if (!karmaIncreased)
+        {
+            throw new InvalidOperationException(
+                $"Reward hold failed: karma did not increase ({karmaBefore} -> {karmaAfter}).");
+        }
+
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "r1-reward-hold-confirmed");
+
+        // Persist through the ordinary file-menu save route.
+        await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+        await WaitForAsync(
+            steps,
+            "reward hold: workspace saved (last command save_character)",
+            () => string.Equals(
+                window.SnapshotStateForAutomation().LastCommandId,
+                "save_character",
+                StringComparison.Ordinal),
+            ct);
+
+        string? workspaceId = window.SnapshotStateForAutomation().WorkspaceId?.Value;
+        DesktopMouseFirstJourneyRuntime.WriteRewardRecoveryReceipt(
+            stage: "hold",
+            workspaceId: workspaceId,
+            karmaBalance: karmaAfter,
+            operationId: null,
+            acknowledged: false,
+            recoveredFromDurableRecord: false);
+        // The ack leg reads the hold receipt for the expected karma balance and
+        // workspace id; write it alongside the recovery receipt.
+        string? holdReceiptPath = Environment.GetEnvironmentVariable(
+            "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD_RECEIPT");
+        if (string.IsNullOrWhiteSpace(holdReceiptPath))
+        {
+            throw new InvalidOperationException(
+                "Reward hold failed: CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD_RECEIPT is not set.");
+        }
+        File.WriteAllText(holdReceiptPath, System.Text.Json.JsonSerializer.Serialize(new
+        {
+            stage = "hold",
+            workspaceId,
+            karmaBalance = karmaAfter,
+            operationId = (string?)null,
+            acknowledged = false,
+            recoveredFromDurableRecord = false,
+            timestamp = DateTime.UtcNow.ToString("o")
+        }));
+        RecordStep(steps, $"reward hold receipt written (workspaceId={workspaceId ?? "none"}, karma={karmaAfter})");
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "reward_recovery_hold",
+            ScreenshotPaths: [],
+            Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+            {
+                ["reward_hold_dialog_opened"] = dialogOpened,
+                ["reward_hold_confirmed_closed"] = dialogClosed,
+                ["reward_hold_karma_increased"] = karmaIncreased,
+                ["reward_hold_saved"] = true
+            },
+            InteractionNotes:
+            [
+                $"Reward hold: +5 karma applied through the real CareerRewardsWindow route, the confirmed state appeared, the dialog closed WITHOUT acknowledgment, and the workspace was saved (karma {karmaBefore} -> {karmaAfter})."
+            ]);
+    }
+
+    /// <summary>
+    /// Phase B: fresh process. Reload the saved workspace, verify the karma
+    /// balance survived, open the reward dialog (the presenter recovers the
+    /// CONFIRMED result from the durable record per correction 1), click the
+    /// OFFERED acknowledge action, and verify the dialog closes with the
+    /// karma balance unchanged (no second reward write).
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseRewardAckLegAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string holdReceiptPath = Environment.GetEnvironmentVariable(
+            "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD_RECEIPT")
+            ?? throw new InvalidOperationException(
+                "The reward ack leg requires CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD_RECEIPT.");
+        using JsonDocument hold = JsonDocument.Parse(File.ReadAllText(holdReceiptPath));
+        if (!string.Equals(hold.RootElement.GetProperty("stage").GetString(), "hold", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The hold receipt does not record a hold stage.");
+        }
+
+        decimal expectedKarma = hold.RootElement.GetProperty("karmaBalance").GetDecimal();
+        string? savedWorkspaceId = hold.RootElement.GetProperty("workspaceId").GetString();
+        if (string.IsNullOrWhiteSpace(savedWorkspaceId))
+        {
+            throw new InvalidOperationException("The hold receipt does not carry a workspaceId.");
+        }
+
+        await LoadSavedWorkspaceForRewardLegAsync(window, steps, ct);
+        var sectionHost = window.ControlsForAutomation.SectionHost;
+        decimal karmaReopened = 0m;
+        bool karmaSurvived = await WaitForConditionWithinAsync(
+            () =>
+            {
+                karmaReopened = ReadCareerRewardsKarmaBalance(sectionHost);
+                return karmaReopened == expectedKarma;
+            },
+            ct,
+            TimeSpan.FromSeconds(10));
+        if (!karmaSurvived)
+        {
+            throw new InvalidOperationException(
+                $"Reward ack failed: reopened karma {karmaReopened} != hold receipt {expectedKarma}.");
+        }
+        RecordStep(steps, $"reward ack: reopened karma {karmaReopened} matches the hold receipt");
+
+        // Open the reward dialog; the presenter must surface the recovered
+        // CONFIRMED result from the durable record (correction 1).
+        Button? awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+        if (awardKarmaButton is null)
+        {
+            foreach (string candidateTabId in CareerRewardsTabCandidates)
+            {
+                bool tabReached = false;
+                for (int tabAttempt = 0; tabAttempt < 3 && !tabReached; tabAttempt++)
+                {
+                    try
+                    {
+                        await ClickSummaryNavigationTabAsync(window, candidateTabId, steps, ct, recordPointerAction);
+                        tabReached = true;
+                    }
+                    catch (TimeoutException timeout)
+                    {
+                        RecordStep(steps, $"reward ack tab walk: {candidateTabId} not reachable on attempt {tabAttempt} ({timeout.Message})");
+                    }
+                    catch (InvalidOperationException routingFailure)
+                    {
+                        RecordStep(steps, $"reward ack tab walk: {candidateTabId} routing failed on attempt {tabAttempt} ({routingFailure.Message})");
+                    }
+
+                    if (!tabReached)
+                    {
+                        await Task.Delay(500, ct);
+                    }
+                }
+
+                if (!tabReached)
+                {
+                    continue;
+                }
+
+                awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+                if (awardKarmaButton is not null)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (awardKarmaButton is null)
+        {
+            throw new InvalidOperationException(
+                "Reward ack failed: no tab rendered the career rewards Award Karma button (real route unavailable).");
+        }
+
+        bool dialogOpened = false;
+        for (int attempt = 1; attempt <= 3 && !dialogOpened; attempt++)
+        {
+            Button? freshButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
+            if (freshButton is null)
+            {
+                await Task.Delay(250, ct);
+                continue;
+            }
+
+            try
+            {
+                await RoutePointerClickAsync(freshButton);
+            }
+            catch (InvalidOperationException routingFailure)
+            {
+                RecordStep(steps, $"reward ack award attempt {attempt} routing failed: {routingFailure.Message}");
+            }
+
+            dialogOpened = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply") is not null
+                    || FindCareerRewardsDialogButton("career-rewards-acknowledge") is not null,
+                ct,
+                TimeSpan.FromSeconds(8));
+        }
+
+        if (!dialogOpened)
+        {
+            throw new InvalidOperationException(
+                "Reward ack failed: Award Karma click did not open the CareerRewardsWindow modal.");
+        }
+
+        // Correction 1 contract: the fresh dialog shows the recovered
+        // CONFIRMED state with the acknowledge button enabled, WITHOUT any
+        // new reward write (karma unchanged, asserted after the click).
+        Button? acknowledgeButton = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+        if (acknowledgeButton is null)
+        {
+            string dialogText = CaptureDialogTextForAutomation("career-rewards-detail");
+            throw new InvalidOperationException(
+                $"Reward ack failed: the reopened dialog did not show the acknowledged-confirm state. dialogText={dialogText}");
+        }
+
+        if (!acknowledgeButton.IsEffectivelyEnabled)
+        {
+            throw new InvalidOperationException(
+                "Reward ack failed: the recovered acknowledge button is present but disabled.");
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            acknowledgeButton.BringIntoView();
+            ForceHeadlessLayoutPump(acknowledgeButton);
+        });
+        await RoutePointerClickAsync(acknowledgeButton);
+        recordPointerAction();
+        RecordStep(steps, "reward ack: clicked the offered career-rewards-acknowledge action");
+
+        bool dialogClosed = await WaitForConditionWithinAsync(
+            () => FindCareerRewardsDialogButton("career-rewards-acknowledge") is null,
+            ct,
+            TimeSpan.FromSeconds(8));
+        if (!dialogClosed)
+        {
+            throw new InvalidOperationException(
+                "Reward ack failed: the dialog did not close after the offered acknowledgment.");
+        }
+
+        decimal karmaAfterAck = 0m;
+        bool karmaUnchanged = await WaitForConditionWithinAsync(
+            () =>
+            {
+                karmaAfterAck = ReadCareerRewardsKarmaBalance(sectionHost);
+                return karmaAfterAck == expectedKarma;
+            },
+            ct,
+            TimeSpan.FromSeconds(8));
+        if (!karmaUnchanged)
+        {
+            throw new InvalidOperationException(
+                $"Reward ack failed: karma changed across acknowledgment ({expectedKarma} -> {karmaAfterAck}); a second reward write occurred.");
+        }
+
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "r2-reward-ack-verified");
+
+        DesktopMouseFirstJourneyRuntime.WriteRewardRecoveryReceipt(
+            stage: "ack",
+            workspaceId: savedWorkspaceId,
+            karmaBalance: karmaAfterAck,
+            operationId: null,
+            acknowledged: true,
+            recoveredFromDurableRecord: true);
+        RecordStep(steps, $"reward ack receipt written (karma unchanged at {karmaAfterAck})");
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "reward_recovery_ack",
+            ScreenshotPaths: [],
+            Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+            {
+                ["reward_ack_dialog_opened"] = dialogOpened,
+                ["reward_ack_recovered_confirmed_shown"] = true,
+                ["reward_ack_offered_action_accepted"] = dialogClosed,
+                ["reward_ack_karma_unchanged"] = karmaUnchanged,
+                ["reward_ack_karma_survived_restart"] = karmaSurvived
+            },
+            InteractionNotes:
+            [
+                $"Reward ack: the fresh process recovered the confirmed reward from the durable record, the offered acknowledge action closed the dialog, and the karma balance stayed at {karmaAfterAck} (no second reward write)."
+            ]);
+    }
+
     private static async Task AwardKarmaForSr6AdvanceAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,

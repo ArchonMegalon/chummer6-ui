@@ -33,6 +33,63 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string PriorityTalentChoiceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_TALENT_CHOICE";
     public const string Sr6AdvanceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE";
     public const string Sr6AdvanceReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE_RECEIPT";
+    // T545/7867: two-process career reward recovery leg. Phase A awards karma
+    // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
+    // (process exits = process restart). Phase B is a fresh process that must
+    // recover the confirmed result from the durable store and acknowledge it
+    // through the actually-offered dialog action.
+    public const string RewardHoldEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD";
+    public const string RewardAckEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_ACK";
+    public const string RewardRecoveryReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_RECOVERY_RECEIPT";
+
+    public static bool RewardHoldRequested => string.Equals(
+        Environment.GetEnvironmentVariable(RewardHoldEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    public static bool RewardAckRequested => string.Equals(
+        Environment.GetEnvironmentVariable(RewardAckEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// T545/7867: writes the durable facts of the career reward recovery leg
+    /// so the second process (and the harness) can assert the confirmed
+    /// result survived the restart without a second reward write. No-op when
+    /// no receipt path is configured.
+    /// </summary>
+    public static void WriteRewardRecoveryReceipt(
+        string stage,
+        string? workspaceId,
+        decimal karmaBalance,
+        string? operationId,
+        bool acknowledged,
+        bool recoveredFromDurableRecord)
+    {
+        string? path = Environment.GetEnvironmentVariable(RewardRecoveryReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            stage,
+            workspaceId,
+            karmaBalance,
+            operationId,
+            acknowledged,
+            recoveredFromDurableRecord,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
 
     public const string UserJourneyTraceOutputEnvironmentVariable = "CHUMMER_DESKTOP_USER_JOURNEY_TRACE_OUTPUT";
     public const string UserJourneyTesterShardIdEnvironmentVariable = "CHUMMER_DESKTOP_USER_JOURNEY_TESTER_SHARD_ID";

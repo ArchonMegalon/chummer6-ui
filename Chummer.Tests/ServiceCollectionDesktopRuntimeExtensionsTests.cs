@@ -72,6 +72,8 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                     Assert.IsInstanceOfType<InProcessChummerClient>(client);
                     Assert.IsInstanceOfType<FileSr6CareerAttributeRecoveryStore>(
                         provider.GetRequiredService<Chummer.Presentation.Overview.ISr6CareerAttributeRecoveryStore>());
+                    Assert.IsInstanceOfType<FileCareerRewardRecoveryStore>(
+                        provider.GetRequiredService<Chummer.Presentation.Overview.ICareerRewardRecoveryStore>());
                     Assert.IsInstanceOfType<Chummer.Presentation.Overview.ICareerQualityAtomicWorkspace>(client);
                     Assert.IsInstanceOfType<OwnerManagedCareerQualityAuthorityResolver>(
                         provider.GetRequiredService<ICharacterCareerQualityAuthorityResolver>());
