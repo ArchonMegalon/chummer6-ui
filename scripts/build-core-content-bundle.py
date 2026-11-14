@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import tempfile
 
-PINNED_COMMITS = {"2057d3160122608339884cddc129bb6a4abdb6bb", "0751145891d84e124825c59a968c499eb22d2875"}
+PINNED_COMMITS = {"903be22902d51769a8742cb2778dbf4bf3385ac8", "80584effc7c4275b6abf2ee1b68fd50f7ccf8906"}
 ROOTS = ("Chummer/data", "Chummer/lang", "Chummer/customdata")
 MANIFEST = "core-content-manifest.json"
 
