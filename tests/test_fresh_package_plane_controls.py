@@ -538,13 +538,13 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "2806347c6a3f3f86c6634ba090996939620c83c6",
+            "blob": "581195fa099f82a386d22e0d5417516870387c7f",
             "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+            "rawSha256": "42d22722e10448613219317250190a0508b5a2aed68ccc9e920d8ad6e1c2e70d",
             "rawSizeBytes": 73930,
-            "semanticCanonicalSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+            "semanticCanonicalSha256": "42d22722e10448613219317250190a0508b5a2aed68ccc9e920d8ad6e1c2e70d",
             "semanticCanonicalSizeBytes": 73930,
             "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71",
         },
@@ -555,7 +555,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 73930
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5"
+        "42d22722e10448613219317250190a0508b5a2aed68ccc9e920d8ad6e1c2e70d"
     )
     assert package_plane.load_split_preseal_verifier().NEXT_AUTHORITY_ORACLE == (
         package_plane.SEALED_NEXT_AUTHORITY_ORACLE

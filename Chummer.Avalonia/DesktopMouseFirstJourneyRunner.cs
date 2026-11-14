@@ -1212,12 +1212,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         CharacterOverviewState state = window.SnapshotStateForAutomation();
                         return state.Profile is not null
                             && state.Build is not null
-                            // Gen-11: the post-finalization reload path can
-                            // surface a projection whose Build object exists
-                            // before TotalAttributes hydrates; the assertion
-                            // below requires 28, so the wait must require the
-                            // same property instead of racing it.
-                            && state.Build.TotalAttributes == 28
+                            // Gen-12 (clarification 7737): the legacy
+                            // <totalattributes> creation-budget element is no
+                            // longer persisted for SR5 payloads, so
+                            // Build.TotalAttributes projects 0 here. The
+                            // loader projects sections atomically from one
+                            // immutable snapshot, so section presence plus a
+                            // non-blank active section and a clean error
+                            // state is the honest visibility predicate; the
+                            // seeded attribute sum is asserted separately
+                            // from the actual workspace document below.
                             && !string.IsNullOrWhiteSpace(state.ActiveSectionJson)
                             && string.IsNullOrWhiteSpace(state.Error);
                     },
@@ -1233,7 +1237,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 bool newCharacterActionOpenedVisibleWorkspace = !string.IsNullOrWhiteSpace(createdWorkspaceId)
                     && openedVisibleState.HasActiveWorkspace
                     && profileIdentityMatches;
-                bool starterAttributesMatchSeededWorkspace = openedOverviewState.Build is { TotalAttributes: 28 };
+                StarterAttributeEvidence starterAttributeEvidence = await ReadWorkspaceNaturalAttributeTotalAsync(
+                    window,
+                    expectedRulesetId,
+                    createdWorkspaceId,
+                    journeyTimeout.Token);
+                int starterAttributeSum = starterAttributeEvidence.Sum;
+                bool starterAttributesMatchSeededWorkspace =
+                    starterAttributeEvidence.IsValid
+                    && starterAttributeSum == SeededStarterNaturalAttributeTotal;
                 bool sectionPreviewOmitsReviewCopy = sectionReviewPanel is null || !sectionReviewPanel.IsVisible;
                 bool visibleWorkspaceNonblank = !string.IsNullOrWhiteSpace(ReadWindowTextSnapshot(window))
                     && !string.IsNullOrWhiteSpace(openedOverviewState.ActiveSectionJson);
@@ -1246,6 +1258,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     + $"visible_open_count={openedVisibleState.OpenCount}; "
                     + $"profile_identity={profileIdentityMatches.ToString().ToLowerInvariant()}; "
                     + $"total_attributes={openedOverviewState.Build?.TotalAttributes}; "
+                    + $"natural_attribute_sum={starterAttributeSum}; "
+                    + $"natural_attribute_evidence={(starterAttributeEvidence.IsValid ? "valid" : starterAttributeEvidence.Diagnostics)}; "
                     + $"state_open_count={openedOverviewState.OpenWorkspaces.Count}; "
                     + $"session_open_count={openedOverviewState.Session.OpenWorkspaces.Count}");
                 string fileNewAfterScreenshot = RequireScreenshotPath(
@@ -2618,6 +2632,292 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         }
 
         RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
+    }
+
+    /// <summary>
+    /// Deterministic seeded starter sum of the eight natural (non-special)
+    /// attribute totals for SR5 Priority starter workspaces.
+    /// </summary>
+    private const int SeededStarterNaturalAttributeTotal = 28;
+
+    /// <summary>
+    /// Gen-12 (clarification 7737): the legacy <c>totalattributes</c> creation
+    /// budget is no longer persisted for SR5 payloads, so the seeded starter
+    /// attribute assertion reads the actual workspace document through the
+    /// owner-bound seam and sums the natural (non-special) attribute totals.
+    /// </summary>
+    /// <summary>
+    /// Evidence record for the seeded starter attribute read. Sum is -1 when
+    /// any binding or parsing precondition fails; Diagnostics explains why.
+    /// </summary>
+    internal sealed record StarterAttributeEvidence(int Sum, string Diagnostics)
+    {
+        public bool IsValid => Sum >= 0;
+    }
+
+    /// <summary>
+    /// Gen-12 (clarification 7737): the legacy <c>totalattributes</c> creation
+    /// budget is no longer persisted for SR5 payloads, so the seeded starter
+    /// attribute assertion reads the actual workspace document through the
+    /// owner-bound seam and sums the natural (non-special) attribute totals.
+    /// Root review correction (PR #601): the read is bound to the expected
+    /// created workspace id and the expected ruleset family; a workspace or
+    /// owner transition that occurs across the await invalidates the evidence
+    /// instead of being silently attributed to the created workspace.
+    /// </summary>
+    private static async Task<StarterAttributeEvidence> ReadWorkspaceNaturalAttributeTotalAsync(
+        MainWindow window,
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        CancellationToken ct)
+    {
+        CharacterOverviewState state = window.SnapshotStateForAutomation();
+        CharacterWorkspaceId? workspaceId = state.WorkspaceId;
+        if (workspaceId is null)
+        {
+            return new StarterAttributeEvidence(-1, "no active workspace in overview snapshot");
+        }
+
+        if (!string.IsNullOrWhiteSpace(expectedWorkspaceId)
+            && !string.Equals(workspaceId.Value.Value, expectedWorkspaceId, StringComparison.Ordinal))
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "workspace binding mismatch: overview reports " + workspaceId.Value.Value
+                + ", created workspace was " + expectedWorkspaceId);
+        }
+
+        IChummerClient client = App.Services?.GetRequiredService<IChummerClient>()
+            ?? throw new InvalidOperationException(
+                "starter attribute evidence failed: the app service provider is unavailable.");
+        IOwnerBoundWorkspaceMutationClient boundClient = client as IOwnerBoundWorkspaceMutationClient
+            ?? throw new InvalidOperationException(
+                "starter attribute evidence failed: the workspace client is not owner-bound.");
+
+        OwnerContextStamp owner = boundClient.CaptureOwnerContext();
+        if (!owner.IsValid)
+        {
+            return new StarterAttributeEvidence(-1, "pre-await owner context is not valid");
+        }
+
+        CommandResult<WorkspaceDocumentSnapshot> read = await boundClient.GetWorkspaceAsync(
+            owner, workspaceId.Value, ct);
+
+        // Post-await re-verification: the await suspended the UI loop, so the
+        // bound overview and the owner authority may both have transitioned.
+        // Attribute the document only when BOTH still match the pre-await
+        // binding; otherwise the read must not be used as journey evidence.
+        CharacterOverviewState postAwaitState = window.SnapshotStateForAutomation();
+        if (!string.Equals(
+                postAwaitState.WorkspaceId?.Value,
+                workspaceId.Value.Value,
+                StringComparison.Ordinal))
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "workspace transitioned across the read await: pre=" + workspaceId.Value.Value
+                + " post=" + (postAwaitState.WorkspaceId?.Value ?? "null"));
+        }
+
+        OwnerContextStamp postAwaitOwner = boundClient.CaptureOwnerContext();
+        if (postAwaitOwner != owner)
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "owner authority transitioned across the read await (revision "
+                + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")");
+        }
+
+        if (!read.Success
+            || read.Value?.Document is not { } document
+            || document.Format != WorkspaceDocumentFormat.NativeXml)
+        {
+            return new StarterAttributeEvidence(-1, "workspace read failed or document is not NativeXml");
+        }
+
+        // The document must carry the expected ruleset family: a read of a
+        // different edition's workspace is never seeded-starter evidence.
+        if (!RulesetFamilyMatches(document.RulesetId, expectedRulesetId, out string rulesetDiagnostic))
+        {
+            return new StarterAttributeEvidence(-1, rulesetDiagnostic);
+        }
+
+        XElement? root;
+        try
+        {
+            root = XDocument.Parse(document.State.Payload, LoadOptions.PreserveWhitespace).Root;
+        }
+        catch (System.Xml.XmlException parseFailure)
+        {
+            return new StarterAttributeEvidence(
+                -1, "workspace payload is not parseable XML: " + parseFailure.Message);
+        }
+
+        if (root is not { Name.LocalName: "character" })
+        {
+            return new StarterAttributeEvidence(-1, "workspace payload root is not <character>");
+        }
+
+        // The document's own gameedition must agree with the expected family.
+        string? documentEdition = root.Element("gameedition")?.Value.Trim();
+        if (!DocumentEditionMatches(documentEdition, expectedRulesetId, out string editionDiagnostic))
+        {
+            return new StarterAttributeEvidence(-1, editionDiagnostic);
+        }
+
+        StarterAttributeEvidence parsed = SumNaturalAttributes(root);
+        return parsed;
+    }
+
+    /// <summary>Normalizes a ruleset id to its lowercase family token (sr5/sr6).</summary>
+    internal static string NormalizeRulesetFamily(string? rulesetId)
+    {
+        string trimmed = (rulesetId ?? string.Empty).Trim();
+        if (trimmed.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        string lower = trimmed.ToLowerInvariant();
+        if (lower.StartsWith("sr", StringComparison.Ordinal) && lower.Length > 2)
+        {
+            lower = lower[2..];
+        }
+
+        // Accept edition markers that carry a suffix or ordinal ("5th",
+        // "5-core"): the leading digit is the family identity.
+        string leading = lower.Length > 0 && char.IsDigit(lower[0])
+            ? lower[..1]
+            : string.Empty;
+
+        return leading is "5" or "6" ? "sr" + leading : lower;
+    }
+
+    /// <summary>
+    /// True when the document's ruleset id belongs to the same ruleset family
+    /// as the expected journey ruleset. Comparison is family-level (sr5 vs
+    /// sr6) so SR5 documents carrying variant labels still bind.
+    /// </summary>
+    internal static bool RulesetFamilyMatches(
+        string? documentRulesetId,
+        string expectedRulesetId,
+        out string diagnostic)
+    {
+        string expectedFamily = NormalizeRulesetFamily(expectedRulesetId);
+        string documentFamily = NormalizeRulesetFamily(documentRulesetId);
+        if (expectedFamily.Length == 0)
+        {
+            diagnostic = "expected ruleset family is empty; refusing to bind";
+            return false;
+        }
+
+        if (documentFamily.Length == 0)
+        {
+            diagnostic = "workspace document carries no ruleset id; refusing to bind";
+            return false;
+        }
+
+        if (!string.Equals(documentFamily, expectedFamily, StringComparison.Ordinal))
+        {
+            diagnostic = "workspace document ruleset " + documentRulesetId
+                + " does not match expected journey ruleset " + expectedRulesetId;
+            return false;
+        }
+
+        diagnostic = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// True when the document's own gameedition element agrees with the
+    /// expected ruleset family. A missing gameedition element is a failure:
+    /// the edition must be asserted, not assumed.
+    /// </summary>
+    internal static bool DocumentEditionMatches(
+        string? documentEdition,
+        string expectedRulesetId,
+        out string diagnostic)
+    {
+        string expectedFamily = NormalizeRulesetFamily(expectedRulesetId);
+        if (string.IsNullOrWhiteSpace(documentEdition))
+        {
+            diagnostic = "workspace document carries no gameedition element; refusing to bind";
+            return false;
+        }
+
+        string editionFamily = NormalizeRulesetFamily(documentEdition);
+        if (!string.Equals(editionFamily, expectedFamily, StringComparison.Ordinal))
+        {
+            diagnostic = "workspace document gameedition " + documentEdition
+                + " does not match expected journey ruleset " + expectedRulesetId;
+            return false;
+        }
+
+        diagnostic = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// Root review correction (PR #601): the natural attribute sum requires
+    /// EXACTLY ONE valid integer totalvalue per each of the eight natural
+    /// attribute names. Missing, malformed, or duplicate entries reject the
+    /// evidence instead of silently summing a partial set.
+    /// </summary>
+    internal static StarterAttributeEvidence SumNaturalAttributes(XElement root)
+    {
+        string[] naturals = { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" };
+        Dictionary<string, int> values = new(StringComparer.OrdinalIgnoreCase);
+        List<string> problems = new();
+
+        foreach (XElement attribute in root.Element("attributes")?.Elements("attribute")
+            ?? Enumerable.Empty<XElement>())
+        {
+            string? name = attribute.Element("name")?.Value.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                problems.Add("attribute entry with blank name");
+                continue;
+            }
+
+            if (!naturals.Contains(name, StringComparer.OrdinalIgnoreCase))
+            {
+                // Special attributes (e.g. EDG) are out of scope; not a defect.
+                continue;
+            }
+
+            string? raw = attribute.Element("totalvalue")?.Value.Trim();
+            if (raw is null
+                || !int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int totalValue))
+            {
+                problems.Add("natural attribute " + name + " has missing or malformed totalvalue");
+                continue;
+            }
+
+            if (values.ContainsKey(name))
+            {
+                problems.Add("duplicate natural attribute entry: " + name);
+                continue;
+            }
+
+            values[name] = totalValue;
+        }
+
+        List<string> missing = naturals.Where(n => !values.ContainsKey(n)).ToList();
+        if (missing.Count > 0)
+        {
+            problems.Add("missing natural attributes: " + string.Join(",", missing));
+        }
+
+        if (problems.Count > 0)
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "natural attribute parse rejected: " + string.Join("; ", problems));
+        }
+
+        return new StarterAttributeEvidence(
+            values.Values.Sum(),
+            "exactly one valid totalvalue per each of 8 natural attributes");
     }
 
     /// <summary>
@@ -4169,9 +4469,17 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     ?? throw new InvalidOperationException("sr6 wizard: confirm checkbox not found after wait");
                 if (AcceptanceFallbacksOff)
                 {
-                    await RoutePointerClickAsync(check);
+                    // T556 lesson (mirrors rewards Apply + wizard footer): some
+                    // controls swallow a bare synthetic click; the hardened
+                    // waitForClick form plus retries delivers reliably.
+                    string tickDiagnostics = string.Empty;
+                    for (int tickAttempt = 0; tickAttempt < 3 && check.IsChecked != true; tickAttempt++)
+                    {
+                        tickDiagnostics = await RoutePointerClickAsync(check, waitForClick: true);
+                        RecordStep(steps, $"sr6 wizard: confirm checkbox pointer attempt {tickAttempt + 1}; checked={check.IsChecked}; {tickDiagnostics}");
+                    }
                     if (check.IsChecked != true)
-                        throw new InvalidOperationException("sr6 wizard: confirm checkbox did not tick via pointer input (acceptance mode)");
+                        throw new InvalidOperationException("sr6 wizard: confirm checkbox did not tick via pointer input (acceptance mode); " + tickDiagnostics);
                 }
                 else
                 {
@@ -4222,7 +4530,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             });
             if (lossAckNeeded && finalizeWindow is not null)
             {
-                await Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
                     var ack = finalizeWindow.GetVisualDescendants().OfType<CheckBox>()
                         .FirstOrDefault(c => string.Equals(
@@ -4231,8 +4539,24 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             StringComparison.Ordinal))
                         ?? throw new InvalidOperationException("sr6 wizard: loss ack not found");
                     if (AcceptanceFallbacksOff)
-                        throw new InvalidOperationException("acceptance mode: loss-ack requires genuine pointer input; property-set fallback disabled");
-                    ack.IsChecked = true;
+                    {
+                        // T556 lesson (mirrors confirm checkbox + rewards Apply):
+                        // drive the loss-ack through genuine pointer input with
+                        // the hardened waitForClick form plus retries instead of
+                        // a forbidden property-set.
+                        string ackDiagnostics = string.Empty;
+                        for (int ackAttempt = 0; ackAttempt < 3 && ack.IsChecked != true; ackAttempt++)
+                        {
+                            ackDiagnostics = await RoutePointerClickAsync(ack, waitForClick: true);
+                            RecordStep(steps, $"sr6 wizard: loss-ack pointer attempt {ackAttempt + 1}; checked={ack.IsChecked}; {ackDiagnostics}");
+                        }
+                        if (ack.IsChecked != true)
+                            throw new InvalidOperationException("sr6 wizard: loss-ack did not tick via pointer input (acceptance mode); " + ackDiagnostics);
+                    }
+                    else
+                    {
+                        ack.IsChecked = true;
+                    }
                 });
                 recordPointerAction();
                 RecordStep(steps, "sr6 wizard: unspent-balance loss acknowledged");
@@ -4251,7 +4575,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // window rather than the captured one.
             for (int finishAttempt = 0; finishAttempt < 3; finishAttempt++)
             {
-                await Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
                     Sr6CreationWizardWindow current = VisibleSr6WizardWindows()
                         .FirstOrDefault(w => w.GetVisualDescendants().OfType<Button>().Any(b => string.Equals(
@@ -4267,8 +4591,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     if (ack is { IsChecked: false })
                     {
                         if (AcceptanceFallbacksOff)
-                            throw new InvalidOperationException("acceptance mode: loss-ack requires genuine pointer input; property-set fallback disabled");
-                        ack.IsChecked = true;
+                        {
+                            // Root review correction (PR #601): the republish
+                            // re-drive re-ticks the loss-ack through the same
+                            // genuine pointer input as the primary drive - a
+                            // republish between the primary ack and the finish
+                            // click is a normal ordering hazard, and strict
+                            // acceptance mode must survive it rather than
+                            // abandon the journey evidence.
+                            string reDriveDiagnostics = string.Empty;
+                            for (int reDriveAttempt = 0; reDriveAttempt < 3 && ack.IsChecked != true; reDriveAttempt++)
+                            {
+                                reDriveDiagnostics = await RoutePointerClickAsync(ack, waitForClick: true);
+                            }
+                            if (ack.IsChecked != true)
+                                throw new InvalidOperationException("acceptance mode: loss-ack re-drive did not tick via pointer input; " + reDriveDiagnostics);
+                        }
+                        else
+                        {
+                            ack.IsChecked = true;
+                        }
                     }
                 });
                 bool finishEnabled = await Dispatcher.UIThread.InvokeAsync(() =>
@@ -4295,7 +4637,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // failing the assertion.
             for (int finishAttempt = 0; finishAttempt < 3; finishAttempt++)
             {
-                await Dispatcher.UIThread.InvokeAsync(() =>
+                await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
                     Sr6CreationWizardWindow current = Active();
                     var ack = current.GetVisualDescendants().OfType<CheckBox>()
@@ -4306,8 +4648,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     if (ack is { IsChecked: false })
                     {
                         if (AcceptanceFallbacksOff)
-                            throw new InvalidOperationException("acceptance mode: loss-ack requires genuine pointer input; property-set fallback disabled");
-                        ack.IsChecked = true;
+                        {
+                            // Root review correction (PR #601): the republish
+                            // re-drive re-ticks the loss-ack through the same
+                            // genuine pointer input as the primary drive - a
+                            // republish between the primary ack and the finish
+                            // click is a normal ordering hazard, and strict
+                            // acceptance mode must survive it rather than
+                            // abandon the journey evidence.
+                            string reDriveDiagnostics = string.Empty;
+                            for (int reDriveAttempt = 0; reDriveAttempt < 3 && ack.IsChecked != true; reDriveAttempt++)
+                            {
+                                reDriveDiagnostics = await RoutePointerClickAsync(ack, waitForClick: true);
+                            }
+                            if (ack.IsChecked != true)
+                                throw new InvalidOperationException("acceptance mode: loss-ack re-drive did not tick via pointer input; " + reDriveDiagnostics);
+                        }
+                        else
+                        {
+                            ack.IsChecked = true;
+                        }
                     }
                 });
                 bool finishEnabled = await Dispatcher.UIThread.InvokeAsync(() =>
@@ -5364,7 +5724,21 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             _ => throw new InvalidOperationException("Active menu bar surface does not expose a control.")
         };
 
-        MenuItem menu = FindVisibleMenuButton(host, menuButtonName)
+        MenuItem? menuCandidate = FindVisibleMenuButton(host, menuButtonName);
+        if (menuCandidate is null)
+        {
+            // The shell-initialized wait only requires the menu bar surface
+            // to be non-null; the individual menu button can materialize a
+            // beat later. Wait for the visible button instead of failing
+            // single-shot right after startup.
+            await WaitForAsync(
+                steps,
+                $"{menuLabel} menu button visible",
+                () => FindVisibleMenuButton(host, menuButtonName) is not null,
+                ct);
+            menuCandidate = FindVisibleMenuButton(host, menuButtonName);
+        }
+        MenuItem menu = menuCandidate
             ?? throw new InvalidOperationException($"The visible {menuLabel} menu button was not found.");
         await RoutePointerClickAsync(menu);
         recordPointerAction();
@@ -7041,6 +7415,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         {
                             bringIntoViewPending = false;
                             button.BringIntoView();
+                            // A scroll that actually moved the viewport is a
+                            // layout change AFTER the readiness pump ran, so
+                            // the composited scene still shows the pre-scroll
+                            // position and every hit-test misses (observed on
+                            // the creation-attributes-allocate-confirm button
+                            // when the selection-budget page outgrew the modal
+                            // viewport). Re-arm the pump so the next tick
+                            // rebuilds layout + scene against the post-scroll
+                            // geometry. Ordinary readiness work, one extra pass.
+                            layoutPumpPending = true;
                             Point p0 = button.TranslatePoint(default, rootVisual) ?? default;
                             geometryHistory.Clear();
                             geometryHistory.Add(p0);
@@ -7461,6 +7845,16 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         {
                             bringIntoViewPending = false;
                             button.BringIntoView();
+                            // A scroll that actually moved the viewport is a
+                            // layout change AFTER the readiness pump ran, so
+                            // the composited scene still shows the pre-scroll
+                            // position and every hit-test misses (observed on
+                            // the creation-attributes-allocate-confirm button
+                            // when the selection-budget page outgrew the modal
+                            // viewport). Re-arm the pump so the next tick
+                            // rebuilds layout + scene against the post-scroll
+                            // geometry. Ordinary readiness work, one extra pass.
+                            layoutPumpPending = true;
                             Point p0 = button.TranslatePoint(default, rootVisual) ?? default;
                             geometryHistory.Clear();
                             geometryHistory.Add(p0);

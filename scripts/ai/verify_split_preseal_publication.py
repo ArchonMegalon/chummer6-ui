@@ -202,6 +202,11 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/GrantBoundDesktopWorkspaceRoamingSyncTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityFixtures.cs",
         "Chummer.Tests/Presentation/DesktopMouseFirstJourneyManualModeTests.cs",
+        # R117 (2026-11-15): Root PR601 review corrections - starter-attribute
+        # read bound to the created workspace + SR5 edition identity with
+        # post-await owner/workspace transition rejection and exactly-8
+        # natural-attribute validation; focused binding-test lane added.
+        "Chummer.Tests/Presentation/DesktopMouseFirstJourneyStarterAttributeBindingTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationWizardPriorityReflowTests.cs",  # R112 2026-11-13: UX-04 priority reflow coverage (gen-9)
         "Chummer.Tests/Presentation/CreationQualitiesReviewBlockersTests.cs",  # R112 2026-11-13: UX-05 quality blocker-reason coverage (gen-9)
         "Chummer.Tests/Presentation/Sr6CareerAttributeAdvanceFlowTests.cs",
@@ -588,13 +593,13 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 64
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "2806347c6a3f3f86c6634ba090996939620c83c6",
+        "blob": "581195fa099f82a386d22e0d5417516870387c7f",
         "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "rawSha256": "42d22722e10448613219317250190a0508b5a2aed68ccc9e920d8ad6e1c2e70d",
         "rawSizeBytes": 73930,
-        "semanticCanonicalSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "semanticCanonicalSha256": "42d22722e10448613219317250190a0508b5a2aed68ccc9e920d8ad6e1c2e70d",
         "semanticCanonicalSizeBytes": 73930,
         "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71"
     },
