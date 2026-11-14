@@ -1589,9 +1589,16 @@ def test_pull_request_ci_pins_actionlint_for_workflow_semantic_validation() -> N
             "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
         ),
         "ACTIONLINT_VERSION": "1.7.12",
+        "ACTIONLINT_ASSET_ID": "384924896",
+        "ACTIONLINT_DOWNLOAD_TOKEN": "${{ github.token }}",
     }
     script = validation["run"]
-    assert "rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}" in script
+    assert '--header "Authorization: Bearer ${ACTIONLINT_DOWNLOAD_TOKEN}"' in script
+    assert "--location-trusted" not in script
+    assert (
+        "https://api.github.com/repos/rhysd/actionlint/releases/assets/"
+        "${ACTIONLINT_ASSET_ID}"
+    ) in script
     assert "sha256sum --check --strict" in script
     assert 'test "$("$actionlint_root/actionlint" -version | head -n 1)"' in script
     assert '"$actionlint_root/actionlint" -color' in script

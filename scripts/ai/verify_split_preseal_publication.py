@@ -323,6 +323,8 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "tests/test_fresh_package_plane_controls.py",
         "tests/test_creation_lifestyles_presentation_source_contract.py",
         "tests/test_keylocker_fixture_intake.py",
+        "tests/test_preview_nightly_candidate_export.py",
+        "tests/test_unsigned_windows_preview_native_evidence_workflows.py",
         "tests/test_split_preseal_publication.py",
         "tests/test_windows_installer_payload_gate.py",
         "tests/test_source_link_portability.py",

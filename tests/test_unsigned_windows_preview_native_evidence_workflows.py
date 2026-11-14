@@ -848,7 +848,11 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
         "DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId);",
         "Close();",
         "BeginAutomaticHandoffAsync();",
-        "await Task.Delay(250).ConfigureAwait(true);",
+        "internal static Func<int, CancellationToken, Task> "
+        "HandoffDelay { get; set; } =\n"
+        "        static (milliseconds, cancellationToken) => "
+        "Task.Delay(milliseconds, cancellationToken);",
+        "await HandoffDelay(250, lifetime).ConfigureAwait(true);",
         "DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(",
     ):
         assert fragment in install_linking
@@ -856,12 +860,25 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
         "private async Task RunAutomaticHandoffAsync()"
     )
     handoff_delay_index = install_linking.index(
-        "await Task.Delay(250).ConfigureAwait(true);",
+        "await HandoffDelay(250, lifetime).ConfigureAwait(true);",
         automatic_handoff,
+    )
+    lifetime_token_index = install_linking.index(
+        "CancellationToken lifetime = _windowLifetimeCancellation?.Token "
+        "?? CancellationToken.None;",
+        automatic_handoff,
+    )
+    cancellation_guard_index = install_linking.index(
+        "if (lifetime.IsCancellationRequested || _browserReturnReceived || "
+        "DesktopInstallLinkingRuntime.IsClaimed(_state))\n"
+        "            {\n"
+        "                return;\n"
+        "            }",
+        handoff_delay_index,
     )
     handoff_open_index = install_linking.index(
         "DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(",
-        handoff_delay_index,
+        cancellation_guard_index,
     )
     continue_unlinked = install_linking.index(
         "private Task ContinueUnlinkedAsync()"
@@ -871,7 +888,13 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
         continue_unlinked,
     )
     close_prompt = install_linking.index("Close();", mark_dismissed)
-    assert automatic_handoff < handoff_delay_index < handoff_open_index
+    assert (
+        automatic_handoff
+        < lifetime_token_index
+        < handoff_delay_index
+        < cancellation_guard_index
+        < handoff_open_index
+    )
     assert continue_unlinked < mark_dismissed < close_prompt
     assert (
         '["desktop.install_link.title"] = "Claim your copy"'
@@ -884,7 +907,7 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
         in localization
     )
     handoff_delay = re.search(
-        r"await Task\.Delay\(([0-9]+)\)\.ConfigureAwait\(true\);",
+        r"await HandoffDelay\(([0-9]+), lifetime\)\.ConfigureAwait\(true\);",
         install_linking,
     )
     capture_settle = re.search(

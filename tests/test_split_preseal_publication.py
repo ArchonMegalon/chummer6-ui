@@ -158,6 +158,26 @@ def test_keylocker_dependency_fix_has_exact_recipe_membership(tmp_path, monkeypa
             preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
 
 
+@pytest.mark.parametrize("path", [
+    "tests/test_preview_nightly_candidate_export.py",
+    "tests/test_unsigned_windows_preview_native_evidence_workflows.py",
+])
+def test_preview_assertion_repair_has_exact_recipe_membership(tmp_path, monkeypatch, path) -> None:
+    monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"M\t{path}")
+    monkeypatch.setattr(preseal, "commit_bytes", lambda *args: b"reviewed existing CI assertion repair")
+    monkeypatch.setattr(preseal, "commit_blob", lambda *args: "c" * 40)
+    assert preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)[0]["path"] == path
+    for status, candidate in (
+        ("D", path),
+        ("M", "tests/test_unreviewed_preview_override.py"),
+        ("M", preseal.MARKER_PATH),
+        *(("M", name) for name in preseal.CANONICAL_LOCK_PATHS),
+    ):
+        monkeypatch.setattr(preseal, "git", lambda *args, **kwargs: f"{status}\t{candidate}")
+        with pytest.raises(preseal.PresealError, match="not allowed"):
+            preseal.diff_rows(tmp_path, "a" * 40, "b" * 40)
+
+
 def test_windows_installer_gate_test_has_exact_recipe_membership(tmp_path, monkeypatch) -> None:
     path = "tests/test_windows_installer_payload_gate.py"
     assert path in preseal.ALLOWED_RECIPE_PATHS

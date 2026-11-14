@@ -39,6 +39,7 @@ jobs:
           ACTIONLINT_ARCHIVE_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
           ACTIONLINT_VERSION: 1.7.12
           ACTIONLINT_ASSET_ID: 384924896
+          ACTIONLINT_DOWNLOAD_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           archive="$RUNNER_TEMP/actionlint.tar.gz"
@@ -47,6 +48,7 @@ jobs:
           test ! -e "$actionlint_root"
           curl --fail --location --proto '=https' --tlsv1.2 \
             --header 'Accept: application/octet-stream' \
+            --header "Authorization: Bearer ${ACTIONLINT_DOWNLOAD_TOKEN}" \
             --output "$archive" \
             "https://api.github.com/repos/rhysd/actionlint/releases/assets/${ACTIONLINT_ASSET_ID}"
           printf '%s  %s\n' "$ACTIONLINT_ARCHIVE_SHA256" "$archive" \
