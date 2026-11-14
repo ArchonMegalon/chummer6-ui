@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import hashlib
+import select
+import shutil
 import subprocess
 import sys
 from datetime import UTC, datetime, timedelta
@@ -15,6 +17,119 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = REPO_ROOT / "scripts" / "ai" / "verify_mode_contract.py"
 VERIFY = REPO_ROOT / "scripts" / "ai" / "verify.sh"
 PACKAGE_PLANE = REPO_ROOT / "scripts" / "ai" / "with-package-plane.sh"
+
+
+def _package_plane_lock_case(
+    tmp_path: Path,
+) -> tuple[list[str], dict[str, str], Path, Path]:
+    if shutil.which("bash") is None or shutil.which("flock") is None:
+        pytest.skip("package-plane lock regression requires Bash and flock")
+    repository = tmp_path / "repository with spaces"
+    scripts = repository / "scripts" / "ai"
+    scripts.mkdir(parents=True)
+    for name in ("with-package-plane.sh", "_env.sh"):
+        shutil.copyfile(PACKAGE_PLANE.parent / name, scripts / name)
+        (scripts / name).chmod(0o644)
+
+    trace = tmp_path / "reentry argv"
+    bash_env = tmp_path / "bash environment"
+    bash_env.write_text(
+        'if [[ "${CHUMMER_PACKAGE_PLANE_LOCK_HELD:-}" == "1" ]]; then\n'
+        '  printf "%s\\0" "$0" "$@" >> "$CHUMMER_TEST_REENTRY_ARGV"\n'
+        'fi\n',
+        encoding="utf-8",
+    )
+    lock = tmp_path / "lock directory" / "package plane.lock"
+    lock.parent.mkdir()
+    state = tmp_path / "state"
+    environment = {
+        key: value for key, value in os.environ.items() if not key.startswith("CHUMMER_")
+    }
+    environment.update(
+        {
+            "BASH_ENV": str(bash_env),
+            "CHUMMER_TEST_REENTRY_ARGV": str(trace),
+            "CHUMMER_PACKAGE_PLANE_SERIALIZE": "1",
+            "CHUMMER_PACKAGE_PLANE_LOCK_ROOT": str(lock.parent),
+            "CHUMMER_PACKAGE_PLANE_LOCK_FILE": str(lock),
+            "CHUMMER_PACKAGE_PLANE_LOCK_WAIT_SECONDS": "5",
+            "CHUMMER_VERIFY_MODE": "invalid-lock-regression",
+            "WRITABLE_STATE_ROOT": str(state),
+            "DOTNET_CLI_HOME": str(state / "dotnet"),
+            "NUGET_PACKAGES": str(state / "packages"),
+            "XDG_CACHE_HOME": str(state / "cache"),
+            "XDG_DATA_HOME": str(state / "data"),
+            "TMPDIR": str(state / "tmp"),
+        }
+    )
+    command = [
+        "bash",
+        str(scripts / PACKAGE_PLANE.name),
+        "build",
+        "project with spaces.csproj",
+        "-p:Example=value with spaces",
+        "",
+        "*literal*",
+    ]
+    return command, environment, trace, lock
+
+
+@pytest.mark.parametrize("contended", [False, True])
+def test_package_plane_lock_reentry_preserves_nonexecutable_script_and_argv(
+    contended: bool, tmp_path: Path,
+) -> None:
+    fcntl = pytest.importorskip("fcntl")
+    command, environment, trace, lock = _package_plane_lock_case(tmp_path)
+    assert not os.access(tmp_path / command[1], os.X_OK)
+    if contended:
+        command[1] = str(Path(command[1]).relative_to(tmp_path))
+    waiting = f"[with-package-plane] waiting for package-plane lock: {lock}\n"
+    with lock.open("w") as lock_stream:
+        if contended:
+            fcntl.flock(lock_stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with subprocess.Popen(
+            command, cwd=tmp_path, env=environment, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        ) as child:
+            try:
+                prefix = ""
+                if contended:
+                    assert select.select([child.stdout], [], [], 5)[0]
+                    prefix = child.stdout.readline()
+                    assert prefix == waiting
+                    with pytest.raises(subprocess.TimeoutExpired):
+                        child.wait(timeout=0.2)
+                    assert not trace.exists()
+                    fcntl.flock(lock_stream, fcntl.LOCK_UN)
+                stdout, stderr = child.communicate(timeout=5)
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.communicate()
+
+    assert child.returncode == 2, (stdout, stderr)
+    assert prefix + stdout == waiting
+    assert stderr == "CHUMMER_VERIFY_MODE must be scaffold, slice, integration, or release.\n"
+    # The real script rejects the mode before any SDK call, after one guarded reentry.
+    expected = [str(tmp_path / command[1]), *command[2:]]
+    assert trace.read_bytes().split(b"\0") == [os.fsencode(arg) for arg in expected] + [b""]
+
+
+def test_package_plane_lock_timeout_does_not_reenter(tmp_path: Path) -> None:
+    fcntl = pytest.importorskip("fcntl")
+    command, environment, trace, lock = _package_plane_lock_case(tmp_path)
+    environment["CHUMMER_PACKAGE_PLANE_LOCK_WAIT_SECONDS"] = "1"
+    with lock.open("w") as lock_stream:
+        fcntl.flock(lock_stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        result = subprocess.run(
+            command, cwd=tmp_path, env=environment, text=True,
+            capture_output=True, check=False, timeout=5,
+        )
+
+    assert result.returncode == 1
+    assert result.stdout == f"[with-package-plane] waiting for package-plane lock: {lock}\n"
+    assert result.stderr == ""
+    assert not trace.exists()
 
 
 def run_contract(*args: object) -> subprocess.CompletedProcess[str]:
@@ -472,7 +587,7 @@ def test_strict_verify_builds_then_runs_product_assembly_without_msbuild_forward
     ) in source
     runner = source.split('dotnet "$repo_root/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"', 1)[1].split(
         'core_projection_after=', 1)[0]
-    assert "--minimum-expected-tests 945" in runner
+    assert "--minimum-expected-tests 950" in runner
     assert '--test-parameter "ChummerCoreContentRoot=$core_projection_root"' in runner
     assert "-m:1" not in runner and "--disable-build-servers" not in runner
 

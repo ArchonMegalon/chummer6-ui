@@ -52,7 +52,7 @@ if [[ "${CHUMMER_PACKAGE_PLANE_SERIALIZE:-1}" == "1" ]] && [[ -z "${CHUMMER_PACK
     echo "[with-package-plane] waiting for package-plane lock: $package_plane_lock_file"
     exec env CHUMMER_PACKAGE_PLANE_LOCK_HELD=1 \
       flock -w "$package_plane_lock_wait_seconds" -o "$package_plane_lock_file" \
-      "$0" "$@"
+      "$BASH" "$script_dir/with-package-plane.sh" "$@"
   fi
 fi
 
