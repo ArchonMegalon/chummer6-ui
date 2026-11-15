@@ -1664,6 +1664,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
             var sectionHost = window.ControlsForAutomation.SectionHost;
 
+            // Funding rounds leave auto-reopened CareerRewardsWindow editor
+            // loops alive; their concurrent prepare calls contend for the
+            // presenter display generation and silently refuse the fresh
+            // karma flow (click observed, no dialog). Cancel every live
+            // straggler modal first so the award prepare runs against a
+            // quiet presenter, mirroring the nuyen leg's guard.
+            await CancelAllCareerRewardsDialogsAsync(steps, ct);
             Button? awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
             if (awardKarmaButton is null)
             {
@@ -2552,6 +2559,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
                 ct,
                 TimeSpan.FromSeconds(8));
+            if (!dialogOpened)
+            {
+                // A prior funding apply can leave its Confirmed pending
+                // reward un-acknowledged; every fresh dialog then shows the
+                // confirmation panel (apply hidden) and the attempt leaves
+                // the window behind, stacking Confirmed modals. Mirror the
+                // nuyen leg's blocked-window recovery: acknowledge through
+                // the dialog's own route, then sweep, before retrying.
+                foreach (string windowDetail in DescribeVisibleCareerRewardsWindows())
+                {
+                    RecordStep(steps, "sr6 funding blocked window: " + windowDetail);
+                }
+                Button? pendingAcknowledge = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+                if (pendingAcknowledge is not null)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        pendingAcknowledge.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, pendingAcknowledge)));
+                    recordPointerAction();
+                    RecordStep(steps, "sr6 funding: acknowledged the Confirmed pending reward blocking the award route");
+                }
+                await CancelAllCareerRewardsDialogsAsync(steps, ct);
+            }
         }
 
         if (!dialogOpened)
@@ -2566,6 +2595,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // only: apply the grant through the owner-bound workspace
             // mutation client from inside the journey harness (no product
             // seam), record the gap, and continue the advance leg.
+            if (AcceptanceFallbacksOff)
+            {
+                throw new InvalidOperationException(
+                    "SR6 advance funding failed: the real career manual-karma route did not open its dialog; "
+                    + "diagnostic input fallbacks are disabled (ACCEPTANCE_FALLBACKS_OFF=1) so the fixture-only "
+                    + "grant must not run. Visible rewards windows: "
+                    + string.Join(" | ", DescribeVisibleCareerRewardsWindows()));
+            }
             RecordStep(steps, "sr6 funding: manual-karma route refused (SR6 exchange-rate product gap); falling back to fixture-only grant");
             await ApplyFixtureKarmaGrantForSr6AdvanceAsync(window, steps, ct);
             RecordStep(steps, "sr6 funding: fixture grant applied (25 karma); manual-karma product gap reported");
@@ -2701,6 +2738,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             RecordStep(steps, $"sr6 rewards straggler sweep round {round}: {live.Count} live CareerRewardsWindow modal(s)");
             foreach (CareerRewardsWindow straggler in live)
             {
+                // A Confirmed pending reward hides the apply button and
+                // shows the confirmation panel; cancel alone cannot clear
+    // that state and every subsequent fresh open is refused. Route
+                // the dialog's own acknowledge action first so the window
+                // can actually close on the cancel round below.
+                Button? stragglerAck = straggler.GetVisualDescendants().OfType<Button>()
+                    .FirstOrDefault(button => string.Equals(
+                        AutomationProperties.GetAutomationId(button),
+                        "career-rewards-acknowledge",
+                        StringComparison.Ordinal));
+                if (stragglerAck is not null)
+                {
+                    // Same shape as the nuyen leg's blocked-window ack: the
+                    // acknowledge control can live in a collapsed panel, so
+                    // no visibility gate - raise the Click event and wait
+                    // for the pending reward to clear. Fall through to the
+                    // cancel click below so the window itself still closes.
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        stragglerAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, stragglerAck)));
+                    cancelledAny = true;
+                    await Task.Delay(400, ct);
+                }
                 Button? cancel = straggler.GetVisualDescendants().OfType<Button>()
                     .FirstOrDefault(button => string.Equals(
                         AutomationProperties.GetAutomationId(button),
@@ -3855,6 +3914,43 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     if (AcceptanceFallbacksOff)
                     {
                         RecordStep(steps, "sr6 apply fallback SUPPRESSED (acceptance mode)");
+                        // Acceptance mode: retry with GENUINE pointer input
+                        // only (no routed-event rescue). The first advance
+                        // previously had no bounded retry here, unlike the
+                        // natural-limit leg's card+apply retry.
+                        for (int applyRetry = 0; applyRetry < 3; applyRetry++)
+                        {
+                            Button? retryApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
+                            if (retryApply is null || !retryApply.IsEffectivelyEnabled)
+                            {
+                                break;
+                            }
+                            try
+                            {
+                                await RoutePointerClickAsync(retryApply);
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                // Swallowed again - re-arm and retry after a
+                                // settle delay; the notice wait below decides.
+                            }
+                            recordPointerAction();
+                            RecordStep(steps, $"sr6 apply genuine retry {applyRetry + 1}: pointer re-click on the live apply button");
+                            bool retryNotice = await WaitForConditionWithinAsync(
+                                () =>
+                                {
+                                        string notice = window.SnapshotStateForAutomation().Notice ?? string.Empty;
+                                        return notice.StartsWith("Career advancement: ", StringComparison.Ordinal)
+                                            || notice.StartsWith("advanced ", StringComparison.Ordinal);
+                                },
+                                ct,
+                                TimeSpan.FromSeconds(4));
+                            if (retryNotice)
+                            {
+                                break;
+                            }
+                            await Task.Delay(400, ct);
+                        }
                     }
                     else
                     {
