@@ -2817,6 +2817,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 // every fresh dialog show the confirmation panel instead of
                 // the entry form (apply hidden). Acknowledge it through the
                 // dialog's own acknowledge route so the next open is fresh.
+                string? balanceBefore = DescribeCareerRewardsDialogBalanceText();
+                RecordStep(steps, $"sr6 nuyen blocked balance before ack: {balanceBefore ?? "none"}");
                 Button? pendingAcknowledge = FindCareerRewardsDialogButton("career-rewards-acknowledge");
                 if (pendingAcknowledge is not null)
                 {
@@ -2827,7 +2829,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         () => FindCareerRewardsDialogButton("career-rewards-acknowledge") is null,
                         ct,
                         TimeSpan.FromSeconds(6));
-                    RecordStep(steps, $"sr6 nuyen leg: acknowledged the Confirmed pending reward (cleared={ackCleared})");
+                    string? balanceAfter = DescribeCareerRewardsDialogBalanceText();
+                    RecordStep(steps, $"sr6 nuyen leg: acknowledged the Confirmed pending reward (cleared={ackCleared}; balanceAfter={balanceAfter ?? "none"})");
                 }
                 // Sweep any lingering BLOCKED dialogs: a stale window still
                 // hosts a collapsed apply button that would foul the later
@@ -2899,7 +2902,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 () => FindCareerRewardsDialogButton("career-rewards-apply")?.IsEnabled == true,
                 ct,
                 TimeSpan.FromSeconds(6));
-            RecordStep(steps, $"sr6 nuyen leg: settled pending reward at entry round {settle} (cleared={entryCleared})");
+            RecordStep(steps, $"sr6 nuyen leg: settled pending reward at entry round {settle} (cleared={entryCleared}; balance={DescribeCareerRewardsDialogBalanceText() ?? "none"})");
         }
 
         // T496/T546: same synthetic pointer swallow as the karma Apply.
@@ -5224,6 +5227,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return null;
         }
 
+        private static string? DescribeCareerRewardsDialogBalanceText()
+        {
+            return global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows
+                    .OfType<CareerRewardsWindow>()
+                    .Where(w => w.IsVisible)
+                    .SelectMany(w => w.GetVisualDescendants().OfType<global::Avalonia.Controls.TextBlock>())
+                    .Select(t => t.Text)
+                    .FirstOrDefault(t => t is not null
+                        && (t.Contains("recorded", StringComparison.OrdinalIgnoreCase)
+                            || t.Contains("acknowledg", StringComparison.OrdinalIgnoreCase)))
+                : null;
+        }
         private static Button? FindCareerRewardsDialogButton(string automationId)
         {
             return global::Avalonia.Application.Current?.ApplicationLifetime
