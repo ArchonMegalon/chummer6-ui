@@ -2867,6 +2867,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             throw new InvalidOperationException(
                 "sr6 nuyen leg failed: the CareerRewardsWindow apply button disappeared before the apply click.");
         }
+        // A pending Confirmed reward is surfaced into every fresh dialog
+        // (pendingResult) and disables the entry until acknowledged.
+        bool applyEnabled = await Dispatcher.UIThread.InvokeAsync(() => applyButton.IsEnabled);
+        if (!applyEnabled)
+        {
+            Button? entryAck = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+            if (entryAck is not null)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                    entryAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, entryAck)));
+                recordPointerAction();
+                bool entryCleared = await WaitForConditionWithinAsync(
+                    () => FindCareerRewardsDialogButton("career-rewards-apply")?.IsEnabled == true,
+                    ct,
+                    TimeSpan.FromSeconds(6));
+                RecordStep(steps, $"sr6 nuyen leg: acknowledged pending reward at entry (cleared={entryCleared})");
+            }
+            else
+            {
+                RecordStep(steps, "sr6 nuyen leg: apply disabled with no acknowledge button rendered");
+            }
+        }
 
         // T496/T546: same synthetic pointer swallow as the karma Apply.
         bool nuyenApplyClickObserved = false;
