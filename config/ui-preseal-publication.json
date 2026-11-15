@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "7415fc66e4430977679573019bd67facf9a754e9",
-  "baseTree": "66a914b69f64f999019fae5a409f13618511938d",
+  "baseCommit": "989db5c25b18a0005f5cdee2bbe6987b446b7f37",
+  "baseTree": "4d113de7e405e422426c5b3534d6c500ec227315",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,41 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "941c94105fa95852f357f723748e379cd2b4bd93",
-      "path": "Chummer.Presentation/Overview/CareerManualKarmaEditRequest.cs",
-      "sha256": "6b7bb70dba2c082f8422d3896630aa1eb682b6a754a58c4217b372ece4e3d201",
-      "sizeBytes": 8186,
+      "blob": "9e3b2375747ee4e713018720219c14b57a8bf937",
+      "path": "Chummer.Avalonia/Controls/CareerRewardsWindow.cs",
+      "sha256": "2212b74b80c198a62d613d978bbd5a3fbaa074004fc51cafce93810a187ec9d6",
+      "sizeBytes": 22130,
       "status": "M"
     },
     {
-      "blob": "8c46870f82dd09ffa1c71d58d96c18987adc9cb4",
-      "path": "Chummer.Presentation/Overview/CareerManualNuyenEditRequest.cs",
-      "sha256": "e44536fe825d309e7921fe8e38c6a5e2003d810dd24a432d87f78810488953c7",
-      "sizeBytes": 4351,
-      "status": "M"
-    },
-    {
-      "blob": "6a42d377d9a3f0fdf5181adfaa06c5dac9f97257",
-      "path": "Chummer.Presentation/Overview/WorkspaceXmlMutationCatalog.cs",
-      "sha256": "f4073e4f2e58600708c53b14a18d6ecdcb291b73abaf8a4d8d56063a9774f937",
-      "sizeBytes": 308149,
-      "status": "M"
-    },
-    {
-      "blob": "72d57c0c474e0b41b3b9edccb1e0a6096ac97c6a",
-      "path": "Chummer.Tests/Presentation/CareerManualKarmaSr6OrdinaryRouteTests.cs",
-      "sha256": "092effdbd7978860841d7a49a3b3bf1d42e690b2663a13a488a67da7b305338b",
-      "sizeBytes": 17986,
-      "status": "A"
-    },
-    {
-      "blob": "2cccbb8e3c776c7b1b52be53550f328bbf718c1f",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "96a82a4a81f60cb468c56d12d4834cd7f881eb90eb9a26617c796600b31b7f1a",
-      "sizeBytes": 77626,
+      "blob": "b646bb9859b9eec34481c4ee58d54bfbbc228386",
+      "path": "Chummer.Tests/Presentation/CareerRewardsUiTests.cs",
+      "sha256": "fe2348229afcc0f5c2836094a4a4bb029862a492ceec3abb052fd7d609eeca98",
+      "sizeBytes": 48677,
       "status": "M"
     }
   ],
-  "recipeTree": "3e4f3c88588e2ea431aa0f4bc36b1db5b0964470",
+  "recipeTree": "a80a662f9d7c370b592f1f5878ea3a999c5d2a82",
   "releaseClaim": false
 }

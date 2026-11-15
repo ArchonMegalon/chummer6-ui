@@ -287,7 +287,11 @@ public sealed class CareerRewardsWindow : Window
                 _nuyenState.Nuyen,
                 gain ? CharacterCareerManualNuyenAction.Gain : CharacterCareerManualNuyenAction.Spend,
                 amount,
-                Percent: 0m,
+                // Plain (non-exchange) edits quote at face value: the rules
+                // scale enteredAmount by percent/100, so a manual gain/spend
+                // must pass 100, not 0 (8066: zero-percent quote committed a
+                // no-op expense while reporting success).
+                Percent: 100m,
                 reason,
                 expenseDate,
                 Refund: false,
