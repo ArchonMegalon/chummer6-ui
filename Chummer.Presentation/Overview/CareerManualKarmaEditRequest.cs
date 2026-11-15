@@ -26,6 +26,53 @@ public sealed record CareerManualKarmaEditRequest(
     public Guid OperationId { get; init; } = Guid.NewGuid();
 }
 
+/// <summary>
+/// Resolves the Chummer5 Working-for-the-People / Working-for-the-Man
+/// exchange rates behind the career manual Karma and Nuyen editors.
+/// SR6 workspaces bind virtual creation profiles
+/// (sr6.creation.profiles#profile:...) that never select an SR5
+/// settings.xml row, so the exchange keys nuyenperbpwftp/nuyenperbpwftm
+/// cannot resolve there. The ordinary (KarmaNuyenExchange=false) reward
+/// route then reuses Core's neutral-rate precedent from
+/// CharacterAfterRunRewardProjector: neutral values that do not claim a
+/// saved settings profile resolved either exchange rate. Exchange-capable
+/// requests stay refused for SR6 in WorkspaceXmlMutationCatalog; SR5
+/// keeps the exact fail-closed contract.
+/// </summary>
+internal static class CareerManualExchangeRates
+{
+    internal const decimal NeutralRate = 1m;
+
+    internal static (decimal? WorkingForPeopleRate, decimal? WorkingForManRate) Resolve(
+        XElement characterRoot,
+        string xml,
+        ICharacterSourceDataResolver? sourceDataResolver)
+    {
+        ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
+        if (sourceData is not null
+            && sourceData.TryResolveKarmaNuyenExchangeRates(
+                out decimal resolvedWorkingForPeopleRate,
+                out decimal resolvedWorkingForManRate))
+        {
+            return (resolvedWorkingForPeopleRate, resolvedWorkingForManRate);
+        }
+
+        if (IsSr6Document(characterRoot))
+        {
+            return (NeutralRate, NeutralRate);
+        }
+
+        return (null, null);
+    }
+
+    internal static bool IsSr6Document(XElement characterRoot)
+    {
+        string? edition = characterRoot.Elements("gameedition").FirstOrDefault()?.Value.Trim();
+        return string.Equals(edition, "SR6", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(edition, "Shadowrun 6", StringComparison.OrdinalIgnoreCase);
+    }
+}
+
 internal static class CareerManualKarmaEditorProjector
 {
     public static CareerManualKarmaEditorState Project(
@@ -57,17 +104,8 @@ internal static class CareerManualKarmaEditorProjector
         int availableKarma = ReadOptionalInt(root, "karma");
         decimal availableNuyen = ReadOptionalDecimal(root, "nuyen");
 
-        decimal? workingForPeopleRate = null;
-        decimal? workingForManRate = null;
-        ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
-        if (sourceData is not null
-            && sourceData.TryResolveKarmaNuyenExchangeRates(
-                out decimal resolvedWorkingForPeopleRate,
-                out decimal resolvedWorkingForManRate))
-        {
-            workingForPeopleRate = resolvedWorkingForPeopleRate;
-            workingForManRate = resolvedWorkingForManRate;
-        }
+        (decimal? workingForPeopleRate, decimal? workingForManRate)
+            = CareerManualExchangeRates.Resolve(root, xml, sourceDataResolver);
 
         if (!CharacterCareerManualKarmaRules.TryProject(
                 created,
