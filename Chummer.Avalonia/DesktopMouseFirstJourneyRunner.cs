@@ -2655,6 +2655,108 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
     }
 
+    private static async Task AwardNuyenForSr6AdvanceAsync(
+        MainWindow window,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        Button? nuyenButton = FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen");
+        if (nuyenButton is null)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: no visible tab rendered the career rewards Adjust Nuyen button.");
+        }
+
+        bool dialogOpened = false;
+        for (int attempt = 1; attempt <= 3 && !dialogOpened; attempt++)
+        {
+            Button? freshButton = FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen");
+            if (freshButton is null)
+            {
+                await Task.Delay(250, ct);
+                continue;
+            }
+
+            try
+            {
+                await RoutePointerClickAsync(freshButton);
+            }
+            catch (InvalidOperationException routingFailure)
+            {
+                RecordStep(steps, $"sr6 nuyen adjust attempt {attempt} routing failed: {routingFailure.Message}");
+            }
+
+            dialogOpened = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
+                ct,
+                TimeSpan.FromSeconds(8));
+        }
+
+        if (!dialogOpened)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the CareerRewardsWindow modal did not open from the Adjust Nuyen button.");
+        }
+
+        TextBox? amountBox = FindCareerRewardsDialogTextBox("career-rewards-amount");
+        if (amountBox is null)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the CareerRewardsWindow modal did not render an amount field.");
+        }
+
+        // Gain is the default action radio in nuyen mode.
+        amountBox.Text = "5000";
+        Dispatcher.UIThread.RunJobs();
+
+        TextBox? reasonBox = FindCareerRewardsDialogTextBox("career-rewards-reason");
+        if (reasonBox is not null)
+        {
+            reasonBox.Text = "SR6 qualification nuyen adjustment";
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Button? applyButton = FindCareerRewardsDialogButton("career-rewards-apply");
+        if (applyButton is null)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the CareerRewardsWindow apply button disappeared before the apply click.");
+        }
+
+        // T496/T546: same synthetic pointer swallow as the karma Apply.
+        bool nuyenApplyClickObserved = false;
+        void OnNuyenApplyClick(object? sender, RoutedEventArgs args) => nuyenApplyClickObserved = true;
+        applyButton.Click += OnNuyenApplyClick;
+        string nuyenApplyDiagnostics;
+        try
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                applyButton.BringIntoView();
+                ForceHeadlessLayoutPump(applyButton);
+            });
+            nuyenApplyDiagnostics = await RoutePointerClickAsync(applyButton, waitForClick: true);
+            nuyenApplyDiagnostics += ";clickObserved=" + nuyenApplyClickObserved;
+        }
+        finally
+        {
+            applyButton.Click -= OnNuyenApplyClick;
+        }
+        recordPointerAction();
+        RecordStep(steps, "sr6 nuyen leg: clicked career rewards Apply (+5,000 nuyen); " + nuyenApplyDiagnostics);
+
+        bool dialogClosed = await WaitForConditionWithinAsync(
+            () => FindCareerRewardsDialogButton("career-rewards-apply") is null,
+            ct,
+            TimeSpan.FromSeconds(8));
+        if (!dialogClosed)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the CareerRewardsWindow modal did not close after Apply.");
+        }
+    }
+
     /// <summary>
     /// Deterministic seeded starter sum of the eight natural (non-special)
     /// attribute totals for SR5 Priority starter workspaces.
@@ -4308,6 +4410,23 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
 
 
+            // 8066 acceptance leg: adjust nuyen through the real CareerRewardsWindow
+            // nuyen route (Gain default) and verify the balance moved.
+            decimal nuyenBeforeAdjust = ReadCareerRewardsNuyenBalance(sectionHost);
+            await AwardNuyenForSr6AdvanceAsync(window, steps, ct, recordPointerAction);
+            bool nuyenAdjusted = await WaitForConditionWithinAsync(
+                () => ReadCareerRewardsNuyenBalance(sectionHost) > nuyenBeforeAdjust,
+                ct,
+                TimeSpan.FromSeconds(8));
+            if (!nuyenAdjusted)
+            {
+                throw new InvalidOperationException(
+                    "sr6 nuyen leg failed: nuyen balance did not increase after the Apply (was " + nuyenBeforeAdjust + ").");
+            }
+            decimal nuyenAfterAdjust = ReadCareerRewardsNuyenBalance(sectionHost);
+            RecordStep(steps, $"sr6 nuyen leg: nuyen {nuyenBeforeAdjust} -> {nuyenAfterAdjust} via the real Adjust Nuyen route");
+
+
             // Persist the advanced character through the ordinary file-menu save
             // route so a fresh process can verify the durable outcome.
             await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
@@ -4343,7 +4462,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     ["sr6_apply_notice_published"] = noticePublished,
                     ["sr6_reopened_dialog_cancelled"] = !reopenedAppeared || reopenedCancelled,
                     ["sr6_karma_debited"] = karmaDebited,
-                    ["sr6_natural_limit_rejected"] = naturalLimitRejected
+                    ["sr6_natural_limit_rejected"] = naturalLimitRejected,
+                    ["sr6_nuyen_adjusted"] = nuyenAdjusted
                 },
                 InteractionNotes:
                 [
@@ -5045,6 +5165,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 ? value
                 : 0m;
         }
+
+    private static decimal ReadCareerRewardsNuyenBalance(SectionHostControl sectionHost)
+    {
+        TextBlock? balance = sectionHost.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .FirstOrDefault(textBlock => textBlock.Text?.StartsWith("Karma ", StringComparison.Ordinal) == true);
+        if (balance?.Text is not string text)
+        {
+            return 0m;
+        }
+
+        // "Karma 32.5 \u00B7 \u00A51,234"
+        string[] segments = text.Split('\u00B7');
+        if (segments.Length < 2)
+        {
+            return 0m;
+        }
+        string nuyenToken = segments[1].Trim().TrimStart('\u00A5');
+        return decimal.TryParse(nuyenToken, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal value)
+            ? value
+            : 0m;
+    }
 
     private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSaveReloadWorkflowAsync(
         MainWindow window,
