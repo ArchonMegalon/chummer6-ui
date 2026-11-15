@@ -2678,19 +2678,48 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 continue;
             }
 
+            bool openClickObserved = false;
+            void OnOpenClick(object? sender, RoutedEventArgs args) => openClickObserved = true;
+            freshButton.Click += OnOpenClick;
+            string openDiagnostics;
             try
             {
-                await RoutePointerClickAsync(freshButton);
+                openDiagnostics = await RoutePointerClickAsync(freshButton, waitForClick: true);
+                openDiagnostics += ";clickObserved=" + openClickObserved;
             }
             catch (InvalidOperationException routingFailure)
             {
                 RecordStep(steps, $"sr6 nuyen adjust attempt {attempt} routing failed: {routingFailure.Message}");
+                openDiagnostics = "routingFailed";
+            }
+            finally
+            {
+                freshButton.Click -= OnOpenClick;
             }
 
             dialogOpened = await WaitForConditionWithinAsync(
                 () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
                 ct,
                 TimeSpan.FromSeconds(8));
+            if (!dialogOpened)
+            {
+                // Mirror the established dialog-button fallback: the section
+                // host rewards button can swallow synthetic pointer clicks;
+                // raise the Click routed event on the live instance once.
+                Button? liveNuyen = await Dispatcher.UIThread.InvokeAsync(
+                    () => FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen"));
+                if (liveNuyen is not null)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        liveNuyen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveNuyen)));
+                    RecordStep(steps, "sr6 nuyen open fallback: raised Click routed event after swallowed pointer click");
+                }
+                dialogOpened = await WaitForConditionWithinAsync(
+                    () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
+                    ct,
+                    TimeSpan.FromSeconds(8));
+            }
+            RecordStep(steps, $"sr6 nuyen adjust attempt {attempt}: {openDiagnostics}; dialogOpened={dialogOpened}");
         }
 
         if (!dialogOpened)
