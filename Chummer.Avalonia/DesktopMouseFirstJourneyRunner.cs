@@ -2655,6 +2655,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
     }
 
+    private static System.Collections.Generic.IEnumerable<string> DescribeVisibleCareerRewardsWindows()
+    {
+        if (global::Avalonia.Application.Current?.ApplicationLifetime
+            is not IClassicDesktopStyleApplicationLifetime describeDesktop)
+        {
+            yield break;
+        }
+        foreach (CareerRewardsWindow live in describeDesktop.Windows.OfType<CareerRewardsWindow>().Where(w => w.IsVisible))
+        {
+            Button? apply = live.GetVisualDescendants().OfType<Button>()
+                .FirstOrDefault(button => string.Equals(AutomationProperties.GetAutomationId(button), "career-rewards-apply", StringComparison.Ordinal));
+            TextBox? amount = live.GetVisualDescendants().OfType<TextBox>()
+                .FirstOrDefault(textBox => string.Equals(AutomationProperties.GetAutomationId(textBox), "career-rewards-amount", StringComparison.Ordinal));
+            yield return $"title={live.Title}; applyVisible={(apply?.IsVisible.ToString().ToLowerInvariant() ?? "missing")};"
+                + $" amountVisible={(amount?.IsVisible.ToString().ToLowerInvariant() ?? "missing")};"
+                + $" refusal={(live.LastRefusal ?? "none")};"
+                + $" resultStatus={(live.LastResult?.Status.ToString() ?? "none")}";
+        }
+    }
+
     private static int CountVisibleCareerRewardsWindows()
     {
         return global::Avalonia.Application.Current?.ApplicationLifetime
@@ -2710,7 +2730,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
     private static async Task AwardNuyenForSr6AdvanceAsync(
         MainWindow window,
+        DesktopMouseFirstJourneyContext context,
         List<string> steps,
+        List<string> screenshotPaths,
         CancellationToken ct,
         Action recordPointerAction)
     {
@@ -2785,6 +2807,11 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 string presenterError = nuyenBlockedState.Error ?? "none";
                 string presenterNotice = nuyenBlockedState.Notice ?? "none";
                 RecordStep(steps, $"sr6 nuyen adjust attempt {attempt} BLOCKED: presenterError={presenterError}; notice={presenterNotice}; busy={nuyenBlockedState.IsBusy.ToString().ToLowerInvariant()}; liveRewardsWindows={CountVisibleCareerRewardsWindows()}");
+                foreach (string windowDetail in DescribeVisibleCareerRewardsWindows())
+                {
+                    RecordStep(steps, "sr6 nuyen blocked window: " + windowDetail);
+                }
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, $"06e-nuyen-blocked-{attempt}");
             }
             RecordStep(steps, $"sr6 nuyen adjust attempt {attempt}: {openDiagnostics}; dialogOpened={dialogOpened}");
         }
@@ -4509,7 +4536,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // 8066 acceptance leg: adjust nuyen through the real CareerRewardsWindow
             // nuyen route (Gain default) and verify the balance moved.
             decimal nuyenBeforeAdjust = ReadCareerRewardsNuyenBalance(sectionHost);
-            await AwardNuyenForSr6AdvanceAsync(window, steps, ct, recordPointerAction);
+            await AwardNuyenForSr6AdvanceAsync(window, context, steps, screenshotPaths, ct, recordPointerAction);
             bool nuyenAdjusted = await WaitForConditionWithinAsync(
                 () => ReadCareerRewardsNuyenBalance(sectionHost) > nuyenBeforeAdjust,
                 ct,
