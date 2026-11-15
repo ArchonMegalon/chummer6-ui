@@ -2943,6 +2943,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             TimeSpan.FromSeconds(8));
         if (!dialogClosed)
         {
+            // Post-apply diagnostics: the click fired (clickObserved), so
+            // distinguish a silent presenter refusal from a legitimately
+            // open confirmation panel before failing the leg.
+            string postApplyWindows = string.Join(" | ", DescribeVisibleCareerRewardsWindows());
+            string postApplyBalance = DescribeCareerRewardsDialogBalanceText() ?? "none";
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06s-nuyen-apply-no-close");
+            RecordStep(steps, $"sr6 nuyen post-apply (no close): windows={postApplyWindows}; balance={postApplyBalance}");
             throw new InvalidOperationException(
                 "sr6 nuyen leg failed: the CareerRewardsWindow modal did not close after Apply.");
         }
