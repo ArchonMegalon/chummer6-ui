@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Fonts.Inter;
@@ -90,8 +91,10 @@ public sealed class CareerRewardsUiTests
         Assert.IsTrue(outcome.DisplayLabel.StartsWith('-'), "Spend labels open with '-'.");
     }
 
-    [TestMethod]
-    public void Nuyen_adjust_outcome_carries_amount_and_action()
+    [DataTestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Sr6_nuyen_dialog_applies_the_entered_gain_or_spend_at_face_value(bool gain)
     {
         WithHeadlessUi(() =>
         {
@@ -99,9 +102,17 @@ public sealed class CareerRewardsUiTests
             owner.Show();
             Dispatcher.UIThread.RunJobs();
 
-            var dialog = new CareerRewardsWindow(isKarmaMode: false, MakeKarmaEditor(), MakeNuyenEditor(4200m));
+            const string original = "<character><gameedition>SR6</gameedition><created>True</created>"
+                + "<karma>30</karma><nuyen>4200</nuyen><expenses />"
+                + "<customstate>preserved</customstate></character>";
+            var editor = CareerManualNuyenEditorProjector.Project(original,
+                new CharacterWorkspaceId("workspace-under-test"), 9, sourceDataResolver: null);
+            var dialog = new CareerRewardsWindow(isKarmaMode: false, MakeKarmaEditor(), editor);
             Task<object?> dialogTask = dialog.ShowDialog<object?>(owner);
             Dispatcher.UIThread.RunJobs();
+
+            if (!gain)
+                FindByAutomation<RadioButton>(dialog, "career-rewards-spend")!.IsChecked = true;
 
             TextBox amount = FindByAutomation<TextBox>(dialog, "career-rewards-amount")!;
             amount.Text = "800";
@@ -115,10 +126,27 @@ public sealed class CareerRewardsUiTests
             WaitCompletion(dialogTask, timeoutMs: 3000);
             var outcome = (CareerRewardsWindow.CareerNuyenAdjustOutcome)dialogTask.GetAwaiter().GetResult()!;
 
-            Assert.AreEqual(CharacterCareerManualNuyenAction.Gain, outcome.Request.Action);
+            Assert.AreEqual(gain ? CharacterCareerManualNuyenAction.Gain : CharacterCareerManualNuyenAction.Spend,
+                outcome.Request.Action);
             Assert.AreEqual(800, outcome.Request.Amount);
             Assert.AreEqual("Payment for run", outcome.Request.Reason);
-            Assert.AreEqual(0m, outcome.Request.Percent);
+            Assert.AreEqual(100m, outcome.Request.Percent);
+            Assert.AreEqual(editor.WorkspaceId, outcome.Request.WorkspaceId);
+            Assert.AreEqual(editor.ContentRevision, outcome.Request.ExpectedContentRevision);
+            Assert.IsFalse(outcome.Request.KarmaNuyenExchange);
+
+            // Feed the actual dialog request through the production mutation path.
+            // A successful zero-value expense must not satisfy this regression.
+            XElement changed = XDocument.Parse(WorkspaceXmlMutationCatalog.ApplyCareerManualNuyenEdit(
+                original, outcome.Request, sourceDataResolver: null)).Root!;
+            Assert.AreEqual(gain ? "5000" : "3400", changed.Element("nuyen")!.Value);
+            Assert.AreEqual("30", changed.Element("karma")!.Value);
+            XElement[] expenses = changed.Element("expenses")!.Elements("expense").ToArray();
+            Assert.AreEqual(1, expenses.Length);
+            Assert.AreEqual(gain ? "800" : "-800", expenses[0].Element("amount")!.Value);
+            Assert.AreEqual("Nuyen", expenses[0].Element("type")!.Value);
+            Assert.AreEqual("Payment for run", expenses[0].Element("reason")!.Value);
+            Assert.AreEqual("preserved", changed.Element("customstate")!.Value);
 
             owner.Close();
             Dispatcher.UIThread.RunJobs();
