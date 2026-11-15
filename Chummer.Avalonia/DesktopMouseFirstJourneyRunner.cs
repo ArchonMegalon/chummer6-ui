@@ -2829,6 +2829,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         TimeSpan.FromSeconds(6));
                     RecordStep(steps, $"sr6 nuyen leg: acknowledged the Confirmed pending reward (cleared={ackCleared})");
                 }
+                // Sweep any lingering BLOCKED dialogs: a stale window still
+                // hosts a collapsed apply button that would foul the later
+                // dialog-closed scan. No-op when nothing is live.
+                await CancelAllCareerRewardsDialogsAsync(steps, ct);
             }
             RecordStep(steps, $"sr6 nuyen adjust attempt {attempt}: {openDiagnostics}; dialogOpened={dialogOpened}");
         }
