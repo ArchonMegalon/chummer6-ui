@@ -2867,27 +2867,39 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             throw new InvalidOperationException(
                 "sr6 nuyen leg failed: the CareerRewardsWindow apply button disappeared before the apply click.");
         }
-        // A pending Confirmed reward is surfaced into every fresh dialog
-        // (pendingResult) and disables the entry until acknowledged.
-        bool applyEnabled = await Dispatcher.UIThread.InvokeAsync(() => applyButton.IsEnabled);
-        if (!applyEnabled)
+
+        // A pending Confirmed reward is surfaced into fresh dialogs
+        // (pendingResult) and can settle AFTER the dialog opens, disabling
+        // or hiding Apply until it is acknowledged. Settle before clicking:
+        for (int settle = 0; settle < 3; settle++)
         {
+            Button? freshApply = FindCareerRewardsDialogButton("career-rewards-apply");
+            if (freshApply is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 nuyen leg failed: the CareerRewardsWindow apply button disappeared while settling the entry.");
+            }
+            bool entryReady = await Dispatcher.UIThread.InvokeAsync(
+                () => freshApply.IsEnabled && freshApply.IsVisible);
+            if (entryReady)
+            {
+                applyButton = freshApply;
+                break;
+            }
             Button? entryAck = FindCareerRewardsDialogButton("career-rewards-acknowledge");
-            if (entryAck is not null)
+            if (entryAck is null)
             {
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                    entryAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, entryAck)));
-                recordPointerAction();
-                bool entryCleared = await WaitForConditionWithinAsync(
-                    () => FindCareerRewardsDialogButton("career-rewards-apply")?.IsEnabled == true,
-                    ct,
-                    TimeSpan.FromSeconds(6));
-                RecordStep(steps, $"sr6 nuyen leg: acknowledged pending reward at entry (cleared={entryCleared})");
+                RecordStep(steps, "sr6 nuyen leg: apply not ready and no acknowledge button rendered");
+                break;
             }
-            else
-            {
-                RecordStep(steps, "sr6 nuyen leg: apply disabled with no acknowledge button rendered");
-            }
+            await Dispatcher.UIThread.InvokeAsync(() =>
+                entryAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, entryAck)));
+            recordPointerAction();
+            bool entryCleared = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply")?.IsEnabled == true,
+                ct,
+                TimeSpan.FromSeconds(6));
+            RecordStep(steps, $"sr6 nuyen leg: settled pending reward at entry round {settle} (cleared={entryCleared})");
         }
 
         // T496/T546: same synthetic pointer swallow as the karma Apply.
