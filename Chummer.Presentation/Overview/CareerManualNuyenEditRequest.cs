@@ -58,17 +58,8 @@ internal static class CareerManualNuyenEditorProjector
         int availableKarma = ReadOptionalInt(root, "karma");
         decimal availableNuyen = ReadOptionalDecimal(root, "nuyen");
 
-        decimal? workingForPeopleRate = null;
-        decimal? workingForManRate = null;
-        ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
-        if (sourceData is not null
-            && sourceData.TryResolveKarmaNuyenExchangeRates(
-                out decimal resolvedWorkingForPeopleRate,
-                out decimal resolvedWorkingForManRate))
-        {
-            workingForPeopleRate = resolvedWorkingForPeopleRate;
-            workingForManRate = resolvedWorkingForManRate;
-        }
+        (decimal? workingForPeopleRate, decimal? workingForManRate)
+            = global::Chummer.Presentation.Overview.CareerManualExchangeRates.Resolve(root, xml, sourceDataResolver);
 
         if (!CharacterCareerManualNuyenRules.TryProject(
                 created,

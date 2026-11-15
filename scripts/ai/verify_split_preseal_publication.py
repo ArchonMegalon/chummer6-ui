@@ -513,6 +513,7 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Avalonia/MainWindow.ShellFrameProjector.cs",
         "Chummer.Tests/Presentation/CareerAttributeAdvanceUiTests.cs",
         "Chummer.Tests/Presentation/CareerRewardsUiTests.cs",
+        "Chummer.Tests/Presentation/CareerManualKarmaSr6OrdinaryRouteTests.cs",
         "Chummer.Tests/TestFiles/Soma (Career).chum5",
         # 2026-11-02 (WIN-006 followup, re-audit item 2): PDF-composer
         # regression-test landing repairs pre-existing raw-string-literal rot
