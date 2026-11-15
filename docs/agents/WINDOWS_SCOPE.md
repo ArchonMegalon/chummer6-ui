@@ -1,1224 +1,160 @@
-## Controller work order 7867 — Windows continuation, 14 November 2026
-
-This is the current ordered work list for **WIN-006, generation 12**, in the
-existing **friday-windows-session-01**. It supersedes older task ordering below;
-older results remain evidence of their original source and artifacts. Continue
-with the existing Friday Code provider, authentication and local work. Do not
-start another Windows worker or wait for the user to relay routine decisions.
-Root owns acceptance, integration and publication.
-
-At assignment, UI main is `e5874b7eaca47bfa7fac06fbea504d7ee8513abe`.
-PR #597 remains at `51c81413a25152e693fdd2212028fd5e1420ae8d` and needs
-the recovery corrections below. Core #173 is merged and UI has adopted the
-selection-budget correction; the old unpublished-Core blocker is obsolete.
-Use the controller-provided dependency intake in Teable. Preserve local work,
-compare it with main, and start new changes from current main after reconciling
-that work. Do not discard or duplicate pending changes during a rebase.
-
-### 1. Unblock the already transferred Windows preview (T521)
-
-Root already holds and has byte-verified the selected installer, portable payload
-and inventory from source `83d24d56d49705057b2fa0a3c9a8537e889c486c`, version
-`1.0.0-preview.20261114.83d24d56`. Do not rebuild or upload those unchanged
-files again. Transfer the **retained, real, exact-candidate** startup and portable
-save/reopen results plus sanitized installer visual evidence through the existing
-private artifact channel. If a required leg never ran, run only that missing leg.
-Identify the executable bytes, source, version and actual stored-character result.
-Do not substitute synthetic HTTP fixtures, another binary or another runner.
-
-Root has merged Hub #316 and checked the download HTTP boundary. That does not
-supply native Windows evidence. Once the native proof is accepted, Root can
-publish this bounded unsigned preview independently of later SR6 work. Do not
-claim a signed release, current-main native acceptance or complete beta from it.
-
-### 2. Finish PR #597 reward recovery before integration
-
-Preserve its durable intent, owner/revision binding, read-only reconciliation and
-single-dispatch protections. Correct these three remaining paths in the existing
-implementation:
-
-1. **Confirmed after restart:** the UI offers acknowledgment but no in-memory
-   attempt exists, so the offered action fails. Restore the exact confirmed
-   state or acknowledge the exact durable record directly. Test the actual
-   offered action without inserting a hidden extra Reconcile call.
-2. **Account A → B → A:** a completed uncertain attempt with the same operation
-   ID must refresh under fresh authorization. Do not retain the old authority
-   merely because the ID matches. Preserve the guard for a truly in-flight
-   dispatch. Test both recovery and acknowledgment after returning to A.
-3. **Confirmation durability:** normal success and same-presenter reconciliation
-   must durably record the confirmed outcome until explicit acknowledgment.
-   Test confirmed reward → later saved edit → process restart → acknowledgment,
-   with no second reward write and no inference from a later revision alone.
-
-Correct the pre-dispatch refusal test so the store accepts `TryAdd` and rejects
-`TryRecordReplacement`; assert zero mutation calls. A store that refuses before
-reaching that boundary does not test it. Keep corruption, stale-clear, owner
-transition and uncertain-outcome protections. Run the focused existing C# tests
-and a real Windows restart/recovery leg. No new transaction or receipt framework.
-Report the product patch separately from Root-owned oracle/package/marker work.
-
-### 3. Qualify the integrated manual SR5/SR6 Windows candidate
-
-After the recovery correction is integrated, build one identified candidate with
-the actual selected Core packages. Use ordinary OS mouse/keyboard with strict
-fallback-off; count prohibited direct field/property assignments as failures.
-Keep routed-event/headless diagnostics separate from native user interaction.
-
-- **SR5:** new runner, AI Finish disabled, manual required allocations, review,
-  finalize, Career reward, acknowledgment, save, terminate and reopen the same
-  workspace. Verify persisted choices, balances and source/rule identity. A
-  bundled Career fixture or AI-filled draft does not establish this route.
-- **SR6:** complete the supported manual creation route, retain the phase-one
-  result, finalize, advance within Core's natural limit and reject the next
-  illegal advance. Save and reopen in a fresh process; compare both final natural
-  rank and Karma. A missing button/dialog/row is a defect, not a cap refusal.
-- **Installed/portable:** exercise the selected candidate without Git, SDK,
-  source checkouts or a content override; move the portable directory and
-  reopen. Preserve bundled-content integrity checks.
-- **Output/update:** use the native Save PDF route for a readable sheet with
-  actual values and long names. On the selected combined update candidate,
-  require autonomous relaunch, retained shortcuts and unchanged saved-runner
-  contents; distinguish unsigned/local verification from signed delivery.
-
-Repair the next concrete route failure and rerun only the affected leg. Reuse
-unchanged evidence; do not launch a broad requalification campaign for a small fix.
-
-### 4. Finish Windows SR6 inputs that the manual journey exposes as missing
-
-Windows SR6 is authorized now and does not wait for Android, AI Finish or Linux.
-Complete required typed inputs for the advertised creation methods and
-archetypes, including applicable Magic/Resonance, qualities, skills, equipment,
-contacts and lifestyles. Use existing Core preview/confirm operations for
-eligibility, costs, budgets and mutation. Preserve complete selections, explicit
-removals, cancellation, stale-review refusal and save/reopen behavior.
-
-Start with the next missing editor blocking the manual Priority journey, then
-continue the remaining supported methods and archetypes. A visible enabled
-choice must execute its intended operation. Keep genuinely unsupported choices
-honestly unavailable until implemented; do not use AI Finish to bypass a missing
-editor. For missing Core/Hub authority, send Root an exact typed request and a
-separate reviewable producer change. Do not recreate rules math in the desktop.
-Keep SR5 and SR6 isolated and existing SR5 behavior working.
-
-### 5. Complete linking and the real amended-account round trip (T520/T522)
-
-Preserve the original pending link operation and installation. Send the existing
-private approval artifact using the retained encrypted handoff instructions in
-Teable; never mint a replacement just to unblock the test. Root performs the
-authorized account-side action. Keep signed URLs, tokens, states, grants, keys
-and account contents out of Git, screenshots and shareable reports.
-
-Verify **Installation verlinken** on installed Windows: warm/minimized return,
-cold return to the same operation, foreground completion and rejection of stale
-or post-unlink callbacks. Waiting, failure and success must be visible. A portal
-200 or a poll timeout is not linked-account completion.
-
-Use a real Windows-account-synced runner with applied amends for T522. Preserve
-the complete character, continuation and frozen rules environment. Coordinate
-with Root's Android leg for amended wizard calculations, offline save/reopen/
-restart, conflicts retaining both versions and return sync to Windows. File
-import and synthetic transport are setup evidence only. Root's fresh Android
-receiving-store regressions now pass; the new native consumer still needs its
-build and device run. Keep the original unresolved operation unreplayed.
-Continue independent Windows work while Root prepares that consumer.
-
-### 6. Deliver a focused first-run and recovery usability increment
-
-Inspect the actual current Windows screens and fix remaining concrete defects
-in a separate small PR: visible feedback while resuming a draft or refreshing
-rules; linking progress with a usable recovery action; actionable load failures;
-and recovery labels that explain what is being checked or acknowledged. Inspect
-the existing implementation first so completed fixes are not duplicated.
-Avoid silent enabled controls and generic success text without a verified result.
-Preserve input on failure. Exercise keyboard navigation, 125–200% scaling and
-long German labels on the affected screens. Attach sanitized before/after views
-only for actual changes. This is product polish, not another status dashboard.
-
-### Reporting and integration
-
-Report at least every 15 minutes while active: current subtask, exact head/dirty
-changes, actual build/native result and next blocker. Push small reviewable
-increments; after one is submitted, continue the next independent item. Do not
-stop at “complete for review” while assigned actionable work remains.
-
-Keep one session and generation 12; reconcile the current Teable assignment at
-each milestone. Root handles routine acceptance and merges. Identify any unique
-remaining changes in old PRs #589/#590 for Root; do not blindly merge or discard
-them. Use the existing linear recipe/marker publication contract when applicable;
-never weaken gates, force-push shared main, alter shared credentials or relabel
-preseal validation as a build. AI Finish remains gated and linked-account-only.
-
-No new paid generation, user relay, signing-key change or broad cleanup is needed
-for this work order. Preserve the accepted product scope and all 62 requirement
-identities; passing one bounded task does not declare Windows or SR6 complete.
-
----
-
-## Friday-Worker — Generation 12 Windows readiness report, 14 November 2026
-
-Worker status against the generation-12 assignment and clarification 7737, on base
-main 83d24d56d49705057b2fa0a3c9a8537e889c486c. All evidence paths below are
-on-host artifacts referenced by the generation-11 handoff heartbeat
-(win-gen11-handoff-20261114-gen12-heartbeat-01, Teable recS0nBwQqH3ZTRhvoa).
-
-1. Generation-11 closure. The worker's consolidated recipe 2771d574f (sole direct
-   child of base c9552419d, 33 allowlisted paths) with fresh marker 9e0b98765 and
-   lock-seal merge 2dcb813cfa was validated (preseal_validated,
-   publicationAuthorized=false) and opened as PR #593, then closed as superseded:
-   the controller's own generation-11 publication (c4a553943 + 83d24d56d) landed
-   first with the same T524/T525 semantics. The two local product layout fixes the
-   worker carried (StartingCashPanel Review-step visibility gate; FinalizeStatusText
-   scroll row) are byte-identical on landed main - no further disposition needed.
-2. Qualification on landed main: focused MSTest lanes CareerRewardsUi 31/31,
-   DesktopInstallLinkingOutcomeMatrix 39/39, SR6 continuation 16/16
-   (runner _scratch/gen11/t517_lanes.py, receipt _scratch/gen11/t517_lanes_out.txt).
-3. Distributable (gen-12 item 5): a candidate was produced from main 83d24d56d -
-   installer e71dfd92... (174,765,955 B) + payload ddb610ca... (58,031,561 B), stamp
-   1.0.0-preview.20261114.83d24d56, payload gate PASS (bundled mode after the
-   CHUMMER6PAYLOAD1 append; EnableCompressionInSingleFile added to satisfy the
-   128 MiB entry ceiling), bundled content 331/331 byte-for-byte against core
-   07511458 (git-blob comparison), portable persistence smoke PASS (workspace
-   19ee5bb2...). Inventory: _scratch/t512/DISTRIBUTABLE_INVENTORY.md (gen-10 copy
-   retained as *_gen10.*). Selection for the private artifact route is the next
-   step and stays within the worker's staging authority; Root owns publication.
-4. T522 handoff (gen-12 item 4): the genuine T519 native journey character (Mouse
-   Journey Runner, workspace 3827e841..., SR5/NativeXml/1/sr5-chum5-xml, revision 8,
-   career karma 11->16 through the genuine dialog) is staged with a synthetic amend
-   package (alias MouseRoute -> MouseRoute-Android in the
-   WorkspaceExportResult.Receipt shape) at _scratch/t513/character_handoff/ +
-   _scratch/t513/T522_HANDOFF.md. Both payloads were proven to import and save
-   through the real gen-11 app on the distributable candidate (base leg workspace
-   8c5aebec..., amended leg 605d6c62..., quadruple preserved end-to-end). This is
-   setup, not completion: the amended-account carrier journey stays open with Root.
-5. Narrowed claims (gen-12 item 1 groundwork): every prior native claim is
-   reclassified in the retained worker register _scratch/gen11/t526/T526_NARROWED_CLAIMS.md (on-host, not recipe content). Key
-   narrowings: the T519 SR5 journeys are diagnostic-class evidence bound to the
-   win111-gen11 binary (fallback suppression disclosed, two sites logged
-   SUPPRESSED); the win110 SR6 receipts bind to c64b5735... and carry a
-   fixture-only funding leg plus a qualitative rank assertion, so they make no
-   current-candidate claim; no mouse-first journey has run against the T521
-   distributable. H1/H2 strict ordinary-input acceptance remains open and requires
-   the Core selection-budget reader repair (7737) for the projection waits.
-6. T520 remains blocked-with-evidence (Teable recvSzjawHsjHzHhbs9). The existing
-   pending approval and installation stay unchanged per 7737; safe-locator-only
-   coordination is respected.
-7. Core dependency (7737), historical-at83d24d56: the scoped Core selection-budget
-   reader repair prepared against 07511458 was the gating dependency at the time of
-   the gen-11 handoff. Core173 has since merged (Core 80584eff, runtime 903be229)
-   and UI595 adopted it; the old unpublished-dependency blocker is removed. Native
-   H1/H2 acceptance on the integrated candidate remains open and is not claimed.
-
-No product source changed in this round; this is a scope/evidence recipe only.
-Preseal topology: this section is the sole recipe content on base 83d24d56d; the
-narrowed-claims register stays on-host and is not part of the recipe.
-
-## Controller7725 — Reviewed generation 11 corrections, 14 November 2026
-
-This integration retains Friday PR #591's reviewed work and corrects the two
-controller findings. The original Friday branch remains intact; the controller
-publishes a consolidated recipe and generated marker on a separate branch.
-
-- Attribute totals come from Core, including an explicit zero. The desktop no
-  longer sums arbitrary XML descendants or substitutes its own rules result.
-  Any remaining authoritative projection defect belongs in Core; do not restore
-  the removed desktop calculation to satisfy a journey assertion.
-- Career rewards use a typed outcome, captured owner/workspace/revision, stable
-  operation identity and single-flight dispatch. Confirmed but unacknowledged
-  outcomes remain visible on reopen. Confirmation stays terminal if closing the
-  dialog fails or is cancelled. A definite canonical CAS conflict allows a new,
-  explicitly confirmed entry after refresh; ambiguous results remain uncertain.
-- Uncertain outcomes reconcile by an owner-bound read of the exact accepted
-  document, expense identities and revision. No retry writes are dispatched by
-  the recovery action. This pending-operation state is **presenter-lifetime
-  only**; process-restart recovery is not established by this implementation.
-
-Controller validation: the affected Linux build passed against the existing
-Core oracle package inputs, and **87 focused C# tests passed, with no skips**.
-These exercise Core-total preservation, reward confirmation/reconciliation,
-owner/revision changes, duplicate dispatch, acknowledgment, closed/hidden
-dialogs, CAS refusal and existing Karma/Nuyen parity. The headless tests use
-actual Avalonia close behavior; fixture-only saved snapshots are not native
-persistence evidence. No new native Windows journey or package-consumer seal is
-claimed. Earlier Friday native evidence applies to its original source only.
-
-Continue the existing `friday-windows-session-01` after reconciling Teable's
-current assignment and the controller's published revision. Do not start a
-second Windows worker or require the user to relay routine coordination.
-
-1. Run H1/H2 against the exact integrated candidate: manually create the supported
-   SR5 runner with AI Finish disabled, enter Career, record a reward through
-   ordinary controls, acknowledge it, save, exit and reopen the same runner.
-   Retain the actual Core-projected totals and budget results; do not substitute
-   another character or synthesize a successful summary. Keep pointer/keyboard
-   execution distinct from routed-event fallback evidence.
-2. Qualify the reward failure/recovery routes on Windows. Then close the remaining
-   restart gap in a separate scoped change using the existing recovery-store
-   patterns: retain operation/document identity durably, reconcile with fresh
-   authorization after restart/account transition, and never blindly replay an
-   uncertain reward. A later revision must produce an explicit unresolved state
-   rather than being treated as proof of the original outcome.
-3. Continue T520: installed warm/cold browser return for **Installation verlinken**,
-   foreground restoration and the same retained operation. Preserve stale-return
-   and post-unlink rejection. Never publish callback URIs, states, grants or codes.
-4. Continue T522 with the controller: actual Windows-to-Android account sync of
-   an amended runner, amended phone wizard calculations, offline restart and
-   return sync with full source preservation and safe conflict handling. A file
-   import or package test does not close this journey.
-
-Keep Windows SR6 creation/Career and the remaining UX work moving independently.
-Report source fixes, exact build/test results and native observations separately.
-The controller owns acceptance, protected integration and chummer.run delivery;
-this update does not qualify a new public download or signed release.
-
-## Controller7488 — Browser return and installation-link wording, 12 November 2026
-
-The user reports that returning from the browser to Windows does nothing and
-requests **Installation verlinken** for the installation-link action. This fix
-recognizes the existing proof-poll state-only return, resumes its saved operation,
-and forwards a warm return to the existing Windows process. The URI itself never
-grants an account. Stale returns are rejected before account/workspace display;
-proof renewal preserves the original operation rather than creating another one.
-Both unlinked account buttons now use the requested wording. Linked account
-management retains its separate label.
-
-Controller validation: the affected Linux build and all 172 focused runtime,
-headless Avalonia, shell and localization cases passed. An actual compiled
-headless startup rejected a stale return without graphics or account output.
-These results do not establish native Windows protocol registration, foreground
-activation or authenticated browser completion. The existing public 6940 package
-does not contain this fix. Use only the controller's identified new candidate
-and record its exact executable/version/hash; do not reuse 6940 native evidence.
-
-Friday's next native task in the existing WIN-006 session is:
-
-1. Verify the installed `chummer` protocol target and quoted callback argument.
-   Use the existing authorized test account; never retain callback URIs, states,
-   login codes, grants or keys in shareable evidence.
-2. With the app open (also minimized and opened with a character-file argument),
-   use **Installation verlinken**, approve in the browser and return. The existing
-   app must become visible, show checking/completion and keep the same installation
-   and character. A second return must not create a competing claim or window.
-3. Repeat after closing the app while approval is pending. The cold return must
-   recover the same operation. An uncertain stopped operation must offer honest
-   recovery, never silently create another approval.
-4. Reject stale/replaced and post-unlink returns without showing another account's
-   data. Verify both button labels in German and English, including after unlink.
-
-Report actual results and failures through the existing Teable task and handoff.
-No new Windows session or user relay is required. Keep UX-01–06 and the manual
-SR5/SR6, recovery and amended-account synchronization work below; coordinate any
-UX-06 edits against this callback fix before changing the shared window.
-## Friday-Windows — WIN-006 generation 9 implementation status, 12 November 2026
-
-Worker session `friday-windows-session-01`, continuing on the accepted R110 main.
-This section records what the Windows worker has actually implemented and executed
-for the gen-9 assignment; Root still owns review, merge and publication.
-
-Implemented on the exact candidate (all builds `dotnet build -c Debug
---no-incremental` rc=0 / 0 errors on the pinned 10.0.103 toolchain):
-
-1. **Attributes `EnsurePreviewHeld` step-3/5 blocker (controller item 1).** The
-   wizard now commits valid zero-spend empty draft shapes for every unsurfaced
-   domain (attributes/skills/knowledge/karma/contacts/gear/lifestyle) via the
-   Default*Selection helpers, so the held preview no longer rejects a draft that
-   has no surfaced spend yet.
-2. **UX-01: SR5 `CareerAttributeAdvanceWindow` Grid rows.** Quote cards and the
-   detail pane use distinct `Grid.SetRow` assignments; shared `BuildBlockerText`
-   helper. Verified readable at 620x520 / 150% scaling: costs, targets, blockers,
-   enabled actions, keyboard focus, Close-without-mutation.
-3. **UX-02: PDF/HTML save decided before destination open.**
-   `MainWindow.DesktopFileCoordinator.SavePrintPayloadAsync` resolves format and
-   composition failure BEFORE the Save dialog; `!pdfReady` offers an HTML-only
-   picker with an `.html` suggestion instead of writing HTML bytes under a `.pdf`
-   name or truncating an existing good PDF.
-4. **SR6 native journey (controller item 2).** Wizard finalize -> synthetic-fixture
-   funding (fixture-only; the production `GrantKarmaForAutomationAsync` seam is
-   stripped from the journey path) -> Body attribute row -> Core quote -> explicit
-   confirm -> exact karma/natural-rating verification -> save -> fresh-process
-   reopen with karma 20 persisted and profile created. Also fixed three real
-   presenter bugs found by the journey (record-evidence and recovery paths).
-5. **Manual SR5 creation journey (controller item 3).** Genuinely manual
-   (MANUAL_DEEP: AI Finish off, real typed allocation, required Core
-   confirmations): unallocated start -> priority -> typed attributes/qualities/
-   skills/resources -> review -> finalize -> Career -> save -> fresh-process
-   reopen. Phase 1 receipt `status=pass` (karma 11 -> 16 via the real Award Karma
-   route on the bundled career sample), phase 2 fresh-process reopen receipt
-   `status=pass` (workspace identity, clean persisted state, profile created).
-   Journey hardening this round: summary-navigation-tab retry with catalog-route
-   fallback, menu re-resolve + popup reopen retries, option-walk with detach
-   retry, routed-event fallback for the resources confirm and the career Apply
-   click, and evidence screenshots captured unconditionally in manual mode.
-
-Test evidence (focused lanes on the Windows host):
-
-- T496 lane (Sr6CreationWizardWindow + Sr6CareerAttributeAdvanceFlow +
-  Sr6CareerAttributeRecoveryStore + CareerRewardsUi +
-  DesktopMouseFirstJourneyManualMode): **45/45 passed**.
-- Parity/sync lane (Sr5Sr6RulesetParityAudit + LegacySr5DesktopParityAudit +
-  Sr5Sr6UiParityAuditCompliance + GrantBound/Unavailable roaming-sync tests):
-  39/41; the 2 failures are the R97/R99 classified debt pair (parity-audit
-  generated receipt absent on Windows; legacy pendant bootstrap drift), unchanged
-  from baseline.
-- CharacterOverviewPresenter + AiFinishGate classes compile in the focused set;
-  220/222 passed with the 2 roster-folder failures being the documented
-  POSIX-only unwritable-path environmental pair (unmodified files).
-- Career-attribute parity lane remains 23/23; SR6 parity lane remains 109/111
-  (same classified debt pair).
-
-**Update (13 November 2026): UX-03..UX-06 delivered, journeys re-proven.**
-All six UX repairs are implemented and verified on the exact candidate (builds
-rc=0 / 0 errors):
-
-- UX-03: `CareerRewardsWindow` inline-apply constructor; on authority refusal the
-  dialog stays open with amount/direction/notes intact, shows the refusal reason
-  and requires an explicit re-confirm ("Record again").
-- UX-04: Priority rank rows reflow via `UniformGrid` (columns = option count) in
-  `CharacterCreationWizardControl` - every rank including E is usable at 960 DIP /
-  150% scaling; covered by `CharacterCreationWizardPriorityReflowTests`.
-- UX-05: `CreationQualitiesReviewWindow` aggregates preview + budget blocker
-  reasons ("Rule blockers reported by Core (N): ...") into the review and
-  blocked-review texts; covered by `CreationQualitiesReviewBlockersTests`.
-- UX-06: `DesktopInstallLinkingWindow` single-flight claim redemption
-  (`_redeemInFlight`, disabled redeem button + claim box, localized progress);
-  covered by a new outcome-matrix single-flight test.
-
-Journey evidence this round (live binary, hermetic per-run state roots):
-
-- SR6 native advance journey, natural-cap leg: phase 1 pass - 10 committed
-  advances with exact per-quote debits (10+15+20+20+25+25+30+30+35+35 karma),
-  Body 1->7 at the dwarf natural cap, funding rounds via the real Award Karma
-  route, then Core's refusal proven by state evidence (delivered row clicks open
-  no quote dialog at the cap; workspace revision stable across reload;
-  `06d-sr6-natural-cap-refusal.png`). Phase 2 fresh-process reopen pass (karma 20
-  persisted, rank persisted). Screenshots-OFF pass also green (gen-10 finding 4).
-  Presenter fix: the advance continuation now re-anchors its entry context after
-  each commit (previously any second advance in one session silently dropped).
-- Manual SR5 creation journey: phase 1 + phase 2 fresh-process reopen both pass
-  on the final tree. Runner hardening: native-language checkbox uses a disclosed
-  property-set fallback (a raised Click never toggles a CheckBox), resources
-  option cards route through the atomic click helper with routed fallback, and
-  the journey honors
-  `CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TIMEOUT_SECONDS` (both watchdogs) for the
-  long funding/advance cycles.
-
-Focused-lane test pass (13 November, current tree): 234/237 - the only failures
-are the R97/R99 classified debt pair (parity-audit generated receipt absent on
-Windows; legacy pendant bootstrap drift), unchanged from baseline. New tests
-added: priority reflow, quality blocker reasons, UX-06 single-flight.
-
-Delivery will follow the existing recipe+marker process; no new receipt framework.
-
-## Controller7477 — Windows UI improvements, 12 November 2026
-
-PR #585 is merged at `5ce0c95c578edf51b750047f2c4f960c3de9a8b5`, tree
-`273188e9b78c5f1c10fda6373c0bd4b8cc5b7c8c`. The controller's 07:53 UTC check
-found no newer ready Friday PR. Continue the existing WIN-006 / Friday session
-and read the live Teable generation; do not start a duplicate worker. Routine
-implementation, review and native acceptance need no user relay or approval.
-
-The user requested a UI analysis and concrete improvement tasks. The controller
-reviewed the six source findings below against this exact tree. These are
-implementation tasks, not a claim that the current Windows UI was executed.
-The retained 1 November Creation screenshots are historical: do not reopen the
-already corrected SR6 Grid or AI-gate findings merely because an older image
-shows them. R110's recovery, owner/revision and manual-confirmation fixes remain
-accepted in source. Preserve the existing genuinely manual SR5/SR6, durable
-recovery and amended-account sync assignments after these bounded repairs.
-
-### Repair queue
-
-1. **UX-01 / P1: Make the SR5 Career attribute review usable.**
-   `Chummer.Avalonia/Controls/CareerAttributeAdvanceWindow.cs`, constructor:
-   five children are added to a five-row Grid without row assignments, so each
-   uses row 0. Assign the heading, selection title, scrollable quote list,
-   details and action footer to their intended rows. Preserve Core quotation,
-   confirmation and correction semantics; this is separate from the repaired
-   SR6 dialog. On the fixed native candidate at 620 x 520 and Windows 150%
-   scaling, verify readable cost/target/blocker text, visible enabled actions,
-   keyboard focus and Close without mutation. Include it in the SR5 journey.
-
-2. **UX-02 / P1: Never save HTML under a PDF filename or overwrite a good PDF
-   after composition fails.** `MainWindow.DesktopFileCoordinator.cs`,
-   `SavePrintPayloadAsync`, currently selects HTML when `pdfReady` is false,
-   opens/truncates the chosen `.pdf` file and returns Completed. Resolve the
-   requested format and composition failure before opening the destination.
-   Offer an explicit HTML save with an appropriate filename, or Cancel; do not
-   report PDF success. Exercise the real native Save dialog with a controlled
-   failure and a disposable existing PDF: its bytes stay intact on refusal or
-   cancellation; explicit HTML saves as HTML; normal PDF opens readably. The
-   existing journey's overridden picker alone does not qualify this route.
-
-3. **UX-03 / P2: Retain reward input after a refused save.**
-   `Controls/CareerRewardsWindow.cs` closes with the request before the
-   authoritative result; `MainWindow.CareerEdit.cs`,
-   `OpenCareerRewardsDialogAsync`, returns on refusal and loses the entered
-   amount, direction and notes. Preserve a dialog-local draft and explain the
-   refusal beside it. Reprepare/review stale authority as required, retaining
-   user input; require another explicit confirmation and never replay an
-   uncertain write. Test distinctive run notes with an invalid SR5 spend: no
-   expense is added, all input remains, then a corrected explicit submission
-   creates exactly one expense that survives reopening. This grants no new
-   SR6 reward authority or UI-local Karma calculation.
-
-4. **UX-04 / P2: Keep all Priority ranks and descriptions reachable.**
-   `Controls/CharacterCreationWizardControl.axaml.cs`, `RenderPrioritySurface`,
-   uses five fixed 92-DIP cells in a non-wrapping row and caps labels at 28 DIPs;
-   the wizard reserves 230/280-DIP side columns while the shell permits 960-DIP
-   width. Reflow the choices or secondary panels to fit the available center
-   width and expose complete Core descriptions. Preserve rank exclusivity and
-   authoritative confirmation. At 960-DIP shell width, every rank including E,
-   its full description and the confirmation/navigation controls must be
-   reachable by mouse and keyboard without enlarging the window. Check 150%
-   scaling on the same supported manual Priority route with AI disabled.
-
-5. **UX-05 / P2: Explain actual Quality blockers.**
-   `Creation/CreationQualitiesReviewWindow.cs`, `Describe`, collapses every
-   nonempty Core blocker list into a generic statement. Display the supplied
-   actionable reasons with the retained/added/removed selection and budgets.
-   Keep the existing disabled Confirm and uncertain-outcome recovery controls;
-   do not recreate rules in the UI. A selectable combination rejected by Core
-   must show its specific reasons without clearing choices. Editing and
-   reviewing again clears only resolved reasons; Cancel does not mutate.
-
-6. **UX-06 / P2: Make manual account-code submission visibly single-flight.**
-   `DesktopInstallLinkingWindow.cs`, `RedeemClaimCodeAsync`, currently permits
-   re-entry and editing during redemption; a delayed refusal restores the old
-   captured text. Guard the operation, disable conflicting controls while
-   pending, show progress and restore editing with a clear result. Preserve
-   runtime owner/currentness and uncertain-outcome handling; no automatic
-   retry, token logging or production roaming enablement. A delayed response
-   plus two rapid native clicks must issue one request. Refusal preserves the
-   input and never claims linked or synchronized success. Use the existing
-   authorized account workflow; do not create a new account or change security.
-
-### Execution and delivery
-
-Keep changes reviewable: first fix UX-01/02, then input/review feedback and
-viewport behavior. Use the smallest affected existing tests, including focused
-negative checks for output preservation and duplicate account submission. Run
-the listed short native checks on the exact resulting candidate. Record actual
-mouse/keyboard behavior; a routed-event fallback is not that acceptance. Do not
-build another receipt framework or repeat unrelated complete suites for these
-changes. Existing Windows SR6 completion and the real amended Windows/Android
-round trip remain required; keep AI Finish and unqualified roaming gated.
-
-After the repairs are integrated, build the Windows candidate on the existing
-Windows host using the pinned toolchain, verify installed/manual-save-reopen
-behavior and supply the selected installer with its source/tree, exact hash,
-version and honest native results to the controller. The downloadable unsigned
-6940 preview comes from older source `1aa273c4`; it does not contain #585 or this
-future UI work. Do not rename or replace those old bytes as evidence of the new
-candidate. Root owns review, merge and chummer.run publication; no user artifact
-relay is needed. Signing, native qualification and preview publication remain
-separate claims.
-
-Scope/boundary/contract/design-mirror/milestone fit: these repairs stay in the
-existing desktop presentation and platform adapters. Core retains rule authority,
-UI-kit ownership is unchanged, and no design-repository amendment is needed.
-
-## Controller7462 — R110 integration and next native work, 12 November 2026
-
-Continue the existing WIN-006 generation 9 / `friday-windows-session-01` and its
-Teable assignment. Root owns PR #585 integration. The corrected R110 candidate
-includes Friday's R109 changes plus the following controller corrections:
-
-- Persist an immutable SR6 advancement command before dispatch. Reopening loads
-  that intent and uses Core Lookup with fresh authorization for its original
-  owner. Clear only the matching entry and receipt; unresolved results block
-  another purchase. This replaces R109's in-memory-only recovery.
-- Recheck workspace, owner and display generation after asynchronous preparation,
-  dialog, apply and requote steps, including A-to-B-to-A transitions. A successful
-  commit adopts only its matching committed revision for the resulting notice.
-- Require actual Core confirmation and authoritative saved drafts in manual
-  Attributes, Qualities and Skills acceptance. Screenshots remain optional;
-  mandatory workflow/save/reload assertions run with tracing off as well.
-- Use the Core date contract for SR6 commands and align the remaining Core owner
-  pins and exact consumer-source digests. No synthetic production Karma-grant
-  bypass is included.
-
-The integrated application compiled on Linux with the pinned .NET 10.0.103 SDK
-and the exact retained Core 075114 package feed. All 65 focused C# tests passed,
-covering recovery-store recreation, lost responses, owner transitions, stale
-preparation, duplicate dispatch, row routing, manual-journey assertions and
-bundled-content integrity. Runtime discovery, bundle creation and desktop facade
-now use the same approved Core runtime and recipe identities. A
-separate read-only review found no must-fix defect in the pinned recovery and
-display paths. These results do not establish native Windows restart, power-loss,
-installer, account-sync or complete product acceptance. A command with no matching
-Core receipt stays held; there is no automatic discard or blind replay.
-
-Keep the separate `windows/win109-t492-journey-wip` branch intact. After Root
-reports the accepted main commit, transplant only its needed, reviewed native
-journey corrections onto that base. Do not merge its production automation Karma
-grant. Funding a synthetic test fixture is not a verified user reward operation.
-
-Next work, without a user relay or a new Windows session:
-
-1. Resolve the reported Attributes `EnsurePreviewHeld` step 3/5 blocker narrowly.
-   Run genuinely manual fresh SR5 Creation with AI disabled, enter Career, save,
-   and reopen in a new process. No AI-filled draft or demo substitution.
-2. On the same identified candidate, exercise SR6 attribute row, Core quote,
-   explicit confirmation, save and new-process reopen. Test uncertain-result
-   recovery without another write; retain the original operation identity. Report
-   any missing Core reward operation separately instead of adding UI-local rules.
-3. Continue complete Core continuation/rules/receipt sync and KeepLocal with the
-   reviewed remote revision/token. Production roaming remains disabled until its
-   data-preservation and real amended-account Windows/Android round trip pass.
-
-Root owns publication of the selected Windows download. The currently served
-6940 preview is an older unsigned binary and does not contain this source change.
-Do not relabel it or replace its bytes as evidence for R110. Package preseal,
-source merge, native qualification and download publication remain distinct.
-
-## Historical Controller7266 — 11 November 2026
-
-Continue the existing WIN-006 generation 8 / `friday-windows-session-01` and read
-its refreshed Teable assignment. PR #585 at `95aa16e5f3925b96d262bf9b301500c392b5db2e`
-is not accepted. The [current controller review](https://github.com/ArchonMegalon/chummer6-ui/pull/585#pullrequestreview-5860575202)
-assigns six bounded corrections:
-
-1. Enable the real SR6 attribute-row route while retaining SR5 and Core authority.
-2. Align the oracle hash and Core owner pins across consumers, builders and tests.
-3. Retain unresolved advancement commands and recover by Lookup before another purchase.
-4. Recheck owner, workspace and display generation after every asynchronous step.
-5. Require successful Core confirmation, not modal closure, in manual editor acceptance.
-6. Make manual save/reload assertions mandatory independently of trace/platform.
-
-Preserve the corrected Grid rows, requested attribute normalization and original
-dispatch owner stamp. Test the actual production paths and verify native SR6
-row/quote/confirm/save/new-process behavior. Consolidate against actual current
-main with the existing recipe/marker process. Preseal is not native acceptance.
-
-Root owns integration of the separate 6940 evidence and the exact unsigned
-preview download. That older binary does not include PR #585's newer SR6 work.
-Its browser sign-in screenshot is not an app sync-disclosure test. Do not rebuild
-or substitute its bytes, duplicate Root's publication, or widen its release claim.
-
-After these fixes, complete full Core continuation/rules/receipt sync and KeepLocal
-using the reviewed pending remote revision/token, then the real amended-account
-Windows/Android round trip. Keep production roaming disabled until qualified.
-Continue supported SR6 Creation/Career breadth in the retained assignment. No
-user relay or routine approval is needed; report milestones through Teable.
-
-# Windows delivery scope and Friday handoff
-
-## Current Friday round — 10 November 2026
-
-Read the current WIN-006 Teable assignment before starting; its live generation and base supersede the older rounds below. Continue the existing Friday session. Root owns integration, acceptance and release, so no routine user approval or artifact relay is pending.
-
-### 10 November amendment — manual journey qualification; roaming-sync repair reworked
-
-Status after the R104 controller review of PR #585 (review traced the pinned Hub
-producer c77395de9f and merged publication-recovery semantics):
-
-1. **Roaming-sync data preservation — NOT delivered; rework scheduled.** The first
-   slice (durable ledger + three-way ancestry + preconditioned InstallLinking route)
-   was reviewed with seven data-preservation defects (stale common-base
-   acknowledgement, swallowed ledger write failures, unfenced outbound operations,
-   stale snapshot/continuation pairing, incomplete inbound auxiliary restore,
-   KeepLocal 409 loops, empty/unrelated success receipts) and has been WITHDRAWN
-   from this change set. Main's `UnavailableDesktopWorkspaceRoamingSync`
-   registrations and the unconditional legacy XML Improve refusal remain the
-   shipping behavior. The rework must persist the immutable original request,
-   revision and preconditions, gate dependent actions on durable persistence,
-   export fresh complete Core continuations, and validate success receipts against
-   the submitted workspace — verified against actual Hub contracts with focused
-   two-process and conflict tests before any new slice is presented.
-2. **SR6 containment — main's unconditional refusal is authoritative.** Natural
-   attribute purchases require edition-specific Core quotation and atomic
-   advancement; the legacy Improve action refuses on every edition (main
-   `85fe1b823`). UI-local SR5 improvement is not restored merely to satisfy a
-   legacy test.
-3. **Manual SR5 Creation qualification — delivered, with manual-deep hardening in
-   this round.** The real runner completed the manual deep-stage journey
-   end-to-end: receipt `win103-sr5-priority-manual-deep`, status=pass, 248 steps
-   (attributes 32 typed bumps/12 budget-rejected undos, qualities Review->Confirm,
-   skills, resources, finalize, Career, save + reload, print + export). The journey
-   exposed a real product defect: the wizard projector's skills binding guard
-   compared `SkillsAuthorityDigest` against `EffectiveSkillsInputsDigest`,
-   diverging for talent-granted catalogs and silently dropping a valid skills
-   state; it now binds to Core's canonical `AuthorityDigest` per
-   `CharacterCreationSkillsDraftIntegrity` (controller-confirmed correct).
-   MANUAL_DEEP mode now additionally enforces: AI Finish explicitly off, required
-   manual edits/confirmations/finalization and save/reopen must all succeed (a
-   missing leg fails acceptance), and the global
-   `LastSkillsBindingGuardFailure` diagnostic has been removed (its failure chain
-   still referenced the obsolete digest comparison).
-4. The remaining audit item (XML Editor/Print Setup false-success paths) is open
-   and not claimed by this change set. Exact candidate6940 native qualification
-   remains the separate download priority; prior 6408/R94 receipts are not
-   relabelled as 6940.
-
-### Audit repair priority and R99 controller review
-
-R99 makes the four R94 receipts available and fixes binary reads in the two
-publication verifiers. The evidence handoff is accepted only within the limits
-in `evidence/WIN-006-R94-EVIDENCE-HANDOFF.md`: manual Creation did not reach
-Review/finalization, several clicks used routed-event fallbacks, and later
-output/Career checks used the bundled demo runner. Do not report this as a
-complete manual Creation-to-Career journey or rerun unchanged evidence merely
-to refresh its timestamp.
-
-The 10 November cross-repository audit changes the immediate work order:
-
-1. Repair desktop roaming data preservation and its real Hub transport contract.
-   Persist the acknowledged common base, retain divergent local/remote work,
-   decode nested snapshot authority, send revision/token preconditions, and
-   preserve the complete continuation and frozen amended rules environment.
-   Treat 409/428 and uncertain responses as reconciliation states. Verify actual
-   producer/consumer serialization and two-device offline edits/restart before
-   performing another live amended-sync acceptance run.
-2. Wire SR6 natural-attribute advancement to the Core-owned quote/apply operation
-   being implemented by Root. Augmented limits must not authorize natural Karma
-   purchases. Coordinate exact package/API availability through Teable; do not
-   add UI-local rules or use the existing shared XML mutation as a fallback.
-3. Repair remaining XML Editor/Print Setup false-success paths. Apply through an
-   explicit handler with a verified result, or retain input and visibly explain
-   that the action is unavailable.
-4. Complete the unfinished manual Creation/editor/Career journey on a supported
-   SR5 runner with AI disabled and ordinary interactions. Retain the concrete
-   blocker when it cannot finish; do not substitute a demo runner for acceptance.
-
-Continue the existing Windows SR6 and candidate-delivery work below after these
-blockers. Root owns Registry, Play-host ledger, identity, media, Core rules and
-portable-verifier repairs separately. Keep the same Friday session and provider,
-send scoped shared-dependency requests directly, and continue independent work
-without waiting for user approval or another tooling-only seal.
-
-### Integrated R97 and controller correction
-
-The R97 work removes false success notices for unimplemented legacy dialog actions and separates functional, unavailable, containment, routing and unclassified test evidence. The controller correction rebuilds the audit runner before every run, discards its old generated executable, records the new executable hash, and rejects a runner changed during execution. A matching source stamp cannot authorize binary reuse. The audit summary remains limited to the tested contracts and does not claim that every persisted desktop workflow exists.
-
-These are source and focused-test corrections. They do not establish native Windows acceptance or complete SR6. Preserve the two reported baseline failures as separately classified debt; do not change assertions solely to obtain a passing count.
-
-### 1. Close the existing evidence handoff, then move on
-
-Provide authenticated, controller-reachable references for the four already reported R94 receipts, with exact artifact/source identities and the actions each receipt establishes. Use the existing authorized handoff channel. Keep private character contents, account details and credentials out of public reports. Do not rerun unchanged native or installer cases just to refresh timestamps. If the evidence cannot be retrieved, report that exact gap and continue the independent product tasks below.
-
-### 2. Deliver the Windows half of the amended account-sync journey
-
-Prepare one real Windows-authored SR5 runner with a character-bound amend that visibly affects a phone playtime-wizard calculation. Use the linked account sync route, preserve the complete original character and frozen rule environment, and provide Root the safe operation/artifact references needed to locate the synced runner. A local file export alone does not satisfy this task.
-
-Coordinate directly with Root for amended Android calculation/mutation, offline save/reopen/restart, conflict handling and return sync. On return, verify in a fresh Windows process that the phone change and exact amend environment are retained. Preserve uncertain-operation identities; reconcile a lost response before another upload or mutation. Report which legs actually ran on which host.
-
-### 3. Implement the missing SR6 creation workflows as real vertical slices
-
-The materializer still lists SR6 Karma, PointBuy and LifePath as open workflows. Complete them in that order unless the current authoritative specification requires a different dependency order. For each supported method, deliver typed native inputs, Core-owned eligibility and budgets, preview, explicit confirmation, finalization, Career entry and save/new-process reopen. Include cancellation and stale-context rejection for the changed route. Preserve SR5 and edition isolation.
-
-Inspect the actual current Core contracts first. Where a required Core or package change falls outside the assignment, send Root a concise request naming the repository, base, exact files/contracts and dependency order. Root can assign that work directly; do not wait for the user or implement rules math or copied contracts in Avalonia. Keep unsupported methods honestly unavailable until their real workflow works. Containment and routing tests are not functional completion.
-
-### 4. Qualify the candidate that is actually being delivered
-
-The existing supplied unsigned installer and portable payload remain identified in the 9 November round below. Reuse evidence only for the exact unchanged inputs it covers. Complete any genuinely missing clean-profile manual SR5, native Save PDF, moved-portable, or autonomous-update leg on the selected artifact. Keep shortcuts during update, require installer-controlled relaunch, positively observe checksum rejection and verify the saved runner. Do not downgrade an installed version to force an upgrade test. Send version/dependency issues to Root through Teable and continue independent work.
-
-### Working agreement
-
-Submit a small reviewable PR for each completed slice using the existing linear recipe/marker publication procedure. Report progress and exact blockers through Teable at least every 15 minutes while active, and reread the assignment after each milestone. Root reviews, fixes and merges. Keep AI Finish gated and linked-account-only. Windows work proceeds independently of Android delivery; Android remains a playtime companion, while Windows owns full editing and amend authoring. Do not claim gold/replacement parity from catalog coverage, refusal messages or package checks.
-
-Compute source pins from the exact Git blob bytes and validate the publication in a clean checkout with those bytes. R97 originally pinned a CRLF working copy while Git contained LF bytes; the controller corrected that mismatch. Preserve the active worktree and its uncommitted changes rather than resetting it to perform this check.
-
----
-
-The rounds below are retained history. The current round and live Teable assignment govern new work.
-
-## Current Friday round — 9 November 2026
-
-Root is the sole integration and delivery controller. Continue the existing Friday session/worktree and preserve uncommitted R82 changes. No user approval, USER LEG, new worker, new credential or artifact relay is pending. Refresh this Teable assignment at session start and between bounded tasks. Root keeps Android, Hub deployment and chummer.run publication; Friday owns Windows and its SR6 completion. Keep existing assignment generation2 and session identity.
-
-### 1. Qualify the Windows candidate already supplied
-
-The artifact assignment is ready, not awaiting transfer. With the existing GitHub login:
-
-```text
-gh release download windows-controller-intake-20261109-root6408 --repo ArchonMegalon/chummer6-ui --dir YOUR_NEW_PRIVATE_INTAKE_DIRECTORY
-```
-
-Draft release ID438932651; version1.0.0-preview.20261109.6408; UI source e71face46101cd6aea2c9d2b02616a808caef4ff. Use `gh release view/download` or release-ID access if the draft tag REST endpoint returns404. Report an actual access error through Teable; do not ask the user to relay the installer or credentials.
-
-- Installer `chummer-avalonia-win-x64-installer.exe`: SHA256 `e72c283f27a72a5cba04cdaf05fed18716f046ebc894e531f29995b585684d46`,63206474 bytes.
-- Complete portable payload `chummer-avalonia-win-x64-payload.zip`: SHA256 `4d4516b1a61099e2e0bbc667fa89ead42c19eccfea7e57de40a9cb8e03213322`,61297229 bytes.
-
-Verify exact bytes before execution. This is an unsigned, self-contained preview; the bare apphost alone is not the portable product. Prior R80 native results concern different bytes and do not qualify this candidate.
-
-Use a normal isolated Windows profile with no Git, SDK, Core checkout or content override. Exercise install/launch; supported manual SR5 Creation with AI disabled; Career action; save/exit/new-process reopen; actual Save PDF with readable values; moved portable launch/reopen. For update acceptance, retain shortcuts, require installer-controlled relaunch, positively prove corrupted-update rejection and unchanged saved runner. First inspect installed versions: never force downgrade or claim a non-increasing version is an upgrade. Report a version issue to Root through Teable rather than waiting for a user. Root decides fixes and the next artifact directly.
-
-Return exact version/hash/host identity, actual actions/results and sanitized evidence references. Distinguish source tests, headless tests, native interaction, unsigned preview and signed/public delivery. Keep this release draft; Root owns public activation.
-
-### 2. Finish and submit the current R82 changes
-
-Your10:27UTC report identifies three stale select/Karma audit assertions and one production dialog-routing gap. This replaces the earlier blanket description of four product defects. Root has received the report, not yet accepted the unpublished diff. Preserve Core's edition-specific creation contract: SR6 must not silently reuse SR5 profiles. Submit the bounded production/test/docs changes with focused tests and the existing oracle/recipe/linear marker process.
-
-The reported24-test run had23 passes and one missing generated compliance artifact. Do not fabricate the missing extraction/receipt or relabel it as a pass. Preserve the repaired oracle-pinned wizard tests. A catalog-wide informational fallback must be reviewed as such: it is not proof that54 controls function or that SR6 creation is complete. Unsupported operations must remain explicit and must not report mutation success.
-
-Open or update a reviewable PR with exact commit_sha and result_refs; report it through Teable. Do not rewrite shared main or modify signing/provider identity. Root reviews, fixes and merges. No new Friday PR was visible in the controller's latest check.
-
-### 3. Continue actual Windows SR6 completion
-
-The user authorized completing Windows SR6 in parallel. After the bounded artifact qualification and R82 submission, take the next concrete missing supported SR6 user workflow from the existing specifications. Implement the real typed Core-backed inputs, preview/validation, explicit confirmation, persistence and recovery; do not replace functionality with an informational notice or weaken tests to claim parity.
-
-Maintain strict edition isolation and preserve SR5. Follow the approved SR6 creation methods/content; unsupported PointBuy/LifePath/Karma paths remain clearly unavailable until their actual SR6 implementation exists. For a cross-repository Core/Hub change, send Root exact paths, contract changes and dependency requirements through Teable before editing outside this task's allowed paths. Root can authorize/coordinate directly; do not wait for user approval. Never add a second rules engine in the UI.
-
-Prioritize a complete supported manual SR6 Creation -> Career/play -> save/new-process reopen -> import/export journey, then remaining supported archetypes and recovery. Test actual native interactions for the affected route, including cancellation, stale context and uncertain-write reconciliation where relevant. Keep AI Finish hidden until qualified and linked-account-only; it is not a workaround for incomplete manual editors. Linux and Android completion are not prerequisites for Friday's Windows work.
-
-### 4. Coordinate the required Windows/phone amend roundtrip
-
-Android is a playtime companion, not a full desktop editor. Windows owns comprehensive creation, advanced editing and amend authoring. Preserve character-bound applied amends and complete source/rule environment during account sync. Coordinate with Root for a Windows-authored amended runner -> account sync -> actual amended Android wizard calculation/mutation -> offline save/reopen/restart -> safe conflict/recovery -> return sync to Windows. File import alone does not satisfy this acceptance. Report the available native Windows seed and exact account-bound operation references without exposing account secrets or character contents publicly.
-
-### Working agreement
-
-Use useful parallelism within the existing Friday provider/session and exact task ownership. Root owns shared integrations and Ubuntu heavy-build slots. Keep progress reports short and factual: changed source, focused tests, actual native results, PR/artifact identities, concrete blockers and next action. Do not wait silently for an artifact or approval already assigned here. Keep private evidence private and preserve uncertain-operation identities without blind replay.
-
----
-
-Earlier scope and audit history follows. The current round above and live WIN-006 task govern next actions.
-
-## Controller authority and SR6 authorization — 9 November 2026
-
-The user has delegated sole Chummer delivery authority to the main controller:
-"accept it for me", "u are allone with friday from now on - dont reliy on me",
-and "u are the sole authority". The user also explicitly said "allow friday to
-finish sr6". This section supersedes any earlier need for the user to relay
-approvals or perform the remaining native/manual acceptance legs.
-
-Continue the existing Friday session and its provider/authentication. Reconcile
-Teable `WIN-006`, generation 2, worker `friday-windows`, session
-`friday-windows-session-01`; report against the live assignment. Do not spawn a
-second Windows session. The controller owns scope, acceptance, review, merge,
-build/release decisions and chummer.run publication. Work directly with the
-controller and keep useful work moving at ordinary milestones.
-
-### Accepted R80 milestone and current Windows download
-
-The controller accepts the bounded automated qualification milestone reported as
-`win080-qual-20261109-14a809`. Its source is already-merged
-`4b22392da9ecf8a1bb0f6f739e434d4dfb8e5b85`; no new product PR is required merely
-to repeat that unchanged-source qualification. The reported installed startup and
-two-process save/reopen results remain Friday-run evidence. They do not close
-the remaining browser/manual journeys, all Windows requirements or release
-qualification by themselves. `WIN-006` remains assigned for continuing work.
-
-The user requested a Windows build/download on chummer.run. Supply the exact
-`run-20261109-081355` installer and payload through the controller-assigned
-artifact handoff in Teable, including hashes, sizes, exact source/build commands,
-bundled Core-content identity and actual signing status. Keep private characters,
-environments, credentials and broad diagnostic archives out of the transfer.
-Reuse valid builds for unchanged inputs; rebuild when a concrete change requires
-it. Root verifies and publishes the selected distributable files, checks the
-served bytes and retains rollback. A draft artifact transfer is not public
-release approval; follow the specific Teable assignment.
-
-The real-browser account-link, interrupted/lost-response persistence and portable
-amend checks previously labelled "USER LEGS" are now controller/Friday work.
-Execute them through the actual native UI with approved synthetic fixtures and
-report their exact outcomes. Do not substitute direct handler calls or an
-unrelated successful test for the required route. Preserve uncertain-operation
-identity and reconcile before any retry.
-
-### Finish Windows SR6 now
-
-Friday is authorized to complete supported Windows SR6 creation, Career/play,
-edition-isolated rules/content, persistence/import/export and applicable
-amend/Origin/output workflows. Complete missing inputs and Core-backed actions;
-an unavailable-state label alone is not feature completion. Verify actual native
-save/reopen/process restart and retain working SR5 behavior.
-
-Do not wait for Android SR5, AI Finish or Linux before progressing Windows SR6.
-Do not postpone the current usable Windows SR5 download while doing that work.
-For shared Core or Hub changes, give the controller the exact repository,
-contract/path scope and dependent Windows acceptance; obtain its scoped
-assignment and use separate reviewable PRs. The controller can make these
-routine decisions without another user approval. Keep Core as rules authority,
-retain package integrity, account/privacy boundaries and no-replay protection,
-and do not duplicate a rules engine in the UI.
-
-Android's existing order and playtime-wizard/Windows-applied-amend-sync scope are
-unchanged. This authorization does not mark incomplete work accepted, expose
-unfinished AI actions, change provider accounts or promote Android outside the
-existing Play Internal scope. Ask the controller about concrete blockers while
-continuing independent work; do not use routine approval waits as a stopping point.
-
-## Controller update — 9 November 2026
-
-This update supersedes the old starting base and priority list below. Retain the
-older audit as history; first check current source and existing evidence before
-reopening any of its findings. The full Windows mission remains unchanged.
-
-### Integration status
-
-Friday's [PR #576](https://github.com/ArchonMegalon/chummer6-ui/pull/576) was
-corrected and integrated through [PR #577](https://github.com/ArchonMegalon/chummer6-ui/pull/577).
-PR #577 was rebase-merged on 9 November at 07:01 UTC. Its published product base is
-`a507a9a82efdb47cdc143c593a52fe12ece0cb0e`; its tree is
-`e417678b52b3871c13a646e8170098db7e5fc6ff`. PR #576 is closed as superseded, with
-Friday's branch retained. Do not resubmit that branch or transplant its old patch
-over the corrected integration.
-
-The controller corrections cover worker registration/cleanup across overlapping
-linking generations and clipboard errors arriving after the dialog closes.
-The pinned SDK 10.0.103 Linux application build, 44 focused managed/headless
-tests, the affected publication-control test and all six protected PR checks
-passed. Post-merge run
-[42576620214](https://github.com/ArchonMegalon/chummer6-ui/actions/runs/42576620214)
-passed split-preseal validation. That run skipped SDK/package-consumer
-qualification. These results do not establish native Windows installation,
-autonomous update, complete wizard acceptance or a release.
-
-The controller's 9 November inventory found no newer open Friday PR in UI, Core
-or Hub. The remaining August/September Core, Hub, Rook and tablet drafts are
-separate historical work; they are not an outstanding Friday merge queue. Do not
-revive or merge them merely because they are still open.
-
-### Resume the existing assignment
-
-1. Preserve uncommitted work and read the current Teable `WIN-006` assignment for
-   `friday-windows`, using the existing session `friday-windows-session-01`.
-   Re-read its generation, base and allowed paths; use that exact generation in
-   subsequent reports. The controller is refreshing the old October 31 base.
-   An old heartbeat or this handoff does not authorize a second Windows session.
-2. Fetch main and reconcile local branches with PR #577 and the handoff update.
-   Use the new controller-assigned base for subsequent work. Preserve unpublished
-   commits; report any overlap before changing their ownership. Do not reset or
-   force-push another session's branch, and do not replay an uncertain operation.
-3. Reconcile the latest `win079-lifecycle-p2s-20261109-b7cf61` report with the
-   integration above. It is a completed source milestone, not acceptance of the
-   entire broad `WIN-006` task or all older WIN-001 through WIN-005 claims.
-4. Continue useful Windows work within the existing assigned paths. Start by
-   checking which concrete native acceptance remains for the merged linking
-   lifecycle change; reuse existing valid results for unchanged inputs. Then
-   take the next demonstrated blocker in the manual SR5 install → Creation →
-   Career → save/new-process reopen → PDF → update journey. Do not repeat a
-   repaired audit finding or add release infrastructure without a concrete need.
-5. Report at milestones and at least every 15 minutes while active. Include repo,
-   branch, base/head SHA, actual tests, unresolved blockers and the PR URL in the
-   structured report fields, not only in prose. For stale/conflicting PRs, name
-   the intended successor and request review of the replacement. The controller
-   owns merge and acceptance; do not assume a request or old green badge is approval.
-
-### Shared Android/Windows boundary
-
-Android's current SR5 delivery target is the Before Run, Play, After Run/Career
-and applicable Downtime wizards. Windows owns comprehensive creation, advanced
-editing and amend authoring. Preserve complete character and source data across
-sync; the phone must calculate its actual wizard actions using the character's
-applied amends. A file import alone does not establish that contract.
-
-Where the existing assignment permits Windows sync work, coordinate a concrete
-paired acceptance case with the controller: Windows character with an applied
-amend → phone adoption and amended wizard calculation → offline save/reopen and
-restart → conflict handling → return sync to Windows. Report exact public source
-and package identities and the expected semantic change; keep private character
-content and credentials out of Git and Teable. Do not modify private Android
-overlays or invent Core contracts. Request a scoped shared Core/Hub assignment
-when an actual dependency requires it.
-
-Keep incomplete AI Finish gated; a future enabled action requires a linked
-account and qualified review/apply/recovery semantics. Android delivery does not
-wait for complete Windows parity, and Windows need not wait for Android, Linux,
-SR6 or Rook to finish a usable SR5 increment. Retain local Windows builds,
-existing provider/authentication, package integrity, owner checks and no-replay
-protection. No signing, public release, live deployment or provider activation
-is granted by this handoff.
-
----
-
-## Historical audit — 3 November 2026
-
-Updated 3 November 2026 from the user's re-audit of the corrected, merged
-Quality editor. This historical work order is superseded by the controller update
-above where starting base, integration state or priorities differ. Read
-[WINDOWS_REMOTE.md](WINDOWS_REMOTE.md) and [COORDINATION.md](COORDINATION.md).
-Preserve existing assignments, Core authority, account/data boundaries, package
-controls and release permissions.
-
-## Resume here
-
-Continue the existing user-started Friday Code session. Fetch main, preserve local
-work, and reconcile existing branches and the Teable assignment/session/generation.
-Do not start a duplicate Windows worker. Use Friday Code's existing provider and
-authentication; this remote lane does not require Ubuntu Headroom. Report concrete
-progress through the existing coordination client at least every 15 minutes while
-active and at milestones. Keep tokens, private character data and environment
-values out of reports.
-
-**PR #517 is fixed and merged. Do not repair or resubmit the old singleton-selection
-head.** Start with fresh-character Attributes entry; fix the small asynchronous
-Quality-display race alongside it. Deliver verified bundled runtime content next.
-Continue the remaining manual editors and recovery acceptance within the assigned
-scope. Keep AI Finish default-off at every entry point. AI-populated drafts cannot
-qualify a manual Creation journey.
-
-The first Windows beta milestone remains:
-
-> A normal user installs on a clean Windows PC, manually creates a supported SR5
-> runner, enters Career, saves and reopens it in a new process, makes a Career
-> change, exports a readable character sheet, and updates without losing the
-> character or installing development tools.
-
-Android, Linux, SR6 and live Rook do not block this Windows increment. A declared
-Mundane-first candidate is an intermediate delivery scope, not permission to drop
-magical/resonance archetypes, broader methods, Origin, genuine amend compatibility
-or the full assigned Chummer5a/app parity mission. Preserve requirement identities.
-
-## Current source and evidence
-
-The user audited `chummer6-ui` at:
-
-```text
-Commit: b4d25bdb440f940aeaee80ccaacc8f25d843db53
-Tree:   bd9abdbb4d244dac10118ae376e7b4e8b41d3b12
-```
-
-The controller confirmed this main after rebase-merging the corrected
-[PR #517](https://github.com/ArchonMegalon/chummer6-ui/pull/517). All six PR checks
-passed. The merged tree exactly matches the reviewed tree. This publication updates
-the work order and CI checkout inputs; identify later product generations separately.
-
-| Finding | Current disposition |
-| --- | --- |
-| Selecting Quality B replaces earlier A | Fixed in merged #517 |
-| Quality Add/Remove/empty-set review | Implemented with focused tests |
-| Quality stale-review/duplicate-confirmation protections | Improved; preserve the guards |
-| Quality dialog after asynchronous loading | New stale-context display race; targeted correction required |
-| Quality uncertain-result recovery | Same-session read-only reconciliation; restart/account-transition acceptance remains open |
-| Fresh Attributes entry | Still circular despite the corrected Method route |
-| Magic/Resonance option cards | Explicitly unavailable; misleading clicks contained, editor not implemented |
-| Installed Core content | Still checkout-dependent; clean-machine delivery unresolved |
-| PDF text/font serialization and positioning | Repaired; do not reopen these specific defects |
-| PDF wrapping/language/native Save | Remaining acceptance and implementation work |
-| Installer/update harness | Earlier source corrections retained; exact-candidate native run remains separate |
-| Current-main publication | Successful preseal validation, not a new application/package-consumer build |
-| Complete native Windows beta | Not established |
-
-The controller ran the pinned-SDK Linux Avalonia build, ten Quality interaction
-tests and seven headless control/gate tests for #517. The user auditor inspected
-those reported results but did not rerun them. They are not native Windows
-save/new-process acceptance. Preserve the repaired route edges, independent
-Attributes completion flag, correct starting-cash display, diagnostic allowlist
-and AI gate from the earlier work.
-
-## 1. P1: make fresh Attributes entry possible
-
-Affected source:
-
-- `Chummer.Presentation/Overview/CharacterCreationWizardProjector.cs`
-- `Chummer.Presentation/Overview/CharacterCreationWizardDesktopSession.cs`
-
-The Method-to-Attributes route exists, but Attributes still uses
-`isAvailable: qualitiesAuthority.IsReady`. Its forward route to Qualities also
-uses Quality readiness. The pinned Core Qualities service adds
-`AttributesDraftRequired` when no Attributes draft exists. Confirming the
-Priority/Heritage/Talent prerequisites does not create that draft.
-
-This requires the draft before allowing the player to create it. Drive Attributes
-edit availability from its own authoritative state and admitted prerequisites,
-not a downstream stage. Keep these separate: can enter/edit; has completed; can
-finalize. Do not prepopulate Attributes, mark it complete, ignore Core blockers,
-or relax general session entry checks merely to make navigation work. Coordinate
-any missing shared Core contract with the controller; do not derive rules in UI.
-
-Acceptance with AI Finish disabled:
-
-1. Create a genuinely fresh Priority runner and confirm required prerequisites.
-2. Assert that no Attributes draft exists and Attributes finalization is incomplete.
-3. Use the ordinary Next button to enter the Attributes editor.
-4. Manually allocate, preview and confirm Attributes.
-5. Reload authoritative state and proceed to Qualities.
-
-Add a focused initial-state regression and retain negative prerequisite cases.
-Exercise real Windows controls. AI-filled fixtures and direct test jumps do not
-establish this route.
-
-## 2. P2: revalidate asynchronous Quality results before display
-
-Affected method:
-`Chummer.Avalonia/MainWindow.CreationWizard.cs` /
-`CreationWizard_EditQualitiesAsync`.
-
-The current method validates the captured overview, awaits
-`Task.Run(interaction.Load)`, then creates and opens the dialog without checking
-fresh `_adapter.State`. A user can switch from character A to B, or change account,
-while loading; A's data can then appear over the current window. The busy flag
-prevents duplicate Quality requests but is not a global navigation lock.
-
-This is a source-level stale-dialog race, not demonstrated wrong-character
-mutation. Confirmation has further workspace/revision/owner guards; retain them.
-
-Immediately after loading and before constructing/showing the dialog:
-
-- Check that the captured workspace and owner context are still current.
-- Check that the displayed revision matches the loaded state.
-- Check cancellation and window lifetime.
-- Discard stale uncommitted display results instead of presenting them.
-
-Apply the same rule after asynchronous review preparation, before publishing its
-result. Keep progress and busy-state cleanup correct when discarding a result;
-do not clear an uncertain operation merely to make the UI available. Reuse the
-existing interaction/context checks rather than adding an interaction framework.
-
-Regression coverage: pause loading, switch character, release loading, and assert
-that the old character's dialog is never shown. Repeat for owner transition,
-revision change and closed/cancelled window as applicable. Cover a stale prepared
-review too. Keep the existing confirmation protections and focused tests.
-
-## 3. Preserve the corrected Quality selection contract
-
-Merged #517 initializes the editor from the entire authoritative selection,
-explicitly adds/removes the clicked choice, and previews/confirms the complete
-intended set. Review shows retained, added and removed qualities, the full result
-and Core-calculated budgets. Empty selection can be explicitly reviewed where
-Core permits it. Do not return to `[option.OptionId]` singleton writes.
-
-The interaction binds workspace, revision and owner; copies proposed IDs; retains
-one stable idempotency key/transaction identity; rejects repeat confirmation;
-validates the receipt; and reconciles an uncertain write with read-only loading.
-Core owns legality, exclusions and pricing. The UI collects and displays choices.
-
-Retain existing tests for A then B preserving both, cancellation, explicit removal,
-empty selection, stale character/revision/owner, duplicate confirmation, mutated
-input and lost response. The reopened-editor test uses controlled retained service
-state; it is not a new native process or a full persistence claim.
-
-## 4. Qualify uncertain results across restart and account transition
-
-Current pending state in `_pendingQualitySelections`, the captured owner stamp,
-prepared review and dispatched flag is in memory. Describe the implemented path
-as **same-session read-only reconciliation** until stronger evidence exists.
-
-A new process can load saved character data, but this does not itself establish
-recovery of the original uncertain operation. A pending session with an obsolete
-owner transition stamp is correctly rejected; retaining that dictionary entry
-does not establish that returning to the original account can recover it under a
-new stamp. These are recovery limitations, not evidence of corrupted data.
-
-Use fresh authorization to inspect the original persisted operation through the
-existing Core-owned receipt/recovery contract. Do not weaken stamp equality,
-reuse stale authorization, silently discard pending state or blindly resubmit.
-Coordinate an actual missing shared contract; do not invent a second ledger.
-
-Required native acceptance:
-
-```text
-Commit succeeds -> response is lost -> process terminates
--> new process opens the original character with fresh authorization
--> the saved outcome is identified without another write
-```
-
-Separately transition accounts while a result is uncertain, then return under a
-fresh owner context and recover the original outcome. Verify no cross-account
-display, no extra mutation and exact accepted selection/budgets. Keep the original
-operation identity and distinguish saved result from unapplied proposal.
-
-## 5. P1 delivery: package verified runtime rules/content
-
-`Chummer.Avalonia/DesktopCoreContentRootResolver.cs` still discovers content through
-an environment override, repository root or sibling Core checkout, then invokes
-Git for the pinned identity. This remains a development path. An installed app
-launched with `CHUMMER_CORE_CONTENT_ROOT` does not prove self-contained delivery.
-
-Ship the exact required verified content with installed and portable bundles.
-Resolve it relative to the bundle and validate the approved identity. Keep source
-checkout overrides explicitly developmental. Preserve integrity checks; missing
-or tampered content needs actionable recovery rather than unrelated/default rules.
-
-On a fresh normal Windows profile with **no Git, .NET SDK, Core checkout or Chummer
-content override**: install, launch from Start, manually create a supported runner,
-save, exit/reboot and reopen it. Move the portable directory and repeat launch and
-reopen. Distinguish packaging implementation, clean-machine evidence and signed
-public delivery. Coordinate shared Core/package ownership; assigned Windows
-packaging/adapters can proceed now.
-
-## 6. Finish the advertised manual editors
-
-Magic/Resonance now shows an unavailable message before creating option buttons.
-The headless test verifies no enabled spell card. This closes misleading silent
-clicks but does not implement the structured editor.
-
-Collect applicable tradition, spell, power and resonance choices as typed inputs;
-ask the existing Core service to preview and validate them. This needs a UI, not
-a second rules engine. Use the ordinary sequence:
-
-`select/edit -> Core preview -> costs/changes/blockers -> explicit confirmation -> apply once -> authoritative reload`
-
-Every archetype advertised as supported needs a complete manual path. If the first
-candidate is explicitly Mundane-only, retain the magical/resonance work as open
-in the full mission. Do not unhide AI Finish to fill missing manual stages.
-
-Qualify manual Creation -> Career -> advancement -> save/new-process reopen with
-AI disabled, real Next/navigation and actual input controls. Include a real Quality
-selection, and an actual Magic/Resonance choice for each applicable supported
-acceptance case. Page visits and routed-click fallbacks must be labelled honestly.
-
-## 7. Finish output and installer acceptance on the combined candidate
-
-Keep #515's parenthesized PDF text operands, independent text objects and correct
-bold-font byte serialization. The serializer is repaired. The earlier seven
-compiled composer tests and independent MuPDF one-page/nine-page results retain
-their original scope; the latest auditor did not rerun them.
-
-Add width-based wrapping, page bounds and sensible breaks for real long values.
-Implement intended language/character coverage; Latin-1/WinAnsi does not preserve
-arbitrary names/prose. Do not silently replace unsupported content. Verify actual
-extracted values and independent renders, then a real native Save PDF/open route.
-Headers, HTML, deterministic bytes or renderer exit code alone are insufficient.
-
-Preserve installer parent-exit/disposed-splash fixes and the stronger harness:
-autonomous relaunch, retained shortcuts/targets, exact executable bytes/version
-and process birth, positively observed checksum rejection, file-content comparison
-and the isolated real saved-runner store. Run it on the actual combined candidate:
-
-`installed v1 saves runner -> app-triggered update -> autonomous v2 relaunch -> exact runner reopens -> corrupt update rejected -> runner still reopens unchanged`
-
-Fail autonomous-update acceptance if the harness launches the app. Prove the bad
-artifact was evaluated, no installer ran for it, and installed content stayed
-unchanged. Keep the operator's ordinary store outside the test. Reconcile
-interruptions before retrying. Do not rerun historical workflows just to refresh
-timestamps; use relevant tests for changed inputs and the selected delivery build.
-Unsigned local execution is separate from signed public-channel verification.
-
-## 8. Complete existing package qualification and report evidence accurately
-
-[Main run 41671733822](https://github.com/ArchonMegalon/chummer6-ui/actions/runs/41671733822)
-succeeded on the audited head. It ran current-main split-preseal validation without
-consumer/release claims. Locked SDK setup, sealed package-consumer verification
-and sealed receipt upload were skipped. This validates source publication, not a
-fresh Windows application build, native execution or release readiness. Retain
-#517's separately established Linux build and focused test evidence too.
-
-Follow the existing recipe P -> marker-only Q -> lock-only seal S process. Publish
-P/Q with **rebase merge**, preserve exact topology/lock checks, and complete the
-existing owner-package/seal/consumer qualification for the combined candidate.
-Do not force-push main, weaken checks, fabricate a seal, reuse a stale marker or
-add another release framework. Controller owns protected integration. Independent
-editor/content work should continue during review and package coordination.
-
-## Remaining mission and reporting
-
-After the manual beta works, finish retained Origin prose/manuscript export and
-reopen; genuine character-bound amend import/conflict resolution, frozen-environment
-export and clean-profile reopen; broader methods/archetypes; and full assigned
-Chummer5a/app parity. Character JSON export is not manuscript export; `.chum5`
-import alone is not amend syntax compatibility. Missing/incompatible packages need
-actionable recovery. Basic retained Origin acceptance needs no new paid generation.
-
-Complete AI transaction/recovery and useful supported-archetype behavior behind the
-gate before exposure. Use Core-owned atomic or deliberately resumable completion,
-stable identities, owner/revision binding and explicit uncertain results. Classify
-relevant failures on the exact candidate; unchanged failures are not passes. Check
-ordinary-user permissions, actual mouse/keyboard interaction, 125–200% scaling and
-long/localized text. Preserve the diagnostic allowlist and sentinel tests.
-
-Report exact source/artifact identity, behavior changed, tests actually run, native
-actions, remaining gaps and next steps. Keep merged source, preseal validation,
-package-consumer qualification, native verification and publication distinct.
-
-This handoff changes no Teable assignment, provider, credentials or Friday-owned
-status and does not start Friday. Continue authorized work until the full assigned
-Windows mission is complete; raise only actual shared-owner/permission boundaries.
-The user audit inspected source/diffs/tests/CI but did not compile or execute the
-client, Windows/PowerShell, PDF renderers or an installer. No runtime race, wrong-
-character write or corruption was demonstrated by that audit.
-
-Priority: fresh Attributes entry; targeted asynchronous display guard; verified
-bundled content; restart/account-transition recovery; complete manual editors;
-exact-candidate package/native Creation/Career/PDF/update acceptance; remaining
-Origin/amend/AI/parity work.
+## Controller work order 8023 — Windows continuation, 15 November 2026
+
+This is the current ordered assignment for **WIN-006, generation 12**, owned by
+the existing **friday-windows-session-01**. It supersedes work order 7867 and
+older ordering in Teable. Retain the existing session, provider, authentication
+and local work. Continue without waiting for the user to relay routine approvals.
+Root owns acceptance, integration, account-side coordination and publication.
+
+### Current integration state
+
+At this check, UI main is `00e8facf6a8d7b73d6be352337c6eb8a6136a4d2`.
+PR #597 is merged. PRs #589/#590 were closed as superseded, not merged;
+do not reopen or duplicate their work. Core #173 is merged and its selection
+budget correction is adopted. Hub #317 is merged and deployed.
+
+PR #601 remains open at `5c4b0d2b59d64918d7c246c65f88e8a3d673a34a`.
+The controller's [requested changes](https://github.com/ArchonMegalon/chummer6-ui/pull/601#pullrequestreview-5907346928)
+remain outstanding. The latest observed Friday report is 14 November,
+21:44 UTC; neither a report nor a passing preseal check proves that Friday is
+currently running or that the Windows candidate is release-qualified.
+
+Preserve local changes, reconcile them with current main and this assignment,
+then continue the following work. Re-read Teable after every milestone. A newer
+controller assignment takes precedence over historical task ordering.
+
+### 1. Correct PR #601 in place
+
+Keep the useful bounded layout/menu repairs. Repair the introduced evidence
+weaknesses in `DesktopMouseFirstJourneyRunner.cs`, specifically
+`ReadWorkspaceNaturalAttributeTotalAsync`:
+
+- Bind the read to the exact workspace created by this journey and the SR5
+  ruleset. Reject another character or edition.
+- Recheck the active workspace and owner authority after the asynchronous read.
+  Discard stale results; do not turn them into success evidence.
+- Require exactly one valid natural value for each of BOD, AGI, REA, STR, CHA,
+  INT, LOG and WIL. Reject missing, malformed or duplicate entries before
+  asserting the expected sum.
+- Add focused wrong-workspace, owner-transition, wrong-edition and malformed
+  input cases. A coincidental sum of 28 is insufficient.
+- Investigate the strict loss-acknowledgment path that rejects a replacement
+  dialog. Repair it if claiming that route passes; otherwise retain the exact
+  limitation. Never replay an uncertain finalization.
+
+Run the affected tests and build, and update the same PR with a clear description.
+Follow the existing linear recipe/marker contract where applicable; do not weaken
+publication checks. Record strict/fallback settings honestly. Avalonia synthetic
+pointer dispatch is not ordinary OS mouse input. Keep those evidence levels
+separate, including when a fallback is disabled.
+
+After submitting the correction, continue the independent tasks below. Do not
+stop at "ready for review."
+
+### 2. Transfer the retained current-candidate Windows results
+
+Root already has the selected gen-12 binaries and has verified their bytes and
+331 bundled Core content files against the selected Core source. Do not rebuild
+or upload unchanged binaries merely to send evidence.
+
+The selected installer SHA-256 is
+`a810fb4049c4f40a166484bcd6f97dc4d6e3950d5dd3d78f4e027d872756677f`
+(174,783,574 bytes). Its source was **main 00e8facf plus the journey-runner
+patch**, not an exact-main build. Retain that qualification.
+
+Transfer the exact `build_receipt.json` and retained current-candidate results
+from `_scratch/gen12/item3_*` through the existing private intake: startup,
+installation, save/new-process reopen, moved-portable behavior and sanitized
+installer views. Identify the actual executable, version, workspace and input
+method. Evidence for the older 83d24d56 candidate remains evidence of that older
+candidate only.
+
+If a required leg never ran, run only that missing leg. Do not manufacture or
+broaden old results. Use new unique artifact names; never overwrite an existing
+release asset or use clobber to replace a previously reviewed file. Send only
+the selected distributables and sanitized results, not an entire workspace,
+environment dump, credential directory or private character archive.
+
+Root will select and publish the bounded unsigned preview through chummer.run
+after accepting the applicable results. Binary transfer alone is not publication,
+signed delivery or full beta acceptance.
+
+### 3. Fix the real SR6 reward path, then complete its manual journey
+
+The latest report still leaves the manual SR6 Karma/reward route unresolved
+around canonical settings/exchange-rate handling. Trace the actual failure
+before deciding whether the defect belongs to UI mapping or Core admission.
+A fixture-only Karma grant qualifies the subsequent cap demonstration, not
+normal reward entry.
+
+Use the existing edition-specific Core authority. Do not add desktop pricing,
+exchange-rate or natural-limit rules to bypass it. If producer changes are
+needed, send Root the exact Core/Hub files, typed contract and focused tests for
+a separate scoped assignment/PR; continue independent Windows work meanwhile.
+
+Acceptance on the selected Windows candidate:
+
+1. Start a genuinely fresh supported SR6 runner with AI Finish disabled.
+2. Enter required choices through the available manual editors and finalize.
+3. Award Karma/nuyen through the ordinary user controls and acknowledge the
+   verified result, without fixture funding or direct document edits.
+4. Buy a legal natural attribute improvement using the Core quote, and
+   demonstrate a genuine Core refusal at the natural limit with no debit.
+5. Save, terminate and reopen in a fresh process. Verify the same runner,
+   selections, balances, natural values and frozen rules environment.
+
+Retain the already completed SR5 results at their actual source identity. Run
+only the affected SR5 regression legs after shared changes. Complete any required
+SR6 editor exposed as missing by the journey, using typed Core preview/confirm
+operations, explicit removals, stale-review refusal and visible error recovery.
+Windows SR6 proceeds in parallel with Android and does not wait for AI Finish.
+
+### 4. Finish Installation verlinken and the amended-account round trip
+
+Use the original pending installation/link operation and the existing private
+coordination details in Teable. Transfer any retained approval artifact only
+through that private channel. Root performs the authorized account-side action.
+Do not create replacement operations, rekey or replay an uncertain request.
+
+On installed Windows, verify warm/minimized return, cold return to the original
+operation, foreground completion and refusal of stale/post-unlink callbacks.
+Keep the wording **Installation verlinken**. Waiting, failure and success must
+be visible and actionable. A successful portal request does not establish a
+working native callback.
+
+Prepare and execute the Windows side of the real account-based amended runner
+round trip with Root's Android consumer. Preserve the complete character,
+continuation and frozen rules environment. Acceptance requires actual amended
+phone wizard calculations, offline save/reopen/restart, conflicts retaining
+both versions and return sync to Windows. File import and synthetic transport
+are setup or regression evidence only. Continue other tasks while the Android
+native candidate is being prepared; do not restart unresolved operations.
+
+### 5. Complete output/update acceptance and focused desktop polish
+
+On the selected combined candidate, finish the remaining native Save PDF leg:
+actual character values, readable long fields and the intended supported names.
+For the update leg, require autonomous relaunch, existing shortcuts preserved,
+the expected executable bytes, positive checksum rejection and the same saved
+runner reopened unchanged. Keep local unsigned verification separate from
+signed public-channel delivery.
+
+Inspect actual first-run/recovery screens before changing them. Address concrete
+remaining problems with draft-loading feedback, background rule refresh,
+actionable retry, clear saved-result/reconciliation wording and preserved input
+after failure. Exercise keyboard use, 125–200% scaling and long German labels
+on affected screens. Do not duplicate completed fixes or substitute another
+status dashboard for user-facing improvements.
+
+### Reporting and boundaries
+
+Report every 15 minutes while active and after each milestone: current task,
+exact head and dirty changes, tests actually run, native input method, retained
+artifact identity and next concrete blocker. Keep passing source tests, native
+execution and release qualification distinct. Reuse evidence when its inputs
+are unchanged; do not repeat broad suites solely to refresh timestamps.
+
+Keep one session and generation 12. Keep AI Finish gated and linked-account-only.
+Preserve existing account, signing, owner/revision, data and uncertain-outcome
+boundaries. Never force-push shared main, weaken checks or publish credentials.
+Root handles routine review, merge and delivery; no user relay is required.
