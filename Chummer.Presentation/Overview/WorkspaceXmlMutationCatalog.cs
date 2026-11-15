@@ -3286,10 +3286,16 @@ internal static class WorkspaceXmlMutationCatalog
     private static DateTime ParseManualExpenseDate(XElement expense)
     {
         XElement[] dateNodes = expense.Elements("date").Take(2).ToArray();
+        // Gen-12 qualification finding: the Core SR6 attribute-advance
+        // service writes <date> via XmlConvert.ToString(…, Unspecified),
+        // which emits fractional seconds (round-trippable ISO-8601) for
+        // sub-second timestamps. Accept both the exact sortable "s" form
+        // and the round-trippable form; keep failing closed on anything
+        // that is not a parseable, kind-neutral local timestamp.
         if (dateNodes.Length != 1
             || !DateTime.TryParseExact(
                 dateNodes[0].Value.Trim(),
-                "s",
+                new[] { "s", "o" },
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
                 out DateTime date))
