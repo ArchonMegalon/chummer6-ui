@@ -2937,10 +2937,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         recordPointerAction();
         RecordStep(steps, "sr6 nuyen leg: clicked career rewards Apply (+5,000 nuyen); " + nuyenApplyDiagnostics);
 
+        // 8066: capture the dialog's authoritative outcome immediately after
+        // the click, before any close detection, so a silent no-op vs a
+        // confirmed commit vs a refusal is observable in the receipt.
+        string nuyenPostClick = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            CareerRewardsWindow? ownerWindow = applyButton.FindLogicalAncestorOfType<CareerRewardsWindow>();
+            CharacterOverviewState snapshot = window.SnapshotStateForAutomation();
+            return "ownerResult=" + (ownerWindow?.LastResult?.Status.ToString() ?? "none")
+                + "; ownerRefusal=" + (ownerWindow?.LastRefusal ?? "none")
+                + "; ownerBalance=" + (ownerWindow.LastResult is null ? "n/a" : "set")
+                + "; presenterError=" + (snapshot.Error ?? "none")
+                + "; notice=" + (snapshot.Notice ?? "none");
+        });
+        RecordStep(steps, "sr6 nuyen post-click state: " + nuyenPostClick);
+
         bool dialogClosed = await WaitForConditionWithinAsync(
             () => FindCareerRewardsDialogButton("career-rewards-apply") is null,
             ct,
             TimeSpan.FromSeconds(8));
+        RecordStep(steps, "sr6 nuyen close-wait: dialogClosed=" + dialogClosed
+            + "; windowsAfter=" + string.Join(" | ", DescribeVisibleCareerRewardsWindows())
+            + "; balanceAfter=" + (DescribeCareerRewardsDialogBalanceText() ?? "none"));
         if (!dialogClosed)
         {
             // Post-apply diagnostics: the click fired (clickObserved), so
