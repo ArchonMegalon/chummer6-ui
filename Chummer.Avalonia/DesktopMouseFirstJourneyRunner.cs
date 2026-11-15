@@ -2751,7 +2751,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         }
 
         bool dialogOpened = false;
-        for (int attempt = 1; attempt <= 3 && !dialogOpened; attempt++)
+        for (int attempt = 1; attempt <= 4 && !dialogOpened; attempt++)
         {
             Button? freshButton = FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen");
             if (freshButton is null)
@@ -2812,6 +2812,23 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     RecordStep(steps, "sr6 nuyen blocked window: " + windowDetail);
                 }
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, $"06e-nuyen-blocked-{attempt}");
+                // A Confirmed pending reward (from the natural-limit funding
+                // apply that committed after its close-wait timed out) makes
+                // every fresh dialog show the confirmation panel instead of
+                // the entry form (apply hidden). Acknowledge it through the
+                // dialog's own acknowledge route so the next open is fresh.
+                Button? pendingAcknowledge = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+                if (pendingAcknowledge is not null)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        pendingAcknowledge.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, pendingAcknowledge)));
+                    recordPointerAction();
+                    bool ackCleared = await WaitForConditionWithinAsync(
+                        () => FindCareerRewardsDialogButton("career-rewards-acknowledge") is null,
+                        ct,
+                        TimeSpan.FromSeconds(6));
+                    RecordStep(steps, $"sr6 nuyen leg: acknowledged the Confirmed pending reward (cleared={ackCleared})");
+                }
             }
             RecordStep(steps, $"sr6 nuyen adjust attempt {attempt}: {openDiagnostics}; dialogOpened={dialogOpened}");
         }
