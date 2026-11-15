@@ -267,7 +267,7 @@ internal sealed class DesktopRunsiteWindow : Window
                     Name = "RunsiteSelectedWorkspaceCard",
                     BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(4),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = new StackPanel
                     {

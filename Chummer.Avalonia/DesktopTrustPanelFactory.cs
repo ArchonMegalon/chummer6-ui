@@ -103,7 +103,7 @@ internal static class DesktopTrustPanelFactory
             Background = DesktopShellTheme.ResolveSelectionPanelBrush(),
             BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(14)
         };
         StackPanel content = new()

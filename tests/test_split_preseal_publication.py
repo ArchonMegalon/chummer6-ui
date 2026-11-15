@@ -870,6 +870,20 @@ def test_unsealed_recovery_history_has_a_fail_closed_depth_bound(tmp_path: Path,
         preseal.validate_existing_unsealed_marker(repository, second_head)
 
 
+def test_recovery_after_sixty_four_integrations_keeps_transaction_and_depth_checks(tmp_path: Path) -> None:
+    repository, _, recipe, head = fixture(tmp_path)
+    assert preseal.validate_existing_unsealed_marker(repository, head, _depth=64) == head
+    with pytest.raises(preseal.PresealError, match="bounded depth"):
+        preseal.validate_existing_unsealed_marker(repository, head, _depth=preseal.MAX_UNSEALED_RECOVERY_DEPTH)
+    marker = json.loads((repository / preseal.MARKER_PATH).read_text())
+    marker["authority"] = True
+    checkout(repository, recipe)
+    (repository / preseal.MARKER_PATH).write_bytes(preseal.canonical_json_bytes(marker))
+    tampered = commit(repository, "invalid authority after long history")
+    with pytest.raises(preseal.PresealError):
+        preseal.validate_existing_unsealed_marker(repository, tampered, _depth=64)
+
+
 def test_seventeen_reviewed_integrations_keep_full_history_authentication(tmp_path: Path) -> None:
     repository, _, _, head = fixture(tmp_path)
     for number in range(17):
@@ -1438,10 +1452,12 @@ def test_pipeline_app_source_inputs_are_explicit_preseal_recipe_paths() -> None:
 
 def test_no_unreviewed_avalonia_paths_in_preseal_recipe_paths() -> None:
     """R7 guard: only the owner-approved Avalonia/ICO paths may be recipe-legal."""
+    # The reviewed Blackout recipe changes only the roster control corner radius.
+    assert "Chummer.Avalonia/Controls/CharacterRosterControl.axaml" in preseal.ALLOWED_RECIPE_PATHS
     forbidden = {
-        "Chummer.Avalonia/Controls/CharacterRosterControl.axaml",
         "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
         "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "Chummer.Avalonia/Controls/UnreviewedControl.axaml",
     }
     assert forbidden.isdisjoint(preseal.ALLOWED_RECIPE_PATHS)
 

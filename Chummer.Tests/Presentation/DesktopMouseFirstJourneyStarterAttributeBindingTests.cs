@@ -1,0 +1,332 @@
+using System;
+using System.Linq;
+using System.Xml.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Chummer.Application.Owners;
+using Chummer.Contracts.Owners;
+using Chummer.Contracts.Workspaces;
+using Chummer.Avalonia;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Chummer.Tests.Presentation;
+
+/// <summary>
+/// Focused tests for the Root review corrections on PR #601: the seeded
+/// starter-attribute evidence must (1) bind to the expected created workspace
+/// and ruleset family and reject post-await workspace/owner transitions, and
+/// (2) require exactly one valid totalvalue per each of the eight natural
+/// attributes before summing. The pure helpers under test are the same code
+/// path the journey runner executes.
+/// </summary>
+[TestClass]
+public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
+{
+    [TestMethod]
+    [DataRow("unchanged", true)]
+    [DataRow("workspace-transition", false)]
+    [DataRow("owner-transition", false)]
+    [DataRow("owner-aba", false)]
+    [DataRow("wrong-response", false)]
+    [DataRow("wrong-ruleset", false)]
+    [DataRow("wrong-edition", false)]
+    [DataRow("duplicate-edition", false)]
+    [DataRow("unavailable", false)]
+    public async Task Async_read_attributes_only_the_exact_created_runner_and_unchanged_owner(string change, bool valid)
+    {
+        CharacterWorkspaceId id = new("created-runner");
+        CharacterWorkspaceId? active = id;
+        OwnerContextStamp owner = new(new OwnerScope("install-account:starter-test"), "test-authority", 1);
+        OwnerContextStamp original = owner;
+        var pending = new TaskCompletionSource<CommandResult<WorkspaceDocumentSnapshot>>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        int reads = 0;
+        Task<DesktopMouseFirstJourneyRunner.StarterAttributeEvidence> observed =
+            DesktopMouseFirstJourneyRunner.ReadWorkspaceNaturalAttributeTotalAsync(
+                "sr5", id.Value, () => active, () => owner,
+                (capturedOwner, capturedId, _) =>
+                {
+                    Assert.AreEqual(original, capturedOwner);
+                    Assert.AreEqual(id, capturedId);
+                    reads++;
+                    return pending.Task;
+                }, CancellationToken.None);
+        Assert.IsFalse(observed.IsCompleted, "The identity change must occur across an actual pending read.");
+        if (change == "workspace-transition") active = new("another-runner");
+        if (change == "owner-transition") owner = owner with { Owner = new OwnerScope("install-account:another"), TransitionRevision = 2 };
+        if (change == "owner-aba") owner = owner with { TransitionRevision = 3 };
+        XElement xml = CharacterRoot(change == "wrong-edition" ? "6" : "5", AllEight(3));
+        if (change == "duplicate-edition") xml.Add(new XElement("gameedition", "6"));
+        WorkspaceDocumentSnapshot snapshot = new(
+            change == "wrong-response" ? new CharacterWorkspaceId("another-runner") : id,
+            new WorkspaceDocument(xml.ToString(), change == "wrong-ruleset" ? "sr6" : "sr5"),
+            DateTimeOffset.UtcNow, 1, 1);
+        pending.SetResult(new(true, snapshot, null,
+            change == "unavailable" ? WorkspaceOperationOutcome.Unavailable : WorkspaceOperationOutcome.Success));
+        var result = await observed;
+        Assert.AreEqual(1, reads);
+        Assert.AreEqual(valid, result.IsValid, result.Diagnostics);
+        Assert.AreEqual(valid ? 24 : -1, result.Sum);
+    }
+
+    [TestMethod]
+    [DataRow(null, "created-runner", "sr5")]
+    [DataRow("", "created-runner", "sr5")]
+    [DataRow("created-runner", "other-runner", "sr5")]
+    [DataRow("created-runner", "created-runner", "sr6")]
+    public async Task Missing_or_wrong_created_identity_is_rejected_before_read(string? expected, string active, string ruleset)
+    {
+        var result = await DesktopMouseFirstJourneyRunner.ReadWorkspaceNaturalAttributeTotalAsync(
+            ruleset, expected, () => new CharacterWorkspaceId(active),
+            () => new OwnerContextStamp(new OwnerScope("install-account:starter-test"), "test-authority", 1),
+            (_, _, _) => throw new AssertFailedException("An unbound runner must never be read."), CancellationToken.None);
+        Assert.IsFalse(result.IsValid);
+    }
+
+    [TestMethod]
+    [DataRow("sr50")]
+    [DataRow("5garbage")]
+    [DataRow("unknown")]
+    public void Ambiguous_edition_prefixes_do_not_establish_SR5_identity(string value)
+    {
+        Assert.IsFalse(DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(value, "sr5", out _));
+        Assert.IsFalse(DesktopMouseFirstJourneyRunner.DocumentEditionMatches(value, "sr5", out _));
+        Assert.IsFalse(DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(value, value, out _));
+    }
+
+    [TestMethod]
+    [DataRow("containers")]
+    [DataRow("names")]
+    [DataRow("values")]
+    [DataRow("nested-value")]
+    [DataRow("negative")]
+    [DataRow("overflow")]
+    public void Ambiguous_or_unrepresentable_natural_values_fail_without_partial_evidence(string shape)
+    {
+        XElement root = CharacterRoot("5", AllEight(3));
+        XElement attributes = root.Element("attributes")!;
+        XElement first = attributes.Element("attribute")!;
+        if (shape == "containers") root.Add(new XElement(attributes));
+        if (shape == "names") first.Add(new XElement("name", "AGI"));
+        if (shape == "values") first.Add(new XElement("totalvalue", "4"));
+        if (shape == "nested-value") first.Element("totalvalue")!.ReplaceNodes(new XElement("value", "3"));
+        if (shape == "negative") first.Element("totalvalue")!.Value = "-1";
+        if (shape == "overflow")
+            foreach (XElement value in attributes.Descendants("totalvalue")) value.Value = int.MaxValue.ToString();
+        var result = DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsFalse(result.IsValid, result.Diagnostics);
+        Assert.AreEqual(-1, result.Sum);
+    }
+
+    private const string CharacterTemplate =
+        "<character><gameedition>{edition}</gameedition><attributes>{rows}</attributes></character>";
+
+    private static XElement CharacterRoot(string edition, string rows)
+    {
+        return XElement.Parse(
+            CharacterTemplate
+                .Replace("{edition}", edition, StringComparison.Ordinal)
+                .Replace("{rows}", rows, StringComparison.Ordinal));
+    }
+
+    private static string AttributeRow(string name, string totalValue)
+    {
+        return "<attribute><name>" + name + "</name><totalvalue>" + totalValue + "</totalvalue></attribute>";
+    }
+
+    private static string AllEight(int baseValue)
+    {
+        string[] names = { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" };
+        return string.Concat(names.Select(n => AttributeRow(n, baseValue.ToString(System.Globalization.CultureInfo.InvariantCulture))));
+    }
+
+    // ----- NormalizeRulesetFamily -----
+
+    [TestMethod]
+    [DataRow("sr5", "sr5")]
+    [DataRow("SR5", "sr5")]
+    [DataRow("sr6", "sr6")]
+    [DataRow("5", "sr5")]
+    [DataRow("6", "sr6")]
+    [DataRow("SR5-CORE", "sr5")]
+    public void NormalizeRulesetFamily_maps_common_ids_to_their_family(string input, string expected)
+    {
+        Assert.AreEqual(expected, Chummer.Avalonia.DesktopMouseFirstJourneyRunner.NormalizeRulesetFamily(input));
+    }
+
+    [TestMethod]
+    public void NormalizeRulesetFamily_blank_input_maps_to_empty()
+    {
+        Assert.AreEqual(string.Empty, Chummer.Avalonia.DesktopMouseFirstJourneyRunner.NormalizeRulesetFamily(null));
+        Assert.AreEqual(string.Empty, Chummer.Avalonia.DesktopMouseFirstJourneyRunner.NormalizeRulesetFamily("   "));
+    }
+
+    // ----- RulesetFamilyMatches -----
+
+    [TestMethod]
+    public void RulesetFamilyMatches_accepts_same_family_and_variant_labels()
+    {
+        Assert.IsTrue(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(
+            "sr5", "sr5", out string diagnostic));
+        Assert.AreEqual(string.Empty, diagnostic);
+        Assert.IsTrue(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(
+            "SR5", "sr5", out diagnostic));
+        Assert.IsTrue(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(
+            "sr5-core", "sr5", out diagnostic));
+    }
+
+    [TestMethod]
+    public void RulesetFamilyMatches_rejects_cross_edition_documents()
+    {
+        Assert.IsFalse(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(
+            "sr6", "sr5", out string diagnostic));
+        Assert.IsTrue(diagnostic.Contains("does not match expected journey ruleset", StringComparison.Ordinal), diagnostic);
+    }
+
+    [TestMethod]
+    public void RulesetFamilyMatches_rejects_empty_sides()
+    {
+        Assert.IsFalse(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(
+            null, "sr5", out string nullDocument));
+        Assert.IsTrue(nullDocument.Contains("no ruleset id", StringComparison.Ordinal), nullDocument);
+
+        Assert.IsFalse(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.RulesetFamilyMatches(
+            "sr5", string.Empty, out string emptyExpected));
+        Assert.IsTrue(emptyExpected.Contains("expected ruleset family is empty", StringComparison.Ordinal), emptyExpected);
+    }
+
+    // ----- DocumentEditionMatches -----
+
+    [TestMethod]
+    public void DocumentEditionMatches_accepts_matching_edition_marker()
+    {
+        Assert.IsTrue(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.DocumentEditionMatches(
+            "5", "sr5", out string diagnostic));
+        Assert.AreEqual(string.Empty, diagnostic);
+        Assert.IsTrue(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.DocumentEditionMatches(
+            "5th", "sr5", out diagnostic));
+    }
+
+    [TestMethod]
+    public void DocumentEditionMatches_requires_a_present_edition_marker()
+    {
+        Assert.IsFalse(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.DocumentEditionMatches(
+            null, "sr5", out string missing));
+        Assert.IsTrue(missing.Contains("no gameedition element", StringComparison.Ordinal), missing);
+
+        Assert.IsFalse(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.DocumentEditionMatches(
+            "  ", "sr5", out string blank));
+        Assert.IsTrue(blank.Contains("no gameedition element", StringComparison.Ordinal), blank);
+    }
+
+    [TestMethod]
+    public void DocumentEditionMatches_rejects_mismatched_edition_marker()
+    {
+        Assert.IsFalse(Chummer.Avalonia.DesktopMouseFirstJourneyRunner.DocumentEditionMatches(
+            "6", "sr5", out string diagnostic));
+        Assert.IsTrue(diagnostic.Contains("does not match expected journey ruleset", StringComparison.Ordinal), diagnostic);
+    }
+
+    // ----- SumNaturalAttributes (exactly-one-valid-value-per-attribute) -----
+
+    [TestMethod]
+    public void SumNaturalAttributes_accepts_exactly_one_valid_total_per_attribute()
+    {
+        XElement root = CharacterRoot("5", AllEight(3) + AttributeRow("EDG", "1"));
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsTrue(evidence.IsValid, evidence.Diagnostics);
+        Assert.AreEqual(24, evidence.Sum);
+        Assert.IsTrue(evidence.Diagnostics.Contains("exactly one valid totalvalue", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    [TestMethod]
+    public void SumNaturalAttributes_rejects_a_missing_natural_attribute()
+    {
+        string rows = string.Concat(
+            new[] { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG" }.Select(n => AttributeRow(n, "3")));
+        XElement root = CharacterRoot("5", rows);
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsFalse(evidence.IsValid);
+        Assert.AreEqual(-1, evidence.Sum);
+        Assert.IsTrue(evidence.Diagnostics.Contains("missing natural attributes: WIL", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    [TestMethod]
+    public void SumNaturalAttributes_rejects_a_duplicate_natural_attribute()
+    {
+        XElement root = CharacterRoot("5", AllEight(3) + AttributeRow("BOD", "4"));
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsFalse(evidence.IsValid);
+        Assert.IsTrue(evidence.Diagnostics.Contains("duplicate natural attribute entry: BOD", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    [TestMethod]
+    public void SumNaturalAttributes_rejects_a_malformed_totalvalue()
+    {
+        string rows = string.Concat(
+            new[] { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" }
+                .Select(n => n == "WIL" ? AttributeRow(n, "three") : AttributeRow(n, "3")));
+        XElement root = CharacterRoot("5", rows);
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsFalse(evidence.IsValid);
+        Assert.IsTrue(evidence.Diagnostics.Contains("WIL has missing or malformed totalvalue", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    [TestMethod]
+    public void SumNaturalAttributes_rejects_a_natural_attribute_entry_with_no_totalvalue_element()
+    {
+        XElement root = CharacterRoot(
+            "5",
+            AllEight(3) + "<attribute><name>WIL</name></attribute>");
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsFalse(evidence.IsValid);
+        Assert.IsTrue(evidence.Diagnostics.Contains("WIL has missing or malformed totalvalue", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    [TestMethod]
+    public void SumNaturalAttributes_ignores_special_attributes_but_still_requires_the_eight()
+    {
+        XElement root = CharacterRoot("5", AllEight(3) + AttributeRow("MAG", "0") + AttributeRow("EDG", "2"));
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsTrue(evidence.IsValid, evidence.Diagnostics);
+        Assert.AreEqual(24, evidence.Sum);
+    }
+
+    [TestMethod]
+    public void SumNaturalAttributes_rejects_blank_attribute_names()
+    {
+        XElement root = CharacterRoot(
+            "5",
+            AllEight(3) + "<attribute><name>  </name><totalvalue>5</totalvalue></attribute>");
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsFalse(evidence.IsValid);
+        Assert.IsTrue(evidence.Diagnostics.Contains("blank name", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    [TestMethod]
+    public void SumNaturalAttributes_without_an_attributes_section_is_rejected()
+    {
+        XElement root = XElement.Parse("<character><gameedition>5</gameedition></character>");
+        Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence evidence =
+            Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
+        Assert.IsFalse(evidence.IsValid);
+        Assert.IsTrue(evidence.Diagnostics.Contains("missing natural attributes", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    // ----- StarterAttributeEvidence contract -----
+
+    [TestMethod]
+    public void StarterAttributeEvidence_is_invalid_only_for_negative_sums()
+    {
+        Assert.IsTrue(new Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence(0, "zero").IsValid);
+        Assert.IsTrue(new Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence(28, "seeded").IsValid);
+        Assert.IsFalse(new Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence(-1, "rejected").IsValid);
+    }
+}

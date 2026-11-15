@@ -136,6 +136,33 @@ OWNER_CONTEXT_RECIPE_PATHS = frozenset(
 )
 ALLOWED_RECIPE_PATHS = frozenset(
     {
+        # Controller 8055: reviewed TypeUI desktop tokens/geometry and retained
+        # provider guidance. Exact membership only; native gameplay stays Core-owned.
+        ".agents/skills/typeui-design-system/.typeui-design-system.json",
+        ".agents/skills/typeui-design-system/SKILL.md",
+        ".agents/skills/typeui-fundamentals/SKILL.md",
+        ".agents/skills/typeui-fundamentals/accessibility.md",
+        ".agents/skills/typeui-fundamentals/spacing-principles.md",
+        ".agents/skills/typeui-fundamentals/typography-principles.md",
+        ".agents/skills/typeui-fundamentals/ui-principles.md",
+        ".agents/skills/typeui-fundamentals/ux-principles.md",
+        "skills-lock.json",
+        "Chummer.Avalonia/App.axaml",
+        "Chummer.Avalonia/Controls/CharacterRosterControl.axaml",
+        "Chummer.Avalonia/Controls/ClassicFormPorts/ClassicFormPortSurfaceControl.cs",
+        "Chummer.Avalonia/DesktopBlackLedgerWindow.cs",
+        "Chummer.Avalonia/DesktopCreatorOsWindow.cs",
+        "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "Chummer.Avalonia/DesktopExplainCompanionLauncher.cs",
+        "Chummer.Avalonia/DesktopHorizonWindowScaffold.cs",
+        "Chummer.Avalonia/DesktopKarmaForgeWindow.cs",
+        "Chummer.Avalonia/DesktopNexusPanWindow.cs",
+        "Chummer.Avalonia/DesktopRunControlWindow.cs",
+        "Chummer.Avalonia/DesktopRunbookPressWindow.cs",
+        "Chummer.Avalonia/DesktopRunsiteWindow.cs",
+        "Chummer.Avalonia/DesktopShellTheme.cs",
+        "Chummer.Avalonia/DesktopTrustPanelFactory.cs",
+        "Chummer.Tests/Presentation/DesktopWindowContrastTests.cs",
         "Chummer.Desktop.Runtime/FileSr6CareerAttributeRecoveryStore.cs",
         "Chummer.Presentation/Overview/CharacterOverviewPresenter.Sr6Recovery.cs",
         "Chummer.Tests/Presentation/Sr6CareerAttributeRecoveryStoreTests.cs",
@@ -202,6 +229,11 @@ ALLOWED_RECIPE_PATHS = frozenset(
         "Chummer.Tests/GrantBoundDesktopWorkspaceRoamingSyncTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationWizardProjectorAuthorityFixtures.cs",
         "Chummer.Tests/Presentation/DesktopMouseFirstJourneyManualModeTests.cs",
+        # R117 (2026-11-15): Root PR601 review corrections - starter-attribute
+        # read bound to the created workspace + SR5 edition identity with
+        # post-await owner/workspace transition rejection and exactly-8
+        # natural-attribute validation; focused binding-test lane added.
+        "Chummer.Tests/Presentation/DesktopMouseFirstJourneyStarterAttributeBindingTests.cs",
         "Chummer.Tests/Presentation/CharacterCreationWizardPriorityReflowTests.cs",  # R112 2026-11-13: UX-04 priority reflow coverage (gen-9)
         "Chummer.Tests/Presentation/CreationQualitiesReviewBlockersTests.cs",  # R112 2026-11-13: UX-05 quality blocker-reason coverage (gen-9)
         "Chummer.Tests/Presentation/Sr6CareerAttributeAdvanceFlowTests.cs",
@@ -585,16 +617,19 @@ TRUSTED_GIT = Path("/usr/bin/git")
 # Rolling recipe/marker integrations can legitimately exceed sixteen entries.
 # Keep traversal bounded; every historical recipe, marker, parent and lock is
 # still authenticated. This is not a package-consumer or release qualification.
-MAX_UNSEALED_RECOVERY_DEPTH = 64
+# Main has 65 authenticated source-only integrations since the last package
+# seal. Permit the next bounded rolling-release window while still checking
+# every retained transaction; this never grants package/publication authority.
+MAX_UNSEALED_RECOVERY_DEPTH = 128
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "2806347c6a3f3f86c6634ba090996939620c83c6",
+        "blob": "88f85f91f3ba8eb5ec61af9632f3fb9fb68b4990",
         "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "rawSha256": "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77",
         "rawSizeBytes": 73930,
-        "semanticCanonicalSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+        "semanticCanonicalSha256": "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77",
         "semanticCanonicalSizeBytes": 73930,
         "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71"
     },

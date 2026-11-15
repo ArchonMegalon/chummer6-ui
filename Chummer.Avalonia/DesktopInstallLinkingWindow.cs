@@ -580,7 +580,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     Background = new SolidColorBrush(Color.Parse("#B0021110")),
                     BorderBrush = new SolidColorBrush(Color.Parse("#668EF9E4")),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(8),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = new StackPanel
                     {
@@ -606,7 +606,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Background = new SolidColorBrush(Color.Parse("#06130F")),
             BorderBrush = new SolidColorBrush(Color.Parse("#33F5D37A")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = new CornerRadius(0),
             ClipToBounds = true,
             Child = visual
         };
@@ -621,7 +621,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Background = new SolidColorBrush(Color.Parse("#B0021110")),
             BorderBrush = new SolidColorBrush(Color.Parse("#66F5D37A")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10),
             Child = new StackPanel
             {
@@ -650,7 +650,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Background = new SolidColorBrush(Color.Parse("#80081714")),
             BorderBrush = new SolidColorBrush(Color.Parse("#3346F6D1")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(7, 5),
             Child = new Grid
             {
@@ -689,7 +689,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Background = new SolidColorBrush(Color.Parse("#CC020617")),
             BorderBrush = new SolidColorBrush(Color.Parse("#88F5D37A")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10, 8),
             Child = new StackPanel
             {

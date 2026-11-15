@@ -43,7 +43,7 @@
                       Width="24"
                       Height="24"
                       Background="{DynamicResource ChummerShellPanelMutedBrush}"
-                      CornerRadius="2"
+                      CornerRadius="0"
                       Margin="0,0,4,0">
                   <TextBlock Text="{Binding Initials}"
                              HorizontalAlignment="Center"

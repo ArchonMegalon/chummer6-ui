@@ -1,0 +1,12 @@
+{
+  "designSystemId": "178f284c-d500-48fd-b2ac-732cbebca63e",
+  "installScope": "project",
+  "packageId": "96d30ddf-ff17-448c-bd4e-795fcc7514b1",
+  "skillFolderName": "typeui-design-system",
+  "slug": "blackout-design-system",
+  "source": "workspace",
+  "templateSlug": "blackout",
+  "type": "typeui-design-system",
+  "variant": "workspace",
+  "workspaceId": "929ef05b-3c36-48f0-955e-b72e609c6e23"
+}
