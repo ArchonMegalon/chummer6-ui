@@ -2905,6 +2905,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             RecordStep(steps, $"sr6 nuyen leg: settled pending reward at entry round {settle} (cleared={entryCleared}; balance={DescribeCareerRewardsDialogBalanceText() ?? "none"})");
         }
 
+        RecordStep(steps, "sr6 nuyen pre-apply windows: " + string.Join(" | ", DescribeVisibleCareerRewardsWindows()));
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            var owner = applyButton.FindLogicalAncestorOfType<CareerRewardsWindow>();
+            RecordStep(steps, $"sr6 nuyen apply target window: title={owner?.Title ?? "none"}; "
+                + $"applyEnabled={applyButton.IsEnabled}; applyVisible={applyButton.IsVisible}; "
+                + $"resultStatus={owner?.LastResult?.Status.ToString() ?? "none"}; "
+                + $"refusal={owner?.LastRefusal ?? "none"}");
+        });
+
         // T496/T546: same synthetic pointer swallow as the karma Apply.
         bool nuyenApplyClickObserved = false;
         void OnNuyenApplyClick(object? sender, RoutedEventArgs args) => nuyenApplyClickObserved = true;
