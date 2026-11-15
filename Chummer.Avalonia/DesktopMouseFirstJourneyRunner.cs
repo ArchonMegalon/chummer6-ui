@@ -2655,12 +2655,64 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
     }
 
+    private static async Task<bool> CancelAllCareerRewardsDialogsAsync(
+        List<string> steps,
+        CancellationToken ct)
+    {
+        bool cancelledAny = false;
+        for (int round = 0; round < 12; round++)
+        {
+            var live = global::Avalonia.Application.Current?.ApplicationLifetime
+                is IClassicDesktopStyleApplicationLifetime stragglerDesktop
+                    ? stragglerDesktop.Windows.OfType<CareerRewardsWindow>().Where(w => w.IsVisible).ToList()
+                    : new List<CareerRewardsWindow>();
+            if (live.Count == 0)
+            {
+                return cancelledAny;
+            }
+            RecordStep(steps, $"sr6 rewards straggler sweep round {round}: {live.Count} live CareerRewardsWindow modal(s)");
+            foreach (CareerRewardsWindow straggler in live)
+            {
+                Button? cancel = straggler.GetVisualDescendants().OfType<Button>()
+                    .FirstOrDefault(button => string.Equals(
+                        AutomationProperties.GetAutomationId(button),
+                        "career-rewards-cancel",
+                        StringComparison.Ordinal));
+                if (cancel is null)
+                {
+                    continue;
+                }
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                    cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, cancel)));
+                cancelledAny = true;
+            }
+            await WaitForConditionWithinAsync(
+                () => !(global::Avalonia.Application.Current?.ApplicationLifetime
+                    is IClassicDesktopStyleApplicationLifetime sweepDesktop)
+                    || !sweepDesktop.Windows.OfType<CareerRewardsWindow>().Any(w => w.IsVisible),
+                ct,
+                TimeSpan.FromSeconds(6));
+            await Task.Delay(400, ct);
+        }
+        bool stillOpen = global::Avalonia.Application.Current?.ApplicationLifetime
+            is IClassicDesktopStyleApplicationLifetime finalDesktop
+            && finalDesktop.Windows.OfType<CareerRewardsWindow>().Any(w => w.IsVisible);
+        return !stillOpen;
+    }
+
     private static async Task AwardNuyenForSr6AdvanceAsync(
         MainWindow window,
         List<string> steps,
         CancellationToken ct,
         Action recordPointerAction)
     {
+        // The repeated funding rounds leave auto-reopened CareerRewardsWindow
+        // editor loops alive; their concurrent prepare calls contend for the
+        // presenter display generation and silently refuse the fresh nuyen
+        // flow (click observed, no dialog). Cancel every live straggler
+        // modal first so the nuyen prepare runs against a quiet presenter.
+        await CancelAllCareerRewardsDialogsAsync(steps, ct);
+
         Button? nuyenButton = FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen");
         if (nuyenButton is null)
         {
