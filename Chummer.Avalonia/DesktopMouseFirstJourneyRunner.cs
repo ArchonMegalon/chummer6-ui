@@ -2655,6 +2655,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
     }
 
+    private static int CountVisibleCareerRewardsWindows()
+    {
+        return global::Avalonia.Application.Current?.ApplicationLifetime
+            is IClassicDesktopStyleApplicationLifetime countDesktop
+                ? countDesktop.Windows.OfType<CareerRewardsWindow>().Count(w => w.IsVisible)
+                : 0;
+    }
+
     private static async Task<bool> CancelAllCareerRewardsDialogsAsync(
         List<string> steps,
         CancellationToken ct)
@@ -2770,6 +2778,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
                     ct,
                     TimeSpan.FromSeconds(8));
+            }
+            if (!dialogOpened)
+            {
+                CharacterOverviewState nuyenBlockedState = window.SnapshotStateForAutomation();
+                string presenterError = nuyenBlockedState.Error ?? "none";
+                string presenterNotice = nuyenBlockedState.Notice ?? "none";
+                RecordStep(steps, $"sr6 nuyen adjust attempt {attempt} BLOCKED: presenterError={presenterError}; notice={presenterNotice}; busy={nuyenBlockedState.IsBusy.ToString().ToLowerInvariant()}; liveRewardsWindows={CountVisibleCareerRewardsWindows()}");
             }
             RecordStep(steps, $"sr6 nuyen adjust attempt {attempt}: {openDiagnostics}; dialogOpened={dialogOpened}");
         }
