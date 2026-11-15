@@ -2686,6 +2686,12 @@ internal static class WorkspaceXmlMutationCatalog
                 "Force Career visibility is available only for a Karma/Nuyen exchange.");
         }
 
+        if (request.KarmaNuyenExchange && IsSr6Runner(xml))
+        {
+            throw new InvalidOperationException(
+                "SR6 runners do not provide the Chummer5 manual Karma/Nuyen exchange rules; record Karma and Nuyen separately.");
+        }
+
         CharacterCareerManualKarmaState current = CareerManualKarmaEditorProjector.ProjectState(
             xml,
             sourceDataResolver);
@@ -2773,6 +2779,12 @@ internal static class WorkspaceXmlMutationCatalog
         {
             throw new InvalidOperationException(
                 "Force Career visibility is available only for a Karma/Nuyen exchange.");
+        }
+
+        if (request.KarmaNuyenExchange && IsSr6Runner(xml))
+        {
+            throw new InvalidOperationException(
+                "SR6 runners do not provide the Chummer5 manual Karma/Nuyen exchange rules; record Karma and Nuyen separately.");
         }
 
         CharacterCareerManualNuyenState current = CareerManualNuyenEditorProjector.ProjectState(
@@ -7008,6 +7020,22 @@ internal static class WorkspaceXmlMutationCatalog
         return bool.TryParse(value, out parsed);
     }
 
+    private static bool IsSr6Runner(string xml)
+    {
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        if (document.Root is not { Name.LocalName: "character" } characterRoot)
+        {
+            return false;
+        }
+
+        if (!CareerManualExchangeRates.TryGetCanonicalEdition(characterRoot, out string? edition))
+        {
+            throw new InvalidOperationException(
+                "The workspace declares an ambiguous game edition (duplicate or nested gameedition elements); manual Karma and Nuyen edits are refused.");
+        }
+
+        return AttributeWorkbenchProjector.IsSr6Ruleset(edition);
+    }
     private static int ComputeCareerAttributeUpgradeCost(int currentValue, int totalMaximum)
     {
         if (currentValue >= totalMaximum)
