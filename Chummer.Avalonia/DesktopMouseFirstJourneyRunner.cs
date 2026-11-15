@@ -2693,6 +2693,41 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
         CancellationToken ct)
     {
+        // A freshly created workspace rotates its owner transition revision
+        // once while the background revision sync settles, which races the
+        // capture-then-dispatch window inside the owner-bound read and throws
+        // "Owner authority changed before dispatch". That is a harness
+        // timing race, not evidence: retry by RE-CAPTURING the owner stamp
+        // and the active workspace binding from scratch (never reusing a
+        // stale stamp), so each attempt either reads under a consistent
+        // authority or reports the transition honestly.
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await ReadWorkspaceNaturalAttributeTotalOnceAsync(
+                    expectedRulesetId, expectedWorkspaceId, activeWorkspace,
+                    captureOwner, readWorkspace, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                attempt < 5
+                && (ex.Message.Contains("Owner authority changed before dispatch", StringComparison.Ordinal)
+                    || ex.Message.Contains("The acquired owner authority does not match the requested operation", StringComparison.Ordinal)))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
+            }
+        }
+    }
+
+    private static async Task<StarterAttributeEvidence> ReadWorkspaceNaturalAttributeTotalOnceAsync(
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
         ct.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(expectedWorkspaceId))
             return new(-1, "created workspace identity is missing");
