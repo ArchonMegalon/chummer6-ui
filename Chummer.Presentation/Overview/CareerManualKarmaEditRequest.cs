@@ -68,8 +68,7 @@ internal static class CareerManualExchangeRates
     internal static bool IsSr6Document(XElement characterRoot)
     {
         string? edition = characterRoot.Elements("gameedition").FirstOrDefault()?.Value.Trim();
-        return string.Equals(edition, "SR6", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(edition, "Shadowrun 6", StringComparison.OrdinalIgnoreCase);
+        return AttributeWorkbenchProjector.IsSr6Ruleset(edition);
     }
 }
 
