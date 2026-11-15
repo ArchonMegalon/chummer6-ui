@@ -3286,10 +3286,13 @@ internal static class WorkspaceXmlMutationCatalog
     private static DateTime ParseManualExpenseDate(XElement expense)
     {
         XElement[] dateNodes = expense.Elements("date").Take(2).ToArray();
+        // Core's SR6 advancement writer uses XmlConvert with Unspecified kind,
+        // which omits trailing fractional zeros. Accept its zero-to-seven
+        // fractional digits while retaining the local, timezone-free contract.
         if (dateNodes.Length != 1
             || !DateTime.TryParseExact(
                 dateNodes[0].Value.Trim(),
-                "s",
+                new[] { "s", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF" },
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
                 out DateTime date))

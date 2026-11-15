@@ -1,3 +1,4 @@
+using System.Xml;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
@@ -380,4 +381,90 @@ public sealed class CareerManualKarmaSr6OrdinaryRouteTests
             return false;
         }
     }
+}
+
+[TestClass]
+public sealed class CareerManualExpenseDateTests
+{
+    private static readonly CharacterWorkspaceId Workspace = new("manual-expense-dates");
+    private static readonly DateTime Second = new(2026, 11, 15, 12, 0, 0, DateTimeKind.Unspecified);
+
+    [DataTestMethod]
+    [DataRow(0)]
+    [DataRow(1)]
+    [DataRow(10)]
+    [DataRow(100)]
+    [DataRow(1000)]
+    [DataRow(10000)]
+    [DataRow(100000)]
+    [DataRow(1000000)]
+    public void Core_expense_timestamp_allows_later_manual_rewards_without_losing_precision(int ticks)
+    {
+        // Use the actual Core writer's format, including its omitted trailing zeros.
+        string date = XmlConvert.ToString(Second.AddTicks(ticks), XmlDateTimeSerializationMode.Unspecified);
+        string original = Character(new XElement("date", date));
+        foreach (bool nuyen in new[] { false, true })
+        {
+            XElement result = XDocument.Parse(Apply(original, nuyen)).Root!;
+            Assert.AreEqual(nuyen ? "10050" : "10000", result.Element("nuyen")!.Value);
+            Assert.AreEqual(nuyen ? "5" : "7", result.Element("karma")!.Value);
+            XElement[] expenses = result.Element("expenses")!.Elements("expense").ToArray();
+            Assert.AreEqual(2, expenses.Length);
+            XElement existing = expenses.Single(e => e.Element("reason")!.Value == "Core advancement");
+            Assert.AreEqual(date, existing.Element("date")!.Value);
+            Assert.AreEqual("-3", existing.Element("amount")!.Value);
+            Assert.AreSame(existing, expenses[ticks == 0 ? 0 : 1]);
+            Assert.AreEqual("keep", result.Element("customstate")!.Value);
+        }
+    }
+
+    [DataTestMethod]
+    [DataRow("2026-11-15T12:00:00Z")]
+    [DataRow("2026-11-15T12:00:00.1234567Z")]
+    [DataRow("2026-11-15T12:00:00.123+01:00")]
+    [DataRow("2026-11-15T12:00:00.12345678")]
+    [DataRow("2026-11-15")]
+    [DataRow("not-a-date")]
+    public void Malformed_or_timezone_bearing_existing_dates_still_refuse_manual_rewards(string date)
+    {
+        string original = Character(new XElement("date", date));
+        foreach (bool nuyen in new[] { false, true })
+            Assert.ThrowsExactly<InvalidOperationException>(() => Apply(original, nuyen));
+    }
+
+    [TestMethod]
+    public void Missing_or_duplicate_existing_dates_still_refuse_manual_rewards()
+    {
+        foreach (XElement[] dates in new[]
+        {
+            Array.Empty<XElement>(),
+            new[] { new XElement("date", "2026-11-15T12:00:00"), new XElement("date", "2026-11-15T12:00:00") }
+        })
+        {
+            string original = Character(dates);
+            foreach (bool nuyen in new[] { false, true })
+                Assert.ThrowsExactly<InvalidOperationException>(() => Apply(original, nuyen));
+        }
+    }
+
+    private static string Character(params XElement[] dates) => new XElement("character",
+        new XElement("gameedition", "SR6"), new XElement("created", "True"),
+        new XElement("karma", "5"), new XElement("nuyen", "10000"),
+        new XElement("expenses", new XElement("expense", dates,
+            new XElement("guid", "00000000-0000-0000-0000-000000000001"),
+            new XElement("amount", "-3"), new XElement("type", "Karma"),
+            new XElement("reason", "Core advancement"), new XElement("refund", "False"))),
+        new XElement("customstate", "keep")).ToString(SaveOptions.DisableFormatting);
+
+    private static string Apply(string xml, bool nuyen) => nuyen
+        ? WorkspaceXmlMutationCatalog.ApplyCareerManualNuyenEdit(xml,
+            new CareerManualNuyenEditRequest(Workspace, 9,
+                CareerManualNuyenEditorProjector.Project(xml, Workspace, 9, null).Nuyen,
+                CharacterCareerManualNuyenAction.Gain, 50, 100m, "Manual reward", Second,
+                Refund: false, KarmaNuyenExchange: false, ForceCareerVisible: false), null)
+        : WorkspaceXmlMutationCatalog.ApplyCareerManualKarmaEdit(xml,
+            new CareerManualKarmaEditRequest(Workspace, 9,
+                CareerManualKarmaEditorProjector.Project(xml, Workspace, 9, null).Karma,
+                CharacterCareerManualKarmaAction.Gain, 2, "Manual reward", Second,
+                Refund: false, KarmaNuyenExchange: false, ForceCareerVisible: false), null);
 }
