@@ -235,7 +235,7 @@ internal sealed class DesktopCreatorOsWindow : Window
             {
                 BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
+                CornerRadius = new CornerRadius(0),
                 Padding = new Thickness(10),
                 Child = new StackPanel
                 {

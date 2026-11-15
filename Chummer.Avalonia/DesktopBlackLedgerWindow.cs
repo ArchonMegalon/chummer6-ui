@@ -264,7 +264,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                     Name = "BlackLedgerSelectedWorkspaceCard",
                     BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(4),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = new StackPanel
                     {
@@ -328,7 +328,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
             Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(12),
             Child = stack
         };

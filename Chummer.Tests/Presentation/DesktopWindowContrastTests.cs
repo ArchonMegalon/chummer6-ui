@@ -34,6 +34,40 @@ public sealed class DesktopWindowContrastTests
     private const int HeadlessSessionAttempts = 3;
 
     [TestMethod]
+    public void Contrast_composites_alpha_instead_of_treating_transparent_ink_as_opaque()
+    {
+        Assert.AreEqual(1d, ContrastRatio(Color.FromArgb(0, 255, 255, 255), Colors.Black), 0.001);
+        Assert.AreEqual(21d, ContrastRatio(Colors.White, Colors.Black), 0.001);
+        Assert.IsTrue(ContrastRatio(Color.FromArgb(0x52, 237, 237, 248), Colors.Black) < 4.5,
+            "Low-opacity text must not pass on the luminance of its uncomposited RGB channels.");
+        Assert.AreEqual(Color.FromRgb(24, 31, 80),
+            CompositeOver(Color.FromArgb(0x40, 0x52, 0x6D, 0xFF), Color.FromRgb(5, 5, 22)));
+    }
+
+    [TestMethod]
+    public void Blackout_resources_keep_blue_accent_and_neutral_text_alpha_in_Avalonia()
+    {
+        WithStandaloneInstallLinkingWindow(window =>
+        {
+            using ThemeScope scope = ThemeScope.Dark(window);
+            var resources = global::Avalonia.Application.Current!.Resources;
+            foreach (var (key, expected) in new[]
+            {
+                ("ChummerShellSelectionBrush", Color.FromArgb(0x40, 0x52, 0x6D, 0xFF)),
+                ("ChummerShellMutedForegroundBrush", Color.FromArgb(0xB8, 0xED, 0xED, 0xF8)),
+                ("ChummerShellBorderBrush", Color.FromArgb(0xCC, 0x1C, 0x1C, 0x3B))
+            })
+            {
+                Assert.IsTrue(resources.TryGetResource(key, ThemeVariant.Dark, out object? value), key);
+                Assert.IsTrue(value is ISolidColorBrush, key);
+                Assert.AreEqual(expected, ((ISolidColorBrush)value!).Color,
+                    key + " must use Avalonia ARGB ordering, not CSS RGBA ordering.");
+            }
+            AssertVisibleInputControlContrast(window, "Blackout linking inputs", minimumVisibleInputControls: 1);
+        });
+    }
+
+    [TestMethod]
     public void Install_linking_window_keeps_idle_input_controls_readable_in_dark_mode()
     {
         WithStandaloneInstallLinkingWindow(window =>
@@ -1411,7 +1445,8 @@ public sealed class DesktopWindowContrastTests
     {
         if (brush is ISolidColorBrush solidBrush)
         {
-            return solidBrush.Color;
+            Color color = solidBrush.Color;
+            return Color.FromArgb((byte)Math.Round(color.A * solidBrush.Opacity), color.R, color.G, color.B);
         }
 
         throw new AssertFailedException($"{context} {control.Name ?? control.GetType().Name} must expose a solid {role} brush.");
@@ -1419,35 +1454,46 @@ public sealed class DesktopWindowContrastTests
 
     private static Color ResolveBackgroundColor(IBrush? brush, Control control, string context)
     {
-        if (TryResolveOpaqueSolidColor(brush, out Color ownColor))
+        List<Color> layers = new();
+        bool Add(IBrush? value)
         {
-            return ownColor;
+            if (value is not ISolidColorBrush solid) return false;
+            Color color = solid.Color;
+            color = Color.FromArgb((byte)Math.Round(color.A * solid.Opacity), color.R, color.G, color.B);
+            if (color.A > 0) layers.Add(color);
+            return color.A == byte.MaxValue;
         }
-
+        Color Flatten()
+        {
+            Color color = layers[^1];
+            for (int index = layers.Count - 2; index >= 0; index--) color = CompositeOver(layers[index], color);
+            return color;
+        }
+        if (Add(brush)) return Flatten();
         foreach (Visual visual in control.GetVisualAncestors())
         {
-            switch (visual)
+            // Border/Panel paint the ancestor layers. A templated control's
+            // Background property is forwarded to its template border; adding
+            // it again here would paint the same translucent layer twice.
+            IBrush? ancestorBrush = visual switch
             {
-                case Border border when TryResolveOpaqueSolidColor(border.Background, out Color borderColor):
-                    return borderColor;
-                case TemplatedControl templatedControl when TryResolveOpaqueSolidColor(templatedControl.Background, out Color controlColor):
-                    return controlColor;
-            }
+                Border border => border.Background,
+                Panel panel => panel.Background,
+                Window window => window.Background,
+                _ => null
+            };
+            if (Add(ancestorBrush)) return Flatten();
         }
 
         throw new AssertFailedException($"{context} {control.Name ?? control.GetType().Name} must expose or inherit an opaque solid background brush.");
     }
 
-    private static bool TryResolveOpaqueSolidColor(IBrush? brush, out Color color)
+    private static Color CompositeOver(Color foreground, Color background)
     {
-        if (brush is ISolidColorBrush solidBrush && solidBrush.Color.A > 0)
-        {
-            color = solidBrush.Color;
-            return true;
-        }
-
-        color = default;
-        return false;
+        double alpha = foreground.A / 255d;
+        byte Channel(byte front, byte back) => (byte)Math.Round(front * alpha + back * (1d - alpha));
+        return Color.FromRgb(Channel(foreground.R, background.R), Channel(foreground.G, background.G),
+            Channel(foreground.B, background.B));
     }
 
     private static void AssertContrastAtLeast(Color foreground, Color background, double minimum, string context)
@@ -1458,6 +1504,7 @@ public sealed class DesktopWindowContrastTests
 
     private static double ContrastRatio(Color foreground, Color background)
     {
+        foreground = CompositeOver(foreground, background);
         double foregroundLuminance = RelativeLuminance(foreground);
         double backgroundLuminance = RelativeLuminance(background);
         double lighter = Math.Max(foregroundLuminance, backgroundLuminance);

@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "00e8facf6a8d7b73d6be352337c6eb8a6136a4d2",
-  "baseTree": "ab4530e5b6040bc5c18770c3031a2ed29a7e4910",
+  "baseCommit": "895e6f9c77f3286d1f4eb56f256019e66dc3c85a",
+  "baseTree": "d6753b58ea833ba5b65b93576793a9e45b8b1598",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -25,13 +25,13 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "2806347c6a3f3f86c6634ba090996939620c83c6",
+      "blob": "88f85f91f3ba8eb5ec61af9632f3fb9fb68b4990",
       "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+      "rawSha256": "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77",
       "rawSizeBytes": 73930,
-      "semanticCanonicalSha256": "c011feaf1d18f963158a6e20f0a33862cd12cfe0e295e1990d495535c36195d5",
+      "semanticCanonicalSha256": "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77",
       "semanticCanonicalSizeBytes": 73930,
       "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71"
     },
@@ -44,13 +44,279 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "7148b277504e1bf3ee7cd7689582fecd50c7345c",
+      "blob": "b2284f9c033e5752ce69d93a04cfc69e99435768",
+      "path": ".agents/skills/typeui-design-system/.typeui-design-system.json",
+      "sha256": "d658ea286db840268eef459cadc365f09fc147568e4541a82ee315f5e7b9679f",
+      "sizeBytes": 399,
+      "status": "A"
+    },
+    {
+      "blob": "c313d63a703843d73c605f6d5c861b49d4a9e90d",
+      "path": ".agents/skills/typeui-design-system/SKILL.md",
+      "sha256": "d88982018566c46a2b46412d3ff4161260d6222fa83c966b7ad34d672a18ed45",
+      "sizeBytes": 54927,
+      "status": "A"
+    },
+    {
+      "blob": "208164371b231386c14d2524cf7e79f5c1143812",
+      "path": ".agents/skills/typeui-fundamentals/SKILL.md",
+      "sha256": "af01b69d592b2294093b94c376617836961b28a0ba21d9c080241c189422b32e",
+      "sizeBytes": 3476,
+      "status": "A"
+    },
+    {
+      "blob": "e0573259c7a9fa71061ff94cdc14cb8d281aac8e",
+      "path": ".agents/skills/typeui-fundamentals/accessibility.md",
+      "sha256": "aea1db5ae4e4b963e011d7762614e371178b4c78d1ad54fd5794cb8066edff6e",
+      "sizeBytes": 27810,
+      "status": "A"
+    },
+    {
+      "blob": "3576c6724892e913acbdd2a1d9efb0d72ace7688",
+      "path": ".agents/skills/typeui-fundamentals/spacing-principles.md",
+      "sha256": "fc21239ef82756d4a5c091de0422efbb6c9134016e0bfc32bd24252b9cf32395",
+      "sizeBytes": 14396,
+      "status": "A"
+    },
+    {
+      "blob": "68af545532770798c84b3376c31b9e6f73c9da0b",
+      "path": ".agents/skills/typeui-fundamentals/typography-principles.md",
+      "sha256": "9fe47fefaa7c705587faf8c8d51362ba1c2f80768df2eea4efc1ab51f2ff33ee",
+      "sizeBytes": 51527,
+      "status": "A"
+    },
+    {
+      "blob": "39ddbd8584cbec170764def47dea262a25ddd85d",
+      "path": ".agents/skills/typeui-fundamentals/ui-principles.md",
+      "sha256": "b115daacd152499cdc510450caaad159cbf77d3c630fde708f788ff8e9aa4495",
+      "sizeBytes": 99544,
+      "status": "A"
+    },
+    {
+      "blob": "686e8f3ed4c15f02cf501022f5fbcb334c96e8f9",
+      "path": ".agents/skills/typeui-fundamentals/ux-principles.md",
+      "sha256": "a4805ddfb321fcfde687a9750fba6656dc3dffd198153517f03b8818e0b70d64",
+      "sizeBytes": 84182,
+      "status": "A"
+    },
+    {
+      "blob": "71018cd1da85116bfe2e67f4d1818f32aa9887c0",
+      "path": "Chummer.Avalonia/App.axaml",
+      "sha256": "86c71a8481c58c198bd5ca8e679f878dbe15211bc49e9317b08430a83bc71947",
+      "sizeBytes": 91219,
+      "status": "M"
+    },
+    {
+      "blob": "f9bd3227fa021418e3826a0113018ba144d1dca8",
+      "path": "Chummer.Avalonia/Controls/CareerSkillAdvanceWindow.cs",
+      "sha256": "916f82e3e3f37df88b7addf2b5673d36bb66320669cfc23cafca8bcbd491baa0",
+      "sizeBytes": 30252,
+      "status": "M"
+    },
+    {
+      "blob": "8f77be3850bea303dc44e5b696dde8ca06218693",
+      "path": "Chummer.Avalonia/Controls/CharacterRosterControl.axaml",
+      "sha256": "aaf42440afb900d7d9017349fa8548730c519f1f304627b45137b14e6d206ea7",
+      "sizeBytes": 3409,
+      "status": "M"
+    },
+    {
+      "blob": "45f0c5bdf16495c6ba81adeab44b5e85192dd85f",
+      "path": "Chummer.Avalonia/Controls/ClassicFormPorts/ClassicFormPortSurfaceControl.cs",
+      "sha256": "11e39b337c912e92a94340f719372f70b10d63c7a4f64b23aa8e6d8bf0e80bdf",
+      "sizeBytes": 9797,
+      "status": "M"
+    },
+    {
+      "blob": "46015ec02e9d0c66ab989cb2cafa980198fcc7df",
+      "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
+      "sha256": "bd1fe6a7cae61bc38a1afced7ba2d8440d70966f4e7669f370f75d9c625924aa",
+      "sizeBytes": 4576,
+      "status": "M"
+    },
+    {
+      "blob": "38d6b3a1acd5238d5f06d76b5c9d22d7737c135e",
+      "path": "Chummer.Avalonia/DesktopAliceWindow.cs",
+      "sha256": "09bac8e9d3ddf6bb91489ae12d8a2d27cbcdc81a2c1bc6d3cce0a29960d89a81",
+      "sizeBytes": 250252,
+      "status": "M"
+    },
+    {
+      "blob": "adfe6490c6c594139d1d57487c9c316268013f0d",
+      "path": "Chummer.Avalonia/DesktopBlackLedgerWindow.cs",
+      "sha256": "e4efc7b54279b7f4887c1ab95ee0d350bf55a8995cf6f9ccd10fe61aacbff468",
+      "sizeBytes": 15904,
+      "status": "M"
+    },
+    {
+      "blob": "d6e339ec2b89ca473e75e216638be29fdf6b8cb9",
+      "path": "Chummer.Avalonia/DesktopCreatorOsWindow.cs",
+      "sha256": "8919b8508e13530981be8b7a01c928cc3d42fc335ca890ba881721cbf856d016",
+      "sizeBytes": 14135,
+      "status": "M"
+    },
+    {
+      "blob": "651b6698970de2c59f75826dae063a1d47bf0034",
+      "path": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+      "sha256": "5e8df42342d38a05021ad01238d1f3dc83f0f1c12ccfcad20907874996027de6",
+      "sizeBytes": 197816,
+      "status": "M"
+    },
+    {
+      "blob": "13934e03a71b8c59bcae1930b726ec200d23d88f",
+      "path": "Chummer.Avalonia/DesktopExplainCompanionLauncher.cs",
+      "sha256": "1431c170d3d7b688efe1ec563107c017e363089c45bc95741193ed0c21492ea3",
+      "sizeBytes": 12261,
+      "status": "M"
+    },
+    {
+      "blob": "47d7ec45b74ca409b997ff542e77dc313c69a234",
+      "path": "Chummer.Avalonia/DesktopHomeWindow.cs",
+      "sha256": "45f9e438b033b8c40ec70e225d9fbde66c2dea37a951e34cd94a3a2983c5a211",
+      "sizeBytes": 71017,
+      "status": "M"
+    },
+    {
+      "blob": "ea757fdd50257eaa37a173ec620a1c4348095d82",
+      "path": "Chummer.Avalonia/DesktopHorizonWindowScaffold.cs",
+      "sha256": "eb21a31b9114a9d1dce091205194658beb6b65ba229016aeaa4789db4954a3d3",
+      "sizeBytes": 6956,
+      "status": "M"
+    },
+    {
+      "blob": "6f43a07889044b9a96c4e8bc2930b7f3710b1e7a",
+      "path": "Chummer.Avalonia/DesktopInstallLinkingWindow.cs",
+      "sha256": "15e840c920160b93428f1e042c533b26f609f2fcc6f7250e32e624559d018399",
+      "sizeBytes": 84107,
+      "status": "M"
+    },
+    {
+      "blob": "39e40d9f58c0e0961fb2e28119597a9e3d631065",
+      "path": "Chummer.Avalonia/DesktopKarmaForgeWindow.cs",
+      "sha256": "2561d4c826c29471f7ae293649b44c63158bfbc5b46c12608954fef0ab7e76d7",
+      "sizeBytes": 13874,
+      "status": "M"
+    },
+    {
+      "blob": "2144cf8855b3ef27d7110a95fe90a1670e955aff",
+      "path": "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs",
+      "sha256": "1e034af47661fbcb8940a10aabf424f8540c089061549b6f157577449ee5245d",
+      "sizeBytes": 498241,
+      "status": "M"
+    },
+    {
+      "blob": "2d0bb3f16efe8bcf9146c51ced958e4d433d5539",
+      "path": "Chummer.Avalonia/DesktopNexusPanWindow.cs",
+      "sha256": "13e052d38aa102bf880661b5e23de3fc514f4f55b7b8a9114edeaa80613612ef",
+      "sizeBytes": 12425,
+      "status": "M"
+    },
+    {
+      "blob": "5a8a3e07e48d2fc678325491c1dcfa15ca6a751c",
+      "path": "Chummer.Avalonia/DesktopRunControlWindow.cs",
+      "sha256": "dbcd8339f3e8fad1df6739a59c72182e999432dc7e7bc428f6f247a2f49f3a2c",
+      "sizeBytes": 15927,
+      "status": "M"
+    },
+    {
+      "blob": "e05d3d2d0c2d84b1d395e2074d904bc44e3b6a6d",
+      "path": "Chummer.Avalonia/DesktopRunbookPressWindow.cs",
+      "sha256": "6e19db9924a8bd029a12f8589c8c4877b498c1837268d3c0eba4200bb075946c",
+      "sizeBytes": 13483,
+      "status": "M"
+    },
+    {
+      "blob": "e3c6ff9927a4cf4f14f8f9b806974e6410d83577",
+      "path": "Chummer.Avalonia/DesktopRunsiteWindow.cs",
+      "sha256": "eb0539c707d5b0f1123c3be7078147c899fb6ea9fe1ca98e4654218cbb057166",
+      "sizeBytes": 16943,
+      "status": "M"
+    },
+    {
+      "blob": "337189fa659d62bff36bc320ea0c04b2c6db9f06",
+      "path": "Chummer.Avalonia/DesktopShellTheme.cs",
+      "sha256": "c06e0d36dfb5e717698f17cd3fc2310a49a6dca141a6728d9c002324aaab718b",
+      "sizeBytes": 24599,
+      "status": "M"
+    },
+    {
+      "blob": "893540dbb6bbe55748ffe34c373294471389923c",
+      "path": "Chummer.Avalonia/DesktopTrustPanelFactory.cs",
+      "sha256": "8dd67af954fb01490207de62893b49d1426648f07b578dc0e397f2a388e3467b",
+      "sizeBytes": 8899,
+      "status": "M"
+    },
+    {
+      "blob": "71ca2711bcec70d9f055aa3af273ec70536c2929",
+      "path": "Chummer.Tests/Chummer.Tests.csproj",
+      "sha256": "eba3970ff2b573dc71b7f7c7cd72d0e758360638f3339aa1ab2ab06b1fcb547d",
+      "sizeBytes": 37242,
+      "status": "M"
+    },
+    {
+      "blob": "ece880807380296ce96b1ac05764ca8e18b51979",
+      "path": "Chummer.Tests/Presentation/DesktopMouseFirstJourneyStarterAttributeBindingTests.cs",
+      "sha256": "806ca90bd062a47b7bfd25dc79cc5b6e080048f96a8969bd23055ac97c27b2be",
+      "sizeBytes": 16277,
+      "status": "A"
+    },
+    {
+      "blob": "00a0e0d6f2448cf1633ace71ce1cc6fcfee89dc6",
+      "path": "Chummer.Tests/Presentation/DesktopWindowContrastTests.cs",
+      "sha256": "086d24363c1467e251adb7a13c0beff7ddb7ead05625a1a02a5171f72295fee1",
+      "sizeBytes": 80355,
+      "status": "M"
+    },
+    {
+      "blob": "88f85f91f3ba8eb5ec61af9632f3fb9fb68b4990",
+      "path": "config/ui-next-authority-oracle-v10.json",
+      "sha256": "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77",
+      "sizeBytes": 73930,
+      "status": "M"
+    },
+    {
+      "blob": "5189c1349c811f28cbf3a9a0d64ce6b4f614a5a3",
       "path": "docs/agents/WINDOWS_SCOPE.md",
-      "sha256": "742413875f7326262ccf3308a4d73113e9d97e461c7cb7bec1938570ac9c410a",
-      "sizeBytes": 9086,
+      "sha256": "0699d701f2e4c4e20a5e31c6c70fc3f485bfdc527fd6adda40a7a99d8022bc2b",
+      "sizeBytes": 14285,
+      "status": "M"
+    },
+    {
+      "blob": "ae2b23ea44aa25a84b8d4099de9060fc1c4d794c",
+      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
+      "sha256": "6da1eb1c4e6378cc65f7a173064e499a459dfffe8f889ff48dd45f28fd2451d2",
+      "sizeBytes": 299844,
+      "status": "M"
+    },
+    {
+      "blob": "39267fefcc883b145536176a6876a399d9716e29",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "89e1c4cddbec2483b01d1ebeb3081f7745292b6795cd8901c3beac364ff67627",
+      "sizeBytes": 77546,
+      "status": "M"
+    },
+    {
+      "blob": "726386a174a666a992ce1e258eed2afac4a07701",
+      "path": "skills-lock.json",
+      "sha256": "042bc8dc7e1574db019bb6427409c7a410cf61ed88004436cdbd3beaca948f6a",
+      "sizeBytes": 278,
+      "status": "A"
+    },
+    {
+      "blob": "6987323775fecab751b8daa59925a336a15aca52",
+      "path": "tests/test_fresh_package_plane_controls.py",
+      "sha256": "4614d4e8daf46bd4d167146d254c8c8cfdd32fdc711877c552c9e5ed23c952ff",
+      "sizeBytes": 206846,
+      "status": "M"
+    },
+    {
+      "blob": "5c8d0a22a4920cbb9ed04214c6ba130698bf5f76",
+      "path": "tests/test_split_preseal_publication.py",
+      "sha256": "e48418f15da6b741b245ce41ae6db2cad37ec13ae089e778eb16c89ff25111d1",
+      "sizeBytes": 72810,
       "status": "M"
     }
   ],
-  "recipeTree": "fd08d3db0d5e89a859ecef66b2d13c1c6e0a3e16",
+  "recipeTree": "6306ec8ad6177b8faf4806baa682246878654067",
   "releaseClaim": false
 }

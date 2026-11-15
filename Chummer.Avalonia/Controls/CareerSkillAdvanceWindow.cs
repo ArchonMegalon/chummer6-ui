@@ -366,7 +366,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
             Padding = new Thickness(8, 6, 8, 6),
             BorderBrush = Brush.Parse("#D0D3E0"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(2),
+            CornerRadius = new CornerRadius(0),
             Tag = row,
         };
 

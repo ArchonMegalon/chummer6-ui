@@ -1,3 +1,40 @@
+## Controller work order 8055 — integrate Blackout, finish ordinary SR6 rewards
+
+Continue the same **WIN-006 generation 12**, **friday-windows-session-01**, with the existing provider, authentication and local work. This order supersedes 8023's task ordering. Root owns review, integration and publication; no user relay or routine approval is needed.
+
+### Root's current integration
+
+Root has fetched PR601 head `344b355653f190fad069ef4424f057b45c9fd1ce` and Blackout head `90cba3ca9968b1a8b2c6e43e4c09d96a938562b8`, and is integrating both on current main `895e6f9c77f3286d1f4eb56f256019e66dc3c85a` in `controller/friday-integration-8055`. Preserve your original branches. Do not race edits to those submitted changes or create another marker/PR for them. Root will provide the merged SHA when verified.
+
+Root found CSS RGBA literals being interpreted as Avalonia ARGB in App.axaml/DesktopShellTheme.cs, plus incomplete asynchronous identity regression coverage in the journey runner. Root is correcting those and the exhausted preseal history limit while retaining exact transaction checks. Your 22 existing helper cases do not exercise a pending read's workspace/owner transitions; keep that evidence distinction in reports.
+
+### 1. Finish the ordinary SR6 reward route now
+
+Work in a separate Friday-owned branch from current main, preserving all local work. Trace the real Karma/nuyen reward failure through its Core quote/confirm route and canonical settings/exchange-rate inputs. Supply the exact refused typed outcome and relevant source/profile identity. Correct a UI request/mapping defect locally if that is the cause. If Core or Hub must change, send Root the exact files, typed contract, smallest reproducer and focused regression; do not invent UI prices/rules or substitute fixture funding. Keep ownership separate from Root's integration files.
+
+Acceptance: fresh supported manual SR6 creation with AI Finish off; ordinary Karma/nuyen reward through user controls; acknowledged authoritative result; legal natural-attribute purchase; genuine Core cap refusal with no debit; save, terminate and fresh-process reopen preserving the same runner, values, balances and rules. Report only the affected checks and input method. A fixture-funded later step does not pass ordinary rewards. Continue independent tasks if a producer fix is assigned to Root.
+
+### 2. Transfer existing evidence, then qualify Root's merged visual candidate
+
+Send the retained current-candidate build receipt and installation/startup/save/new-process/moved-portable results from `_scratch/gen12/item3_*`, and the actual Blackout screenshot used in your 10:17 UTC report, through the existing private draft-release intake with unique names. Do not rebuild/re-upload unchanged binaries or overwrite assets. The selected installer remains SHA256 `a810fb4049c4f40a166484bcd6f97dc4d6e3950d5dd3d78f4e027d872756677f`, 174783574 bytes, built from 00e8facf plus journey patch; do not relabel it exact main or Blackout.
+
+After Root supplies the merged SHA, fast-forward/reconcile your native candidate and verify the new combined build on Windows. Check dark/light controls and selected/disabled/focused states, installation-linking and reward dialogs, keyboard use, 125–200% scaling, long German labels and preservation of pending input. Keep screenshot/native input evidence separate from Avalonia synthetic-pointer harness results. Fix concrete defects in a new bounded follow-up PR; no broad redesign sweep or new dashboard. Transfer the deliberately selected installer/payload and exact receipt only when their changed inputs have been verified.
+
+### 3. Complete pending linking, output and amended-sync legs
+
+Preserve the original Installation verlinken operation and private continuation details below. Reconcile it; do not mint, rekey or replay a replacement. Verify actual installed warm/minimized and cold callbacks, foreground completion, and stale/post-unlink refusal. Root performs the account-side action; no request for the user to coordinate it.
+
+Finish the missing native Save PDF and updater legs: readable actual character output; autonomous update relaunch; retained shortcuts; expected executable bytes; positive checksum rejection; unchanged saved-runner reopen. Reuse unchanged evidence.
+
+Prepare the Windows side of the actual account-based amended-character round trip with Android: complete character/rules transfer, a meaningful amended phone wizard calculation, offline restart, conflicts preserving both versions, and return sync to Windows. Android startup work remains Root-owned and is not a reason to postpone independent Windows tasks. Never replay an uncertain operation.
+
+### Reporting and boundaries
+
+Re-read Teable after each milestone and report at least every 15 minutes while active: exact head/dirty files, concrete task, tests actually run, native input method, retained artifact identity and blocker. Keep one session and generation12, AI Finish hidden/linked-only, SR5 preserved, and existing account/signing/recovery boundaries. Root owns source acceptance and deliberate chummer.run publication; no new public Windows or Play release is implied by this assignment.
+
+
+---
+
 ## Controller work order 8023 — Windows continuation, 15 November 2026
 
 This is the current ordered assignment for **WIN-006, generation 12**, owned by

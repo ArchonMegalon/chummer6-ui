@@ -76,7 +76,7 @@
       "Chummer.Avalonia/Creation/CreationQualitiesReviewWindow.cs": "fa17e6d1b4cf267b64560b5aa4d58acc2f06fb51fad4be2cb7d074f1d8db7402",
       "Chummer.Avalonia/Creation/CreationSkillsAllocationWindow.cs": "8a9429bc090ef64f48def25d1374990879dd14333ca763e83bfdb95455ccc7c9",
       "Chummer.Avalonia/DesktopCoreContentRootResolver.cs": "a9c22f3be8a610709ecc62ecf25fbd146d5a495ea69f624c1150cb3965b61299",
-      "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs": "55105bbfac634ac5710c1d70a5ad383b3ba51f30429c7f6aeb9ab0e34171f6e0",
+      "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs": "1e034af47661fbcb8940a10aabf424f8540c089061549b6f157577449ee5245d",
       "Chummer.Avalonia/MainWindow.CareerEdit.cs": "4c96874e078b9be25ce3093d9aaeebe07086559c1c3d7f07740e94651b23a515",
       "Chummer.Avalonia/MainWindow.InteractionCoordinator.cs": "d39f11c270a1e62d1eab0d0b12389d46ebfc3ee801830ddc0d53057056745c44",
       "Chummer.Avalonia/MainWindow.axaml.cs": "b975c4f61f9db2ce2a1687ec363d807c55fe749af9108ae35c452dd157345dcc",
@@ -256,7 +256,7 @@
       "Directory.Build.props": "bf55874a045204a560ac3e25032887d28fa3077b3e8c3e9f97f9045fc49a27aa",
       "Directory.Build.targets": "204a6211bffa0e28b2ffe5fc919aef4d4882046267b7ea88085e44dede588c14",
       "global.json": "6f0b2a83ada111972aea33bab78aff3a17c15095d48514eec0ce7dde4f00989a",
-      "scripts/ai/verify.sh": "9b81ae41d22b7f74092e3f7a4bb498b624d7d7cf90df4b14f224e19e0b641a22",
+      "scripts/ai/verify.sh": "d5c346f892ba1bb7bdeb9068d927b8fa6212d1e661e9e97b21ee0e1fd733f430",
       "scripts/ai/with-package-plane.sh": "b814b82a835094d88312cbc1b10018117a20a7f84c8efdef45791387184fb812",
       "scripts/build-core-content-bundle.py": "5c0a422762fb2cd92c3c3078eadc96679477b321680981563b6b93b8457f6b2a"
     },

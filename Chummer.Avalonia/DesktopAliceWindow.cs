@@ -452,7 +452,7 @@ internal sealed class DesktopAliceWindow : Window
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
             Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10),
             Child = new StackPanel
             {
@@ -510,7 +510,7 @@ internal sealed class DesktopAliceWindow : Window
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
             Background = DesktopShellTheme.ResolveSurfaceBrush(),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10),
             Child = new StackPanel
             {
@@ -1342,7 +1342,7 @@ internal sealed class DesktopAliceWindow : Window
                     BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
                     Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
-                    CornerRadius = new CornerRadius(4),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = new StackPanel
                     {
@@ -1360,7 +1360,7 @@ internal sealed class DesktopAliceWindow : Window
                     BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
                     Background = DesktopShellTheme.ResolveSelectionInsetBrush(),
-                    CornerRadius = new CornerRadius(4),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = new StackPanel
                     {
@@ -1383,7 +1383,7 @@ internal sealed class DesktopAliceWindow : Window
                     BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
                     Background = DesktopShellTheme.ResolveSurfaceBrush(),
-                    CornerRadius = new CornerRadius(4),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = answerText
                 },
@@ -1583,7 +1583,7 @@ internal sealed class DesktopAliceWindow : Window
                     Name = "AliceSelectedHandoffCard",
                     BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(4),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = new StackPanel
                     {
@@ -1755,7 +1755,7 @@ internal sealed class DesktopAliceWindow : Window
                     Name = "AliceSelectedBuildPathCard",
                     BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(4),
+                    CornerRadius = new CornerRadius(0),
                     Padding = new Thickness(10),
                     Child = new StackPanel
                     {
@@ -2119,7 +2119,7 @@ internal sealed class DesktopAliceWindow : Window
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
             Background = DesktopShellTheme.ResolveSurfaceAltBrush(),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(12),
             Child = stack
         };
@@ -4221,7 +4221,7 @@ internal sealed class DesktopAliceWindow : Window
         Border accentPanel = new()
         {
             Background = hardInsetBrush,
-            CornerRadius = new CornerRadius(14),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(18),
             Child = new StackPanel
             {
@@ -4280,7 +4280,7 @@ internal sealed class DesktopAliceWindow : Window
                     Width = 180,
                     Height = 172,
                     Background = new SolidColorBrush(Color.Parse(candidate.HighlightHex)),
-                    CornerRadius = new CornerRadius(28, 28, 12, 12),
+                    CornerRadius = new CornerRadius(0, 0, 0, 0),
                     [Canvas.LeftProperty] = 40d,
                     [Canvas.TopProperty] = 156d
                 },
@@ -4398,7 +4398,7 @@ internal sealed class DesktopAliceWindow : Window
                                 new GradientStop(Color.Parse("#020617"), 1d)
                             ]
                         },
-                        CornerRadius = new CornerRadius(18),
+                        CornerRadius = new CornerRadius(0),
                         Padding = new Thickness(22),
                         Child = new StackPanel
                         {
@@ -4428,7 +4428,7 @@ internal sealed class DesktopAliceWindow : Window
                         [Grid.RowSpanProperty] = 2,
                         Margin = new Thickness(22, 0, 0, 0),
                         Background = scenePanel,
-                        CornerRadius = new CornerRadius(16),
+                        CornerRadius = new CornerRadius(0),
                         Padding = new Thickness(18),
                         Child = new StackPanel
                         {
@@ -5074,7 +5074,7 @@ internal sealed class DesktopAliceWindow : Window
             Background = entry.Kind == AliceConversationTurnKind.User
                 ? DesktopShellTheme.ResolveSelectionInsetBrush()
                 : DesktopShellTheme.ResolveSurfaceAltBrush(),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10),
             Child = stack
         };
