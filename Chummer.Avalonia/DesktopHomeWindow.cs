@@ -1552,7 +1552,7 @@ internal sealed class DesktopHomeWindow : Window
             Background = BuildFlagshipHeroBackground(),
             BorderBrush = BuildFlagshipHeroBorderBrush(),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(0),
             Child = new StackPanel
             {

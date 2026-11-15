@@ -30,16 +30,16 @@
           <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#F1F5F9" />
           <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#DDE9DD" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#526DFF26" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#656BD7" />
           <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#E9EEF5" />
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F2F5FA" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#111111" />
-          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#2C5FB8" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#656BD7" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellProgressTrackBrush" Color="#D8E1EC" />
-          <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#656BD7" />
           <SolidColorBrush x:Key="ChummerShellMediaOverlayForegroundBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellMediaBackdropBrush" Color="#020617" />
           <SolidColorBrush x:Key="TextControlBackground" Color="#FFFFFF" />
@@ -114,131 +114,133 @@
           <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#111827" />
           <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#FFFFFF" />
           <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#475569" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#255E39" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#656BD7" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#545BC9" />
+    <SolidColorBrush x:Key="ChummerShellQuietButtonBrush" Color="#526DFF24" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#173A6C" />
-          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#9A6700" />
-          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#DC2626" />
-          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#2C6B3F" />
-          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#3D57C4" />
+          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#B45309" />
+          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#E41D47" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#656BD7" />
+          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#17B08A" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#050B16" />
-          <SolidColorBrush x:Key="ChummerShellHardBackdropBrush" Color="#050B16" />
-          <SolidColorBrush x:Key="ChummerShellHardPanelBrush" Color="#111827" />
-          <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#D8E1EC" />
-          <SolidColorBrush x:Key="ChummerShellTextMutedBrush" Color="#94A3B8" />
-          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#0F172A" />
-          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#111827" />
-          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#172554" />
-          <SolidColorBrush x:Key="ChummerShellMenuBarBrush" Color="#162033" />
-          <SolidColorBrush x:Key="ChummerShellMenuHoverBrush" Color="#223149" />
-          <SolidColorBrush x:Key="ChummerShellMenuRootBorderBrush" Color="#6B7B91" />
-          <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#0F172A" />
-          <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#111827" />
-          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#475569" />
-          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#64748B" />
-          <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#111827" />
-          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#020617" />
-          <SolidColorBrush x:Key="ChummerShellSelectionToolbarBrush" Color="#0B1220" />
-          <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#111827" />
-          <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#0F172A" />
-          <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#1C4A2D" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#90C39A" />
-          <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#111827" />
-          <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#0F172A" />
-          <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#162031" />
-          <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#1D4ED8" />
-          <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ChummerShellProgressTrackBrush" Color="#1E293B" />
-          <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#90C39A" />
-          <SolidColorBrush x:Key="ChummerShellMediaOverlayForegroundBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ChummerShellMediaBackdropBrush" Color="#020617" />
-          <SolidColorBrush x:Key="TextControlBackground" Color="#162031" />
-          <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#162031" />
-          <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#162031" />
-          <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="#111827" />
-          <SolidColorBrush x:Key="TextControlForeground" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="TextControlForegroundDisabled" Color="#94A3B8" />
-          <SolidColorBrush x:Key="TextControlCaretBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="TextControlSelectionForeground" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="TextControlBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#90C39A" />
-          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#90C39A" />
-          <SolidColorBrush x:Key="TextControlBorderBrushDisabled" Color="#334155" />
-          <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="TextControlPlaceholderForegroundDisabled" Color="#94A3B8" />
-          <SolidColorBrush x:Key="ComboBoxBackground" Color="#111827" />
-          <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#223149" />
-          <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#0F172A" />
-          <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="#0F172A" />
-          <SolidColorBrush x:Key="ComboBoxForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxForegroundPointerOver" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxForegroundPressed" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxForegroundDisabled" Color="#94A3B8" />
-          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForeground" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForegroundPointerOver" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForegroundPressed" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForegroundDisabled" Color="#64748B" />
-          <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="#90C39A" />
-          <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#90C39A" />
-          <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#334155" />
-          <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#111827" />
-          <SolidColorBrush x:Key="ComboBoxDropDownForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="ListBoxBackground" Color="#111827" />
-          <SolidColorBrush x:Key="ListBoxForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxItemBackground" Color="#111827" />
-          <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="#223149" />
-          <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="#0F172A" />
-          <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="#1D4ED8" />
-          <SolidColorBrush x:Key="ComboBoxItemBackgroundDisabled" Color="#0F172A" />
-          <SolidColorBrush x:Key="ComboBoxItemForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxItemForegroundPressed" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled" Color="#94A3B8" />
-          <SolidColorBrush x:Key="ListBoxItemBackground" Color="#111827" />
-          <SolidColorBrush x:Key="ListBoxItemBackgroundPointerOver" Color="#223149" />
-          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#1D4ED8" />
-          <SolidColorBrush x:Key="ListBoxItemBackgroundDisabled" Color="#0F172A" />
-          <SolidColorBrush x:Key="ListBoxItemForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ListBoxItemForegroundPointerOver" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ListBoxItemForegroundDisabled" Color="#94A3B8" />
-          <SolidColorBrush x:Key="TreeViewBackground" Color="#111827" />
-          <SolidColorBrush x:Key="TreeViewForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#111827" />
-          <SolidColorBrush x:Key="FlyoutPresenterForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="FlyoutPresenterBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#111827" />
-          <SolidColorBrush x:Key="MenuFlyoutPresenterForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="MenuItemBackground" Color="#111827" />
-          <SolidColorBrush x:Key="MenuItemBackgroundPointerOver" Color="#223149" />
-          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#1D4ED8" />
-          <SolidColorBrush x:Key="MenuItemForeground" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#94A3B8" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#2F6F46" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#60A5FA" />
-          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#F59E0B" />
-          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#F87171" />
-          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#90C39A" />
-          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#90C39A" />
+          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#01010D" />
+          <SolidColorBrush x:Key="ChummerShellHardBackdropBrush" Color="#01010D" />
+          <SolidColorBrush x:Key="ChummerShellHardPanelBrush" Color="#050516" />
+          <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#EDEDF8B8" />
+          <SolidColorBrush x:Key="ChummerShellTextMutedBrush" Color="#EDEDF8A3" />
+          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#050516" />
+          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#080819" />
+          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#526DFF24" />
+          <SolidColorBrush x:Key="ChummerShellMenuBarBrush" Color="#050516" />
+          <SolidColorBrush x:Key="ChummerShellMenuHoverBrush" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ChummerShellMenuRootBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#050516" />
+          <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#080819" />
+          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#272747CC" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#050516" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#000008" />
+          <SolidColorBrush x:Key="ChummerShellSelectionToolbarBrush" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#050516" />
+          <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#080819" />
+          <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#526DFF40" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#050516" />
+          <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#01010D" />
+          <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#080819" />
+          <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#526DFF40" />
+          <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ChummerShellProgressTrackBrush" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="ChummerShellMediaOverlayForegroundBrush" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ChummerShellMediaBackdropBrush" Color="#000008" />
+          <SolidColorBrush x:Key="TextControlBackground" Color="#080819" />
+          <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#080819" />
+          <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#080819" />
+          <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="#080819" />
+          <SolidColorBrush x:Key="TextControlForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="TextControlForegroundDisabled" Color="#EDEDF852" />
+          <SolidColorBrush x:Key="TextControlCaretBrush" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="TextControlSelectionForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="TextControlBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="TextControlBorderBrushDisabled" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#EDEDF8A3" />
+          <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#EDEDF8A3" />
+          <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#EDEDF8A3" />
+          <SolidColorBrush x:Key="TextControlPlaceholderForegroundDisabled" Color="#EDEDF852" />
+          <SolidColorBrush x:Key="ComboBoxBackground" Color="#050516" />
+          <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#080819" />
+          <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="#080819" />
+          <SolidColorBrush x:Key="ComboBoxForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxForegroundPointerOver" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxForegroundPressed" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxForegroundDisabled" Color="#EDEDF852" />
+          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForeground" Color="#EDEDF8A3" />
+          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForegroundPointerOver" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForegroundPressed" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxDropDownGlyphForegroundDisabled" Color="#EDEDF852" />
+          <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#050516" />
+          <SolidColorBrush x:Key="ComboBoxDropDownForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="ListBoxBackground" Color="#050516" />
+          <SolidColorBrush x:Key="ListBoxForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxItemBackground" Color="#050516" />
+          <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="#080819" />
+          <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="#526DFF40" />
+          <SolidColorBrush x:Key="ComboBoxItemBackgroundDisabled" Color="#080819" />
+          <SolidColorBrush x:Key="ComboBoxItemForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxItemForegroundPressed" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled" Color="#EDEDF852" />
+          <SolidColorBrush x:Key="ListBoxItemBackground" Color="#050516" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundPointerOver" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#526DFF40" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundDisabled" Color="#080819" />
+          <SolidColorBrush x:Key="ListBoxItemForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundPointerOver" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundDisabled" Color="#EDEDF852" />
+          <SolidColorBrush x:Key="TreeViewBackground" Color="#050516" />
+          <SolidColorBrush x:Key="TreeViewForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#050516" />
+          <SolidColorBrush x:Key="FlyoutPresenterForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="FlyoutPresenterBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#050516" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#1C1C3BCC" />
+          <SolidColorBrush x:Key="MenuItemBackground" Color="#050516" />
+          <SolidColorBrush x:Key="MenuItemBackgroundPointerOver" Color="#0C0C21" />
+          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#526DFF40" />
+          <SolidColorBrush x:Key="MenuItemForeground" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#EDEDF852" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#526DFF40" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#526DFF73" />
+    <SolidColorBrush x:Key="ChummerShellQuietButtonBrush" Color="#526DFF24" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#9EB7F8" />
+          <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#FFAF62" />
+          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#FF2E58" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#5CFFCB" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -265,15 +267,17 @@
     </Style>
     <Style Selector="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="Light" />
     </Style>
     <Style Selector="TextBlock.shell-kicker">
       <Setter Property="FontSize" Value="11" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
     <Style Selector="TextBlock.shell-title">
       <Setter Property="FontSize" Value="22" />
-      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="FontWeight" Value="Medium" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-subtitle">
@@ -283,7 +287,7 @@
     </Style>
     <Style Selector="TextBlock.shell-section-title">
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-caption">
@@ -306,7 +310,7 @@
     </Style>
     <Style Selector="TextBlock.shell-tab-label">
       <Setter Property="FontSize" Value="13" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
@@ -318,16 +322,16 @@
     </Style>
     <Style Selector="TextBlock.shell-metric-value">
       <Setter Property="FontSize" Value="15" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="Border.shell-panel">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Padding" Value="4" />
-      <Setter Property="BoxShadow" Value="0 1 2 0 #120F172A" />
+      <Setter Property="BoxShadow" Value="0 1 2 0 #12000000" />
     </Style>
     <Style Selector="Border.shell-panel.chrome">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
@@ -346,7 +350,7 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Padding" Value="2" />
-      <Setter Property="BoxShadow" Value="0 10 24 0 #120F172A" />
+      <Setter Property="BoxShadow" Value="0 10 24 0 #12000000" />
     </Style>
     <Style Selector="Border.shell-card.subtle">
       <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
@@ -357,8 +361,10 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="Padding" Value="5,1" />
-      <Setter Property="MinHeight" Value="32" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="Button:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
@@ -387,7 +393,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="Button.shell-action.quiet">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellQuietButtonBrush}" />
     </Style>
     <Style Selector="Button.tool-icon">
       <Setter Property="Padding" Value="6,2" />
@@ -403,7 +409,7 @@
     <Style Selector="TextBlock.tool-button-label">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
     <Style Selector="TextBlock.tool-button-label.primary">
@@ -435,7 +441,7 @@
       <Setter Property="Padding" Value="3,1" />
       <Setter Property="MinHeight" Value="32" />
       <Setter Property="FontSize" Value="14" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
     </Style>
     <Style Selector="Menu.shell-menubar">
       <Setter Property="Margin" Value="0" />
@@ -471,11 +477,11 @@
       <Setter Property="Padding" Value="14,6" />
       <Setter Property="MinHeight" Value="32" />
       <Setter Property="FontSize" Value="14" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
       <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellMenuRootBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Margin" Value="0,0,4,0" />
     </Style>
     <Style Selector="MenuItem.menu-root:pointerover">
@@ -515,7 +521,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
     <Style Selector="MenuItem.primary-menu-command">
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontWeight" Value="Medium" />
     </Style>
     <Style Selector="Separator">
       <Setter Property="Background" Value="{DynamicResource ChummerShellBorderBrush}" />
@@ -531,7 +537,7 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="primitives|TabStripItem:selected">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
@@ -655,7 +661,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForeground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Background" Value="{DynamicResource ListBoxItemBackground}" />
     </Style>
     <Style Selector="ListBoxItem /template/ Border">
@@ -750,13 +756,13 @@
       <Setter Property="Foreground" Value="{DynamicResource ListBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="ComboBox">
-      <Setter Property="MinHeight" Value="30" />
-      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="14,6" />
       <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ComboBoxBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="CornerRadius" Value="0" />
     </Style>
     <Style Selector="ComboBox.shell-combo">
       <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}" />
@@ -1014,8 +1020,8 @@
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="TextBox">
-      <Setter Property="MinHeight" Value="30" />
-      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="14,6" />
       <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
       <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />
@@ -1147,7 +1153,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushDisabled}" />
     </Style>
     <Style Selector="NumericUpDown">
-      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="MinHeight" Value="36" />
       <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
       <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
       <Setter Property="BorderBrush" Value="{DynamicResource TextControlBorderBrush}" />

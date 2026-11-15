@@ -188,7 +188,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         return new Border
         {
             Padding = new Thickness(10),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(0),
             Background = DesktopShellTheme.ResolveSurfaceBrush(),
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             BorderThickness = new Thickness(1),

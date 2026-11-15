@@ -16,55 +16,55 @@ internal static class DesktopShellTheme
             : new SolidColorBrush(Color.Parse(fallbackHex));
 
     public static IBrush ResolveWindowBackgroundBrush()
-        => ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#050B16");
+        => ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#01010D");
 
     public static IBrush ResolveHardPanelBrush()
-        => ResolveThemeBrush("ChummerShellHardPanelBrush", "#111827");
+        => ResolveThemeBrush("ChummerShellHardPanelBrush", "#050516");
 
     public static IBrush ResolveForegroundBrush()
-        => ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
+        => ResolveThemeBrush("ChummerShellForegroundBrush", "#EDEDF8");
 
     public static IBrush ResolveMutedForegroundBrush()
-        => ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#D8E1EC");
+        => ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#EDEDF8B8");
 
     public static IBrush ResolveTextMutedBrush()
-        => ResolveThemeBrush("ChummerShellTextMutedBrush", "#94A3B8");
+        => ResolveThemeBrush("ChummerShellTextMutedBrush", "#EDEDF8A3");
 
     public static IBrush ResolveBorderBrush()
-        => ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+        => ResolveThemeBrush("ChummerShellBorderBrush", "#1C1C3BCC");
 
     public static IBrush ResolveSurfaceBrush()
-        => ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
+        => ResolveThemeBrush("ChummerShellSurfaceBrush", "#050516");
 
     public static IBrush ResolveSurfaceAltBrush()
-        => ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#020617");
+        => ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#000008");
 
     public static IBrush ResolveChromeBrush()
-        => ResolveThemeBrush("ChummerShellChromeBrush", "#0F172A");
+        => ResolveThemeBrush("ChummerShellChromeBrush", "#050516");
 
     public static IBrush ResolveChromeSubtleBrush()
-        => ResolveThemeBrush("ChummerShellChromeSubtleBrush", "#111827");
+        => ResolveThemeBrush("ChummerShellChromeSubtleBrush", "#080819");
 
     public static IBrush ResolvePanelMutedBrush()
-        => ResolveThemeBrush("ChummerShellPanelMutedBrush", "#111827");
+        => ResolveThemeBrush("ChummerShellPanelMutedBrush", "#080819");
 
     public static IBrush ResolveSelectionToolbarBrush()
-        => ResolveThemeBrush("ChummerShellSelectionToolbarBrush", "#0B1220");
+        => ResolveThemeBrush("ChummerShellSelectionToolbarBrush", "#0C0C21");
 
     public static IBrush ResolveSelectionPanelBrush()
-        => ResolveThemeBrush("ChummerShellSelectionPanelBrush", "#111827");
+        => ResolveThemeBrush("ChummerShellSelectionPanelBrush", "#050516");
 
     public static IBrush ResolveSelectionInsetBrush()
-        => ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#0F172A");
+        => ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#080819");
 
     public static IBrush ResolveChromeAccentBrush()
-        => ResolveThemeBrush("ChummerShellChromeAccentBrush", "#172554");
+        => ResolveThemeBrush("ChummerShellChromeAccentBrush", "#526DFF24");
 
     public static IBrush ResolveActiveMenuBorderBrush()
-        => ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#90C39A");
+        => ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#9EA2FD");
 
     public static IBrush ResolveInfoBrush()
-        => ResolveThemeBrush("ChummerShellInfoBrush", "#60A5FA");
+        => ResolveThemeBrush("ChummerShellInfoBrush", "#9EB7F8");
 
     public static Border CreateWindowSurface(Control child, double padding = 16)
         => new()
@@ -80,7 +80,7 @@ internal static class DesktopShellTheme
             Background = ResolveHardPanelBrush(),
             BorderBrush = ResolveBorderBrush(),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(cornerRadius),
+            CornerRadius = default,
             Padding = new Thickness(padding),
             Child = child
         };
@@ -343,141 +343,141 @@ internal static class DesktopShellTheme
 
     private static void ApplyInputBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#162031");
-        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#F8FAFC");
-        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#080819");
+        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#EDEDF8");
+        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#1C1C3BCC");
 
         if (control is TextBox textBox)
         {
-            textBox.CaretBrush = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#F8FAFC");
-            textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#1D4ED8");
-            textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#F8FAFC");
+            textBox.CaretBrush = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#EDEDF8");
+            textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#526DFF40");
+            textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#EDEDF8");
         }
     }
 
     private static void ApplyReadOnlyInputBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
-        control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
-        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+        control.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#050516");
+        control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#EDEDF8");
+        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#1C1C3BCC");
 
         if (control is TextBox textBox)
         {
-            textBox.CaretBrush = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
-            textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#1D4ED8");
-            textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#F8FAFC");
+            textBox.CaretBrush = ResolveThemeBrush("ChummerShellForegroundBrush", "#EDEDF8");
+            textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#526DFF40");
+            textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#EDEDF8");
         }
     }
 
     private static void ApplyTextControlResourceOverrides(Control control)
     {
-        SetLocalBrushResource(control, "TextControlBackground", "ChummerShellInputBackgroundBrush", "#162031");
-        SetLocalBrushResource(control, "TextControlBackgroundPointerOver", "ChummerShellInputBackgroundBrush", "#162031");
-        SetLocalBrushResource(control, "TextControlBackgroundFocused", "ChummerShellInputBackgroundBrush", "#162031");
-        SetLocalBrushResource(control, "TextControlBackgroundDisabled", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "TextControlForeground", "ChummerShellInputForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "TextControlForegroundPointerOver", "ChummerShellInputForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "TextControlForegroundFocused", "ChummerShellInputForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "TextControlForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
-        SetLocalBrushResource(control, "TextControlCaretBrush", "ChummerShellInputForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "TextControlSelectionForeground", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "TextControlBorderBrush", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "TextControlBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#90C39A");
-        SetLocalBrushResource(control, "TextControlBorderBrushFocused", "ChummerShellActiveMenuBorderBrush", "#90C39A");
-        SetLocalBrushResource(control, "TextControlBorderBrushDisabled", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "TextControlPlaceholderForeground", "ChummerShellMutedForegroundBrush", "#D8E1EC");
-        SetLocalBrushResource(control, "TextControlPlaceholderForegroundPointerOver", "ChummerShellMutedForegroundBrush", "#D8E1EC");
-        SetLocalBrushResource(control, "TextControlPlaceholderForegroundFocused", "ChummerShellMutedForegroundBrush", "#D8E1EC");
-        SetLocalBrushResource(control, "TextControlPlaceholderForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
+        SetLocalBrushResource(control, "TextControlBackground", "ChummerShellInputBackgroundBrush", "#080819");
+        SetLocalBrushResource(control, "TextControlBackgroundPointerOver", "ChummerShellInputBackgroundBrush", "#080819");
+        SetLocalBrushResource(control, "TextControlBackgroundFocused", "ChummerShellInputBackgroundBrush", "#080819");
+        SetLocalBrushResource(control, "TextControlBackgroundDisabled", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "TextControlForeground", "ChummerShellInputForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlForegroundPointerOver", "ChummerShellInputForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlForegroundFocused", "ChummerShellInputForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlForegroundDisabled", "ChummerShellTextMutedBrush", "#EDEDF8A3");
+        SetLocalBrushResource(control, "TextControlCaretBrush", "ChummerShellInputForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlSelectionForeground", "ChummerShellSelectionForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlBorderBrush", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "TextControlBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#9EA2FD");
+        SetLocalBrushResource(control, "TextControlBorderBrushFocused", "ChummerShellActiveMenuBorderBrush", "#9EA2FD");
+        SetLocalBrushResource(control, "TextControlBorderBrushDisabled", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "TextControlPlaceholderForeground", "ChummerShellMutedForegroundBrush", "#EDEDF8B8");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundPointerOver", "ChummerShellMutedForegroundBrush", "#EDEDF8B8");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundFocused", "ChummerShellMutedForegroundBrush", "#EDEDF8B8");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundDisabled", "ChummerShellTextMutedBrush", "#EDEDF8A3");
     }
 
     private static void ApplyReadOnlyTextControlResourceOverrides(Control control)
     {
-        SetLocalBrushResource(control, "TextControlBackground", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "TextControlBackgroundPointerOver", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "TextControlBackgroundFocused", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "TextControlBackgroundDisabled", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "TextControlForeground", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "TextControlForegroundPointerOver", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "TextControlForegroundFocused", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "TextControlForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
-        SetLocalBrushResource(control, "TextControlCaretBrush", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "TextControlSelectionForeground", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "TextControlBorderBrush", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "TextControlBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#90C39A");
-        SetLocalBrushResource(control, "TextControlBorderBrushFocused", "ChummerShellActiveMenuBorderBrush", "#90C39A");
-        SetLocalBrushResource(control, "TextControlBorderBrushDisabled", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "TextControlPlaceholderForeground", "ChummerShellMutedForegroundBrush", "#D8E1EC");
-        SetLocalBrushResource(control, "TextControlPlaceholderForegroundPointerOver", "ChummerShellMutedForegroundBrush", "#D8E1EC");
-        SetLocalBrushResource(control, "TextControlPlaceholderForegroundFocused", "ChummerShellMutedForegroundBrush", "#D8E1EC");
-        SetLocalBrushResource(control, "TextControlPlaceholderForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
+        SetLocalBrushResource(control, "TextControlBackground", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "TextControlBackgroundPointerOver", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "TextControlBackgroundFocused", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "TextControlBackgroundDisabled", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "TextControlForeground", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlForegroundPointerOver", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlForegroundFocused", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlForegroundDisabled", "ChummerShellTextMutedBrush", "#EDEDF8A3");
+        SetLocalBrushResource(control, "TextControlCaretBrush", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlSelectionForeground", "ChummerShellSelectionForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "TextControlBorderBrush", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "TextControlBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#9EA2FD");
+        SetLocalBrushResource(control, "TextControlBorderBrushFocused", "ChummerShellActiveMenuBorderBrush", "#9EA2FD");
+        SetLocalBrushResource(control, "TextControlBorderBrushDisabled", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "TextControlPlaceholderForeground", "ChummerShellMutedForegroundBrush", "#EDEDF8B8");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundPointerOver", "ChummerShellMutedForegroundBrush", "#EDEDF8B8");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundFocused", "ChummerShellMutedForegroundBrush", "#EDEDF8B8");
+        SetLocalBrushResource(control, "TextControlPlaceholderForegroundDisabled", "ChummerShellTextMutedBrush", "#EDEDF8A3");
     }
 
     private static void ApplyComboBoxBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#162031");
-        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#F8FAFC");
-        control.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#334155");
+        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#080819");
+        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#EDEDF8");
+        control.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#1C1C3BCC");
     }
 
     private static void ApplyComboBoxResourceOverrides(Control control)
     {
-        SetLocalBrushResource(control, "ComboBoxBackground", "ChummerShellInputBackgroundBrush", "#162031");
-        SetLocalBrushResource(control, "ComboBoxBackgroundPointerOver", "ChummerShellInputBackgroundBrush", "#162031");
-        SetLocalBrushResource(control, "ComboBoxBackgroundPressed", "ChummerShellInputBackgroundBrush", "#162031");
-        SetLocalBrushResource(control, "ComboBoxBackgroundDisabled", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "ComboBoxForeground", "ChummerShellInputForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "ComboBoxForegroundPointerOver", "ChummerShellInputForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "ComboBoxForegroundPressed", "ChummerShellInputForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "ComboBoxForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
-        SetLocalBrushResource(control, "ComboBoxBorderBrush", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "ComboBoxBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#90C39A");
-        SetLocalBrushResource(control, "ComboBoxBorderBrushPressed", "ChummerShellActiveMenuBorderBrush", "#90C39A");
-        SetLocalBrushResource(control, "ComboBoxBorderBrushDisabled", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "ComboBoxDropDownBackground", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "ComboBoxDropDownForeground", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ComboBoxDropDownBorderBrush", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "ComboBoxItemBackground", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "ComboBoxItemBackgroundPointerOver", "ChummerShellChromeSubtleBrush", "#111827");
-        SetLocalBrushResource(control, "ComboBoxItemBackgroundPressed", "ChummerShellChromeBrush", "#0F172A");
-        SetLocalBrushResource(control, "ComboBoxItemBackgroundSelected", "ChummerShellSelectionBrush", "#1D4ED8");
-        SetLocalBrushResource(control, "ComboBoxItemBackgroundDisabled", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "ComboBoxItemForeground", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ComboBoxItemForegroundPointerOver", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ComboBoxItemForegroundPressed", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ComboBoxItemForegroundSelected", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "ComboBoxItemForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
+        SetLocalBrushResource(control, "ComboBoxBackground", "ChummerShellInputBackgroundBrush", "#080819");
+        SetLocalBrushResource(control, "ComboBoxBackgroundPointerOver", "ChummerShellInputBackgroundBrush", "#080819");
+        SetLocalBrushResource(control, "ComboBoxBackgroundPressed", "ChummerShellInputBackgroundBrush", "#080819");
+        SetLocalBrushResource(control, "ComboBoxBackgroundDisabled", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "ComboBoxForeground", "ChummerShellInputForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxForegroundPointerOver", "ChummerShellInputForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxForegroundPressed", "ChummerShellInputForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxForegroundDisabled", "ChummerShellTextMutedBrush", "#EDEDF8A3");
+        SetLocalBrushResource(control, "ComboBoxBorderBrush", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "ComboBoxBorderBrushPointerOver", "ChummerShellActiveMenuBorderBrush", "#9EA2FD");
+        SetLocalBrushResource(control, "ComboBoxBorderBrushPressed", "ChummerShellActiveMenuBorderBrush", "#9EA2FD");
+        SetLocalBrushResource(control, "ComboBoxBorderBrushDisabled", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "ComboBoxDropDownBackground", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "ComboBoxDropDownForeground", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxDropDownBorderBrush", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "ComboBoxItemBackground", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundPointerOver", "ChummerShellChromeSubtleBrush", "#080819");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundPressed", "ChummerShellChromeBrush", "#050516");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundSelected", "ChummerShellSelectionBrush", "#526DFF40");
+        SetLocalBrushResource(control, "ComboBoxItemBackgroundDisabled", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "ComboBoxItemForeground", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundPointerOver", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundPressed", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundSelected", "ChummerShellSelectionForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ComboBoxItemForegroundDisabled", "ChummerShellTextMutedBrush", "#EDEDF8A3");
     }
 
     private static void ApplyListBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#111827");
-        control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#E5E7EB");
-        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#334155");
+        control.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#050516");
+        control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#EDEDF8");
+        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#1C1C3BCC");
     }
 
     private static void ApplySelectableResourceOverrides(Control control)
     {
-        SetLocalBrushResource(control, "ChummerShellSurfaceBrush", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "ChummerShellForegroundBrush", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ChummerShellChromeSubtleBrush", "ChummerShellChromeSubtleBrush", "#111827");
-        SetLocalBrushResource(control, "ChummerShellSelectionBrush", "ChummerShellSelectionBrush", "#1D4ED8");
-        SetLocalBrushResource(control, "ChummerShellSelectionForegroundBrush", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "ChummerShellTextMutedBrush", "ChummerShellTextMutedBrush", "#94A3B8");
-        SetLocalBrushResource(control, "ChummerShellBorderBrush", "ChummerShellBorderBrush", "#334155");
-        SetLocalBrushResource(control, "ChummerShellActiveMenuBorderBrush", "ChummerShellActiveMenuBorderBrush", "#90C39A");
-        SetLocalBrushResource(control, "ListBoxBackground", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "ListBoxForeground", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ListBoxItemBackground", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "ListBoxItemBackgroundPointerOver", "ChummerShellChromeSubtleBrush", "#111827");
-        SetLocalBrushResource(control, "ListBoxItemBackgroundSelected", "ChummerShellSelectionBrush", "#1D4ED8");
-        SetLocalBrushResource(control, "ListBoxItemBackgroundDisabled", "ChummerShellSurfaceAltBrush", "#020617");
-        SetLocalBrushResource(control, "ListBoxItemForeground", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ListBoxItemForegroundPointerOver", "ChummerShellForegroundBrush", "#E5E7EB");
-        SetLocalBrushResource(control, "ListBoxItemForegroundSelected", "ChummerShellSelectionForegroundBrush", "#F8FAFC");
-        SetLocalBrushResource(control, "ListBoxItemForegroundDisabled", "ChummerShellTextMutedBrush", "#94A3B8");
-        SetLocalBrushResource(control, "TreeViewBackground", "ChummerShellSurfaceBrush", "#111827");
-        SetLocalBrushResource(control, "TreeViewForeground", "ChummerShellForegroundBrush", "#E5E7EB");
+        SetLocalBrushResource(control, "ChummerShellSurfaceBrush", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "ChummerShellForegroundBrush", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ChummerShellChromeSubtleBrush", "ChummerShellChromeSubtleBrush", "#080819");
+        SetLocalBrushResource(control, "ChummerShellSelectionBrush", "ChummerShellSelectionBrush", "#526DFF40");
+        SetLocalBrushResource(control, "ChummerShellSelectionForegroundBrush", "ChummerShellSelectionForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ChummerShellTextMutedBrush", "ChummerShellTextMutedBrush", "#EDEDF8A3");
+        SetLocalBrushResource(control, "ChummerShellBorderBrush", "ChummerShellBorderBrush", "#1C1C3BCC");
+        SetLocalBrushResource(control, "ChummerShellActiveMenuBorderBrush", "ChummerShellActiveMenuBorderBrush", "#9EA2FD");
+        SetLocalBrushResource(control, "ListBoxBackground", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "ListBoxForeground", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ListBoxItemBackground", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "ListBoxItemBackgroundPointerOver", "ChummerShellChromeSubtleBrush", "#080819");
+        SetLocalBrushResource(control, "ListBoxItemBackgroundSelected", "ChummerShellSelectionBrush", "#526DFF40");
+        SetLocalBrushResource(control, "ListBoxItemBackgroundDisabled", "ChummerShellSurfaceAltBrush", "#000008");
+        SetLocalBrushResource(control, "ListBoxItemForeground", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ListBoxItemForegroundPointerOver", "ChummerShellForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ListBoxItemForegroundSelected", "ChummerShellSelectionForegroundBrush", "#EDEDF8");
+        SetLocalBrushResource(control, "ListBoxItemForegroundDisabled", "ChummerShellTextMutedBrush", "#EDEDF8A3");
+        SetLocalBrushResource(control, "TreeViewBackground", "ChummerShellSurfaceBrush", "#050516");
+        SetLocalBrushResource(control, "TreeViewForeground", "ChummerShellForegroundBrush", "#EDEDF8");
     }
 
     private static void SetLocalBrushResource(Control control, string resourceKey, string themeResourceKey, string fallbackHex)

@@ -1141,7 +1141,7 @@ public partial class DesktopDialogWindow : Window
             BorderThickness = new Thickness(1),
             BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
             Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#020617"),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10),
             Child = card
         };
@@ -2618,7 +2618,7 @@ public partial class DesktopDialogWindow : Window
             Background = DesktopShellTheme.ResolveSurfaceBrush(),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderStrongBrush", "#93A0B2"),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10, 8),
             Margin = new Thickness(0, 0, 8, 8),
             Child = new StackPanel
