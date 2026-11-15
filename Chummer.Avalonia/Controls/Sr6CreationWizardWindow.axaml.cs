@@ -78,9 +78,9 @@ public partial class Sr6CreationWizardWindow : Window
             // write, or the writer can still hold the workspace operation
             // lease when the wizard opens. Retry a bounded number of times
             // before surfacing the transient blocker to the user.
-            for (int attempt = 0; attempt < 3 && IsTransientWorkspaceLoad(result); attempt++)
+            for (int attempt = 0; attempt < 12 && IsTransientWorkspaceLoad(result); attempt++)
             {
-                Thread.Sleep(250);
+                Thread.Sleep(attempt < 4 ? 250 : 500);
                 if (!RequireCurrentContext()) return;
                 result = _presenter.Load(_overview);
             }
