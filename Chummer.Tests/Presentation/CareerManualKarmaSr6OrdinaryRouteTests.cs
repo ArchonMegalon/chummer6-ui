@@ -172,6 +172,145 @@ public sealed class CareerManualKarmaSr6OrdinaryRouteTests
         Assert.AreEqual("6000", root.Element("nuyen")!.Value);
     }
 
+    [TestMethod]
+    public void Ambiguous_duplicate_editions_refuse_karma_paths_in_both_orders()
+    {
+        // SR6-first duplicate previously gained the neutral fallback; SR5-first
+        // previously evaded the exchange refusal. Both orders must now refuse.
+        string sr6First = Sr6Xml.Replace(
+            "<gameedition>SR6</gameedition>",
+            "<gameedition>SR6</gameedition><gameedition>SR5</gameedition>");
+        string sr5First = Sr6Xml.Replace(
+            "<gameedition>SR6</gameedition>",
+            "<gameedition>SR5</gameedition><gameedition>SR6</gameedition>");
+
+        InvalidOperationException firstOrdinary = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerManualKarmaEditorProjector.Project(sr6First, WorkspaceId, 9, NonResolvingResolver));
+        StringAssert.Contains(firstOrdinary.Message, "ambiguous game edition");
+        InvalidOperationException secondOrdinary = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerManualKarmaEditorProjector.Project(sr5First, WorkspaceId, 9, NonResolvingResolver));
+        StringAssert.Contains(secondOrdinary.Message, "ambiguous game edition");
+
+        // Exchange requests refuse with the same ambiguity contract, not the
+        // ordinary SR6 exchange refusal, in both duplicate orders.
+        CareerManualKarmaEditorState validEditor = CareerManualKarmaEditorProjector.Project(
+            Sr6Xml, WorkspaceId, 9, NonResolvingResolver);
+        foreach (string ambiguousXml in new[] { sr6First, sr5First })
+        {
+            InvalidOperationException exchange = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                WorkspaceXmlMutationCatalog.ApplyCareerManualKarmaEdit(
+                    ambiguousXml,
+                    new CareerManualKarmaEditRequest(
+                        WorkspaceId,
+                        9,
+                        validEditor.Karma,
+                        CharacterCareerManualKarmaAction.Gain,
+                        2,
+                        "Working for the People",
+                        new DateTime(2023, 12, 1, 8, 30, 0),
+                        Refund: false,
+                        KarmaNuyenExchange: true,
+                        ForceCareerVisible: false),
+                    NonResolvingResolver));
+            StringAssert.Contains(exchange.Message, "ambiguous game edition");
+        }
+    }
+
+    [TestMethod]
+    public void Ambiguous_duplicate_editions_refuse_nuyen_paths_in_both_orders()
+    {
+        string sr6First = Sr6Xml.Replace(
+            "<gameedition>SR6</gameedition>",
+            "<gameedition>SR6</gameedition><gameedition>SR5</gameedition>");
+        string sr5First = Sr6Xml.Replace(
+            "<gameedition>SR6</gameedition>",
+            "<gameedition>SR5</gameedition><gameedition>SR6</gameedition>");
+
+        foreach (string ambiguousXml in new[] { sr6First, sr5First })
+        {
+            InvalidOperationException ordinary = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                CareerManualNuyenEditorProjector.Project(ambiguousXml, WorkspaceId, 9, NonResolvingResolver));
+            StringAssert.Contains(ordinary.Message, "ambiguous game edition");
+
+            InvalidOperationException exchange = Assert.ThrowsExactly<InvalidOperationException>(() =>
+                WorkspaceXmlMutationCatalog.ApplyCareerManualNuyenEdit(
+                    ambiguousXml,
+                    new CareerManualNuyenEditRequest(
+                        WorkspaceId,
+                        9,
+                        new CharacterCareerManualNuyenState(
+                            AvailableKarma: 5,
+                            AvailableNuyen: 10000m,
+                            NuyenPerKarmaWorkingForPeople: 1m,
+                            NuyenPerKarmaWorkingForMan: 1m),
+                        CharacterCareerManualNuyenAction.Gain,
+                        10000,
+                        50m,
+                        "Salary",
+                        new DateTime(2023, 12, 1, 8, 30, 0),
+                        Refund: false,
+                        KarmaNuyenExchange: true,
+                        ForceCareerVisible: false),
+                    NonResolvingResolver));
+            StringAssert.Contains(exchange.Message, "ambiguous game edition");
+        }
+    }
+
+    [TestMethod]
+    public void Ambiguous_nested_edition_refuses_before_accepting_resolver_rates()
+    {
+        // One direct SR5 child plus a nested SR6 element is ambiguous even when
+        // a resolver would happily provide rates: validation precedes rate
+        // acceptance (Root review 8063 ordering requirement).
+        string nested = Sr5Xml.Replace(
+            "<customstate><karma>keep</karma></customstate>",
+            "<customstate><karma>keep</karma><gameedition>SR6</gameedition></customstate>");
+
+        InvalidOperationException karmaProjection = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerManualKarmaEditorProjector.Project(nested, WorkspaceId, 9, ResolvingResolver));
+        StringAssert.Contains(karmaProjection.Message, "ambiguous game edition");
+
+        InvalidOperationException nuyenProjection = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerManualNuyenEditorProjector.Project(nested, WorkspaceId, 9, ResolvingResolver));
+        StringAssert.Contains(nuyenProjection.Message, "ambiguous game edition");
+    }
+
+    [TestMethod]
+    public void Single_canonical_edition_and_legacy_no_edition_behavior_unchanged()
+    {
+        // A single direct SR5 child plus a nested element carrying the SAME
+        // value is still ambiguous by construction (two gameedition elements
+        // in the document): the duplication is what refuses, not the value.
+        string sr5NestedSame = Sr5Xml.Replace(
+            "<customstate><karma>keep</karma></customstate>",
+            "<customstate><karma>keep</karma><gameedition>SR5</gameedition></customstate>");
+        InvalidOperationException nestedSame = Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerManualKarmaEditorProjector.Project(sr5NestedSame, WorkspaceId, 9, NonResolvingResolver));
+        StringAssert.Contains(nestedSame.Message, "ambiguous game edition");
+
+        // Legacy no-edition documents keep the exact previous behavior: no
+        // edition default is invented; non-resolving rates fail closed.
+        string noEdition = Sr5Xml.Replace("<gameedition>SR5</gameedition>", string.Empty);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerManualKarmaEditorProjector.Project(noEdition, WorkspaceId, 9, NonResolvingResolver));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            CareerManualNuyenEditorProjector.Project(noEdition, WorkspaceId, 9, NonResolvingResolver));
+
+        // A supported single canonical SR6 alias keeps the neutral fallback and
+        // projects to the exact same state as the plain SR6 document. The alias
+        // set is whatever the pre-existing IsSr6Ruleset normalizer accepted
+        // (proven for lowercase sr6 by the passing ordinary-route tests); no
+        // new alias is invented here. The "Shadowrun 6" display alias is mapped
+        // by CharacterOverviewPresenter.Workspace before reaching this gate,
+        // matching the pre-correction behavior.
+        string sr6Alias = Sr6Xml.Replace("<gameedition>SR6</gameedition>", "<gameedition>sr6</gameedition>");
+        CareerManualKarmaEditorState baselineEditor = CareerManualKarmaEditorProjector.Project(
+            Sr6Xml, WorkspaceId, 9, NonResolvingResolver);
+        CareerManualKarmaEditorState aliasEditor = CareerManualKarmaEditorProjector.Project(
+            sr6Alias, WorkspaceId, 9, NonResolvingResolver);
+        Assert.AreEqual(baselineEditor.Karma, aliasEditor.Karma);
+    }
+
     private sealed class ResolvingTestResolver : ICharacterSourceDataResolver
     {
         public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new ResolvingTestContext();

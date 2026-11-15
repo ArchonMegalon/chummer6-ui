@@ -37,7 +37,9 @@ public sealed record CareerManualKarmaEditRequest(
 /// CharacterAfterRunRewardProjector: neutral values that do not claim a
 /// saved settings profile resolved either exchange rate. Exchange-capable
 /// requests stay refused for SR6 in WorkspaceXmlMutationCatalog; SR5
-/// keeps the exact fail-closed contract.
+/// keeps the exact fail-closed contract. Ambiguous edition declarations
+/// (duplicate or nested gameedition elements) refuse every manual
+/// Karma/Nuyen edit before any rate source is accepted.
 /// </summary>
 internal static class CareerManualExchangeRates
 {
@@ -48,6 +50,15 @@ internal static class CareerManualExchangeRates
         string xml,
         ICharacterSourceDataResolver? sourceDataResolver)
     {
+        // Fail closed BEFORE accepting resolver-provided rates: a duplicate
+        // or nested edition element makes the edition ambiguous, so neither
+        // the SR6 neutral fallback nor a resolver row may be trusted.
+        if (!TryGetCanonicalEdition(characterRoot, out string? canonicalEdition))
+        {
+            throw new InvalidOperationException(
+                "The workspace declares an ambiguous game edition (duplicate or nested gameedition elements); manual Karma and Nuyen edits are refused.");
+        }
+
         ICharacterSourceDataContext? sourceData = sourceDataResolver?.TryCreateContext(xml);
         if (sourceData is not null
             && sourceData.TryResolveKarmaNuyenExchangeRates(
@@ -57,7 +68,7 @@ internal static class CareerManualExchangeRates
             return (resolvedWorkingForPeopleRate, resolvedWorkingForManRate);
         }
 
-        if (IsSr6Document(characterRoot))
+        if (AttributeWorkbenchProjector.IsSr6Ruleset(canonicalEdition))
         {
             return (NeutralRate, NeutralRate);
         }
@@ -66,9 +77,53 @@ internal static class CareerManualExchangeRates
     }
 
     internal static bool IsSr6Document(XElement characterRoot)
+        => TryGetCanonicalEdition(characterRoot, out string? edition)
+            && AttributeWorkbenchProjector.IsSr6Ruleset(edition);
+
+    /// <summary>
+    /// Reads the single canonical direct-child gameedition element.
+    /// Returns false when the edition is ambiguous: more than one direct
+    /// child gameedition element (in any order) or an additional nested
+    /// gameedition element elsewhere in the document. A missing edition
+    /// keeps the legacy no-edition behavior (edition = null); supported
+    /// single canonical SR6 aliases stay normalized by the ruleset check.
+    /// </summary>
+    internal static bool TryGetCanonicalEdition(XElement characterRoot, out string? edition)
     {
-        string? edition = characterRoot.Elements("gameedition").FirstOrDefault()?.Value.Trim();
-        return AttributeWorkbenchProjector.IsSr6Ruleset(edition);
+        edition = null;
+        XElement? direct = null;
+        int directCount = 0;
+        foreach (XElement element in characterRoot.Elements("gameedition"))
+        {
+            directCount++;
+            direct = element;
+        }
+
+        if (directCount > 1)
+        {
+            return false;
+        }
+
+        if (directCount == 1)
+        {
+            foreach (XElement nested in characterRoot.Descendants("gameedition"))
+            {
+                if (!ReferenceEquals(nested, direct))
+                {
+                    return false;
+                }
+            }
+
+            edition = direct!.Value.Trim();
+            return true;
+        }
+
+        if (characterRoot.Descendants("gameedition").Any())
+        {
+            return false;
+        }
+
+        return true;
     }
 }
 

@@ -7023,8 +7023,18 @@ internal static class WorkspaceXmlMutationCatalog
     private static bool IsSr6Runner(string xml)
     {
         XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
-        return document.Root is { Name.LocalName: "character" } characterRoot
-            && CareerManualExchangeRates.IsSr6Document(characterRoot);
+        if (document.Root is not { Name.LocalName: "character" } characterRoot)
+        {
+            return false;
+        }
+
+        if (!CareerManualExchangeRates.TryGetCanonicalEdition(characterRoot, out string? edition))
+        {
+            throw new InvalidOperationException(
+                "The workspace declares an ambiguous game edition (duplicate or nested gameedition elements); manual Karma and Nuyen edits are refused.");
+        }
+
+        return AttributeWorkbenchProjector.IsSr6Ruleset(edition);
     }
     private static int ComputeCareerAttributeUpgradeCost(int currentValue, int totalMaximum)
     {
