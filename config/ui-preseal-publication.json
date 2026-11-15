@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "989db5c25b18a0005f5cdee2bbe6987b446b7f37",
-  "baseTree": "4d113de7e405e422426c5b3534d6c500ec227315",
+  "baseCommit": "27be58d9fb6bbb474e2174f69f41fb3acfa4de57",
+  "baseTree": "c1f0046b7426720c4c5116fbcf5cc2e5ca0731bd",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,20 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "9e3b2375747ee4e713018720219c14b57a8bf937",
-      "path": "Chummer.Avalonia/Controls/CareerRewardsWindow.cs",
-      "sha256": "2212b74b80c198a62d613d978bbd5a3fbaa074004fc51cafce93810a187ec9d6",
-      "sizeBytes": 22130,
+      "blob": "02052c38d5ed3ef03c73be87f91014640b5dd053",
+      "path": "Chummer.Presentation/Overview/WorkspaceXmlMutationCatalog.cs",
+      "sha256": "373ef20a39e311dcfca961acb12560d16754fe4b42a12c8f07ab64fe0a4806e6",
+      "sizeBytes": 308427,
       "status": "M"
     },
     {
-      "blob": "b646bb9859b9eec34481c4ee58d54bfbbc228386",
-      "path": "Chummer.Tests/Presentation/CareerRewardsUiTests.cs",
-      "sha256": "fe2348229afcc0f5c2836094a4a4bb029862a492ceec3abb052fd7d609eeca98",
-      "sizeBytes": 48677,
+      "blob": "6c4b2a401e085a9110ee1c047cdb614fd49402cf",
+      "path": "Chummer.Tests/Presentation/CareerManualKarmaSr6OrdinaryRouteTests.cs",
+      "sha256": "c385c8ae3c971b89e9f44f7d1862b8c05b3093d2f605401613ba1927ccbc7738",
+      "sizeBytes": 22269,
       "status": "M"
     }
   ],
-  "recipeTree": "a80a662f9d7c370b592f1f5878ea3a999c5d2a82",
+  "recipeTree": "be5ea4ad36a4dab1f8e02f736940161e7d54d6fd",
   "releaseClaim": false
 }
