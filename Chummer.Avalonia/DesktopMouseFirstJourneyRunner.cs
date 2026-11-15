@@ -2617,9 +2617,30 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 "SR6 advance funding failed: the CareerRewardsWindow apply button disappeared before the apply click.");
         }
 
-        await RoutePointerClickAsync(applyButton);
+        // T496/T546: the rewards dialog Apply is subject to the synthetic pointer
+        // swallow; observe the Click event, pump the fresh dialog scene, and use
+        // waitForClick so the press actually lands (bare RoutePointerClickAsync
+        // is silently refused here and the dialog stays open).
+        bool sr6ApplyClickObserved = false;
+        void OnSr6ApplyClick(object? sender, RoutedEventArgs args) => sr6ApplyClickObserved = true;
+        applyButton.Click += OnSr6ApplyClick;
+        string sr6ApplyDiagnostics;
+        try
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                applyButton.BringIntoView();
+                ForceHeadlessLayoutPump(applyButton);
+            });
+            sr6ApplyDiagnostics = await RoutePointerClickAsync(applyButton, waitForClick: true);
+            sr6ApplyDiagnostics += ";clickObserved=" + sr6ApplyClickObserved;
+        }
+        finally
+        {
+            applyButton.Click -= OnSr6ApplyClick;
+        }
         recordPointerAction();
-        RecordStep(steps, "sr6 funding: clicked career rewards Apply (+25 karma)");
+        RecordStep(steps, "sr6 funding: clicked career rewards Apply (+25 karma); " + sr6ApplyDiagnostics);
 
         bool dialogClosed = await WaitForConditionWithinAsync(
             () => FindCareerRewardsDialogButton("career-rewards-apply") is null,
