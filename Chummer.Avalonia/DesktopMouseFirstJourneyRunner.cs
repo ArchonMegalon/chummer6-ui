@@ -4627,8 +4627,29 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // fallback below must never fire on that successor (its
                     // apply would double-commit the same advance).
                     global::Avalonia.Controls.Window? capApplyDialog = capApply.GetVisualRoot() as global::Avalonia.Controls.Window;
-                    await RoutePointerClickAsync(capApply);
+                    // Gen14: proven modal-Apply shape (see the first-advance
+                    // apply) - observe Click and use waitForClick so the press
+                    // actually lands; bare pointer clicks are swallowed here.
+                    bool capApplyClickObserved = false;
+                    void OnCapApplyClick(object? sender, RoutedEventArgs args) => capApplyClickObserved = true;
+                    capApply.Click += OnCapApplyClick;
+                    string capApplyDiagnostics;
+                    try
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            capApply.BringIntoView();
+                            ForceHeadlessLayoutPump(capApply);
+                        });
+                        capApplyDiagnostics = await RoutePointerClickAsync(capApply, waitForClick: true);
+                        capApplyDiagnostics += ";clickObserved=" + capApplyClickObserved;
+                    }
+                    finally
+                    {
+                        capApply.Click -= OnCapApplyClick;
+                    }
                     recordPointerAction();
+                    RecordStep(steps, "sr6 natural-limit: clicked advance apply; " + capApplyDiagnostics);
 
                     // The first advance proved the observable sequence: the
                     // apply click closes the dialog, the continuation commits
