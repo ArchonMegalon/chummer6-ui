@@ -227,24 +227,86 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             + Environment.NewLine + blockerText;
     }
 
+    /// <summary>
+    /// Gen16 (Controller8283 T656): the typed blocker code is the FIRST
+    /// whitespace-delimited token after the refusal prefix. Comparison is
+    /// exact string equality - unrelated or mixed text that merely CONTAINS
+    /// a typed marker can never satisfy a typed refusal.
+    /// </summary>
+    internal const string AdvanceRefusalPrefix = "Core refused this advance: ";
+
+    private static readonly char[] TypedBlockerCodeTerminators = { ' ', '\t', '\r', '\n', ':' };
+
+    internal static string? ExtractTypedBlockerCode(string? text, string prefix)
+    {
+        if (string.IsNullOrEmpty(text))
+            return null;
+        int start = text.IndexOf(prefix, StringComparison.Ordinal);
+        if (start < 0)
+            return null;
+        string remainder = text[(start + prefix.Length)..];
+        int end = remainder.IndexOfAny(TypedBlockerCodeTerminators);
+        string candidate = end < 0 ? remainder : remainder[..end];
+        return candidate.Length == 0 ? null : candidate;
+    }
+
     internal static Sr6AdvanceBlockerClassification ClassifyAdvanceBlocker(string? noticeText)
     {
-        bool visible = noticeText is not null
-            && noticeText.Contains("Core refused this advance:", StringComparison.Ordinal);
+        string? code = ExtractTypedBlockerCode(noticeText, AdvanceRefusalPrefix);
+        bool visible = code is not null;
         return new Sr6AdvanceBlockerClassification(
             Visible: visible,
-            NaturalCap: visible && noticeText!.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal),
-            InsufficientKarma: visible && noticeText!.Contains("sr6_attribute_insufficient_karma", StringComparison.Ordinal),
+            NaturalCap: string.Equals(code, "sr6_attribute_natural_limit", StringComparison.Ordinal),
+            InsufficientKarma: string.Equals(code, "sr6_attribute_insufficient_karma", StringComparison.Ordinal),
             Unrelated: visible
-                && !noticeText!.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal)
-                && !noticeText!.Contains("sr6_attribute_insufficient_karma", StringComparison.Ordinal));
+                && !string.Equals(code, "sr6_attribute_natural_limit", StringComparison.Ordinal)
+                && !string.Equals(code, "sr6_attribute_insufficient_karma", StringComparison.Ordinal),
+            TypedCode: code);
     }
 
     internal sealed record Sr6AdvanceBlockerClassification(
         bool Visible,
         bool NaturalCap,
         bool InsufficientKarma,
-        bool Unrelated);
+        bool Unrelated,
+        string? TypedCode);
+
+    /// <summary>
+    /// Gen16 (Controller8283 T656): the SHARED cap-control verdict used by
+    /// both the journey runner and the focused tests. The natural-cap leg
+    /// only passes when the active advance dialog shows a present,
+    /// effectively-visible, DISABLED Apply control plus the visible
+    /// "Advance &lt;attribute&gt;" title bound to the requested attribute. A
+    /// missing, hidden or enabled Apply must fail - never succeed vacuously.
+    /// </summary>
+    internal sealed record Sr6CapControlVerdict(
+        bool ApplyPresent,
+        bool ApplyVisible,
+        bool ApplyDisabled,
+        bool TitleBound,
+        bool Ok,
+        string Diagnostics);
+
+    internal static Sr6CapControlVerdict ClassifyCapControls(
+        bool applyPresent,
+        bool applyEffectivelyVisible,
+        bool applyEffectivelyEnabled,
+        string? detailTitleText,
+        bool detailTitleVisible,
+        string requestedAttributeId)
+    {
+        bool applyDisabled = applyPresent && applyEffectivelyVisible && !applyEffectivelyEnabled;
+        bool titleBound = detailTitleVisible
+            && string.Equals(detailTitleText, "Advance " + requestedAttributeId, StringComparison.Ordinal);
+        bool ok = applyDisabled && titleBound;
+        string diagnostics = "applyPresent=" + applyPresent
+            + ";applyVisible=" + applyEffectivelyVisible
+            + ";applyDisabled=" + applyDisabled
+            + ";titleVisible=" + detailTitleVisible
+            + ";titleText=" + (detailTitleText ?? "null")
+            + ";requested=" + requestedAttributeId;
+        return new Sr6CapControlVerdict(applyPresent, applyEffectivelyVisible, applyDisabled, titleBound, ok, diagnostics);
+    }
 
     internal static Sr6CareerAttributeCommand BuildCommand(Sr6CareerAttributeQuote quote)
     {

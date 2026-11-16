@@ -277,6 +277,93 @@ public sealed class Sr6CareerAttributeAdvanceFlowTests
         Assert.IsFalse(cmd.ExplicitlyConfirmed, "the built command still requires explicit confirmation");
     }
 
+    // ---- T656 (Controller8283) negatives through the SHARED verdict ----
+
+    [TestMethod]
+    public void Blocker_classification_rejects_mixed_text_containing_the_cap_marker()
+    {
+        // The marker must be the FIRST token after the refusal prefix;
+        // unrelated text that merely contains the marker is not a cap.
+        var mixed = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_rejected sr6_attribute_natural_limit mentioned afterwards.");
+        Assert.IsTrue(mixed.Visible);
+        Assert.IsFalse(mixed.NaturalCap, "mixed text containing the marker must never classify as the cap");
+        Assert.AreEqual("sr6_attribute_rejected", mixed.TypedCode);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_rejects_marker_embedded_in_a_longer_token()
+    {
+        var embedded = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_natural_limit_suffix");
+        Assert.IsTrue(embedded.Visible);
+        Assert.IsFalse(embedded.NaturalCap, "an embedded marker is not the exact typed code");
+        Assert.AreEqual("sr6_attribute_natural_limit_suffix", embedded.TypedCode);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_when_apply_is_missing()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: false, applyEffectivelyVisible: false, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "a missing Apply must fail - the null pattern-match never succeeds vacuously");
+        Assert.IsFalse(v.ApplyPresent);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_when_apply_is_enabled()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: true, applyEffectivelyEnabled: true,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "an enabled Apply cannot prove the blocked refusal");
+        Assert.IsFalse(v.ApplyDisabled);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_when_apply_is_hidden()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: false, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "a hidden Apply cannot prove the visible refusal");
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_on_wrong_attribute_title()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: true, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Agility", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "the title must bind the REQUESTED attribute exactly");
+        Assert.IsFalse(v.TitleBound);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_requires_all_presence_facts()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: true, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsTrue(v.Ok);
+        Assert.IsTrue(v.ApplyDisabled);
+        Assert.IsTrue(v.TitleBound);
+    }
+
+    [TestMethod]
+    public void Quote_summary_blocker_code_is_extracted_exactly()
+    {
+        string quoteText = "Current 7 (natural 7) -> target 8  |  cost 20 karma  |  available 20\n"
+            + "Blocked: sr6_attribute_natural_limit Body natural rating is already at its maximum (7).";
+        Assert.AreEqual("sr6_attribute_natural_limit",
+            Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode(quoteText, "Blocked: "));
+        string mixed = "Blocked: sr6_attribute_insufficient_karma requires 15 karma, 5 available.";
+        Assert.AreEqual("sr6_attribute_insufficient_karma",
+            Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode(mixed, "Blocked: "));
+        Assert.IsNull(Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode("Ready to advance.", "Blocked: "));
+    }
+
     private sealed class HonestDefaultClient : ISr6CareerAttributeAdvancementClient
     {
     }

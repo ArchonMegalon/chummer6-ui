@@ -4361,18 +4361,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         // inference from a missing dialog. If the visible
                         // blocker is absent, the dialog is a normal quote and
                         // the loop continues below.
-                        (bool blockedVisible, string blockerText) = await Dispatcher.UIThread.InvokeAsync(() =>
+                        string blockerText = await Dispatcher.UIThread.InvokeAsync(() =>
                         {
                             string? notice = null;
                             var blocker = FindAutomationIdControl("sr6-advance-blocker-notice");
                             if (blocker is TextBlock bt && bt.IsVisible)
                                 notice = bt.Text;
-                            return (notice is not null && notice.Contains("Core refused this advance:", StringComparison.Ordinal), notice ?? "");
+                            return notice ?? "";
                         });
-                        bool naturalCapVisible = blockedVisible
-                            && blockerText.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal);
-                        bool insufficientKarmaVisible = blockedVisible
-                            && blockerText.Contains("sr6_attribute_insufficient_karma", StringComparison.Ordinal);
+                        // Gen16 (T656): the REAL verdict is the shared, tested
+                        // classifier with exact typed-code equality - no
+                        // Contains heuristics on the live path.
+                        var blockerClassification = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(blockerText);
+                        bool naturalCapVisible = blockerClassification.NaturalCap;
+                        bool insufficientKarmaVisible = blockerClassification.InsufficientKarma;
                         if (naturalCapVisible)
                     {
                         // Gen15: the cap verdict binds to the EXACT Core
@@ -4383,12 +4385,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         (bool capBindingOk, string capBindingDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
                         {
                             Button? capApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
-                            bool applyDisabled = capApply is not { IsEffectivelyEnabled: true };
-                            bool attributeBound = FindAutomationIdControl("sr6-advance-detail-title") is TextBlock dt
-                                && dt.IsVisible
-                                && (dt.Text ?? string.Empty).Contains("Advance Body", StringComparison.Ordinal);
-                            return (applyDisabled && attributeBound,
-                                "applyDisabled=" + applyDisabled + ";attributeBound=" + attributeBound);
+                            var capTitle = FindAutomationIdControl("sr6-advance-detail-title") as TextBlock;
+                            // Gen16 (T656): the shared tested verdict. A
+                            // missing/hidden/enabled Apply fails - the null
+                            // pattern-match can never succeed vacuously.
+                            var capVerdict = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+                                applyPresent: capApply is not null,
+                                applyEffectivelyVisible: capApply?.IsEffectivelyVisible ?? false,
+                                applyEffectivelyEnabled: capApply?.IsEffectivelyEnabled ?? false,
+                                detailTitleText: capTitle?.Text,
+                                detailTitleVisible: capTitle?.IsVisible ?? false,
+                                requestedAttributeId: "Body");
+                            return (capVerdict.Ok, capVerdict.Diagnostics);
                         });
                         if (!capBindingOk)
                         {
@@ -4488,7 +4496,11 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         // natural-maximum wording proves the cap. A blocked
                         // quote from a thin karma balance is a funding round,
                         // not the cap.
-                        if (quoteText.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal))
+                        // Gen16 (T656): exact typed-code equality on the quote
+                        // summary - "Blocked: <code> ..." only proves the cap
+                        // when the FIRST token after the prefix IS the marker.
+                        string quoteBlockerCode = Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode(quoteText, "Blocked: ");
+                        if (string.Equals(quoteBlockerCode, "sr6_attribute_natural_limit", StringComparison.Ordinal))
                         {
                             // Gen15: only the typed Core natural-limit refusal
                             // proves the cap. Verify the no-write against the
