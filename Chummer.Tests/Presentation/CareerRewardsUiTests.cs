@@ -1000,6 +1000,148 @@ public sealed class CareerRewardsUiTests
         });
     }
 
+    // ---- Gen17 (Controller8300, T660): same-modal ownership coverage ----
+
+    private static Sr6CareerAttributeAdvanceEditorSnapshot MakeAdvanceSnapshot()
+    {
+        var quote = new Sr6CareerAttributeQuote(
+            "sr6-career-attribute-quote/v1",
+            "install-account:subject-alpha",
+            new CharacterWorkspaceId("sr6-same-modal-tests"),
+            42,
+            "source-digest-1",
+            "rule-digest-1",
+            "Body",
+            4,
+            5,
+            0,
+            8,
+            100,
+            25,
+            null,
+            Array.Empty<string>(),
+            "binding-digest-1");
+        return new Sr6CareerAttributeAdvanceEditorSnapshot(
+            new CharacterWorkspaceId("sr6-same-modal-tests"),
+            42,
+            "sr6",
+            new Sr6CareerAttributeQuote[] { quote },
+            0,
+            new OwnerContextStamp(
+                new OwnerScope("install-account:subject-alpha"),
+                "authority-instance-1",
+                42));
+    }
+
+    [TestMethod]
+    public void Single_advance_window_resolves_and_binds_lookups_to_that_instance()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            try
+            {
+                advance.Show();
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+
+                var resolved = DesktopMouseFirstJourneyRunner.ResolveSingleAdvanceWindow();
+                Assert.IsNotNull(resolved, "exactly one visible advance window must resolve");
+                Assert.AreSame(advance, resolved, "the resolved instance must be THE visible window");
+
+                // Same-modal binding: the modal's own controls are found inside
+                // THAT instance's visual tree.
+                Assert.IsNotNull(
+                    DesktopMouseFirstJourneyRunner.FindInWindow<Button>(resolved, "sr6-career-attribute-advance-apply"),
+                    "Apply must be found inside the resolved window");
+                Assert.IsNotNull(
+                    DesktopMouseFirstJourneyRunner.FindInWindow<Button>(resolved, "sr6-career-attribute-advance-cancel"),
+                    "Cancel must be found inside the resolved window");
+            }
+            finally
+            {
+                advance.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Decoy_controls_in_other_windows_never_bind_across_modals()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            Window decoy = new Window { Width = 240, Height = 120 };
+            try
+            {
+                advance.Show();
+                var decoyButton = new Button { Content = "decoy" };
+                global::Avalonia.Automation.AutomationProperties.SetAutomationId(
+                    decoyButton, "sr6-career-attribute-advance-cancel");
+                decoy.Content = decoyButton;
+                decoy.Show();
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+                PumpLayout(decoy);
+
+                // The desktop-wide finder WOULD find the decoy; the scoped
+                // finder must not. This is the exact mismatched-modal hazard.
+                Assert.IsNotNull(
+                    DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                        (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-cancel"),
+                    "the advance window's own cancel must be found");
+                Assert.IsNull(
+                    DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                        (Sr6CareerAttributeAdvanceWindow)advance, "decoy-only-id"),
+                    "an id that only exists in another window must never resolve inside this one");
+            }
+            finally
+            {
+                decoy.Close();
+                advance.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Stacked_advance_windows_refuse_resolution_until_unambiguous()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window first = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            Window second = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            try
+            {
+                first.Show();
+                second.Show();
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(first);
+                PumpLayout(second);
+
+                // Two visible advance modals: same-modal ownership cannot be
+                // proven, so the resolver must refuse (null), never pick one
+                // silently.
+                Assert.IsNull(
+                    DesktopMouseFirstJourneyRunner.ResolveSingleAdvanceWindow(),
+                    "stacked advance windows must not resolve to an unowned click target");
+
+                second.Close();
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsNotNull(
+                    DesktopMouseFirstJourneyRunner.ResolveSingleAdvanceWindow(),
+                    "a single visible advance window resolves again once the stack clears");
+            }
+            finally
+            {
+                second.Close();
+                first.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+
     private static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)

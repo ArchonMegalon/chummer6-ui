@@ -364,6 +364,85 @@ public sealed class Sr6CareerAttributeAdvanceFlowTests
         Assert.IsNull(Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode("Ready to advance.", "Blocked: "));
     }
 
+    // ---- T660 (Controller8300) typed delivery-result parsing ----
+    // RoutePointerClickAsync emits "delivered={bool}" via C# bool
+    // interpolation, so a delivered press renders "delivered=True". The gen16
+    // checks compared case-sensitively against "delivered=true" and therefore
+    // rejected every actual successful delivery.
+
+    [TestMethod]
+    public void Delivery_parsing_accepts_the_capitalized_bool_a_delivered_press_emits()
+    {
+        var delivered = DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(
+            "delivered=True;isPressed=True;enabled=True;visible=True;attached;raise:hit=True;realTarget=Button");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered, delivered.Kind);
+        Assert.AreEqual("True", delivered.Detail);
+    }
+
+    [TestMethod]
+    public void Delivery_parsing_classifies_false_missing_and_malformed_tokens()
+    {
+        var notDelivered = DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(
+            "delivered=False;isPressed=False;enabled=True;visible=True;attached;raise:hit=False");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.NotDelivered, notDelivered.Kind);
+
+        var syntheticCleanup = DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(
+            "delivered=false;routedCleanup=true;");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.NotDelivered, syntheticCleanup.Kind);
+
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Missing,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(null).Kind);
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Missing,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("   ").Kind);
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Missing,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("isPressed=True;enabled=True;attached").Kind);
+
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Malformed,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=yes;isPressed=True").Kind);
+    }
+
+    [TestMethod]
+    public void Delivery_parsing_is_case_insensitive_and_never_misses_a_delivery()
+    {
+        // The gen16 defect in one line: a delivered press rendered
+        // "delivered=True", and "delivered=True".Contains("delivered=true") is
+        // false - the press was delivered yet never counted. The typed parser
+        // is case-insensitive so neither casing can hide a delivery.
+        Assert.IsFalse("delivered=True;isPressed=True".Contains("delivered=true", StringComparison.Ordinal),
+            "precondition: the case-sensitive check demonstrably missed delivered presses");
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=true;isPressed=True").Kind);
+    }
+
+    [TestMethod]
+    public void Executed_cap_branch_entry_binds_the_exact_core_refusal_notice()
+    {
+        // The executed branch's entry predicate: the visible refusal notice is
+        // the exact Core natural-limit text for the requested attribute, and
+        // the typed code is the FIRST token after the prefix.
+        string notice = "Core refused this advance: sr6_attribute_natural_limit "
+            + "Body natural rating is already at its maximum (7).";
+        var classification = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(notice);
+        Assert.IsTrue(classification.Visible);
+        Assert.IsTrue(classification.NaturalCap, "the exact Core cap refusal must classify as the cap");
+        Assert.AreEqual("sr6_attribute_natural_limit", classification.TypedCode);
+
+        // The executed branch's exit predicate: the cancel press is observed
+        // through the typed parser - a capitalized True counts, a False does
+        // not, and nothing else can be mistaken for a delivery.
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=True;isPressed=True;attached").Kind);
+        Assert.AreNotEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=False;isPressed=False;attached").Kind);
+    }
+
     private sealed class HonestDefaultClient : ISr6CareerAttributeAdvancementClient
     {
     }

@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
@@ -22,12 +24,44 @@ namespace Chummer.Avalonia.Controls;
 /// </summary>
 public sealed class Sr6CareerAttributeAdvanceWindow : Window
 {
+    /// <summary>
+    /// Gen17 (Controller8300, T660): live-instance registry so same-modal
+    /// resolution can enumerate exactly the advance windows that exist, in
+    /// BOTH the production desktop app and Avalonia headless test sessions
+    /// (where no IClassicDesktopStyleApplicationLifetime exists to walk).
+    /// Instances register on construction and unregister on Closed.
+    /// </summary>
+    private static readonly List<Sr6CareerAttributeAdvanceWindow> LiveInstances = new();
+
+    internal static IReadOnlyList<Sr6CareerAttributeAdvanceWindow> LiveInstancesSnapshot
+    {
+        get
+        {
+            lock (LiveInstances)
+            {
+                return LiveInstances.ToList();
+            }
+        }
+    }
+
     public Sr6CareerAttributeAdvanceWindow(
         Sr6CareerAttributeAdvanceEditorSnapshot editor,
         string requestedAttributeName)
     {
         ArgumentNullException.ThrowIfNull(editor);
         ArgumentException.ThrowIfNullOrWhiteSpace(requestedAttributeName);
+
+        lock (LiveInstances)
+        {
+            LiveInstances.Add(this);
+        }
+        Closed += (_, _) =>
+        {
+            lock (LiveInstances)
+            {
+                LiveInstances.Remove(this);
+            }
+        };
 
         Title = "Advance Attribute with Karma (SR6)";
         Width = 620;

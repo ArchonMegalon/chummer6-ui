@@ -4101,7 +4101,22 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             bool reopenedCancelled = false;
             if (reopenedAppeared)
             {
-                Button? cancelReopened = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
+                // Gen17 (T660): the reopened cancel is located INSIDE the
+                // single resolved advance window, never by a desktop-wide
+                // search. In acceptance mode an unresolvable modal is a hard
+                // failure, not a silent fallback to routed cleanup.
+                Sr6CareerAttributeAdvanceWindow? reopenedWindow = await Dispatcher.UIThread.InvokeAsync(
+                    ResolveSingleAdvanceWindow);
+                Button? cancelReopened = reopenedWindow is null
+                    ? null
+                    : await Dispatcher.UIThread.InvokeAsync(() =>
+                        FindInWindow<Button>(reopenedWindow, "sr6-career-attribute-advance-cancel"));
+                if (reopenedWindow is null && AcceptanceFallbacksOff)
+                {
+                    throw new InvalidOperationException(
+                        "sr6 advance leg failed: reopened advance dialog could not be resolved as exactly one visible active "
+                        + "Sr6CareerAttributeAdvanceWindow (same-modal ownership requirement).");
+                }
                 if (cancelReopened is not null)
                 {
                     // Gen16 (T657): the reopened-dialog cancel uses the proven
@@ -4117,7 +4132,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         ForceHeadlessLayoutPump(cancelReopened);
                     });
                     string reopenedCancelDiagnostics = await RoutePointerClickAsync(cancelReopened, waitForClick: true);
-                    if (reopenedCancelDiagnostics.Contains("delivered=true", StringComparison.Ordinal))
+                    if (ParsePointerDeliveryResult(reopenedCancelDiagnostics).Kind == PointerDeliveryKind.Delivered)
                     {
                         recordPointerAction();
                         RecordStep(steps, "click sr6-career-attribute-advance-cancel on the reopened dialog (pointer delivered)");
@@ -4374,6 +4389,19 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     }
                     if (quoteOpened)
                     {
+                        // Gen17 (Controller8300, T660): same-modal ownership.
+                        // Resolve exactly ONE visible active advance window and
+                        // bind every dialog-scoped lookup below to THAT instance;
+                        // desktop-wide searches cannot prove which modal the
+                        // controls belong to.
+                        Sr6CareerAttributeAdvanceWindow? advanceWindow = await Dispatcher.UIThread.InvokeAsync(
+                            ResolveSingleAdvanceWindow);
+                        if (advanceWindow is null)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: an advance dialog was detected but exactly one visible active "
+                                + "Sr6CareerAttributeAdvanceWindow could not be resolved (same-modal ownership requirement).");
+                        }
                         // The SR6 advance dialog opened. Gen14 acceptance
                         // requires the cap refusal to bind to Core's OWN
                         // typed blocker rendered visibly in the dialog (with
@@ -4384,7 +4412,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         string blockerText = await Dispatcher.UIThread.InvokeAsync(() =>
                         {
                             string? notice = null;
-                            var blocker = FindAutomationIdControl("sr6-advance-blocker-notice");
+                            var blocker = FindInWindow<TextBlock>(advanceWindow, "sr6-advance-blocker-notice");
                             if (blocker is TextBlock bt && bt.IsVisible)
                                 notice = bt.Text;
                             return notice ?? "";
@@ -4404,8 +4432,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         // funding path below - it can never count as the cap.
                         (bool capBindingOk, string capBindingDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
                         {
-                            Button? capApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
-                            var capTitle = FindAutomationIdControl("sr6-advance-detail-title") as TextBlock;
+                            Button? capApply = FindInWindow<Button>(advanceWindow, "sr6-career-attribute-advance-apply");
+                            var capTitle = FindInWindow<TextBlock>(advanceWindow, "sr6-advance-detail-title");
                             // Gen16 (T656): the shared tested verdict. A
                             // missing/hidden/enabled Apply fails - the null
                             // pattern-match can never succeed vacuously.
@@ -4426,17 +4454,44 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         }
                         await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
                         // Cancel the blocked dialog: no apply is possible and no mutation may occur.
-                        Control? capCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel")
-                            ?? FindAutomationIdControl("sr6-career-attribute-advance-cancel");
+                        // Gen17 (Controller8300, T659): this is the branch the
+                        // gen16 phaseA receipt proved EXECUTED, and it still
+                        // fabricated pointer evidence by raising the routed
+                        // Click and then counting it. The executed cancel must
+                        // be a genuine pointer press observed DELIVERING on
+                        // THIS dialog's cancel control (proven modal shape:
+                        // BringIntoView + layout pump + waitForClick), parsed
+                        // with the typed delivery result. A non-delivered press
+                        // is a hard failure in acceptance mode; routed cleanup
+                        // is permitted only outside acceptance mode and is
+                        // NEVER counted as a pointer action.
+                        Control? capCancel = FindInWindow<Control>(advanceWindow, "sr6-career-attribute-advance-cancel");
                         if (capCancel is null)
-                            throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog has no cancel control.");
-                        // Cancel is a no-op (Close(null)) - the same class as
-                        // the straggler/rewards cancels: routed Click is
-                        // deterministic, while pointer clicks are swallowed on
-                        // stacked modals (raise:hit=False diagnostics).
+                            throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog has no cancel control inside the resolved window.");
                         await Dispatcher.UIThread.InvokeAsync(() =>
-                            capCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, capCancel)));
-                        recordPointerAction();
+                        {
+                            capCancel.BringIntoView();
+                            ForceHeadlessLayoutPump(capCancel);
+                        });
+                        string capCancelPressDiagnostics = await RoutePointerClickAsync(capCancel, waitForClick: true);
+                        PointerDeliveryResult capCancelDelivery = ParsePointerDeliveryResult(capCancelPressDiagnostics);
+                        if (capCancelDelivery.Kind == PointerDeliveryKind.Delivered)
+                        {
+                            recordPointerAction();
+                            RecordStep(steps, "sr6 natural-limit: blocked-cap dialog cancelled by DELIVERED pointer press (typed delivery result parsed)");
+                        }
+                        else if (AcceptanceFallbacksOff)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: blocked-cap dialog cancel pointer press did not deliver ("
+                                + capCancelDelivery.Kind + ": " + capCancelPressDiagnostics + ").");
+                        }
+                        else
+                        {
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                                capCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, capCancel)));
+                            RecordStep(steps, "sr6 natural-limit demo: blocked-cap dialog cancel completed via ROUTED CLEANUP (non-acceptance mode; excluded from pointer-action count)");
+                        }
                         bool capDialogGone = await WaitForConditionWithinAsync(
                             () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
                             ct,
@@ -4526,7 +4581,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             // proves the cap. Verify the no-write against the
                             // pre-attempt baseline before treating this as the cap.
                             naturalCapQuoteText = quoteText;
-                            Button? quoteCapCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
+                            // Gen17 (T660): re-resolve the single visible active
+                            // advance window here - the quoteOpened-scoped
+                            // variable is not in scope at this point.
+                            Sr6CareerAttributeAdvanceWindow? capQuoteWindow = await Dispatcher.UIThread.InvokeAsync(
+                                ResolveSingleAdvanceWindow);
+                            if (capQuoteWindow is null)
+                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked quote dialog could not be resolved as exactly one visible active advance window (same-modal ownership requirement).");
+                            Button? quoteCapCancel = await Dispatcher.UIThread.InvokeAsync(() =>
+                                FindInWindow<Button>(capQuoteWindow, "sr6-career-attribute-advance-cancel"));
                             if (quoteCapCancel is null)
                                 throw new InvalidOperationException("sr6 natural-limit leg failed: blocked quote dialog has no cancel control.");
                             // Gen16 (T657): the cap-dialog cancel must be a
@@ -4542,7 +4605,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 ForceHeadlessLayoutPump(quoteCapCancel);
                             });
                             string capCancelDiagnostics = await RoutePointerClickAsync(quoteCapCancel, waitForClick: true);
-                            if (capCancelDiagnostics.Contains("delivered=true", StringComparison.Ordinal))
+                            if (ParsePointerDeliveryResult(capCancelDiagnostics).Kind == PointerDeliveryKind.Delivered)
                             {
                                 recordPointerAction();
                             }
@@ -4608,7 +4671,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 RecordStep(steps, "sr6 natural-limit: blocked-quote cancel completed via ROUTED CLEANUP (non-acceptance mode; excluded from pointer-action count)");
                                 blockedCancelDiagnostics = "delivered=false;routedCleanup=true;";
                             }
-                            if (blockedCancelDiagnostics.Contains("delivered=true", StringComparison.Ordinal))
+                            if (ParsePointerDeliveryResult(blockedCancelDiagnostics).Kind == PointerDeliveryKind.Delivered)
                             {
                                 recordPointerAction();
                             }
@@ -7115,6 +7178,115 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         }
 
         Dispatcher.UIThread.RunJobs();
+    }
+
+    /// <summary>
+    /// Typed delivery-result kind for RoutePointerClickAsync diagnostics.
+    /// </summary>
+    /// <remarks>
+    /// RoutePointerClickAsync interpolates C# bools ("delivered={bool}"), so a
+    /// delivered press renders as "delivered=True". The gen16 cancel checks
+    /// compared case-sensitively against "delivered=true" and therefore NEVER
+    /// matched a delivered press. This parser replaces every such substring
+    /// guess with a typed, case-insensitive parse that rejects missing and
+    /// malformed evidence instead of silently treating it as non-delivery.
+    /// </remarks>
+    internal enum PointerDeliveryKind
+    {
+        Delivered,
+        NotDelivered,
+        Missing,
+        Malformed,
+    }
+
+    internal readonly record struct PointerDeliveryResult(PointerDeliveryKind Kind, string? Detail);
+
+    /// <summary>
+    /// Typed parse of RoutePointerClickAsync delivery diagnostics. Missing =
+    /// no delivered= segment present; Malformed = a delivered= segment is
+    /// present but its token is neither True nor False (case-insensitive).
+    /// </summary>
+    internal static PointerDeliveryResult ParsePointerDeliveryResult(string? diagnostics)
+    {
+        if (string.IsNullOrWhiteSpace(diagnostics))
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.Missing, "diagnostics null/whitespace");
+        }
+
+        string? deliveredToken = null;
+        foreach (string rawSegment in diagnostics.Split(';'))
+        {
+            string segment = rawSegment.Trim();
+            if (segment.StartsWith("delivered=", StringComparison.OrdinalIgnoreCase))
+            {
+                deliveredToken = segment.Substring("delivered=".Length);
+                break;
+            }
+        }
+
+        if (deliveredToken is null)
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.Missing, diagnostics);
+        }
+
+        if (string.Equals(deliveredToken, "True", StringComparison.OrdinalIgnoreCase))
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.Delivered, deliveredToken);
+        }
+
+        if (string.Equals(deliveredToken, "False", StringComparison.OrdinalIgnoreCase))
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.NotDelivered, deliveredToken);
+        }
+
+        return new PointerDeliveryResult(PointerDeliveryKind.Malformed, deliveredToken);
+    }
+
+    /// <summary>
+    /// Gen17 (Controller8300, T660): resolve exactly ONE visible active
+    /// Sr6CareerAttributeAdvanceWindow instance for same-modal ownership.
+    /// Desktop-wide searches cannot prove which modal a control belongs to.
+    /// When several visible advance windows are stacked (post-apply
+    /// auto-reopen), only an unambiguous single ACTIVE instance resolves;
+    /// ambiguity returns null and callers must fail loudly rather than click
+    /// an unowned control.
+    /// </summary>
+    internal static Sr6CareerAttributeAdvanceWindow? ResolveSingleAdvanceWindow()
+    {
+        // Same-modal resolution uses the window class's live-instance
+        // registry, which works identically in the production desktop app and
+        // Avalonia headless test sessions (no application lifetime required).
+        List<Sr6CareerAttributeAdvanceWindow> visible = Sr6CareerAttributeAdvanceWindow
+            .LiveInstancesSnapshot
+            .Where(window => window.IsVisible)
+            .ToList();
+        if (visible.Count == 1)
+        {
+            return visible[0];
+        }
+        if (visible.Count > 1)
+        {
+            List<Sr6CareerAttributeAdvanceWindow> active = visible
+                .Where(window => window.IsActive)
+                .ToList();
+            return active.Count == 1 ? active[0] : null;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gen17 (T660): locate a control by automation id INSIDE the resolved
+    /// advance window's visual tree only. Controls in any other window are
+    /// invisible to this lookup by construction.
+    /// </summary>
+    internal static T? FindInWindow<T>(Sr6CareerAttributeAdvanceWindow window, string automationId)
+        where T : Control
+    {
+        return window.GetVisualDescendants().OfType<T>()
+            .FirstOrDefault(control => string.Equals(
+                AutomationProperties.GetAutomationId(control),
+                automationId,
+                StringComparison.Ordinal));
     }
 
     private static async Task<string> RoutePointerClickAsync(Control control)
