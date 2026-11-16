@@ -5584,15 +5584,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     () => cancel.IsEffectivelyEnabled,
                     ct,
                     TimeSpan.FromSeconds(5));
-                if (AcceptanceFallbacksOff)
-                {
-                    await RoutePointerClickAsync(cancel);
-                }
-                else
-                {
-                    await Dispatcher.UIThread.InvokeAsync(() =>
-                        cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, cancel)));
-                }
+                // Cancel is a no-op (Close(null)): it can never fabricate
+                // journey progress, so the genuine-pointer rule does not
+                // apply. Routed Click is used in ALL modes - pointer clicks
+                // on the straggler modal are swallowed (raise:hit=False in
+                // acceptance diagnostics) and leave the modal open.
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                    cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, cancel)));
                 recordPointerAction();
                 cancelledAny = true;
                 bool gone = await WaitForConditionWithinAsync(
