@@ -968,6 +968,38 @@ public sealed class CareerRewardsUiTests
         }
     }
 
+    [TestMethod]
+    public void Confirmed_pending_result_exposes_visible_enabled_acknowledgement()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new();
+            owner.Show();
+            // The gen14 acceptance contract: a Confirmed pending reward MUST
+            // surface an acknowledge control that is visible and enabled -
+            // acceptance clicks genuine pointer input on a rendered control,
+            // never RaiseEvent on a hidden or collapsed one.
+            var dialog = new CareerRewardsWindow(true, MakeKarmaEditor(), null,
+                (_, _) => Task.FromResult(Confirmed()),
+                null, null,
+                pendingResult: Confirmed(Guid.NewGuid()),
+                acknowledge: _ => true);
+            _ = dialog.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            Button ack = FindByAutomation<Button>(dialog, "career-rewards-acknowledge")
+                ?? throw new AssertFailedException("acknowledge control missing on a Confirmed dialog");
+            Assert.IsTrue(ack.IsVisible, "acknowledge control must be visible on a Confirmed dialog");
+            Assert.IsTrue(ack.IsEnabled, "acknowledge control must be enabled on a Confirmed dialog");
+            Assert.IsFalse(FindByAutomation<Button>(dialog, "career-rewards-apply")!.IsVisible,
+                "Record must be hidden while a Confirmed result awaits acknowledgement");
+            // Genuine click on the visible control clears the terminal state.
+            ack.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.IsNull(dialog.LastRefusal);
+            owner.Close();
+        });
+    }
+
     private static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)

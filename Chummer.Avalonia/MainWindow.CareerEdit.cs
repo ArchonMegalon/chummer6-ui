@@ -17,6 +17,13 @@ public partial class MainWindow
     private const string CareerEditNoticePrefix = "Career advancement: ";
     private readonly CareerDisplayContext _careerDisplayContext = new();
 
+    // Single-instance guard for the career rewards modal. A trigger event that
+    // fires while a rewards dialog is already open must NOT stack a second
+    // modal: the open dialog's own loop already serializes follow-up rewards
+    // rounds after each acknowledged/recorded outcome, and stacked Confirmed
+    // dialogs otherwise strand unacknowledged records behind hidden windows.
+    private bool _careerRewardsDialogOpen;
+
     private void ObserveCareerDisplayContext(object? sender, EventArgs args)
     {
         CharacterOverviewState state = _adapter.State;
@@ -51,6 +58,21 @@ public partial class MainWindow
                 && _careerDisplayContext.IsCurrent(entryGeneration, current.WorkspaceId, current.DisplayOwnerContext);
         }
 
+        if (_careerRewardsDialogOpen)
+            return;
+        _careerRewardsDialogOpen = true;
+        try
+        {
+            await OpenCareerRewardsDialogCoreAsync(isKarmaMode, entryWorkspaceId, entryOwner, DisplayStillCurrent).ConfigureAwait(true);
+        }
+        finally
+        {
+            _careerRewardsDialogOpen = false;
+        }
+    }
+
+    private async Task OpenCareerRewardsDialogCoreAsync(bool isKarmaMode, CharacterWorkspaceId entryWorkspaceId, OwnerContextStamp entryOwner, Func<bool> DisplayStillCurrent)
+    {
         CareerManualKarmaEditorState? karmaState = await _interactionCoordinator
             .PrepareCareerManualKarmaEditAsync(CancellationToken.None)
             .ConfigureAwait(true);
