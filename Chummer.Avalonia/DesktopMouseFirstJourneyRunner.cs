@@ -522,13 +522,43 @@ internal static class DesktopMouseFirstJourneyRunner
                     throw new InvalidOperationException("The creation wizard is still visible after reopening a finalized character.");
                 }
 
-                // T492: when the first process ran the SR6 advance leg, the
-                // fresh-process reopen must show the advanced attribute rank and
-                // the debited karma balance survived persistence.
-                string? sr6ReceiptPath = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.Sr6AdvanceReceiptEnvironmentVariable);
-                if (!string.IsNullOrWhiteSpace(sr6ReceiptPath) && File.Exists(sr6ReceiptPath))
+                // Gen18 (T664): the fresh-process reopen must verify the FULL
+                // final state of the first process's SR6 leg. The SR6 advance
+                // receipt is now REQUIRED: a missing or unreadable receipt in
+                // the reopen-verify leg of an SR6 journey is a hard failure,
+                // never a skipped optional branch. Verified exact state:
+                // reopened karma AND nuyen equal the receipt's post-leg
+                // balances, the advanced attribute rank persisted at the
+                // quoted target, the workspace stays clean at the receipt's
+                // saved revision, and the SR6 ruleset selection survived.
+                string sr6ReceiptPath = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.Sr6AdvanceReceiptEnvironmentVariable)
+                    ?? throw new InvalidOperationException(
+                        "The SR6 reopen-verify leg requires " + DesktopMouseFirstJourneyRuntime.Sr6AdvanceReceiptEnvironmentVariable
+                        + " to point at the first process's SR6 advance receipt; a missing receipt must fail, not skip.");
+                if (!File.Exists(sr6ReceiptPath))
                 {
-                    using JsonDocument sr6Saved = JsonDocument.Parse(File.ReadAllText(sr6ReceiptPath));
+                    throw new InvalidOperationException(
+                        "The SR6 advance receipt file does not exist: " + sr6ReceiptPath);
+                }
+                JsonDocument sr6Saved;
+                try
+                {
+                    sr6Saved = JsonDocument.Parse(File.ReadAllText(sr6ReceiptPath));
+                }
+                catch (Exception unreadableReceipt) when (unreadableReceipt is IOException or UnauthorizedAccessException or JsonException)
+                {
+                    throw new InvalidOperationException(
+                        "The SR6 advance receipt is present but unreadable: " + unreadableReceipt.Message);
+                }
+                using (sr6Saved)
+                {
+                    string? sr6ReceiptShapeError = ValidateSr6AdvanceReceiptShape(sr6Saved);
+                    if (sr6ReceiptShapeError is not null)
+                    {
+                        throw new InvalidOperationException(
+                            "The SR6 advance receipt failed shape validation: " + sr6ReceiptShapeError);
+                    }
+
                     decimal expectedKarmaAfter = sr6Saved.RootElement.GetProperty("karmaAfter").GetDecimal();
                     string sr6WorkspaceId = sr6Saved.RootElement.GetProperty("workspaceId").GetString()
                         ?? throw new InvalidOperationException("The SR6 advance receipt does not carry a workspaceId.");
@@ -537,24 +567,88 @@ internal static class DesktopMouseFirstJourneyRunner
                         throw new InvalidOperationException(
                             $"The reopened workspace '{restoredWorkspaceId.Value}' does not match the SR6 advance receipt workspace '{sr6WorkspaceId}'.");
                     }
+                    string attributeId = sr6Saved.RootElement.TryGetProperty("attributeId", out JsonElement attributeElement)
+                        ? attributeElement.GetString() ?? "Body" : "Body";
+                    int? quotedTargetNaturalRating = sr6Saved.RootElement.TryGetProperty("quotedTargetNaturalRating", out JsonElement targetElement)
+                        && targetElement.ValueKind == JsonValueKind.Number ? targetElement.GetInt32() : null;
+                    int? expectedSavedRevision = sr6Saved.RootElement.TryGetProperty("savedRevision", out JsonElement revisionElement)
+                        && revisionElement.ValueKind == JsonValueKind.Number ? revisionElement.GetInt32() : null;
 
                     var sr6SectionHost = window.ControlsForAutomation.SectionHost;
                     decimal reopenedKarma = 0m;
-                    bool reopenedKarmaMatches = await WaitForConditionWithinAsync(
+                    decimal reopenedNuyen = 0m;
+                    bool reopenedBalancesMatch = await WaitForConditionWithinAsync(
                         () =>
                         {
                             reopenedKarma = ReadCareerRewardsKarmaBalance(sr6SectionHost);
-                            return reopenedKarma == expectedKarmaAfter;
+                            reopenedNuyen = ReadCareerRewardsNuyenBalance(sr6SectionHost);
+                            bool karmaMatches = reopenedKarma == expectedKarmaAfter;
+                            bool nuyenMatches = !sr6Saved.RootElement.TryGetProperty("nuyenAfter", out JsonElement nuyenElement)
+                                || nuyenElement.ValueKind != JsonValueKind.Number
+                                || reopenedNuyen == nuyenElement.GetDecimal();
+                            return karmaMatches && nuyenMatches;
                         },
                         journeyTimeout.Token,
                         TimeSpan.FromSeconds(10));
-                    if (!reopenedKarmaMatches)
+                    if (!reopenedBalancesMatch)
                     {
                         throw new InvalidOperationException(
-                            $"The reopened workspace shows karma {reopenedKarma}, but the SR6 advance receipt recorded {expectedKarmaAfter}.");
+                            $"The reopened workspace shows karma {reopenedKarma} nuyen {reopenedNuyen}, which does not match the SR6 advance receipt.");
                     }
 
-                    RecordStep(steps, $"sr6 reopen verified: karma {reopenedKarma} matches the advance receipt; attribute rank persisted");
+                    // The advanced attribute rank must equal the quoted target,
+                    // verified against the RETAINED workspace DOCUMENT (not UI
+                    // text): the owner-bound read is the same proven seam the
+                    // starter-attribute evidence uses.
+                    if (quotedTargetNaturalRating is { } expectedRank)
+                    {
+                        StarterAttributeEvidence reopenedAttributes = await ReadWorkspaceAttributeRankAsync(
+                            window, sr6WorkspaceId, attributeId, journeyTimeout.Token);
+                        if (!reopenedAttributes.IsValid)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 reopen-verify failed: attribute rank could not be read from the retained document - "
+                                + reopenedAttributes.Diagnostics);
+                        }
+                        if (reopenedAttributes.Sum != expectedRank)
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace shows {attributeId} rank {reopenedAttributes.Sum}, but the SR6 advance receipt quoted target {expectedRank}.");
+                        }
+                        RecordStep(steps, $"sr6 reopen verified: {attributeId} rank {reopenedAttributes.Sum} matches the quoted target (document-backed read)");
+                    }
+
+                    // The saved/clean revision must be exactly the receipt's saved revision.
+                    if (expectedSavedRevision is { } expectedRevisionValue)
+                    {
+                        long reopenedRevision = restoredOverview.ContentRevision;
+                        if (reopenedRevision != expectedRevisionValue)
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace revision {reopenedRevision} does not match the receipt's saved revision {expectedRevisionValue}.");
+                        }
+                    }
+
+                    // The SR6 ruleset selection must have survived persistence.
+                    // CharacterOverviewState carries no ruleset id; the ruleset
+                    // lives on the matching OpenWorkspaceState entry.
+                    OpenWorkspaceState? reopenedWorkspaceEntry = restoredOverview.OpenWorkspaces
+                        .FirstOrDefault(open => string.Equals(
+                            open.Id.Value, restoredWorkspaceId.Value, StringComparison.Ordinal));
+                    if (reopenedWorkspaceEntry is null)
+                    {
+                        throw new InvalidOperationException(
+                            "The reopened workspace entry is absent from the overview's open-workspace list.");
+                    }
+                    string? reopenedRuleset = reopenedWorkspaceEntry.RulesetId;
+                    if (string.IsNullOrWhiteSpace(reopenedRuleset)
+                        || !reopenedRuleset.Contains("sr6", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            $"The reopened workspace does not preserve the SR6 ruleset selection (rulesetId='{reopenedRuleset ?? "none"}').");
+                    }
+
+                    RecordStep(steps, $"sr6 reopen verified: karma {reopenedKarma} nuyen {reopenedNuyen} match the advance receipt; attribute rank persisted; revision {restoredOverview.ContentRevision} clean; ruleset {reopenedRuleset} preserved");
                     await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-sr6-verified");
                 }
 
@@ -3079,13 +3173,21 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         // 8066: capture the dialog's authoritative outcome immediately after
         // the click, before any close detection, so a silent no-op vs a
         // confirmed commit vs a refusal is observable in the receipt.
+        // Gen18 (T663): this sample races the in-flight apply by design -
+        // CareerRewardsWindow.ApplyPreparedOutcomeAsync sets Uncertain
+        // BEFORE awaiting the apply task, so ownerResult=Uncertain here is
+        // the pre-terminal sample, never a terminal verdict. The terminal
+        // outcome is attributed after the close transition via the
+        // read-only reconciliation below; closure plus balance movement
+        // alone must not be claimed as success (gen17 receipt recorded
+        // ownerResult=Uncertain -> dialogClosed=True -> 5000->10000).
         string nuyenPostClick = await Dispatcher.UIThread.InvokeAsync(() =>
         {
             CareerRewardsWindow? ownerWindow = applyButton.FindLogicalAncestorOfType<CareerRewardsWindow>();
             CharacterOverviewState snapshot = window.SnapshotStateForAutomation();
             return "ownerResult=" + (ownerWindow?.LastResult?.Status.ToString() ?? "none")
                 + "; ownerRefusal=" + (ownerWindow?.LastRefusal ?? "none")
-                + "; ownerBalance=" + (ownerWindow.LastResult is null ? "n/a" : "set")
+                + "; ownerBalance=" + (ownerWindow?.LastResult is null ? "n/a" : "set")
                 + "; presenterError=" + (snapshot.Error ?? "none")
                 + "; notice=" + (snapshot.Notice ?? "none");
         });
@@ -3109,6 +3211,34 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             RecordStep(steps, $"sr6 nuyen post-apply (no close): windows={postApplyWindows}; balance={postApplyBalance}");
             throw new InvalidOperationException(
                 "sr6 nuyen leg failed: the CareerRewardsWindow modal did not close after Apply.");
+        }
+
+        // Gen18 (T663): the dialog closed, but closure is NOT a terminal
+        // verdict by itself - CloseConfirmed only runs after LastResult
+        // reported Confirmed, while ShowUncertainty keeps the dialog open.
+        // Attribute the terminal outcome read-only through the presenter's
+        // reconcile route against the RETAINED workspace document: the
+        // exact next-revision payload comparison proves whether THIS
+        // operation committed, without ever re-sending or repeating the
+        // Apply. GetPendingCareerReward returns the retained attempt's
+        // terminal result (or the durable recovery attribution after a
+        // restart); a null means no unresolved record remains, i.e. the
+        // in-memory Confirmed was already consumed by the normal close.
+        ICharacterOverviewPresenter nuyenReconcilePresenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+        CharacterOverviewState terminalSnapshot = window.SnapshotStateForAutomation();
+        CareerRewardApplyResult? nuyenTerminal = terminalSnapshot.WorkspaceId is { } terminalWorkspaceId
+            && terminalSnapshot.DisplayOwnerContext is { IsValid: true } terminalOwner
+            ? nuyenReconcilePresenter.GetPendingCareerReward(terminalOwner, terminalWorkspaceId)
+            : null;
+        RecordStep(steps, "sr6 nuyen terminal attribution (read-only): "
+            + (nuyenTerminal is null
+                ? "no unresolved pending reward (in-memory terminal Confirmed consumed by the close)"
+                : "pendingStatus=" + nuyenTerminal.Status.ToString()));
+        if (nuyenTerminal is { Status: not CareerRewardApplyStatus.Confirmed })
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the operation did not reach a terminal Confirmed attribution "
+                + "(status=" + nuyenTerminal.Status + "); closure must not convert uncertainty to success.");
         }
     }
 
@@ -3195,6 +3325,274 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
             }
         }
+    }
+
+    /// <summary>
+    /// <summary>
+    /// Gen18 (T664): validates the structural shape of the SR6 advance
+    /// receipt BEFORE any value is consumed by the reopen-verify leg. A
+    /// missing required field or a present-but-non-numeric optional field
+    /// returns a distinct diagnostic (never a silent default). Null means
+    /// the receipt shape is usable.
+    /// </summary>
+    internal static string? ValidateSr6AdvanceReceiptShape(System.Text.Json.JsonDocument document)
+    {
+        System.Text.Json.JsonElement root = document.RootElement;
+        if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+        {
+            return "receipt root is not a JSON object";
+        }
+        if (!root.TryGetProperty("workspaceId", out System.Text.Json.JsonElement workspaceElement)
+            || workspaceElement.ValueKind != System.Text.Json.JsonValueKind.String
+            || string.IsNullOrWhiteSpace(workspaceElement.GetString()))
+        {
+            return "receipt is missing a usable workspaceId";
+        }
+        if (!root.TryGetProperty("karmaAfter", out System.Text.Json.JsonElement karmaElement)
+            || karmaElement.ValueKind != System.Text.Json.JsonValueKind.Number)
+        {
+            return "receipt is missing a numeric karmaAfter";
+        }
+        if (root.TryGetProperty("nuyenAfter", out System.Text.Json.JsonElement nuyenElement)
+            && nuyenElement.ValueKind != System.Text.Json.JsonValueKind.Number)
+        {
+            return "receipt nuyenAfter is present but not numeric";
+        }
+        if (root.TryGetProperty("quotedTargetNaturalRating", out System.Text.Json.JsonElement targetElement)
+            && targetElement.ValueKind != System.Text.Json.JsonValueKind.Number)
+        {
+            return "receipt quotedTargetNaturalRating is present but not numeric";
+        }
+        if (root.TryGetProperty("savedRevision", out System.Text.Json.JsonElement revisionElement)
+            && revisionElement.ValueKind != System.Text.Json.JsonValueKind.Number)
+        {
+            return "receipt savedRevision is present but not numeric";
+        }
+        if (root.TryGetProperty("attributeId", out System.Text.Json.JsonElement attributeElement)
+            && attributeElement.ValueKind == System.Text.Json.JsonValueKind.String
+            && MapSr6AttributeShortCode(attributeElement.GetString()) is null)
+        {
+            return "receipt attributeId '" + attributeElement.GetString() + "' is not a known SR6 natural attribute";
+        }
+        return null;
+    }
+
+    /// Gen18 (T664): reads ONE natural attribute's persisted rank from the
+    /// retained SR6 workspace document through the same owner-bound seam the
+    /// starter-attribute evidence uses. The read is bound to the expected
+    /// workspace id and REQUIRES the sr6 ruleset family; the canonical SR6
+    /// attribute id (e.g. "Body") is mapped to its document short code
+    /// (e.g. "BOD"). The result backs the reopen-verify leg's document-based
+    /// rank check - never UI text scraping.
+    /// </summary>
+    internal static Task<StarterAttributeEvidence> ReadWorkspaceAttributeRankAsync(
+        MainWindow window,
+        string expectedWorkspaceId,
+        string attributeId,
+        CancellationToken ct)
+    {
+        IChummerClient client = App.Services?.GetRequiredService<IChummerClient>()
+            ?? throw new InvalidOperationException(
+                "attribute rank evidence failed: the app service provider is unavailable.");
+        IOwnerBoundWorkspaceMutationClient boundClient = client as IOwnerBoundWorkspaceMutationClient
+            ?? throw new InvalidOperationException(
+                "attribute rank evidence failed: the workspace client is not owner-bound.");
+        return ReadWorkspaceAttributeRankAsync(expectedWorkspaceId, attributeId,
+            () => window.SnapshotStateForAutomation().WorkspaceId,
+            boundClient.CaptureOwnerContext, boundClient.GetWorkspaceAsync, ct);
+    }
+
+    // The journey and regression tests use the same asynchronous observation.
+    // Only the real owner-bound client is supplied by the window entrypoint.
+    internal static async Task<StarterAttributeEvidence> ReadWorkspaceAttributeRankAsync(
+        string expectedWorkspaceId,
+        string attributeId,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        // Same harness-timing retry discipline as the starter-attribute
+        // evidence: owner-authority transition races are re-tried by
+        // RE-CAPTURING the owner stamp and the active workspace binding from
+        // scratch (never reusing a stale stamp).
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await ReadWorkspaceAttributeRankOnceAsync(
+                    expectedWorkspaceId, attributeId, activeWorkspace,
+                    captureOwner, readWorkspace, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                attempt < 5
+                && (ex.Message.Contains("Owner authority changed before dispatch", StringComparison.Ordinal)
+                    || ex.Message.Contains("The acquired owner authority does not match the requested operation", StringComparison.Ordinal)))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
+            }
+        }
+    }
+
+    private static async Task<StarterAttributeEvidence> ReadWorkspaceAttributeRankOnceAsync(
+        string expectedWorkspaceId,
+        string attributeId,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        string? shortCode = MapSr6AttributeShortCode(attributeId);
+        if (shortCode is null)
+        {
+            return new(-1, "sr6 attribute rank read: unknown attribute id '" + (attributeId ?? "null") + "'");
+        }
+        if (string.IsNullOrWhiteSpace(expectedWorkspaceId))
+            return new(-1, "sr6 attribute rank read: workspace identity is missing");
+
+        CharacterWorkspaceId? workspaceId = activeWorkspace();
+        if (workspaceId is null)
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: no active workspace in overview snapshot");
+        }
+
+        if (!string.Equals(workspaceId.Value.Value, expectedWorkspaceId, StringComparison.Ordinal))
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "sr6 attribute rank read: workspace binding mismatch: overview reports " + workspaceId.Value.Value
+                + ", receipt workspace was " + expectedWorkspaceId);
+        }
+
+        OwnerContextStamp owner = captureOwner();
+        if (!owner.IsValid)
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: pre-await owner context is not valid");
+        }
+
+        CommandResult<WorkspaceDocumentSnapshot> read = await readWorkspace(
+            owner, workspaceId.Value, ct);
+        ct.ThrowIfCancellationRequested();
+
+        // Post-await re-verification, identical in discipline to the
+        // starter-attribute evidence: the await suspended the UI loop, so
+        // the bound overview and the owner authority may both have moved.
+        CharacterWorkspaceId? postAwaitWorkspace = activeWorkspace();
+        if (!string.Equals(
+                postAwaitWorkspace?.Value,
+                workspaceId.Value.Value,
+                StringComparison.Ordinal))
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "sr6 attribute rank read: workspace transitioned across the read await: pre=" + workspaceId.Value.Value
+                + " post=" + (postAwaitWorkspace?.Value ?? "null"));
+        }
+
+        OwnerContextStamp postAwaitOwner = captureOwner();
+        if (postAwaitOwner != owner)
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "sr6 attribute rank read: owner authority transitioned across the read await (revision "
+                + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")");
+        }
+
+        if (!read.Success || read.Outcome != WorkspaceOperationOutcome.Success
+            || read.Value?.Document is not { } document
+            || document.Format != WorkspaceDocumentFormat.NativeXml)
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: workspace read failed or document is not NativeXml");
+        }
+        if (read.Value.Id != workspaceId.Value)
+            return new(-1, "sr6 attribute rank read: workspace response does not match the receipt workspace");
+
+        // The rank evidence is only valid for an SR6 document: a read of a
+        // different edition's workspace is never reopen-verify evidence.
+        if (!RulesetFamilyMatches(document.RulesetId, "sr6", out string rulesetDiagnostic))
+        {
+            return new StarterAttributeEvidence(-1, rulesetDiagnostic);
+        }
+
+        XElement? root;
+        try
+        {
+            root = XDocument.Parse(document.State.Payload, LoadOptions.PreserveWhitespace).Root;
+        }
+        catch (System.Xml.XmlException parseFailure)
+        {
+            return new StarterAttributeEvidence(
+                -1, "sr6 attribute rank read: workspace payload is not parseable XML: " + parseFailure.Message);
+        }
+
+        if (root is not { Name.LocalName: "character" })
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: workspace payload root is not <character>");
+        }
+
+        if (root.Elements("attributes").Count() > 1)
+            return new(-1, "sr6 attribute rank read: duplicate natural attributes containers");
+
+        List<string> matches = new();
+        foreach (XElement attribute in root.Element("attributes")?.Elements("attribute")
+            ?? Enumerable.Empty<XElement>())
+        {
+            if (attribute.Elements("name").ToArray() is not [var nameElement]
+                || nameElement.HasElements || nameElement.HasAttributes)
+            {
+                continue;
+            }
+            string? name = nameElement.Value.Trim();
+            if (!string.Equals(name, shortCode, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (attribute.Elements("totalvalue").ToArray() is not [var total]
+                || total.HasElements || total.HasAttributes
+                || !int.TryParse(total.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int totalValue)
+                || totalValue < 0)
+            {
+                return new(-1, "sr6 attribute rank read: attribute " + shortCode + " has missing or malformed totalvalue");
+            }
+            matches.Add(total.Value.Trim());
+            if (matches.Count > 1)
+            {
+                return new(-1, "sr6 attribute rank read: duplicate attribute entries for " + shortCode);
+            }
+        }
+
+        if (matches.Count == 0)
+        {
+            return new(-1, "sr6 attribute rank read: retained document carries no " + shortCode + " attribute entry");
+        }
+        return new(int.Parse(matches[0], NumberStyles.Integer, CultureInfo.InvariantCulture),
+            "sr6 attribute rank read: " + shortCode + " from the retained document");
+    }
+
+    /// <summary>
+    /// Maps a canonical SR6 attribute id (or its document short code) to the
+    /// short code used inside the workspace document. Unknown ids return
+    /// null so callers fail closed instead of guessing.
+    /// </summary>
+    internal static string? MapSr6AttributeShortCode(string? attributeId)
+    {
+        string trimmed = (attributeId ?? string.Empty).Trim();
+        return trimmed.ToLowerInvariant() switch
+        {
+            "body" or "bod" => "BOD",
+            "agility" or "agi" => "AGI",
+            "reaction" or "rea" => "REA",
+            "strength" or "str" => "STR",
+            "charisma" or "cha" => "CHA",
+            "willpower" or "wil" => "WIL",
+            "intuition" or "int" => "INT",
+            "logic" or "log" => "LOG",
+            _ => null,
+        };
     }
 
     private static async Task<StarterAttributeEvidence> ReadWorkspaceNaturalAttributeTotalOnceAsync(
@@ -5116,7 +5514,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 attributeId: "Body",
                 quotedKarmaCost: quotedKarmaCost,
                 quotedTargetNaturalRating: quotedTargetNaturalRating,
-                naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter);
+                naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter,
+                nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
+                savedRevision: window.SnapshotStateForAutomation().ContentRevision is { } savedRev && savedRev > 0 ? (int?)savedRev : null);
             RecordStep(steps, $"sr6 advance receipt written (workspaceId={sr6WorkspaceId ?? "none"})");
 
             return new DesktopUserJourneyWorkflowEvidence(
@@ -7250,6 +7650,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     /// auto-reopen), only an unambiguous single ACTIVE instance resolves;
     /// ambiguity returns null and callers must fail loudly rather than click
     /// an unowned control.
+    /// Gen18 (T662): the resolved instance must ALSO be active in the
+    /// single-visible case, not only the stacked case. A sole visible but
+    /// inactive window refuses resolution (returns null) so the caller
+    /// records an honest refusal instead of clicking an unowned control.
     /// </summary>
     internal static Sr6CareerAttributeAdvanceWindow? ResolveSingleAdvanceWindow()
     {
@@ -7262,7 +7666,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             .ToList();
         if (visible.Count == 1)
         {
-            return visible[0];
+            // Gen18 (T662): a unique visible instance must also be active.
+            // In Avalonia 11 headless the platform keeps every shown window
+            // active while visible (measured: IsActiveProperty is a readonly
+            // DirectProperty; IsActive=false only co-occurs with
+            // IsVisible=false), so this refusal guards production shapes
+            // where a visible modal can be inactive.
+            return visible[0].IsActive ? visible[0] : null;
         }
         if (visible.Count > 1)
         {

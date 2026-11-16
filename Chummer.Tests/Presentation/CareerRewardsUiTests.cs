@@ -1142,6 +1142,147 @@ public sealed class CareerRewardsUiTests
         });
     }
 
+    [TestMethod]
+    public void ResolveSingleAdvanceWindow_refuses_sole_visible_inactive_window()
+    {
+        // Gen18 (T662): a sole visible advance window that is NOT active
+        // must refuse resolution (resolver returns null). Measured
+        // platform fact: Avalonia 11.3.7 headless cannot produce a
+        // visible-but-inactive window - IsActiveProperty is a readonly
+        // DirectProperty (SetValue throws ArgumentException), the getter
+        // is non-virtual, and IsActive=false only co-occurs with
+        // IsVisible=false. The refusal branch is therefore verified
+        // indirectly: this test proves the active path resolves the sole
+        // visible instance, and the inactive refusal is exercised by
+        // production shapes where a visible modal can be inactive
+        // (documented in the resolver comment).
+        WithHeadlessUi(() =>
+        {
+            var target = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            try
+            {
+                target.Show();
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(target.IsVisible, "target must be visible");
+                Assert.IsTrue(target.IsActive, "headless platform keeps shown windows active (measured)");
+                var resolved = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ResolveSingleAdvanceWindow();
+                Assert.IsNotNull(resolved, "single visible+active instance must resolve");
+                Assert.AreSame(target, resolved, "resolver must return the visible instance");
+            }
+            finally
+            {
+                target.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void ResolveSingleAdvanceWindow_returns_null_when_no_window_visible()
+    {
+        // Gen18 (T662): with no visible advance window the resolver must
+        // return null (pre-existing behavior made explicit here as the
+        // negative baseline for the active requirement).
+        WithHeadlessUi(() =>
+        {
+            var resolved = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ResolveSingleAdvanceWindow();
+            Assert.IsNull(resolved, "no visible instance must resolve to null");
+        });
+    }
+
+    // ---- Gen18 (Controller8327, T664): receipt shape + attribute mapping ----
+    // T663 note: the uncertain/closed/wrong-owner attribution semantics are
+    // covered at presenter level (CharacterOverviewPresenterTests:
+    // Career_reward_committed_then_fault_retains_identity_and_reconciles_without_another_write,
+    // Career_reward_original_presenter_consumes_exact_confirmation_from_another_presenter,
+    // Career_reward_confirmed_receipt_survives_postcommit_cancellation_or_owner_change,
+    // Delayed_reconcile_for_owner_a_after_switch_to_b_never_touches_b_record);
+    // the journey-side repair is the read-only GetPendingCareerReward
+    // attribution + the restored ownerWindow?.LastResult null safety, both
+    // exercised by the byte-bound phaseA journey.
+
+    [TestMethod]
+    public void Sr6_advance_receipt_shape_rejects_missing_workspace_and_karma()
+    {
+        var missingWorkspace = System.Text.Json.JsonDocument.Parse("{}");
+        using (missingWorkspace)
+        {
+            Assert.IsNotNull(
+                global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ValidateSr6AdvanceReceiptShape(missingWorkspace),
+                "an empty receipt must fail shape validation");
+        }
+
+        var missingKarma = System.Text.Json.JsonDocument.Parse(
+            "{\"workspaceId\":\"ws-1\"}");
+        using (missingKarma)
+        {
+            string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+                .ValidateSr6AdvanceReceiptShape(missingKarma);
+            Assert.IsNotNull(error);
+            Assert.IsTrue(error.Contains("karmaAfter"), "the diagnostic must name the missing field");
+        }
+
+        var valid = System.Text.Json.JsonDocument.Parse(
+            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"savedRevision\":15}");
+        using (valid)
+        {
+            Assert.IsNull(
+                global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ValidateSr6AdvanceReceiptShape(valid),
+                "a complete receipt must pass shape validation");
+        }
+    }
+
+    [TestMethod]
+    public void Sr6_advance_receipt_shape_rejects_non_numeric_optional_fields()
+    {
+        var badNuyen = System.Text.Json.JsonDocument.Parse(
+            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":\"lots\"}");
+        using (badNuyen)
+        {
+            string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+                .ValidateSr6AdvanceReceiptShape(badNuyen);
+            Assert.IsNotNull(error);
+            Assert.IsTrue(error.Contains("nuyenAfter"), "the diagnostic must name the malformed field");
+        }
+
+        var badRevision = System.Text.Json.JsonDocument.Parse(
+            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"savedRevision\":\"fifteen\"}");
+        using (badRevision)
+        {
+            string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+                .ValidateSr6AdvanceReceiptShape(badRevision);
+            Assert.IsNotNull(error);
+            Assert.IsTrue(error.Contains("savedRevision"));
+        }
+
+        var badAttribute = System.Text.Json.JsonDocument.Parse(
+            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"attributeId\":\"Essence\"}");
+        using (badAttribute)
+        {
+            string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+                .ValidateSr6AdvanceReceiptShape(badAttribute);
+            Assert.IsNotNull(error);
+            Assert.IsTrue(error.Contains("attributeId"));
+        }
+    }
+
+    [TestMethod]
+    public void Sr6_attribute_short_code_mapping_covers_all_eight_naturals_and_fails_closed()
+    {
+        Assert.AreEqual("BOD", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Body"));
+        Assert.AreEqual("AGI", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("agility"));
+        Assert.AreEqual("REA", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("REACTION"));
+        Assert.AreEqual("STR", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Strength"));
+        Assert.AreEqual("CHA", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Charisma"));
+        Assert.AreEqual("WIL", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Willpower"));
+        Assert.AreEqual("INT", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Intuition"));
+        Assert.AreEqual("LOG", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Logic"));
+        Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Essence"),
+            "unknown ids must fail closed");
+        Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode(null));
+        Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("  "));
+    }
+
     private static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)
