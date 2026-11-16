@@ -1143,7 +1143,7 @@ public sealed class CareerRewardsUiTests
     }
 
     [TestMethod]
-    public void ResolveSingleAdvanceWindow_refuses_sole_visible_inactive_window()
+    public void ResolveSingleAdvanceWindow_active_resolution_with_inactive_refusal_as_documented_headless_limitation()
     {
         // Gen18 (T662): a sole visible advance window that is NOT active
         // must refuse resolution (resolver returns null). Measured
@@ -1202,71 +1202,193 @@ public sealed class CareerRewardsUiTests
     // exercised by the byte-bound phaseA journey.
 
     [TestMethod]
-    public void Sr6_advance_receipt_shape_rejects_missing_workspace_and_karma()
+    public void Sr6_advance_receipt_shape_requires_every_final_state_field()
     {
-        var missingWorkspace = System.Text.Json.JsonDocument.Parse("{}");
-        using (missingWorkspace)
+        // Gen19 (T673): ALL final-state fields are REQUIRED on the consumed
+        // SR6 receipt: workspace, numeric-representable karma/nuyen, known
+        // SR6 attribute, positive integral rank, non-negative integral
+        // revision. Missing fields never skip comparisons.
+        foreach (var (json, expectedFragment) in new[]
+                 {
+                     ("{}", "workspaceId"),
+                     ("{\"workspaceId\":\"ws-1\"}", "karmaAfter"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20}", "nuyenAfter"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000}", "attributeId"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\"}", "quotedTargetNaturalRating"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7}", "savedRevision"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Essence\",\"quotedTargetNaturalRating\":7,\"savedRevision\":16}", "attributeId"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":0,\"savedRevision\":16}", "positive integral"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7.5,\"savedRevision\":16}", "integral"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":-1}", "non-negative"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":\"twenty\",\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":16}", "karmaAfter"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":\"ten k\",\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":16}", "nuyenAfter"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":\"16x\"}", "savedRevision"),
+                 })
         {
-            Assert.IsNotNull(
-                global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ValidateSr6AdvanceReceiptShape(missingWorkspace),
-                "an empty receipt must fail shape validation");
-        }
-
-        var missingKarma = System.Text.Json.JsonDocument.Parse(
-            "{\"workspaceId\":\"ws-1\"}");
-        using (missingKarma)
-        {
+            using var document = System.Text.Json.JsonDocument.Parse(json);
             string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
-                .ValidateSr6AdvanceReceiptShape(missingKarma);
-            Assert.IsNotNull(error);
-            Assert.IsTrue(error.Contains("karmaAfter"), "the diagnostic must name the missing field");
+                .ValidateSr6AdvanceReceiptShape(document);
+            Assert.IsNotNull(error, "malformed receipt must fail: " + json);
+            Assert.IsTrue(
+                error.Contains(expectedFragment, StringComparison.Ordinal),
+                $"diagnostic '{error}' must name '{expectedFragment}' for {json}");
         }
 
-        var valid = System.Text.Json.JsonDocument.Parse(
-            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"savedRevision\":15}");
-        using (valid)
+        var complete = System.Text.Json.JsonDocument.Parse(
+            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":16}");
+        using (complete)
         {
             Assert.IsNull(
-                global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ValidateSr6AdvanceReceiptShape(valid),
+                global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ValidateSr6AdvanceReceiptShape(complete),
                 "a complete receipt must pass shape validation");
         }
     }
 
     [TestMethod]
-    public void Sr6_advance_receipt_shape_rejects_non_numeric_optional_fields()
+    public void Saved_receipt_requires_sr6_verification_only_for_sr6_family()
     {
-        var badNuyen = System.Text.Json.JsonDocument.Parse(
-            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":\"lots\"}");
-        using (badNuyen)
-        {
-            string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
-                .ValidateSr6AdvanceReceiptShape(badNuyen);
-            Assert.IsNotNull(error);
-            Assert.IsTrue(error.Contains("nuyenAfter"), "the diagnostic must name the malformed field");
-        }
-
-        var badRevision = System.Text.Json.JsonDocument.Parse(
-            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"savedRevision\":\"fifteen\"}");
-        using (badRevision)
-        {
-            string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
-                .ValidateSr6AdvanceReceiptShape(badRevision);
-            Assert.IsNotNull(error);
-            Assert.IsTrue(error.Contains("savedRevision"));
-        }
-
-        var badAttribute = System.Text.Json.JsonDocument.Parse(
-            "{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"attributeId\":\"Essence\"}");
-        using (badAttribute)
-        {
-            string? error = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
-                .ValidateSr6AdvanceReceiptShape(badAttribute);
-            Assert.IsNotNull(error);
-            Assert.IsTrue(error.Contains("attributeId"));
-        }
+        // Gen19 (T673): the SR6 advance receipt is demanded ONLY when the
+        // saved receipt records a verified sr6-family journey. SR5, missing,
+        // blank, and non-sr variants must NOT demand it.
+        Assert.IsTrue(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+            .SavedReceiptRequiresSr6AdvanceVerification(
+                System.Text.Json.JsonDocument.Parse("{\"rulesetId\":\"sr6\"}")));
+        Assert.IsTrue(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+            .SavedReceiptRequiresSr6AdvanceVerification(
+                System.Text.Json.JsonDocument.Parse("{\"rulesetId\":\"SR6-Wall\"}")));
+        Assert.IsFalse(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+            .SavedReceiptRequiresSr6AdvanceVerification(
+                System.Text.Json.JsonDocument.Parse("{\"rulesetId\":\"sr5\"}")));
+        Assert.IsFalse(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+            .SavedReceiptRequiresSr6AdvanceVerification(
+                System.Text.Json.JsonDocument.Parse("{\"rulesetId\":\"SR5-6E\"}")));
+        Assert.IsFalse(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+            .SavedReceiptRequiresSr6AdvanceVerification(
+                System.Text.Json.JsonDocument.Parse("{}")));
+        Assert.IsFalse(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+            .SavedReceiptRequiresSr6AdvanceVerification(
+                System.Text.Json.JsonDocument.Parse("{\"rulesetId\":\"\"}")));
+        Assert.IsFalse(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner
+            .SavedReceiptRequiresSr6AdvanceVerification(
+                System.Text.Json.JsonDocument.Parse("{\"rulesetId\":7}")));
     }
 
     [TestMethod]
+    public void Nuyen_terminal_attribution_refuses_null_pending_switched_workspace_and_wrong_operation()
+    {
+        // Gen19 (T674): a null pending must NOT be accepted as "the
+        // in-memory Confirmed was consumed by the close"; a switched display
+        // workspace must not redirect the attribution; only a terminal
+        // Confirmed FOR THE RETAINED operation on the RETAINED workspace
+        // passes. The classifier is the exact function the journey calls.
+        Guid operation = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        string? verdict;
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            null, operation, "ws-1", "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "null pending must not be accepted");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            new(operation, CareerRewardApplyStatus.Confirmed), null, "ws-1", "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "operation id was not captured");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            new(operation, CareerRewardApplyStatus.Confirmed), operation, null, "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "workspace id was not captured");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            new(operation, CareerRewardApplyStatus.Confirmed), operation, "ws-1", "ws-2");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "switched away");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            new(operation, CareerRewardApplyStatus.Uncertain, CareerRewardApplyResult.UncertainMessage),
+            operation, "ws-1", "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "Uncertain, not Confirmed");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            new(operation, CareerRewardApplyStatus.Refused, "no"), operation, "ws-1", "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "Refused, not Confirmed");
+
+        Guid other = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            new(other, CareerRewardApplyStatus.Confirmed), operation, "ws-1", "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "not the retained operation");
+
+        Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyNuyenTerminalAttribution(
+            new(operation, CareerRewardApplyStatus.Confirmed), operation, "ws-1", "ws-1"),
+            "a terminal Confirmed for the retained operation on the retained workspace must pass");
+    }
+
+    [TestMethod]
+    public void Sr6_advance_reconcile_outcome_refuses_missing_receipt_and_wrong_workspace()
+    {
+        // Gen19 (T674): the close-timeout reconciliation must fail on a
+        // missing recovery receipt, a receipt bound to a different
+        // workspace, a missing retained workspace, or a switched display -
+        // and pass only on an exact retained-workspace receipt.
+        string? verdict;
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: false, receiptWorkspaceId: null, retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "did not return a confirmed receipt");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptWorkspaceId: "ws-9", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "belongs to workspace");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptWorkspaceId: "ws-1", retainedWorkspaceId: null, currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "workspace id was not captured");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-2");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "switched away");
+
+        Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1"),
+            "an exact retained-workspace receipt must pass");
+    }
+
+    [TestMethod]
+    public void Cap_close_observation_binds_to_the_resolved_window_not_the_desktop()
+    {
+        // Gen19 (T674): the resolved-window closure check must observe the
+        // window instance itself (IsVisible), NOT a desktop-wide search for
+        // any apply button - an auto-reopened successor dialog must not be
+        // able to defeat or satisfy the observation. The resolver contract
+        // plus the no-visible negative prove the binding shape headless.
+        WithHeadlessUi(() =>
+        {
+            var target = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            try
+            {
+                target.Show();
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(target.IsVisible);
+                var resolved = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ResolveSingleAdvanceWindow();
+                Assert.AreSame(target, resolved, "closure must be observed on THIS resolved instance");
+                Assert.IsTrue(resolved!.IsVisible, "the resolved window reports IsVisible directly (no desktop-wide query)");
+            }
+            finally
+            {
+                target.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+
+        [TestMethod]
     public void Sr6_attribute_short_code_mapping_covers_all_eight_naturals_and_fails_closed()
     {
         Assert.AreEqual("BOD", global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("Body"));
@@ -1283,7 +1405,7 @@ public sealed class CareerRewardsUiTests
         Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("  "));
     }
 
-    private static void WithHeadlessUi(Action action)
+        private static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)
         {
