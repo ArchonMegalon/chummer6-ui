@@ -67,6 +67,7 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             Classes = { "shell-section-title" },
             Text = selected is null ? "No advanceable attribute found" : "Advance " + selected.AttributeId,
         };
+        global::Avalonia.Automation.AutomationProperties.SetAutomationId(detailTitle, "sr6-advance-detail-title");
         var detailBody = new TextBlock
         {
             Classes = { "shell-caption" },

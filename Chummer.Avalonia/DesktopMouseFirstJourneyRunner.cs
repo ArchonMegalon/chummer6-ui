@@ -4269,7 +4269,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             $"sr6 natural-limit attempt {attempt + 1}: straggler advance modal(s) still open after cancel rounds");
                     }
 
-                    // The section host can reset tabs after a workspace republish;
+                    // Gen15: authoritative baseline BEFORE any quote attempt for this
+                    // attribute. The refusal verdict compares these values after
+                    // the refusal/close/reload - a post-open baseline would only
+                    // prove cancellation stability, not that the refusal wrote
+                    // nothing.
+                    decimal capKarmaBaseline = ReadCareerRewardsKarmaBalance(sectionHost);
+                    decimal capNuyenBaseline = ReadCareerRewardsNuyenBalance(sectionHost);
+                    long capRevisionBaseline = window.SnapshotStateForAutomation().ContentRevision;
+                    RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: baseline karma={capKarmaBaseline} nuyen={capNuyenBaseline} revision={capRevisionBaseline}");
+// The section host can reset tabs after a workspace republish;
                     // try the flat lookup, then the candidate-tab walk used by
                     // the first advance.
                     Button? limitRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
@@ -4359,46 +4368,67 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         bool insufficientKarmaVisible = blockedVisible
                             && blockerText.Contains("sr6_attribute_insufficient_karma", StringComparison.Ordinal);
                         if (naturalCapVisible)
+                    {
+                        // Gen15: the cap verdict binds to the EXACT Core
+                        // natural-limit refusal for the REQUESTED attribute,
+                        // with the visible blocker AND a disabled Apply.
+                        // Any other blocker must follow its real recovery or
+                        // funding path below - it can never count as the cap.
+                        (bool capBindingOk, string capBindingDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
                         {
-                            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
-                            decimal karmaBeforeCap = ReadCareerRewardsKarmaBalance(sectionHost);
-                            karmaBeforeCapAttempt = karmaBeforeCap.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                            long revisionBefore = window.SnapshotStateForAutomation().ContentRevision;
-                            // Cancel the blocked dialog: no apply is possible and no mutation may occur.
-                            Control? capCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel")
-                                ?? FindAutomationIdControl("sr6-career-attribute-advance-cancel");
-                            if (capCancel is null)
-                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog has no cancel control.");
-                            await RoutePointerClickAsync(capCancel);
-                            recordPointerAction();
-                            bool capDialogGone = await WaitForConditionWithinAsync(
-                                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
-                                ct,
-                                TimeSpan.FromSeconds(8));
-                            if (!capDialogGone)
-                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog did not close after cancel.");
-                            await window.ReloadStateForAutomationAsync(ct);
-                            decimal karmaAfterCap = ReadCareerRewardsKarmaBalance(sectionHost);
-                            long revisionAfter = window.SnapshotStateForAutomation().ContentRevision;
-                            if (karmaBeforeCap != karmaAfterCap || revisionBefore != revisionAfter)
-                            {
-                                throw new InvalidOperationException(
-                                    "sr6 natural-limit leg failed: balances/revision changed across the blocked advance attempt"
-                                    + " (karma " + karmaBeforeCap + "->" + karmaAfterCap
-                                    + ", revision " + revisionBefore + "->" + revisionAfter + ").");
-                            }
-                            RecordStep(steps, $"sr6 natural-limit: Core visibly refused the advance (blocker: {blockerText.Trim()}); balances unchanged (karma {karmaBeforeCap}, revision {revisionBefore})");
-                            reachedCap = true;
-                            break;
+                            Button? capApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
+                            bool applyDisabled = capApply is not { IsEffectivelyEnabled: true };
+                            bool attributeBound = FindAutomationIdControl("sr6-advance-detail-title") is TextBlock dt
+                                && dt.IsVisible
+                                && (dt.Text ?? string.Empty).Contains("Advance Body", StringComparison.Ordinal);
+                            return (applyDisabled && attributeBound,
+                                "applyDisabled=" + applyDisabled + ";attributeBound=" + attributeBound);
+                        });
+                        if (!capBindingOk)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: the visible refusal is not the requested attribute's "
+                                + "sr6_attribute_natural_limit refusal (" + capBindingDiag + ").");
                         }
+                        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
+                        // Cancel the blocked dialog: no apply is possible and no mutation may occur.
+                        Control? capCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel")
+                            ?? FindAutomationIdControl("sr6-career-attribute-advance-cancel");
+                        if (capCancel is null)
+                            throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog has no cancel control.");
+                        await RoutePointerClickAsync(capCancel);
+                        recordPointerAction();
+                        bool capDialogGone = await WaitForConditionWithinAsync(
+                            () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
+                            ct,
+                            TimeSpan.FromSeconds(8));
+                        if (!capDialogGone)
+                            throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog did not close after cancel.");
+                        await window.ReloadStateForAutomationAsync(ct);
+                        decimal karmaAfterCap = ReadCareerRewardsKarmaBalance(sectionHost);
+                        decimal nuyenAfterCap = ReadCareerRewardsNuyenBalance(sectionHost);
+                        long revisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+                        if (capKarmaBaseline != karmaAfterCap || capNuyenBaseline != nuyenAfterCap || capRevisionBaseline != revisionAfter)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: balances/revision changed across the blocked advance attempt"
+                                + " (karma " + capKarmaBaseline + "->" + karmaAfterCap
+                                + ", nuyen " + capNuyenBaseline + "->" + nuyenAfterCap
+                                + ", revision " + capRevisionBaseline + "->" + revisionAfter + ").");
+                        }
+                        karmaBeforeCapAttempt = capKarmaBaseline.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        RecordStep(steps, $"sr6 natural-limit: Core visibly refused the advance (blocker: {blockerText.Trim()}); balances unchanged from the pre-attempt baseline (karma {capKarmaBaseline}, nuyen {capNuyenBaseline}, revision {capRevisionBaseline})");
+                        reachedCap = true;
+                        break;
+                    }
                     }
                     if (!quoteOpened)
                     {
-                        // At the natural cap the SR6 quote prepare yields no
-                        // editor and the continuation falls back to the SR5
-                        // route (or nothing opens at all). Snapshot what IS
-                        // on screen + the published notice so the cap verdict
-                        // binds to Core's own evidence, not an absence.
+                        // Gen15: a missing dialog is diagnostic/failure only.
+                        // No natural-cap PASS may be inferred from an absent
+                        // dialog, a stale committed notice, or a stable
+                        // revision. Core's typed refusal must be DISPLAYED for
+                        // this attempt; otherwise the leg fails honestly.
                         string capDiag = await Dispatcher.UIThread.InvokeAsync(() =>
                         {
                             var desktop = global::Avalonia.Application.Current?.ApplicationLifetime
@@ -4411,52 +4441,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             string notice = window.SnapshotStateForAutomation().Notice ?? "none";
                             return "dialogs=[" + dialogs + "]; notice=" + notice;
                         });
-                        RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: no SR6 quote modal; cap evidence: {capDiag}");
-
-                        // At the natural cap Core refuses to prepare any
-                        // quote (the SR6 prepare yields no editor and the SR5
-                        // fallback prepare returns null), so no dialog opens
-                        // and no blocker text is published. The cap verdict
-                        // binds to Core's own commit evidence instead of
-                        // wording: the row clicks were delivered, no advance
-                        // dialog opened, the notice still reports the last
-                        // COMMITTED advance to its quoted target rating, and
-                        // the workspace revision is unchanged across a reload
-                        // (Core accepted no further mutation).
-                        if (lastCommittedTargetRating <= 0)
-                        {
-                            throw new InvalidOperationException(
-                                "sr6 natural-limit leg failed: the Body quote did not open on advance attempt "
-                                + (attempt + 1) + " of " + MaxAdvances
-                                + " and no advance had been committed yet (cannot attribute the refusal to the natural cap). Evidence: "
-                                + capDiag);
-                        }
-                        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
-                        karmaBeforeCapAttempt = ReadCareerRewardsKarmaBalance(sectionHost).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                        string capNotice = window.SnapshotStateForAutomation().Notice ?? string.Empty;
-                        bool noticeCarriesLastCommit = capNotice.Contains(
-                            "natural rating " + lastCommittedTargetRating.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                            StringComparison.OrdinalIgnoreCase);
-                        long capRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
-                        await window.ReloadStateForAutomationAsync(ct);
-                        long capRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
-                        bool noDialogOpen = !capDiag.Contains("Sr6CareerAttributeAdvanceWindow")
-                            && !capDiag.Contains("CareerAttributeAdvanceWindow");
-                        if (!(noticeCarriesLastCommit && noDialogOpen && capRevisionBefore == capRevisionAfter))
-                        {
-                            throw new InvalidOperationException(
-                                "sr6 natural-limit leg failed: the Body quote did not open on advance attempt "
-                                + (attempt + 1) + " of " + MaxAdvances
-                                + " and the refusal could not be attributed to the natural cap"
-                                + " (noticeCarriesLastCommit=" + noticeCarriesLastCommit
-                                + ", noDialogOpen=" + noDialogOpen
-                                + ", revisionStable=" + (capRevisionBefore == capRevisionAfter)
-                                + ", lastCommittedTarget=" + lastCommittedTargetRating
-                                + "). Evidence: " + capDiag);
-                        }
-                        RecordStep(steps, $"sr6 natural-limit: natural cap confirmed - Core refused to prepare any quote after the last committed advance (Body natural rating {lastCommittedTargetRating}, cost {lastCommittedCost} karma); revision stable at {capRevisionBefore} across reload");
-                        reachedCap = true;
-                        break;
+                        throw new InvalidOperationException(
+                            "sr6 natural-limit leg failed: the Body quote did not open on advance attempt "
+                            + (attempt + 1) + " of " + MaxAdvances
+                            + " (no natural-cap refusal may be inferred from a missing dialog). Evidence: " + capDiag);
                     }
 
 
@@ -4489,12 +4477,35 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         // natural-maximum wording proves the cap. A blocked
                         // quote from a thin karma balance is a funding round,
                         // not the cap.
-                        if (quoteText.Contains("natural", StringComparison.OrdinalIgnoreCase)
-                            && quoteText.Contains("maximum", StringComparison.OrdinalIgnoreCase))
+                        if (quoteText.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal))
                         {
+                            // Gen15: only the typed Core natural-limit refusal
+                            // proves the cap. Verify the no-write against the
+                            // pre-attempt baseline before treating this as the cap.
                             naturalCapQuoteText = quoteText;
-                            karmaBeforeCapAttempt = ReadCareerRewardsKarmaBalance(sectionHost).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                            RecordStep(steps, $"sr6 natural-limit demo: Core refused with the natural-maximum blocker on attempt {attempt + 1}; quote text: {naturalCapQuoteText}");
+                            Button? quoteCapCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
+                            if (quoteCapCancel is null)
+                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked quote dialog has no cancel control.");
+                            await RoutePointerClickAsync(quoteCapCancel);
+                            recordPointerAction();
+                            await WaitForConditionWithinAsync(
+                                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
+                                ct,
+                                TimeSpan.FromSeconds(8));
+                            await window.ReloadStateForAutomationAsync(ct);
+                            decimal quoteKarmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
+                            decimal quoteNuyenAfter = ReadCareerRewardsNuyenBalance(sectionHost);
+                            long quoteRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+                            if (capKarmaBaseline != quoteKarmaAfter || capNuyenBaseline != quoteNuyenAfter || capRevisionBaseline != quoteRevisionAfter)
+                            {
+                                throw new InvalidOperationException(
+                                    "sr6 natural-limit leg failed: balances/revision changed across the blocked quote attempt"
+                                    + " (karma " + capKarmaBaseline + "->" + quoteKarmaAfter
+                                    + ", nuyen " + capNuyenBaseline + "->" + quoteNuyenAfter
+                                    + ", revision " + capRevisionBaseline + "->" + quoteRevisionAfter + ").");
+                            }
+                            karmaBeforeCapAttempt = capKarmaBaseline.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                            RecordStep(steps, $"sr6 natural-limit demo: Core refused with the typed natural-limit blocker on attempt {attempt + 1}; balances unchanged from the pre-attempt baseline; quote text: {naturalCapQuoteText}");
                             reachedCap = true;
                             break;
                         }
