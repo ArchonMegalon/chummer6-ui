@@ -2631,6 +2631,25 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return;
         }
 
+        // The product's post-acknowledge auto-reopen can race the runner here:
+        // a dialog may be present while its apply is still disabled (or about
+        // to be replaced). Gen14 acceptance requires genuine input on an
+        // ENABLED control - wait for apply visible+enabled before typing.
+        bool applyReady = await WaitForConditionWithinAsync(
+            () =>
+            {
+                Button? a = FindCareerRewardsDialogButton("career-rewards-apply");
+                return a is not null && a.IsVisible && a.IsEnabled;
+            },
+            ct,
+            TimeSpan.FromSeconds(8));
+        if (!applyReady)
+        {
+            throw new InvalidOperationException(
+                "SR6 advance funding failed: the CareerRewardsWindow apply control never became visible and enabled. "
+                + "Visible rewards windows: " + string.Join(" | ", DescribeVisibleCareerRewardsWindows()));
+        }
+
         TextBox? amountBox = FindCareerRewardsDialogTextBox("career-rewards-amount");
         if (amountBox is null)
         {
@@ -2652,6 +2671,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         {
             throw new InvalidOperationException(
                 "SR6 advance funding failed: the CareerRewardsWindow apply button disappeared before the apply click.");
+        }
+        if (!applyButton.IsEnabled || !applyButton.IsVisible)
+        {
+            throw new InvalidOperationException(
+                "SR6 advance funding failed: the CareerRewardsWindow apply button is not enabled/visible before the apply click"
+                + " (enabled=" + applyButton.IsEnabled + ", visible=" + applyButton.IsVisible
+                + "); genuine input requires an enabled control.");
         }
 
         // T496/T546: the rewards dialog Apply is subject to the synthetic pointer
