@@ -2483,7 +2483,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         List<string> steps,
         List<string> screenshotPaths,
         CancellationToken ct,
-        Action recordPointerAction)
+        Action recordPointerAction,
+        int retryDepth = 0)
     {
         Button? awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
         if (awardKarmaButton is null)
@@ -2736,11 +2737,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         decimal fundingKarmaAfterApply = ReadCareerRewardsKarmaBalance(window.ControlsForAutomation.SectionHost);
         if (fundingKarmaAfterApply <= fundingKarmaBeforeApply)
         {
+            // A stale-entry refusal (the dialog's context guard silently
+            // returns on Click) leaves the dialog open and the balance
+            // unchanged. Only a FRESH award dialog re-captures the display
+            // context; retry bounded times before failing the leg.
+            if (retryDepth < 2)
+            {
+                RecordStep(steps, "sr6 funding: apply did not commit (before="
+                    + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + ", after=" + fundingKarmaAfterApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + "); cancelling rewards dialogs and retrying with a fresh award dialog (round "
+                    + (retryDepth + 1) + ")");
+                await CancelAllCareerRewardsDialogsAsync(steps, ct);
+                await AwardKarmaForSr6AdvanceAsync(window, context, steps, screenshotPaths, ct, recordPointerAction, retryDepth + 1);
+                return;
+            }
             throw new InvalidOperationException(
                 "SR6 advance funding failed: karma balance did not advance after the apply click (before="
                 + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 + ", after=" + fundingKarmaAfterApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                + "); the apply did not commit.");
+                + "); the apply did not commit after " + (retryDepth + 1) + " fresh-dialog rounds.");
         }
         RecordStep(steps, "sr6 funding: karma balance advanced "
             + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture) + " -> "
@@ -4239,7 +4255,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     Button? stragglerRewardsAck = FindCareerRewardsDialogButton("career-rewards-acknowledge");
                     if (stragglerRewardsAck is not null)
                     {
-                        await RoutePointerClickAsync(stragglerRewardsAck);
+                        // Acknowledgement is a no-side-effect terminal action
+                        // (same class as cancel): routed Click is deterministic
+                        // here, while pointer clicks are swallowed on straggler
+                        // modals (raise:hit=False diagnostics).
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                            stragglerRewardsAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, stragglerRewardsAck)));
                         recordPointerAction();
                         RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: acknowledged pending Confirmed reward straggler");
                     }
