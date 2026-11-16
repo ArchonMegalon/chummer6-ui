@@ -83,6 +83,16 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             MinWidth = 150,
             IsEnabled = pendingCommand is not null && selected is { CanAdvance: true },
         };
+        var blockedNotice = new TextBlock
+        {
+            Classes = { "shell-caption" },
+            Text = selected is { CanAdvance: false }
+                ? "Core refused this advance: " + selected.Blocker
+                : string.Empty,
+            IsVisible = selected is { CanAdvance: false },
+            TextWrapping = TextWrapping.Wrap,
+        };
+        global::Avalonia.Automation.AutomationProperties.SetAutomationId(blockedNotice, "sr6-advance-blocker-notice");
         var cancelButton = new Button
         {
             Content = "Close",
@@ -130,11 +140,12 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         global::Avalonia.Controls.Grid.SetRow(detailTitle, 1);
         global::Avalonia.Controls.Grid.SetRow(quotesScroll, 2);
         global::Avalonia.Controls.Grid.SetRow(detailBody, 3);
-        global::Avalonia.Controls.Grid.SetRow(actionsPanel, 4);
+        global::Avalonia.Controls.Grid.SetRow(blockedNotice, 4);
+        global::Avalonia.Controls.Grid.SetRow(actionsPanel, 5);
 
         Content = new Grid
         {
-            RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto,Auto"),
             RowSpacing = 10,
             Margin = new Thickness(12),
             Children =
@@ -143,6 +154,7 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
                 detailTitle,
                 quotesScroll,
                 detailBody,
+                blockedNotice,
                 actionsPanel,
             },
         };

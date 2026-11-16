@@ -4216,6 +4216,56 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             ct,
                             TimeSpan.FromSeconds(8));
                     }
+                    if (quoteOpened)
+                    {
+                        // The SR6 advance dialog opened. Gen14 acceptance
+                        // requires the cap refusal to bind to Core's OWN
+                        // typed blocker rendered visibly in the dialog (with
+                        // UNCHANGED balances across the attempt) - never an
+                        // inference from a missing dialog. If the visible
+                        // blocker is absent, the dialog is a normal quote and
+                        // the loop continues below.
+                        (bool blockedVisible, string blockerText) = await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            string? notice = null;
+                            var blocker = FindAutomationIdControl("sr6-advance-blocker-notice");
+                            if (blocker is TextBlock bt && bt.IsVisible)
+                                notice = bt.Text;
+                            return (notice is not null && notice.Contains("Core refused this advance:", StringComparison.Ordinal), notice ?? "");
+                        });
+                        if (blockedVisible)
+                        {
+                            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
+                            decimal karmaBeforeCap = ReadCareerRewardsKarmaBalance(sectionHost);
+                            long revisionBefore = window.SnapshotStateForAutomation().ContentRevision;
+                            // Cancel the blocked dialog: no apply is possible and no mutation may occur.
+                            Control? capCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel")
+                                ?? FindAutomationIdControl("sr6-career-attribute-advance-cancel");
+                            if (capCancel is null)
+                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog has no cancel control.");
+                            await RoutePointerClickAsync(capCancel);
+                            recordPointerAction();
+                            bool capDialogGone = await WaitForConditionWithinAsync(
+                                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
+                                ct,
+                                TimeSpan.FromSeconds(8));
+                            if (!capDialogGone)
+                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog did not close after cancel.");
+                            await window.ReloadStateForAutomationAsync(ct);
+                            decimal karmaAfterCap = ReadCareerRewardsKarmaBalance(sectionHost);
+                            long revisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+                            if (karmaBeforeCap != karmaAfterCap || revisionBefore != revisionAfter)
+                            {
+                                throw new InvalidOperationException(
+                                    "sr6 natural-limit leg failed: balances/revision changed across the blocked advance attempt"
+                                    + " (karma " + karmaBeforeCap + "->" + karmaAfterCap
+                                    + ", revision " + revisionBefore + "->" + revisionAfter + ").");
+                            }
+                            RecordStep(steps, $"sr6 natural-limit: Core visibly refused the advance (blocker: {blockerText.Trim()}); balances unchanged (karma {karmaBeforeCap}, revision {revisionBefore})");
+                            reachedCap = true;
+                            break;
+                        }
+                    }
                     if (!quoteOpened)
                     {
                         // At the natural cap the SR6 quote prepare yields no

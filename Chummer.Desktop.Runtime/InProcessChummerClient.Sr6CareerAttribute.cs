@@ -62,14 +62,22 @@ public sealed partial class InProcessChummerClient : ISr6CareerAttributeAdvancem
             foreach (string attributeId in Sr6CareerAttributeIds)
             {
                 Sr6CareerAttributeResult result = service.Quote(owner, id, attributeId);
-                if (result.Outcome == Sr6CareerAttributeOutcome.Available && result.Quote is not null)
+                if (result.Quote is not null)
                 {
+                    // Blocked rows (e.g. sr6_attribute_natural_limit) are kept
+                    // in the editor so the dialog can display Core's own
+                    // refusal reason instead of omitting the row and letting
+                    // callers infer a refusal from an absent dialog.
                     quotes.Add(result.Quote);
+                    if (result.Outcome != Sr6CareerAttributeOutcome.Available)
+                    {
+                        omitted++;
+                    }
                 }
                 else
                 {
-                    // Blocked, unavailable (special-authority attributes), or not
-                    // present in this dossier: honestly omitted from the editor.
+                    // Unavailable (special-authority attributes) or not present
+                    // in this dossier: honestly omitted from the editor.
                     omitted++;
                 }
             }
