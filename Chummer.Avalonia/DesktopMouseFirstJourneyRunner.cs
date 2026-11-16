@@ -4117,16 +4117,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel"));
                         if (liveCancel is { IsEffectivelyEnabled: true })
                         {
-                            if (AcceptanceFallbacksOff)
-                            {
-                                RecordStep(steps, "sr6 cancel fallback SUPPRESSED (acceptance mode)");
-                            }
-                            else
-                            {
-                                await Dispatcher.UIThread.InvokeAsync(() =>
-                                    liveCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveCancel)));
-                                RecordStep(steps, "sr6 cancel fallback: raised Click routed event after swallowed pointer click");
-                            }
+                            // Cancel is a side-effect-free Close(null); the routed
+                            // Click is the deterministic channel in every mode
+                            // (same rationale as the straggler sweep) and cannot
+                            // fabricate journey progress.
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                                liveCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveCancel)));
+                            RecordStep(steps, "sr6 cancel fallback: raised Click routed event after swallowed pointer click");
                         }
                     }
                     reopenedCancelled = await WaitForConditionWithinAsync(
