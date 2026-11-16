@@ -4104,9 +4104,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 Button? cancelReopened = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
                 if (cancelReopened is not null)
                 {
-                    await RoutePointerClickAsync(cancelReopened);
-                    recordPointerAction();
-                    RecordStep(steps, "click sr6-career-attribute-advance-cancel on the reopened dialog");
+                    // Gen16 (T657): the reopened-dialog cancel uses the proven
+                    // modal shape (BringIntoView + layout pump + waitForClick
+                    // observation) and only a DELIVERED pointer press counts
+                    // as a pointer action. The routed RaiseEvent cleanup is
+                    // permitted (side-effect-free Close(null) on an
+                    // already-committed apply) but recorded with its own
+                    // ROUTED CLEANUP marker and never counted.
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        cancelReopened.BringIntoView();
+                        ForceHeadlessLayoutPump(cancelReopened);
+                    });
+                    string reopenedCancelDiagnostics = await RoutePointerClickAsync(cancelReopened, waitForClick: true);
+                    if (reopenedCancelDiagnostics.Contains("delivered=true", StringComparison.Ordinal))
+                    {
+                        recordPointerAction();
+                        RecordStep(steps, "click sr6-career-attribute-advance-cancel on the reopened dialog (pointer delivered)");
+                    }
+                    else
+                    {
+                        RecordStep(steps, "sr6 reopened-dialog cancel pointer press did not deliver (" + reopenedCancelDiagnostics + "); falling back to ROUTED CLEANUP (excluded from pointer-action count)");
+                    }
                     if (await WaitForConditionWithinAsync(
                             () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
                             ct,
@@ -4118,12 +4137,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         if (liveCancel is { IsEffectivelyEnabled: true })
                         {
                             // Cancel is a side-effect-free Close(null); the routed
-                            // Click is the deterministic channel in every mode
-                            // (same rationale as the straggler sweep) and cannot
-                            // fabricate journey progress.
+                            // Click is deterministic cleanup on an
+                            // already-committed apply and cannot fabricate
+                            // journey progress. Recorded separately, never as a
+                            // pointer action.
                             await Dispatcher.UIThread.InvokeAsync(() =>
                                 liveCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveCancel)));
-                            RecordStep(steps, "sr6 cancel fallback: raised Click routed event after swallowed pointer click");
+                            RecordStep(steps, "sr6 ROUTED CLEANUP: raised Click routed event after undelivered pointer press (excluded from pointer-action count)");
                         }
                     }
                     reopenedCancelled = await WaitForConditionWithinAsync(
