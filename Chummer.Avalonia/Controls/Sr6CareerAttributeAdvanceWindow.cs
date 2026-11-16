@@ -227,6 +227,25 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             + Environment.NewLine + blockerText;
     }
 
+    internal static Sr6AdvanceBlockerClassification ClassifyAdvanceBlocker(string? noticeText)
+    {
+        bool visible = noticeText is not null
+            && noticeText.Contains("Core refused this advance:", StringComparison.Ordinal);
+        return new Sr6AdvanceBlockerClassification(
+            Visible: visible,
+            NaturalCap: visible && noticeText!.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal),
+            InsufficientKarma: visible && noticeText!.Contains("sr6_attribute_insufficient_karma", StringComparison.Ordinal),
+            Unrelated: visible
+                && !noticeText!.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal)
+                && !noticeText!.Contains("sr6_attribute_insufficient_karma", StringComparison.Ordinal));
+    }
+
+    internal sealed record Sr6AdvanceBlockerClassification(
+        bool Visible,
+        bool NaturalCap,
+        bool InsufficientKarma,
+        bool Unrelated);
+
     internal static Sr6CareerAttributeCommand BuildCommand(Sr6CareerAttributeQuote quote)
     {
         return new Sr6CareerAttributeCommand(

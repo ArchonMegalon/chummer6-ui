@@ -182,6 +182,101 @@ public sealed class Sr6CareerAttributeAdvanceFlowTests
         Assert.AreEqual(0, snapshot.OmittedAttributeCount);
     }
 
+    // ---- T653 negative coverage for the natural-cap acceptance classification ----
+    // The runner's cap leg must bind ONLY to the exact typed natural-limit
+    // refusal. An insufficient-karma blocker, an unrelated blocker, or a
+    // plain quote (no refusal) must never be classified as the cap.
+
+    [TestMethod]
+    public void Blocker_classification_natural_limit_is_the_only_cap_signal()
+    {
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_natural_limit Body natural rating is already at its maximum (7).");
+        Assert.IsTrue(c.Visible, "the typed refusal must be visible");
+        Assert.IsTrue(c.NaturalCap, "the natural-limit blocker is the cap signal");
+        Assert.IsFalse(c.InsufficientKarma, "the cap signal must not be confused with insufficient karma");
+        Assert.IsFalse(c.Unrelated);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_insufficient_karma_is_not_the_cap()
+    {
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_insufficient_karma requires 15 karma, 5 available.");
+        Assert.IsTrue(c.Visible);
+        Assert.IsFalse(c.NaturalCap,
+            "an insufficient-karma refusal must NOT satisfy the natural-cap leg");
+        Assert.IsTrue(c.InsufficientKarma, "the funding recovery path must recognize insufficient karma");
+        Assert.IsFalse(c.Unrelated);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_unrelated_refusal_is_not_the_cap()
+    {
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_binding_digest_mismatch the workspace changed under us.");
+        Assert.IsTrue(c.Visible);
+        Assert.IsFalse(c.NaturalCap,
+            "an unrelated typed refusal must NOT satisfy the natural-cap leg");
+        Assert.IsFalse(c.InsufficientKarma);
+        Assert.IsTrue(c.Unrelated);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_plain_quote_or_absent_notice_is_not_the_cap()
+    {
+        // A normal quote renders an empty notice - no refusal text at all.
+        var empty = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(string.Empty);
+        Assert.IsFalse(empty.Visible, "an absent notice must not classify as any refusal");
+        Assert.IsFalse(empty.NaturalCap, "no natural-cap signal may come from a plain quote");
+
+        var stale = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker("Dossier saved.");
+        Assert.IsFalse(stale.Visible, "an unrelated committed notice must not classify as a refusal");
+        Assert.IsFalse(stale.NaturalCap);
+
+        var nullNotice = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(null);
+        Assert.IsFalse(nullNotice.Visible);
+        Assert.IsFalse(nullNotice.NaturalCap, "the absence path can never yield a cap signal");
+    }
+
+    [TestMethod]
+    public void Blocker_classification_refuses_loose_wording_without_the_typed_marker()
+    {
+        // Gen15: loose "natural"/"maximum" wording without the exact typed
+        // blocker id must NOT satisfy the cap leg (the gen14 defect).
+        var loose = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: the attribute is already at its natural maximum.");
+        Assert.IsTrue(loose.Visible, "the notice renders, but");
+        Assert.IsFalse(loose.NaturalCap,
+            "loose wording without the typed blocker id must never count as the cap");
+    }
+
+    [TestMethod]
+    public void Blocked_quote_card_surfaces_the_typed_blocker_for_the_requested_attribute()
+    {
+        // Mirror of the runner's dialog binding: a blocked Body quote renders
+        // a visible blocker notice carrying the typed id, and the apply
+        // command builder refuses to produce a command for a blocked quote
+        // (which is what leaves Apply disabled in the dialog).
+        var blocked = new Sr6CareerAttributeQuote(
+            "sr6-career-attribute-quote/v1", "install-account:subject-alpha", WorkspaceId, 42,
+            "source-digest-1", "rule-digest-1", "Body", 7, 8, 0, 7,
+            20, 15, "sr6_attribute_natural_limit", Array.Empty<string>(), "binding-digest-1");
+        Assert.IsFalse(blocked.CanAdvance, "a blocked quote must not be advanceable");
+        Assert.AreEqual("sr6_attribute_natural_limit", blocked.Blocker);
+
+        string noticeText = "Core refused this advance: " + blocked.Blocker;
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(noticeText);
+        Assert.IsTrue(c.Visible && c.NaturalCap,
+            "the rendered notice for the blocked Body quote must classify as the natural cap");
+
+        // The dialog's apply guard: a blocked quote can never produce a
+        // command, so Apply stays disabled for the blocked row.
+        var cmd = Sr6CareerAttributeAdvanceWindow.BuildCommand(blocked);
+        Assert.IsNotNull(cmd, "BuildCommand itself is quote-shaped and does not refuse");
+        Assert.IsFalse(cmd.ExplicitlyConfirmed, "the built command still requires explicit confirmation");
+    }
+
     private sealed class HonestDefaultClient : ISr6CareerAttributeAdvancementClient
     {
     }
