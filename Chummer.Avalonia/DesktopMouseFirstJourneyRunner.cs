@@ -4262,11 +4262,17 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: acknowledged pending Confirmed reward straggler");
                     }
                     bool stragglerCancelled = await CancelAllAdvanceDialogsAsync(recordPointerAction, ct);
+                    // Cancel remaining rewards modals too: a stacked
+                    // CareerRewardsWindow swallows the advance-dialog open
+                    // (attempt 11 failure evidence: dialogs=[MainWindow,
+                    // CareerRewardsWindow#184D15D] with no advance window).
+                    await CancelAllCareerRewardsDialogsAsync(steps, ct);
                     if (!stragglerCancelled
-                        || FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null)
+                        || FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null
+                        || FindCareerRewardsDialogButton("career-rewards-apply") is not null)
                     {
                         throw new InvalidOperationException(
-                            $"sr6 natural-limit attempt {attempt + 1}: straggler advance modal(s) still open after cancel rounds");
+                            $"sr6 natural-limit attempt {attempt + 1}: straggler modal(s) still open after cancel rounds");
                     }
 
                     // Gen15: authoritative baseline BEFORE any quote attempt for this
