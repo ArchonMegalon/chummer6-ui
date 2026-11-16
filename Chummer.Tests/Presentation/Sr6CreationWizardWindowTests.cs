@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
@@ -247,15 +248,22 @@ public sealed class Sr6CreationWizardWindowTests
 
     [TestMethod]
     public void Transient_workspace_unavailable_loads_recover_without_surface()
-        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(async () =>
         {
             var presenter = new RecordingSr6WizardPresenter { TransientWorkspaceUnavailableLoads = 11 };
             using var scope = new WizardScope(presenter);
             // 11 transient loads inside the 12-attempt window: the 12th load is
             // the first success, so the wizard body renders and no blocker text
-            // is surfaced. This is the clean-start recovery path: the draft
-            // publication write lands while the wizard is still retrying.
-            // Transient loads must recover without surfacing any blocker text.
+            // is surfaced. The load ladder is ASYNC now (Task.Delay, not
+            // Thread.Sleep), so the headless dispatcher must pump until the
+            // bounded ladder finished: wait until all 11 transient loads were
+            // consumed, then one further dispatcher pump for the success
+            // render. The ladder re-fences owner/close/cancel on every turn.
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+            while (presenter.TransientWorkspaceUnavailableLoads > 0 && DateTime.UtcNow < deadline)
+                await Task.Delay(50);
+            Assert.AreEqual(0, presenter.TransientWorkspaceUnavailableLoads, "The bounded async ladder must consume every seeded transient load.");
+            await Task.Delay(100);
             Assert.IsFalse(
                 (scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text ?? "").Contains("workspace-unavailable"),
                 "Transient loads must recover without surfacing the Core blocker string.");
@@ -266,13 +274,21 @@ public sealed class Sr6CreationWizardWindowTests
 
     [TestMethod]
     public void Persistent_workspace_unavailable_loads_surface_the_blocker_after_the_window()
-        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(async () =>
         {
             var presenter = new RecordingSr6WizardPresenter { TransientWorkspaceUnavailableLoads = int.MaxValue };
             using var scope = new WizardScope(presenter);
-            // Beyond the bounded window the transient blocker must surface
-            // (never an empty state, never a crash): the user sees the exact
-            // Core blocker string.
+            // Beyond the bounded window (12 async attempts) the transient
+            // blocker must surface (never an empty state, never a crash): the
+            // user sees the exact Core blocker string. Pump the dispatcher
+            // until the bounded ladder exhausts, with a generous deadline.
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (DateTime.UtcNow < deadline)
+            {
+                if ((scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text ?? "").Contains("workspace-unavailable"))
+                    break;
+                await Task.Delay(100);
+            }
             StringAssert.Contains(scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text!, "workspace-unavailable");
         });
 

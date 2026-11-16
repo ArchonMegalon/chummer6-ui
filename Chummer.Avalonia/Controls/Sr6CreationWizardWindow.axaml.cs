@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -47,7 +48,7 @@ public partial class Sr6CreationWizardWindow : Window
     protected override void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
-        LoadFromAuthority();
+        _ = LoadFromAuthorityAsync();
     }
 
     // A fresh wizard can open while the draft workspace is still being
@@ -67,7 +68,7 @@ public partial class Sr6CreationWizardWindow : Window
         return false;
     }
 
-    private void LoadFromAuthority()
+    private async Task LoadFromAuthorityAsync()
     {
         if (!RequireCurrentContext()) return;
         Sr6CreationFoundationInteractionLoadResult result;
@@ -76,11 +77,14 @@ public partial class Sr6CreationWizardWindow : Window
             result = _presenter.Load(_overview);
             // The draft publication event can precede the durable workspace
             // write, or the writer can still hold the workspace operation
-            // lease when the wizard opens. Retry a bounded number of times
-            // before surfacing the transient blocker to the user.
+            // lease when the wizard opens. Readiness is waited out ASYNC: the
+            // UI thread yields between attempts (no Thread.Sleep), every
+            // attempt re-fences on the original owner/close/cancel fences
+            // (RequireCurrentContext), and the ladder stays bounded before
+            // the transient blocker is surfaced to the user.
             for (int attempt = 0; attempt < 12 && IsTransientWorkspaceLoad(result); attempt++)
             {
-                Thread.Sleep(attempt < 4 ? 250 : 500);
+                await Task.Delay(attempt < 4 ? 250 : 500).ConfigureAwait(true);
                 if (!RequireCurrentContext()) return;
                 result = _presenter.Load(_overview);
             }

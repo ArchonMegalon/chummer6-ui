@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Reflection;
@@ -152,6 +153,30 @@ public sealed class CharacterCreationAiFinishGateAvaloniaTests
         => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
     internal static void WithHeadlessUi(Action action)
+    {
+        lock (AvaloniaHeadlessSessionGate.SyncRoot)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(AiFinishGateHeadlessAppBootstrap));
+                session.Dispatch(action, CancellationToken.None).GetAwaiter().GetResult();
+            }
+            finally
+            {
+                try
+                {
+                    session?.Dispose();
+                }
+                catch (NullReferenceException)
+                {
+                    // Avalonia headless teardown can intermittently throw after successful dispatch.
+                }
+            }
+        }
+    }
+
+    internal static void WithHeadlessUi(Func<Task> action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)
         {
