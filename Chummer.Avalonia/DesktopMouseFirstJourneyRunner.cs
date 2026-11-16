@@ -5506,6 +5506,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 ct);
 
             string? sr6WorkspaceId = window.SnapshotStateForAutomation().WorkspaceId?.Value;
+            // Gen18 (T664): the receipt must carry the FINAL Body rank the
+            // natural-limit demo committed (lastCommittedTargetRating), not
+            // the wizard-stage quote's target - the reopen-verify leg checks
+            // the durable end-of-journey state.
             DesktopMouseFirstJourneyRuntime.WriteSr6AdvanceReceipt(
                 karmaBefore,
                 karmaAfter,
@@ -5513,7 +5517,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 sr6WorkspaceId,
                 attributeId: "Body",
                 quotedKarmaCost: quotedKarmaCost,
-                quotedTargetNaturalRating: quotedTargetNaturalRating,
+                quotedTargetNaturalRating: lastCommittedTargetRating > 0 ? lastCommittedTargetRating : quotedTargetNaturalRating,
                 naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter,
                 nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
                 savedRevision: window.SnapshotStateForAutomation().ContentRevision is { } savedRev && savedRev > 0 ? (int?)savedRev : null);
