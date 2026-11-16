@@ -2684,6 +2684,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         // swallow; observe the Click event, pump the fresh dialog scene, and use
         // waitForClick so the press actually lands (bare RoutePointerClickAsync
         // is silently refused here and the dialog stays open).
+        // Gen14: the product loop auto-reopens a fresh rewards dialog after a
+        // Confirmed apply, so "no apply button anywhere" is not a reliable close
+        // signal - the replacement dialog restores career-rewards-apply within
+        // the wait window. Bind the close check to the dialog instance that
+        // received the genuine click instead.
+        global::Avalonia.Controls.Window? fundingDialogWindow = global::Avalonia.Controls.TopLevel.GetTopLevel(applyButton) as global::Avalonia.Controls.Window;
+        if (fundingDialogWindow is null)
+        {
+            throw new InvalidOperationException(
+                "SR6 advance funding failed: the apply control was not attached to a window before the apply click.");
+        }
+
         bool sr6ApplyClickObserved = false;
         void OnSr6ApplyClick(object? sender, RoutedEventArgs args) => sr6ApplyClickObserved = true;
         applyButton.Click += OnSr6ApplyClick;
@@ -2706,13 +2718,19 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         RecordStep(steps, "sr6 funding: clicked career rewards Apply (+25 karma); " + sr6ApplyDiagnostics);
 
         bool dialogClosed = await WaitForConditionWithinAsync(
-            () => FindCareerRewardsDialogButton("career-rewards-apply") is null,
+            () => !fundingDialogWindow.IsVisible || FindCareerRewardsDialogButton("career-rewards-apply") is null,
             ct,
             TimeSpan.FromSeconds(8));
         if (!dialogClosed)
         {
             throw new InvalidOperationException(
                 "SR6 advance funding failed: the CareerRewardsWindow modal did not close after Apply.");
+        }
+
+        if (FindCareerRewardsDialogButton("career-rewards-apply") is not null)
+        {
+            RecordStep(steps, "sr6 funding: product auto-reopened a fresh rewards dialog after the Confirmed apply; cancelling it");
+            await CancelAllCareerRewardsDialogsAsync(steps, ct);
         }
 
         RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
