@@ -3954,9 +3954,36 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 quoteApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
             }
 
-            await RoutePointerClickAsync(quoteApply);
+            // Gen14: mirror the funding route's proven modal-Apply shape -
+            // observe the Click event and use waitForClick so the press
+            // actually lands (bare RoutePointerClickAsync is silently
+            // refused on modal apply buttons and the dialog stays open).
+            bool advanceApplyClickObserved = false;
+            void OnAdvanceApplyClick(object? sender, RoutedEventArgs args) => advanceApplyClickObserved = true;
+            string advanceApplyDiagnostics;
+            if (quoteApply is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 advance leg: the apply button disappeared before the apply click.");
+            }
+            Button advanceApplyTarget = quoteApply;
+            advanceApplyTarget.Click += OnAdvanceApplyClick;
+            try
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    advanceApplyTarget.BringIntoView();
+                    ForceHeadlessLayoutPump(advanceApplyTarget);
+                });
+                advanceApplyDiagnostics = await RoutePointerClickAsync(advanceApplyTarget, waitForClick: true);
+                advanceApplyDiagnostics += ";clickObserved=" + advanceApplyClickObserved;
+            }
+            finally
+            {
+                advanceApplyTarget.Click -= OnAdvanceApplyClick;
+            }
             recordPointerAction();
-            RecordStep(steps, "click sr6-career-attribute-advance-apply");
+            RecordStep(steps, "click sr6-career-attribute-advance-apply; " + advanceApplyDiagnostics);
             // Synthetic pointer clicks can be swallowed by the dialog button's
             // input state machine; mirror the repo's established dialog-button
             // fallback: raise Click routed event on the live instance.
