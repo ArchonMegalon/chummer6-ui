@@ -4233,10 +4233,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 notice = bt.Text;
                             return (notice is not null && notice.Contains("Core refused this advance:", StringComparison.Ordinal), notice ?? "");
                         });
-                        if (blockedVisible)
+                        bool naturalCapVisible = blockedVisible
+                            && blockerText.Contains("sr6_attribute_natural_limit", StringComparison.Ordinal);
+                        bool insufficientKarmaVisible = blockedVisible
+                            && blockerText.Contains("sr6_attribute_insufficient_karma", StringComparison.Ordinal);
+                        if (naturalCapVisible)
                         {
                             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
                             decimal karmaBeforeCap = ReadCareerRewardsKarmaBalance(sectionHost);
+                            karmaBeforeCapAttempt = karmaBeforeCap.ToString(System.Globalization.CultureInfo.InvariantCulture);
                             long revisionBefore = window.SnapshotStateForAutomation().ContentRevision;
                             // Cancel the blocked dialog: no apply is possible and no mutation may occur.
                             Control? capCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel")
