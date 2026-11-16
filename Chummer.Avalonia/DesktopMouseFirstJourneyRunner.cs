@@ -4140,6 +4140,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // persists - proceeding with a stale modal is worse than
                     // failing the attempt.
                     RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: cancelling straggler advance modal(s) from the prior apply");
+                    // A stacked Confirmed rewards dialog also blocks fresh
+                    // advance dialogs (the visible-Core-blocker cap path needs
+                    // the SR6 advance window to OPEN). Acknowledge pending
+                    // Confirmed rewards and cancel remaining rewards modals
+                    // before the advance-dialog sweep.
+                    Button? stragglerRewardsAck = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+                    if (stragglerRewardsAck is not null)
+                    {
+                        await RoutePointerClickAsync(stragglerRewardsAck);
+                        recordPointerAction();
+                        RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: acknowledged pending Confirmed reward straggler");
+                    }
                     bool stragglerCancelled = await CancelAllAdvanceDialogsAsync(recordPointerAction, ct);
                     if (!stragglerCancelled
                         || FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null)
