@@ -2690,6 +2690,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         // the wait window. Bind the close check to the dialog instance that
         // received the genuine click instead.
         global::Avalonia.Controls.Window? fundingDialogWindow = global::Avalonia.Controls.TopLevel.GetTopLevel(applyButton) as global::Avalonia.Controls.Window;
+        decimal fundingKarmaBeforeApply = ReadCareerRewardsKarmaBalance(window.ControlsForAutomation.SectionHost);
+
         if (fundingDialogWindow is null)
         {
             throw new InvalidOperationException(
@@ -2717,15 +2719,33 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         recordPointerAction();
         RecordStep(steps, "sr6 funding: clicked career rewards Apply (+25 karma); " + sr6ApplyDiagnostics);
 
-        bool dialogClosed = await WaitForConditionWithinAsync(
-            () => !fundingDialogWindow.IsVisible || FindCareerRewardsDialogButton("career-rewards-apply") is null,
+        // Gen14: acceptance is the OUTCOME (balance advanced), not dialog
+        // lifecycle - a swallowed or racing apply leaves the dialog open and
+        // the balance unchanged, which must fail the leg, while a committed
+        // apply may leave an auto-reopened dialog behind, which must not.
+        await WaitForConditionWithinAsync(
+            () => !fundingDialogWindow.IsVisible
+                || ReadCareerRewardsKarmaBalance(window.ControlsForAutomation.SectionHost) > fundingKarmaBeforeApply,
             ct,
-            TimeSpan.FromSeconds(8));
-        if (!dialogClosed)
+            TimeSpan.FromSeconds(12));
+        if (fundingDialogWindow.IsVisible)
+        {
+            RecordStep(steps, "sr6 funding: dialog still open after the apply wait; acknowledging and sweeping it");
+            await CancelAllCareerRewardsDialogsAsync(steps, ct);
+        }
+        decimal fundingKarmaAfterApply = ReadCareerRewardsKarmaBalance(window.ControlsForAutomation.SectionHost);
+        if (fundingKarmaAfterApply <= fundingKarmaBeforeApply)
         {
             throw new InvalidOperationException(
-                "SR6 advance funding failed: the CareerRewardsWindow modal did not close after Apply.");
+                "SR6 advance funding failed: karma balance did not advance after the apply click (before="
+                + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + ", after=" + fundingKarmaAfterApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + "); the apply did not commit.");
         }
+        RecordStep(steps, "sr6 funding: karma balance advanced "
+            + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture) + " -> "
+            + fundingKarmaAfterApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            + " after the apply click (outcome-verified)");
 
         if (FindCareerRewardsDialogButton("career-rewards-apply") is not null)
         {
