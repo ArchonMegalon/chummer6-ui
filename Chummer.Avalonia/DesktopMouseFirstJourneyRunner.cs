@@ -4509,8 +4509,38 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             Button? quoteCapCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
                             if (quoteCapCancel is null)
                                 throw new InvalidOperationException("sr6 natural-limit leg failed: blocked quote dialog has no cancel control.");
-                            await RoutePointerClickAsync(quoteCapCancel);
-                            recordPointerAction();
+                            // Gen16 (T657): the cap-dialog cancel must be a
+                            // GENUINE pointer action. Use the proven modal
+                            // shape (BringIntoView + layout pump + click
+                            // observation via waitForClick) so the press
+                            // actually lands; a non-delivered press is a hard
+                            // failure in acceptance mode - no routed fallback
+                            // and no fabricated pointer count.
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                            {
+                                quoteCapCancel.BringIntoView();
+                                ForceHeadlessLayoutPump(quoteCapCancel);
+                            });
+                            string capCancelDiagnostics = await RoutePointerClickAsync(quoteCapCancel, waitForClick: true);
+                            if (capCancelDiagnostics.Contains("delivered=true", StringComparison.Ordinal))
+                            {
+                                recordPointerAction();
+                            }
+                            else if (AcceptanceFallbacksOff)
+                            {
+                                throw new InvalidOperationException(
+                                    "sr6 natural-limit leg failed: cap-dialog cancel pointer press did not deliver ("
+                                    + capCancelDiagnostics + ").");
+                            }
+                            else
+                            {
+                                // Non-acceptance mode only: routed cleanup is
+                                // permitted but is recorded with its own marker
+                                // and NEVER increments the pointer-action count.
+                                await Dispatcher.UIThread.InvokeAsync(() =>
+                                    quoteCapCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, quoteCapCancel)));
+                                RecordStep(steps, "sr6 natural-limit demo: cap-dialog cancel completed via ROUTED CLEANUP (non-acceptance mode; excluded from pointer-action count)");
+                            }
                             await WaitForConditionWithinAsync(
                                 () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
                                 ct,
@@ -4536,9 +4566,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         Button? blockedCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
                         if (blockedCancel is not null)
                         {
+                            // Gen16 (T657): pointer-count honesty. Only a
+                            // DELIVERED pointer press counts as a pointer
+                            // action; the routed RaiseEvent fallback (allowed
+                            // outside acceptance mode only) is recorded with
+                            // its own routed-cleanup marker and never
+                            // increments the pointer-action count.
+                            string blockedCancelDiagnostics;
                             try
                             {
-                                await RoutePointerClickAsync(blockedCancel);
+                                blockedCancelDiagnostics = await RoutePointerClickAsync(blockedCancel);
                             }
                             catch (InvalidOperationException)
                             {
@@ -4548,8 +4585,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 }
                                 await Dispatcher.UIThread.InvokeAsync(() =>
                                     blockedCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, blockedCancel)));
+                                RecordStep(steps, "sr6 natural-limit: blocked-quote cancel completed via ROUTED CLEANUP (non-acceptance mode; excluded from pointer-action count)");
+                                blockedCancelDiagnostics = "delivered=false;routedCleanup=true;";
                             }
-                            recordPointerAction();
+                            if (blockedCancelDiagnostics.Contains("delivered=true", StringComparison.Ordinal))
+                            {
+                                recordPointerAction();
+                            }
                             await WaitForConditionWithinAsync(
                                 () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
                                 ct,
