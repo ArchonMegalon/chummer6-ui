@@ -4402,7 +4402,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             ?? FindAutomationIdControl("sr6-career-attribute-advance-cancel");
                         if (capCancel is null)
                             throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog has no cancel control.");
-                        await RoutePointerClickAsync(capCancel);
+                        // Cancel is a no-op (Close(null)) - the same class as
+                        // the straggler/rewards cancels: routed Click is
+                        // deterministic, while pointer clicks are swallowed on
+                        // stacked modals (raise:hit=False diagnostics).
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                            capCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, capCancel)));
                         recordPointerAction();
                         bool capDialogGone = await WaitForConditionWithinAsync(
                             () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
