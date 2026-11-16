@@ -3998,6 +3998,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             CancellationToken ct,
             Action recordPointerAction)
         {
+        // Gen18 (T664/T672): the FINAL Body rank the natural-limit demo
+        // committed - visible to the receipt write at the end of the leg
+        // (the demo loop declares its own scoped copy inside its block).
+        int sr6FinalCommittedTargetRating = 0;
             // T492: the advancement authority (Sr6CareerAttributeAdvancementRules.
             // TryResolve) accepts only a workspace carrying a real Core SR6
             // creation finalization archive, so the fixture-import route can
@@ -5421,6 +5425,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     }
                     RecordStep(steps, $"sr6 natural-limit demo: attempt {attempt + 1} committed: exact debit {karmaBeforeVal - karmaAfterVal} karma matches quote; balance now {karmaAfterVal}");
                     lastCommittedTargetRating = capTo;
+                    sr6FinalCommittedTargetRating = capTo;
                     lastCommittedCost = capCost;
                 }
 
@@ -5517,7 +5522,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 sr6WorkspaceId,
                 attributeId: "Body",
                 quotedKarmaCost: quotedKarmaCost,
-                quotedTargetNaturalRating: lastCommittedTargetRating > 0 ? lastCommittedTargetRating : quotedTargetNaturalRating,
+                quotedTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : quotedTargetNaturalRating,
                 naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter,
                 nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
                 savedRevision: window.SnapshotStateForAutomation().ContentRevision is { } savedRev && savedRev > 0 ? (int?)savedRev : null);
