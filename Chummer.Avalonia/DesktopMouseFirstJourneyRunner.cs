@@ -10076,6 +10076,44 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             // sample (stable imported document) exactly like the print leg.
             await CloseWorkspaceAndLoadCareerSampleAsync(window, steps, ct, recordPointerAction);
 
+            // gen2 acceptance: the printed dossier must carry a non-ASCII
+            // synthetic runner name so the composer's non-ASCII policy is
+            // exercised by the real save path. Rename the runner through the
+            // REAL dossier-edit mutation (ApplyOriginDossierEditAsync) with
+            // the composed name "Zoë Møller-\u2019Oünoma\u201d" - name and
+            // alias both carry WinAnsi-mappable glyphs (ë ø ü ’ ”) plus
+            // a codepoint-marker fallback case, exactly matching the
+            // composer's documented truthful policy. Only the name and alias
+            // fields change; every other dossier field keeps its current
+            // value so the sample content is otherwise untouched.
+            string nonAsciiName = "Zo\u00eb M\u00f8ller-\u2019O\u00fcnoma\u201d";
+            CharacterOverviewState imported = window.SnapshotStateForAutomation();
+            if (imported.WorkspaceId is null)
+            {
+                throw new InvalidOperationException(
+                    "pdf save leg: no workspace after career sample import; rename leg cannot run.");
+            }
+            ICharacterOverviewPresenter renamePresenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+            await renamePresenter.ApplyOriginDossierEditAsync(new OriginDossierEditRequest(
+                Name: nonAsciiName,
+                Alias: nonAsciiName,
+                PlayerName: imported.Profile?.PlayerName ?? string.Empty,
+                Sex: imported.Profile?.Sex ?? string.Empty,
+                Age: imported.Profile?.Age ?? string.Empty,
+                Height: imported.Profile?.Height ?? string.Empty,
+                Weight: imported.Profile?.Weight ?? string.Empty,
+                Hair: imported.Profile?.Hair ?? string.Empty,
+                Eyes: imported.Profile?.Eyes ?? string.Empty,
+                Skin: imported.Profile?.Skin ?? string.Empty,
+                Concept: imported.Profile?.Concept ?? string.Empty,
+                Description: imported.Profile?.Description ?? string.Empty,
+                Background: imported.Profile?.Background ?? string.Empty), ct);
+            await WaitForAsync(
+                steps,
+                "pdf save leg: dossier renamed to the non-ASCII synthetic runner name",
+                () => string.Equals(window.SnapshotStateForAutomation().Profile?.Name, nonAsciiName, StringComparison.Ordinal),
+                ct);
+
             // printLanded = the target file exists on disk (checked on the
             // dispatcher thread; File.Exists is safe there).
             await PrintWithConflictRecoveryAsync(
