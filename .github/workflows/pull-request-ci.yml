@@ -2,6 +2,7 @@ name: Pull request CI
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
 
 permissions:
   contents: read
@@ -257,6 +258,9 @@ jobs:
 
   fresh-package-plane:
     name: Fresh checkout and pinned same-run package feed
+    # Drafts are review-only and cannot merge. Re-run this required check when
+    # marked ready; the controller must resolve local-build delivery first.
+    if: ${{ github.event.pull_request.draft == false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:

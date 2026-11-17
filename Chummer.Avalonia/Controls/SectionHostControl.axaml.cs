@@ -633,10 +633,16 @@ public partial class SectionHostControl : UserControl
 
             int improveCost = ComputeCareerAttributeUpgradeCost(baseValue + karmaValue, metatypeAugMax);
             bool canImprove = !isSr6 && careerMode && improveCost > 0 && availableKarma >= improveCost;
-            bool canImproveSr6 = isSr6 && careerMode && improveCost > 0;
-            // R109: SR6 rows must expose the REAL eligibility. The quote-time
-            // Core review governs the actual purchase; the row click routes to
-            // the advancement dialog (never the legacy SR5 karma edit).
+            // Gen15 (R109 refinement): for SR6 the row click MUST route to the
+            // advancement dialog even at the natural cap, because the dialog is
+            // the surface that DISPLAYS Core's typed refusal
+            // (sr6_attribute_natural_limit) with a disabled Apply. Gating the
+            // route on improveCost > 0 left a disabled button at the cap, so
+            // no dialog opened and the refusal could only be inferred from
+            // absence - which the acceptance contract forbids. The quote-time
+            // Core review still governs the actual purchase; nothing can be
+            // bought from a blocked dialog.
+            bool canImproveSr6 = isSr6 && careerMode;
             improveButton.IsEnabled = canImprove || canImproveSr6;
             string helpText = isSr6
                 ? canImproveSr6

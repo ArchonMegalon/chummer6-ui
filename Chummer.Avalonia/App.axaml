@@ -1240,6 +1240,15 @@
     <Style Selector="ProgressBar /template/ TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
+    <!-- Gen19 (user report): the scrollbar covered the end of tables.
+         Root cause: Fluent's ScrollViewer ControlTheme spans the content
+         presenter across the scrollbar cells ONLY while AllowAutoHide=True
+         (the default), laying the bar OVER the content so the last row
+         hides beneath it. AllowAutoHide=False restores the non-overlay
+         layout: the scrollbars reserve their own layout space. -->
+    <Style Selector="ScrollViewer">
+      <Setter Property="AllowAutoHide" Value="False" />
+    </Style>
     <Style Selector="ScrollBar">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
