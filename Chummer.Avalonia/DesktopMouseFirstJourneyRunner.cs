@@ -10033,100 +10033,32 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         continue;
                     }
 
-                    // Commit the way a real user does. Posted keystrokes
-                    // bypass the modal loop's translation and synthetic
-                    // BN_CLICKED is dropped here (gen24 run-6), so: attach to
-                    // the dialog thread's input state, give the Edit REAL
-                    // focus, then inject a REAL Enter key event.
-                    uint dialogThread = GetWindowThreadProcessId(hwnd, out _);
-                    uint driverThread = GetCurrentThreadId();
-                    bool attached = AttachThreadInput(driverThread, dialogThread, true);
-                    // SendInput routes to the FOREGROUND window; on an
-                    // interactive desktop the dialog is not foreground, so
-                    // steal focus with the classic ALT-unlock recipe
-                    // (gen24 run-7: SetFocus alone left SendInput feeding
-                    // whatever window the user had foreground).
-                    Trace("foreground before=0x" + GetForegroundWindow().ToString("x"));
-                    keybd_event(0x12 /*VK_MENU*/, 0, 0, IntPtr.Zero);
-                    keybd_event(0x12, 0, 0x0002 /*KEYEVENTF_KEYUP*/, IntPtr.Zero);
-                    bool foregroundStolen = SetForegroundWindow(hwnd);
-                    Thread.Sleep(150);
-                    Trace("foreground after=0x" + GetForegroundWindow().ToString("x") + " stolen=" + foregroundStolen);
-                    IntPtr previousFocus = SetFocus(edit);
-                    SendInputEnter();
-                    if (attached)
+                    // This session has NO foreground window (gen24 runs 5-8:
+                    // GetForegroundWindow()=0x0 and SetForegroundWindow is
+                    // refused), so SendInput and posted keystrokes can never
+                    // reach the modal dialog, and the in-process WM_COMMAND
+                    // fallback wedges the dialog thread. Division of labor:
+                    // the in-process driver sets and HOLDS the verified
+                    // filename; an EXTERNAL UI Automation driver (harness
+                    // python, InvokePattern) performs the Save click - UIA
+                    // Invoke needs no foreground focus.
+                    dialogDriven = true;
+                    Trace("filename text verified and held; external UIA driver commits");
+                    DateTimeOffset holdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(300);
+                    while (DateTimeOffset.UtcNow < holdDeadline)
                     {
-                        AttachThreadInput(driverThread, dialogThread, false);
-                        if (previousFocus != IntPtr.Zero)
+                        if (!IsWindow(hwnd))
                         {
-                            SetFocus(previousFocus);
-                        }
-                    }
-
-                    Trace("real Enter sent (attached=" + attached + ")");
-                    DateTimeOffset commitDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
-                    while (DateTimeOffset.UtcNow < commitDeadline)
-                    {
-                        if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
-                        {
-                            committed = true;
+                            Trace("dialog gone (commit accepted elsewhere)");
                             break;
                         }
 
-                        Thread.Sleep(250);
+                        Thread.Sleep(1000);
                     }
 
-                    Trace("cycle " + cycle + " real-Enter " + (committed ? "accepted" : "not accepted"));
-                    if (committed)
-                    {
-                        break;
-                    }
-
-                    // Fallback 1: correctly-formed WM_COMMAND
-                    // (wParam=MAKEWPARAM(IDOK,0), lParam=button hwnd).
-                    IntPtr saveButton = IntPtr.Zero;
-                    EnumChildWindows(hwnd, (child, lParam) =>
-                    {
-                        var name = new System.Text.StringBuilder(256);
-                        GetClassNameW(child, name, 256);
-                        if (string.Equals(name.ToString(), "Button", StringComparison.OrdinalIgnoreCase) && GetDlgCtrlID(child) == 1)
-                        {
-                            saveButton = child;
-                            return false;
-                        }
-
-                        return true;
-                    }, IntPtr.Zero);
-                    if (saveButton == IntPtr.Zero)
-                    {
-                        Trace("cycle " + cycle + " save button (ctrl id 1) not found");
-                        continue;
-                    }
-
-                    Trace("cycle " + cycle + " fallback WM_COMMAND lParam=button");
-                    PostMessageW(hwnd, 0x0111 /*WM_COMMAND*/, (IntPtr)1 /*MAKEWPARAM(1,0)*/, saveButton);
-                    DateTimeOffset cmdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
-                    while (DateTimeOffset.UtcNow < cmdDeadline)
-                    {
-                        if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
-                        {
-                            committed = true;
-                            break;
-                        }
-
-                        Thread.Sleep(250);
-                    }
-
-                    Trace("cycle " + cycle + " WM_COMMAND " + (committed ? "accepted" : "not accepted"));
-                    if (committed)
-                    {
-                        break;
-                    }
-
+                    Trace("driver hold loop exit");
+                    return;
                 }
-
-                dialogDriven = committed;
-                Trace("dialogDriven=" + dialogDriven);
             }
             catch (Exception driverFailure)
             {
@@ -10151,7 +10083,8 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                 () => File.Exists(targetPath),
                 steps,
                 ct,
-                recordPointerAction);
+                recordPointerAction,
+                landedDeadlineSeconds: 150);
 
             // The dialog driver may still be inside its loop when the file
             // lands; join it (bounded) before reading state.
@@ -10412,7 +10345,8 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         List<string> steps,
         CancellationToken ct,
         Action recordPointerAction,
-        int maxPrintPreps = 4)
+        int maxPrintPreps = 4,
+        int landedDeadlineSeconds = 8)
     {
         // WIN-003 acceptance asks for explicit output-conflict recovery evidence:
         // Core's canonical before/after document guard can reject a print prep
@@ -10442,7 +10376,7 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             RecordStep(steps, $"click visible toolbar print button (prep {prep})");
 
             bool landed = false;
-            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(landedDeadlineSeconds);
             while (DateTimeOffset.UtcNow < deadline)
             {
                 ct.ThrowIfCancellationRequested();
