@@ -9976,12 +9976,70 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
                 SetWindowTextW(edit, targetPath);
                 Thread.Sleep(200);
-                Trace("set text, committing via WM_COMMAND IDOK (posted)");
-                // IDOK = 1 (Save). POST the commit - a blocking send into a
-                // dialog thread that is mid-Show can wait indefinitely.
-                PostMessageW(hwnd, 0x0111 /*WM_COMMAND*/, (IntPtr)1, IntPtr.Zero);
-                dialogDriven = true;
-                Trace("commit posted, dialogDriven=true");
+
+                // Commit the way a real user does: Enter in the filename
+                // Edit. The Edit's default-button handling performs the
+                // IFileDialog commit WITH the edit's context; a bare
+                // WM_COMMAND IDOK to the dialog does not (run-3 evidence).
+                bool committed = false;
+                PostMessageW(edit, 0x0100 /*WM_KEYDOWN*/, (IntPtr)0x0D /*VK_RETURN*/, IntPtr.Zero);
+                PostMessageW(edit, 0x0102 /*WM_CHAR*/, (IntPtr)0x0D, IntPtr.Zero);
+                PostMessageW(edit, 0x0101 /*WM_KEYUP*/, (IntPtr)0x0D, IntPtr.Zero);
+                DateTimeOffset commitDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+                while (DateTimeOffset.UtcNow < commitDeadline)
+                {
+                    if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
+                    {
+                        committed = true;
+                        break;
+                    }
+
+                    Thread.Sleep(250);
+                }
+
+                Trace(committed ? "edit-Enter commit accepted (dialog gone)" : "edit-Enter commit NOT accepted");
+                if (!committed)
+                {
+                    // Fallback: BM_CLICK the Save button (ctrl id 1).
+                    IntPtr saveButton = IntPtr.Zero;
+                    EnumChildWindows(hwnd, (child, lParam) =>
+                    {
+                        var name = new System.Text.StringBuilder(256);
+                        GetClassNameW(child, name, 256);
+                        if (string.Equals(name.ToString(), "Button", StringComparison.OrdinalIgnoreCase) && GetDlgCtrlID(child) == 1)
+                        {
+                            saveButton = child;
+                            return false;
+                        }
+
+                        return true;
+                    }, IntPtr.Zero);
+                    if (saveButton != IntPtr.Zero)
+                    {
+                        Trace("fallback: BM_CLICK save button hwnd=0x" + saveButton.ToString("x"));
+                        PostMessageW(saveButton, 0x00F5 /*BM_CLICK*/, IntPtr.Zero, IntPtr.Zero);
+                        DateTimeOffset clickDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+                        while (DateTimeOffset.UtcNow < clickDeadline)
+                        {
+                            if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
+                            {
+                                committed = true;
+                                break;
+                            }
+
+                            Thread.Sleep(250);
+                        }
+
+                        Trace(committed ? "BM_CLICK commit accepted (dialog gone)" : "BM_CLICK commit NOT accepted");
+                    }
+                    else
+                    {
+                        Trace("fallback: save button (ctrl id 1) not found");
+                    }
+                }
+
+                dialogDriven = committed;
+                Trace("dialogDriven=" + dialogDriven);
             }
             catch (Exception driverFailure)
             {
@@ -10094,6 +10152,9 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     private static extern bool IsWindowVisible(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    private static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     private delegate bool EnumChildWindowsDelegate(IntPtr hWnd, IntPtr lParam);
@@ -10104,6 +10165,9 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    private static extern int GetDlgCtrlID(IntPtr hWnd);
 
     /// <summary>
     /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
