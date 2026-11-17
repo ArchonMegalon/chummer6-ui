@@ -1221,6 +1221,7 @@ public sealed class CareerRewardsUiTests
                      ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7.5,\"savedRevision\":16}", "integral"),
                      ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":-1}", "non-negative"),
                      ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":\"twenty\",\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":16}", "karmaAfter"),
+                     ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":1e30,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":16}", "karmaAfter"),
                      ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":\"ten k\",\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":16}", "nuyenAfter"),
                      ("{\"workspaceId\":\"ws-1\",\"karmaAfter\":20,\"nuyenAfter\":10000,\"attributeId\":\"Body\",\"quotedTargetNaturalRating\":7,\"savedRevision\":\"16x\"}", "savedRevision"),
                  })
@@ -1404,37 +1405,78 @@ public sealed class CareerRewardsUiTests
     }
 
     [TestMethod]
-    public void Sr6_advance_reconcile_outcome_refuses_missing_receipt_and_wrong_workspace()
+    public void Sr6_advance_reconcile_outcome_refuses_missing_blank_or_wrong_operation_receipts()
     {
-        // Gen19 (T674): the close-timeout reconciliation must fail on a
-        // missing recovery receipt, a receipt bound to a different
-        // workspace, a missing retained workspace, or a switched display -
-        // and pass only on an exact retained-workspace receipt.
+        // Gen21 (T676): the close-timeout reconciliation must fail on a
+        // missing recovery receipt, a BLANK receipt workspace (never a
+        // silent match), a receipt bound to a different workspace, a
+        // missing retained operation/workspace capture, a switched
+        // display, or a receipt for a DIFFERENT operation (an
+        // owner/workspace ABA swap or a later-selection redirect). It
+        // passes only on an exact retained-operation + retained-workspace
+        // receipt.
+        Guid retained = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        Guid other = Guid.Parse("22222222-2222-2222-2222-222222222222");
         string? verdict;
 
         verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
-            receiptPresent: false, receiptWorkspaceId: null, retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+            receiptPresent: false, receiptOperationId: null, retainedOperationId: retained,
+            receiptWorkspaceId: null, retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
         Assert.IsNotNull(verdict);
         StringAssert.Contains(verdict, "did not return a confirmed receipt");
 
         verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
-            receiptPresent: true, receiptWorkspaceId: "ws-9", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+            receiptPresent: true, receiptOperationId: retained, retainedOperationId: retained,
+            receiptWorkspaceId: "   ", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict, "a blank receipt workspace must never match");
+        StringAssert.Contains(verdict, "blank receipt workspace");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptOperationId: retained, retainedOperationId: retained,
+            receiptWorkspaceId: null, retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict, "a null receipt workspace must never match");
+        StringAssert.Contains(verdict, "blank receipt workspace");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptOperationId: retained, retainedOperationId: retained,
+            receiptWorkspaceId: "ws-9", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
         Assert.IsNotNull(verdict);
         StringAssert.Contains(verdict, "belongs to workspace");
 
         verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
-            receiptPresent: true, receiptWorkspaceId: "ws-1", retainedWorkspaceId: null, currentWorkspaceId: "ws-1");
+            receiptPresent: true, receiptOperationId: retained, retainedOperationId: null,
+            receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "operation id was not captured from the retained dialog");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptOperationId: retained, retainedOperationId: retained,
+            receiptWorkspaceId: "ws-1", retainedWorkspaceId: null, currentWorkspaceId: "ws-1");
         Assert.IsNotNull(verdict);
         StringAssert.Contains(verdict, "workspace id was not captured");
 
         verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
-            receiptPresent: true, receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-2");
+            receiptPresent: true, receiptOperationId: retained, retainedOperationId: retained,
+            receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-2");
         Assert.IsNotNull(verdict);
         StringAssert.Contains(verdict, "switched away");
 
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptOperationId: null, retainedOperationId: retained,
+            receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict);
+        StringAssert.Contains(verdict, "carries no operation id");
+
+        verdict = global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
+            receiptPresent: true, receiptOperationId: other, retainedOperationId: retained,
+            receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1");
+        Assert.IsNotNull(verdict, "a different-operation receipt (ABA/redirect) must fail");
+        StringAssert.Contains(verdict, "not the retained operation");
+
         Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifySr6AdvanceReconcileOutcome(
-            receiptPresent: true, receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1"),
-            "an exact retained-workspace receipt must pass");
+            receiptPresent: true, receiptOperationId: retained, retainedOperationId: retained,
+            receiptWorkspaceId: "ws-1", retainedWorkspaceId: "ws-1", currentWorkspaceId: "ws-1"),
+            "an exact retained-operation + retained-workspace receipt must pass");
     }
 
     [TestMethod]

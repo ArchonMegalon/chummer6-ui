@@ -44,6 +44,14 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         }
     }
 
+    /// <summary>
+    /// Gen21 (T676): the command bound at window construction - the exact
+    /// operation the single permitted Apply press will submit. A later
+    /// selection can never replace it; the runner's read-only
+    /// reconciliation binds to this operation BEFORE the first press.
+    /// </summary>
+    private readonly Sr6CareerAttributeCommand? _preApplyCommand;
+
     public Sr6CareerAttributeAdvanceWindow(
         Sr6CareerAttributeAdvanceEditorSnapshot editor,
         string requestedAttributeName)
@@ -71,7 +79,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         ShowInTaskbar = false;
 
         Sr6CareerAttributeQuote? selected = ResolveSelectedQuote(editor, requestedAttributeName);
-        Sr6CareerAttributeCommand? pendingCommand = selected is null ? null : BuildCommand(selected);
+        _preApplyCommand = selected is null ? null : BuildCommand(selected);
+        Sr6CareerAttributeCommand? pendingCommand = _preApplyCommand;
 
         var headerText = new TextBlock
         {
@@ -341,6 +350,13 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             + ";requested=" + requestedAttributeId;
         return new Sr6CapControlVerdict(applyPresent, applyEffectivelyVisible, applyDisabled, titleBound, ok, diagnostics);
     }
+
+    /// <summary>
+    /// Gen21 (T676): read-only peek at the pre-bound command. The Guid is
+    /// fixed at construction; repeated peeks (and any later selection
+    /// change) must observe the identical operation id.
+    /// </summary>
+    internal Sr6CareerAttributeCommand? PeekPendingCommand() => _preApplyCommand;
 
     internal static Sr6CareerAttributeCommand BuildCommand(Sr6CareerAttributeQuote quote)
     {

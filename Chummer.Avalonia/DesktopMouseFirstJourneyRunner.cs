@@ -3409,9 +3409,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return "receipt is missing a usable workspaceId";
         }
         if (!root.TryGetProperty("karmaAfter", out System.Text.Json.JsonElement karmaElement)
-            || karmaElement.ValueKind != System.Text.Json.JsonValueKind.Number)
+            || karmaElement.ValueKind != System.Text.Json.JsonValueKind.Number
+            || !RepresentableAsDecimal(karmaElement))
         {
-            return "receipt is missing a numeric karmaAfter";
+            return "receipt is missing a numeric-representable karmaAfter";
         }
         if (!root.TryGetProperty("nuyenAfter", out System.Text.Json.JsonElement nuyenElement)
             || nuyenElement.ValueKind != System.Text.Json.JsonValueKind.Number
@@ -3746,20 +3747,30 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     }
 
     /// <summary>
-    /// Gen19 (T674): verdict for the SR6 advance path's read-only close
+    /// Gen21 (T676): verdict for the SR6 advance paths' read-only close
     /// timeout reconciliation. Returns null ONLY when the recovery Lookup
-    /// produced a receipt bound to the RETAINED workspace while the
-    /// displayed workspace has not switched away. A missing receipt, a
-    /// receipt for a different workspace, a missing retained workspace, or
-    /// a switched display all yield the failure diagnostic; recovery stays
-    /// preserved for review.
+    /// produced a confirmed receipt bound to the RETAINED operation and the
+    /// RETAINED workspace while the displayed workspace has not switched
+    /// away. A missing receipt, a blank receipt workspace (never treated
+    /// as a match), a receipt for a different workspace, a missing
+    /// retained operation/workspace capture, a switched display, or a
+    /// receipt for a DIFFERENT operation (an owner/workspace ABA swap or
+    /// a later-selection redirect of the recovery store) all yield the
+    /// failure diagnostic; recovery stays preserved for review and no
+    /// re-click is implied.
     /// </summary>
     internal static string? ClassifySr6AdvanceReconcileOutcome(
         bool receiptPresent,
+        Guid? receiptOperationId,
+        Guid? retainedOperationId,
         string? receiptWorkspaceId,
         string? retainedWorkspaceId,
         string? currentWorkspaceId)
     {
+        if (retainedOperationId is null)
+        {
+            return "the pre-Apply operation id was not captured from the retained dialog";
+        }
         if (string.IsNullOrWhiteSpace(retainedWorkspaceId))
         {
             return "the pre-Apply workspace id was not captured";
@@ -3773,11 +3784,24 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         {
             return "the recovery Lookup did not return a confirmed receipt for the retained operation";
         }
-        if (!string.IsNullOrWhiteSpace(receiptWorkspaceId)
-            && !string.Equals(receiptWorkspaceId, retainedWorkspaceId, StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(receiptWorkspaceId))
+        {
+            return "the recovery receipt carries no workspace id; a blank receipt workspace must never match the retained workspace";
+        }
+        if (!string.Equals(receiptWorkspaceId, retainedWorkspaceId, StringComparison.Ordinal))
         {
             return "the recovery receipt belongs to workspace '" + receiptWorkspaceId
                 + "', not the retained workspace '" + retainedWorkspaceId + "'";
+        }
+        if (receiptOperationId is null)
+        {
+            return "the recovery receipt carries no operation id";
+        }
+        if (receiptOperationId.Value != retainedOperationId.Value)
+        {
+            return "the recovery receipt is for operation " + receiptOperationId.Value
+                + ", not the retained operation " + retainedOperationId.Value
+                + " (a later selection must never redirect the reconciliation)";
         }
         return null;
     }
@@ -4571,6 +4595,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 throw new InvalidOperationException(
                     "sr6 advance leg: the apply button disappeared before the apply click.");
             }
+            // Gen21 (T676): bind the exact pre-Apply identity BEFORE the one
+            // permitted press: the resolved dialog's pre-bound command (fixed
+            // at window construction - a later selection can never replace
+            // it), the displayed owner, and the displayed workspace. The
+            // timeout path below reconciles ONLY against these values.
+            Sr6CareerAttributeAdvanceWindow? advRetainedDialog = await Dispatcher.UIThread.InvokeAsync(
+                ResolveSingleAdvanceWindow);
+            Guid? advRetainedOperationId = advRetainedDialog?.PeekPendingCommand()?.OperationId;
+            OwnerContextStamp? advRetainedOwner = window.SnapshotStateForAutomation().DisplayOwnerContext;
+            CharacterWorkspaceId? advRetainedWorkspace = window.SnapshotStateForAutomation().WorkspaceId;
+            RecordStep(steps, "sr6 advance: pre-Apply identity bound (operation "
+                + (advRetainedOperationId?.ToString() ?? "unavailable") + ")");
             Button advanceApplyTarget = quoteApply;
             advanceApplyTarget.Click += OnAdvanceApplyClick;
             try
@@ -4603,58 +4639,40 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     TimeSpan.FromSeconds(4))
                 is false)
             {
-                Button? liveApply = await Dispatcher.UIThread.InvokeAsync(
-                    () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply"));
-                if (liveApply is { IsEffectivelyEnabled: true })
+                // Gen21 (T676): a swallowed press is NOT permission to mutate
+                // again - no routed Click rescue and no bounded re-click loop.
+                // The original press above is the ONLY mutation attempt. Bind
+                // the reconciliation to the retained pre-Apply identity and
+                // classify the read-only recovery outcome; uncertainty stays
+                // uncertainty and recovery stays preserved for review.
+                RecordStep(steps, "sr6 advance: notice absent after the single Apply press; STOPPING (no re-click, no routed rescue) and reconciling read-only");
+                CharacterOverviewPresenter faReconcilePresenter =
+                    (CharacterOverviewPresenter)(App.Services?.GetRequiredService<ICharacterOverviewPresenter>()
+                        ?? throw new InvalidOperationException(
+                            "sr6 advance leg failed: the overview presenter is unavailable for read-only reconciliation."));
+                Sr6CareerAttributeReceipt? faReconcileReceipt = null;
+                if (advRetainedOwner is { IsValid: true } advRetainedOwnerValid
+                    && advRetainedWorkspace is { } advRetainedWorkspaceValid)
                 {
-                    if (AcceptanceFallbacksOff)
-                    {
-                        RecordStep(steps, "sr6 apply fallback SUPPRESSED (acceptance mode)");
-                        // Acceptance mode: retry with GENUINE pointer input
-                        // only (no routed-event rescue). The first advance
-                        // previously had no bounded retry here, unlike the
-                        // natural-limit leg's card+apply retry.
-                        for (int applyRetry = 0; applyRetry < 3; applyRetry++)
-                        {
-                            Button? retryApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
-                            if (retryApply is null || !retryApply.IsEffectivelyEnabled)
-                            {
-                                break;
-                            }
-                            try
-                            {
-                                await RoutePointerClickAsync(retryApply);
-                            }
-                            catch (InvalidOperationException)
-                            {
-                                // Swallowed again - re-arm and retry after a
-                                // settle delay; the notice wait below decides.
-                            }
-                            recordPointerAction();
-                            RecordStep(steps, $"sr6 apply genuine retry {applyRetry + 1}: pointer re-click on the live apply button");
-                            bool retryNotice = await WaitForConditionWithinAsync(
-                                () =>
-                                {
-                                        string notice = window.SnapshotStateForAutomation().Notice ?? string.Empty;
-                                        return notice.StartsWith("Career advancement: ", StringComparison.Ordinal)
-                                            || notice.StartsWith("advanced ", StringComparison.Ordinal);
-                                },
-                                ct,
-                                TimeSpan.FromSeconds(4));
-                            if (retryNotice)
-                            {
-                                break;
-                            }
-                            await Task.Delay(400, ct);
-                        }
-                    }
-                    else
-                    {
-                        await Dispatcher.UIThread.InvokeAsync(() =>
-                            liveApply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveApply)));
-                        RecordStep(steps, "sr6 apply fallback: raised Click routed event after swallowed pointer click");
-                    }
+                    faReconcileReceipt = await faReconcilePresenter
+                        .RecoverPendingSr6AdvancementAsync(advRetainedOwnerValid, ct);
                 }
+                CharacterOverviewState faPostWaitSnapshot = window.SnapshotStateForAutomation();
+                string faReconcileVerdict = ClassifySr6AdvanceReconcileOutcome(
+                    receiptPresent: faReconcileReceipt is not null,
+                    receiptOperationId: faReconcileReceipt?.Command.OperationId,
+                    retainedOperationId: advRetainedOperationId,
+                    receiptWorkspaceId: faReconcileReceipt?.Command.Quote.WorkspaceId.Value,
+                    retainedWorkspaceId: advRetainedWorkspace?.Value,
+                    currentWorkspaceId: faPostWaitSnapshot.WorkspaceId?.Value);
+                if (faReconcileVerdict is not null)
+                {
+                    throw new InvalidOperationException(
+                        "sr6 advance leg failed: the swallowed Apply could not be reconciled read-only for the retained operation ("
+                        + faReconcileVerdict + "); recovery is preserved and no second Apply was sent.");
+                }
+                RecordStep(steps, "sr6 advance: reconciled READ-ONLY - the recovery Lookup returned the confirmed receipt for the retained operation "
+                    + advRetainedOperationId + "; no second Apply occurred");
             }
 
             // The apply commits through the authoritative SR6 advancement
@@ -5405,6 +5423,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // fallback below must never fire on that successor (its
                     // apply would double-commit the same advance).
                     global::Avalonia.Controls.Window? capApplyDialog = capApply.GetVisualRoot() as global::Avalonia.Controls.Window;
+                    // Gen21 (T676): capture the retained identity BEFORE the
+                    // first press - the displayed owner, the displayed
+                    // workspace, and the resolved dialog's pre-bound command
+                    // operation. Later selection or an auto-reopened successor
+                    // must never replace these.
+                    OwnerContextStamp? capRetainedOwner = window.SnapshotStateForAutomation().DisplayOwnerContext;
+                    CharacterWorkspaceId? capRetainedWorkspace = window.SnapshotStateForAutomation().WorkspaceId;
+                    Guid? capRetainedOperationId = (capApplyDialog as Sr6CareerAttributeAdvanceWindow)?.PeekPendingCommand()?.OperationId;
                     // Gen14: proven modal-Apply shape (see the first-advance
                     // apply) - observe Click and use waitForClick so the press
                     // actually lands; bare pointer clicks are swallowed here.
@@ -5436,9 +5462,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // host karma text only reflects the commit once the modal
                     // chain has cycled. Mirror it: wait for the dialog to
                     // close, cancel the auto-reopened successor, then verify
-                    // the exact debit. Re-click only while the SAME dialog is
-                    // still open (a closed dialog means the commit is in
-                    // flight; re-clicking the successor would double-commit).
+                    // the exact debit. Gen21 (T676): there is NO re-click -
+                    // the single press above is the only mutation attempt; a
+                    // close timeout stops and reconciles read-only below.
                     bool capDialogClosed = await WaitForConditionWithinAsync(
                         () =>
                         {
@@ -5459,26 +5485,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         // of the exact retained command. Null/missing/
                         // switched outcomes fail the leg while PRESERVING
                         // recovery; no re-click is ever attempted.
-                        CharacterOverviewState retainedSnapshot = window.SnapshotStateForAutomation();
-                        OwnerContextStamp? retainedAdvanceOwner = retainedSnapshot.DisplayOwnerContext;
-                        CharacterWorkspaceId? retainedAdvanceWorkspace = retainedSnapshot.WorkspaceId;
+                        // Gen21 (T676): the retained identity was captured
+                        // BEFORE the first press (capRetained*); it is never
+                        // re-read from a later snapshot here.
                         RecordStep(steps, "sr6 natural-limit: apply did not close the resolved dialog; STOPPING all re-clicks (pending preserved) and reconciling read-only");
                         CharacterOverviewPresenter advanceReconcilePresenter =
                             (CharacterOverviewPresenter)(App.Services?.GetRequiredService<ICharacterOverviewPresenter>()
                                 ?? throw new InvalidOperationException(
                                     "sr6 natural-limit leg failed: the overview presenter is unavailable for read-only reconciliation."));
                         Sr6CareerAttributeReceipt? advanceReconcileReceipt = null;
-                        if (retainedAdvanceOwner is { IsValid: true } retainedAdvOwnerValid
-                            && retainedAdvanceWorkspace is { } retainedAdvWorkspaceValid)
+                        if (capRetainedOwner is { IsValid: true } capRetainedOwnerValid
+                            && capRetainedWorkspace is { } capRetainedWorkspaceValid)
                         {
                             advanceReconcileReceipt = await advanceReconcilePresenter
-                                .RecoverPendingSr6AdvancementAsync(retainedAdvOwnerValid, ct);
+                                .RecoverPendingSr6AdvancementAsync(capRetainedOwnerValid, ct);
                         }
                         CharacterOverviewState postWaitSnapshot = window.SnapshotStateForAutomation();
                         string advanceReconcileVerdict = ClassifySr6AdvanceReconcileOutcome(
                             receiptPresent: advanceReconcileReceipt is not null,
+                            receiptOperationId: advanceReconcileReceipt?.Command.OperationId,
+                            retainedOperationId: capRetainedOperationId,
                             receiptWorkspaceId: advanceReconcileReceipt?.Command.Quote.WorkspaceId.Value,
-                            retainedWorkspaceId: retainedAdvanceWorkspace?.Value,
+                            retainedWorkspaceId: capRetainedWorkspace?.Value,
                             currentWorkspaceId: postWaitSnapshot.WorkspaceId?.Value);
                         if (advanceReconcileVerdict is not null)
                         {
