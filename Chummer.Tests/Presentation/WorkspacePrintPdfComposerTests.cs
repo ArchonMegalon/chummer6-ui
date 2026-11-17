@@ -763,4 +763,259 @@ public class WorkspacePrintPdfComposerTests
             "the all-WinAnsi print HTML must compose without any character substitution");
         Assert.IsTrue(pdf.Length > 0);
     }
+    // ------------------------------------------------------------------
+    // WIN-008 gen3 (Controller8536): painted-glyph extent regressions.
+    // The gen2 bounds test asserted run STARTING x only; the controller
+    // proved with PyMuPDF get_texttrace that glyph boxes still extended
+    // past the printable edge (OE*80 -> right 862.00, han*40 -> 1767.29,
+    // W*200 -> 552.88 vs printable 545.28). These tests assert the painted
+    // RIGHT EDGE of every run: start x plus the resolved painted advance
+    // of the run's literal, using the same base-14 AFM widths the composer
+    // itself applies (its fonts declare no /Widths, so base-14 metrics are
+    // authoritative). A painted right edge past the printable band is a
+    // hard failure.
+
+    private static double PaintedAdvanceOfLiteral(string literal, bool bold)
+    {
+        // AFM advances for the painted alphabet: ASCII 0x20..0x7E,
+        // Latin-1 0xA0..0xFF and the WinAnsi mapped slots. Marker text is
+        // pure ASCII. Extracted with PyMuPDF; cross-checked against the
+        // controller's probes (OE=1000, W=944).
+        int[] regularAscii = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,278,556,556,444,556,444,333,500,556,278,333,556,278,833,556,500,556,556,444,389,333,556,500,722,500,500,444,392,220,392,584];
+        int[] boldAscii = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+        int[] table = bold ? boldAscii : regularAscii;
+
+        // Decode the PDF literal: octal escapes -> WinAnsi bytes; each byte
+        // maps to its glyph advance via WinAnsi byte -> codepoint.
+        double total = 0;
+        int i = 0;
+        while (i < literal.Length)
+        {
+            int advance;
+            if (literal[i] == '\\' && i + 1 < literal.Length && literal[i + 1] >= '0' && literal[i + 1] <= '7')
+            {
+                int value = 0;
+                int digits = 0;
+                int j = i + 1;
+                while (j < literal.Length && digits < 3 && literal[j] >= '0' && literal[j] <= '7')
+                {
+                    value = value * 8 + (literal[j] - '0');
+                    j++;
+                    digits++;
+                }
+
+                advance = WinAnsiByteAdvance(value, table);
+                i = j;
+            }
+            else
+            {
+                char c = literal[i];
+                int cp = c;
+                if (cp >= 0x20 && cp <= 0x7E)
+                {
+                    advance = table[cp - 0x20];
+                }
+                else if (c >= '\u00A0' && c <= '\u00FF')
+                {
+                    advance = table[c - 0x20]; // not used for Latin-1 in these probes
+                    advance = 556; // conservative; probes use ASCII/mapped only
+                }
+                else
+                {
+                    advance = 556;
+                }
+
+                i++;
+            }
+
+            total += advance;
+        }
+
+        return total;
+    }
+
+    private static int WinAnsiByteAdvance(int byteValue, int[] table)
+    {
+        // Mapped slots 0x80..0x9F advance as their WinAnsi codepoint glyph.
+        return byteValue switch
+        {
+            >= 0x20 and <= 0x7E => table[byteValue - 0x20],
+            0x8C => 1000, // OElig
+            0x9C => 944,  // oelig
+            _ => 556,
+        };
+    }
+
+    private static void AssertPaintedExtentsWithinPage(byte[] pdf, string label)
+    {
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        List<(double X, double Size, bool Bold, string Literal)> runs = [];
+        Regex opRegex = new(
+            @"BT (/F[12]) ([0-9.]+) Tf (-?[0-9.]+) (-?[0-9.]+) Td \(((?:[^()\\]|\\.)*)\) Tj ET",
+            RegexOptions.Singleline);
+        foreach (Match m in opRegex.Matches(content))
+        {
+            double size = double.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+            double x = double.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture);
+            runs.Add((x, size, m.Groups[1].Value == "/F2", m.Groups[4].Value));
+        }
+
+        Assert.IsTrue(runs.Count > 0, label + ": no painted runs found");
+
+        const double printableRight = 545.28;
+        const double printableLeft = 50.0;
+        foreach ((double x, double size, bool bold, string literal) in runs)
+        {
+            double advance = PaintedAdvanceOfLiteral(literal, bold);
+            double rightEdge = x + advance * size / 1000.0;
+            Assert.IsTrue(rightEdge <= printableRight + 0.5,
+                $"{label}: painted right edge {rightEdge:F2} exceeds printable right {printableRight:F2} (run x={x:F2}, size={size}, literal='{(literal.Length > 48 ? literal[..48] + "..." : literal)}')");
+            Assert.IsTrue(x >= printableLeft - 0.5,
+                $"{label}: run starts x={x:F2} left of the printable area");
+        }
+    }
+
+    private static string ProbeValueHtml(string value)
+    {
+        StringBuilder html = new();
+        html.Append("<!DOCTYPE html><html><head><title>Bounded PDF regression probe</title></head><body>");
+        html.Append("<h1>Bounded PDF regression probe</h1>");
+        html.Append("<div class=\"card\"><h2>Profile</h2><dl><dt>Concept</dt><dd>").Append(value).Append("</dd></dl></div>");
+        html.Append("</body></html>");
+        return html.ToString();
+    }
+
+    [TestMethod]
+    public void TryCompose_probe_OE80_painted_extents_within_page()
+    {
+        // Probe 1 (controller8536): OE*80 measured 556/source, painted 1000;
+        // right edge reached x=862.00 with 27 glyphs outside the page.
+        string html = ProbeValueHtml(new string('\u0152', 80));
+        bool composed = WorkspacePrintPdfComposer.TryCompose(
+            html, out byte[] pdf, out string? error, out var substitutions);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+        Assert.AreEqual(0, substitutions.Count, "OE is WinAnsi-supported: no substitutions");
+        AssertPaintedExtentsWithinPage(pdf, "OE*80");
+    }
+
+    [TestMethod]
+    public void TryCompose_probe_han40_markers_within_page_and_all_painted()
+    {
+        // Probe 2: han*40 painted [U+6F22] markers whose glyph boxes reached
+        // x=1767.29 with 227 glyphs outside. The resolver must measure the
+        // marker glyphs AND split before overflow, keeping every glyph in
+        // the band and painting ALL 40 markers (no dropped content).
+        string html = ProbeValueHtml(new string('\u6F22', 40));
+        bool composed = WorkspacePrintPdfComposer.TryCompose(
+            html, out byte[] pdf, out string? error, out var substitutions);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+        Assert.AreEqual(40, substitutions.Count, "every unsupported char is recorded");
+        AssertPaintedExtentsWithinPage(pdf, "han*40");
+
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        Assert.AreEqual(40, CountOccurrences(content, "[U+6F22]"),
+            "all 40 painted markers must appear in the content stream");
+    }
+
+    [TestMethod]
+    public void TryCompose_probe_W200_split_before_overflow()
+    {
+        // Probe 3: the hard-split loop appended the overflowing character
+        // before flushing; right edge reached 552.88 > 545.28.
+        string html = ProbeValueHtml(new string('W', 200));
+        bool composed = WorkspacePrintPdfComposer.TryCompose(
+            html, out byte[] pdf, out string? error);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+        AssertPaintedExtentsWithinPage(pdf, "W*200");
+
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        Assert.AreEqual(200, CountOccurrences(content, "W"),
+            "all 200 W glyphs painted (the probe HTML contains no other capital W)");
+    }
+
+    [TestMethod]
+    public void TryCompose_A_macron_uses_visible_marker_not_bare_A()
+    {
+        // gen3 disclosure fix: U+0100 previously salvaged to bare "A"
+        // (silent content change). Marker policy: visible [U+0100] marker,
+        // recorded in substitutions.
+        string html = ProbeValueHtml(new string('\u0100', 10) + "tail");
+        bool composed = WorkspacePrintPdfComposer.TryCompose(
+            html, out byte[] pdf, out string? error, out var substitutions);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+        Assert.AreEqual(10, substitutions.Count(sub => sub.Source == '\u0100'),
+            "each A-macron must be recorded");
+        Assert.IsTrue(substitutions.All(sub => sub.Painted == "[U+0100]"),
+            "painted form must be the visible codepoint marker, not bare A");
+
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        Assert.AreEqual(10, CountOccurrences(content, "[U+0100]"), "markers painted");
+    }
+
+    [TestMethod]
+    public void TryCompose_supplementary_and_lone_surrogates_take_explicit_marker()
+    {
+        // gen3: supplementary input previously hit a caught
+        // ArgumentException inside string.Normalize. Truthful explicit
+        // fallback instead - and never a claim of exact support.
+        string html = ProbeValueHtml("\uD800\uDC00end");
+        bool composed = WorkspacePrintPdfComposer.TryCompose(
+            html, out byte[] pdf, out string? error, out var substitutions);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        Assert.IsTrue(content.Contains("[U+10000]", StringComparison.Ordinal),
+            "supplementary pair must paint the explicit U+10000 marker");
+
+        string htmlLone = ProbeValueHtml("lone\uDC00surrogate");
+        bool composedLone = WorkspacePrintPdfComposer.TryCompose(
+            htmlLone, out byte[] pdfLone, out string? errorLone);
+        Assert.IsTrue(composedLone, $"lone-surrogate composition failed: {errorLone}");
+        string contentLone = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdfLone));
+        Assert.IsTrue(contentLone.Contains("[U+DC00]", StringComparison.Ordinal),
+            "lone surrogate must paint the explicit marker without throwing");
+    }
+
+    [TestMethod]
+    public void TryCompose_styled_runs_preserve_separators_across_wrap()
+    {
+        // "Preserve separators across styled label/value runs": a bold value
+        // run followed by regular text must keep exactly one separator space
+        // when the line wraps mid-sequence.
+        string longValue = "Twist " + string.Join(" ", Enumerable.Repeat("turn", 40));
+        StringBuilder html = new();
+        html.Append("<!DOCTYPE html><html><head><title>Styled</title></head><body>");
+        html.Append("<h1>Styled</h1>");
+        html.Append("<div class=\"card\"><h2>Profile</h2><dl>");
+        html.Append("<dt>Alias</dt><dd>").Append(longValue).Append("</dd>");
+        html.Append("</dl></div></body></html>");
+
+        bool composed = WorkspacePrintPdfComposer.TryCompose(html.ToString(), out byte[] pdf, out string? error);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        // No doubled separators anywhere in the painted output.
+        Assert.IsFalse(content.Contains("  ", StringComparison.Ordinal),
+            "wrapped styled runs must not invent doubled spaces");
+        AssertPaintedExtentsWithinPage(pdf, "styled*wrap");
+    }
+
+    [TestMethod]
+    public void TryCompose_probe_value_page_continuation_keeps_all_content()
+    {
+        // A probe-scale value that hard-splits across a PAGE boundary must
+        // keep every glyph painted (full content through pagination).
+        string value = new string('M', 4000);
+        string html = ProbeValueHtml(value);
+        bool composed = WorkspacePrintPdfComposer.TryCompose(html, out byte[] pdf, out string? error);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+
+        string ascii = Encoding.ASCII.GetString(pdf);
+        Assert.IsTrue(CountPdfPages(ascii) > 1, "4000 M chars must span more than one page");
+        string content = ExtractInflatedContentStreams(ascii);
+        Assert.AreEqual(4000, CountOccurrences(content, "M"),
+            "all 4000 glyphs must survive pagination (probe HTML has no other capital M)");
+        AssertPaintedExtentsWithinPage(pdf, "M*4000");
+    }
+
 }

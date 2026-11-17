@@ -31,15 +31,21 @@ public static class WorkspacePrintPdfComposer
     public const string HtmlFileExtension = ".html";
 
     /// <summary>Attempts to compose a PDF from the Core print HTML. Never throws for
-    /// content problems: returns false with an error reason instead.</summary>
+    /// content problems: returns false with an error reason instead. The
+    /// supported-character policy is the visible-marker policy: characters
+    /// without WinAnsi representation paint as deterministic [U+XXXX] markers
+    /// inside the PDF itself, so the disclosure is visible in the document
+    /// without requiring callers to inspect substitution metadata (the
+    /// full-fidelity overload exposes that list for tooling).</summary>
     public static bool TryCompose(string printHtml, out byte[] pdf, out string? error)
         => TryCompose(printHtml, out pdf, out error, out _);
 
-    /// <summary>Full-fidelity overload: also reports every non-WinAnsi character
-    /// substitution applied while encoding the document, so callers (and the
-    /// journey harness) can truthfully state the supported-character policy.
-    /// Each entry is the source character's codepoint and its painted fallback.
-    /// </summary>
+    /// <summary>Full-fidelity overload: also reports every character whose
+    /// painted form differs from its source form (visible <c>[U+XXXX]</c>
+    /// markers and re-encoded glyphs), so callers can truthfully disclose the
+    /// supported-character policy. WinAnsi-mapped and Latin-1 glyphs are the
+    /// documented supported set and pass through unlogged; supplementary code
+    /// points and unsupported BMP characters paint the visible marker.</summary>
     public static bool TryCompose(string printHtml, out byte[] pdf, out string? error, out IReadOnlyList<(char Source, string Painted)> substitutions)
     {
         pdf = [];
@@ -285,8 +291,15 @@ public static class WorkspacePrintPdfComposer
         // separator is restored from the following token's leading spaces
         // (Split(' ') always leaves exactly one space between words there).
         static List<List<(string Text, TextRunStyle Style)>>? WrapRuns(
-            IReadOnlyList<TextRun> runs, float size, float wrapWidth)
+            IReadOnlyList<TextRun> runs, float size, float wrapWidth,
+            List<(char Source, string Painted)> substitutions)
         {
+            // gen3: resolve every run to its painted form ONCE here; all
+            // measurement, wrapping and painting below operate on painted
+            // text only, so widths and glyphs cannot disagree.
+            runs = runs
+                .Select(run => new TextRun(ResolvePainted(run.Text, substitutions), run.Style, run.Size))
+                .ToList();
             float total = 0f;
             foreach (TextRun run in runs)
             {
@@ -367,15 +380,25 @@ public static class WorkspacePrintPdfComposer
                         currentWidth = 0f;
                     }
 
+                    // gen3: split BEFORE the overflow, and keep every
+                    // resolved marker ([U+XXXX]) ATOMIC - a disclosure marker
+                    // must never be split across lines (it would read as
+                    // garbage and break exact-text assertions). Chunks fill
+                    // the line; when the next atomic unit would cross the
+                    // wrap width, flush the chunk FIRST (the old loop flushed
+                    // after appending, letting the last glyph cross the
+                    // printable edge - probe W*200 right edge 552.88 vs
+                    // 545.28).
                     StringBuilder chunk = new();
-                    foreach (char character in word)
+                    foreach (string unit in EnumerateAtomicPaintedUnits(word))
                     {
-                        chunk.Append(character);
-                        if (MeasureWidth(chunk.ToString(), style, size) >= wrapWidth)
+                        if (chunk.Length > 0 && MeasureWidth(chunk.ToString() + unit, style, size) > wrapWidth)
                         {
                             lines.Add([(chunk.ToString(), style)]);
                             chunk.Clear();
                         }
+
+                        chunk.Append(unit);
                     }
 
                     if (chunk.Length > 0)
@@ -400,18 +423,24 @@ public static class WorkspacePrintPdfComposer
             return lines;
         }
 
-        void DrawRuns(IReadOnlyList<TextRun> runs, float indent)
+        void DrawRuns(IReadOnlyList<TextRun> sourceRuns, float indent)
         {
+            // gen3: resolve to painted text at the single DrawRuns entry
+            // point; the fit decision, any wrap, and the painted ops all
+            // see the same glyphs. substitutions comes from Compose scope.
+            IReadOnlyList<TextRun> runs = sourceRuns
+                .Select(run => new TextRun(ResolvePainted(run.Text, substitutions), run.Style, run.Size))
+                .ToList();
             float size = runs.Count > 0 ? runs.Max(static run => run.Size) : 10f;
             float lineHeight = size * 1.45f;
             float x = Margin + indent;
             float wrapWidth = printableWidth - indent;
 
-            List<List<(string Text, TextRunStyle Style)>>? wrapped = WrapRuns(runs, size, wrapWidth);
+            List<List<(string Text, TextRunStyle Style)>>? wrapped = WrapRuns(runs, size, wrapWidth, substitutions);
             if (wrapped is null)
             {
-                // Fast path: the original runs fit; paint them verbatim so
-                // run boundaries and source spacing are preserved exactly.
+                // Fast path: the painted runs fit; paint them verbatim so run
+                // boundaries and resolved spacing are preserved exactly.
                 EnsureRoom(lineHeight);
                 y -= lineHeight * 0.82f;
                 float baseline = y;
@@ -681,9 +710,12 @@ public static class WorkspacePrintPdfComposer
 
     private static string EscapeWinAnsi(string text, List<(char Source, string Painted)>? substitutions)
     {
-        Encoding winAnsi = Encoding.Latin1;
-        StringBuilder escaped = new(text.Length + 8);
-        foreach (char character in text)
+        // gen3: resolve to the PAINTED text FIRST - the exact same mapping
+        // measurement and wrapping consumed via ResolvePainted - then escape
+        // that literal. Paint == measure by construction.
+        string painted = ResolvePainted(text, substitutions);
+        StringBuilder escaped = new(painted.Length + 8);
+        foreach (char character in painted)
         {
             switch (character)
             {
@@ -694,30 +726,27 @@ public static class WorkspacePrintPdfComposer
                     break;
 
                 default:
+                    // Painted text is fully encoded already: mapped slots
+                    // re-emit their octal WinAnsi literal, Latin-1 bytes pass
+                    // through byte-identically, marker text is pure ASCII.
                     if (WinAnsiMap.TryGetValue(character, out string? mapped))
                     {
                         escaped.Append(mapped);
                         continue;
                     }
 
-                    if (character <= 0xFF && winAnsi.GetBytes([character])[0] == character)
+                    if (character <= 0xFF && Encoding.Latin1.GetBytes([character])[0] == character)
                     {
                         escaped.Append(character);
                         continue;
                     }
 
-                    // Truthful supported-character policy: this character has
-                    // no WinAnsiEncoding representation. Paint a visible,
-                    // deterministic fallback instead of silently mangling it,
-                    // and record the substitution so callers can disclose it.
-                    string fallback = FallbackFor(character);
-                    if (substitutions is not null)
-                    {
-                        substitutions.Add((character, fallback));
-                    }
-
-                    escaped.Append(EscapeLiteral(fallback));
-                    break;
+                    // Unreachable under the gen3 resolver (painted text is
+                    // WinAnsi-encodable by construction); fail loudly rather
+                    // than silently mangling bytes.
+                    throw new InvalidOperationException(
+                        "painted text contains an unencodable character U+"
+                        + ((int)character).ToString("X4", CultureInfo.InvariantCulture));
             }
         }
 
@@ -729,49 +758,6 @@ public static class WorkspacePrintPdfComposer
     /// (e.g. Greek letters keep their Latin transliteration convention), else
     /// the explicit replacement marker. Never empty, always deterministic.
     /// </summary>
-    private static string FallbackFor(char character)
-    {
-        // Latin-1 compatibility handling: strip combining-style accents via
-        // normalization only when the result is a single distinct Latin-1
-        // letter that round-trips WinAnsi (Diacritic-style falls back cleanly;
-        // e.g. U+0142 Latin small L with stroke has no such form).
-        string decomposed = character.ToString().Normalize(System.Text.NormalizationForm.FormD);
-        if (decomposed.Length == 1 && decomposed[0] != character)
-        {
-            return decomposed;
-        }
-
-        foreach (char part in decomposed)
-        {
-            if (part <= 0xFF && Encoding.Latin1.GetBytes([part])[0] == part)
-            {
-                return part.ToString();
-            }
-        }
-
-        // Visible, deterministic, WinAnsi-encodable marker that discloses the
-        // exact unsupported codepoint (never a silent placeholder byte).
-        return string.Create(CultureInfo.InvariantCulture, $"[U+{(int)character:X4}]");
-    }
-
-    /// <summary>Escapes parentheses, backslashes and high bytes for a PDF
-    /// string literal built from already-chosen fallback text (plain ASCII).</summary>
-    private static string EscapeLiteral(string text)
-    {
-        StringBuilder escaped = new(text.Length);
-        foreach (char character in text)
-        {
-            if (character is '(' or ')' or '\\')
-            {
-                escaped.Append('\\');
-            }
-
-            escaped.Append(character);
-        }
-
-        return escaped.ToString();
-    }
-
     /// <summary>Unicode code points outside Latin-1 that WinAnsiEncoding places in
     /// the 0x80–0x9F range. Everything else Latin-1 passes through byte-identically.</summary>
     private static readonly IReadOnlyDictionary<char, string> WinAnsiMap =
@@ -806,27 +792,205 @@ public static class WorkspacePrintPdfComposer
             ['\u0178'] = "\\237"  // Ÿ
         };
 
-    private static float MeasureWidth(string text, TextRunStyle style, float size)
+    /// <summary>Enumerates the ATOMIC painted units of an already-painted
+    /// word: each <c>[U+XXXX]</c> disclosure marker is one unit (never split
+    /// across lines); every other painted character is one unit.</summary>
+    private static IEnumerable<string> EnumerateAtomicPaintedUnits(string paintedWord)
     {
-        IReadOnlyList<short> widths = style == TextRunStyle.Bold ? BoldWidths : RegularWidths;
-        float total = 0f;
-        foreach (char character in text)
+        int index = 0;
+        while (index < paintedWord.Length)
         {
-            int index = character - 32;
-            if (index >= 0 && index < widths.Count)
+            if (paintedWord[index] == '[')
             {
-                total += widths[index];
+                int close = paintedWord.IndexOf(']', index + 1);
+                if (close > index + 1 && paintedWord[index + 1] == 'U' && paintedWord[index + 2] == '+')
+                {
+                    bool allHex = true;
+                    for (int scan = index + 3; scan < close; scan++)
+                    {
+                        if (!Uri.IsHexDigit(paintedWord[scan]))
+                        {
+                            allHex = false;
+                            break;
+                        }
+                    }
+
+                    if (allHex)
+                    {
+                        yield return paintedWord[index..(close + 1)];
+                        index = close + 1;
+                        continue;
+                    }
+                }
+            }
+
+            yield return paintedWord[index].ToString();
+            index++;
+        }
+    }
+
+    /// <summary>Resolves <paramref name="text"/> into the EXACT glyphs the PDF
+    /// will paint, applying the truthful supported-character policy once, at
+    /// resolution time. Measurement, wrapping and the PDF serializer all
+    /// consume this single mapping, so the painted extent can never disagree
+    /// with the measured extent: an unsupported source character that paints
+    /// as a seven-glyph <c>[U+XXXX]</c> marker is measured as those seven
+    /// glyphs, and a WinAnsi-mapped glyph is measured with its true base-14
+    /// advance. Surrogate pairs resolve as one code point (supplementary input
+    /// takes the truthful explicit marker; no exception path).</summary>
+    private static string ResolvePainted(string text, List<(char Source, string Painted)>? substitutions)
+    {
+        StringBuilder resolved = new(text.Length);
+        int index = 0;
+        while (index < text.Length)
+        {
+            char character = text[index];
+            int codepoint;
+            int consume;
+            if (char.IsSurrogate(character))
+            {
+                if (index + 1 < text.Length && char.IsSurrogatePair(character, text[index + 1]))
+                {
+                    codepoint = 0x10000 + ((character - 0xD800) << 10) + (text[index + 1] - 0xDC00);
+                    consume = 2;
+                }
+                else
+                {
+                    // A lone surrogate is not a character: the truthful
+                    // explicit marker names the broken unit instead of
+                    // throwing (the gen25 ArgumentException path).
+                    codepoint = character;
+                    consume = 1;
+                }
             }
             else
             {
-                total += 556; // conservative default for WinAnsi extras
+                codepoint = character;
+                consume = 1;
             }
+
+            string painted = ResolveCodepoint(codepoint);
+            resolved.Append(painted);
+            if (substitutions is not null && codepoint <= 0xFFFF
+                && (consume != painted.Length || painted.Length != 1 || painted[0] != character))
+            {
+                substitutions.Add(((char)codepoint, painted));
+            }
+
+            index += consume;
+        }
+
+        return resolved.ToString();
+    }
+
+    /// <summary>Painted form of one code point under the truthful
+    /// supported-character policy: exact WinAnsi mapping, exact Latin-1
+    /// passthrough, else the visible deterministic <c>[U+XXXX]</c> marker.
+    /// Supplementary code points (and lone surrogates) always take the
+    /// explicit marker; WinAnsi support is never claimed beyond WinAnsi.</summary>
+    private static string ResolveCodepoint(int codepoint)
+    {
+        if (codepoint <= 0xFFFF && !char.IsSurrogate((char)codepoint))
+        {
+            char character = (char)codepoint;
+            if (WinAnsiMap.ContainsKey(character) ||
+                (character <= 0xFF && Encoding.Latin1.GetBytes([character])[0] == character))
+            {
+                // WinAnsi-mapped and Latin-1 glyphs paint as THEMSELVES (one
+                // glyph each); the octal escape for mapped slots belongs to
+                // the literal writer (EscapeWinAnsi), not the painted text.
+                return character.ToString();
+            }
+        }
+
+        // BMP codepoints use the established 4-digit marker format
+        // ([U+03B1], [U+6F22]); supplementary codepoints print their full
+        // width ([U+10000]).
+        return codepoint <= 0xFFFF
+            ? string.Create(CultureInfo.InvariantCulture, $"[U+{codepoint:X4}]")
+            : string.Create(CultureInfo.InvariantCulture, $"[U+{codepoint:X}]");
+    }
+
+    /// <summary>Width of the PAINTED form of <paramref name="text"/>. Callers
+    /// holding unresolved source text resolve first via
+    /// <see cref="ResolvePainted(string, List{(char, string)})"/>.</summary>
+    private static float MeasureWidth(string text, TextRunStyle style, float size)
+    {
+        float total = 0f;
+        foreach (char character in text)
+        {
+            total += GlyphAdvance(character, style);
         }
 
         return total * size / 1000f;
     }
 
-    // Adobe core14 AFM widths for chars 32..126 (' '~'~').
+    /// <summary>Base-14 advance (units/1000) of one PAINTED character. The
+    /// painted text of <see cref="ResolvePainted(string, List{(char, string)})"/>
+    /// is ASCII, Latin-1, or a WinAnsi mapped-slot byte, so this switch covers
+    /// exactly the painted alphabet with the real AFM advances the viewer
+    /// applies (the declared fonts carry no /Widths array, making base-14
+    /// metrics authoritative).</summary>
+    private static float GlyphAdvance(char character, TextRunStyle style)
+    {
+        IReadOnlyList<short> widths = style == TextRunStyle.Bold ? BoldWidths : RegularWidths;
+        int index = character - 32;
+        if (index >= 0 && index < widths.Count)
+        {
+            return widths[index];
+        }
+
+        IReadOnlyList<short> latin = style == TextRunStyle.Bold ? BoldLatin1Widths : RegularLatin1Widths;
+        if (character >= 0xA0 && character <= 0xFF)
+        {
+            return latin[character - 0xA0];
+        }
+
+        IReadOnlyDictionary<char, short> mapped = style == TextRunStyle.Bold ? BoldMappedWidths : RegularMappedWidths;
+        if (mapped.TryGetValue(character, out short advance))
+        {
+            return advance;
+        }
+
+        return 556f; // control characters paint as visible marker glyphs
+    }
+
+    // Adobe core14 AFM widths for chars 32..126 (' '~'~'), 0xA0..0xFF, and
+    // the WinAnsi 0x80..0x9F mapped slots (keyed by SOURCE codepoint; the
+    // painted byte's glyph advance is identical). Extracted with PyMuPDF from
+    // the same base-14 metrics MuPDF applies when a PDF declares no /Widths
+    // array (this composer's fonts), so measured extents equal painted ones.
+    private static readonly IReadOnlyList<short> RegularLatin1Widths =
+    [
+        278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500
+    ];
+
+    private static readonly IReadOnlyList<short> BoldLatin1Widths =
+    [
+        278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556
+    ];
+
+    private static readonly IReadOnlyDictionary<char, short> RegularMappedWidths = new Dictionary<char, short>
+    {
+        ['\u20AC'] = 556, ['\u201A'] = 222, ['\u0192'] = 556, ['\u201E'] = 333,
+        ['\u2026'] = 1000, ['\u2020'] = 556, ['\u2021'] = 556, ['\u02C6'] = 333,
+        ['\u2030'] = 1000, ['\u0160'] = 667, ['\u2039'] = 333, ['\u0152'] = 1000,
+        ['\u017D'] = 611, ['\u2018'] = 222, ['\u2019'] = 222, ['\u201C'] = 333,
+        ['\u201D'] = 333, ['\u2022'] = 350, ['\u2013'] = 556, ['\u2014'] = 1000,
+        ['\u02DC'] = 333, ['\u2122'] = 1000, ['\u0161'] = 500, ['\u203A'] = 333,
+        ['\u0153'] = 944, ['\u017E'] = 500, ['\u0178'] = 667
+    };
+
+    private static readonly IReadOnlyDictionary<char, short> BoldMappedWidths = new Dictionary<char, short>
+    {
+        ['\u20AC'] = 556, ['\u201A'] = 278, ['\u0192'] = 556, ['\u201E'] = 500,
+        ['\u2026'] = 1000, ['\u2020'] = 556, ['\u2021'] = 556, ['\u02C6'] = 333,
+        ['\u2030'] = 1000, ['\u0160'] = 667, ['\u2039'] = 333, ['\u0152'] = 1000,
+        ['\u017D'] = 611, ['\u2018'] = 278, ['\u2019'] = 278, ['\u201C'] = 500,
+        ['\u201D'] = 500, ['\u2022'] = 350, ['\u2013'] = 556, ['\u2014'] = 1000,
+        ['\u02DC'] = 333, ['\u2122'] = 1000, ['\u0161'] = 556, ['\u203A'] = 333,
+        ['\u0153'] = 944, ['\u017E'] = 500, ['\u0178'] = 667
+    };
     private static readonly IReadOnlyList<short> RegularWidths =
     [
         278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278,

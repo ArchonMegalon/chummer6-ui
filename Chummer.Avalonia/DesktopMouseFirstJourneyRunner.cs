@@ -9913,9 +9913,14 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         {
             try
             {
+                // gen3 containment: every loop below is bound by BOTH the
+                // deadline and the journey cancellation token, and the driver
+                // observes without mutating the dialog's filename (the seam
+                // already pointed the dialog at the target; WM_SETTEXT never
+                // changed the dialog's internal filename - gen24 evidence).
                 IntPtr hwnd = IntPtr.Zero;
                 DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(120);
-                while (DateTimeOffset.UtcNow < deadline)
+                while (DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
                 {
                     hwnd = FindDialogTitleWindow("Save Print Preview");
                     if (hwnd != IntPtr.Zero)
@@ -9923,12 +9928,17 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         break;
                     }
 
-                    Thread.Sleep(250);
+                    if (ct.WaitHandle.WaitOne(250))
+                    {
+                        break;
+                    }
                 }
 
                 if (hwnd == IntPtr.Zero)
                 {
-                    Trace("dialog not found within 120s");
+                    Trace(ct.IsCancellationRequested
+                        ? "dialog discovery canceled"
+                        : "dialog not found within 120s");
                     return;
                 }
 
@@ -9938,18 +9948,32 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                 // creation precedes IFileDialog Show() initialization, and the
                 // initialization RE-SETS the filename edit - touching the edit
                 // too early loses the text and Save refuses an empty filename
-                // (gen24 run-5 evidence).
+                // (gen24 run-5 evidence). The wait is cancellation-bound.
                 bool becameVisible = IsWindowVisible(hwnd);
                 DateTimeOffset visibleDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(45);
-                while (!becameVisible && DateTimeOffset.UtcNow < visibleDeadline)
+                while (!becameVisible && DateTimeOffset.UtcNow < visibleDeadline && !ct.IsCancellationRequested)
                 {
-                    Thread.Sleep(250);
+                    if (ct.WaitHandle.WaitOne(250))
+                    {
+                        break;
+                    }
+
                     becameVisible = IsWindowVisible(hwnd);
                 }
 
                 if (!becameVisible)
                 {
-                    Trace("dialog never became visible; ShowWindow(SW_SHOW)");
+                    // The one remaining window-affecting call is REVALIDATED
+                    // immediately before use: alive, dialog class, exact
+                    // title, owned by THIS process. A canceled journey never
+                    // mutates a window.
+                    if (ct.IsCancellationRequested || !ValidateDialogHwnd(hwnd, "Save Print Preview"))
+                    {
+                        Trace("show fallback refused (canceled or revalidation failed)");
+                        return;
+                    }
+
+                    Trace("dialog never became visible; ShowWindow(SW_SHOW) after revalidation");
                     ShowWindow(hwnd, 5 /* SW_SHOW */);
                     Thread.Sleep(500);
                 }
@@ -9958,13 +9982,14 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                     Trace("dialog visible");
                 }
 
+                // Locate the filename Edit for OBSERVATION ONLY (liveness
+                // probe); the driver never writes to it. The filename edit is
+                // the Edit under FloatNotifySink -> ComboBox (gen24 run-4
+                // evidence); the Explorer search-box Edit sits deeper and
+                // must not win.
                 IntPtr edit = IntPtr.Zero;
-                for (int attempt = 0; attempt < 40 && edit == IntPtr.Zero; attempt++)
+                for (int attempt = 0; attempt < 40 && edit == IntPtr.Zero && !ct.IsCancellationRequested; attempt++)
                 {
-                    // The FILENAME Edit of a common-item dialog is the Edit
-                    // whose parent is a ComboBox whose parent is a
-                    // FloatNotifySink; the Explorer search-box Edit sits DEEPER
-                    // and must NOT win (gen24 run-4 evidence).
                     IntPtr best = IntPtr.Zero;
                     int bestDepth = -1;
                     CollectDescendantEdits(hwnd, 0, ref best, ref bestDepth);
@@ -9975,7 +10000,10 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
                     if (edit == IntPtr.Zero)
                     {
-                        Thread.Sleep(250);
+                        if (ct.WaitHandle.WaitOne(250))
+                        {
+                            break;
+                        }
                     }
                 }
 
@@ -9986,9 +10014,8 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                 }
 
                 {
-                    IntPtr p = GetParent(edit);
                     var chain = new System.Text.StringBuilder();
-                    IntPtr walk = edit;
+                    IntPtr walk = GetParent(edit);
                     for (int d = 0; d < 5 && walk != IntPtr.Zero; d++)
                     {
                         var cn = new System.Text.StringBuilder(256);
@@ -9997,68 +10024,39 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         walk = GetParent(walk);
                     }
 
-                    Trace("edit hwnd=0x" + edit.ToString("x") + " chain " + chain.ToString());
+                    Trace("edit hwnd=0x" + edit.ToString("x") + " parent chain " + chain.ToString());
                 }
 
-                bool committed = false;
-                for (int cycle = 0; cycle < 6 && !committed; cycle++)
+                // Observe until the dialog closes (commit accepted by the
+                // external UIA driver) or the journey cancels. No writes to
+                // the dialog or its children: the seam set the dialog's
+                // target; the external UIA driver commits. Liveness is probed
+                // with a timeout-guarded, abort-if-hung message so a wedged
+                // dialog thread cannot wedge the driver.
+                dialogDriven = true;
+                Trace("observing dialog; external UIA driver commits");
+                DateTimeOffset holdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(300);
+                while (DateTimeOffset.UtcNow < holdDeadline && !ct.IsCancellationRequested)
                 {
-                    if (!IsWindow(hwnd) || !IsWindow(edit))
+                    if (!IsWindow(hwnd))
                     {
-                        Trace("dialog or edit died before cycle " + cycle);
+                        Trace("dialog gone (commit accepted elsewhere)");
                         break;
                     }
 
-                    if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr lenResult) == IntPtr.Zero)
+                    if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr _) == IntPtr.Zero)
                     {
-                        Trace("edit not responding (hung dialog thread)");
-                        return;
+                        Trace("edit stopped responding; dialog presumed committed or dead");
+                        break;
                     }
 
-                    SetWindowTextW(edit, targetPath);
-                    Thread.Sleep(300);
-
-                    // Read the text BACK and only commit when the edit really
-                    // holds the target (dialog init may have cleared it).
-                    var probe = new System.Text.StringBuilder(1024);
-                    IntPtr probeLen = (IntPtr)Math.Min(probe.Capacity, (int)lenResult);
-                    bool readBack = SendMessageTimeoutW(
-                        edit, 0x000D /*WM_GETTEXT*/, probeLen + (IntPtr)1, probe, 2, 2000, out _) != IntPtr.Zero;
-                    string current = readBack ? probe.ToString() : string.Empty;
-                    Trace("cycle " + cycle + " read-back=\"" + current + "\"");
-                    if (!string.Equals(current, targetPath, StringComparison.Ordinal))
+                    if (ct.WaitHandle.WaitOne(1000))
                     {
-                        Trace("cycle " + cycle + " text lost (dialog still initializing); retrying");
-                        Thread.Sleep(1000);
-                        continue;
+                        break;
                     }
-
-                    // This session has NO foreground window (gen24 runs 5-8:
-                    // GetForegroundWindow()=0x0 and SetForegroundWindow is
-                    // refused), so SendInput and posted keystrokes can never
-                    // reach the modal dialog, and the in-process WM_COMMAND
-                    // fallback wedges the dialog thread. Division of labor:
-                    // the in-process driver sets and HOLDS the verified
-                    // filename; an EXTERNAL UI Automation driver (harness
-                    // python, InvokePattern) performs the Save click - UIA
-                    // Invoke needs no foreground focus.
-                    dialogDriven = true;
-                    Trace("filename text verified and held; external UIA driver commits");
-                    DateTimeOffset holdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(300);
-                    while (DateTimeOffset.UtcNow < holdDeadline)
-                    {
-                        if (!IsWindow(hwnd))
-                        {
-                            Trace("dialog gone (commit accepted elsewhere)");
-                            break;
-                        }
-
-                        Thread.Sleep(1000);
-                    }
-
-                    Trace("driver hold loop exit");
-                    return;
                 }
+
+                Trace("driver hold loop exit; ct canceled: " + ct.IsCancellationRequested);
             }
             catch (Exception driverFailure)
             {
@@ -10185,9 +10183,6 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         }
     }
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern IntPtr FindWindowW(string? lpClassName, string lpWindowName);
-
     private delegate bool EnumWindowsDelegate(IntPtr hWnd, IntPtr lParam);
 
     [DllImport("user32.dll")]
@@ -10199,19 +10194,6 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern int GetWindowTextW(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern IntPtr FindWindowExW(IntPtr hWndParent, IntPtr hWndChildAfter, string? lpszClass, string? lpszWindow);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetWindowTextW(IntPtr hWnd, string lpString);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern IntPtr SendMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool PostMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr SendMessageTimeoutW(
@@ -10238,56 +10220,6 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     private static extern uint GetCurrentThreadId();
 
     [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr SetFocus(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, IntPtr dwExtraInfo);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct KeyboardInput
-    {
-        public ushort Vk;
-        public ushort Scan;
-        public uint Flags;
-        public uint Time;
-        public IntPtr ExtraInfo;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct InputRecord
-    {
-        public int Type;
-        public KeyboardInput Keyboard;
-    }
-
-    /// <summary>Injects a REAL Enter key-down/up pair via SendInput.
-    /// Real input travels the same translation path as a user keypress.
-    /// </summary>
-    private static void SendInputEnter()
-    {
-        const int inputKeyboard = 1;
-        const uint keyEventfKeyup = 0x0002;
-        var down = new InputRecord { Type = inputKeyboard, Keyboard = new KeyboardInput { Vk = 0x0D, Scan = 0x1C } };
-        var up = new InputRecord { Type = inputKeyboard, Keyboard = new KeyboardInput { Vk = 0x0D, Scan = 0x1C, Flags = keyEventfKeyup } };
-        var records = new[] { down, up };
-        SendInput((uint)records.Length, records, Marshal.SizeOf<InputRecord>());
-    }
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint SendInput(uint nInputs, InputRecord[] pInputs, int cbSize);
-
-    [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     private delegate bool EnumChildWindowsDelegate(IntPtr hWnd, IntPtr lParam);
@@ -10298,9 +10230,6 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
-
-    [DllImport("user32.dll")]
-    private static extern int GetDlgCtrlID(IntPtr hWnd);
 
     /// <summary>
     /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
@@ -10369,7 +10298,7 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     /// The deepest Edit wins (the filename edit lives in the deepest
     /// FloatNotifySink -> ComboBox -> Edit chain of the save dialog).
     /// </summary>
-    private static IntPtr FindDialogTitleWindow(string title)
+    internal static IntPtr FindDialogTitleWindow(string title)
     {
         if (!OperatingSystem.IsWindows())
         {
@@ -10419,14 +10348,33 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         return matches == 1 ? found : IntPtr.Zero;
     }
 
-    private static IntPtr FindDialogChildWindow(IntPtr parent, string className)
+    /// <summary>gen3 containment: revalidate a dialog handle IMMEDIATELY
+    /// before any window-affecting call - alive, top-level dialog class,
+    /// exact expected title, and owned by THIS process. Foreign, retitled,
+    /// or destroyed windows are refused.</summary>
+    internal static bool ValidateDialogHwnd(IntPtr hwnd, string expectedTitle)
     {
-        if (!OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindows() || hwnd == IntPtr.Zero || !IsWindow(hwnd))
         {
-            return IntPtr.Zero;
+            return false;
         }
 
-        return FindWindowExW(parent, IntPtr.Zero, className, null);
+        var className = new System.Text.StringBuilder(256);
+        GetClassNameW(hwnd, className, 256);
+        if (!string.Equals(className.ToString(), "#32770", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var titleText = new System.Text.StringBuilder(256);
+        GetWindowTextW(hwnd, titleText, 256);
+        if (!string.Equals(titleText.ToString(), expectedTitle, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        GetWindowThreadProcessId(hwnd, out uint ownerProcess);
+        return ownerProcess == GetCurrentProcessId();
     }
 
     private static async Task PrintWithConflictRecoveryAsync(
