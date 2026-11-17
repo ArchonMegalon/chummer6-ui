@@ -9967,7 +9967,20 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                     return;
                 }
 
-                Trace("edit hwnd=0x" + edit.ToString("x"));
+                {
+                    IntPtr p = GetParent(edit);
+                    var chain = new System.Text.StringBuilder();
+                    IntPtr walk = edit;
+                    for (int d = 0; d < 5 && walk != IntPtr.Zero; d++)
+                    {
+                        var cn = new System.Text.StringBuilder(256);
+                        GetClassNameW(walk, cn, 256);
+                        chain.Append(cn.ToString()).Append(" < ");
+                        walk = GetParent(walk);
+                    }
+
+                    Trace("edit hwnd=0x" + edit.ToString("x") + " chain " + chain.ToString());
+                }
                 if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr getTextResult) == IntPtr.Zero)
                 {
                     Trace("edit not responding (hung dialog thread)");
@@ -10155,6 +10168,9 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     private static extern bool IsWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    private static extern IntPtr GetParent(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     private delegate bool EnumChildWindowsDelegate(IntPtr hWnd, IntPtr lParam);
@@ -10178,12 +10194,15 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     {
         public IntPtr Best;
         public int BestDepth = -1;
+        public IntPtr FilenameEdit;
     }
 
     /// <summary>
     /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
-    /// The deepest Edit wins (the filename edit lives in the deepest
-    /// FloatNotifySink -> ComboBox -> Edit chain of the save dialog).
+    /// The FILENAME Edit of a common-item dialog is the Edit whose parent
+    /// is a ComboBox whose parent is a FloatNotifySink; the Explorer
+    /// search-box Edit sits DEEPER in the tree and must NOT win (gen24
+    /// run-4 evidence: Save with an empty filename never closes).
     /// </summary>
     private static void CollectDescendantEdits(IntPtr parent, int depth, ref IntPtr best, ref int bestDepth)
     {
@@ -10197,10 +10216,26 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             {
                 var name = new System.Text.StringBuilder(256);
                 GetClassNameW(child, name, 256);
-                if (string.Equals(name.ToString(), "Edit", StringComparison.OrdinalIgnoreCase) && level > state.BestDepth)
+                string className = name.ToString();
+                if (string.Equals(className, "Edit", StringComparison.OrdinalIgnoreCase))
                 {
-                    state.Best = child;
-                    state.BestDepth = level;
+                    if (level > state.BestDepth)
+                    {
+                        state.Best = child;
+                        state.BestDepth = level;
+                    }
+
+                    IntPtr p = GetParent(child);
+                    var pClass = new System.Text.StringBuilder(256);
+                    GetClassNameW(p, pClass, 256);
+                    IntPtr gp = p != IntPtr.Zero ? GetParent(p) : IntPtr.Zero;
+                    var gpClass = new System.Text.StringBuilder(256);
+                    GetClassNameW(gp, gpClass, 256);
+                    if (string.Equals(pClass.ToString(), "ComboBox", StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(gpClass.ToString(), "FloatNotifySink", StringComparison.OrdinalIgnoreCase))
+                    {
+                        state.FilenameEdit = child;
+                    }
                 }
 
                 stack.Push((child, level + 1));
@@ -10208,10 +10243,15 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             }, IntPtr.Zero);
         }
 
-        best = state.Best;
+        best = state.FilenameEdit != IntPtr.Zero ? state.FilenameEdit : state.Best;
         bestDepth = state.BestDepth;
     }
 
+    /// <summary>
+    /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
+    /// The deepest Edit wins (the filename edit lives in the deepest
+    /// FloatNotifySink -> ComboBox -> Edit chain of the save dialog).
+    /// </summary>
     private static IntPtr FindDialogTitleWindow(string title)
     {
         if (!OperatingSystem.IsWindows())
