@@ -10041,6 +10041,17 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                     uint dialogThread = GetWindowThreadProcessId(hwnd, out _);
                     uint driverThread = GetCurrentThreadId();
                     bool attached = AttachThreadInput(driverThread, dialogThread, true);
+                    // SendInput routes to the FOREGROUND window; on an
+                    // interactive desktop the dialog is not foreground, so
+                    // steal focus with the classic ALT-unlock recipe
+                    // (gen24 run-7: SetFocus alone left SendInput feeding
+                    // whatever window the user had foreground).
+                    Trace("foreground before=0x" + GetForegroundWindow().ToString("x"));
+                    keybd_event(0x12 /*VK_MENU*/, 0, 0, IntPtr.Zero);
+                    keybd_event(0x12, 0, 0x0002 /*KEYEVENTF_KEYUP*/, IntPtr.Zero);
+                    bool foregroundStolen = SetForegroundWindow(hwnd);
+                    Thread.Sleep(150);
+                    Trace("foreground after=0x" + GetForegroundWindow().ToString("x") + " stolen=" + foregroundStolen);
                     IntPtr previousFocus = SetFocus(edit);
                     SendInputEnter();
                     if (attached)
@@ -10249,6 +10260,16 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
     [DllImport("user32.dll")]
     private static extern IntPtr SetFocus(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, IntPtr dwExtraInfo);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct KeyboardInput
