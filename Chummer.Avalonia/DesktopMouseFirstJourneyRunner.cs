@@ -4603,6 +4603,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             Sr6CareerAttributeAdvanceWindow? advRetainedDialog = await Dispatcher.UIThread.InvokeAsync(
                 ResolveSingleAdvanceWindow);
             Guid? advRetainedOperationId = advRetainedDialog?.PeekPendingCommand()?.OperationId;
+            Sr6CareerAttributeCommand? advRetainedCommand = advRetainedDialog?.PeekPendingCommand();
             OwnerContextStamp? advRetainedOwner = window.SnapshotStateForAutomation().DisplayOwnerContext;
             CharacterWorkspaceId? advRetainedWorkspace = window.SnapshotStateForAutomation().WorkspaceId;
             RecordStep(steps, "sr6 advance: pre-Apply identity bound (operation "
@@ -4652,10 +4653,17 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             "sr6 advance leg failed: the overview presenter is unavailable for read-only reconciliation."));
                 Sr6CareerAttributeReceipt? faReconcileReceipt = null;
                 if (advRetainedOwner is { IsValid: true } advRetainedOwnerValid
-                    && advRetainedWorkspace is { } advRetainedWorkspaceValid)
+                    && advRetainedWorkspace is { } advRetainedWorkspaceValid
+                    && advRetainedCommand is { } advRetainedCommandBound)
                 {
+                    // Gen22 (T678): exact-operation reconciliation - the
+                    // retained pre-Apply command is verified against the
+                    // pending record BEFORE any Lookup or clear, so a later
+                    // workspace switch or replaced intent can never be
+                    // looked up or cleared by this recovery.
                     faReconcileReceipt = await faReconcilePresenter
-                        .RecoverPendingSr6AdvancementAsync(advRetainedOwnerValid, ct);
+                        .RecoverPendingSr6AdvancementAsync(
+                            advRetainedOwnerValid, advRetainedWorkspaceValid, advRetainedCommandBound, ct);
                 }
                 CharacterOverviewState faPostWaitSnapshot = window.SnapshotStateForAutomation();
                 string faReconcileVerdict = ClassifySr6AdvanceReconcileOutcome(
@@ -5431,6 +5439,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     OwnerContextStamp? capRetainedOwner = window.SnapshotStateForAutomation().DisplayOwnerContext;
                     CharacterWorkspaceId? capRetainedWorkspace = window.SnapshotStateForAutomation().WorkspaceId;
                     Guid? capRetainedOperationId = (capApplyDialog as Sr6CareerAttributeAdvanceWindow)?.PeekPendingCommand()?.OperationId;
+                    Sr6CareerAttributeCommand? capRetainedCommand = (capApplyDialog as Sr6CareerAttributeAdvanceWindow)?.PeekPendingCommand();
                     // Gen14: proven modal-Apply shape (see the first-advance
                     // apply) - observe Click and use waitForClick so the press
                     // actually lands; bare pointer clicks are swallowed here.
@@ -5495,10 +5504,17 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                     "sr6 natural-limit leg failed: the overview presenter is unavailable for read-only reconciliation."));
                         Sr6CareerAttributeReceipt? advanceReconcileReceipt = null;
                         if (capRetainedOwner is { IsValid: true } capRetainedOwnerValid
-                            && capRetainedWorkspace is { } capRetainedWorkspaceValid)
+                            && capRetainedWorkspace is { } capRetainedWorkspaceValid
+                            && capRetainedCommand is { } capRetainedCommandBound)
                         {
+                            // Gen22 (T678): exact-operation reconciliation -
+                            // the retained pre-Apply command is verified
+                            // against the pending record BEFORE any Lookup
+                            // or clear; a replaced intent or another
+                            // workspace's record is never touched.
                             advanceReconcileReceipt = await advanceReconcilePresenter
-                                .RecoverPendingSr6AdvancementAsync(capRetainedOwnerValid, ct);
+                                .RecoverPendingSr6AdvancementAsync(
+                                    capRetainedOwnerValid, capRetainedWorkspaceValid, capRetainedCommandBound, ct);
                         }
                         CharacterOverviewState postWaitSnapshot = window.SnapshotStateForAutomation();
                         string advanceReconcileVerdict = ClassifySr6AdvanceReconcileOutcome(
