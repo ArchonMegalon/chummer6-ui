@@ -10150,6 +10150,18 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern IntPtr FindWindowW(string? lpClassName, string lpWindowName);
 
+    private delegate bool EnumWindowsDelegate(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumWindows(EnumWindowsDelegate lpEnumFunc, IntPtr lParam);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentProcessId();
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int GetWindowTextW(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern IntPtr FindWindowExW(IntPtr hWndParent, IntPtr hWndChildAfter, string? lpszClass, string? lpszWindow);
 
@@ -10326,7 +10338,47 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             return IntPtr.Zero;
         }
 
-        return FindWindowW("#32770", title);
+        // gen2-containment: the naive FindWindowW("#32770", title) call
+        // matched ANY top-level dialog window with the expected title,
+        // including one owned by a foreign process. The driver must only
+        // ever touch a dialog that belongs to THIS process: enumerate all
+        // candidate dialogs, keep only windows whose owning process id is
+        // our own, and refuse ambiguity (more than one match) instead of
+        // guessing. Foreign and ambiguous results both yield IntPtr.Zero
+        // so the caller's bounded discovery loop keeps polling rather
+        // than driving the wrong window.
+        uint currentProcess = GetCurrentProcessId();
+        IntPtr found = IntPtr.Zero;
+        int matches = 0;
+        EnumWindows((candidate, lParam) =>
+        {
+            var className = new System.Text.StringBuilder(256);
+            GetClassNameW(candidate, className, 256);
+            if (!string.Equals(className.ToString(), "#32770", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            var titleText = new System.Text.StringBuilder(256);
+            GetWindowTextW(candidate, titleText, 256);
+            if (!string.Equals(titleText.ToString(), title, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            GetWindowThreadProcessId(candidate, out uint ownerProcess);
+            if (ownerProcess != currentProcess)
+            {
+                // Foreign dialog with the same title: not ours, never drive it.
+                return true;
+            }
+
+            matches++;
+            found = candidate;
+            return true;
+        }, IntPtr.Zero);
+
+        return matches == 1 ? found : IntPtr.Zero;
     }
 
     private static IntPtr FindDialogChildWindow(IntPtr parent, string className)

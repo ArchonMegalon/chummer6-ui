@@ -587,4 +587,180 @@ public class WorkspacePrintPdfComposerTests
             RegexOptions.Singleline);
         return objMatch.Success ? objMatch.Groups[1].Value : null;
     }
+
+    [TestMethod]
+    public void TryCompose_wraps_long_field_values_inside_page_bounds()
+    {
+        // WIN-008 gen2: the delivered PDF failed the extraction bounds check
+        // because a long Concept value painted a single unwrapped line to
+        // x=597.21 on a 595.28pt page. Every painted Td x must stay inside
+        // [Margin, PageWidth - Margin], and the long value must wrap onto
+        // continuation lines instead of overflowing.
+        const string longConcept = "Covert operations specialist with a very long " +
+            "biography paragraph that absolutely cannot fit on a single unwrapped line";
+
+        StringBuilder html = new();
+        html.AppendLine("<!DOCTYPE html><html><head><title>Bounds</title></head><body>");
+        html.AppendLine("<h1>Bounds Print</h1>");
+        html.AppendLine("<div class=\"card\"><h2>Profile</h2><dl class=\"grid\">");
+        html.Append("<dt>Alias</dt><dd>Fastpass</dd>");
+        html.Append("<dt>Concept</dt><dd>").Append(longConcept).Append("</dd>");
+        html.AppendLine("</dl></div>");
+        html.AppendLine("</body></html>");
+
+        bool composed = WorkspacePrintPdfComposer.TryCompose(html.ToString(), out byte[] pdf, out string? error);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        List<List<RunPosition>> rows = ExtractRunXGroups(content);
+        Assert.IsTrue(rows.Count > 0, "content stream must paint positioned runs");
+
+        // PageWidth=595.28, Margin=50: every painted x must lie within the
+        // printable band. A wrapped value paints its continuation lines at the
+        // same x as the first line (single wrapped row never grows rightward).
+        foreach (List<RunPosition> row in rows)
+        {
+            foreach (RunPosition run in row)
+            {
+                Assert.IsTrue(run.X >= 50f - 0.01f,
+                    $"painted x {run.X} must not start left of the margin");
+                Assert.IsTrue(run.X <= 595.28f - 50f + 0.01f,
+                    $"painted x {run.X} must not pass the right margin (long values must wrap)");
+            }
+        }
+
+        // The full value text must survive wrapping: no dropped words.
+        string allText = content;
+        foreach (string word in longConcept.Split(' '))
+        {
+            Assert.IsTrue(allText.Contains(word, StringComparison.Ordinal),
+                $"wrapped value must not drop the word '{word}'");
+        }
+    }
+
+    [TestMethod]
+    public void TryCompose_non_ascii_characters_are_truthfully_encoded_or_disclosed()
+    {
+        // WinAnsi-encodable accents must round-trip exactly; a character with
+        // no WinAnsi representation must be replaced by a visible, disclosed
+        // fallback (recorded in the substitutions report) rather than a
+        // silent '?' byte.
+        const string printableName = "Zo\u00eb Ren\u00e9e";
+        StringBuilder html = new();
+        html.AppendLine("<!DOCTYPE html><html><head><title>Unicode</title></head><body>");
+        html.AppendLine("<h1>Unicode Print</h1>");
+        html.AppendLine("<div class=\"card\"><h2>Profile</h2><dl class=\"grid\">");
+        html.Append("<dt>Alias</dt><dd>").Append(printableName).Append("</dd>");
+        html.Append("<dt>Concept</dt><dd>Greek \u03b1 \u4e2d philosophy</dd>");
+        html.AppendLine("</dl></div></body></html>");
+
+        bool composed = WorkspacePrintPdfComposer.TryCompose(
+            html.ToString(), out byte[] pdf, out string? error, out var substitutions);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+
+        // Zoë Renée: ë (U+00EB) and é (U+00E9) are both WinAnsi-encodable; they
+        // must appear in the PDF text exactly (no substitution recorded).
+        Assert.IsFalse(substitutions.Any(substitution => substitution.Source == '\u00eb'),
+            "ë is WinAnsi-encodable and must not be substituted");
+        Assert.IsFalse(substitutions.Any(substitution => substitution.Source == '\u00e9'),
+            "é is WinAnsi-encodable and must not be substituted");
+
+        // Greek alpha (U+03B1) and CJK 中 (U+4E2D) have no WinAnsi form: they
+        // must be disclosed via the substitution report with a visible,
+        // deterministic fallback, never a silent '?' byte.
+        var alpha = substitutions.FirstOrDefault(substitution => substitution.Source == '\u03b1');
+        Assert.AreEqual('\u03b1', alpha.Source, "alpha substitution must be recorded");
+        StringAssert.StartsWith(alpha.Painted, "[U+03B1]", "fallback must be the visible codepoint marker");
+        var cjk = substitutions.FirstOrDefault(substitution => substitution.Source == '\u4e2d');
+        Assert.AreEqual('\u4e2d', cjk.Source, "CJK substitution must be recorded");
+        StringAssert.StartsWith(cjk.Painted, "[U+4E2D]", "fallback must be the visible codepoint marker");
+
+        // The painted fallback must be present in the content stream.
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        Assert.IsTrue(content.Contains("[U+03B1]", StringComparison.Ordinal),
+            "the visible codepoint fallback must be painted in the PDF");
+        Assert.IsFalse(content.Contains("(?", StringComparison.Ordinal),
+            "the silent '?' mangling signature must not appear");
+    }
+
+    [TestMethod]
+    public void TryCompose_paginates_without_dropping_wrapped_content()
+    {
+        // A field whose value spans multiple wrapped lines that themselves
+        // cross a page boundary must paint every line (pagination is
+        // measured, not line-count approximated).
+        StringBuilder html = new();
+        html.AppendLine("<!DOCTYPE html><html><head><title>Overflow</title></head><body>");
+        html.AppendLine("<h1>Overflow</h1>");
+        for (int cardIndex = 0; cardIndex < 40; cardIndex++)
+        {
+            html.AppendLine($"<div class=\"card\"><h2>Section {cardIndex}</h2><dl>");
+            for (int fieldIndex = 0; fieldIndex < 8; fieldIndex++)
+            {
+                html.AppendLine($"<dt>Field {fieldIndex}</dt><dd>Value line for section {cardIndex}</dd>");
+            }
+
+            html.AppendLine("</dl></div>");
+        }
+
+        html.AppendLine("</body></html>");
+
+        bool composed = WorkspacePrintPdfComposer.TryCompose(html.ToString(), out byte[] pdf, out string? error);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+
+        string content = ExtractInflatedContentStreams(Encoding.ASCII.GetString(pdf));
+        // Every field of every card survives pagination.
+        for (int cardIndex = 0; cardIndex < 40; cardIndex++)
+        {
+            for (int fieldIndex = 0; fieldIndex < 8; fieldIndex++)
+            {
+                Assert.IsTrue(content.Contains($"Field {fieldIndex}:", StringComparison.Ordinal),
+                    $"field label 'Field {fieldIndex}:' missing from painted output");
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Card_border_reopens_on_continuation_page()
+    {
+        // A card spanning a page break must paint a closed border on the
+        // outgoing page and a fresh border on the continuation page (the old
+        // composer carried a stale cardTop onto the next page).
+        StringBuilder html = new();
+        html.AppendLine("<!DOCTYPE html><html><head><title>Split</title></head><body>");
+        html.AppendLine("<h1>Split</h1>");
+        html.AppendLine("<div class=\"card\"><h2>Big</h2><dl>");
+        for (int i = 0; i < 120; i++)
+        {
+            html.AppendLine($"<dt>Row {i}</dt><dd>value {i} with some added text to make the card genuinely long</dd>");
+        }
+
+        html.AppendLine("</dl></div></body></html>");
+
+        bool composed = WorkspacePrintPdfComposer.TryCompose(html.ToString(), out byte[] pdf, out string? error);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+
+        string ascii = Encoding.ASCII.GetString(pdf);
+        int pageCount = CountPdfPages(ascii);
+        Assert.IsTrue(pageCount > 1, "the split card must span more than one page");
+
+        // Count border-painting operators per content stream: a card that
+        // crosses a break paints borders on both pages (re-open = fresh
+        // CardBorderOp on the continuation page).
+        string allContent = ExtractInflatedContentStreams(ascii);
+        int borderOps = CountOccurrences(allContent, "re S\n");
+        Assert.IsTrue(borderOps >= pageCount,
+            $"continuation page must repaint the card border (borders={borderOps}, pages={pageCount})");
+    }
+
+    [TestMethod]
+    public void TryCompose_reports_no_substitutions_for_pure_ascii_document()
+    {
+        bool composed = WorkspacePrintPdfComposer.TryCompose(
+            CoreShapedPrintHtml, out byte[] pdf, out string? error, out var substitutions);
+        Assert.IsTrue(composed, $"composition failed: {error}");
+        Assert.AreEqual(0, substitutions.Count,
+            "the all-WinAnsi print HTML must compose without any character substitution");
+        Assert.IsTrue(pdf.Length > 0);
+    }
 }

@@ -9,6 +9,15 @@ namespace Chummer.Presentation.Printing;
 /// into a real PDF 1.4 document. Pure managed BCL: base-14 Helvetica fonts with
 /// WinAnsiEncoding, A4 pages, deterministic bytes (no timestamps, no compression
 /// variance), so identical print receipts compose identical PDFs.
+///
+/// Layout contract (WIN-008 gen2): every painted span is measured against the
+/// printable page width and word-wrapped when it overflows, pagination is
+/// driven by measured line heights so no content is dropped, a card that
+/// continues across a page break closes its border on the outgoing page and
+/// re-opens it on the continuation page, and non-WinAnsi characters use a
+/// truthful supported-character policy (a visible, documented fallback --
+/// never silent mangling). All painted x-coordinates stay within
+/// [Margin, PageWidth - Margin].
 /// </summary>
 public static class WorkspacePrintPdfComposer
 {
@@ -24,9 +33,18 @@ public static class WorkspacePrintPdfComposer
     /// <summary>Attempts to compose a PDF from the Core print HTML. Never throws for
     /// content problems: returns false with an error reason instead.</summary>
     public static bool TryCompose(string printHtml, out byte[] pdf, out string? error)
+        => TryCompose(printHtml, out pdf, out error, out _);
+
+    /// <summary>Full-fidelity overload: also reports every non-WinAnsi character
+    /// substitution applied while encoding the document, so callers (and the
+    /// journey harness) can truthfully state the supported-character policy.
+    /// Each entry is the source character's codepoint and its painted fallback.
+    /// </summary>
+    public static bool TryCompose(string printHtml, out byte[] pdf, out string? error, out IReadOnlyList<(char Source, string Painted)> substitutions)
     {
         pdf = [];
         error = null;
+        substitutions = [];
 
         if (string.IsNullOrWhiteSpace(printHtml))
         {
@@ -43,7 +61,9 @@ public static class WorkspacePrintPdfComposer
                 return false;
             }
 
-            pdf = Compose(blocks);
+            List<(char Source, string Painted)> substitutionsLocal = [];
+            pdf = Compose(blocks, substitutionsLocal);
+            substitutions = substitutionsLocal;
             return pdf.Length > 0;
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException or InvalidOperationException or NotSupportedException)
@@ -218,32 +238,225 @@ public static class WorkspacePrintPdfComposer
 
     private sealed record TextRun(string Text, TextRunStyle Style, float Size);
 
-    private static byte[] Compose(IReadOnlyList<PrintBlock> blocks)
+    private static byte[] Compose(IReadOnlyList<PrintBlock> blocks, List<(char Source, string Painted)> substitutions)
     {
         List<PageOp> ops = [];
         float y = PageHeight - Margin;
-
-        void EnsureRoom(float needed)
-        {
-            if (y - needed < Margin)
-            {
-                ops.Add(new PageOp(PageBreakOp.Instance));
-                y = PageHeight - Margin;
-            }
-        }
+        float printableWidth = PageWidth - (2 * Margin);
 
         bool cardOpen = false;
         float cardTop = 0f;
 
+        void EnsureRoom(float needed)
+        {
+            if (y - needed >= Margin)
+            {
+                return;
+            }
+
+            // Page break. A card open across the break closes its border on
+            // the outgoing page and re-opens it at the top of the next page,
+            // so continuation pages never carry a stale cardTop.
+            if (cardOpen)
+            {
+                ops.Add(new PageOp(new CardBorderOp(cardTop, y - 2f)));
+            }
+
+            ops.Add(new PageOp(PageBreakOp.Instance));
+            y = PageHeight - Margin;
+            if (cardOpen)
+            {
+                cardTop = y;
+            }
+        }
+
+        // Word-wrap of the concatenated runs into lines that fit the
+        // printable width. Returns null when the whole sequence already fits
+        // (the caller then paints the original runs verbatim, preserving the
+        // exact run boundaries and spacing of the source HTML).
+        //
+        // Token model: each word carries the whitespace that PRECEDED it in
+        // its source run. On the line where the token originates the leading
+        // spaces are painted verbatim (so a value run's two-space offset
+        // survives wrapping); at a wrap boundary the leading spaces are
+        // dropped, which is what indentation-free continuation lines expect.
+        // Words that shared a source run were separated by a single space in
+        // the source text; when they land on the same wrapped line the
+        // separator is restored from the following token's leading spaces
+        // (Split(' ') always leaves exactly one space between words there).
+        static List<List<(string Text, TextRunStyle Style)>>? WrapRuns(
+            IReadOnlyList<TextRun> runs, float size, float wrapWidth)
+        {
+            float total = 0f;
+            foreach (TextRun run in runs)
+            {
+                total += MeasureWidth(run.Text, run.Style, size);
+            }
+
+            if (total <= wrapWidth)
+            {
+                return null;
+            }
+
+            List<(string Spaces, string Word, TextRunStyle Style)> tokens = [];
+            foreach (TextRun run in runs)
+            {
+                bool firstPiece = true;
+                foreach (string piece in run.Text.Split(' '))
+                {
+                    if (piece.Length == 0 && firstPiece)
+                    {
+                        continue; // leading spaces of the run: nothing to paint
+                    }
+
+                    int wordStart = 0;
+                    while (wordStart < piece.Length && piece[wordStart] == ' ')
+                    {
+                        wordStart++;
+                    }
+
+                    string spaces = piece[..wordStart];
+                    string word = piece[wordStart..];
+                    if (word.Length == 0)
+                    {
+                        continue; // interior/consecutive spaces collapse
+                    }
+
+                    if (!firstPiece && spaces.Length == 0)
+                    {
+                        spaces = " "; // Split removed the single separator space
+                    }
+
+                    tokens.Add((spaces, word, run.Style));
+                    firstPiece = false;
+                }
+            }
+
+            if (tokens.Count == 0)
+            {
+                return null;
+            }
+
+            List<List<(string Text, TextRunStyle Style)>> lines = [];
+            List<(string Text, TextRunStyle Style)> current = [];
+            float currentWidth = 0f;
+            foreach ((string spaces, string word, TextRunStyle style) in tokens)
+            {
+                bool firstOnLine = current.Count == 0;
+                string text = firstOnLine ? word : spaces + word;
+                float textWidth = MeasureWidth(text, style, size);
+                if (!firstOnLine && currentWidth + textWidth > wrapWidth)
+                {
+                    lines.Add(current);
+                    current = [];
+                    currentWidth = 0f;
+                    firstOnLine = true;
+                    text = word;
+                    textWidth = MeasureWidth(text, style, size);
+                }
+
+                // A single token wider than the whole line is hard-split per
+                // character so no content is pushed past the printable area:
+                // chunks fill the line, the remainder continues below.
+                if (textWidth > wrapWidth)
+                {
+                    if (current.Count > 0)
+                    {
+                        lines.Add(current);
+                        current = [];
+                        currentWidth = 0f;
+                    }
+
+                    StringBuilder chunk = new();
+                    foreach (char character in word)
+                    {
+                        chunk.Append(character);
+                        if (MeasureWidth(chunk.ToString(), style, size) >= wrapWidth)
+                        {
+                            lines.Add([(chunk.ToString(), style)]);
+                            chunk.Clear();
+                        }
+                    }
+
+                    if (chunk.Length > 0)
+                    {
+                        string remainder = chunk.ToString();
+                        current.Add((remainder, style));
+                        currentWidth = MeasureWidth(remainder, style, size);
+                    }
+
+                    continue;
+                }
+
+                current.Add((text, style));
+                currentWidth += textWidth;
+            }
+
+            if (current.Count > 0)
+            {
+                lines.Add(current);
+            }
+
+            return lines;
+        }
+
         void DrawRuns(IReadOnlyList<TextRun> runs, float indent)
         {
-            float lineHeight = runs.Count > 0 ? runs.Max(static run => run.Size) * 1.45f : 12f;
-            EnsureRoom(lineHeight);
+            float size = runs.Count > 0 ? runs.Max(static run => run.Size) : 10f;
+            float lineHeight = size * 1.45f;
             float x = Margin + indent;
-            y -= lineHeight * 0.82f;
-            float baseline = y;
-            ops.Add(new PageOp(new TextOp(runs, x, baseline)));
-            y -= lineHeight * 0.18f;
+            float wrapWidth = printableWidth - indent;
+
+            List<List<(string Text, TextRunStyle Style)>>? wrapped = WrapRuns(runs, size, wrapWidth);
+            if (wrapped is null)
+            {
+                // Fast path: the original runs fit; paint them verbatim so
+                // run boundaries and source spacing are preserved exactly.
+                EnsureRoom(lineHeight);
+                y -= lineHeight * 0.82f;
+                float baseline = y;
+                ops.Add(new PageOp(new TextOp(runs, x, baseline)));
+                y -= lineHeight * 0.18f;
+                return;
+            }
+
+            foreach (List<(string Text, TextRunStyle Style)> line in wrapped)
+            {
+                // Re-group each wrapped line into styled runs so a wrapped
+                // field row still reads bold-label + regular-value. Token
+                // texts already carry their separators; concatenation is
+                // verbatim (no invented spaces).
+                List<TextRun> lineRuns = [];
+                TextRunStyle? openStyle = null;
+                StringBuilder openText = new();
+                foreach ((string text, TextRunStyle style) in line)
+                {
+                    if (openStyle is { } currentStyle && currentStyle != style)
+                    {
+                        lineRuns.Add(new TextRun(openText.ToString(), currentStyle, size));
+                        openText.Clear();
+                    }
+
+                    openStyle = style;
+                    openText.Append(text);
+                }
+
+                if (openStyle is { } finalStyle && openText.Length > 0)
+                {
+                    lineRuns.Add(new TextRun(openText.ToString(), finalStyle, size));
+                }
+
+                if (lineRuns.Count == 0)
+                {
+                    continue;
+                }
+
+                EnsureRoom(lineHeight);
+                y -= lineHeight * 0.82f;
+                float baseline = y;
+                ops.Add(new PageOp(new TextOp(lineRuns, x, baseline)));
+                y -= lineHeight * 0.18f;
+            }
         }
 
         foreach (PrintBlock block in blocks)
@@ -295,7 +508,7 @@ public static class WorkspacePrintPdfComposer
             ops.Add(new PageOp(new CardBorderOp(cardTop, y - 4f)));
         }
 
-        return WritePdf(ops);
+        return WritePdf(ops, substitutions);
     }
 
     private abstract record PageContentOp;
@@ -318,7 +531,7 @@ public static class WorkspacePrintPdfComposer
     // PDF serializer
     // ---------------------------------------------------------------------
 
-    private static byte[] WritePdf(IReadOnlyList<PageOp> ops)
+    private static byte[] WritePdf(IReadOnlyList<PageOp> ops, List<(char Source, string Painted)> substitutions)
     {
         // Split into pages.
         List<List<PageContentOp>> pages = [new List<PageContentOp>()];
@@ -386,7 +599,7 @@ public static class WorkspacePrintPdfComposer
                 $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {Format(PageWidth)} {Format(PageHeight)}] " +
                 $"/Resources << /Font << /F1 {fontRegularId} 0 R /F2 {fontBoldId} 0 R >> >> /Contents {contentId} 0 R >>\nendobj\n"));
 
-            byte[] stream = RenderContentStream(pages[pageIndex]);
+            byte[] stream = RenderContentStream(pages[pageIndex], substitutions);
             BeginObject(contentId);
             raw.Write(Encoding.ASCII.GetBytes($"<< /Length {stream.Length} >>\nstream\n"));
             raw.Write(stream);
@@ -420,7 +633,7 @@ public static class WorkspacePrintPdfComposer
         return buffer.ToArray();
     }
 
-    private static byte[] RenderContentStream(IReadOnlyList<PageContentOp> contents)
+    private static byte[] RenderContentStream(IReadOnlyList<PageContentOp> contents, List<(char Source, string Painted)> substitutions)
     {
         StringBuilder content = new();
         foreach (PageContentOp op in contents)
@@ -428,7 +641,7 @@ public static class WorkspacePrintPdfComposer
             switch (op)
             {
                 case TextOp text:
-                    AppendTextOp(content, text);
+                    AppendTextOp(content, text, substitutions);
                     break;
 
                 case CardBorderOp border:
@@ -443,7 +656,7 @@ public static class WorkspacePrintPdfComposer
         return Encoding.Latin1.GetBytes(content.ToString());
     }
 
-    private static void AppendTextOp(StringBuilder content, TextOp text)
+    private static void AppendTextOp(StringBuilder content, TextOp text, List<(char Source, string Painted)> substitutions)
     {
         // Td translates relative to the current text-line position and Tj
         // auto-advances it by the painted string width, so compounding runs
@@ -458,7 +671,7 @@ public static class WorkspacePrintPdfComposer
             string font = run.Style == TextRunStyle.Bold ? "/F2" : "/F1";
             content.Append(CultureInfo.InvariantCulture,
                 $"BT {font} {Format(run.Size)} Tf {Format(runX)} {Format(text.Baseline)} Td ");
-            content.Append('(').Append(EscapeWinAnsi(run.Text)).Append(") Tj ET\n");
+            content.Append('(').Append(EscapeWinAnsi(run.Text, substitutions)).Append(") Tj ET\n");
             runX += MeasureWidth(run.Text, run.Style, run.Size);
         }
     }
@@ -466,7 +679,7 @@ public static class WorkspacePrintPdfComposer
     private static string Format(float value)
         => value.ToString("0.##", CultureInfo.InvariantCulture);
 
-    private static string EscapeWinAnsi(string text)
+    private static string EscapeWinAnsi(string text, List<(char Source, string Painted)>? substitutions)
     {
         Encoding winAnsi = Encoding.Latin1;
         StringBuilder escaped = new(text.Length + 8);
@@ -487,19 +700,73 @@ public static class WorkspacePrintPdfComposer
                         continue;
                     }
 
-                    byte encoded = winAnsi.GetBytes([character])[0];
-                    if (character <= 0xFF && encoded == character)
+                    if (character <= 0xFF && winAnsi.GetBytes([character])[0] == character)
                     {
                         escaped.Append(character);
-                    }
-                    else
-                    {
-                        escaped.Append(CultureInfo.InvariantCulture,
-                            $"\\{Convert.ToString(encoded, 8).PadLeft(3, '0')}");
+                        continue;
                     }
 
+                    // Truthful supported-character policy: this character has
+                    // no WinAnsiEncoding representation. Paint a visible,
+                    // deterministic fallback instead of silently mangling it,
+                    // and record the substitution so callers can disclose it.
+                    string fallback = FallbackFor(character);
+                    if (substitutions is not null)
+                    {
+                        substitutions.Add((character, fallback));
+                    }
+
+                    escaped.Append(EscapeLiteral(fallback));
                     break;
             }
+        }
+
+        return escaped.ToString();
+    }
+
+    /// <summary>Best-effort visible fallback for a character without WinAnsi
+    /// representation: a Latin-1-compatible compatibility form when one exists
+    /// (e.g. Greek letters keep their Latin transliteration convention), else
+    /// the explicit replacement marker. Never empty, always deterministic.
+    /// </summary>
+    private static string FallbackFor(char character)
+    {
+        // Latin-1 compatibility handling: strip combining-style accents via
+        // normalization only when the result is a single distinct Latin-1
+        // letter that round-trips WinAnsi (Diacritic-style falls back cleanly;
+        // e.g. U+0142 Latin small L with stroke has no such form).
+        string decomposed = character.ToString().Normalize(System.Text.NormalizationForm.FormD);
+        if (decomposed.Length == 1 && decomposed[0] != character)
+        {
+            return decomposed;
+        }
+
+        foreach (char part in decomposed)
+        {
+            if (part <= 0xFF && Encoding.Latin1.GetBytes([part])[0] == part)
+            {
+                return part.ToString();
+            }
+        }
+
+        // Visible, deterministic, WinAnsi-encodable marker that discloses the
+        // exact unsupported codepoint (never a silent placeholder byte).
+        return string.Create(CultureInfo.InvariantCulture, $"[U+{(int)character:X4}]");
+    }
+
+    /// <summary>Escapes parentheses, backslashes and high bytes for a PDF
+    /// string literal built from already-chosen fallback text (plain ASCII).</summary>
+    private static string EscapeLiteral(string text)
+    {
+        StringBuilder escaped = new(text.Length);
+        foreach (char character in text)
+        {
+            if (character is '(' or ')' or '\\')
+            {
+                escaped.Append('\\');
+            }
+
+            escaped.Append(character);
         }
 
         return escaped.ToString();
