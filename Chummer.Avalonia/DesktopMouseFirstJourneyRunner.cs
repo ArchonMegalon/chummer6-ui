@@ -19,6 +19,7 @@ using Chummer.Presentation.Shell;
 using Chummer.Presentation.Printing;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using System.Text.Json;
@@ -451,6 +452,84 @@ internal static class DesktopMouseFirstJourneyRunner
                         VerificationNotes:
                         [
                             "T492 native SR6 verification: the Sr6CreationWizardWindow finalized the draft through the Core finalization authority, the CareerRewardsWindow awarded karma, the AttributeImprove_Body row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative SR6 career advancement service, the karma debit and reopened-dialog cancel path were verified, and the file-menu save persisted the workspace for the fresh-process reopen leg."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
+            if (DesktopMouseFirstJourneyRuntime.PdfSaveRequested)
+            {
+                RecordStep(steps, "native pdf save leg: real dialog save of the career sample print preview");
+                DesktopUserJourneyWorkflowEvidence pdfEvidence = await ExerciseNativePdfSaveWorkflowAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(pdfEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> pdfAssertion in pdfEvidence.Assertions)
+                {
+                    if (!pdfAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Native PDF save leg assertion failed: {pdfAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: native PDF save leg assertion {pdfAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                var pdfVisibleState = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: pdfVisibleState.WorkspaceId?.Value,
+                        CharacterName: pdfVisibleState.Profile?.Name,
+                        CharacterAlias: pdfVisibleState.Profile?.Alias,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: pdfVisibleState.Session?.HasSavedWorkspace ?? false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "WIN-008 item 1: the REAL SavePrintPayloadAsync production path saved a composed PDF of the bundled career sample through the real modal Win32 save dialog (no SavePrintOverride). The dialog was driven by an in-process background thread; the produced PDF was left on disk for the harness's independent pymupdf render+text extraction."
                         ],
                         UserJourneyWorkflows: userJourneyWorkflows));
                 Environment.ExitCode = 0;
@@ -9763,6 +9842,209 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
         throw new TimeoutException(
             $"wizard button '{automationId}' never produced its effect: {effectDescription}.");
+    }
+
+    /// <summary>
+    /// WIN-008 item 1: native PDF save evidence leg. Exercises the REAL
+    /// production print-save path (no SavePrintOverride): compose-before-dialog,
+    /// the modal Win32 SaveFilePickerAsync, refusal-before-truncation, and the
+    /// honest notice. The modal save dialog is driven by an in-process Win32
+    /// dialog-driver thread (FindWindow/WM_SETTEXT/WM_COMMAND on the dialog
+    /// VIRTUAL window owned by the same process), because the modal dialog
+    /// blocks the awaiting continuation but keeps pumping the dispatcher.
+    /// The produced PDF is left for the HARNESS's independent render+text
+    /// extraction (pymupdf), which is the point of the receipt: the process
+    /// itself does not grade its own output beyond byte-level identity.
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseNativePdfSaveWorkflowAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string? targetPath = Environment.GetEnvironmentVariable(
+            DesktopMouseFirstJourneyRuntime.PdfSaveTargetEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(targetPath))
+        {
+            throw new InvalidOperationException(
+                "The native PDF save leg requires CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET.");
+        }
+
+        if (File.Exists(targetPath))
+        {
+            File.Delete(targetPath);
+        }
+
+        string? capturedNotice = null;
+        string? capturedError = null;
+        bool dialogDriven = false;
+        bool fileWritten = false;
+
+        // The Win32 dialog driver runs on a background thread: the modal
+        // SaveFilePickerAsync pumps the dispatcher but blocks the awaiting
+        // continuation, so the driver must act from OUTSIDE the dispatcher.
+        // Honesty rules: only a REAL dialog window with the expected title is
+        // driven; the driver never writes the file itself.
+        Thread driver = new(() =>
+        {
+            IntPtr hwnd = IntPtr.Zero;
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(90);
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                hwnd = FindDialogTitleWindow("Save Print Preview");
+                if (hwnd != IntPtr.Zero)
+                {
+                    break;
+                }
+
+                Thread.Sleep(250);
+            }
+
+            if (hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            // filename edit: the dialog's first ComboBox's first Edit child
+            // (standard explorer save dialog anatomy), then press Save (ID 1).
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                IntPtr combo = FindDialogChildWindow(hwnd, "ComboBox");
+                if (combo == IntPtr.Zero)
+                {
+                    Thread.Sleep(250);
+                    continue;
+                }
+
+                IntPtr edit = FindDialogChildWindow(combo, "Edit");
+                if (edit == IntPtr.Zero)
+                {
+                    Thread.Sleep(250);
+                    continue;
+                }
+
+                SetWindowTextW(edit, targetPath);
+                Thread.Sleep(150);
+                // IDOK = 1 (Save button) via WM_COMMAND
+                SendMessageW(hwnd, 0x0111 /*WM_COMMAND*/, (IntPtr)1, IntPtr.Zero);
+                dialogDriven = true;
+                return;
+            }
+        });
+        driver.IsBackground = true;
+        driver.Start();
+
+        try
+        {
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07a-pdf-save-before");
+
+            // The canonical print/export user path: import the bundled career
+            // sample (stable imported document) exactly like the print leg.
+            await CloseWorkspaceAndLoadCareerSampleAsync(window, steps, ct, recordPointerAction);
+
+            // printLanded = the target file exists on disk (checked on the
+            // dispatcher thread; File.Exists is safe there).
+            await PrintWithConflictRecoveryAsync(
+                window,
+                () => File.Exists(targetPath),
+                steps,
+                ct,
+                recordPointerAction);
+
+            // The dialog driver may still be inside its loop when the file
+            // lands; join it (bounded) before reading state.
+            if (!driver.Join(TimeSpan.FromSeconds(20)))
+            {
+                RecordStep(steps, "pdf save: dialog driver thread did not exit in time");
+            }
+
+            var visibleState = await Dispatcher.UIThread.InvokeAsync(
+                () => window.SnapshotStateForAutomation());
+            capturedNotice = visibleState.Notice;
+            capturedError = visibleState.Error;
+            fileWritten = File.Exists(targetPath);
+
+            RecordStep(steps, $"pdf save: dialog driven={dialogDriven}");
+            RecordStep(steps, $"pdf save: file exists={fileWritten}");
+            RecordStep(steps, $"pdf save: notice={capturedNotice ?? "none"}");
+            if (!string.IsNullOrEmpty(capturedError))
+            {
+                RecordStep(steps, $"pdf save: presenter error={capturedError}");
+            }
+
+            if (fileWritten)
+            {
+                byte[] head = File.ReadAllBytes(targetPath);
+                string headText = System.Text.Encoding.ASCII.GetString(head, 0, Math.Min(head.Length, 5));
+                long length = new FileInfo(targetPath).Length;
+                RecordStep(steps, $"pdf save: payload head={headText} bytes={length}");
+                DesktopMouseFirstJourneyRuntime.WritePdfSaveReceipt(
+                    visibleState.WorkspaceId?.Value,
+                    targetPath,
+                    length,
+                    capturedNotice,
+                    visibleState.Profile?.Name,
+                    visibleState.Profile?.Alias,
+                    null /* ruleset read independently by the harness from the PDF text */);
+            }
+
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07a-pdf-save-after");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "native_pdf_save",
+                ScreenshotPaths: [],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["pdf_save_dialog_driven"] = dialogDriven,
+                    ["pdf_save_file_written"] = fileWritten,
+                    ["pdf_save_notice_reported"] = !string.IsNullOrWhiteSpace(capturedNotice),
+                    ["pdf_save_notice_is_pdf"] = (capturedNotice ?? string.Empty).Contains("PDF document", StringComparison.OrdinalIgnoreCase),
+                    ["pdf_save_no_error"] = string.IsNullOrEmpty(capturedError)
+                },
+                InteractionNotes:
+                [
+                    "WIN-008 item 1: the REAL SavePrintPayloadAsync path ran with the real modal Win32 save dialog (no SavePrintOverride). The dialog was driven from an in-process background thread (FindWindow 'Save Print Preview' + WM_SETTEXT of the full target path + WM_COMMAND IDOK). The file was then left on disk for the harness's INDEPENDENT pymupdf render+text extraction."
+                ]);
+        }
+        finally
+        {
+            try { driver.Join(TimeSpan.FromSeconds(5)); } catch { /* best effort */ }
+        }
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr FindWindowW(string? lpClassName, string lpWindowName);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr FindWindowExW(IntPtr hWndParent, IntPtr hWndChildAfter, string? lpszClass, string? lpszWindow);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowTextW(IntPtr hWnd, string lpString);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SendMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+    private static IntPtr FindDialogTitleWindow(string title)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return IntPtr.Zero;
+        }
+
+        return FindWindowW("#32770", title);
+    }
+
+    private static IntPtr FindDialogChildWindow(IntPtr parent, string className)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return IntPtr.Zero;
+        }
+
+        return FindWindowExW(parent, IntPtr.Zero, className, null);
     }
 
     private static async Task PrintWithConflictRecoveryAsync(
