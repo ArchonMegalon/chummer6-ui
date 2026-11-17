@@ -2399,27 +2399,49 @@ public class CharacterOverviewPresenterTests
         Assert.IsNull(presenter.State.Profile);
     }
 
+    private static string CreateUnavailableRosterPath()
+    {
+        // A FILE occupying the candidate folder path makes Directory.CreateDirectory fail with
+        // IOException identically on Windows and Linux, producing a genuinely unavailable roster
+        // folder on every platform. The previous /proc fixture was Linux-only: on Windows it
+        // silently resolves to a <drive>:\proc\ path and gets created successfully, so the
+        // fixture stopped exercising the failure route (and polluted the drive root).
+        string candidate = Path.Combine(Path.GetTempPath(), "chummer-unavailable-roster-" + Guid.NewGuid().ToString("N"));
+        File.WriteAllBytes(candidate, new byte[] { 0x1A });
+        return candidate;
+    }
+
     [TestMethod]
     [DataRow("refresh_watch_folder")]
     [DataRow("open_roster_folder")]
     public async Task Character_roster_folder_actions_report_unwritable_paths_without_crashing(string actionId)
     {
-        var client = new FakeChummerClient();
-        var presenter = CreateTrustedPresenter(client);
+        string unavailableRosterPath = CreateUnavailableRosterPath();
+        DesktopPreferenceState retainedPreferences = DesktopPreferenceStateRuntime.Current;
+        DesktopPreferenceStateRuntime.SetCurrent(retainedPreferences with
+        {
+            CharacterRosterPath = unavailableRosterPath
+        });
+        try
+        {
+            var client = new FakeChummerClient();
+            var presenter = CreateTrustedPresenter(client);
 
-        await presenter.InitializeAsync(CancellationToken.None);
-        await presenter.ExecuteCommandAsync("character_roster", CancellationToken.None);
-        await presenter.UpdateDialogFieldAsync(
-            "rosterWatchFolderPath",
-            "/proc/chummer-character-roster/Characters",
-            CancellationToken.None);
+            await presenter.InitializeAsync(CancellationToken.None);
+            await presenter.ExecuteCommandAsync("character_roster", CancellationToken.None);
 
-        await presenter.ExecuteDialogActionAsync(actionId, CancellationToken.None);
+            await presenter.ExecuteDialogActionAsync(actionId, CancellationToken.None);
 
-        Assert.AreEqual("dialog.character_roster", presenter.State.ActiveDialog?.Id);
-        Assert.IsNull(presenter.State.Error);
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Roster folder is unavailable");
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Global Settings");
+            Assert.AreEqual("dialog.character_roster", presenter.State.ActiveDialog?.Id);
+            Assert.IsNull(presenter.State.Error);
+            StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Roster folder is unavailable");
+            StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Global Settings");
+        }
+        finally
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(retainedPreferences);
+            try { File.Delete(unavailableRosterPath); } catch { /* best effort cleanup */ }
+        }
     }
 
     [TestMethod]
