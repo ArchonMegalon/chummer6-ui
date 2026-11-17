@@ -36,6 +36,7 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string PdfSaveEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE";
     public const string PdfSaveReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_RECEIPT";
     public const string PdfSaveTargetEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET";
+    public const string PdfSaveTraceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TRACE";
     // T545/7867: two-process career reward recovery leg. Phase A awards karma
     // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
     // (process exits = process restart). Phase B is a fresh process that must

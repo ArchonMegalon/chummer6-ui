@@ -9887,50 +9887,105 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         // continuation, so the driver must act from OUTSIDE the dispatcher.
         // Honesty rules: only a REAL dialog window with the expected title is
         // driven; the driver never writes the file itself.
+        string tracePath = Environment.GetEnvironmentVariable(
+            DesktopMouseFirstJourneyRuntime.PdfSaveTraceEnvironmentVariable) ?? string.Empty;
+        void Trace(string message)
+        {
+            if (!string.IsNullOrWhiteSpace(tracePath))
+            {
+                try { File.AppendAllText(tracePath, DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff") + " " + message + Environment.NewLine); } catch { }
+            }
+        }
+
+        // The Win32 dialog driver runs on a background thread: the modal
+        // SaveFilePickerAsync pumps the dispatcher but blocks the awaiting
+        // continuation, so the driver must act from OUTSIDE the dispatcher.
+        // Honesty rules: only a REAL dialog window with the expected title is
+        // driven; the driver never writes the file itself.
+        // 
+        // Win32 facts (gen24 run-1 post-mortem): the modern Explorer save
+        // dialog hosts the filename Edit under FloatNotifySink -> ComboBox ->
+        // Edit; the FIRST direct-child ComboBox of the dialog is the
+        // file-type filter (no Edit child). Sends must never block on the
+        // dialog thread (a stopped pump wedges the driver forever); commits
+        // are POSTed, sets are timeout-guarded.
         Thread driver = new(() =>
         {
-            IntPtr hwnd = IntPtr.Zero;
-            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(90);
-            while (DateTimeOffset.UtcNow < deadline)
+            try
             {
-                hwnd = FindDialogTitleWindow("Save Print Preview");
-                if (hwnd != IntPtr.Zero)
+                IntPtr hwnd = IntPtr.Zero;
+                DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(120);
+                while (DateTimeOffset.UtcNow < deadline)
                 {
-                    break;
-                }
+                    hwnd = FindDialogTitleWindow("Save Print Preview");
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        break;
+                    }
 
-                Thread.Sleep(250);
-            }
-
-            if (hwnd == IntPtr.Zero)
-            {
-                return;
-            }
-
-            // filename edit: the dialog's first ComboBox's first Edit child
-            // (standard explorer save dialog anatomy), then press Save (ID 1).
-            for (int attempt = 0; attempt < 20; attempt++)
-            {
-                IntPtr combo = FindDialogChildWindow(hwnd, "ComboBox");
-                if (combo == IntPtr.Zero)
-                {
                     Thread.Sleep(250);
-                    continue;
                 }
 
-                IntPtr edit = FindDialogChildWindow(combo, "Edit");
+                if (hwnd == IntPtr.Zero)
+                {
+                    Trace("dialog not found within 120s");
+                    return;
+                }
+
+                Trace("dialog found hwnd=0x" + hwnd.ToString("x"));
+                if (!IsWindowVisibleW(hwnd))
+                {
+                    Trace("dialog not visible; ShowWindow(SW_SHOW)");
+                    ShowWindowW(hwnd, 5 /* SW_SHOW */);
+                    Thread.Sleep(250);
+                }
+
+                IntPtr edit = IntPtr.Zero;
+                for (int attempt = 0; attempt < 40 && edit == IntPtr.Zero; attempt++)
+                {
+                    // Enumerate ALL descendant Edits; the filename edit is the
+                    // one inside the ComboBox under a FloatNotifySink. Prefer an
+                    // Edit whose current text ends in .pdf/.htm*, else the one
+                    // whose ancestor chain is deepest (the filter combo's listbox
+                    // Edits, if any, are shallow).
+                    IntPtr best = IntPtr.Zero;
+                    int bestDepth = -1;
+                    CollectDescendantEdits(hwnd, 0, ref best, ref bestDepth);
+                    if (best != IntPtr.Zero)
+                    {
+                        edit = best;
+                    }
+
+                    if (edit == IntPtr.Zero)    {
+                        Thread.Sleep(250);
+                    }
+                }
+
                 if (edit == IntPtr.Zero)
                 {
-                    Thread.Sleep(250);
-                    continue;
+                    Trace("no descendant Edit found");
+                    return;
+                }
+
+                Trace("edit hwnd=0x" + edit.ToString("x"));
+                if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr getTextResult) == IntPtr.Zero)
+                {
+                    Trace("edit not responding (hung dialog thread)");
+                    return;
                 }
 
                 SetWindowTextW(edit, targetPath);
-                Thread.Sleep(150);
-                // IDOK = 1 (Save button) via WM_COMMAND
-                SendMessageW(hwnd, 0x0111 /*WM_COMMAND*/, (IntPtr)1, IntPtr.Zero);
+                Thread.Sleep(200);
+                Trace("set text, committing via WM_COMMAND IDOK (posted)");
+                // IDOK = 1 (Save). POST the commit - a blocking send into a
+                // dialog thread that is mid-Show can wait indefinitely.
+                PostMessageW(hwnd, 0x0111 /*WM_COMMAND*/, (IntPtr)1, IntPtr.Zero);
                 dialogDriven = true;
-                return;
+                Trace("commit posted, dialogDriven=true");
+            }
+            catch (Exception driverFailure)
+            {
+                Trace("driver exception: " + driverFailure.GetType().Name + ": " + driverFailure.Message);
             }
         });
         driver.IsBackground = true;
@@ -10026,6 +10081,72 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr SendMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool PostMessageW(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SendMessageTimeoutW(
+        IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWindowVisibleW(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindowW(IntPtr hWnd, int nCmdShow);
+
+    private delegate bool EnumChildWindowsDelegate(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumChildWindows(IntPtr hWndParent, EnumChildWindowsDelegate lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+
+    /// <summary>
+    /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
+    /// The deepest Edit wins (the filename edit lives in the deepest
+    /// FloatNotifySink -> ComboBox -> Edit chain of the save dialog).
+    /// </summary>
+    private sealed class DescendantEditSearch
+    {
+        public IntPtr Best;
+        public int BestDepth = -1;
+    }
+
+    /// <summary>
+    /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
+    /// The deepest Edit wins (the filename edit lives in the deepest
+    /// FloatNotifySink -> ComboBox -> Edit chain of the save dialog).
+    /// </summary>
+    private static void CollectDescendantEdits(IntPtr parent, int depth, ref IntPtr best, ref int bestDepth)
+    {
+        var state = new DescendantEditSearch();
+        var stack = new System.Collections.Generic.Stack<(IntPtr Window, int Level)>();
+        stack.Push((parent, depth));
+        while (stack.Count > 0)
+        {
+            (IntPtr current, int level) = stack.Pop();
+            EnumChildWindows(current, (child, lParam) =>
+            {
+                var name = new System.Text.StringBuilder(256);
+                GetClassNameW(child, name, 256);
+                if (string.Equals(name.ToString(), "Edit", StringComparison.OrdinalIgnoreCase) && level > state.BestDepth)
+                {
+                    state.Best = child;
+                    state.BestDepth = level;
+                }
+
+                stack.Push((child, level + 1));
+                return true;
+            }, IntPtr.Zero);
+        }
+
+        best = state.Best;
+        bestDepth = state.BestDepth;
+    }
 
     private static IntPtr FindDialogTitleWindow(string title)
     {
