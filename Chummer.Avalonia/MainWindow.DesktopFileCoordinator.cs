@@ -339,12 +339,31 @@ internal static class MainWindowDesktopFileCoordinator
             MimeTypes = ["text/html"]
         });
 
+        // WIN-008 journey seam (gen24): when the mouse-first journey
+        // requests a native PDF save (CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE=1
+        // with a target path), point the REAL modal save dialog at the
+        // exact target directory and filename so the journey drives ONLY
+        // the Save commit (external UIA InvokePattern needs no foreground
+        // in headless sessions). Other save paths are untouched.
+        global::Avalonia.Platform.Storage.IStorageFolder? journeyStartFolder = null;
+        string? journeyPdfTarget = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET");
+        if (!string.IsNullOrWhiteSpace(journeyPdfTarget))
+        {
+            string? journeyDirectory = Path.GetDirectoryName(journeyPdfTarget);
+            if (!string.IsNullOrEmpty(journeyDirectory))
+            {
+                journeyStartFolder = await storageProvider.TryGetFolderFromPathAsync(journeyDirectory);
+            }
+            baseName = Path.GetFileNameWithoutExtension(journeyPdfTarget);
+        }
+
         IStorageFile? targetFile = await storageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = pickerTitle,
             SuggestedFileName = pdfReady ? baseName + WorkspacePrintPdfComposer.PdfFileExtension : baseName + ".html",
             FileTypeChoices = choices,
-            ShowOverwritePrompt = true
+            ShowOverwritePrompt = true,
+            SuggestedStartLocation = journeyStartFolder
         });
 
         if (targetFile is null)
