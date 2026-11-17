@@ -6888,6 +6888,230 @@ public class CharacterOverviewPresenterTests
         Assert.IsNull(presenter.PendingSr6Recovery);
     }
 
+    // ---------------------------------------------------------------------
+    // Gen22 (T678): exact-operation recovery binding. The retained pre-Apply
+    // command is verified against the pending record BEFORE any Lookup or
+    // clear, so a switched workspace or a replaced intent can never cause
+    // another operation's record to be looked up or cleared.
+    // ---------------------------------------------------------------------
+
+    [TestMethod]
+    public async Task Exact_recovery_reconciles_retained_A_after_switch_to_B_and_never_touches_B_intent()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        SeedSr6RecoveryWorkspace(client, "ws-sr6-b");
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var original = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(original.Quote.WorkspaceId, CancellationToken.None);
+        var owner = presenter.State.DisplayOwnerContext!.Value;
+        client.LoseResponse = true;
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, original, CancellationToken.None));
+        Assert.AreEqual(1, client.AdvanceCalls);
+        client.LoseResponse = false;
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-sr6-b"), CancellationToken.None);
+        var lostB = Sr6RecoveryTestData.Command("ws-sr6-b");
+        client.LoseResponse = true;
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, lostB, CancellationToken.None));
+        Assert.AreEqual(2, client.AdvanceCalls);
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, original.Quote.WorkspaceId, out var heldA));
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, new CharacterWorkspaceId("ws-sr6-b"), out var heldB));
+        // Reconcile the RETAINED A identity while the presenter displays B.
+        client.LoseResponse = false;
+        client.RecoveryReady = true;
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(original);
+        Assert.IsNotNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, original.Quote.WorkspaceId, original, CancellationToken.None));
+        Assert.AreEqual(1, client.LookupCalls);
+        Assert.AreEqual(Sr6CareerAttributeIntegrity.Digest(original), Sr6CareerAttributeIntegrity.Digest(client.LastLookedUp!));
+        Assert.IsNull(directory.OpenStore().TryRead(owner.Owner, original.Quote.WorkspaceId, out var clearedA) ? clearedA : null);
+        // B's unrelated record is untouched and still resolves on its own exact entry.
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, new CharacterWorkspaceId("ws-sr6-b"), out var stillB));
+        Assert.AreEqual(heldB!.EntryId, stillB!.EntryId);
+        Assert.AreEqual(heldB.CommandDigest, stillB.CommandDigest);
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(lostB);
+        Assert.IsNotNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, new CharacterWorkspaceId("ws-sr6-b"), lostB, CancellationToken.None));
+        Assert.AreEqual(2, client.LookupCalls);
+        Assert.AreEqual(Sr6CareerAttributeIntegrity.Digest(lostB), Sr6CareerAttributeIntegrity.Digest(client.LastLookedUp!));
+        Assert.IsNull(directory.OpenStore().TryRead(owner.Owner, new CharacterWorkspaceId("ws-sr6-b"), out var clearedB) ? clearedB : null);
+        Assert.AreEqual(2, client.AdvanceCalls, "Recovery must never dispatch a new advance.");
+    }
+
+    [TestMethod]
+    public async Task Exact_recovery_refuses_replaced_intent_in_A_and_leaves_the_replacement_untouched()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var original = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(original.Quote.WorkspaceId, CancellationToken.None);
+        var owner = presenter.State.DisplayOwnerContext!.Value;
+        client.LoseResponse = true;
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, original, CancellationToken.None));
+        Assert.AreEqual(1, client.AdvanceCalls);
+        client.LoseResponse = false;
+        client.RecoveryReady = true;
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(original);
+        Assert.IsNotNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, original.Quote.WorkspaceId, original, CancellationToken.None));
+        // The replacement intent: a second apply in A, its response lost too.
+        client.RecoveryReady = false;
+        client.StoredReceipt = null;
+        client.LoseResponse = true;
+        await presenter.LoadAsync(original.Quote.WorkspaceId, CancellationToken.None);
+        var replacement = Sr6RecoveryTestData.Command();
+        Assert.AreNotEqual(original.OperationId, replacement.OperationId, "A fresh intent must carry a fresh operation.");
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, replacement, CancellationToken.None));
+        Assert.AreEqual(2, client.AdvanceCalls);
+        client.LoseResponse = false;
+        client.RecoveryReady = true;
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(original);
+        // Reconcile the RETAINED original while the REPLACEMENT holds the slot.
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, original.Quote.WorkspaceId, original, CancellationToken.None));
+        Assert.AreEqual(1, client.LookupCalls, "The original must never reach Lookup after a replacement took the slot.");
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, original.Quote.WorkspaceId, out var stillHeld));
+        Assert.AreEqual(Sr6CareerAttributeIntegrity.Digest(replacement), stillHeld!.CommandDigest);
+        // The replacement itself still resolves on its own exact entry.
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(replacement);
+        Assert.IsNotNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, original.Quote.WorkspaceId, replacement, CancellationToken.None));
+        Assert.AreEqual(2, client.LookupCalls);
+        Assert.IsNull(directory.OpenStore().TryRead(owner.Owner, original.Quote.WorkspaceId, out var cleared) ? cleared : null);
+        Assert.AreEqual(2, client.AdvanceCalls, "Recovery must never dispatch a new advance.");
+    }
+
+    [TestMethod]
+    public async Task Exact_recovery_refuses_owner_transition_and_uses_fresh_authorization_on_success()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var command = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        var originalOwner = presenter.State.DisplayOwnerContext!.Value;
+        client.LoseResponse = true;
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(originalOwner, command, CancellationToken.None));
+        client.LoseResponse = false;
+        client.RecoveryReady = true;
+        // StoredReceipt stays null: the open-probe during LoadAsync must not
+        // resolve or clear the intent before the exact-entry call runs.
+        client.StoredReceipt = null;
+        client.TransitionToOwnerB();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            originalOwner, command.Quote.WorkspaceId, command, CancellationToken.None));
+        Assert.AreEqual(0, client.LookupCalls);
+        Assert.IsTrue(directory.OpenStore().TryRead(originalOwner.Owner, command.Quote.WorkspaceId, out var stillHeld));
+        Assert.IsNotNull(stillHeld);
+        client.TransitionAwayAndBack();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(command);
+        Assert.IsNotNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            originalOwner, command.Quote.WorkspaceId, command, CancellationToken.None));
+        // LookupCalls == 2: one from the reopen probe (absent then), one from
+        // this exact-entry call. Both must have carried the retained command.
+        Assert.AreEqual(2, client.LookupCalls);
+        Assert.AreEqual(originalOwner.Owner, client.LastLookupOwner!.Value.Owner);
+        Assert.AreNotEqual(originalOwner, client.LastLookupOwner.Value, "The retained stamp's old authority must never be reused.");
+        Assert.IsNull(directory.OpenStore().TryRead(originalOwner.Owner, command.Quote.WorkspaceId, out var cleared) ? cleared : null);
+    }
+
+    [TestMethod]
+    public async Task Exact_recovery_refuses_same_operation_id_with_different_command()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var original = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(original.Quote.WorkspaceId, CancellationToken.None);
+        var owner = presenter.State.DisplayOwnerContext!.Value;
+        client.LoseResponse = true;
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, original, CancellationToken.None));
+        client.LoseResponse = false;
+        client.RecoveryReady = true;
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(original);
+        // A forged command carrying the SAME operation id but a different
+        // quote must be refused on the full-command digest alone.
+        var forgedQuote = original.Quote with { WorkspaceRevision = 43 };
+        forgedQuote = forgedQuote with { BindingDigest = Sr6CareerAttributeIntegrity.BindingDigest(forgedQuote) };
+        var forged = original with { Quote = forgedQuote };
+        Assert.AreNotEqual(Sr6CareerAttributeIntegrity.Digest(original), Sr6CareerAttributeIntegrity.Digest(forged));
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, original.Quote.WorkspaceId, forged, CancellationToken.None));
+        Assert.AreEqual(0, client.LookupCalls);
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, original.Quote.WorkspaceId, out var stillHeld));
+        Assert.AreEqual(Sr6CareerAttributeIntegrity.Digest(original), stillHeld!.CommandDigest);
+        // The exact command still resolves afterwards.
+        Assert.IsNotNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, original.Quote.WorkspaceId, original, CancellationToken.None));
+        Assert.AreEqual(1, client.LookupCalls);
+        Assert.IsNull(directory.OpenStore().TryRead(owner.Owner, original.Quote.WorkspaceId, out var cleared) ? cleared : null);
+    }
+
+    [TestMethod]
+    public async Task Exact_recovery_sends_retained_command_to_lookup_and_clears_only_on_exact_receipt()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var command = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        var owner = presenter.State.DisplayOwnerContext!.Value;
+        client.LoseResponse = true;
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, command, CancellationToken.None));
+        Assert.AreEqual(1, client.AdvanceCalls);
+        client.LoseResponse = false;
+        client.RecoveryReady = true;
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(command);
+        var receipt = await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, command.Quote.WorkspaceId, command, CancellationToken.None);
+        Assert.IsNotNull(receipt);
+        Assert.AreEqual(command.OperationId, receipt!.Command.OperationId);
+        Assert.AreEqual(1, client.LookupCalls);
+        Assert.AreEqual(Sr6CareerAttributeIntegrity.Digest(command), Sr6CareerAttributeIntegrity.Digest(client.LastLookedUp!));
+        Assert.AreEqual(1, client.AdvanceCalls, "Recovery must never dispatch a new advance.");
+        Assert.IsNull(directory.OpenStore().TryRead(owner.Owner, command.Quote.WorkspaceId, out var cleared) ? cleared : null);
+        Assert.IsNull(presenter.PendingSr6Recovery);
+    }
+
+    [TestMethod]
+    public async Task Exact_recovery_keeps_intent_when_lookup_is_absent_or_uncertain()
+    {
+        using var directory = new Sr6RecoveryTestDirectory();
+        var client = new RecoveryFakeClient();
+        SeedSr6RecoveryWorkspace(client);
+        using var presenter = CreateTrustedPresenter(client, sr6RecoveryStore: directory.OpenStore());
+        var command = Sr6RecoveryTestData.Command();
+        await presenter.LoadAsync(command.Quote.WorkspaceId, CancellationToken.None);
+        var owner = presenter.State.DisplayOwnerContext!.Value;
+        client.LoseResponse = true;
+        Assert.IsNull(await presenter.ApplySr6CareerAttributeAdvanceAsync(owner, command, CancellationToken.None));
+        client.LoseResponse = false;
+        // Absent: the server does not know the operation yet.
+        client.RecoveryReady = true;
+        client.StoredReceipt = null;
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, command.Quote.WorkspaceId, command, CancellationToken.None));
+        Assert.AreEqual(1, client.LookupCalls);
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, command.Quote.WorkspaceId, out var stillHeld));
+        Assert.AreEqual(Sr6CareerAttributeIntegrity.Digest(command), stillHeld!.CommandDigest);
+        // Uncertain: an unrelated receipt must not resolve or clear the intent.
+        client.StoredReceipt = Sr6RecoveryTestData.Receipt(Sr6RecoveryTestData.Command(revision: 99));
+        Assert.IsNull(await presenter.RecoverPendingSr6AdvancementAsync(
+            owner, command.Quote.WorkspaceId, command, CancellationToken.None));
+        Assert.AreEqual(2, client.LookupCalls);
+        Assert.IsTrue(directory.OpenStore().TryRead(owner.Owner, command.Quote.WorkspaceId, out var stillHeld2));
+        Assert.AreEqual(Sr6CareerAttributeIntegrity.Digest(command), stillHeld2!.CommandDigest);
+        Assert.AreEqual(1, client.AdvanceCalls, "Recovery must never dispatch a new advance.");
+    }
+
     private sealed class WriteFailingSr6RecoveryStore : ISr6CareerAttributeRecoveryStore
     {
         public bool TryRead(OwnerScope owner, CharacterWorkspaceId id, out Sr6CareerAttributePendingRecovery? pending)

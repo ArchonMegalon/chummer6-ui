@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
@@ -245,6 +246,52 @@ public sealed class Sr6CreationWizardWindowTests
             Assert.AreEqual(0, presenter.Confirms, "A mismatched acknowledgement must not dispatch.");
         });
 
+    [TestMethod]
+    public void Transient_workspace_unavailable_loads_recover_without_surface()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(async () =>
+        {
+            var presenter = new RecordingSr6WizardPresenter { TransientWorkspaceUnavailableLoads = 11 };
+            using var scope = new WizardScope(presenter);
+            // 11 transient loads inside the 12-attempt window: the 12th load is
+            // the first success, so the wizard body renders and no blocker text
+            // is surfaced. The load ladder is ASYNC now (Task.Delay, not
+            // Thread.Sleep), so the headless dispatcher must pump until the
+            // bounded ladder finished: wait until all 11 transient loads were
+            // consumed, then one further dispatcher pump for the success
+            // render. The ladder re-fences owner/close/cancel on every turn.
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+            while (presenter.TransientWorkspaceUnavailableLoads > 0 && DateTime.UtcNow < deadline)
+                await Task.Delay(50);
+            Assert.AreEqual(0, presenter.TransientWorkspaceUnavailableLoads, "The bounded async ladder must consume every seeded transient load.");
+            await Task.Delay(100);
+            Assert.IsFalse(
+                (scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text ?? "").Contains("workspace-unavailable"),
+                "Transient loads must recover without surfacing the Core blocker string.");
+            Assert.IsFalse(
+                (scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text ?? "").Contains("store-read-failed"),
+                "Transient loads must not surface as store failures.");
+        });
+
+    [TestMethod]
+    public void Persistent_workspace_unavailable_loads_surface_the_blocker_after_the_window()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(async () =>
+        {
+            var presenter = new RecordingSr6WizardPresenter { TransientWorkspaceUnavailableLoads = int.MaxValue };
+            using var scope = new WizardScope(presenter);
+            // Beyond the bounded window (12 async attempts) the transient
+            // blocker must surface (never an empty state, never a crash): the
+            // user sees the exact Core blocker string. Pump the dispatcher
+            // until the bounded ladder exhausts, with a generous deadline.
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (DateTime.UtcNow < deadline)
+            {
+                if ((scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text ?? "").Contains("workspace-unavailable"))
+                    break;
+                await Task.Delay(100);
+            }
+            StringAssert.Contains(scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text!, "workspace-unavailable");
+        });
+
     private static void Click(Sr6CreationWizardWindow window, string name)
         => window.FindControl<Button>(name)!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
@@ -264,6 +311,7 @@ public sealed class RecordingSr6WizardPresenter : ISr6CreationFoundationInteract
 {
     public int Prepares, Confirms;
     public bool PointBuy, ThrowOnConfirm, ThrowOnLoad, ThrowOnPrepare, RefreshFailsAfterCommit;
+    public int TransientWorkspaceUnavailableLoads;
     public Sr6CreationFoundationSelection? LastSelection;
     public Sr6CreationFoundationState? SavedState;
     private Sr6CreationFoundationState State(CharacterOverviewState overview) => SavedState ?? new(
@@ -278,6 +326,16 @@ public sealed class RecordingSr6WizardPresenter : ISr6CreationFoundationInteract
     public Sr6CreationFoundationInteractionLoadResult Load(CharacterOverviewState overview)
     {
         if (ThrowOnLoad) throw new IOException("test store read failed");
+        if (TransientWorkspaceUnavailableLoads > 0)
+        {
+            TransientWorkspaceUnavailableLoads--;
+            // Mirror the Core blocker string exactly: the wizard's transient
+            // retry window keys on this ordinal substring.
+            return new(
+                CharacterCreationFoundationOutcomes.Blocked,
+                null,
+                ["sr6-creation-foundation-workspace-unavailable"]);
+        }
         return new(CharacterCreationFoundationOutcomes.Success, new(State(overview), []), []);
     }
     public Sr6CreationFoundationInteractionPrepareResult Prepare(CharacterOverviewState overview, Sr6CreationFoundationSelection selection)

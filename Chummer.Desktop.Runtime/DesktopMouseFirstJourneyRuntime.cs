@@ -255,7 +255,9 @@ public static class DesktopMouseFirstJourneyRuntime
         string? attributeId = null,
         int? quotedKarmaCost = null,
         int? quotedTargetNaturalRating = null,
-        string? naturalRatingAfter = null)
+        string? naturalRatingAfter = null,
+        decimal? nuyenAfter = null,
+        int? savedRevision = null)
     {
         string? path = Environment.GetEnvironmentVariable(Sr6AdvanceReceiptEnvironmentVariable);
         if (string.IsNullOrWhiteSpace(path))
@@ -273,6 +275,8 @@ public static class DesktopMouseFirstJourneyRuntime
             quotedKarmaCost,
             quotedTargetNaturalRating,
             naturalRatingAfter,
+            nuyenAfter,
+            savedRevision,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));

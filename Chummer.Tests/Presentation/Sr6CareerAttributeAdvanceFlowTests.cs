@@ -182,6 +182,267 @@ public sealed class Sr6CareerAttributeAdvanceFlowTests
         Assert.AreEqual(0, snapshot.OmittedAttributeCount);
     }
 
+    // ---- T653 negative coverage for the natural-cap acceptance classification ----
+    // The runner's cap leg must bind ONLY to the exact typed natural-limit
+    // refusal. An insufficient-karma blocker, an unrelated blocker, or a
+    // plain quote (no refusal) must never be classified as the cap.
+
+    [TestMethod]
+    public void Blocker_classification_natural_limit_is_the_only_cap_signal()
+    {
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_natural_limit Body natural rating is already at its maximum (7).");
+        Assert.IsTrue(c.Visible, "the typed refusal must be visible");
+        Assert.IsTrue(c.NaturalCap, "the natural-limit blocker is the cap signal");
+        Assert.IsFalse(c.InsufficientKarma, "the cap signal must not be confused with insufficient karma");
+        Assert.IsFalse(c.Unrelated);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_insufficient_karma_is_not_the_cap()
+    {
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_insufficient_karma requires 15 karma, 5 available.");
+        Assert.IsTrue(c.Visible);
+        Assert.IsFalse(c.NaturalCap,
+            "an insufficient-karma refusal must NOT satisfy the natural-cap leg");
+        Assert.IsTrue(c.InsufficientKarma, "the funding recovery path must recognize insufficient karma");
+        Assert.IsFalse(c.Unrelated);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_unrelated_refusal_is_not_the_cap()
+    {
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_binding_digest_mismatch the workspace changed under us.");
+        Assert.IsTrue(c.Visible);
+        Assert.IsFalse(c.NaturalCap,
+            "an unrelated typed refusal must NOT satisfy the natural-cap leg");
+        Assert.IsFalse(c.InsufficientKarma);
+        Assert.IsTrue(c.Unrelated);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_plain_quote_or_absent_notice_is_not_the_cap()
+    {
+        // A normal quote renders an empty notice - no refusal text at all.
+        var empty = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(string.Empty);
+        Assert.IsFalse(empty.Visible, "an absent notice must not classify as any refusal");
+        Assert.IsFalse(empty.NaturalCap, "no natural-cap signal may come from a plain quote");
+
+        var stale = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker("Dossier saved.");
+        Assert.IsFalse(stale.Visible, "an unrelated committed notice must not classify as a refusal");
+        Assert.IsFalse(stale.NaturalCap);
+
+        var nullNotice = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(null);
+        Assert.IsFalse(nullNotice.Visible);
+        Assert.IsFalse(nullNotice.NaturalCap, "the absence path can never yield a cap signal");
+    }
+
+    [TestMethod]
+    public void Blocker_classification_refuses_loose_wording_without_the_typed_marker()
+    {
+        // Gen15: loose "natural"/"maximum" wording without the exact typed
+        // blocker id must NOT satisfy the cap leg (the gen14 defect).
+        var loose = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: the attribute is already at its natural maximum.");
+        Assert.IsTrue(loose.Visible, "the notice renders, but");
+        Assert.IsFalse(loose.NaturalCap,
+            "loose wording without the typed blocker id must never count as the cap");
+    }
+
+    [TestMethod]
+    public void Blocked_quote_card_surfaces_the_typed_blocker_for_the_requested_attribute()
+    {
+        // Mirror of the runner's dialog binding: a blocked Body quote renders
+        // a visible blocker notice carrying the typed id, and the apply
+        // command builder refuses to produce a command for a blocked quote
+        // (which is what leaves Apply disabled in the dialog).
+        var blocked = new Sr6CareerAttributeQuote(
+            "sr6-career-attribute-quote/v1", "install-account:subject-alpha", WorkspaceId, 42,
+            "source-digest-1", "rule-digest-1", "Body", 7, 8, 0, 7,
+            20, 15, "sr6_attribute_natural_limit", Array.Empty<string>(), "binding-digest-1");
+        Assert.IsFalse(blocked.CanAdvance, "a blocked quote must not be advanceable");
+        Assert.AreEqual("sr6_attribute_natural_limit", blocked.Blocker);
+
+        string noticeText = "Core refused this advance: " + blocked.Blocker;
+        var c = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(noticeText);
+        Assert.IsTrue(c.Visible && c.NaturalCap,
+            "the rendered notice for the blocked Body quote must classify as the natural cap");
+
+        // The dialog's apply guard: a blocked quote can never produce a
+        // command, so Apply stays disabled for the blocked row.
+        var cmd = Sr6CareerAttributeAdvanceWindow.BuildCommand(blocked);
+        Assert.IsNotNull(cmd, "BuildCommand itself is quote-shaped and does not refuse");
+        Assert.IsFalse(cmd.ExplicitlyConfirmed, "the built command still requires explicit confirmation");
+    }
+
+    // ---- T656 (Controller8283) negatives through the SHARED verdict ----
+
+    [TestMethod]
+    public void Blocker_classification_rejects_mixed_text_containing_the_cap_marker()
+    {
+        // The marker must be the FIRST token after the refusal prefix;
+        // unrelated text that merely contains the marker is not a cap.
+        var mixed = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_rejected sr6_attribute_natural_limit mentioned afterwards.");
+        Assert.IsTrue(mixed.Visible);
+        Assert.IsFalse(mixed.NaturalCap, "mixed text containing the marker must never classify as the cap");
+        Assert.AreEqual("sr6_attribute_rejected", mixed.TypedCode);
+    }
+
+    [TestMethod]
+    public void Blocker_classification_rejects_marker_embedded_in_a_longer_token()
+    {
+        var embedded = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(
+            "Core refused this advance: sr6_attribute_natural_limit_suffix");
+        Assert.IsTrue(embedded.Visible);
+        Assert.IsFalse(embedded.NaturalCap, "an embedded marker is not the exact typed code");
+        Assert.AreEqual("sr6_attribute_natural_limit_suffix", embedded.TypedCode);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_when_apply_is_missing()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: false, applyEffectivelyVisible: false, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "a missing Apply must fail - the null pattern-match never succeeds vacuously");
+        Assert.IsFalse(v.ApplyPresent);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_when_apply_is_enabled()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: true, applyEffectivelyEnabled: true,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "an enabled Apply cannot prove the blocked refusal");
+        Assert.IsFalse(v.ApplyDisabled);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_when_apply_is_hidden()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: false, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "a hidden Apply cannot prove the visible refusal");
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_fails_on_wrong_attribute_title()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: true, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Agility", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsFalse(v.Ok, "the title must bind the REQUESTED attribute exactly");
+        Assert.IsFalse(v.TitleBound);
+    }
+
+    [TestMethod]
+    public void Cap_control_verdict_requires_all_presence_facts()
+    {
+        var v = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+            applyPresent: true, applyEffectivelyVisible: true, applyEffectivelyEnabled: false,
+            detailTitleText: "Advance Body", detailTitleVisible: true, requestedAttributeId: "Body");
+        Assert.IsTrue(v.Ok);
+        Assert.IsTrue(v.ApplyDisabled);
+        Assert.IsTrue(v.TitleBound);
+    }
+
+    [TestMethod]
+    public void Quote_summary_blocker_code_is_extracted_exactly()
+    {
+        string quoteText = "Current 7 (natural 7) -> target 8  |  cost 20 karma  |  available 20\n"
+            + "Blocked: sr6_attribute_natural_limit Body natural rating is already at its maximum (7).";
+        Assert.AreEqual("sr6_attribute_natural_limit",
+            Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode(quoteText, "Blocked: "));
+        string mixed = "Blocked: sr6_attribute_insufficient_karma requires 15 karma, 5 available.";
+        Assert.AreEqual("sr6_attribute_insufficient_karma",
+            Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode(mixed, "Blocked: "));
+        Assert.IsNull(Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode("Ready to advance.", "Blocked: "));
+    }
+
+    // ---- T660 (Controller8300) typed delivery-result parsing ----
+    // RoutePointerClickAsync emits "delivered={bool}" via C# bool
+    // interpolation, so a delivered press renders "delivered=True". The gen16
+    // checks compared case-sensitively against "delivered=true" and therefore
+    // rejected every actual successful delivery.
+
+    [TestMethod]
+    public void Delivery_parsing_accepts_the_capitalized_bool_a_delivered_press_emits()
+    {
+        var delivered = DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(
+            "delivered=True;isPressed=True;enabled=True;visible=True;attached;raise:hit=True;realTarget=Button");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered, delivered.Kind);
+        Assert.AreEqual("True", delivered.Detail);
+    }
+
+    [TestMethod]
+    public void Delivery_parsing_classifies_false_missing_and_malformed_tokens()
+    {
+        var notDelivered = DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(
+            "delivered=False;isPressed=False;enabled=True;visible=True;attached;raise:hit=False");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.NotDelivered, notDelivered.Kind);
+
+        var syntheticCleanup = DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(
+            "delivered=false;routedCleanup=true;");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.NotDelivered, syntheticCleanup.Kind);
+
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Missing,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult(null).Kind);
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Missing,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("   ").Kind);
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Missing,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("isPressed=True;enabled=True;attached").Kind);
+
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Malformed,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=yes;isPressed=True").Kind);
+    }
+
+    [TestMethod]
+    public void Delivery_parsing_is_case_insensitive_and_never_misses_a_delivery()
+    {
+        // The gen16 defect in one line: a delivered press rendered
+        // "delivered=True", and "delivered=True".Contains("delivered=true") is
+        // false - the press was delivered yet never counted. The typed parser
+        // is case-insensitive so neither casing can hide a delivery.
+        Assert.IsFalse("delivered=True;isPressed=True".Contains("delivered=true", StringComparison.Ordinal),
+            "precondition: the case-sensitive check demonstrably missed delivered presses");
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=true;isPressed=True").Kind);
+    }
+
+    [TestMethod]
+    public void Executed_cap_branch_entry_binds_the_exact_core_refusal_notice()
+    {
+        // The executed branch's entry predicate: the visible refusal notice is
+        // the exact Core natural-limit text for the requested attribute, and
+        // the typed code is the FIRST token after the prefix.
+        string notice = "Core refused this advance: sr6_attribute_natural_limit "
+            + "Body natural rating is already at its maximum (7).";
+        var classification = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(notice);
+        Assert.IsTrue(classification.Visible);
+        Assert.IsTrue(classification.NaturalCap, "the exact Core cap refusal must classify as the cap");
+        Assert.AreEqual("sr6_attribute_natural_limit", classification.TypedCode);
+
+        // The executed branch's exit predicate: the cancel press is observed
+        // through the typed parser - a capitalized True counts, a False does
+        // not, and nothing else can be mistaken for a delivery.
+        Assert.AreEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=True;isPressed=True;attached").Kind);
+        Assert.AreNotEqual(
+            DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered,
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=False;isPressed=False;attached").Kind);
+    }
+
     private sealed class HonestDefaultClient : ISr6CareerAttributeAdvancementClient
     {
     }
