@@ -10033,12 +10033,26 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         continue;
                     }
 
-                    // Commit the way a real user does: Enter in the filename
-                    // Edit (the dialog message pump translates it via its
-                    // default-button handling).
-                    PostMessageW(edit, 0x0100 /*WM_KEYDOWN*/, (IntPtr)0x0D /*VK_RETURN*/, IntPtr.Zero);
-                    PostMessageW(edit, 0x0102 /*WM_CHAR*/, (IntPtr)0x0D, IntPtr.Zero);
-                    PostMessageW(edit, 0x0101 /*WM_KEYUP*/, (IntPtr)0x0D, IntPtr.Zero);
+                    // Commit the way a real user does. Posted keystrokes
+                    // bypass the modal loop's translation and synthetic
+                    // BN_CLICKED is dropped here (gen24 run-6), so: attach to
+                    // the dialog thread's input state, give the Edit REAL
+                    // focus, then inject a REAL Enter key event.
+                    uint dialogThread = GetWindowThreadProcessId(hwnd, out _);
+                    uint driverThread = GetCurrentThreadId();
+                    bool attached = AttachThreadInput(driverThread, dialogThread, true);
+                    IntPtr previousFocus = SetFocus(edit);
+                    SendInputEnter();
+                    if (attached)
+                    {
+                        AttachThreadInput(driverThread, dialogThread, false);
+                        if (previousFocus != IntPtr.Zero)
+                        {
+                            SetFocus(previousFocus);
+                        }
+                    }
+
+                    Trace("real Enter sent (attached=" + attached + ")");
                     DateTimeOffset commitDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
                     while (DateTimeOffset.UtcNow < commitDeadline)
                     {
@@ -10051,13 +10065,14 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         Thread.Sleep(250);
                     }
 
-                    Trace("cycle " + cycle + " edit-Enter " + (committed ? "accepted" : "not accepted"));
+                    Trace("cycle " + cycle + " real-Enter " + (committed ? "accepted" : "not accepted"));
                     if (committed)
                     {
                         break;
                     }
 
-                    // Fallback: BM_CLICK the Save button (ctrl id 1).
+                    // Fallback 1: correctly-formed WM_COMMAND
+                    // (wParam=MAKEWPARAM(IDOK,0), lParam=button hwnd).
                     IntPtr saveButton = IntPtr.Zero;
                     EnumChildWindows(hwnd, (child, lParam) =>
                     {
@@ -10077,10 +10092,10 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         continue;
                     }
 
-                    Trace("cycle " + cycle + " fallback BM_CLICK save hwnd=0x" + saveButton.ToString("x"));
-                    PostMessageW(saveButton, 0x00F5 /*BM_CLICK*/, IntPtr.Zero, IntPtr.Zero);
-                    DateTimeOffset clickDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
-                    while (DateTimeOffset.UtcNow < clickDeadline)
+                    Trace("cycle " + cycle + " fallback WM_COMMAND lParam=button");
+                    PostMessageW(hwnd, 0x0111 /*WM_COMMAND*/, (IntPtr)1 /*MAKEWPARAM(1,0)*/, saveButton);
+                    DateTimeOffset cmdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+                    while (DateTimeOffset.UtcNow < cmdDeadline)
                     {
                         if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
                         {
@@ -10091,7 +10106,12 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         Thread.Sleep(250);
                     }
 
-                    Trace("cycle " + cycle + " BM_CLICK " + (committed ? "accepted" : "not accepted"));
+                    Trace("cycle " + cycle + " WM_COMMAND " + (committed ? "accepted" : "not accepted"));
+                    if (committed)
+                    {
+                        break;
+                    }
+
                 }
 
                 dialogDriven = committed;
@@ -10216,6 +10236,52 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetParent(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SetFocus(IntPtr hWnd);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KeyboardInput
+    {
+        public ushort Vk;
+        public ushort Scan;
+        public uint Flags;
+        public uint Time;
+        public IntPtr ExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct InputRecord
+    {
+        public int Type;
+        public KeyboardInput Keyboard;
+    }
+
+    /// <summary>Injects a REAL Enter key-down/up pair via SendInput.
+    /// Real input travels the same translation path as a user keypress.
+    /// </summary>
+    private static void SendInputEnter()
+    {
+        const int inputKeyboard = 1;
+        const uint keyEventfKeyup = 0x0002;
+        var down = new InputRecord { Type = inputKeyboard, Keyboard = new KeyboardInput { Vk = 0x0D, Scan = 0x1C } };
+        var up = new InputRecord { Type = inputKeyboard, Keyboard = new KeyboardInput { Vk = 0x0D, Scan = 0x1C, Flags = keyEventfKeyup } };
+        var records = new[] { down, up };
+        SendInput((uint)records.Length, records, Marshal.SizeOf<InputRecord>());
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint nInputs, InputRecord[] pInputs, int cbSize);
 
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
