@@ -9933,21 +9933,38 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                 }
 
                 Trace("dialog found hwnd=0x" + hwnd.ToString("x"));
-                if (!IsWindowVisible(hwnd))
+
+                // WAIT for the dialog to actually become visible. Window
+                // creation precedes IFileDialog Show() initialization, and the
+                // initialization RE-SETS the filename edit - touching the edit
+                // too early loses the text and Save refuses an empty filename
+                // (gen24 run-5 evidence).
+                bool becameVisible = IsWindowVisible(hwnd);
+                DateTimeOffset visibleDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(45);
+                while (!becameVisible && DateTimeOffset.UtcNow < visibleDeadline)
                 {
-                    Trace("dialog not visible; ShowWindow(SW_SHOW)");
-                    ShowWindow(hwnd, 5 /* SW_SHOW */);
                     Thread.Sleep(250);
+                    becameVisible = IsWindowVisible(hwnd);
+                }
+
+                if (!becameVisible)
+                {
+                    Trace("dialog never became visible; ShowWindow(SW_SHOW)");
+                    ShowWindow(hwnd, 5 /* SW_SHOW */);
+                    Thread.Sleep(500);
+                }
+                else
+                {
+                    Trace("dialog visible");
                 }
 
                 IntPtr edit = IntPtr.Zero;
                 for (int attempt = 0; attempt < 40 && edit == IntPtr.Zero; attempt++)
                 {
-                    // Enumerate ALL descendant Edits; the filename edit is the
-                    // one inside the ComboBox under a FloatNotifySink. Prefer an
-                    // Edit whose current text ends in .pdf/.htm*, else the one
-                    // whose ancestor chain is deepest (the filter combo's listbox
-                    // Edits, if any, are shallow).
+                    // The FILENAME Edit of a common-item dialog is the Edit
+                    // whose parent is a ComboBox whose parent is a
+                    // FloatNotifySink; the Explorer search-box Edit sits DEEPER
+                    // and must NOT win (gen24 run-4 evidence).
                     IntPtr best = IntPtr.Zero;
                     int bestDepth = -1;
                     CollectDescendantEdits(hwnd, 0, ref best, ref bestDepth);
@@ -9956,7 +9973,8 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                         edit = best;
                     }
 
-                    if (edit == IntPtr.Zero)    {
+                    if (edit == IntPtr.Zero)
+                    {
                         Thread.Sleep(250);
                     }
                 }
@@ -9981,38 +9999,64 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
                     Trace("edit hwnd=0x" + edit.ToString("x") + " chain " + chain.ToString());
                 }
-                if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr getTextResult) == IntPtr.Zero)
-                {
-                    Trace("edit not responding (hung dialog thread)");
-                    return;
-                }
 
-                SetWindowTextW(edit, targetPath);
-                Thread.Sleep(200);
-
-                // Commit the way a real user does: Enter in the filename
-                // Edit. The Edit's default-button handling performs the
-                // IFileDialog commit WITH the edit's context; a bare
-                // WM_COMMAND IDOK to the dialog does not (run-3 evidence).
                 bool committed = false;
-                PostMessageW(edit, 0x0100 /*WM_KEYDOWN*/, (IntPtr)0x0D /*VK_RETURN*/, IntPtr.Zero);
-                PostMessageW(edit, 0x0102 /*WM_CHAR*/, (IntPtr)0x0D, IntPtr.Zero);
-                PostMessageW(edit, 0x0101 /*WM_KEYUP*/, (IntPtr)0x0D, IntPtr.Zero);
-                DateTimeOffset commitDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
-                while (DateTimeOffset.UtcNow < commitDeadline)
+                for (int cycle = 0; cycle < 6 && !committed; cycle++)
                 {
-                    if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
+                    if (!IsWindow(hwnd) || !IsWindow(edit))
                     {
-                        committed = true;
+                        Trace("dialog or edit died before cycle " + cycle);
                         break;
                     }
 
-                    Thread.Sleep(250);
-                }
+                    if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr lenResult) == IntPtr.Zero)
+                    {
+                        Trace("edit not responding (hung dialog thread)");
+                        return;
+                    }
 
-                Trace(committed ? "edit-Enter commit accepted (dialog gone)" : "edit-Enter commit NOT accepted");
-                if (!committed)
-                {
+                    SetWindowTextW(edit, targetPath);
+                    Thread.Sleep(300);
+
+                    // Read the text BACK and only commit when the edit really
+                    // holds the target (dialog init may have cleared it).
+                    var probe = new System.Text.StringBuilder(1024);
+                    IntPtr probeLen = (IntPtr)Math.Min(probe.Capacity, (int)lenResult);
+                    bool readBack = SendMessageTimeoutW(
+                        edit, 0x000D /*WM_GETTEXT*/, probeLen + (IntPtr)1, probe, 2, 2000, out _) != IntPtr.Zero;
+                    string current = readBack ? probe.ToString() : string.Empty;
+                    Trace("cycle " + cycle + " read-back=\"" + current + "\"");
+                    if (!string.Equals(current, targetPath, StringComparison.Ordinal))
+                    {
+                        Trace("cycle " + cycle + " text lost (dialog still initializing); retrying");
+                        Thread.Sleep(1000);
+                        continue;
+                    }
+
+                    // Commit the way a real user does: Enter in the filename
+                    // Edit (the dialog message pump translates it via its
+                    // default-button handling).
+                    PostMessageW(edit, 0x0100 /*WM_KEYDOWN*/, (IntPtr)0x0D /*VK_RETURN*/, IntPtr.Zero);
+                    PostMessageW(edit, 0x0102 /*WM_CHAR*/, (IntPtr)0x0D, IntPtr.Zero);
+                    PostMessageW(edit, 0x0101 /*WM_KEYUP*/, (IntPtr)0x0D, IntPtr.Zero);
+                    DateTimeOffset commitDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+                    while (DateTimeOffset.UtcNow < commitDeadline)
+                    {
+                        if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
+                        {
+                            committed = true;
+                            break;
+                        }
+
+                        Thread.Sleep(250);
+                    }
+
+                    Trace("cycle " + cycle + " edit-Enter " + (committed ? "accepted" : "not accepted"));
+                    if (committed)
+                    {
+                        break;
+                    }
+
                     // Fallback: BM_CLICK the Save button (ctrl id 1).
                     IntPtr saveButton = IntPtr.Zero;
                     EnumChildWindows(hwnd, (child, lParam) =>
@@ -10027,28 +10071,27 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
                         return true;
                     }, IntPtr.Zero);
-                    if (saveButton != IntPtr.Zero)
+                    if (saveButton == IntPtr.Zero)
                     {
-                        Trace("fallback: BM_CLICK save button hwnd=0x" + saveButton.ToString("x"));
-                        PostMessageW(saveButton, 0x00F5 /*BM_CLICK*/, IntPtr.Zero, IntPtr.Zero);
-                        DateTimeOffset clickDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
-                        while (DateTimeOffset.UtcNow < clickDeadline)
-                        {
-                            if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
-                            {
-                                committed = true;
-                                break;
-                            }
+                        Trace("cycle " + cycle + " save button (ctrl id 1) not found");
+                        continue;
+                    }
 
-                            Thread.Sleep(250);
+                    Trace("cycle " + cycle + " fallback BM_CLICK save hwnd=0x" + saveButton.ToString("x"));
+                    PostMessageW(saveButton, 0x00F5 /*BM_CLICK*/, IntPtr.Zero, IntPtr.Zero);
+                    DateTimeOffset clickDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+                    while (DateTimeOffset.UtcNow < clickDeadline)
+                    {
+                        if (!IsWindow(hwnd) || !IsWindowVisible(hwnd))
+                        {
+                            committed = true;
+                            break;
                         }
 
-                        Trace(committed ? "BM_CLICK commit accepted (dialog gone)" : "BM_CLICK commit NOT accepted");
+                        Thread.Sleep(250);
                     }
-                    else
-                    {
-                        Trace("fallback: save button (ctrl id 1) not found");
-                    }
+
+                    Trace("cycle " + cycle + " BM_CLICK " + (committed ? "accepted" : "not accepted"));
                 }
 
                 dialogDriven = committed;
@@ -10159,6 +10202,10 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     [DllImport("user32.dll", SetLastError = true)]
     private static extern IntPtr SendMessageTimeoutW(
         IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr SendMessageTimeoutW(
+        IntPtr hWnd, int Msg, IntPtr wParam, System.Text.StringBuilder lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
