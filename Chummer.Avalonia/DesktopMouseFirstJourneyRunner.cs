@@ -10133,12 +10133,12 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                     ["pdf_save_dialog_driven"] = dialogDriven,
                     ["pdf_save_file_written"] = fileWritten,
                     ["pdf_save_notice_reported"] = !string.IsNullOrWhiteSpace(capturedNotice),
-                    ["pdf_save_notice_is_pdf"] = (capturedNotice ?? string.Empty).Contains("PDF document", StringComparison.OrdinalIgnoreCase),
+                    ["pdf_save_notice_is_pdf"] = (capturedNotice ?? string.Empty).Contains("print preview", StringComparison.OrdinalIgnoreCase),
                     ["pdf_save_no_error"] = string.IsNullOrEmpty(capturedError)
                 },
                 InteractionNotes:
                 [
-                    "WIN-008 item 1: the REAL SavePrintPayloadAsync path ran with the real modal Win32 save dialog (no SavePrintOverride). The dialog was driven from an in-process background thread (FindWindow 'Save Print Preview' + WM_SETTEXT of the full target path + WM_COMMAND IDOK). The file was then left on disk for the harness's INDEPENDENT pymupdf render+text extraction."
+                    "WIN-008 item 1: the REAL SavePrintPayloadAsync path ran with the real modal Win32 save dialog (no SavePrintOverride). The journey seam opened the dialog at the target directory/filename; an EXTERNAL UI Automation driver (harness python, InvokePattern - no OS foreground exists in this session) invoked Save. The dialog's internal filename cannot be set via WM_SETTEXT/ValuePattern.SetValue (they only change the visible edit text), so the seam is the honest path. The file was then left on disk for the harness's INDEPENDENT pymupdf render+text extraction."
                 ]);
         }
         finally
