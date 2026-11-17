@@ -10084,7 +10084,7 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                 steps,
                 ct,
                 recordPointerAction,
-                landedDeadlineSeconds: 150);
+                landedDeadlineSeconds: 420);
 
             // The dialog driver may still be inside its loop when the file
             // lands; join it (bounded) before reading state.
