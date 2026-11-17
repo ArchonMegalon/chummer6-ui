@@ -9933,10 +9933,10 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                 }
 
                 Trace("dialog found hwnd=0x" + hwnd.ToString("x"));
-                if (!IsWindowVisibleW(hwnd))
+                if (!IsWindowVisible(hwnd))
                 {
                     Trace("dialog not visible; ShowWindow(SW_SHOW)");
-                    ShowWindowW(hwnd, 5 /* SW_SHOW */);
+                    ShowWindow(hwnd, 5 /* SW_SHOW */);
                     Thread.Sleep(250);
                 }
 
@@ -10091,10 +10091,10 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsWindowVisibleW(IntPtr hWnd);
+    private static extern bool IsWindowVisible(IntPtr hWnd);
 
     [DllImport("user32.dll")]
-    private static extern bool ShowWindowW(IntPtr hWnd, int nCmdShow);
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     private delegate bool EnumChildWindowsDelegate(IntPtr hWnd, IntPtr lParam);
 
