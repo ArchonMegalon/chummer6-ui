@@ -304,6 +304,17 @@ def test_pull_request_ci_runs_exact_stage_scope_against_pinned_registry_authorit
     workflow = (REPO_ROOT / ".github" / "workflows" / "pull-request-ci.yml").read_text(
         encoding="utf-8"
     )
+    # A draft must not start a hosted product build. Becoming ready must trigger
+    # a new run of the same required check, not inherit a skipped draft result.
+    events = workflow.split("permissions:", 1)[0]
+    assert "types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]" in events
+    package_job = workflow.split("  fresh-package-plane:", 1)[1]
+    job_header = package_job.split("    steps:", 1)[0]
+    assert "name: Fresh checkout and pinned same-run package feed" in job_header
+    assert "if: ${{ github.event.pull_request.draft == false }}" in job_header
+    assert "verify_fresh_checkout_package_plane.py" in package_job
+    guards_header = workflow.split("  release-controls:", 1)[1].split("    steps:", 1)[0]
+    assert "    if:" not in guards_header
     tree = ast.parse(
         FLAGSHIP_PUBLICATION_INPUT_ASSEMBLER.read_text(encoding="utf-8")
     )

@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
@@ -22,12 +24,52 @@ namespace Chummer.Avalonia.Controls;
 /// </summary>
 public sealed class Sr6CareerAttributeAdvanceWindow : Window
 {
+    /// <summary>
+    /// Gen17 (Controller8300, T660): live-instance registry so same-modal
+    /// resolution can enumerate exactly the advance windows that exist, in
+    /// BOTH the production desktop app and Avalonia headless test sessions
+    /// (where no IClassicDesktopStyleApplicationLifetime exists to walk).
+    /// Instances register on construction and unregister on Closed.
+    /// </summary>
+    private static readonly List<Sr6CareerAttributeAdvanceWindow> LiveInstances = new();
+
+    internal static IReadOnlyList<Sr6CareerAttributeAdvanceWindow> LiveInstancesSnapshot
+    {
+        get
+        {
+            lock (LiveInstances)
+            {
+                return LiveInstances.ToList();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gen21 (T676): the command bound at window construction - the exact
+    /// operation the single permitted Apply press will submit. A later
+    /// selection can never replace it; the runner's read-only
+    /// reconciliation binds to this operation BEFORE the first press.
+    /// </summary>
+    private readonly Sr6CareerAttributeCommand? _preApplyCommand;
+
     public Sr6CareerAttributeAdvanceWindow(
         Sr6CareerAttributeAdvanceEditorSnapshot editor,
         string requestedAttributeName)
     {
         ArgumentNullException.ThrowIfNull(editor);
         ArgumentException.ThrowIfNullOrWhiteSpace(requestedAttributeName);
+
+        lock (LiveInstances)
+        {
+            LiveInstances.Add(this);
+        }
+        Closed += (_, _) =>
+        {
+            lock (LiveInstances)
+            {
+                LiveInstances.Remove(this);
+            }
+        };
 
         Title = "Advance Attribute with Karma (SR6)";
         Width = 620;
@@ -37,7 +79,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         ShowInTaskbar = false;
 
         Sr6CareerAttributeQuote? selected = ResolveSelectedQuote(editor, requestedAttributeName);
-        Sr6CareerAttributeCommand? pendingCommand = selected is null ? null : BuildCommand(selected);
+        _preApplyCommand = selected is null ? null : BuildCommand(selected);
+        Sr6CareerAttributeCommand? pendingCommand = _preApplyCommand;
 
         var headerText = new TextBlock
         {
@@ -67,6 +110,7 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             Classes = { "shell-section-title" },
             Text = selected is null ? "No advanceable attribute found" : "Advance " + selected.AttributeId,
         };
+        global::Avalonia.Automation.AutomationProperties.SetAutomationId(detailTitle, "sr6-advance-detail-title");
         var detailBody = new TextBlock
         {
             Classes = { "shell-caption" },
@@ -83,6 +127,16 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             MinWidth = 150,
             IsEnabled = pendingCommand is not null && selected is { CanAdvance: true },
         };
+        var blockedNotice = new TextBlock
+        {
+            Classes = { "shell-caption" },
+            Text = selected is { CanAdvance: false }
+                ? "Core refused this advance: " + selected.Blocker
+                : string.Empty,
+            IsVisible = selected is { CanAdvance: false },
+            TextWrapping = TextWrapping.Wrap,
+        };
+        global::Avalonia.Automation.AutomationProperties.SetAutomationId(blockedNotice, "sr6-advance-blocker-notice");
         var cancelButton = new Button
         {
             Content = "Close",
@@ -130,11 +184,12 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         global::Avalonia.Controls.Grid.SetRow(detailTitle, 1);
         global::Avalonia.Controls.Grid.SetRow(quotesScroll, 2);
         global::Avalonia.Controls.Grid.SetRow(detailBody, 3);
-        global::Avalonia.Controls.Grid.SetRow(actionsPanel, 4);
+        global::Avalonia.Controls.Grid.SetRow(blockedNotice, 4);
+        global::Avalonia.Controls.Grid.SetRow(actionsPanel, 5);
 
         Content = new Grid
         {
-            RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto,Auto"),
             RowSpacing = 10,
             Margin = new Thickness(12),
             Children =
@@ -143,6 +198,7 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
                 detailTitle,
                 quotesScroll,
                 detailBody,
+                blockedNotice,
                 actionsPanel,
             },
         };
@@ -213,6 +269,94 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             + "  |  available " + quote.AvailableKarma
             + Environment.NewLine + blockerText;
     }
+
+    /// <summary>
+    /// Gen16 (Controller8283 T656): the typed blocker code is the FIRST
+    /// whitespace-delimited token after the refusal prefix. Comparison is
+    /// exact string equality - unrelated or mixed text that merely CONTAINS
+    /// a typed marker can never satisfy a typed refusal.
+    /// </summary>
+    internal const string AdvanceRefusalPrefix = "Core refused this advance: ";
+
+    private static readonly char[] TypedBlockerCodeTerminators = { ' ', '\t', '\r', '\n', ':' };
+
+    internal static string? ExtractTypedBlockerCode(string? text, string prefix)
+    {
+        if (string.IsNullOrEmpty(text))
+            return null;
+        int start = text.IndexOf(prefix, StringComparison.Ordinal);
+        if (start < 0)
+            return null;
+        string remainder = text[(start + prefix.Length)..];
+        int end = remainder.IndexOfAny(TypedBlockerCodeTerminators);
+        string candidate = end < 0 ? remainder : remainder[..end];
+        return candidate.Length == 0 ? null : candidate;
+    }
+
+    internal static Sr6AdvanceBlockerClassification ClassifyAdvanceBlocker(string? noticeText)
+    {
+        string? code = ExtractTypedBlockerCode(noticeText, AdvanceRefusalPrefix);
+        bool visible = code is not null;
+        return new Sr6AdvanceBlockerClassification(
+            Visible: visible,
+            NaturalCap: string.Equals(code, "sr6_attribute_natural_limit", StringComparison.Ordinal),
+            InsufficientKarma: string.Equals(code, "sr6_attribute_insufficient_karma", StringComparison.Ordinal),
+            Unrelated: visible
+                && !string.Equals(code, "sr6_attribute_natural_limit", StringComparison.Ordinal)
+                && !string.Equals(code, "sr6_attribute_insufficient_karma", StringComparison.Ordinal),
+            TypedCode: code);
+    }
+
+    internal sealed record Sr6AdvanceBlockerClassification(
+        bool Visible,
+        bool NaturalCap,
+        bool InsufficientKarma,
+        bool Unrelated,
+        string? TypedCode);
+
+    /// <summary>
+    /// Gen16 (Controller8283 T656): the SHARED cap-control verdict used by
+    /// both the journey runner and the focused tests. The natural-cap leg
+    /// only passes when the active advance dialog shows a present,
+    /// effectively-visible, DISABLED Apply control plus the visible
+    /// "Advance &lt;attribute&gt;" title bound to the requested attribute. A
+    /// missing, hidden or enabled Apply must fail - never succeed vacuously.
+    /// </summary>
+    internal sealed record Sr6CapControlVerdict(
+        bool ApplyPresent,
+        bool ApplyVisible,
+        bool ApplyDisabled,
+        bool TitleBound,
+        bool Ok,
+        string Diagnostics);
+
+    internal static Sr6CapControlVerdict ClassifyCapControls(
+        bool applyPresent,
+        bool applyEffectivelyVisible,
+        bool applyEffectivelyEnabled,
+        string? detailTitleText,
+        bool detailTitleVisible,
+        string requestedAttributeId)
+    {
+        bool applyDisabled = applyPresent && applyEffectivelyVisible && !applyEffectivelyEnabled;
+        bool titleBound = detailTitleVisible
+            && string.Equals(detailTitleText, "Advance " + requestedAttributeId, StringComparison.Ordinal);
+        bool ok = applyDisabled && titleBound;
+        string diagnostics = "applyPresent=" + applyPresent
+            + ";applyVisible=" + applyEffectivelyVisible
+            + ";applyDisabled=" + applyDisabled
+            + ";titleVisible=" + detailTitleVisible
+            + ";titleText=" + (detailTitleText ?? "null")
+            + ";requested=" + requestedAttributeId;
+        return new Sr6CapControlVerdict(applyPresent, applyEffectivelyVisible, applyDisabled, titleBound, ok, diagnostics);
+    }
+
+    /// <summary>
+    /// Gen21 (T676): read-only peek at the pre-bound command. The Guid is
+    /// fixed at construction; repeated peeks (and any later selection
+    /// change) must observe the identical operation id.
+    /// </summary>
+    internal Sr6CareerAttributeCommand? PeekPendingCommand() => _preApplyCommand;
 
     internal static Sr6CareerAttributeCommand BuildCommand(Sr6CareerAttributeQuote quote)
     {

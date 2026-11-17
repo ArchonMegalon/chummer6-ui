@@ -1,5 +1,7 @@
+using Chummer.Application.Characters;
 using Chummer.Application.Owners;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Presentation.Overview;
 
@@ -94,6 +96,88 @@ public sealed partial class CharacterOverviewPresenter
     public Task<Sr6CareerAttributeReceipt?> RecoverPendingSr6AdvancementAsync(OwnerContextStamp owner, CancellationToken ct)
         => RecoverPendingSr6AdvancementAsync(State, owner, CaptureDisplayGeneration(), ct);
 
+    /// <summary>
+    /// Exact-operation timeout reconciliation for a caller that retained the
+    /// complete pre-Apply command of the pressed dialog. The pending record of
+    /// the RETAINED workspace is verified against that command - valid, same
+    /// owner scope, same workspace, same full command digest - BEFORE any
+    /// Lookup or clear runs. A switched workspace or a replaced intent can
+    /// therefore never cause another operation's record to be looked up or
+    /// cleared; mismatches leave every record untouched. Fresh authorization
+    /// is captured live from the current owner context; the retained stamp's
+    /// old authority is never reused.
+    /// </summary>
+    public Task<Sr6CareerAttributeReceipt?> RecoverPendingSr6AdvancementAsync(
+        OwnerContextStamp owner,
+        CharacterWorkspaceId workspace,
+        Sr6CareerAttributeCommand command,
+        CancellationToken ct)
+        => RecoverExactSr6PendingAsync(State, owner, workspace, command, CaptureDisplayGeneration(), ct);
+
+    private async Task<Sr6CareerAttributeReceipt?> RecoverExactSr6PendingAsync(
+        CharacterOverviewState state,
+        OwnerContextStamp owner,
+        CharacterWorkspaceId workspace,
+        Sr6CareerAttributeCommand command,
+        long generation,
+        CancellationToken ct)
+    {
+        using PresenterOperationLease operation = EnterPresenterOperation(ct);
+        ct = operation.Token;
+        if (command is null || !Sr6CareerAttributeIntegrity.IsConfirmed(command)
+            || command.Quote.WorkspaceId != workspace)
+        {
+            PublishSr6RecoveryError(state, owner, generation, Sr6RecoveryUnresolvedError);
+            return null;
+        }
+        if (!TryCaptureSr6RecoveryOwner(owner, out var fresh)) return null;
+        if (!_sr6CareerAttributeRecoveryStore.TryRead(fresh.Owner, workspace, out var pending))
+        {
+            PublishSr6RecoveryError(state, fresh, generation, Sr6RecoveryStorageError);
+            return null;
+        }
+        if (pending is null) return null;
+        if (!pending.IsValid || !pending.BelongsTo(fresh.Owner, workspace)
+            || pending.CommandDigest != Sr6CareerAttributeIntegrity.Digest(command))
+        {
+            // A different operation incarnation holds this workspace's
+            // recovery slot. Refuse BEFORE any Lookup or clear: the stored
+            // record stays exactly as it is, and no command but the retained
+            // one is ever sent to Lookup.
+            PublishSr6RecoveryError(state, fresh, generation, Sr6RecoveryUnresolvedError);
+            return null;
+        }
+        if (!IsSr6RecoveryDisplayCurrent(state, fresh, generation)) return null;
+        Sr6CareerAttributeReceipt? receipt;
+        try
+        {
+            receipt = await _client.LookupSr6CareerAttributeAsync(fresh, command, ct).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            PublishSr6RecoveryError(state, fresh, generation, Sr6RecoveryUnresolvedError);
+            return null;
+        }
+        if (!pending.MatchesReceipt(receipt))
+        {
+            PublishSr6RecoveryError(state, fresh, generation, Sr6RecoveryUnresolvedError);
+            return null;
+        }
+        // The receipt can resolve the original entry after a display transition,
+        // but cannot clear another owner/workspace or a newer intent incarnation.
+        if (!_sr6CareerAttributeRecoveryStore.TryClear(pending))
+        {
+            PublishSr6RecoveryError(state, fresh, generation, Sr6RecoveryStorageError);
+            return null;
+        }
+        if (IsSr6RecoveryDisplayCurrent(state, fresh, generation))
+            TryPublishDisplayTransition(generation, State with
+            {
+                Error = null,
+                Notice = "The held advancement was confirmed. Reload the runner to review its current values."
+            }, state);
+        return receipt;
+    }
     private async Task<Sr6CareerAttributeReceipt?> RecoverPendingSr6AdvancementAsync(
         CharacterOverviewState state, OwnerContextStamp owner, long generation, CancellationToken ct)
     {

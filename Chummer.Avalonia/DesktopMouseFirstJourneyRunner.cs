@@ -522,13 +522,60 @@ internal static class DesktopMouseFirstJourneyRunner
                     throw new InvalidOperationException("The creation wizard is still visible after reopening a finalized character.");
                 }
 
-                // T492: when the first process ran the SR6 advance leg, the
-                // fresh-process reopen must show the advanced attribute rank and
-                // the debited karma balance survived persistence.
-                string? sr6ReceiptPath = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.Sr6AdvanceReceiptEnvironmentVariable);
-                if (!string.IsNullOrWhiteSpace(sr6ReceiptPath) && File.Exists(sr6ReceiptPath))
+                // Gen18 (T664): the fresh-process reopen must verify the FULL
+                // final state of the first process's SR6 leg. Gen19 (T673):
+                // that requirement is scoped to VERIFIED SR6 journeys - the
+                // saved receipt's ruleset id must normalize to the sr6
+                // family before the SR6 advance receipt is demanded at all.
+                // An SR5 reopen-verify leg must never be forced through the
+                // SR6 receipt path.
+                string savedRulesetId = saved.RootElement.TryGetProperty("rulesetId", out System.Text.Json.JsonElement savedRulesetElement)
+                    && savedRulesetElement.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? savedRulesetElement.GetString() ?? string.Empty : string.Empty;
+                bool savedReceiptIsSr6 = string.Equals(
+                    NormalizeRulesetFamily(savedRulesetId), "sr6", StringComparison.Ordinal);
+                if (!savedReceiptIsSr6)
                 {
-                    using JsonDocument sr6Saved = JsonDocument.Parse(File.ReadAllText(sr6ReceiptPath));
+                    RecordStep(steps, "sr6 reopen verification skipped: the saved receipt is not an sr6-family journey (rulesetId='" + savedRulesetId + "')");
+                }
+                if (savedReceiptIsSr6)
+                {
+                // The SR6 advance receipt is REQUIRED here: a missing or
+                // unreadable receipt in the reopen-verify leg of a verified
+                // SR6 journey is a hard failure, never a skipped optional
+                // branch. Verified exact state: reopened karma AND nuyen
+                // equal the receipt's post-leg balances, the advanced
+                // attribute rank persisted at the receipt's target, the
+                // workspace stays clean at the receipt's saved revision,
+                // and the SR6 ruleset selection survived.
+                string sr6ReceiptPath = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.Sr6AdvanceReceiptEnvironmentVariable)
+                    ?? throw new InvalidOperationException(
+                        "The SR6 reopen-verify leg requires " + DesktopMouseFirstJourneyRuntime.Sr6AdvanceReceiptEnvironmentVariable
+                        + " to point at the first process's SR6 advance receipt; a missing receipt must fail, not skip.");
+                if (!File.Exists(sr6ReceiptPath))
+                {
+                    throw new InvalidOperationException(
+                        "The SR6 advance receipt file does not exist: " + sr6ReceiptPath);
+                }
+                JsonDocument sr6Saved;
+                try
+                {
+                    sr6Saved = JsonDocument.Parse(File.ReadAllText(sr6ReceiptPath));
+                }
+                catch (Exception unreadableReceipt) when (unreadableReceipt is IOException or UnauthorizedAccessException or JsonException)
+                {
+                    throw new InvalidOperationException(
+                        "The SR6 advance receipt is present but unreadable: " + unreadableReceipt.Message);
+                }
+                using (sr6Saved)
+                {
+                    string? sr6ReceiptShapeError = ValidateSr6AdvanceReceiptShape(sr6Saved);
+                    if (sr6ReceiptShapeError is not null)
+                    {
+                        throw new InvalidOperationException(
+                            "The SR6 advance receipt failed shape validation: " + sr6ReceiptShapeError);
+                    }
+
                     decimal expectedKarmaAfter = sr6Saved.RootElement.GetProperty("karmaAfter").GetDecimal();
                     string sr6WorkspaceId = sr6Saved.RootElement.GetProperty("workspaceId").GetString()
                         ?? throw new InvalidOperationException("The SR6 advance receipt does not carry a workspaceId.");
@@ -537,25 +584,88 @@ internal static class DesktopMouseFirstJourneyRunner
                         throw new InvalidOperationException(
                             $"The reopened workspace '{restoredWorkspaceId.Value}' does not match the SR6 advance receipt workspace '{sr6WorkspaceId}'.");
                     }
+                    // Gen19 (T673): the shape validator REQUIRES attributeId,
+                    // quotedTargetNaturalRating and savedRevision, so none of
+                    // these reads may fall back to defaults or skip their
+                    // comparison - every field is consumed unconditionally.
+                    string attributeId = sr6Saved.RootElement.GetProperty("attributeId").GetString()
+                        ?? throw new InvalidOperationException("The SR6 advance receipt attributeId is not a string.");
+                    int expectedRank = sr6Saved.RootElement.GetProperty("quotedTargetNaturalRating").GetInt32();
+                    int expectedRevisionValue = sr6Saved.RootElement.GetProperty("savedRevision").GetInt32();
 
                     var sr6SectionHost = window.ControlsForAutomation.SectionHost;
                     decimal reopenedKarma = 0m;
-                    bool reopenedKarmaMatches = await WaitForConditionWithinAsync(
+                    decimal reopenedNuyen = 0m;
+                    bool reopenedBalancesMatch = await WaitForConditionWithinAsync(
                         () =>
                         {
                             reopenedKarma = ReadCareerRewardsKarmaBalance(sr6SectionHost);
-                            return reopenedKarma == expectedKarmaAfter;
+                            reopenedNuyen = ReadCareerRewardsNuyenBalance(sr6SectionHost);
+                            bool karmaMatches = reopenedKarma == expectedKarmaAfter;
+                            bool nuyenMatches = reopenedNuyen == sr6Saved.RootElement.GetProperty("nuyenAfter").GetDecimal();
+                            return karmaMatches && nuyenMatches;
                         },
                         journeyTimeout.Token,
                         TimeSpan.FromSeconds(10));
-                    if (!reopenedKarmaMatches)
+                    if (!reopenedBalancesMatch)
                     {
                         throw new InvalidOperationException(
-                            $"The reopened workspace shows karma {reopenedKarma}, but the SR6 advance receipt recorded {expectedKarmaAfter}.");
+                            $"The reopened workspace shows karma {reopenedKarma} nuyen {reopenedNuyen}, which does not match the SR6 advance receipt.");
                     }
 
-                    RecordStep(steps, $"sr6 reopen verified: karma {reopenedKarma} matches the advance receipt; attribute rank persisted");
+                    // The advanced attribute rank must equal the quoted target,
+                    // verified against the RETAINED workspace DOCUMENT (not UI
+                    // text): the owner-bound read is the same proven seam the
+                    // starter-attribute evidence uses.
+                    {
+                        StarterAttributeEvidence reopenedAttributes = await ReadWorkspaceAttributeRankAsync(
+                            window, sr6WorkspaceId, attributeId, journeyTimeout.Token);
+                        if (!reopenedAttributes.IsValid)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 reopen-verify failed: attribute rank could not be read from the retained document - "
+                                + reopenedAttributes.Diagnostics);
+                        }
+                        if (reopenedAttributes.Sum != expectedRank)
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace shows {attributeId} rank {reopenedAttributes.Sum}, but the SR6 advance receipt quoted target {expectedRank}.");
+                        }
+                        RecordStep(steps, $"sr6 reopen verified: {attributeId} rank {reopenedAttributes.Sum} matches the receipt target {expectedRank} (document-backed read)");
+                    }
+
+                    // The saved/clean revision must be exactly the receipt's saved revision.
+                    {
+                        long reopenedRevision = restoredOverview.ContentRevision;
+                        if (reopenedRevision != expectedRevisionValue)
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace revision {reopenedRevision} does not match the receipt's saved revision {expectedRevisionValue}.");
+                        }
+                    }
+
+                    // The SR6 ruleset selection must have survived persistence.
+                    // CharacterOverviewState carries no ruleset id; the ruleset
+                    // lives on the matching OpenWorkspaceState entry.
+                    OpenWorkspaceState? reopenedWorkspaceEntry = restoredOverview.OpenWorkspaces
+                        .FirstOrDefault(open => string.Equals(
+                            open.Id.Value, restoredWorkspaceId.Value, StringComparison.Ordinal));
+                    if (reopenedWorkspaceEntry is null)
+                    {
+                        throw new InvalidOperationException(
+                            "The reopened workspace entry is absent from the overview's open-workspace list.");
+                    }
+                    string? reopenedRuleset = reopenedWorkspaceEntry.RulesetId;
+                    if (string.IsNullOrWhiteSpace(reopenedRuleset)
+                        || !string.Equals(NormalizeRulesetFamily(reopenedRuleset), "sr6", StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"The reopened workspace does not preserve the SR6 ruleset selection (rulesetId='{reopenedRuleset ?? "none"}').");
+                    }
+
+                    RecordStep(steps, $"sr6 reopen verified: karma {reopenedKarma} nuyen {reopenedNuyen} match the advance receipt; attribute rank persisted; revision {restoredOverview.ContentRevision} clean; ruleset {reopenedRuleset} preserved");
                     await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-sr6-verified");
+                }
                 }
 
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-restored");
@@ -1664,6 +1774,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
             var sectionHost = window.ControlsForAutomation.SectionHost;
 
+            // Funding rounds leave auto-reopened CareerRewardsWindow editor
+            // loops alive; their concurrent prepare calls contend for the
+            // presenter display generation and silently refuse the fresh
+            // karma flow (click observed, no dialog). Cancel every live
+            // straggler modal first so the award prepare runs against a
+            // quiet presenter, mirroring the nuyen leg's guard.
+            await CancelAllCareerRewardsDialogsAsync(steps, ct);
             Button? awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
             if (awardKarmaButton is null)
             {
@@ -2476,7 +2593,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         List<string> steps,
         List<string> screenshotPaths,
         CancellationToken ct,
-        Action recordPointerAction)
+        Action recordPointerAction,
+        int retryDepth = 0)
     {
         Button? awardKarmaButton = FindVisibleCareerRewardsButton(window, "CareerAwardKarma");
         if (awardKarmaButton is null)
@@ -2552,6 +2670,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
                 ct,
                 TimeSpan.FromSeconds(8));
+            if (!dialogOpened)
+            {
+                // A prior funding apply can leave its Confirmed pending
+                // reward un-acknowledged; every fresh dialog then shows the
+                // confirmation panel (apply hidden) and the attempt leaves
+                // the window behind, stacking Confirmed modals. Mirror the
+                // nuyen leg's blocked-window recovery: acknowledge through
+                // the dialog's own route, then sweep, before retrying.
+                foreach (string windowDetail in DescribeVisibleCareerRewardsWindows())
+                {
+                    RecordStep(steps, "sr6 funding blocked window: " + windowDetail);
+                }
+                Button? pendingAcknowledge = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+                if (pendingAcknowledge is not null)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        pendingAcknowledge.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, pendingAcknowledge)));
+                    recordPointerAction();
+                    RecordStep(steps, "sr6 funding: acknowledged the Confirmed pending reward blocking the award route");
+                }
+                await CancelAllCareerRewardsDialogsAsync(steps, ct);
+            }
         }
 
         if (!dialogOpened)
@@ -2566,6 +2706,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // only: apply the grant through the owner-bound workspace
             // mutation client from inside the journey harness (no product
             // seam), record the gap, and continue the advance leg.
+            if (AcceptanceFallbacksOff)
+            {
+                throw new InvalidOperationException(
+                    "SR6 advance funding failed: the real career manual-karma route did not open its dialog; "
+                    + "diagnostic input fallbacks are disabled (ACCEPTANCE_FALLBACKS_OFF=1) so the fixture-only "
+                    + "grant must not run. Visible rewards windows: "
+                    + string.Join(" | ", DescribeVisibleCareerRewardsWindows()));
+            }
             RecordStep(steps, "sr6 funding: manual-karma route refused (SR6 exchange-rate product gap); falling back to fixture-only grant");
             await ApplyFixtureKarmaGrantForSr6AdvanceAsync(window, steps, ct);
             RecordStep(steps, "sr6 funding: fixture grant applied (25 karma); manual-karma product gap reported");
@@ -2594,6 +2742,25 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return;
         }
 
+        // The product's post-acknowledge auto-reopen can race the runner here:
+        // a dialog may be present while its apply is still disabled (or about
+        // to be replaced). Gen14 acceptance requires genuine input on an
+        // ENABLED control - wait for apply visible+enabled before typing.
+        bool applyReady = await WaitForConditionWithinAsync(
+            () =>
+            {
+                Button? a = FindCareerRewardsDialogButton("career-rewards-apply");
+                return a is not null && a.IsVisible && a.IsEnabled;
+            },
+            ct,
+            TimeSpan.FromSeconds(8));
+        if (!applyReady)
+        {
+            throw new InvalidOperationException(
+                "SR6 advance funding failed: the CareerRewardsWindow apply control never became visible and enabled. "
+                + "Visible rewards windows: " + string.Join(" | ", DescribeVisibleCareerRewardsWindows()));
+        }
+
         TextBox? amountBox = FindCareerRewardsDialogTextBox("career-rewards-amount");
         if (amountBox is null)
         {
@@ -2616,22 +2783,509 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             throw new InvalidOperationException(
                 "SR6 advance funding failed: the CareerRewardsWindow apply button disappeared before the apply click.");
         }
+        if (!applyButton.IsEnabled || !applyButton.IsVisible)
+        {
+            throw new InvalidOperationException(
+                "SR6 advance funding failed: the CareerRewardsWindow apply button is not enabled/visible before the apply click"
+                + " (enabled=" + applyButton.IsEnabled + ", visible=" + applyButton.IsVisible
+                + "); genuine input requires an enabled control.");
+        }
 
-        await RoutePointerClickAsync(applyButton);
+        // T496/T546: the rewards dialog Apply is subject to the synthetic pointer
+        // swallow; observe the Click event, pump the fresh dialog scene, and use
+        // waitForClick so the press actually lands (bare RoutePointerClickAsync
+        // is silently refused here and the dialog stays open).
+        // Gen14: the product loop auto-reopens a fresh rewards dialog after a
+        // Confirmed apply, so "no apply button anywhere" is not a reliable close
+        // signal - the replacement dialog restores career-rewards-apply within
+        // the wait window. Bind the close check to the dialog instance that
+        // received the genuine click instead.
+        global::Avalonia.Controls.Window? fundingDialogWindow = global::Avalonia.Controls.TopLevel.GetTopLevel(applyButton) as global::Avalonia.Controls.Window;
+        decimal fundingKarmaBeforeApply = ReadCareerRewardsKarmaBalance(window.ControlsForAutomation.SectionHost);
+
+        if (fundingDialogWindow is null)
+        {
+            throw new InvalidOperationException(
+                "SR6 advance funding failed: the apply control was not attached to a window before the apply click.");
+        }
+
+        bool sr6ApplyClickObserved = false;
+        void OnSr6ApplyClick(object? sender, RoutedEventArgs args) => sr6ApplyClickObserved = true;
+        applyButton.Click += OnSr6ApplyClick;
+        string sr6ApplyDiagnostics;
+        try
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                applyButton.BringIntoView();
+                ForceHeadlessLayoutPump(applyButton);
+            });
+            sr6ApplyDiagnostics = await RoutePointerClickAsync(applyButton, waitForClick: true);
+            sr6ApplyDiagnostics += ";clickObserved=" + sr6ApplyClickObserved;
+        }
+        finally
+        {
+            applyButton.Click -= OnSr6ApplyClick;
+        }
         recordPointerAction();
-        RecordStep(steps, "sr6 funding: clicked career rewards Apply (+25 karma)");
+        RecordStep(steps, "sr6 funding: clicked career rewards Apply (+25 karma); " + sr6ApplyDiagnostics);
+
+        // Gen14: acceptance is the OUTCOME (balance advanced), not dialog
+        // lifecycle - a swallowed or racing apply leaves the dialog open and
+        // the balance unchanged, which must fail the leg, while a committed
+        // apply may leave an auto-reopened dialog behind, which must not.
+        await WaitForConditionWithinAsync(
+            () => !fundingDialogWindow.IsVisible
+                || ReadCareerRewardsKarmaBalance(window.ControlsForAutomation.SectionHost) > fundingKarmaBeforeApply,
+            ct,
+            TimeSpan.FromSeconds(12));
+        if (fundingDialogWindow.IsVisible)
+        {
+            RecordStep(steps, "sr6 funding: dialog still open after the apply wait; acknowledging and sweeping it");
+            await CancelAllCareerRewardsDialogsAsync(steps, ct);
+        }
+        decimal fundingKarmaAfterApply = ReadCareerRewardsKarmaBalance(window.ControlsForAutomation.SectionHost);
+        if (fundingKarmaAfterApply <= fundingKarmaBeforeApply)
+        {
+            // A stale-entry refusal (the dialog's context guard silently
+            // returns on Click) leaves the dialog open and the balance
+            // unchanged. Only a FRESH award dialog re-captures the display
+            // context; retry bounded times before failing the leg.
+            if (retryDepth < 2)
+            {
+                RecordStep(steps, "sr6 funding: apply did not commit (before="
+                    + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + ", after=" + fundingKarmaAfterApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    + "); cancelling rewards dialogs and retrying with a fresh award dialog (round "
+                    + (retryDepth + 1) + ")");
+                await CancelAllCareerRewardsDialogsAsync(steps, ct);
+                await AwardKarmaForSr6AdvanceAsync(window, context, steps, screenshotPaths, ct, recordPointerAction, retryDepth + 1);
+                return;
+            }
+            throw new InvalidOperationException(
+                "SR6 advance funding failed: karma balance did not advance after the apply click (before="
+                + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + ", after=" + fundingKarmaAfterApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                + "); the apply did not commit after " + (retryDepth + 1) + " fresh-dialog rounds.");
+        }
+        RecordStep(steps, "sr6 funding: karma balance advanced "
+            + fundingKarmaBeforeApply.ToString(System.Globalization.CultureInfo.InvariantCulture) + " -> "
+            + fundingKarmaAfterApply.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            + " after the apply click (outcome-verified)");
+
+        if (FindCareerRewardsDialogButton("career-rewards-apply") is not null)
+        {
+            RecordStep(steps, "sr6 funding: product auto-reopened a fresh rewards dialog after the Confirmed apply; cancelling it");
+            await CancelAllCareerRewardsDialogsAsync(steps, ct);
+        }
+
+        RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
+    }
+
+    private static System.Collections.Generic.IEnumerable<string> DescribeVisibleCareerRewardsWindows()
+    {
+        if (global::Avalonia.Application.Current?.ApplicationLifetime
+            is not IClassicDesktopStyleApplicationLifetime describeDesktop)
+        {
+            yield break;
+        }
+        foreach (CareerRewardsWindow live in describeDesktop.Windows.OfType<CareerRewardsWindow>().Where(w => w.IsVisible))
+        {
+            Button? apply = live.GetVisualDescendants().OfType<Button>()
+                .FirstOrDefault(button => string.Equals(AutomationProperties.GetAutomationId(button), "career-rewards-apply", StringComparison.Ordinal));
+            TextBox? amount = live.GetVisualDescendants().OfType<TextBox>()
+                .FirstOrDefault(textBox => string.Equals(AutomationProperties.GetAutomationId(textBox), "career-rewards-amount", StringComparison.Ordinal));
+            yield return $"title={live.Title}; applyVisible={(apply?.IsVisible.ToString().ToLowerInvariant() ?? "missing")};"
+                + $" amountVisible={(amount?.IsVisible.ToString().ToLowerInvariant() ?? "missing")};"
+                + $" refusal={(live.LastRefusal ?? "none")};"
+                + $" resultStatus={(live.LastResult?.Status.ToString() ?? "none")}";
+        }
+    }
+
+    private static int CountVisibleCareerRewardsWindows()
+    {
+        return global::Avalonia.Application.Current?.ApplicationLifetime
+            is IClassicDesktopStyleApplicationLifetime countDesktop
+                ? countDesktop.Windows.OfType<CareerRewardsWindow>().Count(w => w.IsVisible)
+                : 0;
+    }
+
+    private static async Task<bool> CancelAllCareerRewardsDialogsAsync(
+        List<string> steps,
+        CancellationToken ct)
+    {
+        bool cancelledAny = false;
+        for (int round = 0; round < 12; round++)
+        {
+            var live = global::Avalonia.Application.Current?.ApplicationLifetime
+                is IClassicDesktopStyleApplicationLifetime stragglerDesktop
+                    ? stragglerDesktop.Windows.OfType<CareerRewardsWindow>().Where(w => w.IsVisible).ToList()
+                    : new List<CareerRewardsWindow>();
+            if (live.Count == 0)
+            {
+                return cancelledAny;
+            }
+            RecordStep(steps, $"sr6 rewards straggler sweep round {round}: {live.Count} live CareerRewardsWindow modal(s)");
+            foreach (CareerRewardsWindow straggler in live)
+            {
+                // A Confirmed pending reward hides the apply button and
+                // shows the confirmation panel; cancel alone cannot clear
+    // that state and every subsequent fresh open is refused. Route
+                // the dialog's own acknowledge action first so the window
+                // can actually close on the cancel round below.
+                Button? stragglerAck = straggler.GetVisualDescendants().OfType<Button>()
+                    .FirstOrDefault(button => string.Equals(
+                        AutomationProperties.GetAutomationId(button),
+                        "career-rewards-acknowledge",
+                        StringComparison.Ordinal));
+                if (stragglerAck is not null)
+                {
+                    // Same shape as the nuyen leg's blocked-window ack: the
+                    // acknowledge control can live in a collapsed panel, so
+                    // no visibility gate - raise the Click event and wait
+                    // for the pending reward to clear. Fall through to the
+                    // cancel click below so the window itself still closes.
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        stragglerAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, stragglerAck)));
+                    cancelledAny = true;
+                    await Task.Delay(400, ct);
+                }
+                Button? cancel = straggler.GetVisualDescendants().OfType<Button>()
+                    .FirstOrDefault(button => string.Equals(
+                        AutomationProperties.GetAutomationId(button),
+                        "career-rewards-cancel",
+                        StringComparison.Ordinal));
+                if (cancel is null)
+                {
+                    continue;
+                }
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                    cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, cancel)));
+                cancelledAny = true;
+            }
+            await WaitForConditionWithinAsync(
+                () => !(global::Avalonia.Application.Current?.ApplicationLifetime
+                    is IClassicDesktopStyleApplicationLifetime sweepDesktop)
+                    || !sweepDesktop.Windows.OfType<CareerRewardsWindow>().Any(w => w.IsVisible),
+                ct,
+                TimeSpan.FromSeconds(6));
+            await Task.Delay(400, ct);
+        }
+        bool stillOpen = global::Avalonia.Application.Current?.ApplicationLifetime
+            is IClassicDesktopStyleApplicationLifetime finalDesktop
+            && finalDesktop.Windows.OfType<CareerRewardsWindow>().Any(w => w.IsVisible);
+        return !stillOpen;
+    }
+
+    private static async Task AwardNuyenForSr6AdvanceAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // The repeated funding rounds leave auto-reopened CareerRewardsWindow
+        // editor loops alive; their concurrent prepare calls contend for the
+        // presenter display generation and silently refuse the fresh nuyen
+        // flow (click observed, no dialog). Cancel every live straggler
+        // modal first so the nuyen prepare runs against a quiet presenter.
+        await CancelAllCareerRewardsDialogsAsync(steps, ct);
+
+        Button? nuyenButton = FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen");
+        if (nuyenButton is null)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: no visible tab rendered the career rewards Adjust Nuyen button.");
+        }
+
+        bool dialogOpened = false;
+        for (int attempt = 1; attempt <= 4 && !dialogOpened; attempt++)
+        {
+            Button? freshButton = FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen");
+            if (freshButton is null)
+            {
+                await Task.Delay(250, ct);
+                continue;
+            }
+
+            bool openClickObserved = false;
+            void OnOpenClick(object? sender, RoutedEventArgs args) => openClickObserved = true;
+            freshButton.Click += OnOpenClick;
+            string openDiagnostics;
+            try
+            {
+                openDiagnostics = await RoutePointerClickAsync(freshButton, waitForClick: true);
+                openDiagnostics += ";clickObserved=" + openClickObserved;
+            }
+            catch (InvalidOperationException routingFailure)
+            {
+                RecordStep(steps, $"sr6 nuyen adjust attempt {attempt} routing failed: {routingFailure.Message}");
+                openDiagnostics = "routingFailed";
+            }
+            finally
+            {
+                freshButton.Click -= OnOpenClick;
+            }
+
+            dialogOpened = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
+                ct,
+                TimeSpan.FromSeconds(8));
+            if (!dialogOpened)
+            {
+                // Mirror the established dialog-button fallback: the section
+                // host rewards button can swallow synthetic pointer clicks;
+                // raise the Click routed event on the live instance once.
+                Button? liveNuyen = await Dispatcher.UIThread.InvokeAsync(
+                    () => FindVisibleCareerRewardsButton(window, "CareerAdjustNuyen"));
+                if (liveNuyen is not null)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        liveNuyen.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveNuyen)));
+                    RecordStep(steps, "sr6 nuyen open fallback: raised Click routed event after swallowed pointer click");
+                }
+                dialogOpened = await WaitForConditionWithinAsync(
+                    () => FindCareerRewardsDialogButton("career-rewards-apply") is not null,
+                    ct,
+                    TimeSpan.FromSeconds(8));
+            }
+            if (!dialogOpened)
+            {
+                CharacterOverviewState nuyenBlockedState = window.SnapshotStateForAutomation();
+                string presenterError = nuyenBlockedState.Error ?? "none";
+                string presenterNotice = nuyenBlockedState.Notice ?? "none";
+                RecordStep(steps, $"sr6 nuyen adjust attempt {attempt} BLOCKED: presenterError={presenterError}; notice={presenterNotice}; busy={nuyenBlockedState.IsBusy.ToString().ToLowerInvariant()}; liveRewardsWindows={CountVisibleCareerRewardsWindows()}");
+                foreach (string windowDetail in DescribeVisibleCareerRewardsWindows())
+                {
+                    RecordStep(steps, "sr6 nuyen blocked window: " + windowDetail);
+                }
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, $"06e-nuyen-blocked-{attempt}");
+                // A Confirmed pending reward (from the natural-limit funding
+                // apply that committed after its close-wait timed out) makes
+                // every fresh dialog show the confirmation panel instead of
+                // the entry form (apply hidden). Acknowledge it through the
+                // dialog's own acknowledge route so the next open is fresh.
+                string? balanceBefore = DescribeCareerRewardsDialogBalanceText();
+                RecordStep(steps, $"sr6 nuyen blocked balance before ack: {balanceBefore ?? "none"}");
+                Button? pendingAcknowledge = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+                if (pendingAcknowledge is not null)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                        pendingAcknowledge.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, pendingAcknowledge)));
+                    recordPointerAction();
+                    bool ackCleared = await WaitForConditionWithinAsync(
+                        () => FindCareerRewardsDialogButton("career-rewards-acknowledge") is null,
+                        ct,
+                        TimeSpan.FromSeconds(6));
+                    string? balanceAfter = DescribeCareerRewardsDialogBalanceText();
+                    RecordStep(steps, $"sr6 nuyen leg: acknowledged the Confirmed pending reward (cleared={ackCleared}; balanceAfter={balanceAfter ?? "none"})");
+                }
+                // Sweep any lingering BLOCKED dialogs: a stale window still
+                // hosts a collapsed apply button that would foul the later
+                // dialog-closed scan. No-op when nothing is live.
+                await CancelAllCareerRewardsDialogsAsync(steps, ct);
+            }
+            RecordStep(steps, $"sr6 nuyen adjust attempt {attempt}: {openDiagnostics}; dialogOpened={dialogOpened}");
+        }
+
+        if (!dialogOpened)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the CareerRewardsWindow modal did not open from the Adjust Nuyen button.");
+        }
+
+        TextBox? amountBox = FindCareerRewardsDialogTextBox("career-rewards-amount");
+        if (amountBox is null)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the CareerRewardsWindow modal did not render an amount field.");
+        }
+
+        // Gain is the default action radio in nuyen mode.
+        amountBox.Text = "5000";
+        Dispatcher.UIThread.RunJobs();
+
+        TextBox? reasonBox = FindCareerRewardsDialogTextBox("career-rewards-reason");
+        if (reasonBox is not null)
+        {
+            reasonBox.Text = "SR6 qualification nuyen adjustment";
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        Button? applyButton = FindCareerRewardsDialogButton("career-rewards-apply");
+        if (applyButton is null)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: the CareerRewardsWindow apply button disappeared before the apply click.");
+        }
+
+        // A pending Confirmed reward is surfaced into fresh dialogs
+        // (pendingResult) and can settle AFTER the dialog opens, disabling
+        // or hiding Apply until it is acknowledged. Settle before clicking:
+        for (int settle = 0; settle < 3; settle++)
+        {
+            Button? freshApply = FindCareerRewardsDialogButton("career-rewards-apply");
+            if (freshApply is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 nuyen leg failed: the CareerRewardsWindow apply button disappeared while settling the entry.");
+            }
+            bool entryReady = await Dispatcher.UIThread.InvokeAsync(
+                () => freshApply.IsEnabled && freshApply.IsVisible);
+            if (entryReady)
+            {
+                applyButton = freshApply;
+                break;
+            }
+            Button? entryAck = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+            if (entryAck is null)
+            {
+                RecordStep(steps, "sr6 nuyen leg: apply not ready and no acknowledge button rendered");
+                break;
+            }
+            await Dispatcher.UIThread.InvokeAsync(() =>
+                entryAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, entryAck)));
+            recordPointerAction();
+            bool entryCleared = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("career-rewards-apply")?.IsEnabled == true,
+                ct,
+                TimeSpan.FromSeconds(6));
+            RecordStep(steps, $"sr6 nuyen leg: settled pending reward at entry round {settle} (cleared={entryCleared}; balance={DescribeCareerRewardsDialogBalanceText() ?? "none"})");
+        }
+
+        RecordStep(steps, "sr6 nuyen pre-apply windows: " + string.Join(" | ", DescribeVisibleCareerRewardsWindows()));
+        // Gen19 (T674): retain the pre-Apply binding BEFORE the click - the
+        // owner window instance, the owner identity, and the workspace.
+        // Post-close attribution must be for the RETAINED operation against
+        // the RETAINED owner/workspace, never the current snapshot.
+        CareerRewardsWindow? retainedNuyenWindow = null;
+        OwnerContextStamp? retainedNuyenOwner = null;
+        CharacterWorkspaceId? retainedNuyenWorkspace = null;
+        Guid? retainedNuyenOperationId = null;
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            retainedNuyenWindow = applyButton.FindLogicalAncestorOfType<CareerRewardsWindow>();
+            CharacterOverviewState preApplySnapshot = window.SnapshotStateForAutomation();
+            retainedNuyenOwner = preApplySnapshot.DisplayOwnerContext;
+            retainedNuyenWorkspace = preApplySnapshot.WorkspaceId;
+            CareerRewardsWindow? owner = retainedNuyenWindow;
+            RecordStep(steps, $"sr6 nuyen apply target window: title={owner?.Title ?? "none"}; "
+                + $"applyEnabled={applyButton.IsEnabled}; applyVisible={applyButton.IsVisible}; "
+                + $"resultStatus={owner?.LastResult?.Status.ToString() ?? "none"}; "
+                + $"refusal={owner?.LastRefusal ?? "none"}; "
+                + $"workspace={retainedNuyenWorkspace?.Value ?? "none"}");
+        });
+
+        // T496/T546: same synthetic pointer swallow as the karma Apply.
+        bool nuyenApplyClickObserved = false;
+        void OnNuyenApplyClick(object? sender, RoutedEventArgs args) => nuyenApplyClickObserved = true;
+        applyButton.Click += OnNuyenApplyClick;
+        string nuyenApplyDiagnostics;
+        try
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                applyButton.BringIntoView();
+                ForceHeadlessLayoutPump(applyButton);
+            });
+            nuyenApplyDiagnostics = await RoutePointerClickAsync(applyButton, waitForClick: true);
+            nuyenApplyDiagnostics += ";clickObserved=" + nuyenApplyClickObserved;
+        }
+        finally
+        {
+            applyButton.Click -= OnNuyenApplyClick;
+        }
+        recordPointerAction();
+        RecordStep(steps, "sr6 nuyen leg: clicked career rewards Apply (+5,000 nuyen); " + nuyenApplyDiagnostics);
+
+        // 8066: capture the dialog's authoritative outcome immediately after
+        // the click, before any close detection, so a silent no-op vs a
+        // confirmed commit vs a refusal is observable in the receipt.
+        // Gen18 (T663): this sample races the in-flight apply by design -
+        // CareerRewardsWindow.ApplyPreparedOutcomeAsync sets Uncertain
+        // BEFORE awaiting the apply task, so ownerResult=Uncertain here is
+        // the pre-terminal sample, never a terminal verdict. The terminal
+        // outcome is attributed after the close transition via the
+        // read-only reconciliation below; closure plus balance movement
+        // alone must not be claimed as success (gen17 receipt recorded
+        // ownerResult=Uncertain -> dialogClosed=True -> 5000->10000).
+        string nuyenPostClick = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            CareerRewardsWindow? ownerWindow = applyButton.FindLogicalAncestorOfType<CareerRewardsWindow>();
+            CharacterOverviewState snapshot = window.SnapshotStateForAutomation();
+            // The pre-terminal Uncertain result already carries the REAL
+            // operation id - retain it for the post-close attribution.
+            retainedNuyenOperationId = ownerWindow?.LastResult?.OperationId;
+            return "ownerResult=" + (ownerWindow?.LastResult?.Status.ToString() ?? "none")
+                + "; ownerRefusal=" + (ownerWindow?.LastRefusal ?? "none")
+                + "; ownerBalance=" + (ownerWindow?.LastResult is null ? "n/a" : "set")
+                + "; operationId=" + (retainedNuyenOperationId?.ToString() ?? "none")
+                + "; presenterError=" + (snapshot.Error ?? "none")
+                + "; notice=" + (snapshot.Notice ?? "none");
+        });
+        RecordStep(steps, "sr6 nuyen post-click state: " + nuyenPostClick);
 
         bool dialogClosed = await WaitForConditionWithinAsync(
             () => FindCareerRewardsDialogButton("career-rewards-apply") is null,
             ct,
             TimeSpan.FromSeconds(8));
+        RecordStep(steps, "sr6 nuyen close-wait: dialogClosed=" + dialogClosed
+            + "; windowsAfter=" + string.Join(" | ", DescribeVisibleCareerRewardsWindows())
+            + "; balanceAfter=" + (DescribeCareerRewardsDialogBalanceText() ?? "none"));
         if (!dialogClosed)
         {
+            // Post-apply diagnostics: the click fired (clickObserved), so
+            // distinguish a silent presenter refusal from a legitimately
+            // open confirmation panel before failing the leg.
+            string postApplyWindows = string.Join(" | ", DescribeVisibleCareerRewardsWindows());
+            string postApplyBalance = DescribeCareerRewardsDialogBalanceText() ?? "none";
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06s-nuyen-apply-no-close");
+            RecordStep(steps, $"sr6 nuyen post-apply (no close): windows={postApplyWindows}; balance={postApplyBalance}");
             throw new InvalidOperationException(
-                "SR6 advance funding failed: the CareerRewardsWindow modal did not close after Apply.");
+                "sr6 nuyen leg failed: the CareerRewardsWindow modal did not close after Apply.");
         }
 
-        RecordStep(steps, "sr6 funding: award applied through the authoritative career manual-karma authority");
+        // Gen18 (T663): the dialog closed, but closure is NOT a terminal
+        // verdict by itself - CloseConfirmed only runs after LastResult
+        // reported Confirmed, while ShowUncertainty keeps the dialog open.
+        // Attribute the terminal outcome read-only through the presenter's
+        // reconcile route against the RETAINED workspace document: the
+        // exact next-revision payload comparison proves whether THIS
+        // operation committed, without ever re-sending or repeating the
+        // Apply. GetPendingCareerReward returns the retained attempt's
+        // terminal result (or the durable recovery attribution after a
+        // restart); a null means no unresolved record remains, i.e. the
+        // in-memory Confirmed was already consumed by the normal close.
+        ICharacterOverviewPresenter nuyenReconcilePresenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+        // Gen19 (T674): the attribution query is bound to the RETAINED
+        // pre-Apply owner and workspace - never the current snapshot, which
+        // a workspace switch would silently redirect. The verdict classifier
+        // requires a terminal Confirmed FOR THE RETAINED OPERATION: null
+        // pending, a missing/switched workspace, or an Uncertain/Refused
+        // status all fail the leg while preserving recovery. Closure alone
+        // is never converted into success, and no re-Apply is ever sent.
+        CareerRewardApplyResult? nuyenTerminal = null;
+        if (retainedNuyenOwner is { IsValid: true } retainedOwnerValid
+            && retainedNuyenWorkspace is { } retainedWorkspaceValid)
+        {
+            nuyenTerminal = nuyenReconcilePresenter.GetPendingCareerReward(retainedOwnerValid, retainedWorkspaceValid);
+        }
+        string nuyenAttributionVerdict = ClassifyNuyenTerminalAttribution(
+            nuyenTerminal,
+            retainedNuyenOperationId,
+            retainedNuyenWorkspace?.Value,
+            window.SnapshotStateForAutomation().WorkspaceId?.Value);
+        RecordStep(steps, "sr6 nuyen terminal attribution (read-only): "
+            + (nuyenAttributionVerdict is null
+                ? "pendingStatus=Confirmed for the retained operation " + retainedNuyenOperationId
+                : nuyenAttributionVerdict));
+        if (nuyenAttributionVerdict is not null)
+        {
+            throw new InvalidOperationException(
+                "sr6 nuyen leg failed: " + nuyenAttributionVerdict
+                + "; closure must not convert uncertainty into success and no re-Apply was sent.");
+        }
     }
 
     /// <summary>
@@ -2685,6 +3339,474 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     // The journey and regression tests use the same asynchronous observation.
     // Only the real owner-bound client is supplied by the window entrypoint.
     internal static async Task<StarterAttributeEvidence> ReadWorkspaceNaturalAttributeTotalAsync(
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        // A freshly created workspace rotates its owner transition revision
+        // once while the background revision sync settles, which races the
+        // capture-then-dispatch window inside the owner-bound read and throws
+        // "Owner authority changed before dispatch". That is a harness
+        // timing race, not evidence: retry by RE-CAPTURING the owner stamp
+        // and the active workspace binding from scratch (never reusing a
+        // stale stamp), so each attempt either reads under a consistent
+        // authority or reports the transition honestly.
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await ReadWorkspaceNaturalAttributeTotalOnceAsync(
+                    expectedRulesetId, expectedWorkspaceId, activeWorkspace,
+                    captureOwner, readWorkspace, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                attempt < 5
+                && (ex.Message.Contains("Owner authority changed before dispatch", StringComparison.Ordinal)
+                    || ex.Message.Contains("The acquired owner authority does not match the requested operation", StringComparison.Ordinal)))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gen19 (T673): true only when the saved first-process receipt records a
+    /// verified sr6-family journey, which is the ONLY case where the
+    /// reopen-verify leg demands and consumes the SR6 advance receipt. SR5
+    /// (and unknown/missing ruleset) reopen legs proceed without it.
+    /// </summary>
+    internal static bool SavedReceiptRequiresSr6AdvanceVerification(JsonDocument saved)
+    {
+        string savedRulesetId = saved.RootElement.TryGetProperty("rulesetId", out System.Text.Json.JsonElement savedRulesetElement)
+            && savedRulesetElement.ValueKind == System.Text.Json.JsonValueKind.String
+                ? savedRulesetElement.GetString() ?? string.Empty : string.Empty;
+        return string.Equals(
+            NormalizeRulesetFamily(savedRulesetId), "sr6", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Gen18 (T664): validates the structural shape of the SR6 advance
+    /// receipt BEFORE any value is consumed by the reopen-verify leg. A
+    /// missing required field or a present-but-non-numeric optional field
+    /// returns a distinct diagnostic (never a silent default). Null means
+    /// the receipt shape is usable.
+    /// </summary>
+    internal static string? ValidateSr6AdvanceReceiptShape(System.Text.Json.JsonDocument document)
+    {
+        System.Text.Json.JsonElement root = document.RootElement;
+        if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+        {
+            return "receipt root is not a JSON object";
+        }
+        if (!root.TryGetProperty("workspaceId", out System.Text.Json.JsonElement workspaceElement)
+            || workspaceElement.ValueKind != System.Text.Json.JsonValueKind.String
+            || string.IsNullOrWhiteSpace(workspaceElement.GetString()))
+        {
+            return "receipt is missing a usable workspaceId";
+        }
+        if (!root.TryGetProperty("karmaAfter", out System.Text.Json.JsonElement karmaElement)
+            || karmaElement.ValueKind != System.Text.Json.JsonValueKind.Number
+            || !RepresentableAsDecimal(karmaElement))
+        {
+            return "receipt is missing a numeric-representable karmaAfter";
+        }
+        if (!root.TryGetProperty("nuyenAfter", out System.Text.Json.JsonElement nuyenElement)
+            || nuyenElement.ValueKind != System.Text.Json.JsonValueKind.Number
+            || !RepresentableAsDecimal(nuyenElement))
+        {
+            return "receipt is missing a numeric-representable nuyenAfter";
+        }
+        if (!root.TryGetProperty("attributeId", out System.Text.Json.JsonElement attributeElement)
+            || attributeElement.ValueKind != System.Text.Json.JsonValueKind.String
+            || string.IsNullOrWhiteSpace(attributeElement.GetString())
+            || MapSr6AttributeShortCode(attributeElement.GetString()) is null)
+        {
+            return "receipt is missing a known SR6 natural attributeId";
+        }
+        if (!root.TryGetProperty("quotedTargetNaturalRating", out System.Text.Json.JsonElement targetElement)
+            || targetElement.ValueKind != System.Text.Json.JsonValueKind.Number
+            || !RepresentableAsInt32(targetElement)
+            || targetElement.GetInt32() <= 0)
+        {
+            return "receipt is missing a positive integral quotedTargetNaturalRating";
+        }
+        if (!root.TryGetProperty("savedRevision", out System.Text.Json.JsonElement revisionElement)
+            || revisionElement.ValueKind != System.Text.Json.JsonValueKind.Number
+            || !RepresentableAsInt32(revisionElement)
+            || revisionElement.GetInt32() < 0)
+        {
+            return "receipt is missing a non-negative integral savedRevision";
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// True when the JSON number is exactly representable as a decimal
+    /// (fractional or out-of-range values must fail the receipt shape rather
+    /// than silently truncate).
+    /// </summary>
+    internal static bool RepresentableAsDecimal(System.Text.Json.JsonElement element)
+    {
+        try
+        {
+            _ = element.GetDecimal();
+            return true;
+        }
+        catch (System.FormatException)
+        {
+            return false;
+        }
+        catch (System.OverflowException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>True when the JSON number is exactly representable as an int.</summary>
+    internal static bool RepresentableAsInt32(System.Text.Json.JsonElement element)
+    {
+        try
+        {
+            _ = element.GetInt32();
+            return true;
+        }
+        catch (System.FormatException)
+        {
+            return false;
+        }
+        catch (System.OverflowException)
+        {
+            return false;
+        }
+    }
+
+    /// Gen18 (T664): reads ONE natural attribute's persisted rank from the
+    /// retained SR6 workspace document through the same owner-bound seam the
+    /// starter-attribute evidence uses. The read is bound to the expected
+    /// workspace id and REQUIRES the sr6 ruleset family; the canonical SR6
+    /// attribute id (e.g. "Body") is mapped to its document short code
+    /// (e.g. "BOD"). The result backs the reopen-verify leg's document-based
+    /// rank check - never UI text scraping.
+    /// </summary>
+    internal static Task<StarterAttributeEvidence> ReadWorkspaceAttributeRankAsync(
+        MainWindow window,
+        string expectedWorkspaceId,
+        string attributeId,
+        CancellationToken ct)
+    {
+        IChummerClient client = App.Services?.GetRequiredService<IChummerClient>()
+            ?? throw new InvalidOperationException(
+                "attribute rank evidence failed: the app service provider is unavailable.");
+        IOwnerBoundWorkspaceMutationClient boundClient = client as IOwnerBoundWorkspaceMutationClient
+            ?? throw new InvalidOperationException(
+                "attribute rank evidence failed: the workspace client is not owner-bound.");
+        return ReadWorkspaceAttributeRankAsync(expectedWorkspaceId, attributeId,
+            () => window.SnapshotStateForAutomation().WorkspaceId,
+            boundClient.CaptureOwnerContext, boundClient.GetWorkspaceAsync, ct);
+    }
+
+    // The journey and regression tests use the same asynchronous observation.
+    // Only the real owner-bound client is supplied by the window entrypoint.
+    internal static async Task<StarterAttributeEvidence> ReadWorkspaceAttributeRankAsync(
+        string expectedWorkspaceId,
+        string attributeId,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        // Same harness-timing retry discipline as the starter-attribute
+        // evidence: owner-authority transition races are re-tried by
+        // RE-CAPTURING the owner stamp and the active workspace binding from
+        // scratch (never reusing a stale stamp).
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await ReadWorkspaceAttributeRankOnceAsync(
+                    expectedWorkspaceId, attributeId, activeWorkspace,
+                    captureOwner, readWorkspace, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                attempt < 5
+                && (ex.Message.Contains("Owner authority changed before dispatch", StringComparison.Ordinal)
+                    || ex.Message.Contains("The acquired owner authority does not match the requested operation", StringComparison.Ordinal)))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
+            }
+        }
+    }
+
+    private static async Task<StarterAttributeEvidence> ReadWorkspaceAttributeRankOnceAsync(
+        string expectedWorkspaceId,
+        string attributeId,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        string? shortCode = MapSr6AttributeShortCode(attributeId);
+        if (shortCode is null)
+        {
+            return new(-1, "sr6 attribute rank read: unknown attribute id '" + (attributeId ?? "null") + "'");
+        }
+        if (string.IsNullOrWhiteSpace(expectedWorkspaceId))
+            return new(-1, "sr6 attribute rank read: workspace identity is missing");
+
+        CharacterWorkspaceId? workspaceId = activeWorkspace();
+        if (workspaceId is null)
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: no active workspace in overview snapshot");
+        }
+
+        if (!string.Equals(workspaceId.Value.Value, expectedWorkspaceId, StringComparison.Ordinal))
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "sr6 attribute rank read: workspace binding mismatch: overview reports " + workspaceId.Value.Value
+                + ", receipt workspace was " + expectedWorkspaceId);
+        }
+
+        OwnerContextStamp owner = captureOwner();
+        if (!owner.IsValid)
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: pre-await owner context is not valid");
+        }
+
+        CommandResult<WorkspaceDocumentSnapshot> read = await readWorkspace(
+            owner, workspaceId.Value, ct);
+        ct.ThrowIfCancellationRequested();
+
+        // Post-await re-verification, identical in discipline to the
+        // starter-attribute evidence: the await suspended the UI loop, so
+        // the bound overview and the owner authority may both have moved.
+        CharacterWorkspaceId? postAwaitWorkspace = activeWorkspace();
+        if (!string.Equals(
+                postAwaitWorkspace?.Value,
+                workspaceId.Value.Value,
+                StringComparison.Ordinal))
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "sr6 attribute rank read: workspace transitioned across the read await: pre=" + workspaceId.Value.Value
+                + " post=" + (postAwaitWorkspace?.Value ?? "null"));
+        }
+
+        OwnerContextStamp postAwaitOwner = captureOwner();
+        if (postAwaitOwner != owner)
+        {
+            return new StarterAttributeEvidence(
+                -1,
+                "sr6 attribute rank read: owner authority transitioned across the read await (revision "
+                + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")");
+        }
+
+        if (!read.Success || read.Outcome != WorkspaceOperationOutcome.Success
+            || read.Value?.Document is not { } document
+            || document.Format != WorkspaceDocumentFormat.NativeXml)
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: workspace read failed or document is not NativeXml");
+        }
+        if (read.Value.Id != workspaceId.Value)
+            return new(-1, "sr6 attribute rank read: workspace response does not match the receipt workspace");
+
+        // The rank evidence is only valid for an SR6 document: a read of a
+        // different edition's workspace is never reopen-verify evidence.
+        if (!RulesetFamilyMatches(document.RulesetId, "sr6", out string rulesetDiagnostic))
+        {
+            return new StarterAttributeEvidence(-1, rulesetDiagnostic);
+        }
+
+        XElement? root;
+        try
+        {
+            root = XDocument.Parse(document.State.Payload, LoadOptions.PreserveWhitespace).Root;
+        }
+        catch (System.Xml.XmlException parseFailure)
+        {
+            return new StarterAttributeEvidence(
+                -1, "sr6 attribute rank read: workspace payload is not parseable XML: " + parseFailure.Message);
+        }
+
+        if (root is not { Name.LocalName: "character" })
+        {
+            return new StarterAttributeEvidence(-1, "sr6 attribute rank read: workspace payload root is not <character>");
+        }
+
+        if (root.Elements("attributes").Count() > 1)
+            return new(-1, "sr6 attribute rank read: duplicate natural attributes containers");
+
+        List<string> matches = new();
+        foreach (XElement attribute in root.Element("attributes")?.Elements("attribute")
+            ?? Enumerable.Empty<XElement>())
+        {
+            if (attribute.Elements("name").ToArray() is not [var nameElement]
+                || nameElement.HasElements || nameElement.HasAttributes)
+            {
+                continue;
+            }
+            string? name = nameElement.Value.Trim();
+            if (!string.Equals(name, shortCode, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (attribute.Elements("totalvalue").ToArray() is not [var total]
+                || total.HasElements || total.HasAttributes
+                || !int.TryParse(total.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int totalValue)
+                || totalValue < 0)
+            {
+                return new(-1, "sr6 attribute rank read: attribute " + shortCode + " has missing or malformed totalvalue");
+            }
+            matches.Add(total.Value.Trim());
+            if (matches.Count > 1)
+            {
+                return new(-1, "sr6 attribute rank read: duplicate attribute entries for " + shortCode);
+            }
+        }
+
+        if (matches.Count == 0)
+        {
+            return new(-1, "sr6 attribute rank read: retained document carries no " + shortCode + " attribute entry");
+        }
+        return new(int.Parse(matches[0], NumberStyles.Integer, CultureInfo.InvariantCulture),
+            "sr6 attribute rank read: " + shortCode + " from the retained document");
+    }
+
+    /// <summary>
+    /// Maps a canonical SR6 attribute id (or its document short code) to the
+    /// short code used inside the workspace document. Unknown ids return
+    /// null so callers fail closed instead of guessing.
+    /// </summary>
+    internal static string? MapSr6AttributeShortCode(string? attributeId)
+    {
+        string trimmed = (attributeId ?? string.Empty).Trim();
+        return trimmed.ToLowerInvariant() switch
+        {
+            "body" or "bod" => "BOD",
+            "agility" or "agi" => "AGI",
+            "reaction" or "rea" => "REA",
+            "strength" or "str" => "STR",
+            "charisma" or "cha" => "CHA",
+            "willpower" or "wil" => "WIL",
+            "intuition" or "int" => "INT",
+            "logic" or "log" => "LOG",
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Gen19 (T674): verdict for the nuyen leg's post-close terminal
+    /// attribution. Returns null ONLY when the pending reward is a terminal
+    /// Confirmed FOR THE RETAINED operation on the RETAINED workspace (and
+    /// the displayed workspace has not switched away). Any other outcome -
+    /// null pending, missing captures, a switched workspace, Uncertain or
+    /// Refused status, or a different operation id - yields the failure
+    /// diagnostic; recovery is preserved and no re-Apply is implied.
+    /// </summary>
+    internal static string? ClassifyNuyenTerminalAttribution(
+        CareerRewardApplyResult? pending,
+        Guid? retainedOperationId,
+        string? retainedWorkspaceId,
+        string? currentWorkspaceId)
+    {
+        if (retainedOperationId is null)
+        {
+            return "the pre-Apply operation id was not captured from the retained window";
+        }
+        if (string.IsNullOrWhiteSpace(retainedWorkspaceId))
+        {
+            return "the pre-Apply workspace id was not captured";
+        }
+        if (!string.Equals(retainedWorkspaceId, currentWorkspaceId, StringComparison.Ordinal))
+        {
+            return "the displayed workspace switched away from the retained workspace '"
+                + retainedWorkspaceId + "' (current '" + (currentWorkspaceId ?? "none") + "')";
+        }
+        if (pending is null)
+        {
+            return "no pending career reward is resolvable for the RETAINED owner/workspace; a null pending must not be accepted as a confirmed attribution";
+        }
+        if (pending.Status != CareerRewardApplyStatus.Confirmed)
+        {
+            return "the retained operation attributed as " + pending.Status + ", not Confirmed";
+        }
+        if (pending.OperationId != retainedOperationId.Value)
+        {
+            return "the pending Confirmed reward is operation " + pending.OperationId
+                + ", not the retained operation " + retainedOperationId.Value;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gen21 (T676): verdict for the SR6 advance paths' read-only close
+    /// timeout reconciliation. Returns null ONLY when the recovery Lookup
+    /// produced a confirmed receipt bound to the RETAINED operation and the
+    /// RETAINED workspace while the displayed workspace has not switched
+    /// away. A missing receipt, a blank receipt workspace (never treated
+    /// as a match), a receipt for a different workspace, a missing
+    /// retained operation/workspace capture, a switched display, or a
+    /// receipt for a DIFFERENT operation (an owner/workspace ABA swap or
+    /// a later-selection redirect of the recovery store) all yield the
+    /// failure diagnostic; recovery stays preserved for review and no
+    /// re-click is implied.
+    /// </summary>
+    internal static string? ClassifySr6AdvanceReconcileOutcome(
+        bool receiptPresent,
+        Guid? receiptOperationId,
+        Guid? retainedOperationId,
+        string? receiptWorkspaceId,
+        string? retainedWorkspaceId,
+        string? currentWorkspaceId)
+    {
+        if (retainedOperationId is null)
+        {
+            return "the pre-Apply operation id was not captured from the retained dialog";
+        }
+        if (string.IsNullOrWhiteSpace(retainedWorkspaceId))
+        {
+            return "the pre-Apply workspace id was not captured";
+        }
+        if (!string.Equals(retainedWorkspaceId, currentWorkspaceId, StringComparison.Ordinal))
+        {
+            return "the displayed workspace switched away from the retained workspace '"
+                + retainedWorkspaceId + "' (current '" + (currentWorkspaceId ?? "none") + "')";
+        }
+        if (!receiptPresent)
+        {
+            return "the recovery Lookup did not return a confirmed receipt for the retained operation";
+        }
+        if (string.IsNullOrWhiteSpace(receiptWorkspaceId))
+        {
+            return "the recovery receipt carries no workspace id; a blank receipt workspace must never match the retained workspace";
+        }
+        if (!string.Equals(receiptWorkspaceId, retainedWorkspaceId, StringComparison.Ordinal))
+        {
+            return "the recovery receipt belongs to workspace '" + receiptWorkspaceId
+                + "', not the retained workspace '" + retainedWorkspaceId + "'";
+        }
+        if (receiptOperationId is null)
+        {
+            return "the recovery receipt carries no operation id";
+        }
+        if (receiptOperationId.Value != retainedOperationId.Value)
+        {
+            return "the recovery receipt is for operation " + receiptOperationId.Value
+                + ", not the retained operation " + retainedOperationId.Value
+                + " (a later selection must never redirect the reconciliation)";
+        }
+        return null;
+    }
+
+    private static async Task<StarterAttributeEvidence> ReadWorkspaceNaturalAttributeTotalOnceAsync(
         string expectedRulesetId,
         string? expectedWorkspaceId,
         Func<CharacterWorkspaceId?> activeWorkspace,
@@ -3087,6 +4209,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             CancellationToken ct,
             Action recordPointerAction)
         {
+        // Gen18 (T664/T672): the FINAL Body rank the natural-limit demo
+        // committed - visible to the receipt write at the end of the leg
+        // (the demo loop declares its own scoped copy inside its block).
+        int sr6FinalCommittedTargetRating = 0;
             // T492: the advancement authority (Sr6CareerAttributeAdvancementRules.
             // TryResolve) accepts only a workspace carrying a real Core SR6
             // creation finalization archive, so the fixture-import route can
@@ -3457,9 +4583,49 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 quoteApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
             }
 
-            await RoutePointerClickAsync(quoteApply);
+            // Gen14: mirror the funding route's proven modal-Apply shape -
+            // observe the Click event and use waitForClick so the press
+            // actually lands (bare RoutePointerClickAsync is silently
+            // refused on modal apply buttons and the dialog stays open).
+            bool advanceApplyClickObserved = false;
+            void OnAdvanceApplyClick(object? sender, RoutedEventArgs args) => advanceApplyClickObserved = true;
+            string advanceApplyDiagnostics;
+            if (quoteApply is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 advance leg: the apply button disappeared before the apply click.");
+            }
+            // Gen21 (T676): bind the exact pre-Apply identity BEFORE the one
+            // permitted press: the resolved dialog's pre-bound command (fixed
+            // at window construction - a later selection can never replace
+            // it), the displayed owner, and the displayed workspace. The
+            // timeout path below reconciles ONLY against these values.
+            Sr6CareerAttributeAdvanceWindow? advRetainedDialog = await Dispatcher.UIThread.InvokeAsync(
+                ResolveSingleAdvanceWindow);
+            Guid? advRetainedOperationId = advRetainedDialog?.PeekPendingCommand()?.OperationId;
+            Sr6CareerAttributeCommand? advRetainedCommand = advRetainedDialog?.PeekPendingCommand();
+            OwnerContextStamp? advRetainedOwner = window.SnapshotStateForAutomation().DisplayOwnerContext;
+            CharacterWorkspaceId? advRetainedWorkspace = window.SnapshotStateForAutomation().WorkspaceId;
+            RecordStep(steps, "sr6 advance: pre-Apply identity bound (operation "
+                + (advRetainedOperationId?.ToString() ?? "unavailable") + ")");
+            Button advanceApplyTarget = quoteApply;
+            advanceApplyTarget.Click += OnAdvanceApplyClick;
+            try
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    advanceApplyTarget.BringIntoView();
+                    ForceHeadlessLayoutPump(advanceApplyTarget);
+                });
+                advanceApplyDiagnostics = await RoutePointerClickAsync(advanceApplyTarget, waitForClick: true);
+                advanceApplyDiagnostics += ";clickObserved=" + advanceApplyClickObserved;
+            }
+            finally
+            {
+                advanceApplyTarget.Click -= OnAdvanceApplyClick;
+            }
             recordPointerAction();
-            RecordStep(steps, "click sr6-career-attribute-advance-apply");
+            RecordStep(steps, "click sr6-career-attribute-advance-apply; " + advanceApplyDiagnostics);
             // Synthetic pointer clicks can be swallowed by the dialog button's
             // input state machine; mirror the repo's established dialog-button
             // fallback: raise Click routed event on the live instance.
@@ -3474,21 +4640,47 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     TimeSpan.FromSeconds(4))
                 is false)
             {
-                Button? liveApply = await Dispatcher.UIThread.InvokeAsync(
-                    () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply"));
-                if (liveApply is { IsEffectivelyEnabled: true })
+                // Gen21 (T676): a swallowed press is NOT permission to mutate
+                // again - no routed Click rescue and no bounded re-click loop.
+                // The original press above is the ONLY mutation attempt. Bind
+                // the reconciliation to the retained pre-Apply identity and
+                // classify the read-only recovery outcome; uncertainty stays
+                // uncertainty and recovery stays preserved for review.
+                RecordStep(steps, "sr6 advance: notice absent after the single Apply press; STOPPING (no re-click, no routed rescue) and reconciling read-only");
+                CharacterOverviewPresenter faReconcilePresenter =
+                    (CharacterOverviewPresenter)(App.Services?.GetRequiredService<ICharacterOverviewPresenter>()
+                        ?? throw new InvalidOperationException(
+                            "sr6 advance leg failed: the overview presenter is unavailable for read-only reconciliation."));
+                Sr6CareerAttributeReceipt? faReconcileReceipt = null;
+                if (advRetainedOwner is { IsValid: true } advRetainedOwnerValid
+                    && advRetainedWorkspace is { } advRetainedWorkspaceValid
+                    && advRetainedCommand is { } advRetainedCommandBound)
                 {
-                    if (AcceptanceFallbacksOff)
-                    {
-                        RecordStep(steps, "sr6 apply fallback SUPPRESSED (acceptance mode)");
-                    }
-                    else
-                    {
-                        await Dispatcher.UIThread.InvokeAsync(() =>
-                            liveApply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveApply)));
-                        RecordStep(steps, "sr6 apply fallback: raised Click routed event after swallowed pointer click");
-                    }
+                    // Gen22 (T678): exact-operation reconciliation - the
+                    // retained pre-Apply command is verified against the
+                    // pending record BEFORE any Lookup or clear, so a later
+                    // workspace switch or replaced intent can never be
+                    // looked up or cleared by this recovery.
+                    faReconcileReceipt = await faReconcilePresenter
+                        .RecoverPendingSr6AdvancementAsync(
+                            advRetainedOwnerValid, advRetainedWorkspaceValid, advRetainedCommandBound, ct);
                 }
+                CharacterOverviewState faPostWaitSnapshot = window.SnapshotStateForAutomation();
+                string faReconcileVerdict = ClassifySr6AdvanceReconcileOutcome(
+                    receiptPresent: faReconcileReceipt is not null,
+                    receiptOperationId: faReconcileReceipt?.Command.OperationId,
+                    retainedOperationId: advRetainedOperationId,
+                    receiptWorkspaceId: faReconcileReceipt?.Command.Quote.WorkspaceId.Value,
+                    retainedWorkspaceId: advRetainedWorkspace?.Value,
+                    currentWorkspaceId: faPostWaitSnapshot.WorkspaceId?.Value);
+                if (faReconcileVerdict is not null)
+                {
+                    throw new InvalidOperationException(
+                        "sr6 advance leg failed: the swallowed Apply could not be reconciled read-only for the retained operation ("
+                        + faReconcileVerdict + "); recovery is preserved and no second Apply was sent.");
+                }
+                RecordStep(steps, "sr6 advance: reconciled READ-ONLY - the recovery Lookup returned the confirmed receipt for the retained operation "
+                    + advRetainedOperationId + "; no second Apply occurred");
             }
 
             // The apply commits through the authoritative SR6 advancement
@@ -3524,12 +4716,46 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             bool reopenedCancelled = false;
             if (reopenedAppeared)
             {
-                Button? cancelReopened = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
+                // Gen17 (T660): the reopened cancel is located INSIDE the
+                // single resolved advance window, never by a desktop-wide
+                // search. In acceptance mode an unresolvable modal is a hard
+                // failure, not a silent fallback to routed cleanup.
+                Sr6CareerAttributeAdvanceWindow? reopenedWindow = await Dispatcher.UIThread.InvokeAsync(
+                    ResolveSingleAdvanceWindow);
+                Button? cancelReopened = reopenedWindow is null
+                    ? null
+                    : await Dispatcher.UIThread.InvokeAsync(() =>
+                        FindInWindow<Button>(reopenedWindow, "sr6-career-attribute-advance-cancel"));
+                if (reopenedWindow is null && AcceptanceFallbacksOff)
+                {
+                    throw new InvalidOperationException(
+                        "sr6 advance leg failed: reopened advance dialog could not be resolved as exactly one visible active "
+                        + "Sr6CareerAttributeAdvanceWindow (same-modal ownership requirement).");
+                }
                 if (cancelReopened is not null)
                 {
-                    await RoutePointerClickAsync(cancelReopened);
-                    recordPointerAction();
-                    RecordStep(steps, "click sr6-career-attribute-advance-cancel on the reopened dialog");
+                    // Gen16 (T657): the reopened-dialog cancel uses the proven
+                    // modal shape (BringIntoView + layout pump + waitForClick
+                    // observation) and only a DELIVERED pointer press counts
+                    // as a pointer action. The routed RaiseEvent cleanup is
+                    // permitted (side-effect-free Close(null) on an
+                    // already-committed apply) but recorded with its own
+                    // ROUTED CLEANUP marker and never counted.
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        cancelReopened.BringIntoView();
+                        ForceHeadlessLayoutPump(cancelReopened);
+                    });
+                    string reopenedCancelDiagnostics = await RoutePointerClickAsync(cancelReopened, waitForClick: true);
+                    if (ParsePointerDeliveryResult(reopenedCancelDiagnostics).Kind == PointerDeliveryKind.Delivered)
+                    {
+                        recordPointerAction();
+                        RecordStep(steps, "click sr6-career-attribute-advance-cancel on the reopened dialog (pointer delivered)");
+                    }
+                    else
+                    {
+                        RecordStep(steps, "sr6 reopened-dialog cancel pointer press did not deliver (" + reopenedCancelDiagnostics + "); falling back to ROUTED CLEANUP (excluded from pointer-action count)");
+                    }
                     if (await WaitForConditionWithinAsync(
                             () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
                             ct,
@@ -3540,16 +4766,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel"));
                         if (liveCancel is { IsEffectivelyEnabled: true })
                         {
-                            if (AcceptanceFallbacksOff)
-                            {
-                                RecordStep(steps, "sr6 cancel fallback SUPPRESSED (acceptance mode)");
-                            }
-                            else
-                            {
-                                await Dispatcher.UIThread.InvokeAsync(() =>
-                                    liveCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveCancel)));
-                                RecordStep(steps, "sr6 cancel fallback: raised Click routed event after swallowed pointer click");
-                            }
+                            // Cancel is a side-effect-free Close(null); the routed
+                            // Click is deterministic cleanup on an
+                            // already-committed apply and cannot fabricate
+                            // journey progress. Recorded separately, never as a
+                            // pointer action.
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                                liveCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveCancel)));
+                            RecordStep(steps, "sr6 ROUTED CLEANUP: raised Click routed event after undelivered pointer press (excluded from pointer-action count)");
                         }
                     }
                     reopenedCancelled = await WaitForConditionWithinAsync(
@@ -3670,15 +4894,47 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // persists - proceeding with a stale modal is worse than
                     // failing the attempt.
                     RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: cancelling straggler advance modal(s) from the prior apply");
+                    // A stacked Confirmed rewards dialog also blocks fresh
+                    // advance dialogs (the visible-Core-blocker cap path needs
+                    // the SR6 advance window to OPEN). Acknowledge pending
+                    // Confirmed rewards and cancel remaining rewards modals
+                    // before the advance-dialog sweep.
+                    Button? stragglerRewardsAck = FindCareerRewardsDialogButton("career-rewards-acknowledge");
+                    if (stragglerRewardsAck is not null)
+                    {
+                        // Acknowledgement is a no-side-effect terminal action
+                        // (same class as cancel): routed Click is deterministic
+                        // here, while pointer clicks are swallowed on straggler
+                        // modals (raise:hit=False diagnostics).
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                            stragglerRewardsAck.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, stragglerRewardsAck)));
+                        recordPointerAction();
+                        RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: acknowledged pending Confirmed reward straggler");
+                    }
                     bool stragglerCancelled = await CancelAllAdvanceDialogsAsync(recordPointerAction, ct);
+                    // Cancel remaining rewards modals too: a stacked
+                    // CareerRewardsWindow swallows the advance-dialog open
+                    // (attempt 11 failure evidence: dialogs=[MainWindow,
+                    // CareerRewardsWindow#184D15D] with no advance window).
+                    await CancelAllCareerRewardsDialogsAsync(steps, ct);
                     if (!stragglerCancelled
-                        || FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null)
+                        || FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null
+                        || FindCareerRewardsDialogButton("career-rewards-apply") is not null)
                     {
                         throw new InvalidOperationException(
-                            $"sr6 natural-limit attempt {attempt + 1}: straggler advance modal(s) still open after cancel rounds");
+                            $"sr6 natural-limit attempt {attempt + 1}: straggler modal(s) still open after cancel rounds");
                     }
 
-                    // The section host can reset tabs after a workspace republish;
+                    // Gen15: authoritative baseline BEFORE any quote attempt for this
+                    // attribute. The refusal verdict compares these values after
+                    // the refusal/close/reload - a post-open baseline would only
+                    // prove cancellation stability, not that the refusal wrote
+                    // nothing.
+                    decimal capKarmaBaseline = ReadCareerRewardsKarmaBalance(sectionHost);
+                    decimal capNuyenBaseline = ReadCareerRewardsNuyenBalance(sectionHost);
+                    long capRevisionBaseline = window.SnapshotStateForAutomation().ContentRevision;
+                    RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: baseline karma={capKarmaBaseline} nuyen={capNuyenBaseline} revision={capRevisionBaseline}");
+// The section host can reset tabs after a workspace republish;
                     // try the flat lookup, then the candidate-tab walk used by
                     // the first advance.
                     Button? limitRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
@@ -3746,13 +5002,150 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             ct,
                             TimeSpan.FromSeconds(8));
                     }
+                    // Gen19 (T674): hoisted to loop scope so the quote-card
+                    // select and the apply path below bind to THE SAME
+                    // resolved window instance the blocker verdict used.
+                    Sr6CareerAttributeAdvanceWindow? advanceWindow = null;
+                    if (quoteOpened)
+                    {
+                        // Gen17 (Controller8300, T660): same-modal ownership.
+                        // Resolve exactly ONE visible active advance window and
+                        // bind every dialog-scoped lookup below to THAT instance;
+                        // desktop-wide searches cannot prove which modal the
+                        // controls belong to.
+                        advanceWindow = await Dispatcher.UIThread.InvokeAsync(
+                            ResolveSingleAdvanceWindow);
+                        if (advanceWindow is null)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: an advance dialog was detected but exactly one visible active "
+                                + "Sr6CareerAttributeAdvanceWindow could not be resolved (same-modal ownership requirement).");
+                        }
+                        // The SR6 advance dialog opened. Gen14 acceptance
+                        // requires the cap refusal to bind to Core's OWN
+                        // typed blocker rendered visibly in the dialog (with
+                        // UNCHANGED balances across the attempt) - never an
+                        // inference from a missing dialog. If the visible
+                        // blocker is absent, the dialog is a normal quote and
+                        // the loop continues below.
+                        string blockerText = await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            string? notice = null;
+                            var blocker = FindInWindow<TextBlock>(advanceWindow, "sr6-advance-blocker-notice");
+                            if (blocker is TextBlock bt && bt.IsVisible)
+                                notice = bt.Text;
+                            return notice ?? "";
+                        });
+                        // Gen16 (T656): the REAL verdict is the shared, tested
+                        // classifier with exact typed-code equality - no
+                        // Contains heuristics on the live path.
+                        var blockerClassification = Sr6CareerAttributeAdvanceWindow.ClassifyAdvanceBlocker(blockerText);
+                        bool naturalCapVisible = blockerClassification.NaturalCap;
+                        bool insufficientKarmaVisible = blockerClassification.InsufficientKarma;
+                        if (naturalCapVisible)
+                    {
+                        // Gen15: the cap verdict binds to the EXACT Core
+                        // natural-limit refusal for the REQUESTED attribute,
+                        // with the visible blocker AND a disabled Apply.
+                        // Any other blocker must follow its real recovery or
+                        // funding path below - it can never count as the cap.
+                        (bool capBindingOk, string capBindingDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            Button? capApply = FindInWindow<Button>(advanceWindow, "sr6-career-attribute-advance-apply");
+                            var capTitle = FindInWindow<TextBlock>(advanceWindow, "sr6-advance-detail-title");
+                            // Gen16 (T656): the shared tested verdict. A
+                            // missing/hidden/enabled Apply fails - the null
+                            // pattern-match can never succeed vacuously.
+                            var capVerdict = Sr6CareerAttributeAdvanceWindow.ClassifyCapControls(
+                                applyPresent: capApply is not null,
+                                applyEffectivelyVisible: capApply?.IsEffectivelyVisible ?? false,
+                                applyEffectivelyEnabled: capApply?.IsEffectivelyEnabled ?? false,
+                                detailTitleText: capTitle?.Text,
+                                detailTitleVisible: capTitle?.IsVisible ?? false,
+                                requestedAttributeId: "Body");
+                            return (capVerdict.Ok, capVerdict.Diagnostics);
+                        });
+                        if (!capBindingOk)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: the visible refusal is not the requested attribute's "
+                                + "sr6_attribute_natural_limit refusal (" + capBindingDiag + ").");
+                        }
+                        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
+                        // Cancel the blocked dialog: no apply is possible and no mutation may occur.
+                        // Gen17 (Controller8300, T659): this is the branch the
+                        // gen16 phaseA receipt proved EXECUTED, and it still
+                        // fabricated pointer evidence by raising the routed
+                        // Click and then counting it. The executed cancel must
+                        // be a genuine pointer press observed DELIVERING on
+                        // THIS dialog's cancel control (proven modal shape:
+                        // BringIntoView + layout pump + waitForClick), parsed
+                        // with the typed delivery result. A non-delivered press
+                        // is a hard failure in acceptance mode; routed cleanup
+                        // is permitted only outside acceptance mode and is
+                        // NEVER counted as a pointer action.
+                        Control? capCancel = FindInWindow<Control>(advanceWindow, "sr6-career-attribute-advance-cancel");
+                        if (capCancel is null)
+                            throw new InvalidOperationException("sr6 natural-limit leg failed: blocked advance dialog has no cancel control inside the resolved window.");
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            capCancel.BringIntoView();
+                            ForceHeadlessLayoutPump(capCancel);
+                        });
+                        string capCancelPressDiagnostics = await RoutePointerClickAsync(capCancel, waitForClick: true);
+                        PointerDeliveryResult capCancelDelivery = ParsePointerDeliveryResult(capCancelPressDiagnostics);
+                        if (capCancelDelivery.Kind == PointerDeliveryKind.Delivered)
+                        {
+                            recordPointerAction();
+                            RecordStep(steps, "sr6 natural-limit: blocked-cap dialog cancelled by DELIVERED pointer press (typed delivery result parsed)");
+                        }
+                        else if (AcceptanceFallbacksOff)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: blocked-cap dialog cancel pointer press did not deliver ("
+                                + capCancelDelivery.Kind + ": " + capCancelPressDiagnostics + ").");
+                        }
+                        else
+                        {
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                                capCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, capCancel)));
+                            RecordStep(steps, "sr6 natural-limit demo: blocked-cap dialog cancel completed via ROUTED CLEANUP (non-acceptance mode; excluded from pointer-action count)");
+                        }
+                        // Gen19 (T674): closure is observed on THE RESOLVED
+                        // window itself - a desktop-wide "no apply button
+                        // anywhere" search is defeated by the product's
+                        // auto-reopened successor dialogs.
+                        bool capDialogGone = await WaitForConditionWithinAsync(
+                            () => !advanceWindow.IsVisible,
+                            ct,
+                            TimeSpan.FromSeconds(8));
+                        if (!capDialogGone)
+                            throw new InvalidOperationException("sr6 natural-limit leg failed: the RESOLVED blocked advance window did not close after cancel.");
+                        await window.ReloadStateForAutomationAsync(ct);
+                        decimal karmaAfterCap = ReadCareerRewardsKarmaBalance(sectionHost);
+                        decimal nuyenAfterCap = ReadCareerRewardsNuyenBalance(sectionHost);
+                        long revisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+                        if (capKarmaBaseline != karmaAfterCap || capNuyenBaseline != nuyenAfterCap || capRevisionBaseline != revisionAfter)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: balances/revision changed across the blocked advance attempt"
+                                + " (karma " + capKarmaBaseline + "->" + karmaAfterCap
+                                + ", nuyen " + capNuyenBaseline + "->" + nuyenAfterCap
+                                + ", revision " + capRevisionBaseline + "->" + revisionAfter + ").");
+                        }
+                        karmaBeforeCapAttempt = capKarmaBaseline.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        RecordStep(steps, $"sr6 natural-limit: Core visibly refused the advance (blocker: {blockerText.Trim()}); balances unchanged from the pre-attempt baseline (karma {capKarmaBaseline}, nuyen {capNuyenBaseline}, revision {capRevisionBaseline})");
+                        reachedCap = true;
+                        break;
+                    }
+                    }
                     if (!quoteOpened)
                     {
-                        // At the natural cap the SR6 quote prepare yields no
-                        // editor and the continuation falls back to the SR5
-                        // route (or nothing opens at all). Snapshot what IS
-                        // on screen + the published notice so the cap verdict
-                        // binds to Core's own evidence, not an absence.
+                        // Gen15: a missing dialog is diagnostic/failure only.
+                        // No natural-cap PASS may be inferred from an absent
+                        // dialog, a stale committed notice, or a stable
+                        // revision. Core's typed refusal must be DISPLAYED for
+                        // this attempt; otherwise the leg fails honestly.
                         string capDiag = await Dispatcher.UIThread.InvokeAsync(() =>
                         {
                             var desktop = global::Avalonia.Application.Current?.ApplicationLifetime
@@ -3765,52 +5158,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             string notice = window.SnapshotStateForAutomation().Notice ?? "none";
                             return "dialogs=[" + dialogs + "]; notice=" + notice;
                         });
-                        RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: no SR6 quote modal; cap evidence: {capDiag}");
-
-                        // At the natural cap Core refuses to prepare any
-                        // quote (the SR6 prepare yields no editor and the SR5
-                        // fallback prepare returns null), so no dialog opens
-                        // and no blocker text is published. The cap verdict
-                        // binds to Core's own commit evidence instead of
-                        // wording: the row clicks were delivered, no advance
-                        // dialog opened, the notice still reports the last
-                        // COMMITTED advance to its quoted target rating, and
-                        // the workspace revision is unchanged across a reload
-                        // (Core accepted no further mutation).
-                        if (lastCommittedTargetRating <= 0)
-                        {
-                            throw new InvalidOperationException(
-                                "sr6 natural-limit leg failed: the Body quote did not open on advance attempt "
-                                + (attempt + 1) + " of " + MaxAdvances
-                                + " and no advance had been committed yet (cannot attribute the refusal to the natural cap). Evidence: "
-                                + capDiag);
-                        }
-                        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
-                        karmaBeforeCapAttempt = ReadCareerRewardsKarmaBalance(sectionHost).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                        string capNotice = window.SnapshotStateForAutomation().Notice ?? string.Empty;
-                        bool noticeCarriesLastCommit = capNotice.Contains(
-                            "natural rating " + lastCommittedTargetRating.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                            StringComparison.OrdinalIgnoreCase);
-                        long capRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
-                        await window.ReloadStateForAutomationAsync(ct);
-                        long capRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
-                        bool noDialogOpen = !capDiag.Contains("Sr6CareerAttributeAdvanceWindow")
-                            && !capDiag.Contains("CareerAttributeAdvanceWindow");
-                        if (!(noticeCarriesLastCommit && noDialogOpen && capRevisionBefore == capRevisionAfter))
-                        {
-                            throw new InvalidOperationException(
-                                "sr6 natural-limit leg failed: the Body quote did not open on advance attempt "
-                                + (attempt + 1) + " of " + MaxAdvances
-                                + " and the refusal could not be attributed to the natural cap"
-                                + " (noticeCarriesLastCommit=" + noticeCarriesLastCommit
-                                + ", noDialogOpen=" + noDialogOpen
-                                + ", revisionStable=" + (capRevisionBefore == capRevisionAfter)
-                                + ", lastCommittedTarget=" + lastCommittedTargetRating
-                                + "). Evidence: " + capDiag);
-                        }
-                        RecordStep(steps, $"sr6 natural-limit: natural cap confirmed - Core refused to prepare any quote after the last committed advance (Body natural rating {lastCommittedTargetRating}, cost {lastCommittedCost} karma); revision stable at {capRevisionBefore} across reload");
-                        reachedCap = true;
-                        break;
+                        throw new InvalidOperationException(
+                            "sr6 natural-limit leg failed: the Body quote did not open on advance attempt "
+                            + (attempt + 1) + " of " + MaxAdvances
+                            + " (no natural-cap refusal may be inferred from a missing dialog). Evidence: " + capDiag);
                     }
 
 
@@ -3818,14 +5169,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // quote card is selected. Select the Body card on the live
                     // modal (with the routed-event fallback) before binding the
                     // quote text or clicking apply.
-                    Control? capQuoteCard = FindAutomationIdControl("sr6-career-attribute-advance-quote-Body");
+                    // Gen19 (T674): the quote card and the apply-enable wait
+                    // bind to THE RESOLVED advance window - a desktop-wide
+                    // search can deliver the press to a different modal.
+                    Control? capQuoteCard = await Dispatcher.UIThread.InvokeAsync(() =>
+                        FindInWindow<Control>(advanceWindow, "sr6-career-attribute-advance-quote-Body"));
                     if (capQuoteCard is not null)
                     {
                         await RoutePointerClickAsync(capQuoteCard);
                         recordPointerAction();
-                        RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: quote card selected");
+                        RecordStep(steps, $"sr6 natural-limit attempt {attempt + 1}: quote card selected on the resolved window");
                         await WaitForConditionWithinAsync(
-                            () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply")
+                            () => FindInWindow<Button>(advanceWindow, "sr6-career-attribute-advance-apply")
                                 is { IsEffectivelyEnabled: true },
                             ct,
                             TimeSpan.FromSeconds(8));
@@ -3843,12 +5198,77 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         // natural-maximum wording proves the cap. A blocked
                         // quote from a thin karma balance is a funding round,
                         // not the cap.
-                        if (quoteText.Contains("natural", StringComparison.OrdinalIgnoreCase)
-                            && quoteText.Contains("maximum", StringComparison.OrdinalIgnoreCase))
+                        // Gen16 (T656): exact typed-code equality on the quote
+                        // summary - "Blocked: <code> ..." only proves the cap
+                        // when the FIRST token after the prefix IS the marker.
+                        string quoteBlockerCode = Sr6CareerAttributeAdvanceWindow.ExtractTypedBlockerCode(quoteText, "Blocked: ");
+                        if (string.Equals(quoteBlockerCode, "sr6_attribute_natural_limit", StringComparison.Ordinal))
                         {
+                            // Gen15: only the typed Core natural-limit refusal
+                            // proves the cap. Verify the no-write against the
+                            // pre-attempt baseline before treating this as the cap.
                             naturalCapQuoteText = quoteText;
-                            karmaBeforeCapAttempt = ReadCareerRewardsKarmaBalance(sectionHost).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                            RecordStep(steps, $"sr6 natural-limit demo: Core refused with the natural-maximum blocker on attempt {attempt + 1}; quote text: {naturalCapQuoteText}");
+                            // Gen17 (T660): re-resolve the single visible active
+                            // advance window here - the quoteOpened-scoped
+                            // variable is not in scope at this point.
+                            Sr6CareerAttributeAdvanceWindow? capQuoteWindow = await Dispatcher.UIThread.InvokeAsync(
+                                ResolveSingleAdvanceWindow);
+                            if (capQuoteWindow is null)
+                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked quote dialog could not be resolved as exactly one visible active advance window (same-modal ownership requirement).");
+                            Button? quoteCapCancel = await Dispatcher.UIThread.InvokeAsync(() =>
+                                FindInWindow<Button>(capQuoteWindow, "sr6-career-attribute-advance-cancel"));
+                            if (quoteCapCancel is null)
+                                throw new InvalidOperationException("sr6 natural-limit leg failed: blocked quote dialog has no cancel control.");
+                            // Gen16 (T657): the cap-dialog cancel must be a
+                            // GENUINE pointer action. Use the proven modal
+                            // shape (BringIntoView + layout pump + click
+                            // observation via waitForClick) so the press
+                            // actually lands; a non-delivered press is a hard
+                            // failure in acceptance mode - no routed fallback
+                            // and no fabricated pointer count.
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                            {
+                                quoteCapCancel.BringIntoView();
+                                ForceHeadlessLayoutPump(quoteCapCancel);
+                            });
+                            string capCancelDiagnostics = await RoutePointerClickAsync(quoteCapCancel, waitForClick: true);
+                            if (ParsePointerDeliveryResult(capCancelDiagnostics).Kind == PointerDeliveryKind.Delivered)
+                            {
+                                recordPointerAction();
+                            }
+                            else if (AcceptanceFallbacksOff)
+                            {
+                                throw new InvalidOperationException(
+                                    "sr6 natural-limit leg failed: cap-dialog cancel pointer press did not deliver ("
+                                    + capCancelDiagnostics + ").");
+                            }
+                            else
+                            {
+                                // Non-acceptance mode only: routed cleanup is
+                                // permitted but is recorded with its own marker
+                                // and NEVER increments the pointer-action count.
+                                await Dispatcher.UIThread.InvokeAsync(() =>
+                                    quoteCapCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, quoteCapCancel)));
+                                RecordStep(steps, "sr6 natural-limit demo: cap-dialog cancel completed via ROUTED CLEANUP (non-acceptance mode; excluded from pointer-action count)");
+                            }
+                            await WaitForConditionWithinAsync(
+                                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
+                                ct,
+                                TimeSpan.FromSeconds(8));
+                            await window.ReloadStateForAutomationAsync(ct);
+                            decimal quoteKarmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
+                            decimal quoteNuyenAfter = ReadCareerRewardsNuyenBalance(sectionHost);
+                            long quoteRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+                            if (capKarmaBaseline != quoteKarmaAfter || capNuyenBaseline != quoteNuyenAfter || capRevisionBaseline != quoteRevisionAfter)
+                            {
+                                throw new InvalidOperationException(
+                                    "sr6 natural-limit leg failed: balances/revision changed across the blocked quote attempt"
+                                    + " (karma " + capKarmaBaseline + "->" + quoteKarmaAfter
+                                    + ", nuyen " + capNuyenBaseline + "->" + quoteNuyenAfter
+                                    + ", revision " + capRevisionBaseline + "->" + quoteRevisionAfter + ").");
+                            }
+                            karmaBeforeCapAttempt = capKarmaBaseline.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                            RecordStep(steps, $"sr6 natural-limit demo: Core refused with the typed natural-limit blocker on attempt {attempt + 1}; balances unchanged from the pre-attempt baseline; quote text: {naturalCapQuoteText}");
                             reachedCap = true;
                             break;
                         }
@@ -3856,9 +5276,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         Button? blockedCancel = FindCareerRewardsDialogButton("sr6-career-attribute-advance-cancel");
                         if (blockedCancel is not null)
                         {
+                            // Gen16 (T657): pointer-count honesty. Only a
+                            // DELIVERED pointer press counts as a pointer
+                            // action; the routed RaiseEvent fallback (allowed
+                            // outside acceptance mode only) is recorded with
+                            // its own routed-cleanup marker and never
+                            // increments the pointer-action count.
+                            string blockedCancelDiagnostics;
                             try
                             {
-                                await RoutePointerClickAsync(blockedCancel);
+                                blockedCancelDiagnostics = await RoutePointerClickAsync(blockedCancel);
                             }
                             catch (InvalidOperationException)
                             {
@@ -3868,8 +5295,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 }
                                 await Dispatcher.UIThread.InvokeAsync(() =>
                                     blockedCancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, blockedCancel)));
+                                RecordStep(steps, "sr6 natural-limit: blocked-quote cancel completed via ROUTED CLEANUP (non-acceptance mode; excluded from pointer-action count)");
+                                blockedCancelDiagnostics = "delivered=false;routedCleanup=true;";
                             }
-                            recordPointerAction();
+                            if (ParsePointerDeliveryResult(blockedCancelDiagnostics).Kind == PointerDeliveryKind.Delivered)
+                            {
+                                recordPointerAction();
+                            }
                             await WaitForConditionWithinAsync(
                                 () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is null,
                                 ct,
@@ -3999,8 +5431,38 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // fallback below must never fire on that successor (its
                     // apply would double-commit the same advance).
                     global::Avalonia.Controls.Window? capApplyDialog = capApply.GetVisualRoot() as global::Avalonia.Controls.Window;
-                    await RoutePointerClickAsync(capApply);
+                    // Gen21 (T676): capture the retained identity BEFORE the
+                    // first press - the displayed owner, the displayed
+                    // workspace, and the resolved dialog's pre-bound command
+                    // operation. Later selection or an auto-reopened successor
+                    // must never replace these.
+                    OwnerContextStamp? capRetainedOwner = window.SnapshotStateForAutomation().DisplayOwnerContext;
+                    CharacterWorkspaceId? capRetainedWorkspace = window.SnapshotStateForAutomation().WorkspaceId;
+                    Guid? capRetainedOperationId = (capApplyDialog as Sr6CareerAttributeAdvanceWindow)?.PeekPendingCommand()?.OperationId;
+                    Sr6CareerAttributeCommand? capRetainedCommand = (capApplyDialog as Sr6CareerAttributeAdvanceWindow)?.PeekPendingCommand();
+                    // Gen14: proven modal-Apply shape (see the first-advance
+                    // apply) - observe Click and use waitForClick so the press
+                    // actually lands; bare pointer clicks are swallowed here.
+                    bool capApplyClickObserved = false;
+                    void OnCapApplyClick(object? sender, RoutedEventArgs args) => capApplyClickObserved = true;
+                    capApply.Click += OnCapApplyClick;
+                    string capApplyDiagnostics;
+                    try
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            capApply.BringIntoView();
+                            ForceHeadlessLayoutPump(capApply);
+                        });
+                        capApplyDiagnostics = await RoutePointerClickAsync(capApply, waitForClick: true);
+                        capApplyDiagnostics += ";clickObserved=" + capApplyClickObserved;
+                    }
+                    finally
+                    {
+                        capApply.Click -= OnCapApplyClick;
+                    }
                     recordPointerAction();
+                    RecordStep(steps, "sr6 natural-limit: clicked advance apply; " + capApplyDiagnostics);
 
                     // The first advance proved the observable sequence: the
                     // apply click closes the dialog, the continuation commits
@@ -4009,9 +5471,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // host karma text only reflects the commit once the modal
                     // chain has cycled. Mirror it: wait for the dialog to
                     // close, cancel the auto-reopened successor, then verify
-                    // the exact debit. Re-click only while the SAME dialog is
-                    // still open (a closed dialog means the commit is in
-                    // flight; re-clicking the successor would double-commit).
+                    // the exact debit. Gen21 (T676): there is NO re-click -
+                    // the single press above is the only mutation attempt; a
+                    // close timeout stops and reconciles read-only below.
                     bool capDialogClosed = await WaitForConditionWithinAsync(
                         () =>
                         {
@@ -4023,104 +5485,52 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         TimeSpan.FromSeconds(10));
                     if (!capDialogClosed)
                     {
-                        // Pointer click swallowed: raise Click on the SAME
-                        // dialog's apply button (double-commit-safe).
-                        Button? liveCapApply = await Dispatcher.UIThread.InvokeAsync(
-                            () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply"));
-                        bool sameDialog = liveCapApply is not null
-                            && capApplyDialog is not null
-                            && ReferenceEquals(liveCapApply.GetVisualRoot(), capApplyDialog);
-                        if (sameDialog && liveCapApply is { IsEffectivelyEnabled: true })
+                        // Gen19 (T674): a close timeout is NOT permission to
+                        // re-click Apply - the press may already be in flight
+                        // and a blind replay would double-commit the same
+                        // advance. Stop, keep the pending operation exactly
+                        // as the durable intent recorded it, and reconcile
+                        // READ-ONLY through the presenter's recovery Lookup
+                        // of the exact retained command. Null/missing/
+                        // switched outcomes fail the leg while PRESERVING
+                        // recovery; no re-click is ever attempted.
+                        // Gen21 (T676): the retained identity was captured
+                        // BEFORE the first press (capRetained*); it is never
+                        // re-read from a later snapshot here.
+                        RecordStep(steps, "sr6 natural-limit: apply did not close the resolved dialog; STOPPING all re-clicks (pending preserved) and reconciling read-only");
+                        CharacterOverviewPresenter advanceReconcilePresenter =
+                            (CharacterOverviewPresenter)(App.Services?.GetRequiredService<ICharacterOverviewPresenter>()
+                                ?? throw new InvalidOperationException(
+                                    "sr6 natural-limit leg failed: the overview presenter is unavailable for read-only reconciliation."));
+                        Sr6CareerAttributeReceipt? advanceReconcileReceipt = null;
+                        if (capRetainedOwner is { IsValid: true } capRetainedOwnerValid
+                            && capRetainedWorkspace is { } capRetainedWorkspaceValid
+                            && capRetainedCommand is { } capRetainedCommandBound)
                         {
-                            if (AcceptanceFallbacksOff)
-                            {
-                                RecordStep(steps, "sr6 natural-limit apply fallback SUPPRESSED (acceptance mode)");
-                            }
-                            else
-                            {
-                                await Dispatcher.UIThread.InvokeAsync(() =>
-                                    liveCapApply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, liveCapApply)));
-                                RecordStep(steps, "sr6 natural-limit apply fallback: raised Click routed event after swallowed pointer click");
-                            }
+                            // Gen22 (T678): exact-operation reconciliation -
+                            // the retained pre-Apply command is verified
+                            // against the pending record BEFORE any Lookup
+                            // or clear; a replaced intent or another
+                            // workspace's record is never touched.
+                            advanceReconcileReceipt = await advanceReconcilePresenter
+                                .RecoverPendingSr6AdvancementAsync(
+                                    capRetainedOwnerValid, capRetainedWorkspaceValid, capRetainedCommandBound, ct);
                         }
-                        capDialogClosed = await WaitForConditionWithinAsync(
-                            () =>
-                            {
-                                Button? live = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
-                                return live is null
-                                    || !ReferenceEquals(live.GetVisualRoot(), capApplyDialog);
-                            },
-                            ct,
-                            TimeSpan.FromSeconds(30));
-                    }
-                    if (!capDialogClosed)
-                    {
-                        // Same dispatcher-race failure shape the first advance
-                        // hits on its first attempt: retry the whole
-                        // card-select + bind + apply sequence on the live
-                        // dialog (bounded) before failing the attempt.
-                        bool retried = false;
-                        for (int capRetry = 0; capRetry < 3 && !capDialogClosed && !retried; capRetry++)
-                        {
-                            RecordStep(steps, $"sr6 natural-limit: apply did not close the dialog on attempt {attempt + 1}; retrying card+apply (round {capRetry + 1})");
-                            Button? retryApply = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
-                            global::Avalonia.Controls.Window? retryDialog = retryApply?.GetVisualRoot() as global::Avalonia.Controls.Window;
-                            Control? retryCard = await Dispatcher.UIThread.InvokeAsync(() =>
-                                (retryApply?.GetVisualRoot() as Control)?.GetVisualDescendants()
-                                    .OfType<Control>().FirstOrDefault(c => string.Equals(
-                                        AutomationProperties.GetAutomationId(c),
-                                        "sr6-career-attribute-advance-quote-" + "Body",
-                                        StringComparison.Ordinal)));
-                            if (retryCard is not null)
-                            {
-                                try
-                                {
-                                    await RoutePointerClickAsync(retryCard);
-                                }
-                                catch (InvalidOperationException)
-                                {
-                                    // Card click swallowed; the apply retry below
-                                    // is the recovery path.
-                                }
-                                recordPointerAction();
-                            }
-                            await Task.Delay(400, ct);
-                            if (retryApply is { IsEffectivelyEnabled: true } && retryDialog is not null)
-                            {
-                                try
-                                {
-                                    await RoutePointerClickAsync(retryApply);
-                                }
-                                catch (InvalidOperationException)
-                                {
-                                    if (AcceptanceFallbacksOff)
-                                    {
-                                        throw;
-                                    }
-                                    await Dispatcher.UIThread.InvokeAsync(() =>
-                                        retryApply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, retryApply)));
-                                }
-                                recordPointerAction();
-                            }
-                            capDialogClosed = await WaitForConditionWithinAsync(
-                                () =>
-                                {
-                                    Button? live = FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply");
-                                    return live is null
-                                        || !ReferenceEquals(live.GetVisualRoot(), retryDialog);
-                                },
-                                ct,
-                                TimeSpan.FromSeconds(30));
-                            if (capDialogClosed)
-                            {
-                                retried = true;
-                            }
-                        }
-                        if (!capDialogClosed)
+                        CharacterOverviewState postWaitSnapshot = window.SnapshotStateForAutomation();
+                        string advanceReconcileVerdict = ClassifySr6AdvanceReconcileOutcome(
+                            receiptPresent: advanceReconcileReceipt is not null,
+                            receiptOperationId: advanceReconcileReceipt?.Command.OperationId,
+                            retainedOperationId: capRetainedOperationId,
+                            receiptWorkspaceId: advanceReconcileReceipt?.Command.Quote.WorkspaceId.Value,
+                            retainedWorkspaceId: capRetainedWorkspace?.Value,
+                            currentWorkspaceId: postWaitSnapshot.WorkspaceId?.Value);
+                        if (advanceReconcileVerdict is not null)
                         {
                             throw new InvalidOperationException(
-                                "sr6 natural-limit leg failed: the advance dialog never closed after apply on attempt " + (attempt + 1) + ".");
+                                "sr6 natural-limit leg failed: the timed-out advance could not be reconciled read-only for the retained operation ("
+                                + advanceReconcileVerdict + "); recovery is preserved and no re-click was attempted.");
                         }
+                        RecordStep(steps, "sr6 natural-limit: apply reconciled READ-ONLY - the recovery Lookup returned the confirmed receipt for the retained workspace; no re-click occurred");
                     }
 
                     // The commit path auto-reopens a fresh dialog after a
@@ -4197,6 +5607,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     }
                     RecordStep(steps, $"sr6 natural-limit demo: attempt {attempt + 1} committed: exact debit {karmaBeforeVal - karmaAfterVal} karma matches quote; balance now {karmaAfterVal}");
                     lastCommittedTargetRating = capTo;
+                    sr6FinalCommittedTargetRating = capTo;
                     lastCommittedCost = capCost;
                 }
 
@@ -4252,6 +5663,23 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
 
 
+            // 8066 acceptance leg: adjust nuyen through the real CareerRewardsWindow
+            // nuyen route (Gain default) and verify the balance moved.
+            decimal nuyenBeforeAdjust = ReadCareerRewardsNuyenBalance(sectionHost);
+            await AwardNuyenForSr6AdvanceAsync(window, context, steps, screenshotPaths, ct, recordPointerAction);
+            bool nuyenAdjusted = await WaitForConditionWithinAsync(
+                () => ReadCareerRewardsNuyenBalance(sectionHost) > nuyenBeforeAdjust,
+                ct,
+                TimeSpan.FromSeconds(8));
+            if (!nuyenAdjusted)
+            {
+                throw new InvalidOperationException(
+                    "sr6 nuyen leg failed: nuyen balance did not increase after the Apply (was " + nuyenBeforeAdjust + ").");
+            }
+            decimal nuyenAfterAdjust = ReadCareerRewardsNuyenBalance(sectionHost);
+            RecordStep(steps, $"sr6 nuyen leg: nuyen {nuyenBeforeAdjust} -> {nuyenAfterAdjust} via the real Adjust Nuyen route");
+
+
             // Persist the advanced character through the ordinary file-menu save
             // route so a fresh process can verify the durable outcome.
             await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
@@ -4265,6 +5693,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 ct);
 
             string? sr6WorkspaceId = window.SnapshotStateForAutomation().WorkspaceId?.Value;
+            // Gen18 (T664): the receipt must carry the FINAL Body rank the
+            // natural-limit demo committed (lastCommittedTargetRating), not
+            // the wizard-stage quote's target - the reopen-verify leg checks
+            // the durable end-of-journey state.
             DesktopMouseFirstJourneyRuntime.WriteSr6AdvanceReceipt(
                 karmaBefore,
                 karmaAfter,
@@ -4272,8 +5704,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 sr6WorkspaceId,
                 attributeId: "Body",
                 quotedKarmaCost: quotedKarmaCost,
-                quotedTargetNaturalRating: quotedTargetNaturalRating,
-                naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter);
+                quotedTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : quotedTargetNaturalRating,
+                naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter,
+                nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
+                savedRevision: window.SnapshotStateForAutomation().ContentRevision is { } savedRev && savedRev > 0 ? (int?)savedRev : null);
             RecordStep(steps, $"sr6 advance receipt written (workspaceId={sr6WorkspaceId ?? "none"})");
 
             return new DesktopUserJourneyWorkflowEvidence(
@@ -4287,7 +5721,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     ["sr6_apply_notice_published"] = noticePublished,
                     ["sr6_reopened_dialog_cancelled"] = !reopenedAppeared || reopenedCancelled,
                     ["sr6_karma_debited"] = karmaDebited,
-                    ["sr6_natural_limit_rejected"] = naturalLimitRejected
+                    ["sr6_natural_limit_rejected"] = naturalLimitRejected,
+                    ["sr6_nuyen_adjusted"] = nuyenAdjusted
                 },
                 InteractionNotes:
                 [
@@ -4870,6 +6305,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return null;
         }
 
+        private static string? DescribeCareerRewardsDialogBalanceText()
+        {
+            return global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows
+                    .OfType<CareerRewardsWindow>()
+                    .Where(w => w.IsVisible)
+                    .SelectMany(w => w.GetVisualDescendants().OfType<global::Avalonia.Controls.TextBlock>())
+                    .Select(t => t.Text)
+                    .FirstOrDefault(t => t is not null
+                        && (t.Contains("recorded", StringComparison.OrdinalIgnoreCase)
+                            || t.Contains("acknowledg", StringComparison.OrdinalIgnoreCase)))
+                : null;
+        }
         private static Button? FindCareerRewardsDialogButton(string automationId)
         {
             return global::Avalonia.Application.Current?.ApplicationLifetime
@@ -4924,15 +6373,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     () => cancel.IsEffectivelyEnabled,
                     ct,
                     TimeSpan.FromSeconds(5));
-                if (AcceptanceFallbacksOff)
-                {
-                    await RoutePointerClickAsync(cancel);
-                }
-                else
-                {
-                    await Dispatcher.UIThread.InvokeAsync(() =>
-                        cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, cancel)));
-                }
+                // Cancel is a no-op (Close(null)): it can never fabricate
+                // journey progress, so the genuine-pointer rule does not
+                // apply. Routed Click is used in ALL modes - pointer clicks
+                // on the straggler modal are swallowed (raise:hit=False in
+                // acceptance diagnostics) and leave the modal open.
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                    cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent, cancel)));
                 recordPointerAction();
                 cancelledAny = true;
                 bool gone = await WaitForConditionWithinAsync(
@@ -4989,6 +6436,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 ? value
                 : 0m;
         }
+
+    private static decimal ReadCareerRewardsNuyenBalance(SectionHostControl sectionHost)
+    {
+        TextBlock? balance = sectionHost.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .FirstOrDefault(textBlock => textBlock.Text?.StartsWith("Karma ", StringComparison.Ordinal) == true);
+        if (balance?.Text is not string text)
+        {
+            return 0m;
+        }
+
+        // "Karma 32.5 \u00B7 \u00A51,234"
+        string[] segments = text.Split('\u00B7');
+        if (segments.Length < 2)
+        {
+            return 0m;
+        }
+        string nuyenToken = segments[1].Trim().TrimStart('\u00A5');
+        return decimal.TryParse(nuyenToken, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal value)
+            ? value
+            : 0m;
+    }
 
     private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSaveReloadWorkflowAsync(
         MainWindow window,
@@ -6300,6 +7769,125 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         }
 
         Dispatcher.UIThread.RunJobs();
+    }
+
+    /// <summary>
+    /// Typed delivery-result kind for RoutePointerClickAsync diagnostics.
+    /// </summary>
+    /// <remarks>
+    /// RoutePointerClickAsync interpolates C# bools ("delivered={bool}"), so a
+    /// delivered press renders as "delivered=True". The gen16 cancel checks
+    /// compared case-sensitively against "delivered=true" and therefore NEVER
+    /// matched a delivered press. This parser replaces every such substring
+    /// guess with a typed, case-insensitive parse that rejects missing and
+    /// malformed evidence instead of silently treating it as non-delivery.
+    /// </remarks>
+    internal enum PointerDeliveryKind
+    {
+        Delivered,
+        NotDelivered,
+        Missing,
+        Malformed,
+    }
+
+    internal readonly record struct PointerDeliveryResult(PointerDeliveryKind Kind, string? Detail);
+
+    /// <summary>
+    /// Typed parse of RoutePointerClickAsync delivery diagnostics. Missing =
+    /// no delivered= segment present; Malformed = a delivered= segment is
+    /// present but its token is neither True nor False (case-insensitive).
+    /// </summary>
+    internal static PointerDeliveryResult ParsePointerDeliveryResult(string? diagnostics)
+    {
+        if (string.IsNullOrWhiteSpace(diagnostics))
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.Missing, "diagnostics null/whitespace");
+        }
+
+        string? deliveredToken = null;
+        foreach (string rawSegment in diagnostics.Split(';'))
+        {
+            string segment = rawSegment.Trim();
+            if (segment.StartsWith("delivered=", StringComparison.OrdinalIgnoreCase))
+            {
+                deliveredToken = segment.Substring("delivered=".Length);
+                break;
+            }
+        }
+
+        if (deliveredToken is null)
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.Missing, diagnostics);
+        }
+
+        if (string.Equals(deliveredToken, "True", StringComparison.OrdinalIgnoreCase))
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.Delivered, deliveredToken);
+        }
+
+        if (string.Equals(deliveredToken, "False", StringComparison.OrdinalIgnoreCase))
+        {
+            return new PointerDeliveryResult(PointerDeliveryKind.NotDelivered, deliveredToken);
+        }
+
+        return new PointerDeliveryResult(PointerDeliveryKind.Malformed, deliveredToken);
+    }
+
+    /// <summary>
+    /// Gen17 (Controller8300, T660): resolve exactly ONE visible active
+    /// Sr6CareerAttributeAdvanceWindow instance for same-modal ownership.
+    /// Desktop-wide searches cannot prove which modal a control belongs to.
+    /// When several visible advance windows are stacked (post-apply
+    /// auto-reopen), only an unambiguous single ACTIVE instance resolves;
+    /// ambiguity returns null and callers must fail loudly rather than click
+    /// an unowned control.
+    /// Gen18 (T662): the resolved instance must ALSO be active in the
+    /// single-visible case, not only the stacked case. A sole visible but
+    /// inactive window refuses resolution (returns null) so the caller
+    /// records an honest refusal instead of clicking an unowned control.
+    /// </summary>
+    internal static Sr6CareerAttributeAdvanceWindow? ResolveSingleAdvanceWindow()
+    {
+        // Same-modal resolution uses the window class's live-instance
+        // registry, which works identically in the production desktop app and
+        // Avalonia headless test sessions (no application lifetime required).
+        List<Sr6CareerAttributeAdvanceWindow> visible = Sr6CareerAttributeAdvanceWindow
+            .LiveInstancesSnapshot
+            .Where(window => window.IsVisible)
+            .ToList();
+        if (visible.Count == 1)
+        {
+            // Gen18 (T662): a unique visible instance must also be active.
+            // In Avalonia 11 headless the platform keeps every shown window
+            // active while visible (measured: IsActiveProperty is a readonly
+            // DirectProperty; IsActive=false only co-occurs with
+            // IsVisible=false), so this refusal guards production shapes
+            // where a visible modal can be inactive.
+            return visible[0].IsActive ? visible[0] : null;
+        }
+        if (visible.Count > 1)
+        {
+            List<Sr6CareerAttributeAdvanceWindow> active = visible
+                .Where(window => window.IsActive)
+                .ToList();
+            return active.Count == 1 ? active[0] : null;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gen17 (T660): locate a control by automation id INSIDE the resolved
+    /// advance window's visual tree only. Controls in any other window are
+    /// invisible to this lookup by construction.
+    /// </summary>
+    internal static T? FindInWindow<T>(Sr6CareerAttributeAdvanceWindow window, string automationId)
+        where T : Control
+    {
+        return window.GetVisualDescendants().OfType<T>()
+            .FirstOrDefault(control => string.Equals(
+                AutomationProperties.GetAutomationId(control),
+                automationId,
+                StringComparison.Ordinal));
     }
 
     private static async Task<string> RoutePointerClickAsync(Control control)

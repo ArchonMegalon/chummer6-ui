@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
@@ -794,17 +795,46 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
     tool_strip_code = CLASSIC_TOOL_STRIP_CODE.read_text(encoding="utf-8")
     project = AVALONIA_PROJECT.read_text(encoding="utf-8")
     assert 'RequestedThemeVariant="Dark"' in application
-    for color in (
-        "#050B16",
-        "#111827",
-        "#162033",
-        "#0F172A",
-        "#020617",
-        "#172554",
-        "#0B1220",
-        "#1C4A2D",
-    ):
-        assert f'Color="{color}"' in application
+    # Bind the rendered shell to each named theme resource. A color elsewhere
+    # in App.axaml must not satisfy a missing or incorrectly themed brush.
+    resource_key = "{http://schemas.microsoft.com/winfx/2006/xaml}Key"
+    themes = {
+        theme.attrib[resource_key]: {
+            brush.attrib[resource_key]: brush.attrib["Color"]
+            for brush in theme
+            if brush.tag == "{https://github.com/avaloniaui}SolidColorBrush"
+        }
+        for theme in ET.fromstring(application).findall(
+            ".//{https://github.com/avaloniaui}ResourceDictionary.ThemeDictionaries/"
+            "{https://github.com/avaloniaui}ResourceDictionary"
+        )
+    }
+    assert set(themes) == {"Light", "Dark"}
+    assert themes["Light"].keys() == themes["Dark"].keys()
+    for theme_name, expected in {
+        "Light": {
+            "ChummerShellWindowBackgroundBrush": "#E3EAF3",
+            "ChummerShellHardPanelBrush": "#FBFCFE",
+            "ChummerShellForegroundBrush": "#111827",
+            "ChummerShellInputBackgroundBrush": "#FFFFFF",
+            "ChummerShellInputForegroundBrush": "#111111",
+            "ChummerShellSelectionBrush": "#656BD7",
+            "ChummerShellSelectionForegroundBrush": "#FFFFFF",
+            "ChummerShellMediaBackdropBrush": "#020617",
+        },
+        "Dark": {
+            "ChummerShellWindowBackgroundBrush": "#01010D",
+            "ChummerShellHardPanelBrush": "#050516",
+            "ChummerShellForegroundBrush": "#EDEDF8",
+            "ChummerShellInputBackgroundBrush": "#080819",
+            "ChummerShellInputForegroundBrush": "#EDEDF8",
+            "ChummerShellSelectionBrush": "#40526DFF",
+            "ChummerShellSelectionForegroundBrush": "#EDEDF8",
+            "ChummerShellMediaBackdropBrush": "#000008",
+        },
+    }.items():
+        for name, color in expected.items():
+            assert themes[theme_name][name] == color
     assert 'Title="Chummer Desktop Classic"' in window
     assert (
         "await DesktopInstallLinkingWindow.ShowIfNeededAsync("
