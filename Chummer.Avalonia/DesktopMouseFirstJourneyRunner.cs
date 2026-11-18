@@ -923,13 +923,46 @@ internal static class DesktopMouseFirstJourneyRunner
                 () => wizard.PriorityGridHost.Children.Count > 0
                     && wizard.PriorityConfirmButton.IsVisible,
                 journeyTimeout.Token);
+            // WIN-009: the plan's priority-heritage rank (env
+            // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_HERITAGE) drives the
+            // heritage row when set. The remaining four categories take the
+            // remaining distinct ranks (talent keeps E whenever available) so
+            // the Sum-to-Ten assignment still totals exactly 10. The default
+            // (no env) remains the canonical A/E/B/C/D spread.
+            string heritageRank = string.IsNullOrWhiteSpace(plan.PriorityHeritage)
+                ? "A"
+                : plan.PriorityHeritage!;
+            string[] remainingRanks = new[] { "A", "B", "C", "D", "E" }
+                .Where(rank => !string.Equals(rank, heritageRank, StringComparison.Ordinal))
+                .ToArray();
+            string talentRank;
+            string attributesRank;
+            string skillsRank;
+            string resourcesRank;
+            if (remainingRanks.Contains("E"))
+            {
+                talentRank = "E";
+                string[] rest = remainingRanks.Where(rank => rank != "E").ToArray();
+                attributesRank = rest[0];
+                skillsRank = rest[1];
+                resourcesRank = rest[2];
+            }
+            else
+            {
+                // heritage E consumes the zero rank; the canonical complement
+                // A/B/C/D keeps the Sum-to-Ten total at exactly 10.
+                talentRank = "A";
+                attributesRank = "B";
+                skillsRank = "C";
+                resourcesRank = "D";
+            }
             foreach ((string Category, string Rank) priorityPick in new[]
                      {
-                         ("heritage", "A"),
-                         ("talent", "E"),
-                         ("attributes", "B"),
-                         ("skills", "C"),
-                         ("resources", "D"),
+                         ("heritage", heritageRank),
+                         ("talent", talentRank),
+                         ("attributes", attributesRank),
+                         ("skills", skillsRank),
+                         ("resources", resourcesRank),
                      })
             {
                 string categoryLocal = priorityPick.Category;
@@ -959,7 +992,32 @@ internal static class DesktopMouseFirstJourneyRunner
                 () => wizard.GetPriorityHeritageChoices().Any(choice => choice.IsEnabled),
                 journeyTimeout.Token);
             string heritageChoiceId = await Dispatcher.UIThread.InvokeAsync(() =>
-                wizard.GetPriorityHeritageChoices().FirstOrDefault(c => c.IsEnabled).SelectionId);
+            {
+                var heritageChoices = wizard.GetPriorityHeritageChoices();
+                if (!string.IsNullOrWhiteSpace(plan.Metatype))
+                {
+                    // WIN-009: select the plan-requested metatype explicitly
+                    // (e.g. Dwarf at heritage rank C). A request that is not
+                    // enabled at the assigned rank is a hard journey failure -
+                    // that refusal IS the negative acceptance evidence.
+                    var wanted = heritageChoices.FirstOrDefault(c => c.IsEnabled
+                        && string.Equals(c.Label, plan.Metatype, StringComparison.OrdinalIgnoreCase));
+                    if (wanted.Label is null || string.IsNullOrEmpty(wanted.SelectionId))
+                    {
+                        throw new InvalidOperationException(
+                            "journey: requested heritage metatype '" + plan.Metatype
+                            + "' is not enabled at rank " + heritageRank
+                            + " (available: "
+                            + string.Join(", ", heritageChoices.Select(c =>
+                                c.Label + (c.IsEnabled ? string.Empty : " [disabled]")))
+                            + ")");
+                    }
+                    RecordStep(steps, "heritage choice requested metatype " + plan.Metatype
+                        + " at rank " + heritageRank + " -> " + wanted.Label);
+                    return wanted.SelectionId;
+                }
+                return heritageChoices.FirstOrDefault(c => c.IsEnabled).SelectionId;
+            });
             await ClickWizardButtonUntilEffectAsync(
                 wizard,
                 "creation-wizard-priority-heritage-choice-" + heritageChoiceId,
