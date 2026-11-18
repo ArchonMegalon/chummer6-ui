@@ -4544,7 +4544,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         string? expectedHeritageRank,
         string? expectedMetatypeName,
         CharacterCreationPrerequisiteDraft? prerequisite,
-        CharacterCreationAttributesDraft? attributes)
+        CharacterCreationAttributesDraft? attributes,
+        string? loadedWorkspaceId)
     {
         const string prefix = "exact-character mismatch: ";
         if (prerequisite is null)
@@ -4554,6 +4555,40 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         if (attributes is null)
         {
             return prefix + "the finalized document carries no attributes draft";
+        }
+
+        // REVIEW8657-1: the archived drafts must belong to the workspace that was
+        // actually loaded (the caller re-verifies the active workspace across the
+        // read await; here the DRAFT identity is bound to that same loaded id), and
+        // the attributes draft must reference the exact archived prerequisite via
+        // revision/digest/authority - a swapped or foreign draft chain is refused.
+        if (!string.IsNullOrWhiteSpace(loadedWorkspaceId))
+        {
+            if (!string.Equals(prerequisite.WorkspaceId.Value, loadedWorkspaceId, StringComparison.Ordinal))
+            {
+                return prefix + "prerequisite draft workspace '" + prerequisite.WorkspaceId.Value
+                    + "' does not match the loaded workspace '" + loadedWorkspaceId + "'";
+            }
+            if (!string.Equals(attributes.WorkspaceId.Value, loadedWorkspaceId, StringComparison.Ordinal))
+            {
+                return prefix + "attributes draft workspace '" + attributes.WorkspaceId.Value
+                    + "' does not match the loaded workspace '" + loadedWorkspaceId + "'";
+            }
+        }
+        if (attributes.PrerequisiteDraftRevision != prerequisite.DraftRevision)
+        {
+            return prefix + "attributes draft prerequisite revision " + attributes.PrerequisiteDraftRevision
+                + " does not match the archived prerequisite revision " + prerequisite.DraftRevision;
+        }
+        if (!string.Equals(attributes.PrerequisiteDraftDigest, prerequisite.DraftDigest, StringComparison.Ordinal))
+        {
+            return prefix + "attributes draft prerequisite digest '" + attributes.PrerequisiteDraftDigest
+                + "' does not match the archived prerequisite digest '" + prerequisite.DraftDigest + "'";
+        }
+        if (!string.Equals(attributes.PrerequisiteAuthorityDigest, prerequisite.AuthorityDigest, StringComparison.Ordinal))
+        {
+            return prefix + "attributes draft prerequisite authority '" + attributes.PrerequisiteAuthorityDigest
+                + "' does not match the archived prerequisite authority '" + prerequisite.AuthorityDigest + "'";
         }
         CharacterCreationPriorityHeritageSelection? heritage = prerequisite.HeritageSelection;
         if (heritage is null)
@@ -4819,7 +4854,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             expectedHeritageRank,
             expectedMetatypeName,
             prerequisite,
-            attributes);
+            attributes,
+            workspaceId.Value.Value);
         if (verdict is not null)
         {
             return ExactCharacterEvidence.Failed(verdict);

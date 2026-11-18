@@ -482,7 +482,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         string expectedFragment)
     {
         string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
-            parsed.Item1, parsed.Item2, parsed.Item3, expectedRank, expectedMetatype, prerequisite, attributes);
+            parsed.Item1, parsed.Item2, parsed.Item3, expectedRank, expectedMetatype, prerequisite, attributes, "exact-character-workspace");
         Assert.IsNotNull(verdict);
         Assert.IsTrue(verdict.Contains(expectedFragment, StringComparison.Ordinal), verdict);
     }
@@ -532,7 +532,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
         var parsed = ParseRows(root);
         string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
-            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes);
+            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes, "exact-character-workspace");
         Assert.IsNull(verdict);
     }
 
@@ -644,10 +644,47 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 2, 1) + ExactRow("ESS", 6, 0));
         var parsed = ParseRows(root);
         string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
-            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes);
+            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes, "exact-character-workspace");
         Assert.IsNull(verdict);
     }
 
+    [TestMethod]
+    public void Classify_accepts_core_emitted_essence_allocation_with_zero_points()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // REVIEW8664 regression: Core emits a metatype-granted special projection
+        // for essence (ESS 6/0) WITH a zero-point allocation row alongside the
+        // EDG allocation. The pre-a0b59338c delta-based classifier iterated
+        // allocation rows and counted the ESS XML delta (6) as special spend,
+        // refusing every legitimately finalized Dwarf. The allocation-backed
+        // classifier counts PriorityPoints (0 for ESS, 1 for EDG) and must
+        // accept. This fixture fails on the OLD implementation and passes on
+        // the NEW one.
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1)
+            with
+            {
+                Allocations = new[]
+                {
+                    new CharacterCreationAttributeAllocation("EDG", 1, 0),
+                    new CharacterCreationAttributeAllocation("ESS", 0, 0),
+                },
+                Attributes = new[]
+                {
+                    Projection("BOD", "normal", 1, 2), Projection("AGI", "normal", 1, 2),
+                    Projection("REA", "normal", 1, 2), Projection("STR", "normal", 1, 2),
+                    Projection("CHA", "normal", 1, 2), Projection("INT", "normal", 1, 2),
+                    Projection("LOG", "normal", 1, 2), Projection("WIL", "normal", 1, 2),
+                    Projection("EDG", "special", 1, 2),
+                    Projection("ESS", "special", 0, 6),
+                },
+            };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 2, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
+            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes, "exact-character-workspace");
+        Assert.IsNull(verdict);
+    }
     [TestMethod]
     public void Classify_rejects_an_allocation_not_backed_by_the_document()
     {
@@ -692,6 +729,73 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
 
     // ----- StarterAttributeEvidence contract -----
 
+    [TestMethod]
+    public void Classify_rejects_a_prerequisite_draft_from_a_foreign_workspace()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1)
+            with { WorkspaceId = new CharacterWorkspaceId("some-other-workspace") };
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "prerequisite draft workspace 'some-other-workspace' does not match the loaded workspace");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_an_attributes_draft_from_a_foreign_workspace()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
+            with { WorkspaceId = new CharacterWorkspaceId("unrelated-workspace") };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "attributes draft workspace 'unrelated-workspace' does not match the loaded workspace");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_an_attributes_draft_linked_to_a_different_prerequisite()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // Same workspace, same overall shape, but the attributes draft points at
+        // a DIFFERENT prerequisite chain (revision bumped): the linkage fields
+        // must be bound to the exact archived prerequisite.
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
+            with { PrerequisiteDraftRevision = 2 };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "does not match the archived prerequisite revision 1");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_an_attributes_draft_with_a_foreign_prerequisite_digest()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
+            with { PrerequisiteDraftDigest = "sha256:other-chain" };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "does not match the archived prerequisite digest 'sha256:prereq-draft'");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_an_attributes_draft_with_a_foreign_authority_digest()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
+            with { PrerequisiteAuthorityDigest = "sha256:other-authority" };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "does not match the archived prerequisite authority 'sha256:authority'");
+    }
     [TestMethod]
     public void StarterAttributeEvidence_is_invalid_only_for_negative_sums()
     {
