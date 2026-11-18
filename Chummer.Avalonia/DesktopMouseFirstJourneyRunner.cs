@@ -1164,11 +1164,14 @@ internal static class DesktopMouseFirstJourneyRunner
                 RecordStep(steps, $"wizard step graph after authoritative priority draft: {stepSummary}");
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-priority-graph-evidence");
             }
-            if (!string.IsNullOrWhiteSpace(plan.Metatype))
+            if (!string.IsNullOrWhiteSpace(plan.Metatype)
+                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
             {
                 // Metatype/nationality option cards live on the foundation step,
                 // which the Core marks life-modules-only for Priority builds.
                 // plan.Metatype is non-empty only for Life-Modules plans.
+                // (WIN-009 Priority plans carry plan.Metatype as the requested
+                // heritage metatype, already selected at the heritage step.)
                 await SelectWizardOptionAsync(
                     window,
                     wizard,
