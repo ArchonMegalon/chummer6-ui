@@ -1,4 +1,5 @@
 using Chummer.Desktop.Runtime;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
 
@@ -8,7 +9,7 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
     [TestMethod]
     public void ReadPlan_uses_defaults_when_environment_is_empty()
     {
-        using EnvironmentOverride scope = new();
+        using EnvironmentOverride scope = new EnvironmentOverride();
 
         DesktopMouseFirstJourneyPlan plan = DesktopMouseFirstJourneyRuntime.ReadPlan();
 
@@ -27,7 +28,7 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
     [TestMethod]
     public void ReadPlan_normalizes_priority_scenario_fields()
     {
-        using EnvironmentOverride scope = new()
+        using EnvironmentOverride scope = new EnvironmentOverride()
             .Set(DesktopMouseFirstJourneyRuntime.RulesetIdEnvironmentVariable, "SR6")
             .Set(DesktopMouseFirstJourneyRuntime.BuildMethodEnvironmentVariable, "priority")
             .Set(DesktopMouseFirstJourneyRuntime.MetatypeCategoryEnvironmentVariable, "Show All")
@@ -55,7 +56,7 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
     [TestMethod]
     public void ReadPlan_clears_priority_heritage_for_non_priority_builds()
     {
-        using EnvironmentOverride scope = new()
+        using EnvironmentOverride scope = new EnvironmentOverride()
             .Set(DesktopMouseFirstJourneyRuntime.BuildMethodEnvironmentVariable, "karma")
             .Set(DesktopMouseFirstJourneyRuntime.PriorityHeritageEnvironmentVariable, "B");
 
@@ -69,9 +70,27 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
     }
 
     [TestMethod]
+    public void ReadPlan_retains_priority_facts_for_sum_to_ten_builds()
+    {
+        using EnvironmentOverride scope = new EnvironmentOverride()
+            .Set(DesktopMouseFirstJourneyRuntime.BuildMethodEnvironmentVariable, "SumToTen")
+            .Set(DesktopMouseFirstJourneyRuntime.PriorityHeritageEnvironmentVariable, "c")
+            .Set(DesktopMouseFirstJourneyRuntime.MetatypeEnvironmentVariable, "Dwarf");
+
+        DesktopMouseFirstJourneyPlan plan = DesktopMouseFirstJourneyRuntime.ReadPlan();
+
+        // WIN-009 gen2 (T748): Sum-to-Ten shares the Priority prerequisite
+        // draft machinery, so the plan must retain the heritage facts and
+        // drive the same prerequisite table.
+        Assert.AreEqual("SumToTen", plan.BuildMethod);
+        Assert.AreEqual("C", plan.PriorityHeritage);
+        Assert.AreEqual("Dwarf", plan.Metatype);
+    }
+
+    [TestMethod]
     public void ReadPlan_preserves_bp_build_method_for_sr4()
     {
-        using EnvironmentOverride scope = new()
+        using EnvironmentOverride scope = new EnvironmentOverride()
             .Set(DesktopMouseFirstJourneyRuntime.RulesetIdEnvironmentVariable, "sr4")
             .Set(DesktopMouseFirstJourneyRuntime.BuildMethodEnvironmentVariable, "bp");
 

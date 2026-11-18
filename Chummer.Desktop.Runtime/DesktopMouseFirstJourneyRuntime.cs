@@ -210,7 +210,13 @@ public static class DesktopMouseFirstJourneyRuntime
         string? priorityTalent = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityTalentEnvironmentVariable));
         string? priorityTalentChoice = NormalizeNullable(Environment.GetEnvironmentVariable(PriorityTalentChoiceEnvironmentVariable));
 
-        if (!string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+        // WIN-009 gen2 (T748): Sum-to-Ten shares the Priority prerequisite
+        // draft machinery (the same authority, grid and confirmation flow), so
+        // the journey plan must retain the heritage/talent facts for SumToTen
+        // as well - only genuinely table-less methods drop them.
+        bool prerequisiteTableMethod = string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
+        if (!prerequisiteTableMethod)
         {
             priorityHeritage = null;
             priorityTalent = null;

@@ -604,7 +604,11 @@ internal static class DesktopMouseFirstJourneyRunner
                 string savedBuildMethod = saved.RootElement.TryGetProperty("buildMethod", out System.Text.Json.JsonElement savedBuildMethodElement)
                     && savedBuildMethodElement.ValueKind == System.Text.Json.JsonValueKind.String
                         ? savedBuildMethodElement.GetString() ?? string.Empty : string.Empty;
-                if (string.Equals(savedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+                // WIN-009 gen2 (T748): Sum-to-Ten plans run the same
+                // exact-character reopen verification - the draft binding is
+                // method-symmetric in the Core pipeline.
+                if (string.Equals(savedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(savedBuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
                 {
                     string savedRulesetIdForExactCheck = saved.RootElement.TryGetProperty("rulesetId", out System.Text.Json.JsonElement savedRulesetForExactElement)
                         && savedRulesetForExactElement.ValueKind == System.Text.Json.JsonValueKind.String
@@ -956,7 +960,13 @@ internal static class DesktopMouseFirstJourneyRunner
             // table with the canonical spread from the Core prerequisite tests.
             // Life-Modules plans skip this block: their build method is already
             // authoritative from the create dialog.
-            if (string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+            // WIN-009 gen2 (T748): Sum-to-Ten drives the SAME prerequisite
+            // table (the wizard renders the priority grid for any
+            // prerequisite-table method; the Core treats Priority and
+            // SumToTen symmetrically across the draft pipeline).
+            bool prerequisiteTablePlan = string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
+            if (prerequisiteTablePlan)
             {
             await WaitForAsync(
                 steps,
@@ -1099,7 +1109,7 @@ internal static class DesktopMouseFirstJourneyRunner
                 journeyTimeout.Token,
                 recordPointerAction);
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02a-priority-confirmed");
-            } // end Priority build-method gate
+            } // end prerequisite-table (Priority / SumToTen) gate
 
             // For Priority builds the Core marks foundation as life-modules-only
             // (never enterable) and gates the attributes step on deep-stage
@@ -1206,7 +1216,8 @@ internal static class DesktopMouseFirstJourneyRunner
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-priority-graph-evidence");
             }
             if (!string.IsNullOrWhiteSpace(plan.Metatype)
-                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
             {
                 // Metatype/nationality option cards live on the foundation step,
                 // which the Core marks life-modules-only for Priority builds.
@@ -1229,7 +1240,8 @@ internal static class DesktopMouseFirstJourneyRunner
             // plan.Metatype as the requested heritage metatype, already applied
             // at the heritage step - the foundation flow keys on the method.)
             if (!string.IsNullOrWhiteSpace(plan.Metatype)
-                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
             {
             string nationalityOptionId =
                 await WaitForWizardNationalityOptionAsync(window, steps, journeyTimeout.Token);
@@ -1548,7 +1560,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 bool wizardDrivenPriorityPlan = string.Equals(
                     plan.BuildMethod,
                     "Priority",
-                    StringComparison.OrdinalIgnoreCase);
+                    StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
                 ExactCharacterEvidence exactCharacterEvidence = wizardDrivenPriorityPlan
                     ? await ReadWorkspaceExactCharacterEvidenceAsync(
                         window,
