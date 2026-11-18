@@ -4590,6 +4590,61 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return prefix + "attributes draft prerequisite authority '" + attributes.PrerequisiteAuthorityDigest
                 + "' does not match the archived prerequisite authority '" + prerequisite.AuthorityDigest + "'";
         }
+
+        // REVIEW8657-2: an empty, partial, or duplicated archived projection set
+        // silently skips per-attribute comparisons. Require a complete, unique
+        // applicable set (all eight naturals projected), every allocation bound to
+        // a projected row, and the special budget bound to at least one special
+        // allocation whenever it records spend.
+        string[] naturals = { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" };
+        if (attributes.Attributes.Count == 0)
+        {
+            return prefix + "the archived attributes draft carries an empty attribute projection set";
+        }
+        List<string> duplicateProjections = attributes.Attributes
+            .GroupBy(a => a.AttributeId, StringComparer.Ordinal)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (duplicateProjections.Count > 0)
+        {
+            return prefix + "duplicate draft attribute projection rows for "
+                + string.Join(",", duplicateProjections);
+        }
+        List<string> missingProjections = naturals
+            .Where(n => !attributes.Attributes.Any(a => string.Equals(a.AttributeId, n, StringComparison.Ordinal)))
+            .ToList();
+        if (missingProjections.Count > 0)
+        {
+            return prefix + "draft attribute projection set is missing natural attributes "
+                + string.Join(",", missingProjections);
+        }
+        List<string> duplicateAllocations = attributes.Allocations
+            .GroupBy(a => a.AttributeId, StringComparer.Ordinal)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (duplicateAllocations.Count > 0)
+        {
+            return prefix + "duplicate draft allocation rows for "
+                + string.Join(",", duplicateAllocations);
+        }
+        foreach (CharacterCreationAttributeAllocation allocation in attributes.Allocations)
+        {
+            if (!attributes.Attributes.Any(a => string.Equals(a.AttributeId, allocation.AttributeId, StringComparison.Ordinal)))
+            {
+                return prefix + "draft allocation references attribute " + allocation.AttributeId
+                    + " that the archived projection set omits";
+            }
+        }
+        bool hasSpecialAllocation = attributes.Allocations.Any(a => attributes.Attributes.Any(r =>
+                string.Equals(r.AttributeId, a.AttributeId, StringComparison.Ordinal)
+                && string.Equals(r.Category, "special", StringComparison.Ordinal)));
+        if (attributes.SpecialPointUsed > 0 && !hasSpecialAllocation)
+        {
+            return prefix + "draft records special budget used " + attributes.SpecialPointUsed
+                + " with no special allocation binding";
+        }
         CharacterCreationPriorityHeritageSelection? heritage = prerequisite.HeritageSelection;
         if (heritage is null)
         {
@@ -4655,7 +4710,6 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return prefix + string.Join("; ", mismatches);
         }
 
-        string[] naturals = { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" };
         List<string> missingNaturals = naturals
             .Where(n => !xmlTotals.ContainsKey(n) || !xmlMinimums.ContainsKey(n))
             .ToList();

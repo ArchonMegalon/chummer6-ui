@@ -797,6 +797,88 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
             "does not match the archived prerequisite authority 'sha256:authority'");
     }
     [TestMethod]
+    public void Classify_rejects_an_empty_archived_projection_set()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes
+            with { Attributes = Array.Empty<CharacterCreationAttributeProjection>() };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "carries an empty attribute projection set");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_duplicate_projection_row()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes
+            with { Attributes = baseAttributes.Attributes.Append(Projection("BOD", "normal", 1, 2)).ToList() };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "duplicate draft attribute projection rows for BOD");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_projection_set_missing_a_natural_attribute()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes
+            with { Attributes = baseAttributes.Attributes.Where(a => a.AttributeId != "REA").ToList() };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "missing natural attributes REA");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_an_allocation_whose_row_the_projection_set_omits()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes
+            with
+            {
+                Allocations = baseAttributes.Allocations
+                    .Append(new CharacterCreationAttributeAllocation("MAG", 0, 0))
+                    .ToList(),
+            };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "draft allocation references attribute MAG that the archived projection set omits");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_special_spend_without_a_special_allocation()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // Special budget records spend, but every allocation row is zero-point:
+        // no special allocation carries the spend, so the budget is unbound.
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1);
+        var attributes = baseAttributes
+            with
+            {
+                Allocations = new List<CharacterCreationAttributeAllocation>(),
+                Attributes = baseAttributes.Attributes
+                    .Where(a => a.Category == "normal")
+                    .ToList(),
+            };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 2, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "records special budget used 1 with no special allocation binding");
+    }
+    [TestMethod]
     public void StarterAttributeEvidence_is_invalid_only_for_negative_sums()
     {
         Assert.IsTrue(new Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence(0, "zero").IsValid);
