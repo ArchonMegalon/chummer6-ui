@@ -356,6 +356,10 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
             new CharacterCreationMetatypeAttributeProjection("LOG", 1, 6, 10),
             new CharacterCreationMetatypeAttributeProjection("WIL", 1, 6, 10),
             new CharacterCreationMetatypeAttributeProjection("EDG", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("MAG", 0, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("RES", 0, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("ESS", 0, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("DEP", 0, 0, 0),
         },
         PriorityChildNodeDigest: "sha256:prioc",
         MetatypeSourceNodeDigest: "sha256:dwarfnode",
@@ -431,15 +435,8 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         SpecialPointUsed: specialUsed,
         CreationKarmaTotal: 25,
         CreationKarmaUsed: 0,
-        Allocations: new[] { new CharacterCreationAttributeAllocation("EDG", 0, 0) },
-        Attributes: new[]
-        {
-            Projection("BOD", "normal", 1, 2), Projection("AGI", "normal", 1, 2),
-            Projection("REA", "normal", 1, 2), Projection("STR", "normal", 1, 2),
-            Projection("CHA", "normal", 1, 2), Projection("INT", "normal", 1, 2),
-            Projection("LOG", "normal", 1, 2), Projection("WIL", "normal", 1, 2),
-            Projection("EDG", "special", dwarfSpecialMinimum, dwarfSpecialMinimum),
-        },
+        Allocations: FullAllocations(edgPoints: 0),
+        Attributes: FullProjections(edgMinimum: dwarfSpecialMinimum, edgCurrent: dwarfSpecialMinimum),
         SourceAnchorIds: new[] { "attributes.xml" },
         CharacterEffectsApplied: true,
         DraftDigest: "sha256:attr-draft");
@@ -458,6 +455,55 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         IsEnabled: true,
         DisableReasons: Array.Empty<string>(),
         SourceAnchorIds: Array.Empty<string>());
+
+    private static readonly string[] NaturalIds =
+        { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" };
+
+    /// <summary>
+    /// WIN-009 gen3 (T772): the real creation contract (Core
+    /// CharacterCreationAttributesService.BuildDraft) emits exactly one
+    /// allocation per projected heritage range, with the normal budget
+    /// spend carried by the natural rows' PriorityPoints.
+    /// </summary>
+    private static List<CharacterCreationAttributeAllocation> FullAllocations(int edgPoints) => new()
+    {
+        new CharacterCreationAttributeAllocation("BOD", 1, 0),
+        new CharacterCreationAttributeAllocation("AGI", 1, 0),
+        new CharacterCreationAttributeAllocation("REA", 1, 0),
+        new CharacterCreationAttributeAllocation("STR", 1, 0),
+        new CharacterCreationAttributeAllocation("CHA", 1, 0),
+        new CharacterCreationAttributeAllocation("INT", 1, 0),
+        new CharacterCreationAttributeAllocation("LOG", 1, 0),
+        new CharacterCreationAttributeAllocation("WIL", 1, 0),
+        new CharacterCreationAttributeAllocation("EDG", edgPoints, 0),
+        new CharacterCreationAttributeAllocation("MAG", 0, 0),
+        new CharacterCreationAttributeAllocation("RES", 0, 0),
+        new CharacterCreationAttributeAllocation("ESS", 0, 0),
+        new CharacterCreationAttributeAllocation("DEP", 0, 0),
+    };
+
+    private static List<CharacterCreationAttributeProjection> FullProjections(int edgMinimum, int edgCurrent) => new()
+    {
+        Projection("BOD", "normal", 1, 2), Projection("AGI", "normal", 1, 2),
+        Projection("REA", "normal", 1, 2), Projection("STR", "normal", 1, 2),
+        Projection("CHA", "normal", 1, 2), Projection("INT", "normal", 1, 2),
+        Projection("LOG", "normal", 1, 2), Projection("WIL", "normal", 1, 2),
+        Projection("EDG", "special", edgMinimum, edgCurrent),
+        Projection("MAG", "special", 0, 0),
+        Projection("RES", "special", 0, 0),
+        Projection("ESS", "special", 0, 6),
+        Projection("DEP", "special", 0, 0),
+    };
+
+    /// <summary>XML tail: EDG plus the non-natural special rows a real
+    /// finalized Dwarf workspace carries (MAG/RES/DEP at minimum, ESS 6/0).</summary>
+    private static string SpecialTailRows(int edgTotal) =>
+        ExactRow("EDG", edgTotal, 1) + ExactRow("MAG", 0, 0) + ExactRow("RES", 0, 0)
+        + ExactRow("ESS", 6, 0) + ExactRow("DEP", 0, 0);
+
+    private static string FullDwarfRows() => AllEightExact() + SpecialTailRows(1);
+
+    private static string FullDwarfRowsEdgRaised() => AllEightExact() + SpecialTailRows(2);
 
     private const string ExactCharacterTemplate =
         "<character><gameedition>5</gameedition><metatype>Dwarf</metatype>"
@@ -490,11 +536,11 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
     [TestMethod]
     public void ParseExactCharacterRows_parses_the_full_dwarf_row_set()
     {
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var rows = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ParseExactCharacterRows(root);
         Assert.IsTrue(rows.Succeeded, rows.Diagnostics);
         Assert.AreEqual("Dwarf", rows.MetatypeName);
-        Assert.AreEqual(10, rows.Totals.Count);
+        Assert.AreEqual(13, rows.Totals.Count);
         Assert.AreEqual(2, rows.Totals["BOD"]);
         Assert.AreEqual(1, rows.Minimums["AGI"]);
         Assert.AreEqual(1, rows.Minimums["EDG"]);
@@ -529,7 +575,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
             parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes, "exact-character-workspace");
@@ -542,7 +588,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Elf", prerequisite, attributes,
             "does not match the plan's metatype 'Elf'");
@@ -554,7 +600,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes("other-source", 8, 1, 0, 1);
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "does not match the heritage selection source");
@@ -566,7 +612,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "D", "Dwarf", prerequisite, attributes,
             "heritage assignment rank 'C' does not match the plan's heritage rank 'D'");
@@ -578,7 +624,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         XElement bod = root.Element("attributes")!.Elements("attribute")
             .First(a => a.Element("name")!.Value == "BOD");
         bod.Element("totalvalue")!.Value = "4";
@@ -596,9 +642,8 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         // itself under-states the total so the budget is not fully spent.
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
             with { NormalPointTotal = 9 };
-        string rows = string.Concat(new[] { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" }
-            .Select(n => ExactRow(n, 2, 1)))
-            + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0);
+        string rows = string.Concat(NaturalIds.Select(n => ExactRow(n, 2, 1)))
+            + SpecialTailRows(1);
         XElement root = ExactCharacterRoot(rows);
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
@@ -613,7 +658,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         // Draft says the single special point WAS allocated to EDG...
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1);
         // ...but the XML shows EDG still at its metatype minimum.
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "special attribute budget spent 0 does not match the draft's used 1");
@@ -631,17 +676,10 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1)
             with
             {
-                Allocations = new[] { new CharacterCreationAttributeAllocation("EDG", 1, 0) },
-                Attributes = new[]
-                {
-                    Projection("BOD", "normal", 1, 2), Projection("AGI", "normal", 1, 2),
-                    Projection("REA", "normal", 1, 2), Projection("STR", "normal", 1, 2),
-                    Projection("CHA", "normal", 1, 2), Projection("INT", "normal", 1, 2),
-                    Projection("LOG", "normal", 1, 2), Projection("WIL", "normal", 1, 2),
-                    Projection("EDG", "special", 1, 2),
-                },
+                Allocations = FullAllocations(edgPoints: 1),
+                Attributes = FullProjections(edgMinimum: 1, edgCurrent: 2),
             };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 2, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRowsEdgRaised());
         var parsed = ParseRows(root);
         string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
             parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes, "exact-character-workspace");
@@ -664,22 +702,10 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1)
             with
             {
-                Allocations = new[]
-                {
-                    new CharacterCreationAttributeAllocation("EDG", 1, 0),
-                    new CharacterCreationAttributeAllocation("ESS", 0, 0),
-                },
-                Attributes = new[]
-                {
-                    Projection("BOD", "normal", 1, 2), Projection("AGI", "normal", 1, 2),
-                    Projection("REA", "normal", 1, 2), Projection("STR", "normal", 1, 2),
-                    Projection("CHA", "normal", 1, 2), Projection("INT", "normal", 1, 2),
-                    Projection("LOG", "normal", 1, 2), Projection("WIL", "normal", 1, 2),
-                    Projection("EDG", "special", 1, 2),
-                    Projection("ESS", "special", 0, 6),
-                },
+                Allocations = FullAllocations(edgPoints: 1),
+                Attributes = FullProjections(edgMinimum: 1, edgCurrent: 2),
             };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 2, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRowsEdgRaised());
         var parsed = ParseRows(root);
         string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
             parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes, "exact-character-workspace");
@@ -694,8 +720,8 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         // EDG at its metatype minimum: the allocation is not backed by the
         // XML facts.
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1)
-            with { Allocations = new[] { new CharacterCreationAttributeAllocation("EDG", 1, 0) } };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+            with { Allocations = FullAllocations(edgPoints: 1) };
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "shows 0 raised points but the draft allocated 1");
@@ -721,7 +747,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1)
             with { HeritageSelection = null };
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "carries no heritage selection");
@@ -736,7 +762,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1)
             with { WorkspaceId = new CharacterWorkspaceId("some-other-workspace") };
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "prerequisite draft workspace 'some-other-workspace' does not match the loaded workspace");
@@ -749,7 +775,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
             with { WorkspaceId = new CharacterWorkspaceId("unrelated-workspace") };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "attributes draft workspace 'unrelated-workspace' does not match the loaded workspace");
@@ -765,7 +791,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         // must be bound to the exact archived prerequisite.
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
             with { PrerequisiteDraftRevision = 2 };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "does not match the archived prerequisite revision 1");
@@ -778,7 +804,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
             with { PrerequisiteDraftDigest = "sha256:other-chain" };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "does not match the archived prerequisite digest 'sha256:prereq-draft'");
@@ -791,7 +817,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
         var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
             with { PrerequisiteAuthorityDigest = "sha256:other-authority" };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "does not match the archived prerequisite authority 'sha256:authority'");
@@ -804,7 +830,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
         var attributes = baseAttributes
             with { Attributes = Array.Empty<CharacterCreationAttributeProjection>() };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "carries an empty attribute projection set");
@@ -818,7 +844,7 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
         var attributes = baseAttributes
             with { Attributes = baseAttributes.Attributes.Append(Projection("BOD", "normal", 1, 2)).ToList() };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
             "duplicate draft attribute projection rows for BOD");
@@ -832,10 +858,10 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
         var attributes = baseAttributes
             with { Attributes = baseAttributes.Attributes.Where(a => a.AttributeId != "REA").ToList() };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
-            "missing natural attributes REA");
+            "draft attribute projection set is missing natural attributes REA");
     }
 
     [TestMethod]
@@ -848,13 +874,13 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
             with
             {
                 Allocations = baseAttributes.Allocations
-                    .Append(new CharacterCreationAttributeAllocation("MAG", 0, 0))
+                    .Append(new CharacterCreationAttributeAllocation("ZZZ", 0, 0))
                     .ToList(),
             };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRows());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
-            "draft allocation references attribute MAG that the archived projection set omits");
+            "draft allocation references attribute ZZZ that the archived projection set omits");
     }
 
     [TestMethod]
@@ -873,11 +899,116 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
                     .Where(a => a.Category == "normal")
                     .ToList(),
             };
-        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 2, 1) + ExactRow("ESS", 6, 0));
+        XElement root = ExactCharacterRoot(FullDwarfRowsEdgRaised());
         var parsed = ParseRows(root);
         AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
-            "records special budget used 1 with no special allocation binding");
+            "draft records special budget used 1 with no special allocation binding");
     }
+    [TestMethod]
+    public void Classify_rejects_a_zero_spend_special_omission_from_the_draft()
+    {
+        // WIN-009 gen3 (T772/U1): eight naturals plus EMPTY special
+        // projections/allocations must NOT pass — the applicable special set
+        // is bound to the heritage ranges, so an omitted EDG row is refused
+        // even at zero spend.
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            Allocations = baseAttributes.Allocations
+                .Where(a => NaturalIds.Contains(a.AttributeId, StringComparer.Ordinal))
+                .ToList(),
+            Attributes = baseAttributes.Attributes
+                .Where(a => NaturalIds.Contains(a.AttributeId, StringComparer.Ordinal))
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows());
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "heritage attribute ranges have no draft projection rows: EDG");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_special_row_not_backed_by_heritage_ranges()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            Attributes = baseAttributes.Attributes
+                .Append(Projection("XYZ", "special", 0, 0))
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows());
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "are not backed by the heritage attribute ranges");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_points_on_a_nonspendable_special()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // Essence is a metatype fact, never a spendable special: an
+        // allocation carrying points on it is refused by the contract-bound
+        // special loop.
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            Allocations = baseAttributes.Allocations
+                .Select(a => string.Equals(a.AttributeId, "ESS", StringComparison.Ordinal)
+                    ? new CharacterCreationAttributeAllocation(a.AttributeId, 2, 0)
+                    : a)
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows());
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "ESS is not spendable in the creation contract but the draft allocated 2");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_case_variant_duplicate_projection_row()
+    {
+        // WIN-009 gen3 (T772/U2): duplicate detection and XML matching must
+        // share one identity rule — a case-variant duplicate (bod vs BOD) is
+        // a duplicate, not a second independent row.
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            Attributes = baseAttributes.Attributes
+                .Append(Projection("bod", "normal", 1, 2))
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows());
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "duplicate draft attribute projection rows");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_case_variant_duplicate_allocation_row()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            Allocations = baseAttributes.Allocations
+                .Append(new CharacterCreationAttributeAllocation("edg", 0, 0))
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows());
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "duplicate draft allocation rows");
+    }
+
     [TestMethod]
     public void StarterAttributeEvidence_is_invalid_only_for_negative_sums()
     {

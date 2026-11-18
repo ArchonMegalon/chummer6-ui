@@ -4602,7 +4602,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return prefix + "the archived attributes draft carries an empty attribute projection set";
         }
         List<string> duplicateProjections = attributes.Attributes
-            .GroupBy(a => a.AttributeId, StringComparer.Ordinal)
+            .GroupBy(a => a.AttributeId, StringComparer.OrdinalIgnoreCase)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
             .ToList();
@@ -4620,7 +4620,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 + string.Join(",", missingProjections);
         }
         List<string> duplicateAllocations = attributes.Allocations
-            .GroupBy(a => a.AttributeId, StringComparer.Ordinal)
+            .GroupBy(a => a.AttributeId, StringComparer.OrdinalIgnoreCase)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
             .ToList();
@@ -4681,6 +4681,45 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
         }
 
+        // WIN-009 gen3 (T772): bind the expected applicable projection and
+        // allocation set to the heritage selection's actual attribute ranges.
+        // The real creation contract emits exactly one projection and one
+        // allocation row per heritage range (zero-spend rows included), so an
+        // omitted applicable special row can no longer silently skip its XML
+        // comparison and normal spend must be allocation-backed. The expected
+        // set is derived from the contract, never an invented unconditional
+        // MAG/RES/ESS list.
+        bool supportedSpecialTalent = ExactCharacterSupportedSpecialAuthority(prerequisite.TalentSelection);
+        List<string> omittedHeritageProjections = heritage.Attributes
+            .Where(r => !attributes.Attributes.Any(a => string.Equals(a.AttributeId, r.AttributeId, StringComparison.Ordinal)))
+            .Select(r => r.AttributeId)
+            .ToList();
+        if (omittedHeritageProjections.Count > 0)
+        {
+            return prefix + "heritage attribute ranges have no draft projection rows: "
+                + string.Join(",", omittedHeritageProjections);
+        }
+        List<string> omittedHeritageAllocations = heritage.Attributes
+            .Where(r => !attributes.Allocations.Any(b => string.Equals(b.AttributeId, r.AttributeId, StringComparison.Ordinal)))
+            .Select(r => r.AttributeId)
+            .ToList();
+        if (omittedHeritageAllocations.Count > 0)
+        {
+            return prefix + "heritage attribute ranges have no draft allocation rows: "
+                + string.Join(",", omittedHeritageAllocations);
+        }
+        List<string> unbackedSpecialRows = attributes.Attributes
+            .Where(a => string.Equals(a.Category, "special", StringComparison.Ordinal)
+                && !string.Equals(a.AttributeId, "MAGAdept", StringComparison.Ordinal)
+                && !heritage.Attributes.Any(r => string.Equals(r.AttributeId, a.AttributeId, StringComparison.Ordinal)))
+            .Select(a => a.AttributeId)
+            .ToList();
+        if (unbackedSpecialRows.Count > 0)
+        {
+            return prefix + "draft special projection rows " + string.Join(",", unbackedSpecialRows)
+                + " are not backed by the heritage attribute ranges";
+        }
+
         List<string> mismatches = new();
         foreach (CharacterCreationAttributeProjection row in attributes.Attributes)
         {
@@ -4738,20 +4777,36 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
         // Only allocation-backed special rows count as special-point spends:
         // essence and metatype-granted special minimums are metatype facts,
-        // not creation-budget spends.
+        // not creation-budget spends. WIN-009 gen3 (T772): the special set is
+        // bound to the heritage selection's actual attribute ranges (not the
+        // draft's self-declared row category), non-spendable specials must
+        // carry zero allocations, and Mystic Adept separate-magic rows are
+        // bound when present.
         int specialSpent = 0;
-        foreach (CharacterCreationAttributeAllocation allocation in attributes.Allocations)
+        foreach (CharacterCreationMetatypeAttributeProjection range in heritage.Attributes)
         {
-            CharacterCreationAttributeProjection? row = attributes.Attributes
-                .FirstOrDefault(a => string.Equals(a.AttributeId, allocation.AttributeId, StringComparison.OrdinalIgnoreCase));
-            if (row is null || !string.Equals(row.Category, "special", StringComparison.Ordinal))
+            if (naturals.Contains(range.AttributeId, StringComparer.Ordinal))
             {
                 continue;
             }
-            if (!xmlTotals.TryGetValue(row.AttributeId, out int specialTotal)
-                || !xmlMinimums.TryGetValue(row.AttributeId, out int specialMinimum))
+            CharacterCreationAttributeAllocation allocation = attributes.Allocations
+                .First(b => string.Equals(b.AttributeId, range.AttributeId, StringComparison.Ordinal));
+            CharacterCreationPriorityTalentSelection? rangeTalent = prerequisite.TalentSelection;
+            bool spendable = string.Equals(range.AttributeId, "EDG", StringComparison.Ordinal)
+                || (string.Equals(range.AttributeId, "MAG", StringComparison.Ordinal)
+                    && supportedSpecialTalent && rangeTalent!.Magic > 0)
+                || (string.Equals(range.AttributeId, "RES", StringComparison.Ordinal)
+                    && supportedSpecialTalent && rangeTalent!.Resonance > 0);
+            if (!spendable && allocation.PriorityPoints != 0)
             {
-                return prefix + "workspace is missing special attribute " + row.AttributeId + " rows";
+                return prefix + "special attribute " + range.AttributeId
+                    + " is not spendable in the creation contract but the draft allocated "
+                    + allocation.PriorityPoints;
+            }
+            if (!xmlTotals.TryGetValue(range.AttributeId, out int specialTotal)
+                || !xmlMinimums.TryGetValue(range.AttributeId, out int specialMinimum))
+            {
+                return prefix + "workspace is missing special attribute " + range.AttributeId + " rows";
             }
             // Allocation-backed spend (mirrors Core CharacterCreationAttributesService):
             // special budget usage is the sum of allocation PriorityPoints over special
@@ -4760,11 +4815,30 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // require the delta to COVER the allocated points.
             if (specialTotal - specialMinimum < allocation.PriorityPoints)
             {
-                return prefix + "special attribute " + row.AttributeId
+                return prefix + "special attribute " + range.AttributeId
                     + " shows " + Math.Max(0, specialTotal - specialMinimum)
                     + " raised points but the draft allocated " + allocation.PriorityPoints;
             }
             specialSpent += allocation.PriorityPoints;
+        }
+        foreach (CharacterCreationAttributeAllocation adeptAllocation in attributes.Allocations)
+        {
+            if (!string.Equals(adeptAllocation.AttributeId, "MAGAdept", StringComparison.Ordinal))
+            {
+                continue;
+            }
+            if (!xmlTotals.TryGetValue(adeptAllocation.AttributeId, out int adeptTotal)
+                || !xmlMinimums.TryGetValue(adeptAllocation.AttributeId, out int adeptMinimum))
+            {
+                return prefix + "workspace is missing special attribute MAGAdept rows";
+            }
+            if (adeptTotal - adeptMinimum < adeptAllocation.PriorityPoints)
+            {
+                return prefix + "special attribute MAGAdept"
+                    + " shows " + Math.Max(0, adeptTotal - adeptMinimum)
+                    + " raised points but the draft allocated " + adeptAllocation.PriorityPoints;
+            }
+            specialSpent += adeptAllocation.PriorityPoints;
         }
         if (specialSpent != attributes.SpecialPointUsed)
         {
@@ -4776,6 +4850,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             return prefix + "special attribute budget spent " + attributes.SpecialPointUsed
                 + " exceeds the draft total " + attributes.SpecialPointTotal;
         }
+        int normalAllocationSpend = attributes.Allocations
+            .Where(b => naturals.Contains(b.AttributeId, StringComparer.Ordinal))
+            .Sum(b => b.PriorityPoints);
+        if (normalAllocationSpend != attributes.NormalPointUsed)
+        {
+            return prefix + "normal allocation-backed spend " + normalAllocationSpend
+                + " does not match the draft's used " + attributes.NormalPointUsed;
+        }
         if (prerequisite.TotalSpecialAttributePoints != attributes.SpecialPointTotal)
         {
             return prefix + "prerequisite draft special points "
@@ -4783,6 +4865,36 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 + " do not match the attributes draft total " + attributes.SpecialPointTotal;
         }
         return null;
+    }
+
+    /// <summary>
+    /// WIN-009 gen3 (T772): mirrors Core CharacterCreationAttributesService.
+    /// HasSupportedSpecialAttributeAuthority so the exact-character checker
+    /// binds applicable special attributes (MAG/RES) to the same talent
+    /// contract the creation rules use, instead of inventing an unconditional
+    /// MAG/RES/ESS set.
+    /// </summary>
+    private static bool ExactCharacterSupportedSpecialAuthority(CharacterCreationPriorityTalentSelection? talent)
+    {
+        if (talent is null || talent.Depth is not null || talent.GrantedQualities is null)
+        {
+            return false;
+        }
+        if (string.Equals(talent.Value, "Mundane", StringComparison.Ordinal))
+        {
+            return talent.Magic is null && talent.Resonance is null && talent.GrantedQualities.Count == 0;
+        }
+        if (talent.GrantedQualities.Count != 1 || !string.Equals(talent.GrantedQualities[0], talent.Value, StringComparison.Ordinal))
+        {
+            return false;
+        }
+        return talent.Value switch
+        {
+            "Adept" or "Magician" or "Mystic Adept" or "Aspected Magician" =>
+                talent.Magic > 0 && talent.Resonance is null,
+            "Technomancer" => talent.Resonance > 0 && talent.Magic is null,
+            _ => false
+        };
     }
 
     /// <summary>
