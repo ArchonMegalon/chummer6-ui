@@ -1184,8 +1184,11 @@ internal static class DesktopMouseFirstJourneyRunner
 
             // The foundation (Life-Modules) flow only applies when the journey
             // plan drives a Life-Modules build; Priority builds route through
-            // the prerequisite draft instead.
-            if (!string.IsNullOrWhiteSpace(plan.Metatype))
+            // the prerequisite draft instead. (WIN-009 Priority plans may carry
+            // plan.Metatype as the requested heritage metatype, already applied
+            // at the heritage step - the foundation flow keys on the method.)
+            if (!string.IsNullOrWhiteSpace(plan.Metatype)
+                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
             {
             string nationalityOptionId =
                 await WaitForWizardNationalityOptionAsync(window, steps, journeyTimeout.Token);
