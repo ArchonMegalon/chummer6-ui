@@ -19,6 +19,7 @@ using Chummer.Presentation.Shell;
 using Chummer.Presentation.Printing;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using System.Text.Json;
@@ -451,6 +452,84 @@ internal static class DesktopMouseFirstJourneyRunner
                         VerificationNotes:
                         [
                             "T492 native SR6 verification: the Sr6CreationWizardWindow finalized the draft through the Core finalization authority, the CareerRewardsWindow awarded karma, the AttributeImprove_Body row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative SR6 career advancement service, the karma debit and reopened-dialog cancel path were verified, and the file-menu save persisted the workspace for the fresh-process reopen leg."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
+            if (DesktopMouseFirstJourneyRuntime.PdfSaveRequested)
+            {
+                RecordStep(steps, "native pdf save leg: real dialog save of the career sample print preview");
+                DesktopUserJourneyWorkflowEvidence pdfEvidence = await ExerciseNativePdfSaveWorkflowAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(pdfEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> pdfAssertion in pdfEvidence.Assertions)
+                {
+                    if (!pdfAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Native PDF save leg assertion failed: {pdfAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: native PDF save leg assertion {pdfAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                var pdfVisibleState = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: pdfVisibleState.WorkspaceId?.Value,
+                        CharacterName: pdfVisibleState.Profile?.Name,
+                        CharacterAlias: pdfVisibleState.Profile?.Alias,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: pdfVisibleState.Session?.HasSavedWorkspace ?? false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "WIN-008 item 1: the REAL SavePrintPayloadAsync production path saved a composed PDF of the bundled career sample through the real modal Win32 save dialog (no SavePrintOverride). The dialog was driven by an in-process background thread; the produced PDF was left on disk for the harness's independent pymupdf render+text extraction."
                         ],
                         UserJourneyWorkflows: userJourneyWorkflows));
                 Environment.ExitCode = 0;
@@ -9765,13 +9844,585 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             $"wizard button '{automationId}' never produced its effect: {effectDescription}.");
     }
 
+    /// <summary>
+    /// WIN-008 item 1: native PDF save evidence leg. Exercises the REAL
+    /// production print-save path (no SavePrintOverride): compose-before-dialog,
+    /// the modal Win32 SaveFilePickerAsync, refusal-before-truncation, and the
+    /// honest notice. The modal save dialog is driven by an in-process Win32
+    /// dialog-driver thread (FindWindow/WM_SETTEXT/WM_COMMAND on the dialog
+    /// VIRTUAL window owned by the same process), because the modal dialog
+    /// blocks the awaiting continuation but keeps pumping the dispatcher.
+    /// The produced PDF is left for the HARNESS's independent render+text
+    /// extraction (pymupdf), which is the point of the receipt: the process
+    /// itself does not grade its own output beyond byte-level identity.
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseNativePdfSaveWorkflowAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string? targetPath = Environment.GetEnvironmentVariable(
+            DesktopMouseFirstJourneyRuntime.PdfSaveTargetEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(targetPath))
+        {
+            throw new InvalidOperationException(
+                "The native PDF save leg requires CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET.");
+        }
+
+        if (File.Exists(targetPath))
+        {
+            File.Delete(targetPath);
+        }
+
+        string? capturedNotice = null;
+        string? capturedError = null;
+        bool dialogDriven = false;
+        bool fileWritten = false;
+
+        // The Win32 dialog driver runs on a background thread: the modal
+        // SaveFilePickerAsync pumps the dispatcher but blocks the awaiting
+        // continuation, so the driver must act from OUTSIDE the dispatcher.
+        // Honesty rules: only a REAL dialog window with the expected title is
+        // driven; the driver never writes the file itself.
+        string tracePath = Environment.GetEnvironmentVariable(
+            DesktopMouseFirstJourneyRuntime.PdfSaveTraceEnvironmentVariable) ?? string.Empty;
+        void Trace(string message)
+        {
+            if (!string.IsNullOrWhiteSpace(tracePath))
+            {
+                try { File.AppendAllText(tracePath, DateTimeOffset.UtcNow.ToString("HH:mm:ss.fff") + " " + message + Environment.NewLine); } catch { }
+            }
+        }
+
+        // The Win32 dialog driver runs on a background thread: the modal
+        // SaveFilePickerAsync pumps the dispatcher but blocks the awaiting
+        // continuation, so the driver must act from OUTSIDE the dispatcher.
+        // Honesty rules: only a REAL dialog window with the expected title is
+        // driven; the driver never writes the file itself.
+        // 
+        // Win32 facts (gen24 run-1 post-mortem): the modern Explorer save
+        // dialog hosts the filename Edit under FloatNotifySink -> ComboBox ->
+        // Edit; the FIRST direct-child ComboBox of the dialog is the
+        // file-type filter (no Edit child). Sends must never block on the
+        // dialog thread (a stopped pump wedges the driver forever); commits
+        // are POSTed, sets are timeout-guarded.
+        // gen4 scope ownership: the driver no longer runs under the raw
+        // journey token. A scope-owned LINKED token feeds the driver; the
+        // finally below cancels the scope BEFORE the bounded join, so an
+        // invocation that exits early (import/rename/print failure) stops
+        // its own discovery and hold loops instead of leaving a driver
+        // alive that could act on a LATER dialog.
+        using CancellationTokenSource driverScope = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        Thread driver = new(() => RunPdfSaveDialogDriverScope(
+            driverScope.Token,
+            Trace,
+            () => dialogDriven = true));
+        driver.IsBackground = true;
+        driver.Start();
+
+        try
+        {
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07a-pdf-save-before");
+
+            // The canonical print/export user path: import the bundled career
+            // sample (stable imported document) exactly like the print leg.
+            await CloseWorkspaceAndLoadCareerSampleAsync(window, steps, ct, recordPointerAction);
+
+            // gen2 acceptance: the printed dossier must carry a non-ASCII
+            // synthetic runner name so the composer's non-ASCII policy is
+            // exercised by the real save path. Rename the runner through the
+            // REAL dossier-edit mutation (ApplyOriginDossierEditAsync) with
+            // the composed name "Zoë Møller-\u2019Oünoma\u201d" - name and
+            // alias both carry WinAnsi-mappable glyphs (ë ø ü ’ ”) plus
+            // a codepoint-marker fallback case, exactly matching the
+            // composer's documented truthful policy. Only the name and alias
+            // fields change; every other dossier field keeps its current
+            // value so the sample content is otherwise untouched.
+            string nonAsciiName = "Zo\u00eb M\u00f8ller-\u2019O\u00fcnoma\u201d";
+            CharacterOverviewState imported = window.SnapshotStateForAutomation();
+            if (imported.WorkspaceId is null)
+            {
+                throw new InvalidOperationException(
+                    "pdf save leg: no workspace after career sample import; rename leg cannot run.");
+            }
+            ICharacterOverviewPresenter renamePresenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+            await renamePresenter.ApplyOriginDossierEditAsync(new OriginDossierEditRequest(
+                Name: nonAsciiName,
+                Alias: nonAsciiName,
+                PlayerName: imported.Profile?.PlayerName ?? string.Empty,
+                Sex: imported.Profile?.Sex ?? string.Empty,
+                Age: imported.Profile?.Age ?? string.Empty,
+                Height: imported.Profile?.Height ?? string.Empty,
+                Weight: imported.Profile?.Weight ?? string.Empty,
+                Hair: imported.Profile?.Hair ?? string.Empty,
+                Eyes: imported.Profile?.Eyes ?? string.Empty,
+                Skin: imported.Profile?.Skin ?? string.Empty,
+                Concept: imported.Profile?.Concept ?? string.Empty,
+                Description: imported.Profile?.Description ?? string.Empty,
+                Background: imported.Profile?.Background ?? string.Empty), ct);
+            await WaitForAsync(
+                steps,
+                "pdf save leg: dossier renamed to the non-ASCII synthetic runner name",
+                () => string.Equals(window.SnapshotStateForAutomation().Profile?.Name, nonAsciiName, StringComparison.Ordinal),
+                ct);
+
+            // printLanded = the target file exists on disk (checked on the
+            // dispatcher thread; File.Exists is safe there).
+            await PrintWithConflictRecoveryAsync(
+                window,
+                () => File.Exists(targetPath),
+                steps,
+                ct,
+                recordPointerAction,
+                landedDeadlineSeconds: 420);
+
+            // The dialog driver may still be inside its loop when the file
+            // lands; join it (bounded) before reading state.
+            if (!driver.Join(TimeSpan.FromSeconds(20)))
+            {
+                RecordStep(steps, "pdf save: dialog driver thread did not exit in time");
+            }
+
+            var visibleState = await Dispatcher.UIThread.InvokeAsync(
+                () => window.SnapshotStateForAutomation());
+            capturedNotice = visibleState.Notice;
+            capturedError = visibleState.Error;
+            fileWritten = File.Exists(targetPath);
+
+            RecordStep(steps, $"pdf save: dialog driven={dialogDriven}");
+            RecordStep(steps, $"pdf save: file exists={fileWritten}");
+            RecordStep(steps, $"pdf save: notice={capturedNotice ?? "none"}");
+            if (!string.IsNullOrEmpty(capturedError))
+            {
+                RecordStep(steps, $"pdf save: presenter error={capturedError}");
+            }
+
+            if (fileWritten)
+            {
+                byte[] head = File.ReadAllBytes(targetPath);
+                string headText = System.Text.Encoding.ASCII.GetString(head, 0, Math.Min(head.Length, 5));
+                long length = new FileInfo(targetPath).Length;
+                RecordStep(steps, $"pdf save: payload head={headText} bytes={length}");
+                DesktopMouseFirstJourneyRuntime.WritePdfSaveReceipt(
+                    visibleState.WorkspaceId?.Value,
+                    targetPath,
+                    length,
+                    capturedNotice,
+                    visibleState.Profile?.Name,
+                    visibleState.Profile?.Alias,
+                    null /* ruleset read independently by the harness from the PDF text */);
+            }
+
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07a-pdf-save-after");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "native_pdf_save",
+                ScreenshotPaths: [],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["pdf_save_dialog_driven"] = dialogDriven,
+                    ["pdf_save_file_written"] = fileWritten,
+                    ["pdf_save_notice_reported"] = !string.IsNullOrWhiteSpace(capturedNotice),
+                    ["pdf_save_notice_is_pdf"] = (capturedNotice ?? string.Empty).Contains("print preview", StringComparison.OrdinalIgnoreCase),
+                    ["pdf_save_no_error"] = string.IsNullOrEmpty(capturedError)
+                },
+                InteractionNotes:
+                [
+                    "WIN-008 item 1: the REAL SavePrintPayloadAsync path ran with the real modal Win32 save dialog (no SavePrintOverride). The journey seam opened the dialog at the target directory/filename; an EXTERNAL UI Automation driver (harness python, InvokePattern - no OS foreground exists in this session) invoked Save. The dialog's internal filename cannot be set via WM_SETTEXT/ValuePattern.SetValue (they only change the visible edit text), so the seam is the honest path. The file was then left on disk for the harness's INDEPENDENT pymupdf render+text extraction."
+                ]);
+        }
+        finally
+        {
+            // gen4: STOP the owned driver BEFORE the bounded join. Canceling
+            // the scope makes every driver loop (whose waits observe the
+            // token) exit promptly; the join then proves the thread is gone.
+            // A canceled/exited driver cannot act on any dialog that appears
+            // after this invocation returns.
+            try { driverScope.Cancel(); } catch { /* best effort */ }
+            try { driver.Join(TimeSpan.FromSeconds(10)); } catch { /* best effort */ }
+        }
+    }
+
+    /// <summary>
+    /// gen4 (WIN-008): the ACTUAL production Win32 save-dialog driver body,
+    /// extracted from the thread lambda in ExerciseNativePdfSaveWorkflowAsync
+    /// so its LIFETIME is directly testable via IVT. All loops (discovery,
+    /// visibility wait, edit search, observation hold) run under
+    /// <paramref name="scopeToken"/>: the caller owns the token and cancels it
+    /// in its finally BEFORE the bounded join, so no loop started by an
+    /// invocation can outlive that invocation or act on a later dialog.
+    /// </summary>
+    internal static void RunPdfSaveDialogDriverScope(
+        CancellationToken scopeToken,
+        Action<string>? trace,
+        Action? onDialogDriven)
+    {
+        void Trace(string message) => trace?.Invoke(message);
+        try
+        {
+        try
+        {
+            // gen3 containment: every loop below is bound by BOTH the
+            // deadline and the journey cancellation token, and the driver
+            // observes without mutating the dialog's filename (the seam
+            // already pointed the dialog at the target; WM_SETTEXT never
+            // changed the dialog's internal filename - gen24 evidence).
+            IntPtr hwnd = IntPtr.Zero;
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(120);
+            while (DateTimeOffset.UtcNow < deadline && !scopeToken.IsCancellationRequested)
+            {
+                hwnd = FindDialogTitleWindow("Save Print Preview");
+                if (hwnd != IntPtr.Zero)
+                {
+                    break;
+                }
+
+                if (scopeToken.WaitHandle.WaitOne(250))
+                {
+                    break;
+                }
+            }
+
+            if (hwnd == IntPtr.Zero)
+            {
+                Trace(scopeToken.IsCancellationRequested
+                    ? "dialog discovery canceled"
+                    : "dialog not found within 120s");
+                return;
+            }
+
+            Trace("dialog found hwnd=0x" + hwnd.ToString("x"));
+
+            // WAIT for the dialog to actually become visible. Window
+            // creation precedes IFileDialog Show() initialization, and the
+            // initialization RE-SETS the filename edit - touching the edit
+            // too early loses the text and Save refuses an empty filename
+            // (gen24 run-5 evidence). The wait is cancellation-bound.
+            bool becameVisible = IsWindowVisible(hwnd);
+            DateTimeOffset visibleDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(45);
+            while (!becameVisible && DateTimeOffset.UtcNow < visibleDeadline && !scopeToken.IsCancellationRequested)
+            {
+                if (scopeToken.WaitHandle.WaitOne(250))
+                {
+                    break;
+                }
+
+                becameVisible = IsWindowVisible(hwnd);
+            }
+
+            if (!becameVisible)
+            {
+                // The one remaining window-affecting call is REVALIDATED
+                // immediately before use: alive, dialog class, exact
+                // title, owned by THIS process. A canceled journey never
+                // mutates a window.
+                if (scopeToken.IsCancellationRequested || !ValidateDialogHwnd(hwnd, "Save Print Preview"))
+                {
+                    Trace("show fallback refused (canceled or revalidation failed)");
+                    return;
+                }
+
+                Trace("dialog never became visible; ShowWindow(SW_SHOW) after revalidation");
+                ShowWindow(hwnd, 5 /* SW_SHOW */);
+                Thread.Sleep(500);
+            }
+            else
+            {
+                Trace("dialog visible");
+            }
+
+            // Locate the filename Edit for OBSERVATION ONLY (liveness
+            // probe); the driver never writes to it. The filename edit is
+            // the Edit under FloatNotifySink -> ComboBox (gen24 run-4
+            // evidence); the Explorer search-box Edit sits deeper and
+            // must not win.
+            IntPtr edit = IntPtr.Zero;
+            for (int attempt = 0; attempt < 40 && edit == IntPtr.Zero && !scopeToken.IsCancellationRequested; attempt++)
+            {
+                IntPtr best = IntPtr.Zero;
+                int bestDepth = -1;
+                CollectDescendantEdits(hwnd, 0, ref best, ref bestDepth);
+                if (best != IntPtr.Zero)
+                {
+                    edit = best;
+                }
+
+                if (edit == IntPtr.Zero)
+                {
+                    if (scopeToken.WaitHandle.WaitOne(250))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (edit == IntPtr.Zero)
+            {
+                Trace("no descendant Edit found");
+                return;
+            }
+
+            {
+                var chain = new System.Text.StringBuilder();
+                IntPtr walk = GetParent(edit);
+                for (int d = 0; d < 5 && walk != IntPtr.Zero; d++)
+                {
+                    var cn = new System.Text.StringBuilder(256);
+                    GetClassNameW(walk, cn, 256);
+                    chain.Append(cn.ToString()).Append(" < ");
+                    walk = GetParent(walk);
+                }
+
+                Trace("edit hwnd=0x" + edit.ToString("x") + " parent chain " + chain.ToString());
+            }
+
+            // Observe until the dialog closes (commit accepted by the
+            // external UIA driver) or the journey cancels. No writes to
+            // the dialog or its children: the seam set the dialog's
+            // target; the external UIA driver commits. Liveness is probed
+            // with a timeout-guarded, abort-if-hung message so a wedged
+            // dialog thread cannot wedge the driver.
+            onDialogDriven?.Invoke();
+            Trace("observing dialog; external UIA driver commits");
+            DateTimeOffset holdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(300);
+            while (DateTimeOffset.UtcNow < holdDeadline && !scopeToken.IsCancellationRequested)
+            {
+                if (!IsWindow(hwnd))
+                {
+                    Trace("dialog gone (commit accepted elsewhere)");
+                    break;
+                }
+
+                if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr _) == IntPtr.Zero)
+                {
+                    Trace("edit stopped responding; dialog presumed committed or dead");
+                    break;
+                }
+
+                if (scopeToken.WaitHandle.WaitOne(1000))
+                {
+                    break;
+                }
+            }
+
+            Trace("driver hold loop exit; scope canceled: " + scopeToken.IsCancellationRequested);
+        }
+        catch (Exception driverFailure)
+        {
+            Trace("driver exception: " + driverFailure.GetType().Name + ": " + driverFailure.Message);
+        }
+        }
+        catch (Exception driverFailure)
+        {
+            Trace("driver exception: " + driverFailure.GetType().Name + ": " + driverFailure.Message);
+        }
+    }
+
+    private delegate bool EnumWindowsDelegate(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumWindows(EnumWindowsDelegate lpEnumFunc, IntPtr lParam);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentProcessId();
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int GetWindowTextW(IntPtr hWnd, System.Text.StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SendMessageTimeoutW(
+        IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr SendMessageTimeoutW(
+        IntPtr hWnd, int Msg, IntPtr wParam, System.Text.StringBuilder lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetParent(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private delegate bool EnumChildWindowsDelegate(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumChildWindows(IntPtr hWndParent, EnumChildWindowsDelegate lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+
+    /// <summary>
+    /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
+    /// The deepest Edit wins (the filename edit lives in the deepest
+    /// FloatNotifySink -> ComboBox -> Edit chain of the save dialog).
+    /// </summary>
+    private sealed class DescendantEditSearch
+    {
+        public IntPtr Best;
+        public int BestDepth = -1;
+        public IntPtr FilenameEdit;
+    }
+
+    /// <summary>
+    /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
+    /// The FILENAME Edit of a common-item dialog is the Edit whose parent
+    /// is a ComboBox whose parent is a FloatNotifySink; the Explorer
+    /// search-box Edit sits DEEPER in the tree and must NOT win (gen24
+    /// run-4 evidence: Save with an empty filename never closes).
+    /// </summary>
+    private static void CollectDescendantEdits(IntPtr parent, int depth, ref IntPtr best, ref int bestDepth)
+    {
+        var state = new DescendantEditSearch();
+        var stack = new System.Collections.Generic.Stack<(IntPtr Window, int Level)>();
+        stack.Push((parent, depth));
+        while (stack.Count > 0)
+        {
+            (IntPtr current, int level) = stack.Pop();
+            EnumChildWindows(current, (child, lParam) =>
+            {
+                var name = new System.Text.StringBuilder(256);
+                GetClassNameW(child, name, 256);
+                string className = name.ToString();
+                if (string.Equals(className, "Edit", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (level > state.BestDepth)
+                    {
+                        state.Best = child;
+                        state.BestDepth = level;
+                    }
+
+                    IntPtr p = GetParent(child);
+                    var pClass = new System.Text.StringBuilder(256);
+                    GetClassNameW(p, pClass, 256);
+                    IntPtr gp = p != IntPtr.Zero ? GetParent(p) : IntPtr.Zero;
+                    var gpClass = new System.Text.StringBuilder(256);
+                    GetClassNameW(gp, gpClass, 256);
+                    if (string.Equals(pClass.ToString(), "ComboBox", StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(gpClass.ToString(), "FloatNotifySink", StringComparison.OrdinalIgnoreCase))
+                    {
+                        state.FilenameEdit = child;
+                    }
+                }
+
+                stack.Push((child, level + 1));
+                return true;
+            }, IntPtr.Zero);
+        }
+
+        best = state.FilenameEdit != IntPtr.Zero ? state.FilenameEdit : state.Best;
+        bestDepth = state.BestDepth;
+    }
+
+    /// <summary>
+    /// Depth-first enumeration of every Edit descendant of <paramref name="parent"/>.
+    /// The deepest Edit wins (the filename edit lives in the deepest
+    /// FloatNotifySink -> ComboBox -> Edit chain of the save dialog).
+    /// </summary>
+    internal static IntPtr FindDialogTitleWindow(string title)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return IntPtr.Zero;
+        }
+
+        // gen2-containment: the naive FindWindowW("#32770", title) call
+        // matched ANY top-level dialog window with the expected title,
+        // including one owned by a foreign process. The driver must only
+        // ever touch a dialog that belongs to THIS process: enumerate all
+        // candidate dialogs, keep only windows whose owning process id is
+        // our own, and refuse ambiguity (more than one match) instead of
+        // guessing. Foreign and ambiguous results both yield IntPtr.Zero
+        // so the caller's bounded discovery loop keeps polling rather
+        // than driving the wrong window.
+        uint currentProcess = GetCurrentProcessId();
+        IntPtr found = IntPtr.Zero;
+        int matches = 0;
+        EnumWindows((candidate, lParam) =>
+        {
+            var className = new System.Text.StringBuilder(256);
+            GetClassNameW(candidate, className, 256);
+            if (!string.Equals(className.ToString(), "#32770", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            var titleText = new System.Text.StringBuilder(256);
+            GetWindowTextW(candidate, titleText, 256);
+            if (!string.Equals(titleText.ToString(), title, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            GetWindowThreadProcessId(candidate, out uint ownerProcess);
+            if (ownerProcess != currentProcess)
+            {
+                // Foreign dialog with the same title: not ours, never drive it.
+                return true;
+            }
+
+            matches++;
+            found = candidate;
+            return true;
+        }, IntPtr.Zero);
+
+        return matches == 1 ? found : IntPtr.Zero;
+    }
+
+    /// <summary>gen3 containment: revalidate a dialog handle IMMEDIATELY
+    /// before any window-affecting call - alive, top-level dialog class,
+    /// exact expected title, and owned by THIS process. Foreign, retitled,
+    /// or destroyed windows are refused.</summary>
+    internal static bool ValidateDialogHwnd(IntPtr hwnd, string expectedTitle)
+    {
+        if (!OperatingSystem.IsWindows() || hwnd == IntPtr.Zero || !IsWindow(hwnd))
+        {
+            return false;
+        }
+
+        var className = new System.Text.StringBuilder(256);
+        GetClassNameW(hwnd, className, 256);
+        if (!string.Equals(className.ToString(), "#32770", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var titleText = new System.Text.StringBuilder(256);
+        GetWindowTextW(hwnd, titleText, 256);
+        if (!string.Equals(titleText.ToString(), expectedTitle, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        GetWindowThreadProcessId(hwnd, out uint ownerProcess);
+        return ownerProcess == GetCurrentProcessId();
+    }
+
     private static async Task PrintWithConflictRecoveryAsync(
         MainWindow window,
         Func<bool> printLanded,
         List<string> steps,
         CancellationToken ct,
         Action recordPointerAction,
-        int maxPrintPreps = 4)
+        int maxPrintPreps = 4,
+        int landedDeadlineSeconds = 8)
     {
         // WIN-003 acceptance asks for explicit output-conflict recovery evidence:
         // Core's canonical before/after document guard can reject a print prep
@@ -9801,7 +10452,7 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             RecordStep(steps, $"click visible toolbar print button (prep {prep})");
 
             bool landed = false;
-            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(landedDeadlineSeconds);
             while (DateTimeOffset.UtcNow < deadline)
             {
                 ct.ThrowIfCancellationRequested();

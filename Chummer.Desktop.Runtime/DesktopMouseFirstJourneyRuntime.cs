@@ -33,6 +33,10 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string PriorityTalentChoiceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_TALENT_CHOICE";
     public const string Sr6AdvanceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE";
     public const string Sr6AdvanceReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE_RECEIPT";
+    public const string PdfSaveEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE";
+    public const string PdfSaveReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_RECEIPT";
+    public const string PdfSaveTargetEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET";
+    public const string PdfSaveTraceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TRACE";
     // T545/7867: two-process career reward recovery leg. Phase A awards karma
     // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
     // (process exits = process restart). Phase B is a fresh process that must
@@ -242,6 +246,20 @@ public static class DesktopMouseFirstJourneyRuntime
         StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// WIN-008 item 1: when this process is launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE=1, the journey runner
+    /// executes a dedicated native PDF save leg: the REAL production save
+    /// path (compose-before-dialog + modal SaveFilePickerAsync with no
+    /// SavePrintOverride installed), driven by an in-process Win32 dialog
+    /// driver thread, with an independent extraction receipt for the
+    /// produced PDF.
+    /// </summary>
+    public static bool PdfSaveRequested => string.Equals(
+        Environment.GetEnvironmentVariable(PdfSaveEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Gen-9 item 2: writes the SR6 row-to-confirm leg's durable facts so a
     /// fresh-process reopen leg can assert the advanced attribute rank and
     /// debited karma survived persistence. No-op when no receipt path is
@@ -287,6 +305,48 @@ public static class DesktopMouseFirstJourneyRuntime
 
         File.WriteAllText(path, json);
     }
+
+    /// <summary>
+    /// WIN-008 item 1: writes the native PDF save leg's durable facts so the
+    /// harness can run an INDEPENDENT extraction (render + text) on the
+    /// produced PDF. No-op when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_RECEIPT.
+    /// </summary>
+    public static void WritePdfSaveReceipt(
+        string? workspaceId,
+        string targetPath,
+        long pdfBytes,
+        string? notice,
+        string? characterName,
+        string? characterAlias,
+        string? rulesetId)
+    {
+        string? path = Environment.GetEnvironmentVariable(PdfSaveReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            workspaceId,
+            targetPath,
+            pdfBytes,
+            notice,
+            characterName,
+            characterAlias,
+            rulesetId,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
 
     public static void WriteSuccessReceipt(
         DesktopMouseFirstJourneyContext context,
