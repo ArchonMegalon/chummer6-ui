@@ -620,6 +620,51 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
     }
 
     [TestMethod]
+    public void Classify_counts_special_spend_from_allocations_not_essence()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // Draft allocates the single special point to EDG; the XML raises EDG
+        // by exactly 1. Essence (ESS 6/0) is a metatype fact with NO
+        // allocation, so it must NOT count as special-point spend even though
+        // its XML delta is 6.
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1)
+            with
+            {
+                Allocations = new[] { new CharacterCreationAttributeAllocation("EDG", 1, 0) },
+                Attributes = new[]
+                {
+                    Projection("BOD", "normal", 1, 2), Projection("AGI", "normal", 1, 2),
+                    Projection("REA", "normal", 1, 2), Projection("STR", "normal", 1, 2),
+                    Projection("CHA", "normal", 1, 2), Projection("INT", "normal", 1, 2),
+                    Projection("LOG", "normal", 1, 2), Projection("WIL", "normal", 1, 2),
+                    Projection("EDG", "special", 1, 2),
+                },
+            };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 2, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
+            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes);
+        Assert.IsNull(verdict);
+    }
+
+    [TestMethod]
+    public void Classify_rejects_an_allocation_not_backed_by_the_document()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // Draft allocates one special point to EDG but the document leaves
+        // EDG at its metatype minimum: the allocation is not backed by the
+        // XML facts.
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1)
+            with { Allocations = new[] { new CharacterCreationAttributeAllocation("EDG", 1, 0) } };
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "shows 0 raised points but the draft allocated 1");
+    }
+
+    [TestMethod]
     public void Classify_rejects_missing_drafts()
     {
         var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");

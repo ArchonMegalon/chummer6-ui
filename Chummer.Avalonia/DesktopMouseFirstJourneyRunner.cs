@@ -4664,7 +4664,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             {
                 return prefix + "workspace is missing special attribute " + row.AttributeId + " rows";
             }
-            specialSpent += Math.Max(0, specialTotal - specialMinimum);
+            // Allocation-backed spend (mirrors Core CharacterCreationAttributesService):
+            // special budget usage is the sum of allocation PriorityPoints over special
+            // rows. The XML delta (total - metatypemin) may exceed the allocation for
+            // metatype-granted facts (essence 6/0 on Dwarf) that are not spends; only
+            // require the delta to COVER the allocated points.
+            if (specialTotal - specialMinimum < allocation.PriorityPoints)
+            {
+                return prefix + "special attribute " + row.AttributeId
+                    + " shows " + Math.Max(0, specialTotal - specialMinimum)
+                    + " raised points but the draft allocated " + allocation.PriorityPoints;
+            }
+            specialSpent += allocation.PriorityPoints;
         }
         if (specialSpent != attributes.SpecialPointUsed)
         {
