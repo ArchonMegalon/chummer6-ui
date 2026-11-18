@@ -395,7 +395,7 @@ def assert_startup_smoke_completion_gate(source: str) -> None:
     ) in runner
     assert 'native_install_root="$(to_native_path "$INSTALL_ROOT")"' in runner
     assert (
-        'local -a installer_args=("/smoke-install=$native_install_root")'
+        'local -a installer_args=("--smoke-install" "$native_install_root")'
         in runner
     )
     assert runner.count(reset) == 1
