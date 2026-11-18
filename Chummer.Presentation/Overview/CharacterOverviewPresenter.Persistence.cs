@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Chummer.Contracts.Workspaces;
 using Chummer.Application.Owners;
+using Chummer.Application.Characters;
 
 namespace Chummer.Presentation.Overview;
 
@@ -800,7 +801,7 @@ public sealed partial class CharacterOverviewPresenter
 
         StringBuilder cards = new();
         AppendAttributeValueCards(cards, attributesTask.Result);
-        AppendSkillValueCards(cards, skillsTask.Result);
+        await AppendSkillValueCardsAsync(cards, skillsTask.Result, workspaceId, ct).ConfigureAwait(false);
         AppendQualityValueCards(cards, qualitiesTask.Result);
         if (cards.Length == 0)
         {
@@ -847,13 +848,106 @@ public sealed partial class CharacterOverviewPresenter
         cards.Append("</dl></div>");
     }
 
-    private static void AppendSkillValueCards(StringBuilder cards, JsonNode? section)
+    /// <summary>
+    /// WIN-008 gen4 (T729): the sections API fills a skill's name with its source id
+    /// (suid) when the saved skill has no name element, so the enrichment previously
+    /// printed GUID-shaped ids as if they were display names. Active-skill labels are
+    /// now resolved through the character's exact source-data context (the same
+    /// authority career editors use): the saved name wins when it is a real label,
+    /// a genuine custom name wins next, then the catalog display name, and only a
+    /// skill that cannot be resolved at all receives an explicit "unresolved skill"
+    /// disclosure instead of an id pretending to be a name.
+    /// </summary>
+    private async Task AppendSkillValueCardsAsync(
+        StringBuilder cards, JsonNode? section, CharacterWorkspaceId workspaceId, CancellationToken ct)
     {
         if (section?["skills"] is not JsonArray skills || skills.Count == 0)
         {
             return;
         }
 
+        ICharacterSourceDataContext? sourceData = await TryCreatePrintSkillSourceContextAsync(
+            skills, workspaceId, ct).ConfigureAwait(false);
+        AppendSkillValueCards(cards, skills, sourceData);
+    }
+
+    private async Task<ICharacterSourceDataContext?> TryCreatePrintSkillSourceContextAsync(
+        JsonArray skills, CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        bool needsCatalogResolution = false;
+        foreach (JsonNode? item in skills)
+        {
+            if (item is null || (item["isKnowledge"]?.GetValue<bool>() ?? false))
+            {
+                continue;
+            }
+
+            string savedName = (string?)item["name"] ?? string.Empty;
+            string customName = (string?)item["customName"] ?? string.Empty;
+            if (!IsDisplayableSkillLabel(savedName) && !IsDisplayableSkillLabel(customName))
+            {
+                needsCatalogResolution = true;
+                break;
+            }
+        }
+
+        if (!needsCatalogResolution || _characterSourceDataResolver is null)
+        {
+            return null;
+        }
+
+        // The context is built from the exact saved dossier bytes. Any failure here
+        // degrades to unresolved-label disclosure; it must never fail the enrichment.
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspaceId, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null
+                || read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                return null;
+            }
+
+            return _characterSourceDataResolver.TryCreateContext(read.Value.Document.Content);
+        }
+        catch (Exception contextError) when (contextError is InvalidOperationException
+            or System.Text.Json.JsonException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A label is displayable only when it is non-blank and not a GUID-shaped id.</summary>
+    private static bool IsDisplayableSkillLabel(string value)
+        => !string.IsNullOrWhiteSpace(value)
+            && !(Guid.TryParseExact(value, "D", out Guid parsed) && parsed != Guid.Empty);
+
+    private static string ResolvePrintSkillLabel(
+        string savedName, string customName, string suid, ICharacterSourceDataContext? sourceData)
+    {
+        if (IsDisplayableSkillLabel(savedName))
+        {
+            return savedName;
+        }
+
+        if (IsDisplayableSkillLabel(customName))
+        {
+            return customName;
+        }
+
+        if (sourceData is not null
+            && Guid.TryParseExact(suid, "D", out Guid sourceId) && sourceId != Guid.Empty
+            && sourceData.TryResolveActiveSkillSource(suid, out CharacterActiveSkillSource source)
+            && !string.IsNullOrWhiteSpace(source.Name))
+        {
+            return source.Name;
+        }
+
+        return suid.Length >= 8 ? $"unresolved skill ({suid[..8]})" : "unresolved skill";
+    }
+
+    private static void AppendSkillValueCards(StringBuilder cards, JsonArray skills, ICharacterSourceDataContext? sourceData)
+    {
         cards.Append("<div class=\"card\"><h2>Skills</h2><dl class=\"grid\">");
         int knowledgeCount = 0;
         foreach (JsonNode? item in skills)
@@ -865,17 +959,10 @@ public sealed partial class CharacterOverviewPresenter
                 continue;
             }
 
-            string name = (string?)item?["name"] ?? string.Empty;
-            if (name.Length == 0)
-            {
-                name = (string?)item?["customName"] ?? string.Empty;
-            }
-
-            if (name.Length == 0)
-            {
-                string guid = (string?)item?["guid"] ?? string.Empty;
-                name = guid.Length > 0 ? $"skill {guid[..8]}" : "unnamed skill";
-            }
+            string savedName = (string?)item?["name"] ?? string.Empty;
+            string customName = (string?)item?["customName"] ?? string.Empty;
+            string suid = (string?)item?["suid"] ?? string.Empty;
+            string name = ResolvePrintSkillLabel(savedName, customName, suid, sourceData);
 
             int baseValue = item?["baseValue"]?.GetValue<int>() ?? 0;
             int karmaValue = item?["karmaValue"]?.GetValue<int>() ?? 0;

@@ -1370,6 +1370,66 @@ public class CharacterOverviewPresenterTests
                 new(0, 0m, 2500m, 2500m), CharacterCareerManualNuyenAction.Gain, amount, 100m, "Run reward",
                 new DateTime(2081, 5, 12), false, false, false) { OperationId = operationId }, owner, ct);
 
+    [TestMethod]
+    public async Task Print_enrichment_resolves_unnamed_active_skills_through_the_catalog()
+    {
+        var client = new PrintSectionFakeClient();
+        client.SeedDocument("ws-1", "<character><name>Troy</name></character>");
+        var presenter = new CharacterOverviewPresenter(
+            client,
+            characterSourceDataResolver: new CatalogSkillNameResolver());
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("print_character", CancellationToken.None);
+
+        Assert.IsNull(presenter.State.Error);
+        Assert.IsNotNull(presenter.State.PendingPrint);
+        string payload = Encoding.UTF8.GetString(Convert.FromBase64String(presenter.State.PendingPrint!.ContentBase64));
+        // The saved skill has no name element, so the section carries the GUID-shaped
+        // suid as its name. The catalog display name must win and the raw id must not
+        // be printed as if it were a name.
+        StringAssert.Contains(payload, "Gymnastics");
+        Assert.IsFalse(payload.Contains("skill 1a2b3c4d"), "GUID-shaped id must not be printed as a name.");
+        Assert.IsFalse(payload.Contains("1a2b3c4d"), "The suid itself must not leak into the print body.");
+        StringAssert.Contains(payload, "rating 4 (base 4, karma 0)");
+    }
+
+    [TestMethod]
+    public async Task Print_enrichment_prefers_genuine_custom_names_over_the_catalog()
+    {
+        var client = new PrintSectionFakeClient();
+        client.SeedDocument("ws-1", "<character><name>Troy</name></character>");
+        var presenter = new CharacterOverviewPresenter(
+            client,
+            characterSourceDataResolver: new CatalogSkillNameResolver());
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("print_character", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.PendingPrint);
+        string payload = Encoding.UTF8.GetString(Convert.FromBase64String(presenter.State.PendingPrint!.ContentBase64));
+        StringAssert.Contains(payload, "custom-label");
+        Assert.IsFalse(payload.Contains("Street Piracy"), "A genuine custom name must win over the catalog.");
+    }
+
+    [TestMethod]
+    public async Task Print_enrichment_discloses_unresolved_skill_labels_explicitly()
+    {
+        var client = new PrintSectionFakeClient();
+        client.SeedDocument("ws-1", "<character><name>Troy</name></character>");
+        // No resolver at all: catalog authority is unavailable, so the enrichment must
+        // fail closed with an explicit disclosure instead of printing an id as a name.
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.LoadAsync(new CharacterWorkspaceId("ws-1"), CancellationToken.None);
+        await presenter.ExecuteCommandAsync("print_character", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.PendingPrint);
+        string payload = Encoding.UTF8.GetString(Convert.FromBase64String(presenter.State.PendingPrint!.ContentBase64));
+        StringAssert.Contains(payload, "unresolved skill (1a2b3c4d)");
+        Assert.IsFalse(payload.Contains("Gymnastics"), "No catalog authority: no catalog name may appear.");
+    }
+
     private sealed class RewardSourceResolver : ICharacterSourceDataResolver
     {
         public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new RewardSourceContext();
@@ -1383,6 +1443,100 @@ public class CharacterOverviewPresenterTests
         { deviceRating = 0; return false; }
         public bool TryResolveVehicleModBonuses(string sourceId, string name, out CharacterVehicleModSourceBonuses bonuses)
         { bonuses = CharacterVehicleModSourceBonuses.Empty; return false; }
+    }
+
+    private sealed class CatalogSkillNameResolver : ICharacterSourceDataResolver
+    {
+        public ICharacterSourceDataContext? TryCreateContext(string characterXml) => new CatalogSkillNameContext();
+    }
+
+    private sealed class CatalogSkillNameContext : ICharacterSourceDataContext
+    {
+        public bool TryResolveActiveSkillSource(string sourceSkillId, out CharacterActiveSkillSource source)
+        {
+            if (string.Equals(sourceSkillId, "1a2b3c4d-0000-0000-0000-000000000001", StringComparison.OrdinalIgnoreCase))
+            {
+                source = new CharacterActiveSkillSource(
+                    SourceSkillId: sourceSkillId,
+                    Name: "Gymnastics",
+                    SkillCategory: "Physical",
+                    SkillGroup: "Athletics",
+                    DefaultAttribute: "AGI",
+                    IsExotic: false,
+                    RequiresGroundMovement: false,
+                    RequiresSwimMovement: false,
+                    RequiresFlyMovement: false,
+                    RawSourceXml: "<skill/>");
+                return true;
+            }
+
+            if (string.Equals(sourceSkillId, "9f8e7d6c-0000-0000-0000-000000000002", StringComparison.OrdinalIgnoreCase))
+            {
+                source = new CharacterActiveSkillSource(
+                    SourceSkillId: sourceSkillId,
+                    Name: "Street Piracy",
+                    SkillCategory: "Social",
+                    SkillGroup: "Hacking",
+                    DefaultAttribute: "LOG",
+                    IsExotic: false,
+                    RequiresGroundMovement: false,
+                    RequiresSwimMovement: false,
+                    RequiresFlyMovement: false,
+                    RawSourceXml: "<skill/>");
+                return true;
+            }
+
+            source = CharacterActiveSkillSource.Unavailable;
+            return false;
+        }
+
+        public bool TryResolveCyberwareGradeDeviceRating(string gradeName, string improvementSource, out int deviceRating)
+        { deviceRating = 0; return false; }
+
+        public bool TryResolveVehicleModBonuses(string sourceId, string name, out CharacterVehicleModSourceBonuses bonuses)
+        { bonuses = CharacterVehicleModSourceBonuses.Empty; return false; }
+    }
+
+    /// <summary>
+    /// Gen4 T729 test fixture: serves a skills section whose unnamed active skills carry
+    /// the GUID-shaped suid in the name field (the shape Core's sections API produces)
+    /// plus one genuinely custom-named skill, mirroring real saved dossiers.
+    /// </summary>
+    private sealed class PrintSectionFakeClient : FakeChummerClient, IChummerClient
+    {
+        public new Task<JsonNode> GetSectionAsync(CharacterWorkspaceId id, string sectionId, CancellationToken ct)
+        {
+            JsonObject section = new()
+            {
+                ["workspaceId"] = id.Value,
+                ["sectionId"] = sectionId
+            };
+            if (string.Equals(sectionId, "skills", StringComparison.Ordinal))
+            {
+                section["skills"] = new JsonArray
+                {
+                    // Unnamed active skill: name is the GUID-shaped suid (Core codec shape).
+                    MakeSkill("1a2b3c4d-0000-0000-0000-000000000001", "1a2b3c4d-0000-0000-0000-000000000001",
+                        customName: string.Empty, baseValue: 4),
+                    // Genuinely custom-named skill: the custom label must win over the catalog.
+                    MakeSkill("9f8e7d6c-0000-0000-0000-000000000002", "9f8e7d6c-0000-0000-0000-000000000002",
+                        customName: "custom-label", baseValue: 2)
+                };
+            }
+
+            return Task.FromResult<JsonNode>(section);
+        }
+
+        private static JsonObject MakeSkill(string name, string suid, string customName, int baseValue)
+            => new()
+            {
+                ["name"] = name,
+                ["suid"] = suid,
+                ["customName"] = customName,
+                ["isKnowledge"] = false,
+                ["baseValue"] = baseValue,
+                ["karmaValue"] = 0
+            };
     }
 
     private static WorkspaceCollectionMutationRequest SeedOwnerBoundWorkspace(FakeChummerClient client)

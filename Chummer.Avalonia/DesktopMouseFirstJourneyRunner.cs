@@ -9909,160 +9909,17 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         // file-type filter (no Edit child). Sends must never block on the
         // dialog thread (a stopped pump wedges the driver forever); commits
         // are POSTed, sets are timeout-guarded.
-        Thread driver = new(() =>
-        {
-            try
-            {
-                // gen3 containment: every loop below is bound by BOTH the
-                // deadline and the journey cancellation token, and the driver
-                // observes without mutating the dialog's filename (the seam
-                // already pointed the dialog at the target; WM_SETTEXT never
-                // changed the dialog's internal filename - gen24 evidence).
-                IntPtr hwnd = IntPtr.Zero;
-                DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(120);
-                while (DateTimeOffset.UtcNow < deadline && !ct.IsCancellationRequested)
-                {
-                    hwnd = FindDialogTitleWindow("Save Print Preview");
-                    if (hwnd != IntPtr.Zero)
-                    {
-                        break;
-                    }
-
-                    if (ct.WaitHandle.WaitOne(250))
-                    {
-                        break;
-                    }
-                }
-
-                if (hwnd == IntPtr.Zero)
-                {
-                    Trace(ct.IsCancellationRequested
-                        ? "dialog discovery canceled"
-                        : "dialog not found within 120s");
-                    return;
-                }
-
-                Trace("dialog found hwnd=0x" + hwnd.ToString("x"));
-
-                // WAIT for the dialog to actually become visible. Window
-                // creation precedes IFileDialog Show() initialization, and the
-                // initialization RE-SETS the filename edit - touching the edit
-                // too early loses the text and Save refuses an empty filename
-                // (gen24 run-5 evidence). The wait is cancellation-bound.
-                bool becameVisible = IsWindowVisible(hwnd);
-                DateTimeOffset visibleDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(45);
-                while (!becameVisible && DateTimeOffset.UtcNow < visibleDeadline && !ct.IsCancellationRequested)
-                {
-                    if (ct.WaitHandle.WaitOne(250))
-                    {
-                        break;
-                    }
-
-                    becameVisible = IsWindowVisible(hwnd);
-                }
-
-                if (!becameVisible)
-                {
-                    // The one remaining window-affecting call is REVALIDATED
-                    // immediately before use: alive, dialog class, exact
-                    // title, owned by THIS process. A canceled journey never
-                    // mutates a window.
-                    if (ct.IsCancellationRequested || !ValidateDialogHwnd(hwnd, "Save Print Preview"))
-                    {
-                        Trace("show fallback refused (canceled or revalidation failed)");
-                        return;
-                    }
-
-                    Trace("dialog never became visible; ShowWindow(SW_SHOW) after revalidation");
-                    ShowWindow(hwnd, 5 /* SW_SHOW */);
-                    Thread.Sleep(500);
-                }
-                else
-                {
-                    Trace("dialog visible");
-                }
-
-                // Locate the filename Edit for OBSERVATION ONLY (liveness
-                // probe); the driver never writes to it. The filename edit is
-                // the Edit under FloatNotifySink -> ComboBox (gen24 run-4
-                // evidence); the Explorer search-box Edit sits deeper and
-                // must not win.
-                IntPtr edit = IntPtr.Zero;
-                for (int attempt = 0; attempt < 40 && edit == IntPtr.Zero && !ct.IsCancellationRequested; attempt++)
-                {
-                    IntPtr best = IntPtr.Zero;
-                    int bestDepth = -1;
-                    CollectDescendantEdits(hwnd, 0, ref best, ref bestDepth);
-                    if (best != IntPtr.Zero)
-                    {
-                        edit = best;
-                    }
-
-                    if (edit == IntPtr.Zero)
-                    {
-                        if (ct.WaitHandle.WaitOne(250))
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                if (edit == IntPtr.Zero)
-                {
-                    Trace("no descendant Edit found");
-                    return;
-                }
-
-                {
-                    var chain = new System.Text.StringBuilder();
-                    IntPtr walk = GetParent(edit);
-                    for (int d = 0; d < 5 && walk != IntPtr.Zero; d++)
-                    {
-                        var cn = new System.Text.StringBuilder(256);
-                        GetClassNameW(walk, cn, 256);
-                        chain.Append(cn.ToString()).Append(" < ");
-                        walk = GetParent(walk);
-                    }
-
-                    Trace("edit hwnd=0x" + edit.ToString("x") + " parent chain " + chain.ToString());
-                }
-
-                // Observe until the dialog closes (commit accepted by the
-                // external UIA driver) or the journey cancels. No writes to
-                // the dialog or its children: the seam set the dialog's
-                // target; the external UIA driver commits. Liveness is probed
-                // with a timeout-guarded, abort-if-hung message so a wedged
-                // dialog thread cannot wedge the driver.
-                dialogDriven = true;
-                Trace("observing dialog; external UIA driver commits");
-                DateTimeOffset holdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(300);
-                while (DateTimeOffset.UtcNow < holdDeadline && !ct.IsCancellationRequested)
-                {
-                    if (!IsWindow(hwnd))
-                    {
-                        Trace("dialog gone (commit accepted elsewhere)");
-                        break;
-                    }
-
-                    if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr _) == IntPtr.Zero)
-                    {
-                        Trace("edit stopped responding; dialog presumed committed or dead");
-                        break;
-                    }
-
-                    if (ct.WaitHandle.WaitOne(1000))
-                    {
-                        break;
-                    }
-                }
-
-                Trace("driver hold loop exit; ct canceled: " + ct.IsCancellationRequested);
-            }
-            catch (Exception driverFailure)
-            {
-                Trace("driver exception: " + driverFailure.GetType().Name + ": " + driverFailure.Message);
-            }
-        });
+        // gen4 scope ownership: the driver no longer runs under the raw
+        // journey token. A scope-owned LINKED token feeds the driver; the
+        // finally below cancels the scope BEFORE the bounded join, so an
+        // invocation that exits early (import/rename/print failure) stops
+        // its own discovery and hold loops instead of leaving a driver
+        // alive that could act on a LATER dialog.
+        using CancellationTokenSource driverScope = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        Thread driver = new(() => RunPdfSaveDialogDriverScope(
+            driverScope.Token,
+            Trace,
+            () => dialogDriven = true));
         driver.IsBackground = true;
         driver.Start();
 
@@ -10179,7 +10036,188 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         }
         finally
         {
-            try { driver.Join(TimeSpan.FromSeconds(5)); } catch { /* best effort */ }
+            // gen4: STOP the owned driver BEFORE the bounded join. Canceling
+            // the scope makes every driver loop (whose waits observe the
+            // token) exit promptly; the join then proves the thread is gone.
+            // A canceled/exited driver cannot act on any dialog that appears
+            // after this invocation returns.
+            try { driverScope.Cancel(); } catch { /* best effort */ }
+            try { driver.Join(TimeSpan.FromSeconds(10)); } catch { /* best effort */ }
+        }
+    }
+
+    /// <summary>
+    /// gen4 (WIN-008): the ACTUAL production Win32 save-dialog driver body,
+    /// extracted from the thread lambda in ExerciseNativePdfSaveWorkflowAsync
+    /// so its LIFETIME is directly testable via IVT. All loops (discovery,
+    /// visibility wait, edit search, observation hold) run under
+    /// <paramref name="scopeToken"/>: the caller owns the token and cancels it
+    /// in its finally BEFORE the bounded join, so no loop started by an
+    /// invocation can outlive that invocation or act on a later dialog.
+    /// </summary>
+    internal static void RunPdfSaveDialogDriverScope(
+        CancellationToken scopeToken,
+        Action<string>? trace,
+        Action? onDialogDriven)
+    {
+        void Trace(string message) => trace?.Invoke(message);
+        try
+        {
+        try
+        {
+            // gen3 containment: every loop below is bound by BOTH the
+            // deadline and the journey cancellation token, and the driver
+            // observes without mutating the dialog's filename (the seam
+            // already pointed the dialog at the target; WM_SETTEXT never
+            // changed the dialog's internal filename - gen24 evidence).
+            IntPtr hwnd = IntPtr.Zero;
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(120);
+            while (DateTimeOffset.UtcNow < deadline && !scopeToken.IsCancellationRequested)
+            {
+                hwnd = FindDialogTitleWindow("Save Print Preview");
+                if (hwnd != IntPtr.Zero)
+                {
+                    break;
+                }
+
+                if (scopeToken.WaitHandle.WaitOne(250))
+                {
+                    break;
+                }
+            }
+
+            if (hwnd == IntPtr.Zero)
+            {
+                Trace(scopeToken.IsCancellationRequested
+                    ? "dialog discovery canceled"
+                    : "dialog not found within 120s");
+                return;
+            }
+
+            Trace("dialog found hwnd=0x" + hwnd.ToString("x"));
+
+            // WAIT for the dialog to actually become visible. Window
+            // creation precedes IFileDialog Show() initialization, and the
+            // initialization RE-SETS the filename edit - touching the edit
+            // too early loses the text and Save refuses an empty filename
+            // (gen24 run-5 evidence). The wait is cancellation-bound.
+            bool becameVisible = IsWindowVisible(hwnd);
+            DateTimeOffset visibleDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(45);
+            while (!becameVisible && DateTimeOffset.UtcNow < visibleDeadline && !scopeToken.IsCancellationRequested)
+            {
+                if (scopeToken.WaitHandle.WaitOne(250))
+                {
+                    break;
+                }
+
+                becameVisible = IsWindowVisible(hwnd);
+            }
+
+            if (!becameVisible)
+            {
+                // The one remaining window-affecting call is REVALIDATED
+                // immediately before use: alive, dialog class, exact
+                // title, owned by THIS process. A canceled journey never
+                // mutates a window.
+                if (scopeToken.IsCancellationRequested || !ValidateDialogHwnd(hwnd, "Save Print Preview"))
+                {
+                    Trace("show fallback refused (canceled or revalidation failed)");
+                    return;
+                }
+
+                Trace("dialog never became visible; ShowWindow(SW_SHOW) after revalidation");
+                ShowWindow(hwnd, 5 /* SW_SHOW */);
+                Thread.Sleep(500);
+            }
+            else
+            {
+                Trace("dialog visible");
+            }
+
+            // Locate the filename Edit for OBSERVATION ONLY (liveness
+            // probe); the driver never writes to it. The filename edit is
+            // the Edit under FloatNotifySink -> ComboBox (gen24 run-4
+            // evidence); the Explorer search-box Edit sits deeper and
+            // must not win.
+            IntPtr edit = IntPtr.Zero;
+            for (int attempt = 0; attempt < 40 && edit == IntPtr.Zero && !scopeToken.IsCancellationRequested; attempt++)
+            {
+                IntPtr best = IntPtr.Zero;
+                int bestDepth = -1;
+                CollectDescendantEdits(hwnd, 0, ref best, ref bestDepth);
+                if (best != IntPtr.Zero)
+                {
+                    edit = best;
+                }
+
+                if (edit == IntPtr.Zero)
+                {
+                    if (scopeToken.WaitHandle.WaitOne(250))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (edit == IntPtr.Zero)
+            {
+                Trace("no descendant Edit found");
+                return;
+            }
+
+            {
+                var chain = new System.Text.StringBuilder();
+                IntPtr walk = GetParent(edit);
+                for (int d = 0; d < 5 && walk != IntPtr.Zero; d++)
+                {
+                    var cn = new System.Text.StringBuilder(256);
+                    GetClassNameW(walk, cn, 256);
+                    chain.Append(cn.ToString()).Append(" < ");
+                    walk = GetParent(walk);
+                }
+
+                Trace("edit hwnd=0x" + edit.ToString("x") + " parent chain " + chain.ToString());
+            }
+
+            // Observe until the dialog closes (commit accepted by the
+            // external UIA driver) or the journey cancels. No writes to
+            // the dialog or its children: the seam set the dialog's
+            // target; the external UIA driver commits. Liveness is probed
+            // with a timeout-guarded, abort-if-hung message so a wedged
+            // dialog thread cannot wedge the driver.
+            onDialogDriven?.Invoke();
+            Trace("observing dialog; external UIA driver commits");
+            DateTimeOffset holdDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(300);
+            while (DateTimeOffset.UtcNow < holdDeadline && !scopeToken.IsCancellationRequested)
+            {
+                if (!IsWindow(hwnd))
+                {
+                    Trace("dialog gone (commit accepted elsewhere)");
+                    break;
+                }
+
+                if (SendMessageTimeoutW(edit, 0x000E /*WM_GETTEXTLENGTH*/, IntPtr.Zero, IntPtr.Zero, 2 /*ABORTIFHUNG*/, 2000, out IntPtr _) == IntPtr.Zero)
+                {
+                    Trace("edit stopped responding; dialog presumed committed or dead");
+                    break;
+                }
+
+                if (scopeToken.WaitHandle.WaitOne(1000))
+                {
+                    break;
+                }
+            }
+
+            Trace("driver hold loop exit; scope canceled: " + scopeToken.IsCancellationRequested);
+        }
+        catch (Exception driverFailure)
+        {
+            Trace("driver exception: " + driverFailure.GetType().Name + ": " + driverFailure.Message);
+        }
+        }
+        catch (Exception driverFailure)
+        {
+            Trace("driver exception: " + driverFailure.GetType().Name + ": " + driverFailure.Message);
         }
     }
 
