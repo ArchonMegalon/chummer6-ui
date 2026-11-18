@@ -7,6 +7,8 @@ using Chummer.Application.Owners;
 using Chummer.Contracts.Owners;
 using Chummer.Contracts.Workspaces;
 using Chummer.Avalonia;
+using Chummer.Contracts.Characters;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -318,6 +320,329 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
             Chummer.Avalonia.DesktopMouseFirstJourneyRunner.SumNaturalAttributes(root);
         Assert.IsFalse(evidence.IsValid);
         Assert.IsTrue(evidence.Diagnostics.Contains("missing natural attributes", StringComparison.Ordinal), evidence.Diagnostics);
+    }
+
+    // ----- WIN-009 gen2 (T747): exact-character parser + classifier -----
+
+    private static string ExactRow(string name, int total, int minimum) =>
+        "<attribute><name>" + name + "</name><totalvalue>" + total.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        + "</totalvalue><metatypemin>" + minimum.ToString(System.Globalization.CultureInfo.InvariantCulture)
+        + "</metatypemin><metatypemax>6</metatypemax><metatypeaugmax>10</metatypeaugmax></attribute>";
+
+    // 8 naturals, all minimum 1, each spent 1 normal point: 8 total/used.
+    private static string AllEightExact() =>
+        string.Concat(new[] { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" }
+            .Select(n => ExactRow(n, 2, 1)));
+
+    private static CharacterCreationPriorityHeritageSelection DwarfHeritage(string metatypeSourceId) => new(
+        SelectionId: "metatype:dwarf-selection",
+        Kind: "metatype",
+        PrioritySourceId: "priority-table-heritage-c",
+        MetatypeSourceId: metatypeSourceId,
+        MetavariantSourceId: null,
+        MetatypeName: "Dwarf",
+        MetavariantName: null,
+        SpecialAttributePoints: 1,
+        KarmaCost: 0,
+        HalvesNormalAttributePoints: false,
+        Attributes: new[]
+        {
+            new CharacterCreationMetatypeAttributeProjection("BOD", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("AGI", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("REA", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("STR", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("CHA", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("INT", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("LOG", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("WIL", 1, 6, 10),
+            new CharacterCreationMetatypeAttributeProjection("EDG", 1, 6, 10),
+        },
+        PriorityChildNodeDigest: "sha256:prioc",
+        MetatypeSourceNodeDigest: "sha256:dwarfnode",
+        SourceAnchorIds: new[] { "metatypes.xml#metatype:dwarf" });
+
+    private static CharacterCreationPriorityAssignment HeritageAssignment(string rank) => new(
+        Order: 0,
+        CategoryId: "heritage",
+        Rank: rank,
+        SourceId: "priority-table-heritage-c",
+        SourceNodeDigest: "sha256:prioc",
+        SumToTenValue: 0,
+        BaseNormalAttributePoints: 8,
+        SourceAnchorIds: new[] { "priority.xml#heritage:c" });
+
+    private static CharacterCreationPriorityAssignment MetatypeAssignment => new(
+        Order: 1,
+        CategoryId: "metatype",
+        Rank: "Dwarf",
+        SourceId: "metatypes.xml#dwarf",
+        SourceNodeDigest: "sha256:dwarfnode",
+        SumToTenValue: 0,
+        BaseNormalAttributePoints: null,
+        SourceAnchorIds: new[] { "metatypes.xml#metatype:dwarf" });
+
+    private static CharacterCreationPrerequisiteDraft ExactPrerequisite(
+        CharacterCreationPriorityHeritageSelection heritage,
+        string rank,
+        int effectiveNormal,
+        int totalSpecial) => new(
+        Schema: CharacterCreationPrerequisiteSchemas.DraftV1,
+        WorkspaceId: new CharacterWorkspaceId("exact-character-workspace"),
+        DraftRevision: 1,
+        BaseContentRevision: 1,
+        BaseRawCharacterXmlDigest: "sha256:raw",
+        AuthorityDigest: "sha256:authority",
+        BuildMethod: "Priority",
+        SettingsProfileId: "profile",
+        PriorityTable: "SR5",
+        PriorityArray: new[] { "C", "C", "D", "E", "E" },
+        SumToTenTarget: null,
+        Assignments: new[] { HeritageAssignment(rank), MetatypeAssignment },
+        CreationKarmaTotal: 25,
+        CreationKarmaUsed: 0,
+        SourceAnchorIds: new[] { "priority.xml" },
+        DraftDigest: "sha256:prereq-draft")
+    {
+        HeritageSelection = heritage,
+        EffectiveNormalAttributePoints = effectiveNormal,
+        TotalSpecialAttributePoints = totalSpecial,
+    };
+
+    private static CharacterCreationAttributesDraft ExactAttributes(
+        string metatypeSourceId,
+        int normalTotal,
+        int specialTotal,
+        int specialUsed,
+        int dwarfSpecialMinimum) => new(
+        Schema: CharacterCreationAttributesSchemas.DraftV1,
+        WorkspaceId: new CharacterWorkspaceId("exact-character-workspace"),
+        DraftRevision: 1,
+        BaseContentRevision: 1,
+        BaseRawCharacterXmlDigest: "sha256:raw",
+        PrerequisiteDraftRevision: 1,
+        PrerequisiteDraftDigest: "sha256:prereq-draft",
+        PrerequisiteAuthorityDigest: "sha256:authority",
+        MetatypeSourceId: metatypeSourceId,
+        MetatypeSourceNodeDigest: "sha256:dwarfnode",
+        HalvesNormalAttributePoints: false,
+        NormalPointTotal: normalTotal,
+        NormalPointUsed: normalTotal,
+        SpecialPointTotal: specialTotal,
+        SpecialPointUsed: specialUsed,
+        CreationKarmaTotal: 25,
+        CreationKarmaUsed: 0,
+        Allocations: new[] { new CharacterCreationAttributeAllocation("EDG", 0, 0) },
+        Attributes: new[]
+        {
+            Projection("BOD", "normal", 1, 2), Projection("AGI", "normal", 1, 2),
+            Projection("REA", "normal", 1, 2), Projection("STR", "normal", 1, 2),
+            Projection("CHA", "normal", 1, 2), Projection("INT", "normal", 1, 2),
+            Projection("LOG", "normal", 1, 2), Projection("WIL", "normal", 1, 2),
+            Projection("EDG", "special", dwarfSpecialMinimum, dwarfSpecialMinimum),
+        },
+        SourceAnchorIds: new[] { "attributes.xml" },
+        CharacterEffectsApplied: true,
+        DraftDigest: "sha256:attr-draft");
+
+    private static CharacterCreationAttributeProjection Projection(string id, string category, int minimum, int current) => new(
+        AttributeId: id,
+        Category: category,
+        Minimum: minimum,
+        Maximum: 6,
+        AugmentedMaximum: 10,
+        Current: current,
+        PriorityPointsSpent: 0,
+        KarmaLevels: 0,
+        PriorityPointCost: 0,
+        KarmaCost: 0,
+        IsEnabled: true,
+        DisableReasons: Array.Empty<string>(),
+        SourceAnchorIds: Array.Empty<string>());
+
+    private const string ExactCharacterTemplate =
+        "<character><gameedition>5</gameedition><metatype>Dwarf</metatype>"
+        + "<attributes>{rows}</attributes></character>";
+
+    private static XElement ExactCharacterRoot(string rows) =>
+        XElement.Parse(ExactCharacterTemplate.Replace("{rows}", rows, StringComparison.Ordinal));
+
+    private static (IReadOnlyDictionary<string, int>, IReadOnlyDictionary<string, int>, string) ParseRows(XElement root)
+    {
+        var parsed = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ParseExactCharacterRows(root);
+        Assert.IsTrue(parsed.Succeeded, parsed.Diagnostics);
+        return (parsed.Totals, parsed.Minimums, parsed.MetatypeName);
+    }
+
+    private static void AssertFailedClassify(
+        (IReadOnlyDictionary<string, int>, IReadOnlyDictionary<string, int>, string) parsed,
+        string? expectedRank,
+        string? expectedMetatype,
+        CharacterCreationPrerequisiteDraft prerequisite,
+        CharacterCreationAttributesDraft attributes,
+        string expectedFragment)
+    {
+        string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
+            parsed.Item1, parsed.Item2, parsed.Item3, expectedRank, expectedMetatype, prerequisite, attributes);
+        Assert.IsNotNull(verdict);
+        Assert.IsTrue(verdict.Contains(expectedFragment, StringComparison.Ordinal), verdict);
+    }
+
+    [TestMethod]
+    public void ParseExactCharacterRows_parses_the_full_dwarf_row_set()
+    {
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var rows = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ParseExactCharacterRows(root);
+        Assert.IsTrue(rows.Succeeded, rows.Diagnostics);
+        Assert.AreEqual("Dwarf", rows.MetatypeName);
+        Assert.AreEqual(10, rows.Totals.Count);
+        Assert.AreEqual(2, rows.Totals["BOD"]);
+        Assert.AreEqual(1, rows.Minimums["AGI"]);
+        Assert.AreEqual(1, rows.Minimums["EDG"]);
+        Assert.AreEqual(0, rows.Minimums["ESS"]);
+    }
+
+    [TestMethod]
+    public void ParseExactCharacterRows_rejects_a_duplicate_metatype_element()
+    {
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1));
+        root.Add(new XElement("metatype", "Elf"));
+        var rows = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ParseExactCharacterRows(root);
+        Assert.IsFalse(rows.Succeeded);
+        Assert.IsTrue(rows.Diagnostics.Contains("exactly one scalar metatype", StringComparison.Ordinal), rows.Diagnostics);
+    }
+
+    [TestMethod]
+    public void ParseExactCharacterRows_rejects_missing_or_malformed_metatypemin()
+    {
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1));
+        XElement bod = root.Element("attributes")!.Elements("attribute")
+            .First(a => a.Element("name")!.Value == "BOD");
+        bod.Element("metatypemin")!.Remove();
+        var rows = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ParseExactCharacterRows(root);
+        Assert.IsFalse(rows.Succeeded);
+        Assert.IsTrue(rows.Diagnostics.Contains("BOD has missing or malformed metatypemin", StringComparison.Ordinal), rows.Diagnostics);
+    }
+
+    [TestMethod]
+    public void Classify_exact_matches_when_every_fact_agrees()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
+            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes);
+        Assert.IsNull(verdict);
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_metatype_name_mismatch()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Elf", prerequisite, attributes,
+            "does not match the plan's metatype 'Elf'");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_metatype_source_mismatch()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes("other-source", 8, 1, 0, 1);
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "does not match the heritage selection source");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_heritage_rank_mismatch()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "D", "Dwarf", prerequisite, attributes,
+            "heritage assignment rank 'C' does not match the plan's heritage rank 'D'");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_per_attribute_total_mismatch()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        XElement bod = root.Element("attributes")!.Elements("attribute")
+            .First(a => a.Element("name")!.Value == "BOD");
+        bod.Element("totalvalue")!.Value = "4";
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "BOD total 4 does not match draft current 2");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_budget_that_is_not_fully_spent()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // All rows match the draft (per-attribute checks pass); the draft
+        // itself under-states the total so the budget is not fully spent.
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1)
+            with { NormalPointTotal = 9 };
+        string rows = string.Concat(new[] { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" }
+            .Select(n => ExactRow(n, 2, 1)))
+            + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0);
+        XElement root = ExactCharacterRoot(rows);
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "not fully spent");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_special_budget_overspend()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        // Draft says the single special point WAS allocated to EDG...
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 1, 1);
+        // ...but the XML shows EDG still at its metatype minimum.
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "special attribute budget spent 0 does not match the draft's used 1");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_missing_drafts()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", null, null,
+            "carries no prerequisite draft");
+        var attributesOnly = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        AssertFailedClassify(parsed, "C", "Dwarf", null, attributesOnly,
+            "carries no prerequisite draft");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_a_heritage_selection_missing_from_the_draft()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1)
+            with { HeritageSelection = null };
+        var attributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        XElement root = ExactCharacterRoot(AllEightExact() + ExactRow("EDG", 1, 1) + ExactRow("ESS", 6, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "carries no heritage selection");
     }
 
     // ----- StarterAttributeEvidence contract -----

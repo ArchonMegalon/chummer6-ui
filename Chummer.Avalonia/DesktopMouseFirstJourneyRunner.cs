@@ -596,6 +596,47 @@ internal static class DesktopMouseFirstJourneyRunner
                     throw new InvalidOperationException("The reopened profile is not marked created; finalization did not persist.");
                 }
 
+                // WIN-009 gen2 (T747): the reopen-verify leg repeats the exact
+                // character check against the RETAINED document so the draft
+                // binding is proven to survive the cold process boundary.
+                // Gated to the same wizard-driven Priority plans the first leg
+                // checks; the saved receipt carries the plan identity.
+                string savedBuildMethod = saved.RootElement.TryGetProperty("buildMethod", out System.Text.Json.JsonElement savedBuildMethodElement)
+                    && savedBuildMethodElement.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? savedBuildMethodElement.GetString() ?? string.Empty : string.Empty;
+                if (string.Equals(savedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+                {
+                    string savedRulesetIdForExactCheck = saved.RootElement.TryGetProperty("rulesetId", out System.Text.Json.JsonElement savedRulesetForExactElement)
+                        && savedRulesetForExactElement.ValueKind == System.Text.Json.JsonValueKind.String
+                            ? savedRulesetForExactElement.GetString() ?? string.Empty : string.Empty;
+                    string? savedPriorityHeritage = saved.RootElement.TryGetProperty("priorityHeritage", out System.Text.Json.JsonElement savedHeritageElement)
+                        && savedHeritageElement.ValueKind == System.Text.Json.JsonValueKind.String
+                            ? savedHeritageElement.GetString() : null;
+                    string? savedMetatype = saved.RootElement.TryGetProperty("metatype", out System.Text.Json.JsonElement savedMetatypeElement)
+                        && savedMetatypeElement.ValueKind == System.Text.Json.JsonValueKind.String
+                            ? savedMetatypeElement.GetString() : null;
+                    ExactCharacterEvidence reopenedExact = await ReadWorkspaceExactCharacterEvidenceAsync(
+                        window,
+                        savedRulesetIdForExactCheck,
+                        restoredWorkspaceId.Value,
+                        savedPriorityHeritage,
+                        savedMetatype,
+                        journeyTimeout.Token);
+                    if (!reopenedExact.Succeeded)
+                    {
+                        throw new InvalidOperationException(
+                            "reopen exact-character check failed against the retained document: "
+                            + reopenedExact.Diagnostics);
+                    }
+                    RecordStep(
+                        steps,
+                        "reopen exact-character verified: "
+                        + $"metatype={reopenedExact.MetatypeName}; metatype_source={reopenedExact.MetatypeSourceId}; "
+                        + $"heritage_rank={reopenedExact.HeritageRank}; "
+                        + $"normal_points={reopenedExact.NormalPointUsed}/{reopenedExact.NormalPointTotal}; "
+                        + $"special_points={reopenedExact.SpecialPointUsed}/{reopenedExact.SpecialPointTotal} (document-backed)");
+                }
+
                 if (restoredOverview.CreationWizard is not null)
                 {
                     throw new InvalidOperationException("The creation wizard is still visible after reopening a finalized character.");
@@ -1496,21 +1537,32 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     createdWorkspaceId,
                     journeyTimeout.Token);
                 int starterAttributeSum = starterAttributeEvidence.Sum;
-                // WIN-009: wizard-driven Priority plans never take the seeded
-                // starter path - the wizard's AI-finish leg produces a finalized
-                // document whose natural sum is the build ghost's allocation,
-                // not the seeded constant. The in-runner assertion for those
-                // plans is parse validity plus a positive natural sum; the
-                // per-attribute values and Dwarf-specific facts are verified
-                // externally from the same workspace document.
+                // WIN-009 gen2 (T747): wizard-driven Priority plans no longer
+                // accept a bare positive sum. The runner binds the SAME
+                // workspace's finalized document to its OWN creation drafts
+                // (the finalization archive in the auxiliary state) and asserts
+                // the metatype/heritage identity, every draft-derived attribute
+                // total, and both point budgets exactly. The check runs here
+                // (before save) and again in the reopen-verify leg against the
+                // retained document after the cold process boundary.
                 bool wizardDrivenPriorityPlan = string.Equals(
                     plan.BuildMethod,
                     "Priority",
                     StringComparison.OrdinalIgnoreCase);
+                ExactCharacterEvidence exactCharacterEvidence = wizardDrivenPriorityPlan
+                    ? await ReadWorkspaceExactCharacterEvidenceAsync(
+                        window,
+                        expectedRulesetId,
+                        createdWorkspaceId,
+                        plan.PriorityHeritage,
+                        plan.Metatype,
+                        journeyTimeout.Token)
+                    : ExactCharacterEvidence.Failed(
+                        "not a wizard-driven Priority plan; the exact-character check does not apply");
                 bool starterAttributesMatchSeededWorkspace =
                     starterAttributeEvidence.IsValid
                     && (wizardDrivenPriorityPlan
-                        ? starterAttributeSum > 0
+                        ? exactCharacterEvidence.Succeeded
                         : starterAttributeSum == SeededStarterNaturalAttributeTotal);
                 bool sectionPreviewOmitsReviewCopy = sectionReviewPanel is null || !sectionReviewPanel.IsVisible;
                 bool visibleWorkspaceNonblank = !string.IsNullOrWhiteSpace(ReadWindowTextSnapshot(window))
@@ -1528,6 +1580,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     + $"natural_attribute_evidence={(starterAttributeEvidence.IsValid ? "valid" : starterAttributeEvidence.Diagnostics)}; "
                     + $"state_open_count={openedOverviewState.OpenWorkspaces.Count}; "
                     + $"session_open_count={openedOverviewState.Session.OpenWorkspaces.Count}");
+                if (wizardDrivenPriorityPlan)
+                {
+                    RecordStep(
+                        steps,
+                        "file-new exact-character evidence: "
+                        + $"metatype={exactCharacterEvidence.MetatypeName}; "
+                        + $"metatype_source={exactCharacterEvidence.MetatypeSourceId}; "
+                        + $"heritage_rank={exactCharacterEvidence.HeritageRank}; "
+                        + $"normal_points={exactCharacterEvidence.NormalPointUsed}/{exactCharacterEvidence.NormalPointTotal}; "
+                        + $"special_points={exactCharacterEvidence.SpecialPointUsed}/{exactCharacterEvidence.SpecialPointTotal}; "
+                        + (exactCharacterEvidence.Succeeded
+                            ? "verdict=exact-match"
+                            : "verdict=mismatch: " + exactCharacterEvidence.Diagnostics));
+                }
                 string fileNewAfterScreenshot = RequireScreenshotPath(
                     await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "file_new_character_visible_workspace-after"),
                     "file_new_character_visible_workspace",
@@ -1544,7 +1610,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         ["new_character_action_opened_visible_workspace"] = newCharacterActionOpenedVisibleWorkspace,
                         ["visible_workspace_nonblank"] = visibleWorkspaceNonblank,
                         ["starter_attributes_match_seeded_workspace"] = starterAttributesMatchSeededWorkspace,
-                        ["section_preview_omits_review_copy"] = sectionPreviewOmitsReviewCopy
+                        ["section_preview_omits_review_copy"] = sectionPreviewOmitsReviewCopy,
+                        // WIN-009 gen2 (T747): for wizard-driven Priority plans this
+                        // is the exact-character verdict; for other plans the exact
+                        // check does not apply and the step trail says so.
+                        ["exact_character_matches_creation_drafts"] =
+                            !wizardDrivenPriorityPlan || exactCharacterEvidence.Succeeded
                     },
                     InteractionNotes:
                     [
@@ -3466,6 +3537,78 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     }
 
     /// <summary>
+    /// WIN-009 gen2 (T747): evidence for the exact-character check. The
+    /// wizard-driven Priority route must prove the finalized workspace
+    /// document IS the character the creation drafts describe - metatype
+    /// identity, heritage rank, every draft-derived attribute total, and
+    /// both point budgets - instead of a bare positive attribute sum.
+    /// Succeeded=false means a binding, parse, or comparison precondition
+    /// failed; Diagnostics explains exactly which one.
+    /// </summary>
+    internal sealed record ExactCharacterEvidence(
+        bool Succeeded,
+        string Diagnostics,
+        string MetatypeName,
+        string MetatypeSourceId,
+        string HeritageRank,
+        int NormalPointTotal,
+        int NormalPointUsed,
+        int SpecialPointTotal,
+        int SpecialPointUsed,
+        IReadOnlyDictionary<string, int> AttributeTotals,
+        IReadOnlyDictionary<string, int> AttributeMinimums)
+    {
+        public static ExactCharacterEvidence Failed(string diagnostics) => new(
+            false,
+            diagnostics,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            -1,
+            -1,
+            -1,
+            -1,
+            new Dictionary<string, int>(),
+            new Dictionary<string, int>());
+
+        public static ExactCharacterEvidence Match(
+            string diagnostics,
+            string metatypeName,
+            string metatypeSourceId,
+            string heritageRank,
+            int normalPointTotal,
+            int normalPointUsed,
+            int specialPointTotal,
+            int specialPointUsed,
+            IReadOnlyDictionary<string, int> attributeTotals,
+            IReadOnlyDictionary<string, int> attributeMinimums) => new(
+            true,
+            diagnostics,
+            metatypeName,
+            metatypeSourceId,
+            heritageRank,
+            normalPointTotal,
+            normalPointUsed,
+            specialPointTotal,
+            specialPointUsed,
+            attributeTotals,
+            attributeMinimums);
+    }
+
+    /// <summary>Parsed XML rows backing the exact-character check.</summary>
+    internal sealed record ExactCharacterRows(
+        bool Succeeded,
+        string Diagnostics,
+        string MetatypeName,
+        IReadOnlyDictionary<string, int> Totals,
+        IReadOnlyDictionary<string, int> Minimums)
+    {
+        public static ExactCharacterRows Failed(string diagnostics) => new(
+            false, diagnostics, string.Empty,
+            new Dictionary<string, int>(), new Dictionary<string, int>());
+    }
+
+    /// <summary>
     /// Gen-12 (clarification 7737): the legacy <c>totalattributes</c> creation
     /// budget is no longer persisted for SR5 payloads, so the seeded starter
     /// attribute assertion reads the actual workspace document through the
@@ -3490,6 +3633,67 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         return ReadWorkspaceNaturalAttributeTotalAsync(expectedRulesetId, expectedWorkspaceId,
             () => window.SnapshotStateForAutomation().WorkspaceId,
             boundClient.CaptureOwnerContext, boundClient.GetWorkspaceAsync, ct);
+    }
+
+    /// <summary>
+    /// WIN-009 gen2 (T747): window-bound exact-character evidence read.
+    /// Same owner-bound seam and retry discipline as the starter-attribute
+    /// read; the classification itself is the pure
+    /// ClassifyExactCharacterAgainstCreationDrafts function so tests can
+    /// exercise every refusal branch without a window.
+    /// </summary>
+    private static Task<ExactCharacterEvidence> ReadWorkspaceExactCharacterEvidenceAsync(
+        MainWindow window,
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        CancellationToken ct)
+    {
+        IChummerClient client = App.Services?.GetRequiredService<IChummerClient>()
+            ?? throw new InvalidOperationException(
+                "exact character evidence failed: the app service provider is unavailable.");
+        IOwnerBoundWorkspaceMutationClient boundClient = client as IOwnerBoundWorkspaceMutationClient
+            ?? throw new InvalidOperationException(
+                "exact character evidence failed: the workspace client is not owner-bound.");
+        return ReadWorkspaceExactCharacterEvidenceAsync(
+            expectedRulesetId, expectedWorkspaceId, expectedHeritageRank, expectedMetatypeName,
+            () => window.SnapshotStateForAutomation().WorkspaceId,
+            boundClient.CaptureOwnerContext, boundClient.GetWorkspaceAsync, ct);
+    }
+
+    // The journey and regression tests use the same asynchronous observation.
+    internal static async Task<ExactCharacterEvidence> ReadWorkspaceExactCharacterEvidenceAsync(
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        // Same harness-timing retry discipline as the starter-attribute
+        // evidence: owner-authority transition races are re-tried by
+        // RE-CAPTURING the owner stamp and the active workspace binding from
+        // scratch (never reusing a stale stamp).
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await ReadWorkspaceExactCharacterEvidenceOnceAsync(
+                    expectedRulesetId, expectedWorkspaceId, expectedHeritageRank, expectedMetatypeName,
+                    activeWorkspace, captureOwner, readWorkspace, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                attempt < 5
+                && (ex.Message.Contains("Owner authority changed before dispatch", StringComparison.Ordinal)
+                    || ex.Message.Contains("The acquired owner authority does not match the requested operation", StringComparison.Ordinal)))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
+            }
+        }
     }
 
     // The journey and regression tests use the same asynchronous observation.
@@ -4231,6 +4435,387 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         return sum <= int.MaxValue
             ? new StarterAttributeEvidence((int)sum, "exactly one valid totalvalue per each of 8 natural attributes")
             : new StarterAttributeEvidence(-1, "natural attribute sum overflow");
+    }
+
+    /// <summary>
+    /// WIN-009 gen2 (T747): parses EVERY attribute row (natural and special)
+    /// for exactly one scalar totalvalue and metatypemin each, plus exactly
+    /// one scalar metatype element. Duplicate, missing, or malformed rows
+    /// reject the evidence instead of silently comparing a partial set.
+    /// </summary>
+    internal static ExactCharacterRows ParseExactCharacterRows(XElement root)
+    {
+        Dictionary<string, int> totals = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, int> minimums = new(StringComparer.OrdinalIgnoreCase);
+        List<string> problems = new();
+        if (root.Elements("attributes").Count() > 1)
+            return ExactCharacterRows.Failed("duplicate attributes containers");
+        if (root.Elements("metatype").ToArray() is not [var metatypeElement]
+            || metatypeElement.HasElements || metatypeElement.HasAttributes)
+        {
+            return ExactCharacterRows.Failed("workspace requires exactly one scalar metatype element");
+        }
+        string metatypeName = metatypeElement.Value.Trim();
+        if (string.IsNullOrWhiteSpace(metatypeName))
+        {
+            return ExactCharacterRows.Failed("workspace metatype element is blank");
+        }
+
+        foreach (XElement attribute in root.Element("attributes")?.Elements("attribute")
+            ?? Enumerable.Empty<XElement>())
+        {
+            if (attribute.Elements("name").ToArray() is not [var nameElement]
+                || nameElement.HasElements || nameElement.HasAttributes)
+            {
+                problems.Add("attribute entry requires exactly one scalar name");
+                continue;
+            }
+            string name = nameElement.Value.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                problems.Add("attribute entry with blank name");
+                continue;
+            }
+            if (attribute.Elements("totalvalue").ToArray() is not [var total]
+                || total.HasElements || total.HasAttributes
+                || !int.TryParse(total.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int totalValue)
+                || totalValue < 0)
+            {
+                problems.Add("attribute " + name + " has missing or malformed totalvalue");
+                continue;
+            }
+            if (attribute.Elements("metatypemin").ToArray() is not [var min]
+                || min.HasElements || min.HasAttributes
+                || !int.TryParse(min.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int minValue)
+                || minValue < 0)
+            {
+                problems.Add("attribute " + name + " has missing or malformed metatypemin");
+                continue;
+            }
+            if (totals.ContainsKey(name) || minimums.ContainsKey(name))
+            {
+                problems.Add("duplicate attribute entry: " + name);
+                continue;
+            }
+            totals[name] = totalValue;
+            minimums[name] = minValue;
+        }
+
+        if (problems.Count > 0)
+        {
+            return ExactCharacterRows.Failed(
+                "workspace attribute parse rejected: " + string.Join("; ", problems));
+        }
+
+        return new ExactCharacterRows(
+            true,
+            "parsed " + totals.Count + " attribute rows",
+            metatypeName,
+            totals,
+            minimums);
+    }
+
+    /// <summary>
+    /// WIN-009 gen2 (T747): the pure exact-character classifier. Returns
+    /// null ONLY when the workspace document's XML facts and the finalized
+    /// creation drafts agree on every checked identity: metatype name and
+    /// source id, heritage rank, every draft-derived attribute total and
+    /// metatype minimum, the fully-spent normal budget, and the special
+    /// allocation budget. Any refusal is a distinct diagnostic; nothing is
+    /// silently defaulted.
+    /// </summary>
+    internal static string? ClassifyExactCharacterAgainstCreationDrafts(
+        IReadOnlyDictionary<string, int> xmlTotals,
+        IReadOnlyDictionary<string, int> xmlMinimums,
+        string xmlMetatypeName,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        CharacterCreationPrerequisiteDraft? prerequisite,
+        CharacterCreationAttributesDraft? attributes)
+    {
+        const string prefix = "exact-character mismatch: ";
+        if (prerequisite is null)
+        {
+            return prefix + "the finalized document carries no prerequisite draft";
+        }
+        if (attributes is null)
+        {
+            return prefix + "the finalized document carries no attributes draft";
+        }
+        CharacterCreationPriorityHeritageSelection? heritage = prerequisite.HeritageSelection;
+        if (heritage is null)
+        {
+            return prefix + "the prerequisite draft carries no heritage selection";
+        }
+        if (!string.IsNullOrWhiteSpace(expectedMetatypeName)
+            && !string.Equals(xmlMetatypeName, expectedMetatypeName, StringComparison.Ordinal))
+        {
+            return prefix + "workspace metatype '" + xmlMetatypeName
+                + "' does not match the plan's metatype '" + expectedMetatypeName + "'";
+        }
+        if (!string.Equals(xmlMetatypeName, heritage.MetatypeName, StringComparison.Ordinal))
+        {
+            return prefix + "workspace metatype '" + xmlMetatypeName
+                + "' does not match the draft heritage selection '" + heritage.MetatypeName + "'";
+        }
+        if (!string.Equals(attributes.MetatypeSourceId, heritage.MetatypeSourceId, StringComparison.Ordinal))
+        {
+            return prefix + "attributes draft metatype source '" + attributes.MetatypeSourceId
+                + "' does not match the heritage selection source '" + heritage.MetatypeSourceId + "'";
+        }
+        if (!string.IsNullOrWhiteSpace(expectedHeritageRank))
+        {
+            CharacterCreationPriorityAssignment? heritageAssignment = prerequisite.Assignments
+                .FirstOrDefault(a => string.Equals(a.CategoryId, "heritage", StringComparison.Ordinal));
+            if (heritageAssignment is null)
+            {
+                return prefix + "the prerequisite draft carries no heritage assignment";
+            }
+            if (!string.Equals(heritageAssignment.Rank, expectedHeritageRank, StringComparison.Ordinal))
+            {
+                return prefix + "heritage assignment rank '" + heritageAssignment.Rank
+                    + "' does not match the plan's heritage rank '" + expectedHeritageRank + "'";
+            }
+        }
+
+        List<string> mismatches = new();
+        foreach (CharacterCreationAttributeProjection row in attributes.Attributes)
+        {
+            if (!xmlTotals.TryGetValue(row.AttributeId, out int xmlTotal))
+            {
+                mismatches.Add("workspace is missing attribute " + row.AttributeId + " totalvalue");
+                continue;
+            }
+            if (xmlTotal != row.Current)
+            {
+                mismatches.Add(row.AttributeId + " total " + xmlTotal
+                    + " does not match draft current " + row.Current);
+            }
+            if (!xmlMinimums.TryGetValue(row.AttributeId, out int xmlMinimum))
+            {
+                mismatches.Add("workspace is missing attribute " + row.AttributeId + " metatypemin");
+                continue;
+            }
+            if (xmlMinimum != row.Minimum)
+            {
+                mismatches.Add(row.AttributeId + " metatypemin " + xmlMinimum
+                    + " does not match draft minimum " + row.Minimum);
+            }
+        }
+        if (mismatches.Count > 0)
+        {
+            return prefix + string.Join("; ", mismatches);
+        }
+
+        string[] naturals = { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" };
+        List<string> missingNaturals = naturals
+            .Where(n => !xmlTotals.ContainsKey(n) || !xmlMinimums.ContainsKey(n))
+            .ToList();
+        if (missingNaturals.Count > 0)
+        {
+            return prefix + "workspace is missing natural attribute rows: "
+                + string.Join(",", missingNaturals);
+        }
+        int normalSpent = naturals.Sum(n => Math.Max(0, xmlTotals[n] - xmlMinimums[n]));
+        if (normalSpent != attributes.NormalPointUsed)
+        {
+            return prefix + "normal attribute budget spent " + normalSpent
+                + " does not match the draft's used " + attributes.NormalPointUsed;
+        }
+        if (attributes.NormalPointUsed != attributes.NormalPointTotal)
+        {
+            return prefix + "normal attribute budget " + attributes.NormalPointUsed
+                + "/" + attributes.NormalPointTotal + " is not fully spent";
+        }
+        if (prerequisite.EffectiveNormalAttributePoints != attributes.NormalPointTotal)
+        {
+            return prefix + "prerequisite draft effective normal points "
+                + prerequisite.EffectiveNormalAttributePoints
+                + " do not match the attributes draft total " + attributes.NormalPointTotal;
+        }
+
+        // Only allocation-backed special rows count as special-point spends:
+        // essence and metatype-granted special minimums are metatype facts,
+        // not creation-budget spends.
+        int specialSpent = 0;
+        foreach (CharacterCreationAttributeAllocation allocation in attributes.Allocations)
+        {
+            CharacterCreationAttributeProjection? row = attributes.Attributes
+                .FirstOrDefault(a => string.Equals(a.AttributeId, allocation.AttributeId, StringComparison.OrdinalIgnoreCase));
+            if (row is null || !string.Equals(row.Category, "special", StringComparison.Ordinal))
+            {
+                continue;
+            }
+            if (!xmlTotals.TryGetValue(row.AttributeId, out int specialTotal)
+                || !xmlMinimums.TryGetValue(row.AttributeId, out int specialMinimum))
+            {
+                return prefix + "workspace is missing special attribute " + row.AttributeId + " rows";
+            }
+            specialSpent += Math.Max(0, specialTotal - specialMinimum);
+        }
+        if (specialSpent != attributes.SpecialPointUsed)
+        {
+            return prefix + "special attribute budget spent " + specialSpent
+                + " does not match the draft's used " + attributes.SpecialPointUsed;
+        }
+        if (attributes.SpecialPointUsed > attributes.SpecialPointTotal)
+        {
+            return prefix + "special attribute budget spent " + attributes.SpecialPointUsed
+                + " exceeds the draft total " + attributes.SpecialPointTotal;
+        }
+        if (prerequisite.TotalSpecialAttributePoints != attributes.SpecialPointTotal)
+        {
+            return prefix + "prerequisite draft special points "
+                + prerequisite.TotalSpecialAttributePoints
+                + " do not match the attributes draft total " + attributes.SpecialPointTotal;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// WIN-009 gen2 (T747): single-attempt exact-character read. Same
+    /// binding, owner-capture, and post-await re-verification discipline as
+    /// the starter-attribute Once; on a verified read it classifies the XML
+    /// facts against the document's own finalization-archive drafts.
+    /// </summary>
+    private static async Task<ExactCharacterEvidence> ReadWorkspaceExactCharacterEvidenceOnceAsync(
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(expectedWorkspaceId))
+        {
+            return ExactCharacterEvidence.Failed("created workspace identity is missing");
+        }
+        if (NormalizeRulesetFamily(expectedRulesetId) != "sr5")
+        {
+            return ExactCharacterEvidence.Failed("exact character evidence requires the SR5 journey");
+        }
+        CharacterWorkspaceId? workspaceId = activeWorkspace();
+        if (workspaceId is null)
+        {
+            return ExactCharacterEvidence.Failed("no active workspace in overview snapshot");
+        }
+        if (!string.Equals(workspaceId.Value.Value, expectedWorkspaceId, StringComparison.Ordinal))
+        {
+            return ExactCharacterEvidence.Failed(
+                "workspace binding mismatch: overview reports " + workspaceId.Value.Value
+                + ", expected workspace was " + expectedWorkspaceId);
+        }
+
+        OwnerContextStamp owner = captureOwner();
+        if (!owner.IsValid)
+        {
+            return ExactCharacterEvidence.Failed("pre-await owner context is not valid");
+        }
+
+        CommandResult<WorkspaceDocumentSnapshot> read = await readWorkspace(
+            owner, workspaceId.Value, ct);
+        ct.ThrowIfCancellationRequested();
+
+        CharacterWorkspaceId? postAwaitWorkspace = activeWorkspace();
+        if (!string.Equals(
+                postAwaitWorkspace?.Value,
+                workspaceId.Value.Value,
+                StringComparison.Ordinal))
+        {
+            return ExactCharacterEvidence.Failed(
+                "workspace transitioned across the read await: pre=" + workspaceId.Value.Value
+                + " post=" + (postAwaitWorkspace?.Value ?? "null"));
+        }
+
+        OwnerContextStamp postAwaitOwner = captureOwner();
+        if (postAwaitOwner != owner)
+        {
+            return ExactCharacterEvidence.Failed(
+                "owner authority transitioned across the read await (revision "
+                + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")");
+        }
+
+        if (!read.Success || read.Outcome != WorkspaceOperationOutcome.Success
+            || read.Value?.Document is not { } document
+            || document.Format != WorkspaceDocumentFormat.NativeXml)
+        {
+            return ExactCharacterEvidence.Failed("workspace read failed or document is not NativeXml");
+        }
+        if (read.Value.Id != workspaceId.Value)
+        {
+            return ExactCharacterEvidence.Failed("workspace response does not match the expected workspace");
+        }
+        if (!RulesetFamilyMatches(document.RulesetId, expectedRulesetId, out string rulesetDiagnostic))
+        {
+            return ExactCharacterEvidence.Failed(rulesetDiagnostic);
+        }
+
+        XElement? root;
+        try
+        {
+            root = XDocument.Parse(document.State.Payload, LoadOptions.PreserveWhitespace).Root;
+        }
+        catch (System.Xml.XmlException parseFailure)
+        {
+            return ExactCharacterEvidence.Failed(
+                "workspace payload is not parseable XML: " + parseFailure.Message);
+        }
+        if (root is not { Name.LocalName: "character" })
+        {
+            return ExactCharacterEvidence.Failed("workspace payload root is not <character>");
+        }
+        if (root.Elements("gameedition").ToArray() is not [var edition]
+            || edition.HasElements || edition.HasAttributes)
+        {
+            return ExactCharacterEvidence.Failed("workspace requires exactly one scalar gameedition element");
+        }
+        string? documentEdition = edition.Value.Trim();
+        if (!DocumentEditionMatches(documentEdition, expectedRulesetId, out string editionDiagnostic))
+        {
+            return ExactCharacterEvidence.Failed(editionDiagnostic);
+        }
+
+        ExactCharacterRows parsed = ParseExactCharacterRows(root);
+        if (!parsed.Succeeded)
+        {
+            return ExactCharacterEvidence.Failed(parsed.Diagnostics);
+        }
+
+        WorkspaceDocumentAuxiliaryState auxiliary = document.AuxiliaryState;
+        CharacterCreationFinalizationArchive? archive = auxiliary.CharacterCreationFinalizationArchive;
+        CharacterCreationPrerequisiteDraft? prerequisite = archive?.State.CharacterCreationPrerequisiteDraft;
+        CharacterCreationAttributesDraft? attributes = archive?.State.CharacterCreationAttributesDraft;
+        string? verdict = ClassifyExactCharacterAgainstCreationDrafts(
+            parsed.Totals,
+            parsed.Minimums,
+            parsed.MetatypeName,
+            expectedHeritageRank,
+            expectedMetatypeName,
+            prerequisite,
+            attributes);
+        if (verdict is not null)
+        {
+            return ExactCharacterEvidence.Failed(verdict);
+        }
+
+        CharacterCreationPriorityHeritageSelection heritage = prerequisite!.HeritageSelection!;
+        string heritageRank = prerequisite.Assignments
+            .FirstOrDefault(a => string.Equals(a.CategoryId, "heritage", StringComparison.Ordinal))?.Rank
+            ?? string.Empty;
+        return ExactCharacterEvidence.Match(
+            "exact match: metatype, heritage rank, every draft attribute, and both budgets verified",
+            heritage.MetatypeName,
+            heritage.MetatypeSourceId,
+            heritageRank,
+            attributes!.NormalPointTotal,
+            attributes.NormalPointUsed,
+            attributes.SpecialPointTotal,
+            attributes.SpecialPointUsed,
+            parsed.Totals,
+            parsed.Minimums);
     }
 
     /// <summary>
