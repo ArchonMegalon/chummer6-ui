@@ -1496,9 +1496,22 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     createdWorkspaceId,
                     journeyTimeout.Token);
                 int starterAttributeSum = starterAttributeEvidence.Sum;
+                // WIN-009: wizard-driven Priority plans never take the seeded
+                // starter path - the wizard's AI-finish leg produces a finalized
+                // document whose natural sum is the build ghost's allocation,
+                // not the seeded constant. The in-runner assertion for those
+                // plans is parse validity plus a positive natural sum; the
+                // per-attribute values and Dwarf-specific facts are verified
+                // externally from the same workspace document.
+                bool wizardDrivenPriorityPlan = string.Equals(
+                    plan.BuildMethod,
+                    "Priority",
+                    StringComparison.OrdinalIgnoreCase);
                 bool starterAttributesMatchSeededWorkspace =
                     starterAttributeEvidence.IsValid
-                    && starterAttributeSum == SeededStarterNaturalAttributeTotal;
+                    && (wizardDrivenPriorityPlan
+                        ? starterAttributeSum > 0
+                        : starterAttributeSum == SeededStarterNaturalAttributeTotal);
                 bool sectionPreviewOmitsReviewCopy = sectionReviewPanel is null || !sectionReviewPanel.IsVisible;
                 bool visibleWorkspaceNonblank = !string.IsNullOrWhiteSpace(ReadWindowTextSnapshot(window))
                     && !string.IsNullOrWhiteSpace(openedOverviewState.ActiveSectionJson);
