@@ -59,6 +59,30 @@ public partial class MainWindow
         shellFrame = _transientStateCoordinator.ApplyShellFrame(shellFrame);
         _controls.ApplyShellFrame(shellFrame);
         ApplyWorkbenchChromeVisibility(shellFrame);
+        UpdateWindowTitleFromFrame(shellFrame);
+    }
+
+    /// <summary>Gen6 T794: reflect the active workspace and its save state in the native title bar.</summary>
+    private void UpdateWindowTitleFromFrame(MainWindowShellFrame shellFrame)
+    {
+        string baseTitle = Title;
+        int separator = baseTitle.IndexOf(" - ", StringComparison.Ordinal);
+        if (separator > 0)
+        {
+            baseTitle = baseTitle[..separator];
+        }
+
+        WorkspaceStripState strip = shellFrame.ChromeState.WorkspaceStrip;
+        string summary = strip.WorkspaceText;
+        if (string.IsNullOrWhiteSpace(summary) || summary.IndexOf("none", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return;
+        }
+
+        string saveState = shellFrame.ChromeState.StatusStrip.SaveState;
+        Title = string.IsNullOrEmpty(saveState)
+            ? baseTitle + " - " + summary
+            : baseTitle + " - " + summary + " (" + saveState + ")";
     }
 
     private void ApplyWorkbenchChromeVisibility(MainWindowShellFrame shellFrame)

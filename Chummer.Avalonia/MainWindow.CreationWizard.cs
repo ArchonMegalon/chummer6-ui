@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Avalonia.Controls;
 using Chummer.Application.Characters;
 using Chummer.Application.Owners;
@@ -49,6 +49,12 @@ public partial class MainWindow
     private Chummer.Contracts.Workspaces.CharacterWorkspaceId? _creationSr6WizardWorkspaceId;
     private OwnerContextStamp? _creationSr6WizardOwner;
     private string? _creationSr6WizardSnapshotDigest;
+    // Gen6 T795: owned-window migration of the SR5 creation wizard. The SAME
+    // CharacterCreationWizardControl instance is reparented between the inline
+    // center-surface host and the owned window; journeys and UI automation keep
+    // working because FindWizardControl scans desktop windows too.
+    private Controls.OwnedWizardWindow? _creationWizardOwnedWindow;
+    private bool _creationWizardOwnedWindowBound;
 
     private void InitializeCreationWizard()
     {
@@ -96,6 +102,7 @@ public partial class MainWindow
     private void DetachCreationWizard()
     {
         _creationWizardLifetime.Cancel();
+        CloseCreationWizardOwnedWindow();
         CloseSr6WizardWindow();
         _creationAttributesWindow?.Close();
         _creationSkillsWindow?.Close();
@@ -171,6 +178,15 @@ public partial class MainWindow
             _creationJourneyFinishOwner = default;
             CharacterCreationWizardControl.ClearContactLifestylePreviews();
             CharacterCreationWizardControl.ClearJourneyPreviews();
+            return;
+        }
+
+        // Gen6 T795: route the wizard into the owned window when the desktop
+        // owned-wizard session gate is enabled; the inline host remains the
+        // default (and headless-journey) path until the gate is set.
+        if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
+        {
+            RouteCreationWizardToOwnedWindow(overview, snapshot);
             return;
         }
 
@@ -1904,4 +1920,71 @@ public partial class MainWindow
         openWindow?.Close();
     }
 
+    /// <summary>
+    /// Gen6 T795: reparents the SR5 creation wizard control into an owned
+    /// window while a creation draft is active, and back into the inline
+    /// center-surface host when the draft ends. The same control instance
+    /// moves; event wiring and state binding are untouched.
+    /// </summary>
+    private void RouteCreationWizardToOwnedWindow(CharacterOverviewState overview, CharacterCreationWizardSnapshot snapshot)
+    {
+        if (snapshot is null)
+        {
+            CloseCreationWizardOwnedWindow();
+            return;
+        }
+
+        if (_creationWizardOwnedWindow is { IsVisible: true } open
+            && _creationWizardOwnedWindowBound
+            && _boundCreationWizardSnapshot?.WorkspaceId == snapshot.WorkspaceId)
+        {
+            open.SetStepCaption(snapshot.ActiveStepId);
+            return;
+        }
+
+        CloseCreationWizardOwnedWindow();
+        var hosted = new Controls.OwnedWizardWindow("Character Creation", CharacterCreationWizardControl);
+        _creationWizardOwnedWindow = hosted;
+        _creationWizardOwnedWindowBound = true;
+        hosted.Closed += (_, _) =>
+        {
+            if (!ReferenceEquals(_creationWizardOwnedWindow, hosted))
+                return;
+            _creationWizardOwnedWindow = null;
+            _creationWizardOwnedWindowBound = false;
+            // Returning the control to the inline host keeps the center surface
+            // authoritative when the user closes the wizard window.
+            ReturnCreationWizardToInlineHost();
+        };
+        hosted.SetStepCaption(snapshot.ActiveStepId);
+        hosted.Show(this);
+    }
+
+    /// <summary>Gen6 T795: closes the owned creation wizard window, if any.</summary>
+    private void CloseCreationWizardOwnedWindow()
+    {
+        Controls.OwnedWizardWindow? openWindow = _creationWizardOwnedWindow;
+        _creationWizardOwnedWindow = null;
+        _creationWizardOwnedWindowBound = false;
+        if (openWindow is not null)
+        {
+            // Detach the hosted control first so the Closed handler sees the
+            // control already returned to the inline host (no re-entry).
+            openWindow.SetContent(null);
+            openWindow.Close();
+        }
+        ReturnCreationWizardToInlineHost();
+    }
+
+    /// <summary>Gen6 T795: puts the wizard control back into the inline center-surface host.</summary>
+    private void ReturnCreationWizardToInlineHost()
+    {
+        if (CharacterCreationWizardControl.Parent is Controls.OwnedWizardWindow)
+        {
+            // The window owns the control via its ContentPresenter; closing the
+            // window detaches it. Re-add to the inline host grid.
+            InlineWizardHost.Children.Add(CharacterCreationWizardControl);
+            CharacterCreationWizardControl.IsVisible = true;
+        }
+    }
 }

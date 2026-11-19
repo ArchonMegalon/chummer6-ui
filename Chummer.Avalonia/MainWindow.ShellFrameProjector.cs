@@ -75,7 +75,8 @@ internal static class MainWindowShellFrameProjector
                     TimeState: DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.shell.status.time", language, DateTimeOffset.UtcNow.ToString("u")),
                     ComplianceState: ShellStatusTextFormatter.BuildComplianceState(shellSurface, state.Preferences))
                 {
-                    IsBusy = state.IsBusy || shellSurface.IsBusy
+                    IsBusy = state.IsBusy || shellSurface.IsBusy,
+                    SaveState = BuildSaveStateText(workspaceContext, language)
                 }),
             SectionHostState: new SectionHostState(
                 SectionId: hasProjectedSectionSurface ? state.ActiveSectionId : null,
@@ -401,6 +402,16 @@ internal static class MainWindowShellFrameProjector
             || workspaceContext.OpenWorkspaceCount > 0
             || (!string.IsNullOrWhiteSpace(shellSurface.Notice)
                 && shellSurface.Notice.StartsWith("Restored ", StringComparison.OrdinalIgnoreCase));
+
+    private static string BuildSaveStateText(ActiveWorkspaceContext workspaceContext, string language)
+    {
+        if (workspaceContext.ActiveWorkspaceId is null)
+        {
+            return string.Empty;
+        }
+
+        return LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language);
+    }
 
     private static string LocalizeSaveStatus(string saveStatus, string language)
         => saveStatus switch

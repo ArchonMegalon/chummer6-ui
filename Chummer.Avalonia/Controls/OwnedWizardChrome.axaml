@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.OwnedWizardChrome">
+  <!-- Gen6 T795: compact wizard chrome strip rendered by OwnedWizardWindow.
+       The native OS title bar remains (standard Window); this strip carries
+       the wizard step caption and a right-aligned host watermark. -->
+  <Border Background="{DynamicResource ChummerShellToolbarBackgroundBrush}"
+          BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+          BorderThickness="0,0,0,1"
+          Padding="{DynamicResource ChummerShellSpacing}">
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock x:Name="CaptionText" Classes="shell-caption" Text=""
+                 VerticalAlignment="Center" TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis" />
+      <TextBlock Grid.Column="1" Classes="shell-caption" Text="Chummer6"
+                 VerticalAlignment="Center" Opacity="0.7" />
+    </Grid>
+  </Border>
+</UserControl>

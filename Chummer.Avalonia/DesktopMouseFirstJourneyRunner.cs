@@ -9962,7 +9962,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     private static CharacterCreationWizardControl? FindWizardControl(MainWindow window)
         => window.GetVisualDescendants()
             .OfType<CharacterCreationWizardControl>()
-            .FirstOrDefault(control => control.IsVisible);
+            .FirstOrDefault(control => control.IsVisible)
+            // Gen6 T795: the owned-window host moves the SAME control into a
+            // separate top-level window; scan the desktop set as the fallback.
+            ?? (global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows
+                    .SelectMany(w => w.GetVisualDescendants())
+                    .OfType<CharacterCreationWizardControl>()
+                    .FirstOrDefault(control => control.IsVisible)
+                : null);
 
     private static async Task<CharacterCreationWizardControl> WaitForWizardControlAsync(
         MainWindow window,

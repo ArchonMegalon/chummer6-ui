@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="using:Chummer.Avalonia.Controls"
+        x:Class="Chummer.Avalonia.Controls.OwnedWizardWindow"
+        Title="Wizard"
+        Width="1040" Height="720"
+        MinWidth="760" MinHeight="520"
+        CanResize="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="{DynamicResource ChummerShellFontFamily}"
+        FontSize="{DynamicResource ChummerShellFontSizeBody}"
+        TransparencyLevelHint="None"
+        Background="{DynamicResource ChummerShellHardPanelBrush}">
+  <Panel>
+    <shell:OwnedWizardChrome x:Name="WizardChrome" />
+    <ContentPresenter x:Name="WizardContentHost" Margin="{DynamicResource ChummerShellSpacing}" />
+  </Panel>
+</Window>
