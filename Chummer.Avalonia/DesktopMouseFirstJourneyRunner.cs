@@ -390,7 +390,9 @@ internal static class DesktopMouseFirstJourneyRunner
                     steps,
                     screenshotPaths,
                     journeyTimeout.Token,
-                    recordPointerAction);
+                    recordPointerAction,
+                    plan.CharacterName,
+                    plan.CharacterAlias);
                 userJourneyWorkflows.Add(sr6Evidence);
                 DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
                 foreach (KeyValuePair<string, bool> sr6Assertion in sr6Evidence.Assertions)
@@ -1857,7 +1859,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     steps,
                     screenshotPaths,
                     journeyTimeout.Token,
-                    recordPointerAction));
+                    recordPointerAction,
+                    plan.CharacterName,
+                    plan.CharacterAlias));
             }
 
             DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
@@ -5535,7 +5539,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             List<string> steps,
             List<string> screenshotPaths,
             CancellationToken ct,
-            Action recordPointerAction)
+            Action recordPointerAction,
+            string characterName,
+            string characterAlias)
         {
         // Gen18 (T664/T672): the FINAL Body rank the natural-limit demo
         // committed - visible to the receipt write at the end of the leg
@@ -5553,8 +5559,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // on the resulting career workspace.
             await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
             await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
-            await SetDialogTextFieldAsync(window, "newCharacterName", "Win109 Sr6 Qualifier", steps, ct);
-            await SetDialogTextFieldAsync(window, "newCharacterAlias", "W09S6", steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterName", characterName, steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterAlias", characterAlias, steps, ct);
             await SetDialogSelectFieldAsync(
                 window,
                 "newCharacterRulesetId",
