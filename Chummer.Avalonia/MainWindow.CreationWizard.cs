@@ -120,6 +120,10 @@ public partial class MainWindow
         _creationAttributesWindow = null;
         CharacterCreationWizardControl.StepRequested -= CreationWizard_OnStepRequested;
         CharacterCreationWizardControl.ContinueRequested -= CreationWizard_OnContinueRequested;
+        // Gen7: symmetric unsubscribe - CancelRequested was subscribed in the
+        // attach block (wave-4 W1 footer cancel) but never released here, so a
+        // detached wizard kept the closed host in its invocation list.
+        CharacterCreationWizardControl.CancelRequested -= CreationWizard_OnCancelRequested;
         CharacterCreationWizardControl.BuildGhostQuestionSubmitted -= CreationWizard_OnBuildGhostQuestionSubmitted;
         CharacterCreationWizardControl.RecoverCheckpointRequested -= CreationWizard_OnRecoverCheckpointRequested;
         CharacterCreationWizardControl.ExportCheckpointRequested -= CreationWizard_OnExportCheckpointRequested;

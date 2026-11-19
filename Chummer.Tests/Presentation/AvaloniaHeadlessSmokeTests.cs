@@ -168,6 +168,84 @@ public sealed class AvaloniaHeadlessSmokeTests
     }
 
     [TestMethod]
+    public void Wizard_footer_buttons_render_in_distinct_columns_after_gen7_column_fix()
+    {
+        WithHeadlessUi(() =>
+        {
+            Chummer.Avalonia.Controls.CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            try
+            {
+                // Gen7: the footer grid now defines six columns (Auto,*,Auto,Auto,Auto,Auto);
+                // FinalizeButton (column 5) previously referenced a column beyond the
+                // definition. Verify every footer button resolves a valid in-bounds
+                // column and that no two simultaneously-visible buttons share a column.
+                Button finalize = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finalize");
+                Button back = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-back");
+                Button next = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-continue");
+
+                Grid footer = finalize.GetVisualAncestors().OfType<Grid>().First();
+                Assert.AreEqual(6, footer.ColumnDefinitions.Count,
+                    "footer grid must define six columns after the gen7 fix");
+
+                int finalizeColumn = Grid.GetColumn(finalize);
+                int backColumn = Grid.GetColumn(back);
+                int nextColumn = Grid.GetColumn(next);
+                Assert.AreEqual(5, finalizeColumn, "Finalize stays in column 5");
+                Assert.AreEqual(3, backColumn);
+                Assert.AreEqual(4, nextColumn);
+                Assert.IsTrue(finalizeColumn < footer.ColumnDefinitions.Count,
+                    "Finalize column must be within the defined column set");
+
+                // Visibility mutual exclusion on the shared column-5 slot.
+                Button finishWithAi = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finish-with-ai");
+                control.SetFinishWithAiFeatureEnabled(true);
+                control.SetFinishWithAiAvailability(true);
+                control.SetFinalizeAvailability(true, Array.Empty<string>());
+                Assert.IsTrue(finalize.IsVisible, "finalize must be visible when authoritative review is available");
+                Assert.IsFalse(finishWithAi.IsVisible,
+                    "shared column-5 slot must never render both finalize buttons at once");
+            }
+            finally
+            {
+                host.Close();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_completion_blockers_empty_result_reports_truth_not_pending_check()
+    {
+        WithHeadlessUi(() =>
+        {
+            Chummer.Avalonia.Controls.CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            try
+            {
+                var snapshot = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+                var session = new Chummer.Presentation.Overview.CharacterCreationWizardDesktopSession();
+                var state = session.Bind(snapshot);
+                control.SetState(state);
+                TextBlock completion = control.FindControl<TextBlock>("CompletionBlockerText")
+                    ?? throw new InvalidOperationException("CompletionBlockerText not found.");
+                Assert.IsFalse(
+                    (completion.Text ?? string.Empty).StartsWith("Checking", StringComparison.Ordinal),
+                    "an empty authoritative blocker list must not read as a pending check");
+            }
+            finally
+            {
+                host.Close();
+            }
+        });
+    }
+
+    [TestMethod]
     public void Life_module_controls_dispatch_the_version_and_follow_up_and_offer_explicit_finish()
     {
         WithHeadlessUi(() =>

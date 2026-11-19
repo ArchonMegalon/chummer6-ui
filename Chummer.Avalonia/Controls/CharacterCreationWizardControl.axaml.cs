@@ -749,6 +749,13 @@ public partial class CharacterCreationWizardControl : UserControl
         var canReview = !_finalizeBusy && _finalizeAvailable;
         FinalizeButton.IsVisible = canReview;
         FinalizeButton.IsEnabled = canReview;
+        // Column-5 slot is shared with FinishWithAiButton (single footer slot);
+        // both become available on the same finalization-read authority, so the
+        // explicit human Review/Finish affordance wins and the AI sibling hides.
+        if (canReview)
+        {
+            FinishWithAiButton.IsVisible = false;
+        }
         if (_finalizeStatus is null)
         {
             FinalizeStatusText.Text = canReview
@@ -3489,7 +3496,11 @@ public partial class CharacterCreationWizardControl : UserControl
     {
         if (blockers.Count == 0)
         {
-            return "Checking what this character still needs before finalization...";
+            // Gen7 fix: an empty authoritative blocker list is NOT a loading
+            // state - "Checking..." was shown unconditionally and read as a
+            // false pending promise. State the truth: nothing known is missing;
+            // finalization availability is governed separately.
+            return "No known prerequisites are missing for this step.";
         }
         return "Before finalizing, finish these steps: "
             + DescribeBlockerCodes(blockers) + ".";
@@ -3529,7 +3540,7 @@ public partial class CharacterCreationWizardControl : UserControl
         "creation-wizard-finalization-authority-unavailable"
             => "waiting for finalization review to become available",
         "creation-wizard-life-module-authority-unavailable"
-            => "waiting for the lifestyle options to load",
+            => "waiting for the Life Modules options to load",
         "creation-wizard-contacts-authority-unavailable"
             => "waiting for the contacts options to load",
         "creation-wizard-qualities-authority-unavailable"
