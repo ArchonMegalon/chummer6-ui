@@ -4720,6 +4720,24 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 + " are not backed by the heritage attribute ranges";
         }
 
+        // WIN-009 gen4 (REVIEW8769 U3): MAGAdept rows are not heritage ranges;
+        // their presence requires the source-admitted separate-magic contract.
+        // Core CharacterCreationAttributesService folds the Mystic Adept
+        // power-point policy anchors into the draft ONLY when the prerequisite
+        // talent is Mystic Adept AND the policy has UsesSeparateMagicAttribute
+        // true AND integrity passes - so the full anchor set is the proof.
+        // Absence refuses; authority is never inferred from the draft rows.
+        List<string> unbackedMagAdeptRows = attributes.Attributes
+            .Where(a => string.Equals(a.AttributeId, "MAGAdept", StringComparison.Ordinal)
+                && !ExactCharacterSeparateMagicProof(attributes.SourceAnchorIds))
+            .Select(a => a.AttributeId)
+            .ToList();
+        if (unbackedMagAdeptRows.Count > 0)
+        {
+            return prefix + "draft MAGAdept projection rows " + string.Join(",", unbackedMagAdeptRows)
+                + " carry no source-admitted separate-magic policy proof";
+        }
+
         List<string> mismatches = new();
         foreach (CharacterCreationAttributeProjection row in attributes.Attributes)
         {
@@ -4821,11 +4839,19 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
             specialSpent += allocation.PriorityPoints;
         }
+        bool separateMagicProof = ExactCharacterSeparateMagicProof(attributes.SourceAnchorIds);
+        bool magAdeptTalent = prerequisite.TalentSelection is not null
+            && string.Equals(prerequisite.TalentSelection.Value, "Mystic Adept", StringComparison.Ordinal);
         foreach (CharacterCreationAttributeAllocation adeptAllocation in attributes.Allocations)
         {
             if (!string.Equals(adeptAllocation.AttributeId, "MAGAdept", StringComparison.Ordinal))
             {
                 continue;
+            }
+            if ((!separateMagicProof || !magAdeptTalent) && adeptAllocation.PriorityPoints != 0)
+            {
+                return prefix + "MAGAdept allocation " + adeptAllocation.PriorityPoints
+                    + " is not spendable: the separate-magic contract is not source-admitted";
             }
             if (!xmlTotals.TryGetValue(adeptAllocation.AttributeId, out int adeptTotal)
                 || !xmlMinimums.TryGetValue(adeptAllocation.AttributeId, out int adeptMinimum))
@@ -4865,6 +4891,43 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 + " do not match the attributes draft total " + attributes.SpecialPointTotal;
         }
         return null;
+    }
+
+    /// <summary>
+    /// WIN-009 gen4 (REVIEW8769 U3): the only Core route that folds a Mystic
+    /// Adept power-point policy anchor into the attributes draft is
+    /// state.SeparateMagicPolicy, which CharacterCreationAttributesService
+    /// assigns ONLY when the prerequisite talent is Mystic Adept AND the
+    /// projected MysticAdeptPowerPointPolicy has UsesSeparateMagicAttribute
+    /// true AND policy integrity passes. Requiring the FULL policy anchor
+    /// triple (karmamysadpp + mysadeptsecondmagattribute +
+    /// priorityspellsasadeptpowers) against ONE settings base anchor
+    /// therefore proves the source-admitted separate-magic contract; absence
+    /// refuses instead of inferring authority from draft rows.
+    /// </summary>
+    private static bool ExactCharacterSeparateMagicProof(IEnumerable<string>? sourceAnchorIds)
+    {
+        if (sourceAnchorIds is null)
+        {
+            return false;
+        }
+        HashSet<string> anchors = new(sourceAnchorIds, StringComparer.Ordinal);
+        const string karmaSuffix = ":karmacost/karmamysadpp";
+        foreach (string anchor in anchors)
+        {
+            if (anchor.Length <= karmaSuffix.Length
+                || !anchor.EndsWith(karmaSuffix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+            string settingsBase = anchor[..^karmaSuffix.Length];
+            if (anchors.Contains(settingsBase + ":mysadeptsecondmagattribute")
+                && anchors.Contains(settingsBase + ":priorityspellsasadeptpowers"))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>

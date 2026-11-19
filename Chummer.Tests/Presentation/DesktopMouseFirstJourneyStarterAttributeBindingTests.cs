@@ -1009,6 +1009,137 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
             "duplicate draft allocation rows");
     }
 
+    // WIN-009 gen4 (REVIEW8769 U3): MAGAdept requires the source-admitted
+    // separate-magic contract. The only Core route folding the Mystic Adept
+    // power-point policy anchors into the attributes draft is
+    // state.SeparateMagicPolicy, which is assigned only when the prerequisite
+    // talent is Mystic Adept AND the policy has UsesSeparateMagicAttribute
+    // true. The proof helper therefore requires the full policy anchor triple
+    // against one settings base; a Mundane draft (no talent) with invented
+    // MAGAdept rows refuses even at zero points on the projection side, and a
+    // genuine Mystic Adept draft with the policy anchors passes.
+
+    private const string SeparateMagicSettingsBase = "settings.xml#setting:profile";
+
+    private static readonly string[] SeparateMagicAnchors =
+    {
+        SeparateMagicSettingsBase + ":karmacost/karmamysadpp",
+        SeparateMagicSettingsBase + ":mysadeptsecondmagattribute",
+        SeparateMagicSettingsBase + ":priorityspellsasadeptpowers",
+    };
+
+    private static CharacterCreationPrerequisiteDraft MysticAdeptPrerequisite(
+        CharacterCreationPriorityHeritageSelection heritage,
+        string rank,
+        int effectiveNormal,
+        int totalSpecial) => ExactPrerequisite(heritage, rank, effectiveNormal, totalSpecial) with
+    {
+        TalentSelection = new CharacterCreationPriorityTalentSelection(
+            SelectionId: "metatype:dwarf-selection:talent:0",
+            PrioritySourceId: "priority-table-heritage-c",
+            Name: "Talent",
+            Value: "Mystic Adept",
+            SpecialAttributePoints: 1,
+            Magic: 4,
+            Resonance: null,
+            Depth: null,
+            GrantedQualities: new[] { "Mystic Adept" },
+            PriorityChildNodeDigest: "sha256:prioc-talent",
+            SourceAnchorIds: new[] { "priority.xml#heritage:c:talent:0" })
+    };
+
+    [TestMethod]
+    public void Classify_rejects_mundane_invented_magadept_projection_rows()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            Attributes = baseAttributes.Attributes
+                .Append(Projection("MAGAdept", "special", 0, 0))
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows());
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "carry no source-admitted separate-magic policy proof");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_mundane_invented_magadept_allocation_points()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            Attributes = baseAttributes.Attributes
+                .Append(Projection("MAGAdept", "special", 0, 1))
+                .ToList(),
+            Allocations = baseAttributes.Allocations
+                .Append(new CharacterCreationAttributeAllocation("MAGAdept", 1, 0))
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows() + ExactRow("MAGAdept", 1, 0));
+        var parsed = ParseRows(root);
+        // With NO proof anchors at all the projection-side proof gate fires
+        // before the spend gate; the spend gate itself is covered by the
+        // forged-anchors test below.
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "carry no source-admitted separate-magic policy proof");
+    }
+
+    [TestMethod]
+    public void Classify_rejects_magadept_points_without_full_policy_anchor_triple()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        // Forged shape: the draft carries the FULL policy anchor triple but the
+        // prerequisite talent is Mundane - Core would never bind the policy
+        // anchors for a Mundane talent, so the spend gate must refuse on the
+        // talent side even with proof-shaped anchors present.
+        var prerequisite = ExactPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            SourceAnchorIds = new[] { "attributes.xml" }.Concat(SeparateMagicAnchors).ToArray(),
+            Attributes = baseAttributes.Attributes
+                .Append(Projection("MAGAdept", "special", 0, 1))
+                .ToList(),
+            Allocations = baseAttributes.Allocations
+                .Append(new CharacterCreationAttributeAllocation("MAGAdept", 1, 0))
+                .ToList(),
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows() + ExactRow("MAGAdept", 1, 0));
+        var parsed = ParseRows(root);
+        AssertFailedClassify(parsed, "C", "Dwarf", prerequisite, attributes,
+            "is not spendable: the separate-magic contract is not source-admitted");
+    }
+
+    [TestMethod]
+    public void Classify_accepts_source_admitted_separate_magic_magadept()
+    {
+        var heritage = DwarfHeritage("08f2c9cc-f9f8-4f1a-9efb-63555af71788");
+        var prerequisite = MysticAdeptPrerequisite(heritage, "C", 8, 1);
+        var baseAttributes = ExactAttributes(heritage.MetatypeSourceId, 8, 1, 0, 1);
+        var attributes = baseAttributes with
+        {
+            SourceAnchorIds = new[] { "attributes.xml" }.Concat(SeparateMagicAnchors).ToArray(),
+            Attributes = baseAttributes.Attributes
+                .Append(Projection("MAGAdept", "special", 0, 1))
+                .ToList(),
+            Allocations = baseAttributes.Allocations
+                .Append(new CharacterCreationAttributeAllocation("MAGAdept", 1, 0))
+                .ToList(),
+            SpecialPointUsed = 1,
+        };
+        XElement root = ExactCharacterRoot(FullDwarfRows() + ExactRow("MAGAdept", 1, 0));
+        var parsed = ParseRows(root);
+        string? verdict = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.ClassifyExactCharacterAgainstCreationDrafts(
+            parsed.Item1, parsed.Item2, parsed.Item3, "C", "Dwarf", prerequisite, attributes, "exact-character-workspace");
+        Assert.IsNull(verdict);
+    }
+
     [TestMethod]
     public void StarterAttributeEvidence_is_invalid_only_for_negative_sums()
     {
