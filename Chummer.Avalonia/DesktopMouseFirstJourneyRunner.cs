@@ -1828,6 +1828,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     expectedRulesetId,
                     plan.PriorityHeritage,
                     plan.Metatype,
+                    recordPointerAction,
                     journeyTimeout.Token);
             }
             userJourneyWorkflows.Add(await ExerciseCareerRewardsWorkflowAsync(
@@ -2462,6 +2463,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         string expectedRulesetId,
         string? priorityHeritage,
         string? metatype,
+        Action recordPointerAction,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(createdWorkspaceId))
@@ -2481,8 +2483,29 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 steps,
                 "career leg: active workspace " + (current.WorkspaceId?.Value ?? "(none)")
                 + " is not the created workspace " + createdWorkspaceId
-                + "; restoring it through the production presenter load path");
+                + "; closing the open workspace first (the presenter load path only switches workspaces when none is open), then restoring the created one");
             await window.InitializationForAutomation.WaitAsync(ct);
+            // The saved state is durable (the creation leg saved before the
+            // print/export leg ran); the presenter load route refuses to
+            // switch while another workspace holds the shell, so mirror the
+            // print/export helper's own close route: save (idempotent for a
+            // clean workspace), then Windows > Close All.
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "career leg: open workspace saved before close (last command save_character)",
+                () => string.Equals(
+                    window.SnapshotStateForAutomation().LastCommandId,
+                    "save_character",
+                    StringComparison.Ordinal),
+                ct);
+            MenuItem windowsMenu = await OpenMenuAsync(window, "WindowsMenuButton", "Windows", steps, ct, () => { });
+            await ClickOpenMenuCommandAsync(windowsMenu, "close_all", "Windows", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "career leg: open workspace closed (no active workspace)",
+                () => window.SnapshotStateForAutomation().WorkspaceId is null,
+                ct);
             ICharacterOverviewPresenter presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
             await presenter.LoadAsync(new CharacterWorkspaceId(createdWorkspaceId), ct);
             await WaitForAsync(
