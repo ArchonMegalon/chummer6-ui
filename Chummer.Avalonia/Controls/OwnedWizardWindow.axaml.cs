@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 
 namespace Chummer.Avalonia.Controls;
@@ -53,6 +54,19 @@ public partial class OwnedWizardWindow : Window
     {
         if (ResolveContentHost() is { } host)
             host.Content = content;
+    }
+
+    /// <summary>
+    /// Wave4 W1: footer hint strip (readable prerequisite/loading note).
+    /// Back/Next/Finish and Cancel live in the hosted wizard control's own
+    /// fixed footer.
+    /// </summary>
+    public void SetFooterHint(string? hint)
+    {
+        if (this.FindControl<TextBlock>("FooterHintText") is { } hintHost)
+        {
+            hintHost.Text = hint ?? string.Empty;
+        }
     }
 
     /// <summary>Updates the chrome strip caption without changing the title.</summary>

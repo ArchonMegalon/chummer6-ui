@@ -81,6 +81,10 @@ public partial class MainWindow
 
         CharacterCreationWizardControl.StepRequested += CreationWizard_OnStepRequested;
         CharacterCreationWizardControl.ContinueRequested += CreationWizard_OnContinueRequested;
+        // Wave4 W1: footer Cancel is shown only while the wizard is owned-hosted;
+        // the handler mirrors the user X contract (owned window closes, draft
+        // preserved, inline restore) via the programmatic close path.
+        CharacterCreationWizardControl.CancelRequested += CreationWizard_OnCancelRequested;
         CharacterCreationWizardControl.BuildGhostQuestionSubmitted += CreationWizard_OnBuildGhostQuestionSubmitted;
         CharacterCreationWizardControl.RecoverCheckpointRequested += CreationWizard_OnRecoverCheckpointRequested;
         CharacterCreationWizardControl.ExportCheckpointRequested += CreationWizard_OnExportCheckpointRequested;
@@ -286,9 +290,10 @@ public partial class MainWindow
         if (ContentRegion.ColumnDefinitions.Count >= 3)
             ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
 
-        // Gen6 F01/F02: host choice happens AFTER the shared bind path above. The
-        // owned window only presents the same bound control; the inline center
-        // surface remains the default and the headless-journey path.
+        // Gen6 F01/F02 + wave-4 W6: host choice happens AFTER the shared bind
+        // path above. The owned window is the delivered default host; the inline
+        // center surface remains the headless-journey path and the opt-out via
+        // CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW=0.
         if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
         {
             RouteCreationWizardToOwnedWindow(overview, snapshot);
@@ -2028,7 +2033,22 @@ public partial class MainWindow
             ReturnCreationWizardToInlineHost();
         };
         UpdateCreationWizardOwnedStepContext();
+        // Wave4 W1: owned-hosted wizard offers footer Cancel; the inline host
+        // keeps Cancel hidden (its affordances live in the shell toolbar).
+        CharacterCreationWizardControl.ShowCancelInFooter();
+        hosted.SetFooterHint("Cancel keeps your draft; you can resume any time.");
         hosted.Show(this);
+    }
+
+    /// <summary>
+    /// Wave4 W1: footer Cancel from the owned-hosted wizard. Uses the
+    /// programmatic close path (SetContent(null) before Close) so the hosted
+    /// control detaches cleanly -- the SAME end state as the user X press,
+    /// with the draft preserved and the inline host restored.
+    /// </summary>
+    private void CreationWizard_OnCancelRequested(object? sender, EventArgs e)
+    {
+        CloseCreationWizardOwnedWindow();
     }
 
     /// <summary>Gen6 T795/F03: closes the owned creation wizard window, if any.</summary>
@@ -2059,6 +2079,8 @@ public partial class MainWindow
         // explicit Remove, and Contains guards the normal path.
         if (!InlineWizardHost.Children.Contains(CharacterCreationWizardControl))
             InlineWizardHost.Children.Add(CharacterCreationWizardControl);
+        // Wave4 W1: footer Cancel is owned-host-only; hide it on inline restore.
+        CharacterCreationWizardControl.HideCancelInFooter();
         // Visibility is caller-managed: the null-snapshot branch already set
         // IsVisible=false before this call; active-draft callers keep it true.
     }

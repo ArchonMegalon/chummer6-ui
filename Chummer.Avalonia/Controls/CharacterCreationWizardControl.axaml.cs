@@ -1,4 +1,4 @@
-﻿using Avalonia.Automation;
+using Avalonia.Automation;
 using Avalonia.VisualTree;
 using Avalonia.Styling;
 using System.Collections.Generic;
@@ -172,6 +172,9 @@ public partial class CharacterCreationWizardControl : UserControl
 
     public event EventHandler<CharacterCreationWizardStepRequest>? StepRequested;
     public event EventHandler? ContinueRequested;
+
+    /// <summary>Wave4 W1: footer Cancel intent (owned-window host only).</summary>
+    public event EventHandler? CancelRequested;
     public event EventHandler<CharacterCreationWizardBuildGhostQuestion>? BuildGhostQuestionSubmitted;
     public event EventHandler? RecoverCheckpointRequested;
     public event EventHandler? ExportCheckpointRequested;
@@ -404,12 +407,15 @@ public partial class CharacterCreationWizardControl : UserControl
                 rankButton.Click += PriorityRankButton_OnClick;
                 _priorityRankButtons.Add(rankButton);
                 cellPanel.Children.Add(rankButton);
+                // Wave4 W3: full wrap without a MaxHeight clip -- the UniformGrid
+                // row grows to the tallest cell so descriptions never overlap and
+                // never truncate; the font size is unchanged (no shrink).
                 cellPanel.Children.Add(new TextBlock
                 {
                     Text = option.Label,
                     FontSize = 10.5,
                     TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
-                    MaxHeight = 28,
+                    MinHeight = 28,
                     TextAlignment = global::Avalonia.Media.TextAlignment.Center,
                     Opacity = 0.85,
                 });
@@ -875,9 +881,7 @@ public partial class CharacterCreationWizardControl : UserControl
                 ? $"Saved navigation was invalidated: {reason}."
                 : $"Workspace revision {state.WorkspaceRevision}.";
         AuthorityStatusText.Text = BuildAuthorityStatus(active);
-        CompletionBlockerText.Text = state.CompletionBlockers.Count == 0
-            ? "No completion blockers are currently projected."
-            : $"Completion blockers: {string.Join(", ", state.CompletionBlockers)}";
+        CompletionBlockerText.Text = DescribeCompletionBlockers(state.CompletionBlockers);
         ContinueButton.IsEnabled = state.CanContinue;
         EditorLockText.IsVisible = !state.AdvancedEditorUnlocked;
         BuildGhostAuthorityText.Text = state.BuildGhostAvailable
@@ -3457,13 +3461,101 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private static string BuildAuthorityStatus(CharacterCreationWizardDesktopStep step)
     {
-        List<string> status = [$"Status: {step.Status}"];
+        // Wave4 W2: readable prerequisite sentence; the raw status id stays in
+        // the AutomationId/name for diagnostics, not as user-visible text.
+        string readable = step.Status switch
+        {
+            "complete" or "completed" => "This step is complete.",
+            "current" or "active" => "This is the current step.",
+            "blocked" => "This step needs attention before you can continue.",
+            "locked" => "This step unlocks after the earlier steps are confirmed.",
+            "available" or "enterable" => "This step is ready for your input.",
+            _ => $"Step status: {step.Status}.",
+        };
+        List<string> status = [readable];
         if (step.Blockers.Count > 0)
-            status.Add($"Blockers: {string.Join(", ", step.Blockers)}");
+            status.Add($"Needs attention: {DescribeBlockerCodes(step.Blockers)}");
         if (step.Warnings.Count > 0)
-            status.Add($"Warnings: {string.Join(", ", step.Warnings)}");
+            status.Add($"Notes: {string.Join("; ", step.Warnings)}");
         return string.Join(" · ", status);
     }
+
+    /// <summary>
+    /// Wave4 W2: readable completion-blocker projection. Known Core refusal
+    /// codes become prerequisite sentences; unknown codes keep the raw code
+    /// after a readable prefix so diagnostics are preserved but never lead.
+    /// </summary>
+    private static string DescribeCompletionBlockers(IReadOnlyList<string> blockers)
+    {
+        if (blockers.Count == 0)
+        {
+            return "Checking what this character still needs before finalization...";
+        }
+        return "Before finalizing, finish these steps: "
+            + DescribeBlockerCodes(blockers) + ".";
+    }
+
+    /// <summary>Wave4 W2: readable rendering of a blocker-code list.</summary>
+    private static string DescribeBlockerCodes(IReadOnlyList<string> codes)
+    {
+        var parts = new List<string>();
+        foreach (string code in codes)
+        {
+            parts.Add(DescribeBlockerCode(code));
+        }
+        return string.Join("; ", parts);
+    }
+
+    private static string DescribeBlockerCode(string code) => code switch
+    {
+        "creation-finalization-attributes-draft-required"
+            => "confirm your attribute choices",
+        "creation-finalization-skills-draft-required"
+            => "confirm your skill choices",
+        "creation-finalization-resources-draft-required"
+            => "confirm your resources (even if you keep the default)",
+        "creation-wizard-content-authority-unavailable"
+            => "waiting for the character content to load",
+        "creation-wizard-revision-authority-unavailable"
+            => "waiting for the workspace to sync",
+        "creation-wizard-ruleset-authority-unavailable"
+            => "waiting for the rule set to load",
+        "creation-wizard-source-authority-unavailable"
+            => "waiting for the source data to load",
+        "creation-wizard-runtime-authority-unavailable"
+            => "waiting for the rule engine to start",
+        "creation-wizard-legal-options-authority-unavailable"
+            => "waiting for the allowed options to load",
+        "creation-wizard-finalization-authority-unavailable"
+            => "waiting for finalization review to become available",
+        "creation-wizard-life-module-authority-unavailable"
+            => "waiting for the lifestyle options to load",
+        "creation-wizard-contacts-authority-unavailable"
+            => "waiting for the contacts options to load",
+        "creation-wizard-qualities-authority-unavailable"
+            => "waiting for the qualities options to load",
+        "creation-wizard-magic-resonance-authority-unavailable"
+            => "waiting for the magic/resonance options to load",
+        "creation-wizard-attributes-authority-unavailable"
+            => "waiting for the attribute rules to load",
+        "creation-wizard-contact-create-delete-authority-unavailable"
+            => "waiting for contact editing to become available",
+        "creation-wizard-contact-pets-authority-unavailable"
+            => "waiting for pet options to load",
+        "creation-wizard-lifestyles-authority-unavailable"
+            => "waiting for the lifestyle rules to load",
+        "creation-wizard-identity-authority-unavailable"
+            => "waiting for the identity rules to load",
+        "creation-wizard-story-authority-unavailable"
+            => "waiting for the background rules to load",
+        "career-wizard-authority-unavailable"
+            => "waiting for the career rules to load",
+        "career-wizard-checkpoint-action-unavailable"
+            => "this action is not available yet",
+        "creation-wizard-checkpoint-step-unavailable"
+            => "this step is not available yet",
+        _ => $"other requirement ({code})",
+    };
 
     private void StepButton_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -3473,6 +3565,31 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void ContinueButton_OnClick(object? sender, RoutedEventArgs e)
         => ContinueRequested?.Invoke(this, EventArgs.Empty);
+
+    private void CancelButton_OnClick(object? sender, RoutedEventArgs e)
+        => CancelRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Wave4 W1: shows the footer Cancel action. Used only by the owned-window
+    /// host so Cancel keeps the SAME contract as a user X press (draft
+    /// preserved, inline restore). The inline host keeps Cancel hidden.
+    /// </summary>
+    public void ShowCancelInFooter()
+    {
+        if (this.FindControl<Button>("CancelButton") is { } cancel)
+        {
+            cancel.IsVisible = true;
+        }
+    }
+
+    /// <summary>Wave4 W1: hides the footer Cancel (inline host restore).</summary>
+    public void HideCancelInFooter()
+    {
+        if (this.FindControl<Button>("CancelButton") is { } cancel)
+        {
+            cancel.IsVisible = false;
+        }
+    }
 
     private void RecoverButton_OnClick(object? sender, RoutedEventArgs e)
         => RecoverCheckpointRequested?.Invoke(this, EventArgs.Empty);

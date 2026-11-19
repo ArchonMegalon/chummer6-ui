@@ -11,15 +11,27 @@
         FontSize="{DynamicResource ChummerShellFontSizeBody}"
         TransparencyLevelHint="None"
         Background="{DynamicResource ChummerShellHardPanelBrush}">
-  <!-- Gen6 F04: Auto,* rows keep the chrome header out of the body's
-       rectangle; the body scrolls within the window instead of overflowing. -->
-  <Grid RowDefinitions="Auto,*">
+  <!-- Gen6 F04 + wave4 W1: Auto,*,Auto rows keep the chrome header and the
+       wizard footer fixed; ONLY the wizard page body scrolls (the hosted
+       CharacterCreationWizardControl owns its internal page scroller). -->
+  <Grid RowDefinitions="Auto,*,Auto">
     <shell:OwnedWizardChrome x:Name="WizardChrome" Grid.Row="0" />
-    <ScrollViewer x:Name="ContentScroller" Grid.Row="1"
-                  HorizontalScrollBarVisibility="Disabled"
-                  VerticalScrollBarVisibility="Auto">
-      <ContentPresenter x:Name="WizardContentHost"
-                        Margin="{DynamicResource ChummerShellSpacing}" />
-    </ScrollViewer>
+    <ContentPresenter x:Name="WizardContentHost" Grid.Row="1"
+                      Margin="{DynamicResource ChummerShellSpacing}" />
+    <Border Grid.Row="2"
+            Background="{DynamicResource ChummerShellToolbarBackgroundBrush}"
+            BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="{DynamicResource ChummerShellSpacing}">
+      <!-- Wave4 W1: hint strip only. Back/Next/Finish live in the hosted
+           wizard control's own fixed footer; Cancel is the wizard control's
+           footer Cancel (shown only when owned-hosted). -->
+      <TextBlock x:Name="FooterHintText"
+                 Classes="shell-caption"
+                 VerticalAlignment="Center"
+                 TextWrapping="Wrap"
+                 TextTrimming="CharacterEllipsis"
+                 AutomationProperties.AutomationId="owned-wizard-footer-hint" />
+    </Border>
   </Grid>
 </Window>

@@ -1398,12 +1398,12 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel shell = new()
         {
-            Spacing = 10
+            Spacing = 12
         };
 
         Grid settingRow = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("146,*,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("150,*,Auto"),
             ColumnSpacing = 10
         };
         TextBlock settingLabel = new()
@@ -1445,7 +1445,7 @@ public partial class DesktopDialogWindow : Window
 
         Grid rulesetRow = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("146,*"),
+            ColumnDefinitions = new ColumnDefinitions("150,*"),
             ColumnSpacing = 10
         };
         TextBlock rulesetLabel = new()
@@ -1457,17 +1457,23 @@ public partial class DesktopDialogWindow : Window
         };
         rulesetRow.Children.Add(rulesetLabel);
 
-        ComboBox rulesetCombo = BuildSelectComboBox(rulesetField, minWidth: 180);
+        ComboBox rulesetCombo = BuildSelectComboBox(rulesetField, minWidth: 220);
         rulesetCombo.Name = DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId");
         Grid.SetColumn(rulesetCombo, 1);
         rulesetRow.Children.Add(rulesetCombo);
 
-        shell.Children.Add(CreateLegacyFieldGroup(
-            "New Runner",
-            CreateLegacyGroupLead("Choose the ruleset, build method, and runner name before the character opens."),
-            settingRow,
-            rulesetRow,
-            CreateSplitFieldRow(nameField, aliasField)));
+        StackPanel settingsGroup = new()
+        {
+            Spacing = 10,
+            Children =
+            {
+                CreateLegacyGroupLead("Choose the ruleset, build method, and runner name before the character opens."),
+                settingRow,
+                rulesetRow,
+                CreateSplitFieldRow(nameField, aliasField)
+            }
+        };
+        shell.Children.Add(CreateLegacyFieldGroup("New Runner", settingsGroup));
         shell.Children.Add(optionsPanel);
 
         return shell;
@@ -4171,9 +4177,9 @@ public partial class DesktopDialogWindow : Window
     {
         (double width, double height, double minWidth, double minHeight) size = dialogId switch
         {
-            "dialog.new_character" => (820d, 250d, 680d, 220d),
+            "dialog.new_character" => (820d, 340d, 680d, 300d),
             "dialog.new_character.priority_workflow" => (980d, 720d, 820d, 560d),
-            "dialog.new_character.karma_workflow" => (820d, 250d, 680d, 220d),
+            "dialog.new_character.karma_workflow" => (820d, 340d, 680d, 300d),
             "dialog.master_index" => (980d, 640d, 760d, 440d),
             "dialog.character_roster" => (900d, 620d, 700d, 420d),
             "dialog.global_settings" => (920d, 600d, 700d, 420d),
