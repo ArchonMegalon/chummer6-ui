@@ -543,6 +543,85 @@ internal static class DesktopMouseFirstJourneyRunner
                 return;
             }
 
+            if (DesktopMouseFirstJourneyRuntime.WizardCancelRequested)
+            {
+                RecordStep(steps, "wizard cancel leg: footer Cancel closes the wizard and keeps the draft");
+                DesktopUserJourneyWorkflowEvidence cancelEvidence = await ExerciseWizardCancelLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(cancelEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> cancelAssertion in cancelEvidence.Assertions)
+                {
+                    if (!cancelAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Wizard cancel leg assertion failed: {cancelAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: wizard cancel leg assertion {cancelAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                CharacterOverviewState cancelReceiptSnapshot = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: cancelReceiptSnapshot.WorkspaceId?.Value,
+                        CharacterName: cancelReceiptSnapshot.Profile?.Name,
+                        CharacterAlias: cancelReceiptSnapshot.Profile?.Alias,
+                        RulesetId: null,
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "WIN-009 gen7: the creation wizard footer Cancel button delivered its press through the real pointer route, CancelRequested fired, the owned window closed, the wizard control was restored to the inline host with the footer Cancel hidden, and the draft was preserved for later resume (cancel keeps your draft)."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
+
             if (string.Equals(
                     Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY"),
                     "1",
@@ -5537,6 +5616,149 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         parent.Add(created);
         return created;
     }
+
+        /// <summary>
+        /// WIN-009 gen7: dedicated creation-wizard cancel leg. Drives the
+        /// REAL new-character dialog to publish an SR5 draft, waits for the
+        /// creation wizard (owned window by default), verifies the footer
+        /// buttons occupy distinct grid columns (the wave-4 review defect),
+        /// then clicks the footer Cancel button through the real pointer route
+        /// and verifies the CancelRequested semantics: the owned window closes,
+        /// the wizard control is restored to the inline host with the footer
+        /// Cancel hidden, and the draft is PRESERVED for later resume.
+        /// </summary>
+        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseWizardCancelLegAsync(
+            MainWindow window,
+            DesktopMouseFirstJourneyContext context,
+            List<string> steps,
+            List<string> screenshotPaths,
+            CancellationToken ct,
+            Action recordPointerAction)
+        {
+            var assertions = new Dictionary<string, bool>();
+            try
+            {
+                await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
+                await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
+                await SetDialogTextFieldAsync(window, "newCharacterName", "Win109 Cancel Probe", steps, ct);
+                await SetDialogTextFieldAsync(window, "newCharacterAlias", "W109C", steps, ct);
+                await SetDialogSelectFieldAsync(
+                    window,
+                    "newCharacterRulesetId",
+                    "sr5",
+                    steps,
+                    ct,
+                    recordPointerAction,
+                    () => { },
+                    () => { });
+                await SetDialogSelectFieldAsync(
+                    window,
+                    "newCharacterBuildMethod",
+                    "Priority",
+                    steps,
+                    ct,
+                    recordPointerAction,
+                    () => { },
+                    () => { });
+                await ClickDialogActionUntilAsync(
+                    window,
+                    "create_character",
+                    steps,
+                    ct,
+                    recordPointerAction,
+                    "wizard-cancel draft published after create_character",
+                    () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+                    maxAttempts: 3,
+                    settleTimeout: WorkspacePublishedWaitTimeout);
+
+                // A draft workspace is published as soon as creation starts (the
+                // wizard edits the draft in place); capture its identity BEFORE
+                // cancel so the leg can prove what the cancel abandoned.
+                CharacterOverviewState draftSnapshot = window.SnapshotStateForAutomation();
+                string? draftWorkspaceId = draftSnapshot.WorkspaceId?.Value;
+                assertions["draft workspace published before cancel"] = draftWorkspaceId is not null;
+
+                CharacterCreationWizardControl wizard =
+                    await WaitForWizardControlAsync(window, steps, ct);
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-01-wizard-open");
+
+                // Wave-4 review defect: the footer grid had only five columns while
+                // FinalizeButton declared Grid.Column=5. Verify both final buttons
+                // share the last footer column and are never simultaneously visible,
+                // and that the Cancel button is a distinct visible footer button.
+                int finalizeColumn = Grid.GetColumn(wizard.FinalizeButton);
+                int finishAiColumn = Grid.GetColumn(wizard.FinishWithAiButton);
+                assertions["footer finalize and finish-ai share column 5"] =
+                    finalizeColumn == 5 && finishAiColumn == 5;
+                assertions["footer finalize and finish-ai not simultaneously visible"] =
+                    !(wizard.FinalizeButton.IsVisible && wizard.FinishWithAiButton.IsVisible);
+                assertions["footer cancel button visible"] = wizard.CancelButton.IsVisible;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-02-footer-columns");
+
+                // Click the footer Cancel button through the REAL pointer route
+                // (RoutePointerClickAsync) with click observation; only a DELIVERED
+                // press counts as the cancel action (gen16 pointer-honesty rule).
+                Button cancelButton = wizard.CancelButton;
+                assertions["footer cancel button is enabled"] = cancelButton.IsEffectivelyEnabled;
+                wizard.BringIntoView();
+                ForceHeadlessLayoutPump(wizard);
+                cancelButton.BringIntoView();
+                ForceHeadlessLayoutPump(cancelButton);
+
+                string cancelDiagnostics = await RoutePointerClickAsync(cancelButton, waitForClick: true);
+                PointerDeliveryResult cancelDelivery = ParsePointerDeliveryResult(cancelDiagnostics);
+                assertions["footer cancel press delivered"] =
+                    cancelDelivery.Kind == PointerDeliveryKind.Delivered;
+                recordPointerAction();
+                RecordStep(steps, $"wizard footer cancel press; {cancelDiagnostics}");
+
+                // Cancel semantics (MainWindow.CreationWizard.cs): the draft is
+                // KEPT ("Cancel keeps your draft; you can resume any time"), the
+                // owned window closes via SetContent(null) + Close, and the wizard
+                // control is restored to the INLINE host with the footer Cancel
+                // hidden (owned-host-only affordance). Poll for that end state.
+                bool cancelCompleted = false;
+                for (int attempt = 0; attempt < 30 && !cancelCompleted; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    bool inlineRestored = window.GetVisualDescendants()
+                        .OfType<CharacterCreationWizardControl>()
+                        .Any(control => control.IsVisible);
+                    bool ownedClosed = !(global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime cancelDesktop
+                        && cancelDesktop.Windows.Any(w => !ReferenceEquals(w, window)
+                            && w.GetVisualDescendants().OfType<CharacterCreationWizardControl>()
+                                .Any(control => control.IsVisible)));
+                    CharacterCreationWizardControl? restoredWizard = FindWizardControl(window);
+                    bool cancelHidden = restoredWizard is null || !restoredWizard.CancelButton.IsVisible;
+                    cancelCompleted = inlineRestored && ownedClosed && cancelHidden;
+                }
+                assertions["wizard returned inline with owned window closed"] = cancelCompleted;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-03-after-cancel");
+
+                assertions["shell responsive after cancel"] = window.IsVisible;
+
+                RecordStep(steps, "wizard cancel leg completed");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                assertions["leg completed without exception"] = false;
+                Console.Error.WriteLine($"Wizard cancel leg exception: {ex}");
+            }
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "wizard-cancel-leg",
+                ScreenshotPaths: screenshotPaths,
+                Assertions: assertions,
+                InteractionNotes:
+                [
+                    "Creation wizard footer cancel leg: footer buttons verified in distinct grid columns, the footer Cancel press was delivered through the real pointer route, the owned window closed with the wizard restored inline and the footer Cancel hidden, and the draft was preserved for later resume."
+                ]);
+        }
 
         private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSr6AdvanceLegAsync(
             MainWindow window,

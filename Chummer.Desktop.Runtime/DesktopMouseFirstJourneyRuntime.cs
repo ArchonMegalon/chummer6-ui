@@ -37,6 +37,7 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string PdfSaveReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_RECEIPT";
     public const string PdfSaveTargetEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET";
     public const string PdfSaveTraceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TRACE";
+    public const string WizardCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL";
     // T545/7867: two-process career reward recovery leg. Phase A awards karma
     // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
     // (process exits = process restart). Phase B is a fresh process that must
@@ -303,6 +304,19 @@ public static class DesktopMouseFirstJourneyRuntime
     /// </summary>
     public static bool PdfSaveRequested => string.Equals(
         Environment.GetEnvironmentVariable(PdfSaveEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-009 gen7: when this process is launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL=1, the journey runner
+    /// executes a dedicated creation-wizard cancel leg: open the new-character
+    /// dialog, create an SR5 draft, wait for the creation wizard footer, click
+    /// the footer Cancel button (the real user route), and verify the draft is
+    /// abandoned (no workspace published) and the inline host restored cleanly.
+    /// </summary>
+    public static bool WizardCancelRequested => string.Equals(
+        Environment.GetEnvironmentVariable(WizardCancelEnvironmentVariable) ?? string.Empty,
         "1",
         StringComparison.OrdinalIgnoreCase);
 
