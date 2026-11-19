@@ -23,12 +23,24 @@ public partial class OwnedWizardWindow : Window
         AttachCaptionBinding();
     }
 
+    // Gen6 F08: the native Window.Title must reflect the wizard, not the
+    // static "Wizard" default -- bind it to the WizardTitle property.
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.Property == WizardTitleProperty)
+            Title = e.GetNewValue<string>();
+    }
+
     public OwnedWizardWindow(string wizardTitle, Control content)
         : this()
     {
         WizardTitle = wizardTitle;
-        WizardContentHost.Content = content;
+        SetContent(content);
     }
+
+    private global::Avalonia.Controls.Presenters.ContentPresenter? ResolveContentHost()
+        => this.FindControl<global::Avalonia.Controls.Presenters.ContentPresenter>("WizardContentHost");
 
     public string WizardTitle
     {
@@ -39,17 +51,34 @@ public partial class OwnedWizardWindow : Window
     /// <summary>Replaces or clears the hosted wizard content (null clears).</summary>
     public void SetContent(Control? content)
     {
-        WizardContentHost.Content = content;
+        if (ResolveContentHost() is { } host)
+            host.Content = content;
     }
 
     /// <summary>Updates the chrome strip caption without changing the title.</summary>
     public void SetStepCaption(string caption)
     {
-        if (WizardContentHost.Content is not null
+        if (ResolveContentHost() is { }
             && this.FindControl<OwnedWizardChrome>("WizardChrome") is { } chrome)
         {
             chrome.Caption = caption;
         }
+    }
+
+    /// <summary>
+    /// Gen6 F08: publishes the readable selected-step context (label plus
+    /// "Step n of m") to the chrome caption AND the native window title, so
+    /// Back/Next navigation and step requests are reflected immediately.
+    /// </summary>
+    public void SetStepContext(string? stepLabel, int stepIndex, int stepCount)
+    {
+        string caption = stepCount > 0 && stepIndex > 0
+            ? $"Step {stepIndex} of {stepCount}"
+                + (string.IsNullOrWhiteSpace(stepLabel) ? "" : $": {stepLabel}")
+            : (stepLabel ?? "");
+        SetStepCaption(caption);
+        string title = WizardTitle;
+        Title = string.IsNullOrEmpty(caption) ? title : $"{title} \u2014 {caption}";
     }
 
     private void AttachCaptionBinding()

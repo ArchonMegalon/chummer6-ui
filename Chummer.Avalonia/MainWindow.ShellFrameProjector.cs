@@ -61,7 +61,12 @@ internal static class MainWindowShellFrameProjector
                 WorkspaceStrip: new WorkspaceStripState(
                     BuildWorkspaceStripText(workspaceContext, language),
                     ShowQuickStartAction: !hasOpenWorkspace && showSampleControls,
-                    ShowOriginDossierAction: !hasOpenWorkspace && showAiFeatures),
+                    ShowOriginDossierAction: !hasOpenWorkspace && showAiFeatures)
+                {
+                    // Gen6 F07: structured title inputs, projected once here.
+                    ActiveCharacterTitle = BuildActiveCharacterTitle(state, workspaceContext),
+                    HasActiveWorkspace = workspaceContext.ActiveWorkspaceId is not null
+                },
                 SummaryHeader: new SummaryHeaderState(
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
@@ -303,6 +308,29 @@ internal static class MainWindowShellFrameProjector
                     : "desktop.shell.state.value.error",
                 language));
 
+    /// <summary>
+    /// Gen6 F07: human-readable active character title for the native window
+    /// title -- profile name first, then workspace identity. Returns null when
+    /// no workspace is active so the caller restores the application base title
+    /// (no stale document title after the last close).
+    /// </summary>
+    private static string? BuildActiveCharacterTitle(
+        CharacterOverviewState state,
+        ActiveWorkspaceContext workspaceContext)
+    {
+        if (workspaceContext.ActiveWorkspaceId is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.Profile?.Name))
+        {
+            return state.Profile!.Name!;
+        }
+
+        return workspaceContext.ActiveWorkspaceId!.Value.Value;
+    }
+
     private static string DescribeWorkspaceForChrome(
         CharacterOverviewState state,
         ActiveWorkspaceContext workspaceContext,
@@ -365,9 +393,14 @@ internal static class MainWindowShellFrameProjector
         CharacterWorkspaceId? activeWorkspaceId = shellSurface.ActiveWorkspaceId;
         OpenWorkspaceState? activeWorkspace = openWorkspaces
             .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, activeWorkspaceId?.Value, StringComparison.Ordinal));
+        // Gen6 F05: HasSavedWorkspace (SavedRevision>0) alone falsely reports
+        // "saved" while the workspace has unsaved edits (SavedRevision=5,
+        // ContentRevision=6). Dirty state is authoritative: ContentRevision !=
+        // SavedRevision means unsaved changes right now; a clean workspace with
+        // no durable revision at all has never been saved.
         string activeWorkspaceSaveStatus = activeWorkspace is null
             ? "n/a"
-            : activeWorkspace.HasSavedWorkspace ? "saved" : "unsaved";
+            : activeWorkspace.IsDirty || activeWorkspace.SavedRevision <= 0 ? "unsaved" : "saved";
         return new ActiveWorkspaceContext(
             activeWorkspaceId,
             openWorkspaceCount,

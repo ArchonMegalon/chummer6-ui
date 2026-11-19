@@ -62,27 +62,28 @@ public partial class MainWindow
         UpdateWindowTitleFromFrame(shellFrame);
     }
 
-    /// <summary>Gen6 T794: reflect the active workspace and its save state in the native title bar.</summary>
+    /// <summary>
+    /// Gen6 T794/F07: reflect the active workspace in the native title bar from
+    /// STRUCTURED projection only -- the localized summary text and the current
+    /// Title are never parsed as application state. With no active workspace the
+    /// base application title is restored explicitly (no stale document title).
+    /// </summary>
     private void UpdateWindowTitleFromFrame(MainWindowShellFrame shellFrame)
     {
-        string baseTitle = Title;
-        int separator = baseTitle.IndexOf(" - ", StringComparison.Ordinal);
-        if (separator > 0)
-        {
-            baseTitle = baseTitle[..separator];
-        }
+        const string baseTitle = "Chummer Desktop";
 
         WorkspaceStripState strip = shellFrame.ChromeState.WorkspaceStrip;
-        string summary = strip.WorkspaceText;
-        if (string.IsNullOrWhiteSpace(summary) || summary.IndexOf("none", StringComparison.OrdinalIgnoreCase) >= 0)
+        string? characterTitle = strip.ActiveCharacterTitle;
+        if (!strip.HasActiveWorkspace || string.IsNullOrWhiteSpace(characterTitle))
         {
+            Title = baseTitle;
             return;
         }
 
         string saveState = shellFrame.ChromeState.StatusStrip.SaveState;
         Title = string.IsNullOrEmpty(saveState)
-            ? baseTitle + " - " + summary
-            : baseTitle + " - " + summary + " (" + saveState + ")";
+            ? baseTitle + " - " + characterTitle
+            : baseTitle + " - " + characterTitle + " (" + saveState + ")";
     }
 
     private void ApplyWorkbenchChromeVisibility(MainWindowShellFrame shellFrame)

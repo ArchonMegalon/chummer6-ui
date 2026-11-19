@@ -55,6 +55,13 @@ public partial class MainWindow
     // working because FindWizardControl scans desktop windows too.
     private Controls.OwnedWizardWindow? _creationWizardOwnedWindow;
     private bool _creationWizardOwnedWindowBound;
+    // Gen6 F03: reuse identity of the owned wizard host (workspace + owner) so the
+    // same captured context reuses its window instead of recreating surfaces.
+    private string? _creationWizardOwnedWindowWorkspaceId;
+    private Chummer.Application.Owners.OwnerContextStamp? _creationWizardOwnedWindowOwner;
+    // Gen6 F08: last bound desktop state, used to publish the readable
+    // selected-step context (label + "Step n of m") to the owned host.
+    private Presentation.Overview.CharacterCreationWizardDesktopState? _lastCreationWizardDesktopState;
 
     private void InitializeCreationWizard()
     {
@@ -144,10 +151,14 @@ public partial class MainWindow
             && snapshot is not null && string.Equals(snapshot.RulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
         {
             // Moving into the separate SR6 window also leaves the SR5 conversation context.
+            // Gen6 F03: the SR5 owned wizard host must not stay alive/empty behind the
+            // SR6 window -- retire it explicitly on the qualified SR6 branch.
+            CloseCreationWizardOwnedWindow();
             RetireCreationWizardBuildGhostTurn();
             CharacterCreationWizardControl.ResetBuildGhostConversation();
             _boundCreationWizardSnapshot = null;
             _boundCreationWizardOwner = null;
+            _lastCreationWizardDesktopState = null;
             _lastBoundJourneyState = null;
             _creationJourneyPreview = null;
             _creationJourneyFinishOwner = default;
@@ -162,6 +173,9 @@ public partial class MainWindow
         CharacterCreationWizardControl.IsHitTestVisible = snapshot is not null;
         if (snapshot is null)
         {
+            // Gen6 F03: a completed/absent draft must retire the owned wizard host
+            // immediately -- an alive/empty owned window is a stray surface.
+            CloseCreationWizardOwnedWindow();
             if (_boundCreationWizardSnapshot is not null && overview.Profile?.Created == true)
             {
                 TryDeleteWizardCheckpoint(_boundCreationWizardSnapshot.WorkspaceId);
@@ -169,6 +183,7 @@ public partial class MainWindow
 
             _boundCreationWizardSnapshot = null;
             _boundCreationWizardOwner = null;
+            _lastCreationWizardDesktopState = null;
             RetireCreationWizardBuildGhostTurn();
             CharacterCreationWizardControl.ResetBuildGhostConversation();
             _creationContactPreparedPreview = null;
@@ -181,28 +196,11 @@ public partial class MainWindow
             return;
         }
 
-        // Gen6 T795: route the wizard into the owned window when the desktop
-        // owned-wizard session gate is enabled; the inline host remains the
-        // default (and headless-journey) path until the gate is set.
-        if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
-        {
-            RouteCreationWizardToOwnedWindow(overview, snapshot);
-            return;
-        }
-
-        // An unfinished character owns the center surface. The unrestricted editor remains
-        // unreachable until canonical finalization makes CreationWizard null.
-        ClassicFormPortHostControl.IsVisible = false;
-        ClassicFormPortHostControl.IsHitTestVisible = false;
-        SectionHostControl.IsVisible = false;
-        SectionHostControl.IsHitTestVisible = false;
-        RightShellRegion.IsVisible = false;
-        RightShellRegion.IsHitTestVisible = false;
-        RightShellRegion.Opacity = 0d;
-        ApplyPaneWidth(RightShellRegion, false, RightShellWidth, 0d, RightShellWidth);
-        if (ContentRegion.ColumnDefinitions.Count >= 3)
-            ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
-
+        // Gen6 T795/F02: the shared bind path (editor lock, owner/revision
+        // invalidation, session Bind, snapshot/owner capture, SetState,
+        // finalization/prerequisite availability, checkpoint persistence) MUST run
+        // for both hosts. The host is only chosen afterwards -- the owned window
+        // never bypasses the authority path the inline host performs.
         bool wizardIdentityChanged = _boundCreationWizardSnapshot is null
             || _boundCreationWizardOwner != overview.DisplayOwnerContext
             || _boundCreationWizardSnapshot.WorkspaceId != snapshot.WorkspaceId;
@@ -254,6 +252,8 @@ public partial class MainWindow
         CharacterCreationWizardControl.SetQualitiesSelection(overview.CreationQualities is { } qualities
             ? CharacterCreationQualitiesInteraction.SelectedIds(qualities) : []);
         CharacterCreationWizardControl.SetState(state);
+        _lastCreationWizardDesktopState = state;
+        UpdateCreationWizardOwnedStepContext();
         CharacterCreationWizardControl.SetStartingCashState(overview.CreationFinalization?.StartingCashSource);
         CharacterCreationWizardControl.SetFinalizeAvailability(
             overview.CreationFinalization is { } finalization && finalization.CanReview,
@@ -266,8 +266,35 @@ public partial class MainWindow
             && _creationWizardBuildGhostPreferenceEnabled
             && CreationWizard_HasLinkedAiOwner(overview));
         TryPersistWizardCheckpoint();
-    
+
         CharacterCreationWizardControl.SetPrerequisiteState(CreationWizard_LoadPrerequisiteState());
+
+        // Gen6 F01/F02: host choice happens AFTER the shared bind path above. The
+        // owned window only presents the same bound control; the inline center
+        // surface remains the default and the headless-journey path.
+        if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
+        {
+            RouteCreationWizardToOwnedWindow(overview, snapshot);
+            return;
+        }
+
+        CloseCreationWizardOwnedWindow();
+
+        // An unfinished character owns the center surface. The unrestricted editor remains
+        // unreachable until canonical finalization makes CreationWizard null.
+        ClassicFormPortHostControl.IsVisible = false;
+        ClassicFormPortHostControl.IsHitTestVisible = false;
+        SectionHostControl.IsVisible = false;
+        SectionHostControl.IsHitTestVisible = false;
+        RightShellRegion.IsVisible = false;
+        RightShellRegion.IsHitTestVisible = false;
+        RightShellRegion.Opacity = 0d;
+        ApplyPaneWidth(RightShellRegion, false, RightShellWidth, 0d, RightShellWidth);
+        if (ContentRegion.ColumnDefinitions.Count >= 3)
+            ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
+        CharacterCreationWizardControl.IsVisible = true;
+        if (!InlineWizardHost.Children.Contains(CharacterCreationWizardControl))
+            InlineWizardHost.Children.Add(CharacterCreationWizardControl);
 }
 
     private void CreationWizard_OnContactPreviewRequested(
@@ -1926,46 +1953,80 @@ public partial class MainWindow
     /// center-surface host when the draft ends. The same control instance
     /// moves; event wiring and state binding are untouched.
     /// </summary>
-    private void RouteCreationWizardToOwnedWindow(CharacterOverviewState overview, CharacterCreationWizardSnapshot snapshot)
+    /// <summary>
+    /// Gen6 F08: pushes the readable selected-step context (label and
+    /// "Step n of m" from the bound desktop state) into the owned wizard
+    /// host's chrome caption and native title. Raw ActiveStepId identifiers
+    /// are never user-visible.
+    /// </summary>
+    private void UpdateCreationWizardOwnedStepContext()
     {
-        if (snapshot is null)
+        if (_creationWizardOwnedWindow is not { } open)
+            return;
+        if (_lastCreationWizardDesktopState is not { } state)
         {
-            CloseCreationWizardOwnedWindow();
+            open.SetStepContext(null, 0, 0);
             return;
         }
+        int count = state.Steps.Count;
+        for (int i = 0; i < count; i++)
+        {
+            if (state.Steps[i].IsSelected)
+            {
+                open.SetStepContext(state.Steps[i].Label, i + 1, count);
+                return;
+            }
+        }
+        open.SetStepContext(null, 0, count);
+    }
 
+    private void RouteCreationWizardToOwnedWindow(CharacterOverviewState overview, CharacterCreationWizardSnapshot snapshot)
+    {
+        // The shared bind path already ran in ApplyCreationWizardState before this
+        // routing call (gen6 F02). Here only the host is chosen/wired.
         if (_creationWizardOwnedWindow is { IsVisible: true } open
             && _creationWizardOwnedWindowBound
-            && _boundCreationWizardSnapshot?.WorkspaceId == snapshot.WorkspaceId)
+            && _creationWizardOwnedWindowWorkspaceId == snapshot.WorkspaceId
+            && _creationWizardOwnedWindowOwner == overview.DisplayOwnerContext)
         {
-            open.SetStepCaption(snapshot.ActiveStepId);
+            UpdateCreationWizardOwnedStepContext();
             return;
         }
 
         CloseCreationWizardOwnedWindow();
+        // Gen6 F01: the control is a child of the inline host grid -- an element can
+        // never hold two logical parents. Remove it explicitly BEFORE assigning it
+        // to the owned window's content presenter.
+        InlineWizardHost.Children.Remove(CharacterCreationWizardControl);
         var hosted = new Controls.OwnedWizardWindow("Character Creation", CharacterCreationWizardControl);
         _creationWizardOwnedWindow = hosted;
         _creationWizardOwnedWindowBound = true;
+        _creationWizardOwnedWindowWorkspaceId = snapshot.WorkspaceId;
+        _creationWizardOwnedWindowOwner = overview.DisplayOwnerContext;
         hosted.Closed += (_, _) =>
         {
             if (!ReferenceEquals(_creationWizardOwnedWindow, hosted))
                 return;
             _creationWizardOwnedWindow = null;
             _creationWizardOwnedWindowBound = false;
+            _creationWizardOwnedWindowWorkspaceId = null;
+            _creationWizardOwnedWindowOwner = null;
             // Returning the control to the inline host keeps the center surface
             // authoritative when the user closes the wizard window.
             ReturnCreationWizardToInlineHost();
         };
-        hosted.SetStepCaption(snapshot.ActiveStepId);
+        UpdateCreationWizardOwnedStepContext();
         hosted.Show(this);
     }
 
-    /// <summary>Gen6 T795: closes the owned creation wizard window, if any.</summary>
+    /// <summary>Gen6 T795/F03: closes the owned creation wizard window, if any.</summary>
     private void CloseCreationWizardOwnedWindow()
     {
         Controls.OwnedWizardWindow? openWindow = _creationWizardOwnedWindow;
         _creationWizardOwnedWindow = null;
         _creationWizardOwnedWindowBound = false;
+        _creationWizardOwnedWindowWorkspaceId = null;
+        _creationWizardOwnedWindowOwner = null;
         if (openWindow is not null)
         {
             // Detach the hosted control first so the Closed handler sees the
@@ -1976,15 +2037,17 @@ public partial class MainWindow
         ReturnCreationWizardToInlineHost();
     }
 
-    /// <summary>Gen6 T795: puts the wizard control back into the inline center-surface host.</summary>
+    /// <summary>Gen6 T795/F01: puts the wizard control back into the inline center-surface host.</summary>
     private void ReturnCreationWizardToInlineHost()
     {
-        if (CharacterCreationWizardControl.Parent is Controls.OwnedWizardWindow)
-        {
-            // The window owns the control via its ContentPresenter; closing the
-            // window detaches it. Re-add to the inline host grid.
+        // Gen6 F01: Parent-based detection is unreliable here -- the control's
+        // visual parent is the window's ContentPresenter (never the Window itself),
+        // and after SetContent(null) the Parent is already cleared. Restore
+        // unconditionally: adding twice to the same grid is impossible after the
+        // explicit Remove, and Contains guards the normal path.
+        if (!InlineWizardHost.Children.Contains(CharacterCreationWizardControl))
             InlineWizardHost.Children.Add(CharacterCreationWizardControl);
-            CharacterCreationWizardControl.IsVisible = true;
-        }
+        // Visibility is caller-managed: the null-snapshot branch already set
+        // IsVisible=false before this call; active-draft callers keep it true.
     }
 }
