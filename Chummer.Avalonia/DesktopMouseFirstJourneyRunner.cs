@@ -425,6 +425,11 @@ internal static class DesktopMouseFirstJourneyRunner
                     }
                 }
 
+                // Gen5 (WIN-009): the SR6 phase-A receipt must carry the
+                // DOCUMENT-BACKED identity of the open workspace, not a
+                // hardcoded fixture name/alias — the phase-B reopen leg
+                // cross-checks the receipt against the persisted document.
+                CharacterOverviewState sr6ReceiptSnapshot = window.SnapshotStateForAutomation();
                 DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
                     context,
                     new DesktopMouseFirstJourneyEvidence(
@@ -437,9 +442,9 @@ internal static class DesktopMouseFirstJourneyRunner
                         UsedComboSelectionFallback: getUsedComboSelectionFallback(),
                         ObservedInputEvents: observedInputEvents,
                         ScenarioId: plan.ScenarioId,
-                        WorkspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
-                        CharacterName: "Win109 Sr6 Qualifier",
-                        CharacterAlias: "W09S",
+                        WorkspaceId: sr6ReceiptSnapshot.WorkspaceId?.Value,
+                        CharacterName: sr6ReceiptSnapshot.Profile?.Name,
+                        CharacterAlias: sr6ReceiptSnapshot.Profile?.Alias,
                         RulesetId: "sr6",
                         BuildMethod: null,
                         MetatypeCategory: null,
