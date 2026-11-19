@@ -2488,9 +2488,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             await WaitForAsync(
                 steps,
                 "career leg: created workspace visible in the automation snapshot",
-                () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+                () => string.Equals(
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                    createdWorkspaceId,
+                    StringComparison.Ordinal),
                 ct,
-                TimeSpan.FromMinutes(1));
+                TimeSpan.FromMinutes(2));
         }
 
         CharacterOverviewState restored = window.SnapshotStateForAutomation();
