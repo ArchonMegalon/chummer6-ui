@@ -77,6 +77,9 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         CanResize = true;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
+        // Gen6 T796: shared desktop design tokens (owned wizard window pattern).
+        FontFamily = new global::Avalonia.Media.FontFamily("Segoe UI,Verdana,Arial");
+        FontSize = 13;
 
         Sr6CareerAttributeQuote? selected = ResolveSelectedQuote(editor, requestedAttributeName);
         _preApplyCommand = selected is null ? null : BuildCommand(selected);

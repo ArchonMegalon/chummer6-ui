@@ -95,12 +95,15 @@ public sealed class CareerRewardsWindow : Window
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         CanResize = false;
         ShowInTaskbar = false;
+        // Gen6 T796: shared desktop design tokens (owned wizard window pattern).
+        FontFamily = new global::Avalonia.Media.FontFamily("Segoe UI,Verdana,Arial");
+        FontSize = 13;
 
         StackPanel root = new() { Margin = new Thickness(14), Spacing = 10 };
 
         _balanceText = new TextBlock
         {
-            FontSize = 12,
+            FontSize = 11,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.Gray
         };
