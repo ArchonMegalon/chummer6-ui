@@ -557,6 +557,9 @@ internal static class DesktopMouseFirstJourneyRunner
                 }
 
                 string? savedCharacterName = saved.RootElement.GetProperty("characterName").GetString();
+                string? savedCharacterAlias = saved.RootElement.TryGetProperty("characterAlias", out System.Text.Json.JsonElement savedAliasElement)
+                    && savedAliasElement.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? savedAliasElement.GetString() : null;
                 await window.InitializationForAutomation.WaitAsync(journeyTimeout.Token);
                 ICharacterOverviewPresenter presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
                 await presenter.LoadAsync(new CharacterWorkspaceId(savedWorkspaceId), journeyTimeout.Token);
@@ -595,6 +598,17 @@ internal static class DesktopMouseFirstJourneyRunner
                 {
                     throw new InvalidOperationException("The reopened profile is not marked created; finalization did not persist.");
                 }
+
+                // Gen5 (WIN-009): the reopen receipt must carry the ACTUAL
+                // persisted alias, not the character name fallback.
+                string restoredAlias = restoredOverview.Profile?.Alias ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(savedCharacterAlias)
+                    && !string.Equals(restoredAlias, savedCharacterAlias, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"The reopened profile alias '{restoredAlias}' does not match the saved alias '{savedCharacterAlias}'.");
+                }
+                RecordStep(steps, $"reopen alias verified: alias={restoredAlias}");
 
                 // WIN-009 gen2 (T747): the reopen-verify leg repeats the exact
                 // character check against the RETAINED document so the draft
@@ -792,6 +806,79 @@ internal static class DesktopMouseFirstJourneyRunner
                 }
                 }
 
+                // Gen5 (WIN-009): the career award receipt is OPTIONAL by env
+                // presence - the harness sets it only for genuine-mode career
+                // scenarios. When set, the receipt file is REQUIRED and the
+                // reopened balances must match the awarded karma on the
+                // CREATED workspace (gen31 awarded the print/export sample).
+                string? careerReceiptPath = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.CareerAwardReceiptEnvironmentVariable);
+                if (!string.IsNullOrWhiteSpace(careerReceiptPath))
+                {
+                    if (!File.Exists(careerReceiptPath))
+                    {
+                        throw new InvalidOperationException(
+                            "The career award receipt file does not exist: " + careerReceiptPath);
+                    }
+                    JsonDocument careerSaved;
+                    try
+                    {
+                        careerSaved = JsonDocument.Parse(File.ReadAllText(careerReceiptPath));
+                    }
+                    catch (Exception unreadableCareerReceipt) when (unreadableCareerReceipt is IOException or UnauthorizedAccessException or JsonException)
+                    {
+                        throw new InvalidOperationException(
+                            "The career award receipt is present but unreadable: " + unreadableCareerReceipt.Message);
+                    }
+                    using (careerSaved)
+                    {
+                        string? careerWorkspaceId = careerSaved.RootElement.TryGetProperty("workspaceId", out System.Text.Json.JsonElement careerWorkspaceElement)
+                            && careerWorkspaceElement.ValueKind == System.Text.Json.JsonValueKind.String
+                                ? careerWorkspaceElement.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(careerWorkspaceId))
+                        {
+                            throw new InvalidOperationException("The career award receipt does not carry a workspaceId.");
+                        }
+                        if (!string.Equals(careerWorkspaceId, restoredWorkspaceId.Value, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace '{restoredWorkspaceId.Value}' does not match the career award receipt workspace '{careerWorkspaceId}'. The award may have landed on the print/export sample.");
+                        }
+                        decimal expectedCareerKarma = careerSaved.RootElement.GetProperty("karmaAfter").GetDecimal();
+                        if (!careerSaved.RootElement.TryGetProperty("karmaIncreased", out System.Text.Json.JsonElement careerIncreasedElement)
+                            || careerIncreasedElement.ValueKind != System.Text.Json.JsonValueKind.True)
+                        {
+                            throw new InvalidOperationException("The career award receipt does not record an increased karma balance.");
+                        }
+                        var careerSectionHost = window.ControlsForAutomation.SectionHost;
+                        decimal reopenedCareerKarma = 0m;
+                        bool careerKarmaMatches = await WaitForConditionWithinAsync(
+                            () =>
+                            {
+                                reopenedCareerKarma = ReadCareerRewardsKarmaBalance(careerSectionHost);
+                                return reopenedCareerKarma == expectedCareerKarma;
+                            },
+                            journeyTimeout.Token,
+                            TimeSpan.FromSeconds(10));
+                        if (!careerKarmaMatches)
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace shows karma {reopenedCareerKarma}, which does not match the career award receipt's {expectedCareerKarma}.");
+                        }
+                        string? careerAlias = careerSaved.RootElement.TryGetProperty("characterAlias", out System.Text.Json.JsonElement careerAliasElement)
+                            && careerAliasElement.ValueKind == System.Text.Json.JsonValueKind.String
+                                ? careerAliasElement.GetString() : null;
+                        if (!string.IsNullOrWhiteSpace(careerAlias)
+                            && !string.Equals(restoredAlias, careerAlias, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened alias '{restoredAlias}' does not match the career award receipt alias '{careerAlias}'.");
+                        }
+                        RecordStep(
+                            steps,
+                            $"career award reopen verified: workspaceId={restoredWorkspaceId.Value}; karma {reopenedCareerKarma} matches the receipt; alias {restoredAlias} (document-backed identity)");
+                    }
+                }
+
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-restored");
                 RecordStep(steps, $"reopen verified: workspaceId={restoredWorkspaceId}, name={restoredName}, profileCreated={restoredCreated}, wizardVisible={restoredOverview.CreationWizard is not null}");
 
@@ -812,7 +899,7 @@ internal static class DesktopMouseFirstJourneyRunner
                         ScenarioId: plan.ScenarioId,
                         WorkspaceId: restoredWorkspaceId.Value,
                         CharacterName: restoredName,
-                        CharacterAlias: savedCharacterName,
+                        CharacterAlias: restoredAlias,
                         RulesetId: null,
                         BuildMethod: plan.BuildMethod,
                         MetatypeCategory: plan.MetatypeCategory,
@@ -1722,6 +1809,27 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // career sample itself (Profile.Created=true), so evidence is
             // produced even when the creation leg never reaches career mode
             // (Priority deep stages stay blocked in this scenario).
+            // Gen5 (WIN-009): the print/export leg above may have closed the
+            // created workspace and imported the bundled career sample for a
+            // stable print document. Trusting the pre-print finalization flag
+            // here awarded karma on the SAMPLE while claiming a genuine
+            // Creation-to-Career transition (gen31 step 239). The created
+            // workspace is now explicitly restored and identity-verified
+            // before the career leg runs in genuine mode.
+            bool genuineCareerWorkspace = GenuineCareerTransition && finalizationApplied;
+            if (genuineCareerWorkspace)
+            {
+                await RestoreCreatedWorkspaceForCareerLegAsync(
+                    window,
+                    steps,
+                    createdWorkspaceId,
+                    expectedCharacterName,
+                    expectedCharacterAlias,
+                    expectedRulesetId,
+                    plan.PriorityHeritage,
+                    plan.Metatype,
+                    journeyTimeout.Token);
+            }
             userJourneyWorkflows.Add(await ExerciseCareerRewardsWorkflowAsync(
                 window,
                 context,
@@ -1729,7 +1837,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 screenshotPaths,
                 journeyTimeout.Token,
                 recordPointerAction,
-                genuineCareerWorkspace: GenuineCareerTransition && finalizationApplied));
+                genuineCareerWorkspace: genuineCareerWorkspace));
 
             // T492: native SR6 row-to-confirm verification leg. Gated on
             // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE=1: imports an
@@ -2243,6 +2351,34 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06c-career-rewards-applied"),
                 "career_rewards_roundtrip", "applied");
 
+            if (genuineCareerWorkspace)
+            {
+                // Gen5 (WIN-009): persist the award so the fresh-process
+                // reopen can assert the karma survived on the CREATED
+                // workspace, then write the career award receipt carrying the
+                // post-award identity for the reopen leg.
+                await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+                await WaitForAsync(
+                    steps,
+                    "career leg: workspace saved after award (last command save_character)",
+                    () => string.Equals(
+                        window.SnapshotStateForAutomation().LastCommandId,
+                        "save_character",
+                        StringComparison.Ordinal),
+                    ct);
+                CharacterOverviewState savedAwardState = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteCareerAwardReceipt(
+                    karmaBefore,
+                    karmaAfter,
+                    karmaIncreased,
+                    savedAwardState.WorkspaceId?.Value,
+                    savedAwardState.Profile?.Name,
+                    savedAwardState.Profile?.Alias);
+                RecordStep(
+                    steps,
+                    $"career award receipt written: workspaceId={savedAwardState.WorkspaceId?.Value}; karma {karmaBefore} -> {karmaAfter}; name={savedAwardState.Profile?.Name}; alias={savedAwardState.Profile?.Alias}");
+            }
+
             return new DesktopUserJourneyWorkflowEvidence(
                 Id: "career_rewards_roundtrip",
                 ScreenshotPaths: [stripShot, dialogShot, appliedShot],
@@ -2306,6 +2442,142 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     // and verify the dialog closed. Throws when the route cannot complete (a
     // product gap must be surfaced, never masked with a synthetic grant).
     // ----- T545 / controller 7867 correction-legs: two-process reward recovery -----
+
+    /// <summary>
+    /// Gen5 (WIN-009): restores the journey-created workspace before the
+    /// genuine-mode career rewards leg and proves the restored identity.
+    /// The print/export leg closes the created workspace and imports the
+    /// bundled career sample; awarding karma on whatever is loaded without
+    /// re-checking identity awarded the SAMPLE (gen31 step 239). The
+    /// restored workspace must match the created id, carry the created
+    /// identity (name + alias + Created flag), be clean and persisted, and
+    /// pass the document-backed exact-character check.
+    /// </summary>
+    private static async Task RestoreCreatedWorkspaceForCareerLegAsync(
+        MainWindow window,
+        List<string> steps,
+        string? createdWorkspaceId,
+        string expectedCharacterName,
+        string expectedCharacterAlias,
+        string expectedRulesetId,
+        string? priorityHeritage,
+        string? metatype,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(createdWorkspaceId))
+        {
+            throw new InvalidOperationException(
+                "The genuine career leg requires the journey-created workspace id; none was recorded.");
+        }
+
+        CharacterOverviewState current = window.SnapshotStateForAutomation();
+        if (string.Equals(current.WorkspaceId?.Value, createdWorkspaceId, StringComparison.Ordinal))
+        {
+            RecordStep(steps, "career leg: created workspace still active; no restore needed");
+        }
+        else
+        {
+            RecordStep(
+                steps,
+                "career leg: active workspace " + (current.WorkspaceId?.Value ?? "(none)")
+                + " is not the created workspace " + createdWorkspaceId
+                + "; restoring it through the production presenter load path");
+            await window.InitializationForAutomation.WaitAsync(ct);
+            ICharacterOverviewPresenter presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+            await presenter.LoadAsync(new CharacterWorkspaceId(createdWorkspaceId), ct);
+            await WaitForAsync(
+                steps,
+                "career leg: created workspace visible in the automation snapshot",
+                () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+                ct,
+                TimeSpan.FromMinutes(1));
+        }
+
+        CharacterOverviewState restored = window.SnapshotStateForAutomation();
+        CharacterWorkspaceId restoredId = restored.WorkspaceId
+            ?? throw new InvalidOperationException("The career leg did not leave a workspace loaded.");
+        if (!string.Equals(restoredId.Value, createdWorkspaceId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"The career leg loaded workspace '{restoredId.Value}' instead of the created '{createdWorkspaceId}'.");
+        }
+
+        OpenWorkspaceState? workspaceEntry = restored.Session.FindWorkspace(restoredId);
+        if (workspaceEntry is null || !workspaceEntry.HasSavedWorkspace || workspaceEntry.IsDirty)
+        {
+            throw new InvalidOperationException("The career leg's restored workspace is not clean and persisted.");
+        }
+
+        string? identityError = BuildCareerWorkspaceIdentityError(
+            restored.WorkspaceId,
+            restored.Profile,
+            createdWorkspaceId,
+            expectedCharacterName,
+            expectedCharacterAlias);
+        if (identityError is not null)
+        {
+            throw new InvalidOperationException(identityError);
+        }
+        RecordStep(
+            steps,
+            $"career leg identity verified: workspaceId={restoredId.Value}; name={restored.Profile?.Name}; alias={restored.Profile?.Alias}; created={restored.Profile?.Created}");
+
+        ExactCharacterEvidence restoredExact = await ReadWorkspaceExactCharacterEvidenceAsync(
+            window,
+            expectedRulesetId,
+            createdWorkspaceId,
+            priorityHeritage,
+            metatype,
+            ct);
+        if (!restoredExact.Succeeded)
+        {
+            throw new InvalidOperationException(
+                "career leg exact-character check failed against the restored document: " + restoredExact.Diagnostics);
+        }
+        RecordStep(
+            steps,
+            "career leg exact-character verified: "
+            + $"metatype={restoredExact.MetatypeName}; heritage_rank={restoredExact.HeritageRank}; "
+            + $"normal_points={restoredExact.NormalPointUsed}/{restoredExact.NormalPointTotal}; "
+            + $"special_points={restoredExact.SpecialPointUsed}/{restoredExact.SpecialPointTotal} (document-backed)");
+    }
+
+    /// <summary>
+    /// Gen5: pure identity classifier for the restored career workspace so
+    /// focused tests can pin the refusal without a live journey. Returns
+    /// null when the restored state carries the created workspace's identity;
+    /// otherwise a diagnostic naming the first mismatch.
+    /// </summary>
+    internal static string? BuildCareerWorkspaceIdentityError(
+        CharacterWorkspaceId? restoredWorkspaceId,
+        CharacterProfileSection? profile,
+        string createdWorkspaceId,
+        string expectedCharacterName,
+        string expectedCharacterAlias)
+    {
+        if (restoredWorkspaceId is null
+            || !string.Equals(restoredWorkspaceId?.Value, createdWorkspaceId, StringComparison.Ordinal))
+        {
+            return $"restored workspace '{restoredWorkspaceId?.Value ?? "none"}' is not the created workspace '{createdWorkspaceId}'.";
+        }
+        if (profile is null)
+        {
+            return "the restored workspace carries no profile section.";
+        }
+        if (!string.Equals(profile.Name, expectedCharacterName, StringComparison.Ordinal))
+        {
+            return $"restored profile name '{profile.Name}' does not match the created '{expectedCharacterName}'.";
+        }
+        if (!string.Equals(profile.Alias, expectedCharacterAlias, StringComparison.Ordinal))
+        {
+            return $"restored profile alias '{profile.Alias}' does not match the created '{expectedCharacterAlias}'.";
+        }
+        if (!profile.Created)
+        {
+            return "the restored profile is not marked created.";
+        }
+        return null;
+    }
 
     /// <summary>
     /// Loads the saved career workspace passed via

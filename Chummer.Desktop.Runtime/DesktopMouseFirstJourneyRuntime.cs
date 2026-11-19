@@ -45,6 +45,7 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string RewardHoldEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD";
     public const string RewardAckEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_ACK";
     public const string RewardRecoveryReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_RECOVERY_RECEIPT";
+    public const string CareerAwardReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CAREER_AWARD_RECEIPT";
 
     public static bool RewardHoldRequested => string.Equals(
         Environment.GetEnvironmentVariable(RewardHoldEnvironmentVariable) ?? string.Empty,
@@ -84,6 +85,46 @@ public static class DesktopMouseFirstJourneyRuntime
             operationId,
             acknowledged,
             recoveredFromDurableRecord,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
+    /// <summary>
+    /// Gen5 (WIN-009): writes the genuine-mode career award's durable facts so
+    /// a fresh-process reopen leg can assert the awarded karma persisted on
+    /// the CREATED workspace (not the print/export sample) and that the
+    /// persisted alias matches. No-op when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CAREER_AWARD_RECEIPT.
+    /// </summary>
+    public static void WriteCareerAwardReceipt(
+        decimal karmaBefore,
+        decimal karmaAfter,
+        bool karmaIncreased,
+        string? workspaceId,
+        string? characterName,
+        string? characterAlias)
+    {
+        string? path = Environment.GetEnvironmentVariable(CareerAwardReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            workspaceId,
+            karmaBefore,
+            karmaAfter,
+            karmaIncreased,
+            characterName,
+            characterAlias,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));

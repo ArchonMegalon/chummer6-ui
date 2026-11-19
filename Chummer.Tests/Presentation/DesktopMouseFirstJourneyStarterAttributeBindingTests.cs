@@ -1147,4 +1147,106 @@ public sealed class DesktopMouseFirstJourneyStarterAttributeBindingTests
         Assert.IsTrue(new Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence(28, "seeded").IsValid);
         Assert.IsFalse(new Chummer.Avalonia.DesktopMouseFirstJourneyRunner.StarterAttributeEvidence(-1, "rejected").IsValid);
     }
+
+    [TestMethod]
+    public void Career_identity_classifier_accepts_the_created_identity()
+    {
+        string? error = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.BuildCareerWorkspaceIdentityError(
+            new CharacterWorkspaceId("created-workspace"),
+            CareerProfile("T781 Dwarf Qualifier", "T78D", created: true),
+            "created-workspace",
+            "T781 Dwarf Qualifier",
+            "T78D");
+        Assert.IsNull(error);
+    }
+
+    [TestMethod]
+    public void Career_identity_classifier_refuses_a_sample_workspace_swap()
+    {
+        string? error = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.BuildCareerWorkspaceIdentityError(
+            new CharacterWorkspaceId("bundled-sample"),
+            CareerProfile("T781 Dwarf Qualifier", "T78D", created: true),
+            "created-workspace",
+            "T781 Dwarf Qualifier",
+            "T78D");
+        Assert.IsNotNull(error);
+        Assert.IsTrue(error.Contains("not the created workspace", StringComparison.Ordinal), error);
+    }
+
+    [TestMethod]
+    public void Career_identity_classifier_refuses_alias_name_and_created_mismatches()
+    {
+        string? aliasError = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.BuildCareerWorkspaceIdentityError(
+            new CharacterWorkspaceId("created-workspace"),
+            CareerProfile("T781 Dwarf Qualifier", "WRONG-ALIAS", created: true),
+            "created-workspace",
+            "T781 Dwarf Qualifier",
+            "T78D");
+        Assert.IsTrue(aliasError!.Contains("alias", StringComparison.Ordinal), aliasError);
+
+        string? nameError = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.BuildCareerWorkspaceIdentityError(
+            new CharacterWorkspaceId("created-workspace"),
+            CareerProfile("Soma Career Sample", "T78D", created: true),
+            "created-workspace",
+            "T781 Dwarf Qualifier",
+            "T78D");
+        Assert.IsTrue(nameError!.Contains("name", StringComparison.Ordinal), nameError);
+
+        string? createdError = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.BuildCareerWorkspaceIdentityError(
+            new CharacterWorkspaceId("created-workspace"),
+            CareerProfile("T781 Dwarf Qualifier", "T78D", created: false),
+            "created-workspace",
+            "T781 Dwarf Qualifier",
+            "T78D");
+        Assert.IsTrue(createdError!.Contains("not marked created", StringComparison.Ordinal), createdError);
+    }
+
+    [TestMethod]
+    public void Career_identity_classifier_refuses_missing_workspace_or_profile()
+    {
+        string? noWorkspace = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.BuildCareerWorkspaceIdentityError(
+            null,
+            CareerProfile("T781 Dwarf Qualifier", "T78D", created: true),
+            "created-workspace",
+            "T781 Dwarf Qualifier",
+            "T78D");
+        Assert.IsTrue(noWorkspace!.Contains("not the created workspace", StringComparison.Ordinal), noWorkspace);
+
+        string? noProfile = Chummer.Avalonia.DesktopMouseFirstJourneyRunner.BuildCareerWorkspaceIdentityError(
+            new CharacterWorkspaceId("created-workspace"),
+            null,
+            "created-workspace",
+            "T781 Dwarf Qualifier",
+            "T78D");
+        Assert.IsTrue(noProfile!.Contains("no profile section", StringComparison.Ordinal), noProfile);
+    }
+
+    private static CharacterProfileSection CareerProfile(string name, string alias, bool created) =>
+        new(
+            name,
+            alias,
+            "journey-player",
+            "Dwarf",
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            "6.0",
+            "6.0",
+            "Priority",
+            string.Empty,
+            created,
+            false,
+            false,
+            false,
+            false,
+            0,
+            0);
 }
