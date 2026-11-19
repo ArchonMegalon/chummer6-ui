@@ -9,6 +9,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -71,6 +72,92 @@ public sealed class AvaloniaHeadlessSmokeTests
             harness.Pump();
 
             CollectionAssert.Contains(harness.ShellPresenter.ExecutedCommandIds, "new_character");
+        });
+    }
+
+    [TestMethod]
+    public void Avalonia_headless_shell_resize_smoke()
+    {
+        WithHeadlessUi(() =>
+        {
+            // Ordinary desktop/laptop window sizes: the shell must keep its
+            // three-region composition and a positive content area at each size.
+            double[][] sizes =
+            {
+                new[] { 1280d, 880d },
+                new[] { 1366d, 768d },
+                new[] { 1920d, 1080d },
+                new[] { 960d, 560d },
+            };
+
+            using HeadlessMainWindowHarness harness = new();
+            harness.WaitForReady();
+
+            foreach (double[] size in sizes)
+            {
+                harness.Window.Width = size[0];
+                harness.Window.Height = size[1];
+                harness.Pump();
+
+                Assert.IsTrue(harness.Window.Bounds.Width >= 960d - 0.5d,
+                    $"window width {harness.Window.Bounds.Width} below MinWidth at requested {size[0]}");
+                Assert.IsTrue(harness.Window.Bounds.Height >= 560d - 0.5d,
+                    $"window height {harness.Window.Bounds.Height} below MinHeight at requested {size[1]}");
+
+                Grid? contentRegion = harness.Window.GetVisualDescendants()
+                    .OfType<Grid>()
+                    .FirstOrDefault(grid => grid.Name == "ContentRegion");
+                Assert.IsNotNull(contentRegion, "ContentRegion must exist at every size.");
+                Assert.IsTrue(contentRegion.Bounds.Width > 200d,
+                    $"content region too narrow ({contentRegion.Bounds.Width}) at {size[0]}x{size[1]}");
+                Assert.IsTrue(contentRegion.Bounds.Height > 200d,
+                    $"content region too short ({contentRegion.Bounds.Height}) at {size[0]}x{size[1]}");
+
+                // The menu bar must remain visible and laid out at every size.
+                MenuItem? fileMenu = harness.Window.GetVisualDescendants()
+                    .OfType<MenuItem>()
+                    .FirstOrDefault(menuItem => menuItem.Name == "FileMenuButton");
+                Assert.IsNotNull(fileMenu, "File menu must exist at every size.");
+                Assert.IsTrue(fileMenu.IsVisible, $"file menu hidden at {size[0]}x{size[1]}");
+                Assert.IsTrue(fileMenu.Bounds.Width > 10d,
+                    $"file menu clipped at {size[0]}x{size[1]}");
+            }
+        });
+    }
+    [TestMethod]
+    public void Avalonia_headless_shell_keyboard_focus_smoke()
+    {
+        WithHeadlessUi(() =>
+        {
+            using HeadlessMainWindowHarness harness = new();
+            harness.WaitForReady();
+
+            // Keyboard navigation must be able to move focus into the shell
+            // (headless Tab key event through the window's input pipeline).
+            harness.Window.Focus();
+            harness.Pump();
+            harness.Window.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.None);
+            harness.Pump();
+
+            IInputElement? focused = harness.Window.FocusManager?.GetFocusedElement();
+            Assert.IsNotNull(focused, "tab navigation must produce a focused element.");
+            Assert.IsInstanceOfType(focused, typeof(Control), "focused element must be a control.");
+
+            Control focusedControl = (Control)focused;
+            Assert.IsTrue(
+                harness.Window.GetVisualDescendants().Contains(focusedControl)
+                    || ReferenceEquals(focusedControl, harness.Window),
+                "focus must stay inside the main window subtree.");
+
+            // Visible focus indication: the gen6 theme defines a focus ring brush
+            // consumed by Button:focus styling.
+            bool focusBrushFound = harness.Window.GetVisualDescendants()
+                .OfType<Button>()
+                .Any(button => button.BorderBrush is not null);
+            Assert.IsTrue(
+                focusBrushFound || global::Avalonia.Application.Current!.TryGetResource(
+                    "ChummerShellFocusRingBrush", null, out object? _),
+                "ChummerShellFocusRingBrush token must exist for visible keyboard focus.");
         });
     }
 
