@@ -71,6 +71,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.summary.inspect_runtime"] = "Inspect Runtime",
         ["desktop.shell.summary.empty_value"] = "-",
         ["desktop.shell.status.character"] = "Character: {0}",
+        ["desktop.shell.title.unnamed_runner"] = "Unnamed runner",
         ["desktop.shell.status.service"] = "Service: {0}",
         ["desktop.shell.status.time"] = "Time: {0}",
         ["desktop.shell.status.time_placeholder"] = "Time: -",

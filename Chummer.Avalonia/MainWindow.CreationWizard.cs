@@ -269,17 +269,10 @@ public partial class MainWindow
 
         CharacterCreationWizardControl.SetPrerequisiteState(CreationWizard_LoadPrerequisiteState());
 
-        // Gen6 F01/F02: host choice happens AFTER the shared bind path above. The
-        // owned window only presents the same bound control; the inline center
-        // surface remains the default and the headless-journey path.
-        if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
-        {
-            RouteCreationWizardToOwnedWindow(overview, snapshot);
-            return;
-        }
-
-        CloseCreationWizardOwnedWindow();
-
+        // Gen6 F02 P1: the active-draft editor locking is COMMON path -- it must
+        // run BEFORE host choice so the unrestricted main editor stays
+        // unreachable for unfinished creation in BOTH hosts (an owned wizard
+        // window must never coexist with an unlocked editor underneath it).
         // An unfinished character owns the center surface. The unrestricted editor remains
         // unreachable until canonical finalization makes CreationWizard null.
         ClassicFormPortHostControl.IsVisible = false;
@@ -292,6 +285,18 @@ public partial class MainWindow
         ApplyPaneWidth(RightShellRegion, false, RightShellWidth, 0d, RightShellWidth);
         if (ContentRegion.ColumnDefinitions.Count >= 3)
             ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
+
+        // Gen6 F01/F02: host choice happens AFTER the shared bind path above. The
+        // owned window only presents the same bound control; the inline center
+        // surface remains the default and the headless-journey path.
+        if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
+        {
+            RouteCreationWizardToOwnedWindow(overview, snapshot);
+            return;
+        }
+
+        CloseCreationWizardOwnedWindow();
+
         CharacterCreationWizardControl.IsVisible = true;
         if (!InlineWizardHost.Children.Contains(CharacterCreationWizardControl))
             InlineWizardHost.Children.Add(CharacterCreationWizardControl);
@@ -2011,6 +2016,13 @@ public partial class MainWindow
             _creationWizardOwnedWindowBound = false;
             _creationWizardOwnedWindowWorkspaceId = null;
             _creationWizardOwnedWindowOwner = null;
+            // Gen6 F01 P1: a user-initiated close (X / Alt+F4) reaches this
+            // handler with the hosted control still inside the closing
+            // window's ContentPresenter -- the programmatic path detaches
+            // via SetContent(null) BEFORE Close(), but the user-close path
+            // must detach explicitly here too, or the restore below would
+            // re-parent a control that still has a visual parent.
+            hosted.SetContent(null);
             // Returning the control to the inline host keeps the center surface
             // authoritative when the user closes the wizard window.
             ReturnCreationWizardToInlineHost();

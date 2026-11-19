@@ -64,7 +64,7 @@ internal static class MainWindowShellFrameProjector
                     ShowOriginDossierAction: !hasOpenWorkspace && showAiFeatures)
                 {
                     // Gen6 F07: structured title inputs, projected once here.
-                    ActiveCharacterTitle = BuildActiveCharacterTitle(state, workspaceContext),
+                    ActiveCharacterTitle = BuildActiveCharacterTitle(state, workspaceContext, language),
                     HasActiveWorkspace = workspaceContext.ActiveWorkspaceId is not null
                 },
                 SummaryHeader: new SummaryHeaderState(
@@ -316,7 +316,8 @@ internal static class MainWindowShellFrameProjector
     /// </summary>
     private static string? BuildActiveCharacterTitle(
         CharacterOverviewState state,
-        ActiveWorkspaceContext workspaceContext)
+        ActiveWorkspaceContext workspaceContext,
+        string language)
     {
         if (workspaceContext.ActiveWorkspaceId is null)
         {
@@ -328,7 +329,11 @@ internal static class MainWindowShellFrameProjector
             return state.Profile!.Name!;
         }
 
-        return workspaceContext.ActiveWorkspaceId!.Value.Value;
+        // Gen6 F07 P2: an unfinished (unnamed) runner must never leak its raw
+        // workspace id into the native title. Use the established localized
+        // caption (same phrase as RulesetUiDirectiveCatalog resume summaries).
+        return DesktopLocalizationCatalog.GetRequiredString(
+            "desktop.shell.title.unnamed_runner", language);
     }
 
     private static string DescribeWorkspaceForChrome(
