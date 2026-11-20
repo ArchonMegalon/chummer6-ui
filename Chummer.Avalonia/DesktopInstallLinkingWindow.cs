@@ -1242,6 +1242,29 @@ internal sealed class DesktopInstallLinkingWindow : Window
     }
 
     /// <summary>
+    /// Recovery-specific observation identity for the validated adoption:
+    /// the same installation/head/key identity and owner-transition
+    /// handling as the shared predicate, but WITHOUT the
+    /// BrowserApprovalReturnState requirement - the validated adoption
+    /// intentionally clears the retained approval fields, so a recovery
+    /// success must not be misread as an owner/operation transition.
+    /// This never replaces the shared browser-operation predicate.
+    /// </summary>
+    private static bool IsSameRecoveryObservation(DesktopInstallLinkingState current,
+        DesktopInstallLinkingState observed)
+    {
+        bool expectedOwner = current.OwnerTransitionRevision == observed.OwnerTransitionRevision
+            || (!DesktopInstallLinkingRuntime.IsClaimed(observed)
+                && DesktopInstallLinkingRuntime.IsClaimed(current)
+                && observed.OwnerTransitionRevision < long.MaxValue
+                && current.OwnerTransitionRevision == observed.OwnerTransitionRevision + 1);
+        return expectedOwner
+            && string.Equals(current.InstallationId, observed.InstallationId, StringComparison.Ordinal)
+            && string.Equals(current.HeadId, observed.HeadId, StringComparison.Ordinal)
+            && string.Equals(current.PublicKey, observed.PublicKey, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Observation ended without a terminal outcome: present an explicit
     /// re-check affordance instead of implying the dialog is still watching.
     /// </summary>
@@ -1475,10 +1498,35 @@ internal sealed class DesktopInstallLinkingWindow : Window
             if (_windowLifetimeCancellation?.IsCancellationRequested == true)
                 return;
             DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
-            if (!IsSameObservedOperation(result.State, recoveryState)
+            // Controller9326: the validated adoption clears the retained
+            // approval fields, so a recovered success must be compared
+            // with the recovery-specific identity (return-state-insensitive),
+            // not the shared browser-operation predicate.
+            Func<DesktopInstallLinkingState, DesktopInstallLinkingState, bool> sameObservation =
+                result.Recovered ? IsSameRecoveryObservation : IsSameObservedOperation;
+            if (!result.Recovered && DesktopInstallLinkingRuntime.IsClaimed(current))
+            {
+                // Controller9326: the copy became linked while the recovery
+                // check was in flight (concurrent adoption, browser callback,
+                // or claim redemption). A delayed negative outcome must never
+                // replace that newer linked UI state - re-assert it instead.
+                _state = current;
+                RefreshSummary();
+                RefreshActionState();
+                if (Owner is MainWindow ownerWindow)
+                {
+                    ownerWindow.ApplyInstallLinkingChrome(_state);
+                }
+                SetStatus(!string.IsNullOrWhiteSpace(_state.LastClaimMessage)
+                    ? _state.LastClaimMessage
+                    : FormatClaimStatus(_state, _language));
+                UpdateMatrixHandoffState("Grant accepted");
+                return;
+            }
+            if (!sameObservation(result.State, recoveryState)
                 || (!result.Recovered && result.State.OwnerTransitionRevision != recoveryState.OwnerTransitionRevision)
                 || current.OwnerTransitionRevision != result.State.OwnerTransitionRevision
-                || !IsSameObservedOperation(current, result.State))
+                || !sameObservation(current, result.State))
             {
                 SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
                 return;
@@ -1487,6 +1535,16 @@ internal sealed class DesktopInstallLinkingWindow : Window
             _state = result.State;
             if (result.Recovered)
             {
+                // Controller9326: the pre-adoption observer captured the
+                // stale retained approval; its return-state comparison
+                // would fail after adoption and repaint recovery_stopped
+                // over the success. Retire that observation and rebase it
+                // onto the adopted state (same shape as StartClaimPolling).
+                _handoffPollCancellation?.Cancel();
+                _handoffPollCancellation?.Dispose();
+                _handoffPollCancellation = new CancellationTokenSource();
+                _observedOperation = _state;
+                _ = PollForClaimedInstallAsync(_state, _handoffPollCancellation.Token);
                 // Controller9308 defect 3: the validated adoption is the same
                 // owner transition the browser-callback path produces, so the
                 // owner chrome must be refreshed from the adopted state here.

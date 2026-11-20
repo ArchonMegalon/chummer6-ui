@@ -1086,6 +1086,336 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
             try { if (Directory.Exists(_stateRoot)) Directory.Delete(_stateRoot, recursive: true); } catch { }
         }
     }
+    // ------------------------------------------------------------------
+    // Controller9326: window-level recovery regressions. The validated
+    // adoption clears the retained approval fields, so the shared
+    // observation predicate would misread the success as an owner
+    // transition; these tests drive the REAL handler + observer loop.
+    // ------------------------------------------------------------------
+
+    [TestMethod]
+    public async Task Recovery_success_rebases_live_observer_and_never_repaints_recovery_stopped()
+    {
+        using RecoveryStatusHubFixture hub = new(linked: true);
+        await WithWindowAsync(async window =>
+        {
+            PrepareRetainedApproval();
+            SyncWindowState(window);
+            FieldInfo tokenField = typeof(DesktopInstallLinkingWindow).GetField(
+                "_handoffPollCancellation", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("_handoffPollCancellation missing");
+            object? tokenBefore = tokenField.GetValue(window);
+
+            // Start the live observer on the stale retained approval.
+            InvokePrivateInstance(window, "StartClaimPolling", "Waiting for browser callback");
+            await StepLoopAsync(2);
+
+            Task handler = InvokeRecoveryHandlerAsync(window);
+            // The dispatcher only runs posted work while the test body
+            // pumps (StepLoopAsync) - awaiting the live task directly
+            // would deadlock on the handler's ConfigureAwait(true)
+            // continuations.
+            for (int i = 0; i < 40 && !handler.IsCompleted; i++)
+            {
+                await StepLoopAsync(2);
+            }
+            Assert.IsTrue(handler.IsCompleted,
+                "the recovery handler must complete under pumping");
+            await handler;
+
+            string statusAfterHandler = GetStatus(window);
+            StringAssert.DoesNotMatch(statusAfterHandler,
+                new System.Text.RegularExpressions.Regex("Recovery stopped"),
+                "recovery_stopped must never be painted after a validated adoption; got: "
+                    + statusAfterHandler);
+            Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(LoadState()),
+                "the adopted grant must persist as the durable state");
+            Assert.IsNotNull(tokenField.GetValue(window),
+                "a rebased observer must be running after adoption");
+            Assert.AreNotSame(tokenBefore, tokenField.GetValue(window),
+                "the pre-adoption observer token must have been retired");
+
+            // Pump the rebased observer: none of its iterations may repaint
+            // the success as recovery_stopped.
+            for (int i = 0; i < 4; i++)
+            {
+                await StepLoopAsync(2);
+                StringAssert.DoesNotMatch(GetStatus(window),
+                    new System.Text.RegularExpressions.Regex("Recovery stopped"),
+                    "stale observer repainted recovery_stopped after adoption");
+            }
+            Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(LoadState()));
+        });
+    }
+
+    [TestMethod]
+    public async Task Recovery_delayed_notlinked_does_not_replace_newer_linked_state()
+    {
+        using RecoveryStatusHubFixture hub = new(linked: false, responseDelayMs: 350);
+        await WithWindowAsync(async window =>
+        {
+            PrepareRetainedApproval();
+            SyncWindowState(window);
+
+            // Fire the recovery check; the fake Hub holds the response.
+            Task handler = InvokeRecoveryHandlerAsync(window);
+            await StepLoopAsync(2);
+
+            // Before the response lands, the copy becomes linked (concurrent
+            // browser-callback adoption) with a bumped owner revision.
+            SaveState(hub.BuildClaimedState(HeadId, ownerRevisionBump: true));
+            await StepLoopAsync(2);
+
+            // Pump until the delayed response lands and the handler
+            // completes (never await a live task unpumped).
+            for (int i = 0; i < 60 && !handler.IsCompleted; i++)
+            {
+                await StepLoopAsync(2);
+            }
+            Assert.IsTrue(handler.IsCompleted,
+                "the delayed recovery handler must complete under pumping");
+            await handler;
+            await StepLoopAsync(4);
+
+            string status = GetStatus(window);
+            StringAssert.DoesNotMatch(status,
+                new System.Text.RegularExpressions.Regex("Recovery stopped"),
+                "a delayed negative must not replace the newer linked state; got: " + status);
+            Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(LoadState()),
+                "the newer linked state must survive the delayed recovery outcome");
+            StringAssert.DoesNotMatch(status,
+                new System.Text.RegularExpressions.Regex("could not be confirmed"),
+                "the stale expired-approval copy must not surface over the linked state");
+        });
+    }
+
+    private static void SyncWindowState(Window window)
+    {
+        FieldInfo stateField = typeof(DesktopInstallLinkingWindow).GetField(
+            "_state", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("_state field missing");
+        stateField.SetValue(window, LoadState());
+    }
+
+    private static void InvokePrivateInstance(Window window, string methodName, string argument)
+    {
+        MethodInfo method = typeof(DesktopInstallLinkingWindow).GetMethod(
+            methodName, BindingFlags.Instance | BindingFlags.NonPublic, new[] { typeof(string) })
+            ?? throw new AssertFailedException(methodName + " missing");
+        method.Invoke(window, new object?[] { argument });
+    }
+
+    private static async Task InvokeRecoveryHandlerAsync(Window window)
+    {
+        MethodInfo method = typeof(DesktopInstallLinkingWindow).GetMethod(
+            "GetFallbackClaimCodeAsync", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("GetFallbackClaimCodeAsync missing");
+        await (Task)(method.Invoke(window, Array.Empty<object>())
+            ?? throw new AssertFailedException("recovery handler returned null"));
+    }
+    /// <summary>
+    /// Loopback Hub for the recovery-status endpoint (Controller9326): serves
+    /// POST /api/v1/install-linking/installations/status with either a
+    /// consistent linked grant or a not-linked body derived from the request.
+    /// Owns its own state root for the duration of the test.
+    /// </summary>
+    private sealed class RecoveryStatusHubFixture : IDisposable
+    {
+        private readonly System.Net.Sockets.Socket _listener;
+        private readonly string _stateRoot;
+        private readonly string _priorStateRoot;
+        private readonly string _priorApiBase;
+        private readonly System.Security.Cryptography.RSA _installationKey =
+            System.Security.Cryptography.RSA.Create(2048);
+        private readonly bool _linked;
+        private readonly int _responseDelayMs;
+        private Task? _listenerTask;
+        private readonly List<Task> _handlerTasks = new();
+
+        public RecoveryStatusHubFixture(bool linked, int responseDelayMs = 0)
+        {
+            _linked = linked;
+            _responseDelayMs = responseDelayMs;
+            _priorStateRoot = Environment.GetEnvironmentVariable(StateRootEnv);
+            _priorApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+            _stateRoot = Path.Combine(
+                Path.GetTempPath(), "chummer-recovery-hub-", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_stateRoot);
+            Environment.SetEnvironmentVariable(StateRootEnv, _stateRoot);
+            DesktopInstallLinkingState initial = LoadState();
+            SaveState(initial with
+            {
+                PublicKey = _installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = _installationKey.ExportPkcs8PrivateKeyPem()
+            });
+            _listener = new System.Net.Sockets.Socket(System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+            _listener.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 0));
+            _listener.Listen(16);
+            string apiBase = $"http://127.0.0.1:{((System.Net.IPEndPoint)_listener.LocalEndPoint!).Port}/";
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            _listenerTask = Task.Run(AcceptLoopAsync);
+        }
+
+        private async Task AcceptLoopAsync()
+        {
+            while (true)
+            {
+                System.Net.Sockets.Socket connection = await _listener.AcceptAsync();
+                Task handler = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using System.Net.Sockets.Socket socket = connection;
+                        using System.Net.Sockets.NetworkStream stream = new(socket, ownsSocket: false);
+                        string requestBody = await ReadStatusRequestBodyAsync(
+                            stream, CancellationToken.None,
+                            "POST /api/v1/install-linking/installations/status HTTP/1.1");
+                        if (_responseDelayMs > 0)
+                        {
+                            await Task.Delay(_responseDelayMs);
+                        }
+                        string responseBody = _linked
+                            ? BuildLinkedBody(requestBody)
+                            : "{\"linked\": false}";
+                        byte[] response = System.Text.Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n" +
+                            "Content-Type: application/json\r\n" +
+                            "Content-Length: "
+                                + System.Text.Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                            "Connection: close\r\n\r\n" + responseBody);
+                        await stream.WriteAsync(response.AsMemory(), CancellationToken.None);
+                    }
+                    catch (Exception ex) when (ex is ObjectDisposedException or System.Net.Sockets.SocketException
+                        or OperationCanceledException or IOException)
+                    {
+                    }
+                });
+                lock (_handlerTasks) { _handlerTasks.Add(handler); }
+            }
+        }
+
+        private static async Task<string> ReadStatusRequestBodyAsync(
+            Stream stream, CancellationToken cancellationToken, string requestLine)
+        {
+            using StreamReader reader = new(stream, System.Text.Encoding.UTF8,
+                detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
+            Assert.AreEqual(requestLine, await reader.ReadLineAsync(cancellationToken));
+            int contentLength = 0;
+            string? header;
+            while (!string.IsNullOrEmpty(header = await reader.ReadLineAsync(cancellationToken)))
+            {
+                if (header.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
+                {
+                    contentLength = int.Parse(header["Content-Length:".Length..].Trim());
+                }
+            }
+            Assert.IsTrue(contentLength > 0, "the status proof request must carry a body");
+            char[] body = new char[contentLength];
+            Assert.AreEqual(contentLength, await reader.ReadBlockAsync(body.AsMemory(), cancellationToken));
+            return new string(body);
+        }
+
+        private static string BuildLinkedBody(string requestBody)
+        {
+            using System.Text.Json.JsonDocument request =
+                System.Text.Json.JsonDocument.Parse(requestBody);
+            string Field(string name) => request.RootElement.GetProperty(name).GetString()!;
+            string issuedAt = DateTimeOffset.UtcNow.AddMinutes(-5).ToString("o");
+            string expiresAt = DateTimeOffset.UtcNow.AddDays(30).ToString("o");
+            string publicKey = System.Text.Json.JsonSerializer.Serialize(Field("publicKey"));
+string installationIdJson = System.Text.Json.JsonSerializer.Serialize(Field("installationId"));
+string channelJson = System.Text.Json.JsonSerializer.Serialize(Field("channelId"));
+string versionJson = System.Text.Json.JsonSerializer.Serialize(Field("applicationVersion"));
+string headIdJson = System.Text.Json.JsonSerializer.Serialize(Field("headId"));
+string platformJson = System.Text.Json.JsonSerializer.Serialize(Field("platform"));
+string archJson = System.Text.Json.JsonSerializer.Serialize(Field("arch"));
+string issuedAtJson = System.Text.Json.JsonSerializer.Serialize(issuedAt);
+string expiresAtJson = System.Text.Json.JsonSerializer.Serialize(expiresAt);
+string issuedUtcJson = System.Text.Json.JsonSerializer.Serialize(
+            DateTimeOffset.UtcNow.AddMinutes(-1).ToString("o"));
+            return """
+{
+  "linked": true,
+  "installation": {
+    "installationId": %INSTALLATIONID%,
+    "artifactId": "avalonia-win-x64-installer",
+    "channel": %CHANNEL%,
+    "version": %VERSION%,
+    "installAccessClass": "open_public",
+    "status": "active",
+    "createdAtUtc": %ISSUEDAT%,
+    "updatedAtUtc": %ISSUEDAT%,
+    "userId": "user-recovery-1",
+    "subjectId": "subject.install.claim",
+    "publicKey": %PUBLICKEY%,
+    "claimTicketId": "ticket-recovery-1",
+    "headId": %HEADID%,
+    "platform": %PLATFORM%,
+    "arch": %ARCH%,
+    "hostLabel": null,
+    "grantId": "grant-recovery-1"
+  },
+  "grant": {
+    "grantId": "grant-recovery-1",
+    "installationId": %INSTALLATIONID%,
+    "status": "active",
+    "accessToken": "token-recovery-1",
+    "issuedAtUtc": %ISSUEDUTC%,
+    "expiresAtUtc": %EXPIRESAT%,
+    "userId": "user-recovery-1",
+    "subjectId": "subject.install.claim"
+  }
+}
+"""
+                .Replace("%INSTALLATIONID%", installationIdJson)
+                .Replace("%CHANNEL%", channelJson)
+                .Replace("%VERSION%", versionJson)
+                .Replace("%HEADID%", headIdJson)
+                .Replace("%PLATFORM%", platformJson)
+                .Replace("%ARCH%", archJson)
+                .Replace("%PUBLICKEY%", publicKey)
+                .Replace("%ISSUEDAT%", issuedAtJson)
+                .Replace("%EXPIRESAT%", expiresAtJson)
+                .Replace("%ISSUEDUTC%", issuedUtcJson);
+        }
+
+        public DesktopInstallLinkingState BuildClaimedState(string headId, bool ownerRevisionBump = false)
+        {
+            DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
+            return current with
+            {
+                Status = "claimed",
+                ClaimedAtUtc = DateTimeOffset.UtcNow,
+                GrantId = "grant-recovery-1",
+                GrantToken = "token-recovery-1",
+                GrantIssuedAtUtc = DateTimeOffset.UtcNow.AddMinutes(-1),
+                GrantExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(30),
+                UserId = "user-recovery-1",
+                SubjectId = "subject.install.claim",
+                LastClaimError = null,
+                BrowserApprovalRequest = null,
+                BrowserApprovalReturnState = null,
+                BrowserApprovalUncertain = false,
+                BrowserApprovalTerminal = false,
+                OwnerTransitionRevision = ownerRevisionBump
+                    ? Math.Max(1, current.OwnerTransitionRevision) + 1
+                    : current.OwnerTransitionRevision
+            };
+        }
+
+        public void Dispose()
+        {
+            try { _listener.Dispose(); } catch { }
+            try { _listenerTask?.Wait(TimeSpan.FromSeconds(2)); } catch { }
+            Task[] handlers;
+            lock (_handlerTasks) { handlers = _handlerTasks.ToArray(); }
+            try { Task.WhenAll(handlers).Wait(TimeSpan.FromSeconds(3)); } catch { }
+            Environment.SetEnvironmentVariable(StateRootEnv, _priorStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", _priorApiBase);
+            try { if (Directory.Exists(_stateRoot)) Directory.Delete(_stateRoot, recursive: true); } catch { }
+        }
+    }
+
+
 
     private static string BuildMatrixGrantResponse(DesktopInstallLinkingState state, string publicKey)
     {
