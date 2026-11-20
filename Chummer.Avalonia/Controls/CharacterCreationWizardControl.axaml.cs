@@ -654,10 +654,19 @@ public partial class CharacterCreationWizardControl : UserControl
     /// </summary>
     private void RefreshFinishWithAiAvailability()
     {
+        // Gen8: the column-5 footer slot is SHARED between the human
+        // Review/Finish affordance and the AI sibling. The human button wins
+        // whenever the same authoritative finalization-read availability
+        // makes it visible, regardless of the order in which MainWindow
+        // projects the two setters (real call order is SetFinalizeAvailability
+        // then SetFinishWithAiAvailability, so a direct write here previously
+        // re-surfaced the AI button over the human one).
+        bool humanFinalizeVisible = !_finalizeBusy && _finalizeAvailable;
         bool canActuate = _finishWithAiFeatureEnabled
             && _finishWithAiReviewAvailable
             && !_finalizeBusy
-            && !_aiFinishBusy;
+            && !_aiFinishBusy
+            && !humanFinalizeVisible;
         FinishWithAiButton.IsVisible = canActuate;
         FinishWithAiButton.IsEnabled = canActuate;
     }
@@ -752,10 +761,10 @@ public partial class CharacterCreationWizardControl : UserControl
         // Column-5 slot is shared with FinishWithAiButton (single footer slot);
         // both become available on the same finalization-read authority, so the
         // explicit human Review/Finish affordance wins and the AI sibling hides.
-        if (canReview)
-        {
-            FinishWithAiButton.IsVisible = false;
-        }
+        // Gen8: instead of a one-way direct hide here, route the AI sibling
+        // through the joint projection so BOTH orders converge on the same
+        // end-state (human visible => AI hidden; human hidden => AI may show).
+        RefreshFinishWithAiAvailability();
         if (_finalizeStatus is null)
         {
             FinalizeStatusText.Text = canReview

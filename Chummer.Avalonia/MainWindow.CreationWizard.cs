@@ -55,6 +55,11 @@ public partial class MainWindow
     // working because FindWizardControl scans desktop windows too.
     private Controls.OwnedWizardWindow? _creationWizardOwnedWindow;
     private bool _creationWizardOwnedWindowBound;
+    // Gen8: true while the wizard is parked after a Cancel (footer Cancel or
+    // owned-window X) in the default owned mode. While parked the active inline
+    // wizard is NOT exposed; the shell shows the safe park surface and Resume
+    // reopens the owned window. Cleared whenever the wizard is re-hosted.
+    private bool _creationWizardParked;
     // Gen6 F03: reuse identity of the owned wizard host (workspace + owner) so the
     // same captured context reuses its window instead of recreating surfaces.
     private string? _creationWizardOwnedWindowWorkspaceId;
@@ -2007,6 +2012,10 @@ public partial class MainWindow
             return;
         }
 
+        // Gen8: leaving the parked state - the wizard is going back to the owned
+        // window, so the park surface must disappear.
+        _creationWizardParked = false;
+        CreationWizardParkPanel.IsVisible = false;
         CloseCreationWizardOwnedWindow();
         // Gen6 F01: the control is a child of the inline host grid -- an element can
         // never hold two logical parents. Remove it explicitly BEFORE assigning it
@@ -2032,9 +2041,19 @@ public partial class MainWindow
             // must detach explicitly here too, or the restore below would
             // re-parent a control that still has a visual parent.
             hosted.SetContent(null);
-            // Returning the control to the inline host keeps the center surface
-            // authoritative when the user closes the wizard window.
-            ReturnCreationWizardToInlineHost();
+            // Gen8: a user X close in the default owned mode parks the wizard
+            // (draft preserved, inline wizard hidden, Resume surface shown);
+            // the inline opt-out keeps the proven inline restore.
+            if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
+            {
+                ParkCreationWizardAfterCancel();
+            }
+            else
+            {
+                // Returning the control to the inline host keeps the center surface
+                // authoritative when the user closes the wizard window.
+                ReturnCreationWizardToInlineHost();
+            }
         };
         UpdateCreationWizardOwnedStepContext();
         // Wave4 W1: owned-hosted wizard offers footer Cancel; the inline host
@@ -2045,14 +2064,57 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Wave4 W1: footer Cancel from the owned-hosted wizard. Uses the
-    /// programmatic close path (SetContent(null) before Close) so the hosted
-    /// control detaches cleanly -- the SAME end state as the user X press,
-    /// with the draft preserved and the inline host restored.
+    /// Wave4 W1 / Gen8: footer Cancel from the owned-hosted wizard. Gen8
+    /// contract: Cancel exits the owned wizard while KEEPING the draft, and
+    /// the active inline wizard is NOT re-exposed inside MainWindow in the
+    /// default owned mode (an extra-window wizard must not silently become an
+    /// inline editor). The shell instead parks on a safe summary surface with
+    /// a Resume affordance that reopens the owned window. No discard, commit,
+    /// or replay happens on either path.
     /// </summary>
     private void CreationWizard_OnCancelRequested(object? sender, EventArgs e)
     {
+        ParkCreationWizardAfterCancel();
+    }
+
+    /// <summary>
+    /// Gen8: park the wizard after Cancel (footer Cancel or the owned window's
+    /// user close) when the owned route is the active host mode. The wizard
+    /// control is detached from the owned window and hidden from the inline
+    /// host; draft identity/state stay bound and the park surface with Resume
+    /// becomes the visible shell content.
+    /// </summary>
+    private void ParkCreationWizardAfterCancel()
+    {
         CloseCreationWizardOwnedWindow();
+        if (!Creation.OwnedCreationWizardGate.IsSessionEnabled())
+        {
+            // Explicit inline opt-out keeps the proven inline restore behavior.
+            return;
+        }
+        _creationWizardParked = true;
+        // The active inline wizard must not stay visible in the shell.
+        CharacterCreationWizardControl.IsVisible = false;
+        CharacterCreationWizardControl.IsHitTestVisible = false;
+        CreationWizardParkPanel.IsVisible = true;
+    }
+
+    /// <summary>
+    /// Gen8: Resume from the park surface. Re-runs the owned-host routing for
+    /// the still-bound snapshot so the SAME draft identity reopens the owned
+    /// wizard window (fresh layout pass, no replay of any prior operation).
+    /// </summary>
+    private void CreationWizardParkResumeButton_OnClick(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _creationWizardParked = false;
+        CreationWizardParkPanel.IsVisible = false;
+        if (_boundCreationWizardSnapshot is { } snapshot
+            && _adapter is { } adapter
+            && adapter.State.CreationWizard is { } current
+            && string.Equals(current.WorkspaceId, snapshot.WorkspaceId, StringComparison.Ordinal))
+        {
+            RouteCreationWizardToOwnedWindow(adapter.State, snapshot);
+        }
     }
 
     /// <summary>Gen6 T795/F03: closes the owned creation wizard window, if any.</summary>
@@ -2070,6 +2132,10 @@ public partial class MainWindow
             openWindow.SetContent(null);
             openWindow.Close();
         }
+        // Gen8: non-cancel closes (detach, finalization, SR6 branch, opt-out)
+        // also clear any parked surface so a stale banner cannot survive.
+        _creationWizardParked = false;
+        CreationWizardParkPanel.IsVisible = false;
         ReturnCreationWizardToInlineHost();
     }
 
