@@ -50,6 +50,33 @@ public partial class OwnedWizardWindow : Window
     }
 
     /// <summary>Replaces or clears the hosted wizard content (null clears).</summary>
+    /// <summary>
+    /// Renders the owned wizard window to PNG bytes for journey-evidence
+    /// screenshots. Mirrors DesktopDialogWindow.CaptureScreenshotBytesForAutomation.
+    /// </summary>
+    internal byte[] CaptureScreenshotBytesForAutomation()
+    {
+        PixelSize pixelSize = new(
+            Math.Max(1, (int)Math.Ceiling(Bounds.Width)),
+            Math.Max(1, (int)Math.Ceiling(Bounds.Height)));
+
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            InvalidateMeasure();
+            InvalidateArrange();
+            InvalidateVisual();
+            Measure(new Size(pixelSize.Width, pixelSize.Height));
+            Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+            global::Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        }
+
+        using global::Avalonia.Media.Imaging.RenderTargetBitmap bitmap = new(pixelSize, new global::Avalonia.Vector(96d, 96d));
+        bitmap.Render(this);
+        using System.IO.MemoryStream output = new();
+        bitmap.Save(output);
+        return output.ToArray();
+    }
+
     public void SetContent(Control? content)
     {
         if (ResolveContentHost() is { } host)

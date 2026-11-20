@@ -5712,29 +5712,97 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 recordPointerAction();
                 RecordStep(steps, $"wizard footer cancel press; {cancelDiagnostics}");
 
-                // Cancel semantics (MainWindow.CreationWizard.cs): the draft is
-                // KEPT ("Cancel keeps your draft; you can resume any time"), the
-                // owned window closes via SetContent(null) + Close, and the wizard
-                // control is restored to the INLINE host with the footer Cancel
-                // hidden (owned-host-only affordance). Poll for that end state.
+                // Gen8 cancel semantics (MainWindow.CreationWizard.cs): in the
+                // default owned mode the wizard PARKS instead of returning to
+                // the inline host -- the owned window closes, the inline wizard
+                // is hidden, the safe park surface appears with the draft
+                // retained, and Resume re-opens the owned window for the SAME
+                // workspace. Poll for that end state.
                 bool cancelCompleted = false;
+                bool parkVisible = false;
+                bool inlineHidden = false;
+                bool ownedClosed = false;
                 for (int attempt = 0; attempt < 30 && !cancelCompleted; attempt++)
                 {
                     await Task.Delay(100, ct);
-                    bool inlineRestored = window.GetVisualDescendants()
-                        .OfType<CharacterCreationWizardControl>()
-                        .Any(control => control.IsVisible);
-                    bool ownedClosed = !(global::Avalonia.Application.Current?.ApplicationLifetime
+                    parkVisible = window.GetVisualDescendants()
+                        .OfType<Border>()
+                        .Any(border => border.Name == "CreationWizardParkPanel" && border.IsVisible);
+                    inlineHidden = !(FindWizardControl(window) is { IsVisible: true });
+                    ownedClosed = !(global::Avalonia.Application.Current?.ApplicationLifetime
                         is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime cancelDesktop
-                        && cancelDesktop.Windows.Any(w => !ReferenceEquals(w, window)
-                            && w.GetVisualDescendants().OfType<CharacterCreationWizardControl>()
-                                .Any(control => control.IsVisible)));
-                    CharacterCreationWizardControl? restoredWizard = FindWizardControl(window);
-                    bool cancelHidden = restoredWizard is null || !restoredWizard.CancelButton.IsVisible;
-                    cancelCompleted = inlineRestored && ownedClosed && cancelHidden;
+                        && cancelDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                            .Any(w => w.IsVisible));
+                    cancelCompleted = parkVisible && inlineHidden && ownedClosed;
                 }
-                assertions["wizard returned inline with owned window closed"] = cancelCompleted;
+                assertions["wizard parked with owned window closed"] = cancelCompleted;
+                assertions["draft identity preserved after cancel"] =
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value == draftWorkspaceId;
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-03-after-cancel");
+
+                // Real Resume: the park surface's Resume button re-opens the
+                // owned window for the same draft. Drive it through the real
+                // pointer route (pointer-honesty rule).
+                Button? resumeButton = window.GetVisualDescendants()
+                    .OfType<Button>()
+                    .FirstOrDefault(button => button.Name == "CreationWizardResumeButton" && button.IsVisible);
+                assertions["resume button visible on park surface"] = resumeButton is not null;
+                if (resumeButton is not null)
+                {
+                    resumeButton.BringIntoView();
+                    ForceHeadlessLayoutPump(resumeButton);
+                    string resumeDiagnostics = await RoutePointerClickAsync(resumeButton, waitForClick: true);
+                    PointerDeliveryResult resumeDelivery = ParsePointerDeliveryResult(resumeDiagnostics);
+                    assertions["resume press delivered"] =
+                        resumeDelivery.Kind == PointerDeliveryKind.Delivered;
+                    recordPointerAction();
+                    RecordStep(steps, $"park resume press; {resumeDiagnostics}");
+                }
+
+                bool resumed = false;
+                for (int attempt = 0; attempt < 30 && !resumed; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    CharacterCreationWizardControl? resumedWizard = FindWizardControl(window);
+                    bool ownedReopened = global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime resumeDesktop
+                        && resumeDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                            .Any(w => w.IsVisible);
+                    resumed = ownedReopened && resumedWizard is not null;
+                }
+                assertions["resume re-opened the owned wizard window"] = resumed;
+                assertions["draft identity preserved after resume"] =
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value == draftWorkspaceId;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-04-after-resume");
+
+                // Post-resume shell interaction: cancel the wizard again to
+                // prove the shell still accepts input and the park surface
+                // re-appears (round-trip).
+                CharacterCreationWizardControl? resumedWizardControl = FindWizardControl(window);
+                assertions["wizard control reachable after resume"] = resumedWizardControl is not null;
+                if (resumedWizardControl is not null)
+                {
+                    Button secondCancel = resumedWizardControl.CancelButton;
+                    secondCancel.BringIntoView();
+                    ForceHeadlessLayoutPump(secondCancel);
+                    string secondCancelDiagnostics = await RoutePointerClickAsync(secondCancel, waitForClick: true);
+                    PointerDeliveryResult secondCancelDelivery = ParsePointerDeliveryResult(secondCancelDiagnostics);
+                    assertions["second cancel press delivered"] =
+                        secondCancelDelivery.Kind == PointerDeliveryKind.Delivered;
+                    recordPointerAction();
+                    RecordStep(steps, $"second cancel press; {secondCancelDiagnostics}");
+                }
+
+                bool parkedAgain = false;
+                for (int attempt = 0; attempt < 30 && !parkedAgain; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    parkedAgain = window.GetVisualDescendants()
+                        .OfType<Border>()
+                        .Any(border => border.Name == "CreationWizardParkPanel" && border.IsVisible);
+                }
+                assertions["second cancel parks again"] = parkedAgain;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-05-second-park");
 
                 assertions["shell responsive after cancel"] = window.IsVisible;
 
@@ -5756,7 +5824,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 Assertions: assertions,
                 InteractionNotes:
                 [
-                    "Creation wizard footer cancel leg: footer buttons verified in distinct grid columns, the footer Cancel press was delivered through the real pointer route, the owned window closed with the wizard restored inline and the footer Cancel hidden, and the draft was preserved for later resume."
+                    "Creation wizard footer cancel leg: footer buttons verified in distinct grid columns, the footer Cancel press was delivered through the real pointer route, the wizard parked with the owned window closed and the draft identity preserved, Resume re-opened the owned window for the same draft, a second cancel parked again, and the shell stayed responsive."
                 ]);
         }
 
@@ -9265,6 +9333,18 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         string screenshotPath = Path.Combine(screenshotDirectory, $"{fileStem}.png");
         byte[] pngBytes = await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            // Gen8: the owned creation wizard window is not a DesktopDialogWindow;
+            // prefer it when visible so wizard-leg screenshots show the wizard,
+            // not a blank MainWindow behind it.
+            var ownedWizard = global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime captureDesktop
+                ? captureDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                    .FirstOrDefault(w => w.IsVisible)
+                : null;
+            if (ownedWizard is not null)
+            {
+                return ownedWizard.CaptureScreenshotBytesForAutomation();
+            }
             DesktopDialogWindow? dialogWindow = ResolveVisibleDialogWindow();
             return dialogWindow?.CaptureScreenshotBytesForAutomation() ?? window.CaptureScreenshotBytesForAutomation();
         });
