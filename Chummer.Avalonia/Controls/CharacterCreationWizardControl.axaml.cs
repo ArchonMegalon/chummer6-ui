@@ -769,9 +769,25 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetFinalizeResult(string outcome, IReadOnlyList<string> blockers)
     {
         ArgumentNullException.ThrowIfNull(blockers);
-        _finalizeStatus = blockers.Count > 0
-            ? "Finalization could not complete yet: " + DescribeBlockerCodes(blockers) + "."
-            : "Character finalized. You can now edit the full character sheet.";
+        // Gen9 Controller9338 finding 2: the outcome decides success, not the
+        // blocker list. An invalid/conflict/corrupt result can carry zero
+        // blockers; keying the success copy on blockers.Count alone painted
+        // "Character finalized." for rejected finalizations.
+        var normalized = outcome?.Trim() ?? string.Empty;
+        var succeeded = string.Equals(normalized, CharacterCreationFinalizationOutcomes.Applied, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, CharacterCreationFinalizationOutcomes.Replayed, StringComparison.OrdinalIgnoreCase);
+        if (succeeded)
+        {
+            _finalizeStatus = "Character finalized. You can now edit the full character sheet.";
+        }
+        else if (blockers.Count > 0)
+        {
+            _finalizeStatus = "Finalization could not complete yet: " + DescribeBlockerCodes(blockers) + ".";
+        }
+        else
+        {
+            _finalizeStatus = "Finalization could not be completed (" + normalized + "). Start a fresh review.";
+        }
         FinalizeStatusText.Text = _finalizeStatus;
         // Audit 2026-11-03 P2: a rejected finalization withdraws availability
         // until the next authoritative gate update; the shared projection then

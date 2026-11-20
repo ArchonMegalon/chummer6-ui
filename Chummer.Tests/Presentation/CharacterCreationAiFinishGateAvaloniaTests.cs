@@ -694,4 +694,61 @@ public sealed class CharacterCreationWizardFinalizeAvailabilityAvaloniaTests
             host.Close();
         });
     }
+
+    [TestMethod]
+    public void Failed_outcome_with_empty_blockers_never_paints_finalized()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+
+            control.SetFinalizeAvailability(true, Array.Empty<string>());
+            var status = control.FindControl<TextBlock>("FinalizeStatusText")!;
+
+            // Gen9 Controller9338 finding 2: an invalid result with zero blockers
+            // must not paint success copy. The outcome decides, not the list.
+            control.SetFinalizeResult("invalid", Array.Empty<string>());
+            Assert.IsFalse(status.Text!.Contains("Character finalized"),
+                "invalid outcome with empty blockers painted success copy: " + status.Text);
+            Assert.IsTrue(status.Text.Contains("invalid"),
+                "empty-blocker failure must name the outcome: " + status.Text);
+
+            // Same for conflict and corrupt with zero blockers.
+            control.SetFinalizeResult("conflict", Array.Empty<string>());
+            Assert.IsFalse(status.Text.Contains("Character finalized"),
+                "conflict outcome with empty blockers painted success copy: " + status.Text);
+
+            control.SetFinalizeResult("corrupt", Array.Empty<string>());
+            Assert.IsFalse(status.Text.Contains("Character finalized"),
+                "corrupt outcome with empty blockers painted success copy: " + status.Text);
+
+            host.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Applied_and_replayed_outcomes_paint_finalized_copy()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+
+            control.SetFinalizeAvailability(true, Array.Empty<string>());
+            var status = control.FindControl<TextBlock>("FinalizeStatusText")!;
+
+            control.SetFinalizeResult("applied", Array.Empty<string>());
+            Assert.IsTrue(status.Text!.Contains("Character finalized"),
+                "applied outcome must paint success copy: " + status.Text);
+
+            control.SetFinalizeResult("replayed", Array.Empty<string>());
+            Assert.IsTrue(status.Text.Contains("Character finalized"),
+                "replayed outcome must paint success copy: " + status.Text);
+
+            host.Close();
+        });
+    }
 }
