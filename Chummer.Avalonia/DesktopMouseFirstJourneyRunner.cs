@@ -614,7 +614,7 @@ internal static class DesktopMouseFirstJourneyRunner
                         ActiveDialogId: null,
                         VerificationNotes:
                         [
-                            "WIN-009 gen7: the creation wizard footer Cancel button delivered its press through the real pointer route, CancelRequested fired, the owned window closed, the wizard control was restored to the inline host with the footer Cancel hidden, and the draft was preserved for later resume (cancel keeps your draft)."
+                            "WIN-009 gen10: the creation wizard footer Cancel button delivered its press through the real pointer route, CancelRequested fired, the owned window closed, the wizard control was restored to the inline host with the footer Cancel hidden, and the draft was preserved for later resume."
                         ],
                         UserJourneyWorkflows: userJourneyWorkflows));
                 Environment.ExitCode = 0;
@@ -659,6 +659,13 @@ internal static class DesktopMouseFirstJourneyRunner
                 CharacterOverviewState restoredOverview = window.SnapshotStateForAutomation();
                 var restoredWorkspaceId = restoredOverview.WorkspaceId
                     ?? throw new InvalidOperationException("Reopen did not leave a workspace loaded.");
+                // Gen10 item 4 (Controller9350): the verified ruleset id is
+                // captured here so the reopen pass receipt can carry the
+                // ACTUAL edition the reopened workspace restored - the inner
+                // reopen-verify block previously let it go out of scope and
+                // the receipt recorded RulesetId: null.
+                string? reopenedRulesetVerified = restoredOverview.Session
+                    .FindWorkspace(restoredWorkspaceId)?.RulesetId;
                 if (!string.Equals(restoredWorkspaceId.Value, savedWorkspaceId, StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException("Reopen loaded a different workspace than the saved receipt.");
@@ -814,7 +821,14 @@ internal static class DesktopMouseFirstJourneyRunner
                     // comparison - every field is consumed unconditionally.
                     string attributeId = sr6Saved.RootElement.GetProperty("attributeId").GetString()
                         ?? throw new InvalidOperationException("The SR6 advance receipt attributeId is not a string.");
-                    int expectedRank = sr6Saved.RootElement.GetProperty("quotedTargetNaturalRating").GetInt32();
+                    // Gen10 item 4: the top-level quotedTargetNaturalRating now names the
+        // FIRST operation's quoted target; the cold-reopen check verifies the
+        // FINAL committed rank, which lives in finalTargetNaturalRating
+        // (fallback to the legacy top-level field for pre-gen10 receipts).
+        int expectedRank = sr6Saved.RootElement.TryGetProperty("finalTargetNaturalRating", out var finalRankElement)
+            && finalRankElement.ValueKind == System.Text.Json.JsonValueKind.Number
+            ? finalRankElement.GetInt32()
+            : sr6Saved.RootElement.GetProperty("quotedTargetNaturalRating").GetInt32();
                     int expectedRevisionValue = sr6Saved.RootElement.GetProperty("savedRevision").GetInt32();
 
                     var sr6SectionHost = window.ControlsForAutomation.SectionHost;
@@ -986,7 +1000,7 @@ internal static class DesktopMouseFirstJourneyRunner
                         WorkspaceId: restoredWorkspaceId.Value,
                         CharacterName: restoredName,
                         CharacterAlias: restoredAlias,
-                        RulesetId: null,
+                        RulesetId: reopenedRulesetVerified,
                         BuildMethod: plan.BuildMethod,
                         MetatypeCategory: plan.MetatypeCategory,
                         PriorityHeritage: plan.PriorityHeritage,
@@ -7363,8 +7377,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 sr6WorkspaceId,
                 attributeId: "Body",
                 quotedKarmaCost: quotedKarmaCost,
-                quotedTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : quotedTargetNaturalRating,
-                naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter,
+                // Gen10 item 4 (Controller9350): top-level receipt fields must
+                // describe the FIRST operation's own facts so they pair with
+                // karmaBefore/karmaAfter/quotedKarmaCost (also first-op). The
+                // final committed target stays separately named in
+                // finalTargetNaturalRating for the cold-reopen phaseB check.
+                quotedTargetNaturalRating: quotedTargetNaturalRating,
+                naturalRatingAfter: quotedTargetNaturalRating > 0
+                    ? quotedTargetNaturalRating.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : null,
                 nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
                 operations: BuildSr6AdvanceOperations(karmaBefore, karmaAfter, quotedKarmaCost, quotedBodyCardText, sr6FinalCommittedTargetRating, sr6CapOperations),
                 finalTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : null,
@@ -7387,7 +7408,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 },
                 InteractionNotes:
                 [
-                    $"SR6 career attribute advancement round trip: the AttributeImprove_BOD row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative advancement service (karma {karmaBefore} -> {karmaAfter}), the reopened editor dialog was cancelled, and the file menu save persisted the workspace."
+                    $"SR6 career attribute advancement round trip: the AttributeImprove_BOD row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative advancement service (karma {karmaBefore} -> {karmaAfter}). The Apply-close did not auto-reopen the dialog; a fresh Advance (where exercised) opens the next operation explicitly, and the file menu save persisted the workspace."
                 ]);
         }
 
@@ -8964,32 +8985,30 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             $"menu command {commandId} available",
             () => menu.Items.OfType<MenuItem>().Any(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled),
             ct);
-        MenuItem commandItem = menu.Items.OfType<MenuItem>()
-            .First(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled);
-        // Menu popups recompose between resolve and click; a detached
-        // command item can no longer resolve a top-level visual. Re-resolve
-        // from the live menu items on each attempt (T496).
-        // Gen9 (finding 5): a state publication can close the popup
-        // AFTER the availability wait resolved commandItem, detaching it
-        // from its popup host. Routing a detached item threw "Unable to
-        // resolve a top-level visual for control ''" (MenuItems have no
-        // Name) and burned the first attempt before the T496 recovery.
-        // Diagnosis: STALE NATIVE-JOURNEY TARGET, not application
-        // routing - the app legitimately closes menus on focus change;
-        // the harness held an orphaned reference. Probe attachment
-        // BEFORE the first press so the press is not wasted on an orphan.
+        // Gen10 item 4 (Controller9350): the popup can be closed by a state
+        // publication BETWEEN the dispatcher frame that resolves the command
+        // item and the frame that presses it. The gen9 guard detected that
+        // detach but still burned the attempt: the probe ran in its own
+        // frame, then RoutePointerClickAsync ran the press in yet another.
+        // The narrow fix: pass a LIVE resolver into the click route so the
+        // command item is resolved inside the SAME dispatcher frame that
+        // presses it - no publication can slip between resolve and press.
+        // Retry only re-opens the popup (T496).
         for (int menuAttempt = 1; ; menuAttempt++)
         {
+            string routing;
             try
             {
-                bool itemAttached = await Dispatcher.UIThread.InvokeAsync(
-                    () => commandItem.GetVisualRoot() is not null);
-                if (!itemAttached)
+                routing = await RoutePointerClickResolvedAsync(
+                    menu,
+                    waitForClick: false,
+                    liveTarget: () => menu.Items.OfType<MenuItem>()
+                        .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled));
+                if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException(
-                        $"menu command {commandId} target detached before click (popup closed after resolve).");
+                        $"menu command {commandId} not attached at press time (popup closed before resolve).");
                 }
-                await RoutePointerClickAsync(commandItem);
                 break;
             }
             catch (InvalidOperationException routingFailure) when (menuAttempt < 3)
@@ -9001,9 +9020,6 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 await RoutePointerClickAsync(menu);
                 await WaitForAsync(steps, $"menu command {commandId} popup reopened",
                     () => menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled), ct);
-                commandItem = menu.Items.OfType<MenuItem>()
-                    .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled)
-                    ?? throw new InvalidOperationException($"menu command {commandId} no longer available after routing failure.");
             }
         }
         recordPointerAction();
@@ -9688,10 +9704,35 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     }
 
     private static async Task<string> RoutePointerClickAsync(Control control, bool waitForClick)
+        => await RoutePointerClickResolvedAsync(control, waitForClick, liveTarget: null);
+
+    /// <summary>
+    /// Gen10 item 4 (Controller9350): optional live-target resolver variant.
+    /// The resolver runs INSIDE the same dispatcher frame as the press, so a
+    /// popup recomposed between the caller's resolve and this frame cannot
+    /// detach the pressed target (the PhaseA save-menu detach defect).
+    /// </summary>
+    private static async Task<string> RoutePointerClickResolvedAsync(
+        Control control,
+        bool waitForClick,
+        System.Func<Control>? liveTarget)
     {
         TaskCompletionSource<string> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            // Re-resolve the live target in THIS frame before any geometry
+            // work, so resolve + press are atomic against popup recomposition.
+            if (liveTarget is not null)
+            {
+                Control? resolved = liveTarget();
+                if (resolved is null || resolved.GetVisualRoot() is null)
+                {
+                    completion.TrySetResult(
+                        "delivered=false;reason=target-not-live-at-press;");
+                    return;
+                }
+                control = resolved;
+            }
             (Visual rootVisual, Point rootPosition) = ResolveClickRoot(control);
 
             bool delivered = false;
