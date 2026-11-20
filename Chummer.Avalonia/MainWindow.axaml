@@ -95,7 +95,8 @@
                        TextAlignment="Center"
                        HorizontalAlignment="Center"
                        AutomationProperties.AutomationId="creation-wizard-park-message" />
-            <Button Classes="shell-action"
+            <Button x:Name="CreationWizardResumeButton"
+                    Classes="shell-action"
                     Content="Resume character creation"
                     HorizontalAlignment="Center"
                     Click="CreationWizardParkResumeButton_OnClick"

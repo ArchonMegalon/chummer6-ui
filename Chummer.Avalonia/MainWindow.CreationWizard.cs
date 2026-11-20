@@ -2021,6 +2021,10 @@ public partial class MainWindow
         // never hold two logical parents. Remove it explicitly BEFORE assigning it
         // to the owned window's content presenter.
         InlineWizardHost.Children.Remove(CharacterCreationWizardControl);
+        // Gen8: the park surface hid the control; the re-host must restore
+        // visibility or the reopened owned window would show an empty shell.
+        CharacterCreationWizardControl.IsVisible = true;
+        CharacterCreationWizardControl.IsHitTestVisible = true;
         var hosted = new Controls.OwnedWizardWindow("Character Creation", CharacterCreationWizardControl);
         _creationWizardOwnedWindow = hosted;
         _creationWizardOwnedWindowBound = true;
