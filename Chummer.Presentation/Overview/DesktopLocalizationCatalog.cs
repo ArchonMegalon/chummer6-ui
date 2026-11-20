@@ -145,7 +145,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.open_origin_dossier"] = "Open clean Origin Dossier route",
         ["desktop.install_link.button.open_work"] = "Open Linked Dossier",
         ["desktop.install_link.button.open_account"] = "Open Account",
-        ["desktop.install_link.button.link_copy"] = "Link installation",
+        ["desktop.install_link.button.get_claim_code"] = "Get code from chummer.run",
+["desktop.install_link.button.link_copy"] = "Link installation",
         ["desktop.install_link.status.return_checking"] = "Browser return received. Checking the saved approval with Hub...",
         ["desktop.install_link.status.return_refused"] = "This browser return could not be confirmed. In the Chummer window where you started linking, choose Refresh result. If it is closed, reopen it. Check linked installations in your account before starting another approval.",
         ["desktop.install_link.button.copy_login_url"] = "Copy Claim Link",
@@ -663,7 +664,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_origin_dossier"] = "Saubere Origin-Dossier-Route öffnen";
             localized["desktop.install_link.button.open_work"] = "Verknüpftes Dossier öffnen";
             localized["desktop.install_link.button.open_account"] = "Konto öffnen";
-            localized["desktop.install_link.button.link_copy"] = "Installation verlinken";
+            localized["desktop.install_link.button.get_claim_code"] = "Code von chummer.run holen";
+localized["desktop.install_link.button.link_copy"] = "Installation verlinken";
             localized["desktop.install_link.status.return_checking"] = "Browser-Rückkehr empfangen. Die gespeicherte Freigabe wird bei Hub geprüft...";
             localized["desktop.install_link.status.return_refused"] = "Diese Browser-Rückkehr konnte nicht bestätigt werden. Wählen Sie im Chummer-Fenster, in dem Sie die Verknüpfung gestartet haben, Ergebnis aktualisieren. Öffnen Sie es erneut, falls es geschlossen ist. Prüfen Sie vor einer neuen Freigabe die verknüpften Installationen in Ihrem Konto.";
             localized["desktop.install_link.button.open_claim_link"] = "Claim-Link offnen";
@@ -1119,7 +1121,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_origin_dossier"] = "Ouvrir la route propre d'Origin Dossier";
             localized["desktop.install_link.button.open_work"] = "Ouvrir le dossier lie";
             localized["desktop.install_link.button.open_account"] = "Ouvrir le compte";
-            localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
+            localized["desktop.install_link.button.get_claim_code"] = "Obtenir le code depuis chummer.run";
+localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
             localized["desktop.install_link.button.open_claim_link"] = "Ouvrir le lien";
             localized["desktop.install_link.button.check_previous_approval"] = "Verifier l'approbation precedente";            localized["desktop.install_link.button.redeem_claim_code"] = "Utiliser dans l'app";
             localized["desktop.install_link.button.unlink_copy"] = "Délier cette copie";
@@ -1573,7 +1576,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_origin_dossier"] = "クリーンな Origin Dossier ルートを開く";
             localized["desktop.install_link.button.open_work"] = "リンク済みドシエを開く";
             localized["desktop.install_link.button.open_account"] = "アカウントを開く";
-            localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
+            localized["desktop.install_link.button.get_claim_code"] = "chummer.run からコードを取得";
+localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
             localized["desktop.install_link.button.open_claim_link"] = "請求リンクを開く";
             localized["desktop.install_link.button.check_previous_approval"] = "以前の承認を確認";            localized["desktop.install_link.button.redeem_claim_code"] = "アプリ内で引き換え";
             localized["desktop.install_link.button.unlink_copy"] = "このコピーのリンクを解除";
@@ -2027,7 +2031,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_origin_dossier"] = "Abrir rota limpa do Origin Dossier";
             localized["desktop.install_link.button.open_work"] = "Abrir dossie vinculado";
             localized["desktop.install_link.button.open_account"] = "Abrir conta";
-            localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
+            localized["desktop.install_link.button.get_claim_code"] = "Obter código do chummer.run";
+localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
             localized["desktop.install_link.button.open_claim_link"] = "Abrir link";
             localized["desktop.install_link.button.check_previous_approval"] = "Verificar aprovacao anterior";            localized["desktop.install_link.button.redeem_claim_code"] = "Resgatar no app";
             localized["desktop.install_link.button.unlink_copy"] = "Desvincular esta cópia";
@@ -2481,7 +2486,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_origin_dossier"] = "打开干净的 Origin Dossier 路由";
             localized["desktop.install_link.button.open_work"] = "打开已关联档案";
             localized["desktop.install_link.button.open_account"] = "打开账户";
-            localized["desktop.install_link.button.link_copy"] = "绑定此副本";
+            localized["desktop.install_link.button.get_claim_code"] = "从 chummer.run 获取代码";
+localized["desktop.install_link.button.link_copy"] = "绑定此副本";
             localized["desktop.install_link.button.open_claim_link"] = "打开认领链接";
             localized["desktop.install_link.button.check_previous_approval"] = "检查以前的批准";            localized["desktop.install_link.button.redeem_claim_code"] = "在应用内兑换";
             localized["desktop.install_link.button.unlink_copy"] = "解除此副本绑定";

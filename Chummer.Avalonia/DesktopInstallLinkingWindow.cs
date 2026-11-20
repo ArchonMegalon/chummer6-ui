@@ -47,6 +47,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _moreToolsAccountButton;
     private readonly Button _copyLoginUrlButton;
     private readonly Button _redeemClaimCodeButton;
+    private readonly Button _fetchClaimCodeButton;
     private bool _redeemInFlight;
     private readonly Button _unlinkButton;
     private readonly Button _exitButton;
@@ -205,6 +206,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _redeemClaimCodeButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
             RedeemClaimCodeAsync);
+        _fetchClaimCodeButton = CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.get_claim_code", _language),
+            GetFallbackClaimCodeAsync);
         _unlinkButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.unlink_copy", _language),
             UnlinkCopyAsync);
@@ -220,7 +224,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Children =
             {
                 _claimCodeTextBox,
-                _redeemClaimCodeButton
+                _redeemClaimCodeButton,
+                _fetchClaimCodeButton
             }
         };
         _browserFallbackHeadingText = new TextBlock
@@ -1433,6 +1438,49 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _redeemClaimCodeButton.IsEnabled = true;
                 _claimCodeTextBox.IsEnabled = true;
             }
+        }
+    }
+
+    private async Task GetFallbackClaimCodeAsync()
+    {
+        SetStatus("Checking chummer.run for an existing link...");
+        try
+        {
+            DesktopInstallRecoveryResult result = await DesktopInstallLinkingRuntime
+                .RecoverLinkedInstallAsync(_state.HeadId, CancellationToken.None)
+                .ConfigureAwait(true);
+            if (_windowLifetimeCancellation is { IsCancellationRequested: true })
+            {
+                return;
+            }
+
+            _state = result.State;
+            RefreshSummary();
+            RefreshActionState();
+            if (result.Recovered)
+            {
+                SetStatus(result.AlreadyLinked
+                    ? result.Message
+                    : "Link restored from chummer.run. This copy is ready to use.");
+                return;
+            }
+
+            if (result.NotLinked)
+            {
+                // The Hub authoritatively answered "not linked": point the user
+                // at the account page, which displays the fallback claim code,
+                // and show the claim-code entry for pasting it.
+                SetStatus(result.Message);
+                _browserFallbackVisible = true;
+                RefreshActionState();
+                return;
+            }
+
+            SetStatus(result.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            // Window closed during the check: not an error.
         }
     }
 
