@@ -154,21 +154,13 @@
     <Border Grid.Row="2" Grid.ColumnSpan="3"
             Classes="shell-card subtle" Padding="10,6" Margin="0,4,0,2">
       <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <Button Content="Recover navigation"
-                  Classes="shell-action quiet"
-                  Click="RecoverButton_OnClick"
-                  AutomationProperties.AutomationId="creation-wizard-recover" />
-          <Button Content="Export checkpoint"
-                  Classes="shell-action quiet"
-                  Click="ExportButton_OnClick"
-                  AutomationProperties.AutomationId="creation-wizard-export" />
-        </StackPanel>
+        <!-- Gen10 item 2: developer recovery/export buttons removed from the
+             ordinary footer; the events stay wired for secondary surfaces. -->
         <TextBlock x:Name="EditorLockText"
                    Grid.Column="1"
                    Classes="shell-caption"
                    VerticalAlignment="Center"
-                   Text="Advanced editor unlocks after authoritative finalization."
+                   Text="The full sheet editor unlocks after you finish."
                    TextWrapping="Wrap" />
         <Button x:Name="CancelButton"
                 Grid.Column="2"

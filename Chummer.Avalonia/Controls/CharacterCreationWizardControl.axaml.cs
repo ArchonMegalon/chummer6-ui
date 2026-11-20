@@ -737,7 +737,7 @@ public partial class CharacterCreationWizardControl : UserControl
         RefreshFinishWithAiAvailability();
         if (busy)
         {
-            FinalizeStatusText.Text = "Build Ghost is preparing a missing-only proposal...";
+            FinalizeStatusText.Text = "Finishing with Rook is running - it will fill in the remaining required choices and then re-check the review.";
         }
     }
 
@@ -786,7 +786,11 @@ public partial class CharacterCreationWizardControl : UserControl
         }
         else
         {
-            _finalizeStatus = "Finalization could not be completed (" + normalized + "). Start a fresh review.";
+            // Gen10 item 2 / gen9 9338-2: name the outcome in plain language.
+            // The outcome word stays in the copy (parenthesised) so the pinned
+            // regression still sees it, but the raw finalization codes never do.
+            _finalizeStatus = "Finishing stopped (" + normalized + "): " + DescribeOutcome(normalized)
+                + ". Start a fresh review before trying again.";
         }
         FinalizeStatusText.Text = _finalizeStatus;
         // Audit 2026-11-03 P2: a rejected finalization withdraws availability
@@ -941,11 +945,12 @@ public partial class CharacterCreationWizardControl : UserControl
         _lastWizardState = state;
         RefreshStartingCashVisibility();
         RenderPrioritySurface();
-        // Gen9 finding 3: no workspace-revision dumps in user-facing copy.
+        // Gen10 item 2: the checkpoint invalidation reason is a technical
+        // code; map it to plain language (and never lead with the raw code).
         ResumeStatusText.Text = state.Resume.Restored
             ? "You are back where you left off."
             : state.Resume.InvalidationReason is { Length: > 0 } reason
-                ? $"Saved navigation was invalidated: {reason}."
+                ? DescribeResumeInvalidation(reason)
                 : "";
         AuthorityStatusText.Text = BuildAuthorityStatus(active);
         CompletionBlockerText.Text = DescribeCompletionBlockers(
@@ -1659,18 +1664,40 @@ public partial class CharacterCreationWizardControl : UserControl
             return;
         }
 
+        // Gen10 item 2: compact, honest budget summary. Group every
+        // not-yet-projected budget into ONE loading line instead of repeating
+        // the "being calculated" sentence per domain, and never show 0/0 for
+        // a budget the engine cannot currently project (blockers) - say it is
+        // temporarily unavailable and what to do instead.
+        List<string> pendingLabels = [];
         foreach (CharacterCreationWizardDesktopBudget budget in budgets)
         {
-            // Gen9 finding 3: actionable user-facing budget copy. The exact
-            // case states the remaining balance plainly; the not-yet-projected
-            // case says what the player can do (continue; the amount appears
-            // once the engine finishes projecting) instead of exposing
-            // authority vocabulary. Unknown balance is never shown as 0/0.
-            string amount = budget.IsExact
-                ? $"{budget.Remaining} / {budget.Total} {budget.Unit} remaining"
-                : $"Your {budget.Unit} budget is being calculated.";
+            if (budget.Blockers.Count > 0)
+            {
+                BudgetList.Children.Add(Caption(
+                    $"{budget.Label}: temporarily unavailable - keep going and it will refresh."));
+                continue;
+            }
+            if (!budget.IsExact)
+            {
+                pendingLabels.Add(budget.Label);
+                continue;
+            }
+            string amount = $"{budget.Remaining:N0} / {budget.Total:N0} {budget.Unit} remaining";
             BudgetList.Children.Add(Caption(
                 $"{budget.Label}: {amount}"));
+        }
+
+        if (pendingLabels.Count == 1)
+        {
+            BudgetList.Children.Add(Caption(
+                $"{pendingLabels[0]}: still counting - the amount appears when it is ready."));
+        }
+        else if (pendingLabels.Count > 1)
+        {
+            BudgetList.Children.Add(Caption(
+                "Still counting: " + string.Join(", ", pendingLabels)
+                + " - the amounts appear when they are ready."));
         }
     }
 
@@ -3547,7 +3574,7 @@ public partial class CharacterCreationWizardControl : UserControl
             "blocked" => "This step needs attention before you can continue.",
             "locked" => "This step unlocks after the earlier steps are confirmed.",
             "available" or "enterable" => "This step is ready for your input.",
-            _ => $"Step status: {step.Status}.",
+            _ => "This step is not ready yet - finish the earlier steps first.",
         };
         List<string> status = [readable];
         if (step.Blockers.Count > 0)
@@ -3581,6 +3608,42 @@ public partial class CharacterCreationWizardControl : UserControl
         }
         return "Before finalizing, finish these steps: "
             + DescribeBlockerCodes(blockers) + ".";
+    }
+
+    /// <summary>Gen10 item 2: plain-language outcome naming for failure copy.</summary>
+    private static string DescribeOutcome(string outcome)
+    {
+        return outcome switch
+        {
+            "invalid" => "the review was no longer valid",
+            "conflict" => "another change conflicted with this finish",
+            "corrupt" => "the saved record could not be read safely",
+            "not-found" => "the review record is gone",
+            "blocked" => "requirements are still missing",
+            "unavailable" => "finalization is not available right now",
+            _ => "the result (" + outcome + ") was not accepted",
+        };
+    }
+
+    /// <summary>
+    /// Gen10 item 2: plain-language rendering of a checkpoint invalidation
+    /// reason. Known reasons become actionable sentences; unknown reasons
+    /// keep a readable fallback without dumping the raw code as the headline.
+    /// </summary>
+    private static string DescribeResumeInvalidation(string reason)
+    {
+        return reason switch
+        {
+            "creation-wizard-checkpoint-step-unavailable"
+                => "This step is not available in the current run - you were moved to the first open step.",
+            "creation-wizard-checkpoint-revision-mismatch"
+                => "The saved run changed elsewhere - you were moved to the first open step.",
+            "creation-wizard-checkpoint-digest-mismatch"
+                => "The saved run no longer matches the character - you were moved to the first open step.",
+            "creation-wizard-checkpoint-expired"
+                => "The saved run expired - you were moved to the first open step.",
+            _ => "The saved navigation no longer matches this character - you were moved to the first open step.",
+        };
     }
 
     /// <summary>Wave4 W2: readable rendering of a blocker-code list.</summary>
@@ -3642,6 +3705,40 @@ public partial class CharacterCreationWizardControl : UserControl
             => "this action is not available yet",
         "creation-wizard-checkpoint-step-unavailable"
             => "this step is not available yet",
+        "creation-finalization-qualities-draft-required" => "confirm your quality choices",
+        "creation-finalization-magic-resonance-draft-required" => "confirm your magic or resonance choices",
+        "creation-finalization-gear-draft-required" => "confirm your gear choices",
+        "creation-finalization-prerequisite-draft-required" => "confirm your priority assignment",
+        "creation-finalization-ruleset-sr5-required" => "this character must use the Sixth World rule set",
+        "creation-finalization-starting-cash-choice-required" => "choose your starting money",
+        "creation-finalization-starting-cash-choice-invalid" => "pick a valid starting-money option",
+        "creation-finalization-starting-cash-unavailable" => "starting money is not ready yet - go back a step and return",
+        "creation-finalization-explicit-confirmation-required" => "review the step and confirm it before finishing",
+        "creation-finalization-global-karma-exceeded" => "the spent points exceed what this build allows - free some up",
+        "creation-finalization-character-already-created" => "this character is already finished - close the wizard and open the saved sheet",
+        "creation-finalization-build-method-not-ready" => "the build method is still being prepared - try again in a moment",
+        "creation-finalization-build-method-unsupported" => "this build method cannot finish here",
+        "creation-finalization-carryover-policy-unavailable" => "the carry-over rules are not loaded yet - try again in a moment",
+        "creation-finalization-foundation-draft-not-applicable" => "this choice does not apply to the current build method",
+        "creation-finalization-life-module-decision-history-not-applicable" => "the life module choices do not apply to the current build method",
+        "creation-finalization-atomic-persistence-required" => "the final save is being prepared - try again in a moment",
+        "creation-finalization-atomic-persistence-rejected" => "the final save was refused - check the character for unsaved conflicts",
+        "creation-finalization-authority-digest-mismatch" => "the rules changed while you were editing - reopen the review step",
+        "creation-finalization-plan-digest-mismatch" => "the plan changed while you were editing - reopen the review step",
+        "creation-finalization-preview-digest-mismatch" => "the preview changed while you were editing - reopen the review step",
+        "creation-finalization-stale-auxiliary-digest" => "a side record changed while you were editing - reopen the review step",
+        "creation-finalization-stale-character-digest" => "the character changed while you were editing - reopen the review step",
+        "creation-finalization-stale-workspace-revision" => "the workspace changed while you were editing - reopen the review step",
+        "creation-finalization-idempotency-key-invalid" => "the finish request was stale - try again",
+        "creation-finalization-idempotency-conflict" => "another finish is already in progress - wait for it to settle",
+        "creation-finalization-bootstrap-binding-required" => "the character record needs to be linked first - reopen the wizard",
+        "creation-finalization-draft-authority-invalid" => "the editing session expired - reopen the wizard",
+        "creation-finalization-workspace-unavailable" => "the workspace is not available right now - try again in a moment",
+        "creation-finalization-awakened-effects-not-projectable" => "an awakened-effects choice cannot be shown here - adjust it in the editor",
+        "creation-finalization-gear-effects-not-projectable" => "a gear choice cannot be shown here - adjust it in the editor",
+        "creation-finalization-quality-effects-not-projectable" => "a quality effect cannot be shown here - adjust it in the editor",
+        "creation-finalization-talent-grants-not-projectable" => "a talent grant cannot be shown here - adjust it in the editor",
+        "creation-finalization-post-commit-reopen-required" => "the character was saved - reopen it from the shell to keep editing",
         _ => $"other requirement ({code})",
     };
 

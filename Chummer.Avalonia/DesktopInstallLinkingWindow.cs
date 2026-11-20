@@ -1526,6 +1526,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
             if (!sameObservation(result.State, recoveryState)
                 || (!result.Recovered && result.State.OwnerTransitionRevision != recoveryState.OwnerTransitionRevision)
                 || current.OwnerTransitionRevision != result.State.OwnerTransitionRevision
+                // Controller9350 gen10 item 1c: exact operation fence - the
+                // durable state must still BE the runtime's adopted save. A
+                // later retained operation (same identity, unchanged owner
+                // revision) bumps StateRevision; a stale recovered repaint
+                // over it is refused (fails closed to recovery_stopped).
+                || (result.Recovered && current.StateRevision != result.State.StateRevision)
                 || !sameObservation(current, result.State))
             {
                 SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));

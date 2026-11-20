@@ -1,7 +1,9 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -13,8 +15,15 @@ using Avalonia.Headless;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Chummer.Avalonia;
+using Chummer.Contracts.AI;
+using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Rulesets;
+using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Shell;
+using Chummer.Rulesets.Hosting;
+using Chummer.Rulesets.Sr5;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -1104,11 +1113,18 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
             FieldInfo tokenField = typeof(DesktopInstallLinkingWindow).GetField(
                 "_handoffPollCancellation", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?? throw new AssertFailedException("_handoffPollCancellation missing");
-            object? tokenBefore = tokenField.GetValue(window);
 
             // Start the live observer on the stale retained approval.
             InvokePrivateInstance(window, "StartClaimPolling", "Waiting for browser callback");
             await StepLoopAsync(2);
+
+            // Controller9350 gen10 item 1a: capture the token AFTER the
+            // observer is running, so AreNotSame compares against the
+            // active pre-adoption token instead of the initial null
+            // (which would pass vacuously if the observer never started).
+            object? tokenBefore = tokenField.GetValue(window);
+            Assert.IsNotNull(tokenBefore,
+                "the pre-adoption observer must be running before recovery fires");
 
             Task handler = InvokeRecoveryHandlerAsync(window);
             // The dispatcher only runs posted work while the test body
@@ -1189,6 +1205,142 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
         });
     }
 
+
+    [TestMethod]
+    public async Task Recovery_success_applies_linked_owner_chrome_on_real_main_window()
+    {
+        using RecoveryStatusHubFixture hub = new(linked: true);
+        lock (AvaloniaHeadlessSessionGate.SyncRoot)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(MatrixHeadlessAppBootstrap));
+                session.Dispatch(async () =>
+                {
+                    // Controller9350 gen10 item 1b: a real MainWindow owner so
+                    // the recovery adoption path actually exercises
+                    // ApplyInstallLinkingChrome on the owner window.
+                    MainWindow owner = CreateHeadlessMainWindow();
+                    owner.Show();
+                    PumpUi();
+
+                    DesktopInstallLinkingWindow window = new(CreateStartupContext(), loginVideoPreview: true)
+                    {
+                        Width = 880,
+                        Height = 540
+                    };
+                    // Avalonia's WindowBase.Owner setter is inaccessible from
+                    // outside the window; Show(owner) establishes the same
+                    // owned-window relationship the runtime path relies on.
+                    window.Show(owner);
+                    PumpUi();
+                    try
+                    {
+                        PrepareRetainedApproval();
+                        SyncWindowState(window);
+
+                        // Unlinked chrome: the owner must show the plain claim
+                        // title (no linked label) while the copy is unclaimed.
+                        owner.ApplyInstallLinkingChrome(LoadState());
+                        PumpUi();
+                        string titleBefore = owner.Title ?? string.Empty;
+                        StringAssert.DoesNotMatch(titleBefore,
+                            new System.Text.RegularExpressions.Regex("linked account"),
+                            "the unlinked owner chrome must not carry the linked label; got: "
+                                + titleBefore);
+
+                        InvokePrivateInstance(window, "StartClaimPolling", "Waiting for browser callback");
+                        await StepLoopAsync(2);
+
+                        Task handler = InvokeRecoveryHandlerAsync(window);
+                        for (int i = 0; i < 40 && !handler.IsCompleted; i++)
+                        {
+                            await StepLoopAsync(2);
+                        }
+                        Assert.IsTrue(handler.IsCompleted,
+                            "the recovery handler must complete under pumping");
+                        await handler;
+
+                        // Pump the rebased observer: linked chrome must hold
+                        // and recovery_stopped must never repaint.
+                        for (int i = 0; i < 4; i++)
+                        {
+                            await StepLoopAsync(2);
+                            StringAssert.DoesNotMatch(GetStatus(window),
+                                new System.Text.RegularExpressions.Regex("Recovery stopped"),
+                                "stale observer repainted recovery_stopped after adoption");
+                        }
+
+                        string titleAfter = owner.Title ?? string.Empty;
+                        StringAssert.Contains(titleAfter, "linked account",
+                            "the linked owner chrome label must appear after validated recovery; got: "
+                                + titleAfter);
+                        Assert.AreNotEqual(titleBefore, titleAfter,
+                            "the owner chrome must move from the unlinked claim title to the linked shell title");
+                        StringAssert.DoesNotMatch(GetStatus(window),
+                            new System.Text.RegularExpressions.Regex("Recovery stopped"),
+                            "the adoption must not repaint recovery_stopped");
+                        Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(LoadState()),
+                            "the adopted grant must persist as the durable state");
+                    }
+                    finally
+                    {
+                        window.Close();
+                        owner.Close();
+                        PumpUi();
+                    }
+                }, CancellationToken.None).GetAwaiter().GetResult();
+            }
+            finally
+            {
+                session?.Dispose();
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task Recovery_conflicting_retained_operation_refuses_stale_adoption_repaint()
+    {
+        // Controller9350 gen10 item 1c: a later retained operation that lands
+        // while the status check is in flight bumps StateRevision (same
+        // installation identity, unchanged owner revision). The store's
+        // optimistic concurrency must refuse the runtime's adoption save, so
+        // the stale recovered success can never repaint over it.
+        using RecoveryStatusHubFixture hub = new(linked: true, onStatusRequest: () =>
+        {
+            DesktopInstallLinkingState current = LoadState();
+            SaveState(current with { BrowserApprovalRequest = "later-retained-op" });
+        });
+        await WithWindowAsync(async window =>
+        {
+            PrepareRetainedApproval();
+            SyncWindowState(window);
+
+            Task handler = InvokeRecoveryHandlerAsync(window);
+            for (int i = 0; i < 40 && !handler.IsCompleted; i++)
+            {
+                await StepLoopAsync(2);
+            }
+            Assert.IsTrue(handler.IsCompleted,
+                "the recovery handler must complete under pumping");
+            await handler;
+            await StepLoopAsync(4);
+
+            Assert.IsFalse(DesktopInstallLinkingRuntime.IsClaimed(LoadState()),
+                "the conflicting retained operation must survive: the adoption save must lose the CAS race");
+            string status = GetStatus(window);
+            StringAssert.Contains(status, "could not save",
+                "the conflicting adoption must surface the save-conflict failure; got: " + status);
+            StringAssert.DoesNotMatch(status,
+                new System.Text.RegularExpressions.Regex("Link restored"),
+                "the stale recovered success must never repaint over the newer retained operation");
+            StringAssert.DoesNotMatch(status,
+                new System.Text.RegularExpressions.Regex("Recovery stopped"),
+                "the CAS refusal is an ordinary failure, not a recovery stop");
+        });
+    }
+
     private static void SyncWindowState(Window window)
     {
         FieldInfo stateField = typeof(DesktopInstallLinkingWindow).GetField(
@@ -1214,6 +1366,152 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
             ?? throw new AssertFailedException("recovery handler returned null"));
     }
     /// <summary>
+
+    private static MainWindow CreateHeadlessMainWindow()
+    {
+        FakeCharacterOverviewPresenter presenter = new();
+        CharacterOverviewViewModelAdapter adapter = new(presenter);
+        MatrixRecordingShellPresenter shellPresenter = new(MatrixCreateShellState());
+        DefaultCommandAvailabilityEvaluator availabilityEvaluator = new();
+        RulesetPluginRegistry pluginRegistry = new([new Sr5RulesetPlugin()]);
+        RulesetShellCatalogResolverService shellCatalogResolver = new(pluginRegistry);
+        return new MainWindow(
+            presenter,
+            shellPresenter,
+            availabilityEvaluator,
+            new ShellSurfaceResolver(shellCatalogResolver, availabilityEvaluator),
+            new MatrixStubCoachSidecarClient(),
+            adapter);
+    }
+
+    private static ShellState MatrixCreateShellState()
+    {
+        AppCommandDefinition[] commands = new CatalogOnlyRulesetShellCatalogResolver()
+            .ResolveCommands(RulesetDefaults.Sr5)
+            .ToArray();
+
+        return ShellState.Empty with
+        {
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            PreferredRulesetId = RulesetDefaults.Sr5,
+            Commands = commands,
+            MenuRoots = commands.Where(command => string.Equals(command.Group, "menu", StringComparison.Ordinal)).ToArray(),
+            NavigationTabs =
+            [
+                new NavigationTabDefinition("tab-info", "Info", "summary", "character", true, true, RulesetDefaults.Sr5)
+            ],
+            ActiveTabId = "tab-info",
+            Notice = "Ready."
+        };
+    }
+
+    private sealed class MatrixRecordingShellPresenter : IShellPresenter
+    {
+        public MatrixRecordingShellPresenter(ShellState state)
+        {
+            State = state;
+        }
+
+        public ShellState State { get; private set; }
+        public int InitializeCalls { get; private set; }
+        public List<string> ExecutedCommandIds { get; } = [];
+        public List<string> SelectedTabIds { get; } = [];
+        public List<string> ToggledMenuIds { get; } = [];
+        public event EventHandler? StateChanged;
+
+        public Task InitializeAsync(CancellationToken ct)
+        {
+            InitializeCalls++;
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
+        {
+            ExecutedCommandIds.Add(commandId);
+            State = State with
+            {
+                LastCommandId = commandId,
+                OpenMenuId = null,
+                Notice = $"Command '{commandId}' dispatched."
+            };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task SelectTabAsync(string tabId, CancellationToken ct)
+        {
+            SelectedTabIds.Add(tabId);
+            State = State with { ActiveTabId = tabId };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task ToggleMenuAsync(string menuId, CancellationToken ct)
+        {
+            ToggledMenuIds.Add(menuId);
+            State = State with
+            {
+                OpenMenuId = string.Equals(State.OpenMenuId, menuId, StringComparison.Ordinal) ? null : menuId,
+                Notice = null
+            };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public Task SetPreferredRulesetAsync(string rulesetId, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SyncWorkspaceContextAsync(CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
+        {
+            ShellWorkspaceState[] openWorkspaces = activeWorkspaceId is null
+                ? []
+                : [
+                    new ShellWorkspaceState(
+                        activeWorkspaceId.Value,
+                        "Soma",
+                        "Demo",
+                        DateTimeOffset.UtcNow,
+                        RulesetDefaults.Sr5,
+                        HasSavedWorkspace: false)
+                ];
+            State = State with
+            {
+                ActiveWorkspaceId = activeWorkspaceId,
+                OpenWorkspaces = openWorkspaces,
+                ActiveTabId = activeWorkspaceId is null ? State.ActiveTabId : "tab-info",
+                Notice = activeWorkspaceId is null ? "Ready." : $"Restored {openWorkspaces.Length} workspace(s)."
+            };
+            StateChanged?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class MatrixStubCoachSidecarClient : IAvaloniaCoachSidecarClient
+    {
+        public Task<AvaloniaCoachSidecarCallResult<AiGatewayStatusProjection>> GetStatusAsync(CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiGatewayStatusProjection>.Failure(0, "disabled"));
+
+        public Task<AvaloniaCoachSidecarCallResult<AiProviderHealthProjection[]>> ListProviderHealthAsync(string? routeType = null, CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiProviderHealthProjection[]>.Failure(0, "disabled"));
+
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationAuditCatalogPage>> ListConversationAuditsAsync(
+            string routeType,
+            string? runtimeFingerprint = null,
+            int maxCount = 3,
+            CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationAuditCatalogPage>.Failure(0, "disabled"));
+
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendCoachTurnAsync(
+            AiConversationTurnRequest request,
+            CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>.Failure(0, "disabled"));
+
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendBuildTurnAsync(
+            AiConversationTurnRequest request,
+            CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>.Failure(0, "disabled"));
+    }
+
     /// Loopback Hub for the recovery-status endpoint (Controller9326): serves
     /// POST /api/v1/install-linking/installations/status with either a
     /// consistent linked grant or a not-linked body derived from the request.
@@ -1229,13 +1527,15 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
             System.Security.Cryptography.RSA.Create(2048);
         private readonly bool _linked;
         private readonly int _responseDelayMs;
+        private readonly Action? _onStatusRequest;
         private Task? _listenerTask;
         private readonly List<Task> _handlerTasks = new();
 
-        public RecoveryStatusHubFixture(bool linked, int responseDelayMs = 0)
+        public RecoveryStatusHubFixture(bool linked, int responseDelayMs = 0, Action? onStatusRequest = null)
         {
             _linked = linked;
             _responseDelayMs = responseDelayMs;
+            _onStatusRequest = onStatusRequest;
             _priorStateRoot = Environment.GetEnvironmentVariable(StateRootEnv);
             _priorApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
             _stateRoot = Path.Combine(
@@ -1270,6 +1570,7 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
                         string requestBody = await ReadStatusRequestBodyAsync(
                             stream, CancellationToken.None,
                             "POST /api/v1/install-linking/installations/status HTTP/1.1");
+                        _onStatusRequest?.Invoke();
                         if (_responseDelayMs > 0)
                         {
                             await Task.Delay(_responseDelayMs);
