@@ -1443,36 +1443,78 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private async Task GetFallbackClaimCodeAsync()
     {
-        SetStatus("Checking chummer.run for an existing link...");
+        // Controller9308 defect 2: single-flight recovery with visible progress,
+        // mirroring the claim-code redemption path.
+        if (_redeemInFlight || _windowLifetimeCancellation?.IsCancellationRequested == true)
+        {
+            return;
+        }
+
+        DesktopInstallLinkingState recoveryState = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+        if (recoveryState.OwnerTransitionRevision != _state.OwnerTransitionRevision
+            || !IsSameObservedOperation(recoveryState, _state))
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
+            return;
+        }
+
+        _redeemInFlight = true;
+        string originalRecoveryText = _fetchClaimCodeButton.Content as string ?? string.Empty;
+        _fetchClaimCodeButton.IsEnabled = false;
+        _fetchClaimCodeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language);
         try
         {
+            SetStatus("Checking chummer.run for an existing link...");
             DesktopInstallRecoveryResult result = await DesktopInstallLinkingRuntime
                 .RecoverLinkedInstallAsync(_state.HeadId, CancellationToken.None)
                 .ConfigureAwait(true);
-            if (_windowLifetimeCancellation is { IsCancellationRequested: true })
+
+            // Controller9308 defect 2: post-await fence - a delayed recovery
+            // outcome must never repaint a closed window, a newer owner, or a
+            // newer observed operation (mirrors the redemption fence).
+            if (_windowLifetimeCancellation?.IsCancellationRequested == true)
+                return;
+            DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+            if (!IsSameObservedOperation(result.State, recoveryState)
+                || (!result.Recovered && result.State.OwnerTransitionRevision != recoveryState.OwnerTransitionRevision)
+                || current.OwnerTransitionRevision != result.State.OwnerTransitionRevision
+                || !IsSameObservedOperation(current, result.State))
             {
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
                 return;
             }
 
             _state = result.State;
-            RefreshSummary();
-            RefreshActionState();
             if (result.Recovered)
             {
+                // Controller9308 defect 3: the validated adoption is the same
+                // owner transition the browser-callback path produces, so the
+                // owner chrome must be refreshed from the adopted state here.
+                RefreshSummary();
+                RefreshActionState();
+                if (Owner is MainWindow ownerWindow)
+                {
+                    ownerWindow.ApplyInstallLinkingChrome(_state);
+                }
                 SetStatus(result.AlreadyLinked
                     ? result.Message
                     : "Link restored from chummer.run. This copy is ready to use.");
+                UpdateMatrixHandoffState("Grant accepted");
                 return;
             }
 
+            RefreshSummary();
             if (result.NotLinked)
             {
-                // The Hub authoritatively answered "not linked": point the user
-                // at the account page, which displays the fallback claim code,
-                // and show the claim-code entry for pasting it.
+                // Controller9308 defect 4: the Hub authoritatively answered
+                // "not linked" - route through the existing fallback surface
+                // (heading/summary/detail/URL/claim-code hint) with the account
+                // portal URL, not just the visibility flag.
                 SetStatus(result.Message);
-                _browserFallbackVisible = true;
-                RefreshActionState();
+                ShowManualBrowserFallback(
+                    DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri(
+                        DesktopInstallLinkingRuntime.BuildAccountPortalRelativePathForInstall(_state)),
+                    null);
                 return;
             }
 
@@ -1481,6 +1523,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
         catch (OperationCanceledException)
         {
             // Window closed during the check: not an error.
+        }
+        finally
+        {
+            _redeemInFlight = false;
+            if (_windowLifetimeCancellation?.IsCancellationRequested != true)
+            {
+                _fetchClaimCodeButton.Content = originalRecoveryText;
+                _fetchClaimCodeButton.IsEnabled = true;
+            }
         }
     }
 

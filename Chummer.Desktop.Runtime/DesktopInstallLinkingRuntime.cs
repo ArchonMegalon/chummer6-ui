@@ -871,14 +871,43 @@ public static class DesktopInstallLinkingRuntime
                     NotLinked: false);
             }
 
-            if (!status.Linked || status.Grant is null || status.Installation is null)
+            if (!status.Linked)
             {
                 return new DesktopInstallRecoveryResult(
                     false,
                     false,
-                    "The Hub has no linked installation for this copy yet. Open your account page on chummer.run to get the fallback claim code.",
+                    "The Hub has no linked installation for this copy yet. Open chummer.run/account to get the fallback claim code.",
                     currentState,
                     NotLinked: true);
+            }
+            if (status.Grant is null || status.Installation is null)
+            {
+                // linked:true with a missing installation/grant payload is an
+                // invalid response, not a "not linked" answer (audit
+                // 2026-11-20: Controller9308 defect 1). Fail closed and keep
+                // the prior state untouched.
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "The Hub returned an inconsistent installation status. Try again.",
+                    currentState,
+                    NotLinked: false);
+            }
+
+            // Controller9308 defect 1: adopt only after the same redemption-time
+            // validation policy the browser-callback and claim-code paths use -
+            // installation identity, mutual grant/installation/account
+            // consistency, grant usability, and grant time validity. Rejections
+            // preserve the approval state and any valid owner binding.
+            string[] recoveryProblems = ValidateRecoveryStatus(status.Installation, status.Grant, currentState, publicKey!, DateTimeOffset.UtcNow);
+            if (recoveryProblems.Length > 0)
+            {
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "The Hub's link for this copy could not be verified (" + string.Join("; ", recoveryProblems) + "). Open chummer.run/account to get a fallback claim code and try redeeming it instead.",
+                    currentState,
+                    NotLinked: false);
             }
 
             // Adopt the grant the Hub returned for this installation.
@@ -934,6 +963,71 @@ public static class DesktopInstallLinkingRuntime
                 currentState,
                 NotLinked: false);
         }
+    }
+
+    // Controller9308 defect 1: shared validation for the recovery path so the
+    // browser-callback, claim-code, and already-linked adoption paths cannot
+    // drift apart. Returns an empty array when the response is adoptable.
+    private static string[] ValidateRecoveryStatus(
+        ClaimedInstallationDto installation,
+        InstallationGrantDto grant,
+        DesktopInstallLinkingState currentState,
+        string exportedPublicKey,
+        DateTimeOffset now)
+    {
+        List<string> problems = new();
+        string publicKey = exportedPublicKey ?? string.Empty;
+
+        // Installation identity must match this copy exactly. The public key is
+        // compared against the EXPORTED wire form (same normalization the
+        // redemption path uses), not the raw stored PEM.
+        if (!string.Equals(installation.InstallationId, currentState.InstallationId, StringComparison.Ordinal)
+            || !string.Equals(installation.PublicKey, publicKey, StringComparison.Ordinal)
+            || !(installation.HeadId is null
+                || string.Equals(installation.HeadId, currentState.HeadId, StringComparison.Ordinal))
+            || !string.Equals(installation.Version, currentState.ApplicationVersion, StringComparison.Ordinal)
+            || !string.Equals(installation.Channel, currentState.ChannelId, StringComparison.Ordinal)
+            || !(installation.Platform is null
+                || string.Equals(installation.Platform, currentState.Platform, StringComparison.Ordinal))
+            || !(installation.Arch is null
+                || string.Equals(installation.Arch, currentState.Arch, StringComparison.Ordinal)))
+        {
+            problems.Add("the returned installation does not match this copy");
+        }
+
+        // Mutual consistency: installation, grant, and account identities.
+        if (!string.Equals(installation.GrantId, grant.GrantId, StringComparison.Ordinal)
+            || !string.Equals(grant.InstallationId, installation.InstallationId, StringComparison.Ordinal)
+            || !string.Equals(grant.UserId, installation.UserId, StringComparison.Ordinal)
+            || !string.Equals(grant.SubjectId, installation.SubjectId, StringComparison.Ordinal))
+        {
+            problems.Add("the returned grant and installation disagree");
+        }
+
+        // Grant usability: real credential, usable status, real account ids.
+        if (string.IsNullOrWhiteSpace(grant.AccessToken)
+            || string.IsNullOrWhiteSpace(grant.GrantId)
+            || string.IsNullOrWhiteSpace(installation.UserId)
+            || string.IsNullOrWhiteSpace(installation.SubjectId)
+            || !string.Equals(grant.Status, "active", StringComparison.OrdinalIgnoreCase))
+        {
+            problems.Add("the returned grant is not usable");
+        }
+
+        // Grant time validity: shared redemption-time helper.
+        if (!IsGrantTimeValid(grant.IssuedAtUtc, grant.ExpiresAtUtc, now))
+        {
+            problems.Add("the returned grant is not currently valid");
+        }
+
+        // An already-linked copy must never be re-bound to a different owner.
+        if (!string.IsNullOrWhiteSpace(currentState.UserId)
+            && !string.Equals(currentState.UserId, installation.UserId, StringComparison.Ordinal))
+        {
+            problems.Add("the returned link belongs to a different account");
+        }
+
+        return problems.ToArray();
     }
 
     private sealed record InstallStatusResponse(

@@ -2612,6 +2612,285 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public async Task RecoverLinkedInstall_rejects_a_grant_that_disagrees_with_the_installation()
+    {
+        // Controller9308 defect 1: the recovery path must apply the same
+        // redemption-time validation policy as the claim paths. A grant bound
+        // to a different installation (or account) is inconsistent and must
+        // fail closed, preserving the stale approval state.
+        using RSA installationKey = RSA.Create(2048);
+        string tempRoot = Path.Combine(
+            Path.GetTempPath(), "desktop-install-linking-recovery-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(15));
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(1);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+        Task listenerTask = Task.Run(async () =>
+        {
+            using Socket socket = await listenerSocket.AcceptAsync(timeout.Token);
+            using NetworkStream stream = new(socket, ownsSocket: false);
+            string requestBody = await ReadInstallLinkingRequestBodyAsync(
+                stream, timeout.Token, "POST /api/v1/install-linking/installations/status HTTP/1.1");
+            using JsonDocument request = JsonDocument.Parse(requestBody);
+            string Field(string name) => request.RootElement.GetProperty(name).GetString()!;
+            string responseBody = $$"""
+{
+  "linked": true,
+  "installation": {
+    "installationId": "{{Field("installationId")}}",
+    "artifactId": "avalonia-win-x64-installer",
+    "channel": "{{Field("channelId")}}",
+    "version": "{{Field("applicationVersion")}}",
+    "installAccessClass": "open_public",
+    "status": "active",
+    "createdAtUtc": "{{DateTimeOffset.UtcNow.AddMinutes(-5).ToString("o")}}",
+    "updatedAtUtc": "{{DateTimeOffset.UtcNow.AddMinutes(-5).ToString("o")}}",
+    "userId": "user-recovery-1",
+    "subjectId": "subject.install.claim",
+    "publicKey": "{{Field("publicKey")}}",
+    "claimTicketId": "ticket-recovery-1",
+    "headId": "{{Field("headId")}}",
+    "platform": "{{Field("platform")}}",
+    "arch": "{{Field("arch")}}",
+    "hostLabel": null,
+    "grantId": "grant-recovery-1"
+  },
+  "grant": {
+    "grantId": "grant-recovery-1",
+    "installationId": "installation-elsewhere",
+    "status": "active",
+    "accessToken": "token-recovery-1",
+    "issuedAtUtc": "{{DateTimeOffset.UtcNow.AddMinutes(-1).ToString("o")}}",
+    "expiresAtUtc": "{{DateTimeOffset.UtcNow.AddDays(30).ToString("o")}}",
+    "userId": "user-recovery-1",
+    "subjectId": "subject.install.claim"
+  }
+}
+""";
+            byte[] response = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n" +
+                "Content-Type: application/json\r\n" +
+                "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                "Connection: close\r\n\r\n" + responseBody);
+            await stream.WriteAsync(response.AsMemory(), timeout.Token);
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            PersistInstallLinkingState(created with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                LastClaimError = "The secure browser approval could not be confirmed before its request expired.",
+                BrowserApprovalRequest = "{\"stale\":true}",
+                BrowserApprovalReturnState = "stale-return-state",
+                BrowserApprovalUncertain = true,
+                BrowserApprovalTerminal = false,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            DesktopInstallRecoveryResult result = await DesktopInstallLinkingRuntime.RecoverLinkedInstallAsync(
+                "avalonia", timeout.Token);
+            await listenerTask;
+
+            Assert.IsFalse(result.Recovered,
+                "A grant bound to a different installation must never be adopted.");
+            Assert.IsFalse(result.NotLinked,
+                "An inconsistent linked response is invalid, not a not-linked answer.");
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual("guest", finalState.Status);
+            Assert.IsNull(finalState.GrantToken);
+            Assert.IsTrue(finalState.BrowserApprovalUncertain,
+                "A rejected adoption must preserve the retained browser approval state.");
+            Assert.AreEqual("stale-return-state", finalState.BrowserApprovalReturnState);
+        }
+        finally
+        {
+            timeout.Cancel();
+            listenerSocket.Dispose();
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task RecoverLinkedInstall_treats_linked_true_with_missing_payload_as_invalid()
+    {
+        // Controller9308 defect 1: linked:true without the installation/grant
+        // payload is an invalid response, not a not-linked answer.
+        using RSA installationKey = RSA.Create(2048);
+        string tempRoot = Path.Combine(
+            Path.GetTempPath(), "desktop-install-linking-recovery-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(15));
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(1);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+        Task listenerTask = Task.Run(async () =>
+        {
+            using Socket socket = await listenerSocket.AcceptAsync(timeout.Token);
+            using NetworkStream stream = new(socket, ownsSocket: false);
+            await ReadInstallLinkingRequestBodyAsync(
+                stream, timeout.Token, "POST /api/v1/install-linking/installations/status HTTP/1.1");
+            string responseBody = """
+{
+  "linked": true,
+  "installation": null,
+  "grant": null
+}
+""";
+            byte[] response = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n" +
+                "Content-Type: application/json\r\n" +
+                "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                "Connection: close\r\n\r\n" + responseBody);
+            await stream.WriteAsync(response.AsMemory(), timeout.Token);
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            PersistInstallLinkingState(created with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                LastClaimError = null,
+                BrowserApprovalRequest = null,
+                BrowserApprovalReturnState = null,
+                BrowserApprovalUncertain = false,
+                BrowserApprovalTerminal = false,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            DesktopInstallRecoveryResult result = await DesktopInstallLinkingRuntime.RecoverLinkedInstallAsync(
+                "avalonia", timeout.Token);
+            await listenerTask;
+
+            Assert.IsFalse(result.Recovered);
+            Assert.IsFalse(result.NotLinked,
+                "linked:true with missing payload objects must not be reported as not-linked.");
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual("guest", finalState.Status,
+                "An invalid response must not mutate the linking state.");
+            Assert.IsNull(finalState.GrantToken);
+        }
+        finally
+        {
+            timeout.Cancel();
+            listenerSocket.Dispose();
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [TestMethod]
+    public async Task RecoverLinkedInstall_reports_not_linked_with_the_account_claim_route()
+    {
+        // Controller9308 defect 4 (runtime half): the not-linked outcome must
+        // carry the account-portal claim route the window can surface, and the
+        // runtime must not mutate state on this outcome.
+        using RSA installationKey = RSA.Create(2048);
+        string tempRoot = Path.Combine(
+            Path.GetTempPath(), "desktop-install-linking-recovery-tests", Guid.NewGuid().ToString("N"));
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(15));
+        using Socket listenerSocket = new(SocketType.Stream, ProtocolType.Tcp);
+        listenerSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        listenerSocket.Listen(1);
+        int port = ((IPEndPoint)listenerSocket.LocalEndPoint!).Port;
+        string apiBase = $"http://127.0.0.1:{port}/";
+        Task listenerTask = Task.Run(async () =>
+        {
+            using Socket socket = await listenerSocket.AcceptAsync(timeout.Token);
+            using NetworkStream stream = new(socket, ownsSocket: false);
+            await ReadInstallLinkingRequestBodyAsync(
+                stream, timeout.Token, "POST /api/v1/install-linking/installations/status HTTP/1.1");
+            string responseBody = """
+{
+  "linked": false,
+  "installation": null,
+  "grant": null
+}
+""";
+            byte[] response = Encoding.UTF8.GetBytes("HTTP/1.1 200 OK\r\n" +
+                "Content-Type: application/json\r\n" +
+                "Content-Length: " + Encoding.UTF8.GetByteCount(responseBody) + "\r\n" +
+                "Connection: close\r\n\r\n" + responseBody);
+            await stream.WriteAsync(response.AsMemory(), timeout.Token);
+        });
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", apiBase);
+            DesktopInstallLinkingState created = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            PersistInstallLinkingState(created with
+            {
+                Status = "guest",
+                ClaimedAtUtc = null,
+                GrantId = null,
+                GrantToken = null,
+                GrantIssuedAtUtc = null,
+                GrantExpiresAtUtc = null,
+                LastClaimError = null,
+                BrowserApprovalRequest = null,
+                BrowserApprovalReturnState = null,
+                BrowserApprovalUncertain = false,
+                BrowserApprovalTerminal = false,
+                PublicKey = installationKey.ExportRSAPublicKeyPem(),
+                PrivateKey = installationKey.ExportPkcs8PrivateKeyPem()
+            });
+
+            DesktopInstallRecoveryResult result = await DesktopInstallLinkingRuntime.RecoverLinkedInstallAsync(
+                "avalonia", timeout.Token);
+            await listenerTask;
+
+            Assert.IsFalse(result.Recovered);
+            Assert.IsTrue(result.NotLinked,
+                "An authoritative not-linked answer must be surfaced as not-linked.");
+            Assert.IsTrue(result.Message.Contains("chummer.run/account", StringComparison.OrdinalIgnoreCase),
+                "The not-linked message must point at the account claim route.");
+            DesktopInstallLinkingState finalState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
+            Assert.AreEqual("guest", finalState.Status);
+            Assert.IsNull(finalState.GrantToken);
+        }
+        finally
+        {
+            timeout.Cancel();
+            listenerSocket.Dispose();
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public async Task RecoverLinkedInstall_reports_not_linked_and_directs_to_the_fallback_code()
     {
         using RSA installationKey = RSA.Create(2048);
