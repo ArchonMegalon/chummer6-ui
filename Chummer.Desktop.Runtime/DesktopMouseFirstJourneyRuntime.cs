@@ -326,6 +326,21 @@ public static class DesktopMouseFirstJourneyRuntime
     /// debited karma survived persistence. No-op when no receipt path is
     /// configured via CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE_RECEIPT.
     /// </summary>
+    /// <summary>
+    /// Gen9 (WIN-009 finding 6): one SR6 advance operation's own facts,
+    /// so a multi-advance journey writes COHERENT per-operation records
+    /// instead of splicing the first operation's karma with the final
+    /// operation's target rating.
+    /// </summary>
+    public sealed record Sr6AdvanceOperationReceipt(
+        int OperationIndex,
+        string AttributeId,
+        int RankBefore,
+        int RankAfter,
+        int QuotedKarmaCost,
+        int KarmaBefore,
+        int KarmaAfter);
+
     public static void WriteSr6AdvanceReceipt(
         decimal karmaBefore,
         decimal karmaAfter,
@@ -336,7 +351,9 @@ public static class DesktopMouseFirstJourneyRuntime
         int? quotedTargetNaturalRating = null,
         string? naturalRatingAfter = null,
         decimal? nuyenAfter = null,
-        int? savedRevision = null)
+        int? savedRevision = null,
+        System.Collections.Generic.IReadOnlyList<Sr6AdvanceOperationReceipt>? operations = null,
+        int? finalTargetNaturalRating = null)
     {
         string? path = Environment.GetEnvironmentVariable(Sr6AdvanceReceiptEnvironmentVariable);
         if (string.IsNullOrWhiteSpace(path))
@@ -356,6 +373,8 @@ public static class DesktopMouseFirstJourneyRuntime
             naturalRatingAfter,
             nuyenAfter,
             savedRevision,
+            operations,
+            finalTargetNaturalRating,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));

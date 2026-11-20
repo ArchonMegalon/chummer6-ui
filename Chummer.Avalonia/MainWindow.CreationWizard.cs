@@ -184,6 +184,21 @@ public partial class MainWindow
         }
         CharacterCreationWizardControl.IsVisible = snapshot is not null;
         CharacterCreationWizardControl.IsHitTestVisible = snapshot is not null;
+        // Gen9 finding 1: decide park persistence BEFORE anything re-exposes the
+        // wizard. A same-owner refresh of the SAME draft while the park surface
+        // is active must not resurrect the wizard (inline or owned) -- Resume is
+        // the only route back. Identity keys on workspace + owner only; content
+        // revisions (new saves arriving while parked) still stay parked.
+        bool parkKept = _creationWizardParked
+            && snapshot is not null
+            && _boundCreationWizardSnapshot is { } parkedSnapshot
+            && string.Equals(parkedSnapshot.WorkspaceId, snapshot.WorkspaceId, StringComparison.Ordinal)
+            && _boundCreationWizardOwner == overview.DisplayOwnerContext;
+        if (parkKept)
+        {
+            CharacterCreationWizardControl.IsVisible = false;
+            CharacterCreationWizardControl.IsHitTestVisible = false;
+        }
         if (snapshot is null)
         {
             // Gen6 F03: a completed/absent draft must retire the owned wizard host
@@ -305,7 +320,13 @@ public partial class MainWindow
         // CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW=0.
         if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
         {
-            RouteCreationWizardToOwnedWindow(overview, snapshot);
+            // Gen9 finding 1: while parked with the SAME draft identity, the
+            // refresh path stops here -- the park surface stays, the owned
+            // window stays closed, and Resume remains the only reopen route.
+            if (!parkKept)
+            {
+                RouteCreationWizardToOwnedWindow(overview, snapshot);
+            }
             return;
         }
 
@@ -2118,6 +2139,20 @@ public partial class MainWindow
             && string.Equals(current.WorkspaceId, snapshot.WorkspaceId, StringComparison.Ordinal))
         {
             RouteCreationWizardToOwnedWindow(adapter.State, snapshot);
+        }
+    }
+
+    /// <summary>
+    /// Gen9 (finding 1) native-route seam: re-applies the CURRENT session
+    /// state exactly as an external state refresh would, WITHOUT changing
+    /// the draft identity. Used by the journey harness to prove the park
+    /// survives a same-owner refresh on real window bytes.
+    /// </summary>
+    public void RefreshCreationWizardStateForAutomation()
+    {
+        if (_adapter?.State is { } overview)
+        {
+            ApplyCreationWizardState(overview);
         }
     }
 

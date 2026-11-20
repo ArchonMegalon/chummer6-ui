@@ -407,19 +407,13 @@ public partial class MainWindow
                 + " karma (remaining " + receipt.KarmaAfter + ").", () => DisplayStillCurrent()
                     && _interactionCoordinator.PeekState().ContentRevision == noticeRevision);
 
-            Sr6CareerAttributeAdvanceEditorSnapshot? reopened = await _interactionCoordinator
-                .PrepareSr6CareerAttributeAdvanceAsync(CancellationToken.None)
-                .ConfigureAwait(true);
-            if (reopened is null)
-            {
-                return true;
-            }
-            if (!ContextStillCurrent())
-            {
-                return true;
-            }
-
-            editor = reopened;
+            // Gen9 finding 4: a successful Apply must CLOSE the dialog and
+            // return focus to the character. The committed advance is done;
+            // reopening the next operation automatically made every ordinary
+            // state refresh look like another dialog and forced the player to
+            // Cancel repeatedly (six observed auto-reopens in phaseA). An
+            // explicit Advance action opens the next operation.
+            return true;
         }
     }
 

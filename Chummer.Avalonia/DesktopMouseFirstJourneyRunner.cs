@@ -5804,6 +5804,30 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 assertions["second cancel parks again"] = parkedAgain;
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-05-second-park");
 
+                // Gen9 (finding 1) native route: a same-owner state refresh
+                // while parked must NOT reopen the wizard. Drive the real
+                // refresh seam and assert the park end-state survives.
+                await Dispatcher.UIThread.InvokeAsync(
+                    () => window.RefreshCreationWizardStateForAutomation());
+                bool stillParkedAfterRefresh = false;
+                bool ownedReopenedByRefresh = false;
+                for (int attempt = 0; attempt < 30 && !stillParkedAfterRefresh; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    stillParkedAfterRefresh = window.GetVisualDescendants()
+                        .OfType<Border>()
+                        .Any(border => border.Name == "CreationWizardParkPanel" && border.IsVisible);
+                    ownedReopenedByRefresh = global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime refreshDesktop
+                        && refreshDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                            .Any(w => w.IsVisible);
+                }
+                assertions["park survives same-owner refresh"] =
+                    stillParkedAfterRefresh && !ownedReopenedByRefresh;
+                assertions["draft identity preserved across refresh"] =
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value == draftWorkspaceId;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-06-refresh-while-parked");
+
                 assertions["shell responsive after cancel"] = window.IsVisible;
 
                 RecordStep(steps, "wizard cancel leg completed");
@@ -6469,6 +6493,11 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // natural-maximum blocker. An arbitrary refusal or a disabled Apply
             // is NOT proof of the cap; the assertion is on Core's own quote
             // blocker text, plus karma unchanged across the blocked attempt.
+            // Gen9 (finding 6): every committed advance's own facts, written
+            // into the receipt's operations array so each operation stays
+            // internally coherent. Hoisted above the cap-loop block scope so
+            // the receipt site can consume it.
+            var sr6CapOperations = new List<(int From, int To, int Cost, int KarmaBefore, int KarmaAfter)>();
             bool naturalLimitRejected = false;
             Func<string> readCapQuoteText = () =>
             {
@@ -7238,6 +7267,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     lastCommittedTargetRating = capTo;
                     sr6FinalCommittedTargetRating = capTo;
                     lastCommittedCost = capCost;
+                    sr6CapOperations.Add((capFrom, capTo, capCost, karmaBeforeVal, karmaAfterVal));
                 }
 
                 if (!reachedCap)
@@ -7336,6 +7366,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 quotedTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : quotedTargetNaturalRating,
                 naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter,
                 nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
+                operations: BuildSr6AdvanceOperations(karmaBefore, karmaAfter, quotedKarmaCost, quotedBodyCardText, sr6FinalCommittedTargetRating, sr6CapOperations),
+                finalTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : null,
                 savedRevision: window.SnapshotStateForAutomation().ContentRevision is { } savedRev && savedRev > 0 ? (int?)savedRev : null);
             RecordStep(steps, $"sr6 advance receipt written (workspaceId={sr6WorkspaceId ?? "none"})");
 
@@ -7359,6 +7391,41 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 ]);
         }
 
+
+        /// <summary>
+        /// Gen9 (WIN-009 finding 6): builds the per-operation advance records.
+        /// Operation 1 is the wizard-stage advance (its karma facts are the
+        /// receipt's top-level karmaBefore/karmaAfter), followed by every
+        /// natural-limit demo advance. Each entry is internally coherent;
+        /// the last entry's RankAfter equals finalTargetNaturalRating.
+        /// </summary>
+        private static System.Collections.Generic.List<global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt> BuildSr6AdvanceOperations(
+            decimal firstKarmaBefore,
+            decimal firstKarmaAfter,
+            int firstQuotedCost,
+            string firstQuoteCardText,
+            int finalTargetNaturalRating,
+            System.Collections.Generic.IReadOnlyList<(int From, int To, int Cost, int KarmaBefore, int KarmaAfter)> capOperations)
+        {
+            var operations = new System.Collections.Generic.List<global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt>();
+            int firstFrom = 0;
+            var firstMatch = System.Text.RegularExpressions.Regex.Match(
+                firstQuoteCardText ?? string.Empty,
+                @"(\d+)\s*->\s*(\d+)\s*\|\s*(\d+) karma");
+            if (firstMatch.Success)
+            {
+                firstFrom = int.Parse(firstMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+            }
+            operations.Add(new global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt(
+                1, "Body", firstFrom, firstQuotedCost > 0 && firstMatch.Success ? int.Parse(firstMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture) : firstFrom,
+                firstQuotedCost, (int)firstKarmaBefore, (int)firstKarmaAfter));
+            foreach (var cap in capOperations)
+            {
+                operations.Add(new global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt(
+                    operations.Count + 1, "Body", cap.From, cap.To, cap.Cost, cap.KarmaBefore, cap.KarmaAfter));
+            }
+            return operations;
+        }
 
         private static System.Collections.Generic.IEnumerable<Sr6CreationWizardWindow> VisibleSr6WizardWindows()
         {
@@ -8902,10 +8969,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         // Menu popups recompose between resolve and click; a detached
         // command item can no longer resolve a top-level visual. Re-resolve
         // from the live menu items on each attempt (T496).
+        // Gen9 (finding 5): a state publication can close the popup
+        // AFTER the availability wait resolved commandItem, detaching it
+        // from its popup host. Routing a detached item threw "Unable to
+        // resolve a top-level visual for control ''" (MenuItems have no
+        // Name) and burned the first attempt before the T496 recovery.
+        // Diagnosis: STALE NATIVE-JOURNEY TARGET, not application
+        // routing - the app legitimately closes menus on focus change;
+        // the harness held an orphaned reference. Probe attachment
+        // BEFORE the first press so the press is not wasted on an orphan.
         for (int menuAttempt = 1; ; menuAttempt++)
         {
             try
             {
+                bool itemAttached = await Dispatcher.UIThread.InvokeAsync(
+                    () => commandItem.GetVisualRoot() is not null);
+                if (!itemAttached)
+                {
+                    throw new InvalidOperationException(
+                        $"menu command {commandId} target detached before click (popup closed after resolve).");
+                }
                 await RoutePointerClickAsync(commandItem);
                 break;
             }

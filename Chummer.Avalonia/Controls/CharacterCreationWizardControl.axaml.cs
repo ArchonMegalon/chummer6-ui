@@ -398,6 +398,25 @@ public partial class CharacterCreationWizardControl : UserControl
                 Columns = options.Count,
                 MinWidth = 420,
             };
+            // Gen9 finding 2: inside a horizontal ScrollViewer the UniformGrid
+            // measures at UNBOUNDED width, so one long description inflates all
+            // five columns and pushes ranks D/E offscreen at 1040px owned
+            // windows. Bind the grid to max(420, actual viewport width): at
+            // ordinary widths the five columns exactly fill the viewport and
+            // descriptions wrap instead of widening columns; the 420 floor +
+            // Auto scrollbar reserve horizontal scrolling for genuinely narrow
+            // hosts.
+            ranksPanel.MaxWidth = 420;
+            ranksScroll.SizeChanged += (global::System.Object? s, global::Avalonia.Controls.SizeChangedEventArgs e) =>
+            {
+                double viewportWidth = ranksScroll.Viewport.Width;
+                if (viewportWidth > 0)
+                {
+                    double bound = global::System.Math.Max(420d, viewportWidth);
+                    ranksPanel.MaxWidth = bound;
+                    ranksPanel.Width = bound;
+                }
+            };
             ranksScroll.Content = ranksPanel;
             int optionIndex = 0;
             foreach (var option in options)
@@ -750,12 +769,9 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetFinalizeResult(string outcome, IReadOnlyList<string> blockers)
     {
         ArgumentNullException.ThrowIfNull(blockers);
-        _finalizeStatus = outcome is CharacterCreationFinalizationOutcomes.Applied
-                or CharacterCreationFinalizationOutcomes.Replayed
-            ? $"Character finalized ({outcome}); receipt digest anchors this exact workspace revision."
-            : blockers.Count > 0
-                ? $"Finalization failed ({outcome}): {DescribeBlockerCodes(blockers)}"
-                : $"Finalization failed ({outcome}).";
+        _finalizeStatus = blockers.Count > 0
+            ? "Finalization could not complete yet: " + DescribeBlockerCodes(blockers) + "."
+            : "Character finalized. You can now edit the full character sheet.";
         FinalizeStatusText.Text = _finalizeStatus;
         // Audit 2026-11-03 P2: a rejected finalization withdraws availability
         // until the next authoritative gate update; the shared projection then
@@ -784,11 +800,12 @@ public partial class CharacterCreationWizardControl : UserControl
         RefreshFinishWithAiAvailability();
         if (_finalizeStatus is null)
         {
+            // Gen9 finding 3: plain user-facing default copy, no revision ids.
             FinalizeStatusText.Text = canReview
-                ? "Whole-build review is available; finalizing applies the authoritative receipt and unlocks the advanced editor."
+                ? "Whole-build review is available. Finalizing completes creation and unlocks the advanced editor."
                 : _finalizeBlockers.Count > 0
-                    ? $"Finalization unavailable: {DescribeBlockerCodes(_finalizeBlockers)}"
-                    : "Finalization is not available for this workspace revision.";
+                    ? "Before finalizing, finish these steps: " + DescribeBlockerCodes(_finalizeBlockers) + "."
+                    : "Finalization is not available yet for this draft.";
         }
     }
 
@@ -908,18 +925,22 @@ public partial class CharacterCreationWizardControl : UserControl
         _lastWizardState = state;
         RefreshStartingCashVisibility();
         RenderPrioritySurface();
+        // Gen9 finding 3: no workspace-revision dumps in user-facing copy.
         ResumeStatusText.Text = state.Resume.Restored
-            ? "Navigation restored for this exact workspace revision."
+            ? "You are back where you left off."
             : state.Resume.InvalidationReason is { Length: > 0 } reason
                 ? $"Saved navigation was invalidated: {reason}."
-                : $"Workspace revision {state.WorkspaceRevision}.";
+                : "";
         AuthorityStatusText.Text = BuildAuthorityStatus(active);
-        CompletionBlockerText.Text = DescribeCompletionBlockers(state.CompletionBlockers);
+        CompletionBlockerText.Text = DescribeCompletionBlockers(
+            state.CompletionBlockers,
+            isReviewStep: string.Equals(state.ActiveStepId, CharacterCreationWizardStepIds.Review, StringComparison.Ordinal));
         ContinueButton.IsEnabled = state.CanContinue;
         EditorLockText.IsVisible = !state.AdvancedEditorUnlocked;
+        // Gen9 finding 3: plain-language Build Ghost status.
         BuildGhostAuthorityText.Text = state.BuildGhostAvailable
-            ? "Bound to the current runtime, workspace revision, and wizard snapshot."
-            : "Build Ghost is pending authoritative runtime and wizard context.";
+            ? "Build Ghost is ready."
+            : "Build Ghost is not available yet.";
 
         RenderSteps(state.Steps);
         RenderBudgets(state.Budgets);
@@ -1624,17 +1645,16 @@ public partial class CharacterCreationWizardControl : UserControl
 
         foreach (CharacterCreationWizardDesktopBudget budget in budgets)
         {
-            string exactness = budget.IsExact
-                ? "exact"
-                : "authority pending - the authoritative amount is not projected yet";
-            // Gen8 item 3: an authority-pending budget must not read as an
-            // authoritative 0/0. When the total is not authoritative, state
-            // the pending condition instead of a fake numeric balance.
+            // Gen9 finding 3: actionable user-facing budget copy. The exact
+            // case states the remaining balance plainly; the not-yet-projected
+            // case says what the player can do (continue; the amount appears
+            // once the engine finishes projecting) instead of exposing
+            // authority vocabulary. Unknown balance is never shown as 0/0.
             string amount = budget.IsExact
                 ? $"{budget.Remaining} / {budget.Total} {budget.Unit} remaining"
-                : $"{budget.Unit} budget pending authoritative projection";
+                : $"Your {budget.Unit} budget is being calculated.";
             BudgetList.Children.Add(Caption(
-                $"{budget.Label}: {amount} · {exactness}"));
+                $"{budget.Label}: {amount}"));
         }
     }
 
@@ -3526,8 +3546,15 @@ public partial class CharacterCreationWizardControl : UserControl
     /// codes become prerequisite sentences; unknown codes keep the raw code
     /// after a readable prefix so diagnostics are preserved but never lead.
     /// </summary>
-    private static string DescribeCompletionBlockers(IReadOnlyList<string> blockers)
+    private static string DescribeCompletionBlockers(IReadOnlyList<string> blockers, bool isReviewStep)
     {
+        // Gen9 finding 3: global missing requirements belong on the final
+        // Review surface, not on every intermediate step. On ordinary steps
+        // the completion-blocker line stays empty.
+        if (!isReviewStep)
+        {
+            return "";
+        }
         if (blockers.Count == 0)
         {
             // Gen7 fix: an empty authoritative blocker list is NOT a loading
