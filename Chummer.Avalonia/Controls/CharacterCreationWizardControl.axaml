@@ -44,14 +44,12 @@
       <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="10">
         <StackPanel Spacing="4">
           <TextBlock x:Name="ActiveStepTitle" Classes="shell-section-title" />
-          <TextBlock x:Name="AuthorityStatusText" Classes="shell-caption" TextWrapping="Wrap" MaxHeight="44" TextTrimming="CharacterEllipsis" />
+          <TextBlock x:Name="AuthorityStatusText" Classes="shell-caption" TextWrapping="Wrap" />
         </StackPanel>
         <TextBlock x:Name="StepContentHeading"
                    Grid.Row="1"
                    Classes="shell-section-title"
-                   TextWrapping="Wrap"
-                   MaxHeight="40"
-                   TextTrimming="CharacterEllipsis" />
+                   TextWrapping="Wrap" />
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MinHeight="140">
           <StackPanel Spacing="8">
             <StackPanel x:Name="PriorityPanel" Spacing="8" IsVisible="False">
@@ -107,9 +105,7 @@
                    Grid.Row="4"
                    Classes="shell-caption"
                    TextWrapping="Wrap"
-                   MaxHeight="64"
                    VerticalAlignment="Top"
-                   TextTrimming="CharacterEllipsis"
                    AutomationProperties.AutomationId="creation-wizard-finalize-status" />
       </Grid>
     </Border>

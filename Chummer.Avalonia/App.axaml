@@ -415,6 +415,21 @@
     <Style Selector="Button.shell-action.quiet">
       <Setter Property="Background" Value="{DynamicResource ChummerShellQuietButtonBrush}" />
     </Style>
+    <!-- Gen8 item 3: disabled actions (wizard step pills, blocked buttons) must stay
+         readable - Fluent's default disabled gray was too low-contrast on the shell
+         surface. Keep muted but legible: real foreground + visible border. -->
+    <Style Selector="Button:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Opacity" Value="0.72" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="Button TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="Button:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
     <Style Selector="Button.tool-icon">
       <Setter Property="Padding" Value="6,2" />
       <Setter Property="MinHeight" Value="28" />

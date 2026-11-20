@@ -382,17 +382,34 @@ public partial class CharacterCreationWizardControl : UserControl
             // UX-04: the rank cells must share the available width instead of a
             // fixed 92 DIP each — at 960 DIP / 150% scaling a fixed row cannot
             // fit all five ranks and the low ranks (e.g. E) clip out of reach.
+            // Gen8 item 3: real inter-cell separation plus a horizontal-scroll
+            // degradation floor. On narrow hosts the row scrolls instead of
+            // letting adjacent A-E descriptions touch/collide; the per-cell
+            // padding keeps wrapped text visually clear of its neighbours at
+            // every width.
+            var ranksScroll = new global::Avalonia.Controls.ScrollViewer
+            {
+                HorizontalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                Padding = new global::Avalonia.Thickness(0, 0, 0, 2),
+            };
             var ranksPanel = new global::Avalonia.Controls.Primitives.UniformGrid
             {
                 Columns = options.Count,
+                MinWidth = 420,
             };
+            ranksScroll.Content = ranksPanel;
+            int optionIndex = 0;
             foreach (var option in options)
             {
                 var cellPanel = new StackPanel
                 {
                     Spacing = 2,
                     HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
+                    Margin = new global::Avalonia.Thickness(
+                        0, 0, optionIndex < options.Count - 1 ? 8 : 0, 0),
                 };
+                optionIndex++;
                 var rankButton = new Button
                 {
                     Content = option.Rank,
@@ -422,7 +439,7 @@ public partial class CharacterCreationWizardControl : UserControl
                 ranksPanel.Children.Add(cellPanel);
             }
 
-            rowPanel.Children.Add(ranksPanel);
+            rowPanel.Children.Add(ranksScroll);
             PriorityGridHost.Children.Add(rowPanel);
         }
 
@@ -737,7 +754,7 @@ public partial class CharacterCreationWizardControl : UserControl
                 or CharacterCreationFinalizationOutcomes.Replayed
             ? $"Character finalized ({outcome}); receipt digest anchors this exact workspace revision."
             : blockers.Count > 0
-                ? $"Finalization failed ({outcome}): {string.Join(", ", blockers)}"
+                ? $"Finalization failed ({outcome}): {DescribeBlockerCodes(blockers)}"
                 : $"Finalization failed ({outcome}).";
         FinalizeStatusText.Text = _finalizeStatus;
         // Audit 2026-11-03 P2: a rejected finalization withdraws availability
@@ -770,7 +787,7 @@ public partial class CharacterCreationWizardControl : UserControl
             FinalizeStatusText.Text = canReview
                 ? "Whole-build review is available; finalizing applies the authoritative receipt and unlocks the advanced editor."
                 : _finalizeBlockers.Count > 0
-                    ? $"Finalization unavailable: {string.Join(", ", _finalizeBlockers)}"
+                    ? $"Finalization unavailable: {DescribeBlockerCodes(_finalizeBlockers)}"
                     : "Finalization is not available for this workspace revision.";
         }
     }
@@ -1607,9 +1624,17 @@ public partial class CharacterCreationWizardControl : UserControl
 
         foreach (CharacterCreationWizardDesktopBudget budget in budgets)
         {
-            string exactness = budget.IsExact ? "exact" : "authority pending";
+            string exactness = budget.IsExact
+                ? "exact"
+                : "authority pending - the authoritative amount is not projected yet";
+            // Gen8 item 3: an authority-pending budget must not read as an
+            // authoritative 0/0. When the total is not authoritative, state
+            // the pending condition instead of a fake numeric balance.
+            string amount = budget.IsExact
+                ? $"{budget.Remaining} / {budget.Total} {budget.Unit} remaining"
+                : $"{budget.Unit} budget pending authoritative projection";
             BudgetList.Children.Add(Caption(
-                $"{budget.Label}: {budget.Remaining} / {budget.Total} {budget.Unit} remaining · {exactness}"));
+                $"{budget.Label}: {amount} · {exactness}"));
         }
     }
 
