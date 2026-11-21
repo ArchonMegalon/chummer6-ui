@@ -7352,27 +7352,91 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
 
             // Item 3: keyboard navigation + Escape affordance proof on the
-            // affected wizard. Open one fresh modal, capture it at its
-            // ordinary size, then close it with the Escape key (routed
-            // KeyDown) and prove a clean no-mutation closure.
-            Button? escRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
+            // affected wizard. Body sits at its natural cap by this point
+            // in the journey, so its improve row no longer renders; target
+            // the non-capped Agility row instead. Open one fresh modal,
+            // capture it at its ordinary size, then close it with the
+            // Escape key (routed KeyDown) and prove a no-mutation closure.
+            Button? escRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+            if (escRow is null)
+            {
+                foreach (string candidateTabId in CareerRewardsTabCandidates)
+                {
+                    // The strict section-JSON render-wait inside
+                    // ClickSummaryNavigationTabAsync can outrun the SR6
+                    // attributes publication; the leg only needs the parity
+                    // row controls, so click the tab directly and poll for
+                    // the improve row with its own budget.
+                    Control? tabControl = FindVisiblePrimaryNavigationControl(window, candidateTabId);
+                    if (tabControl is null)
+                    {
+                        RecordStep(steps, $"sr6 keyboard leg tab walk: {candidateTabId} control absent");
+                        continue;
+                    }
+
+                    try
+                    {
+                        await RoutePointerClickAsync(tabControl);
+                    }
+                    catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
+                    {
+                        // Transient routing failures (control rebuilt between
+                        // discovery and click during state publications) retry
+                        // on the next candidate just like unreachable tabs.
+                        RecordStep(
+                            steps,
+                            $"sr6 keyboard leg tab walk: {candidateTabId} not clickable ({walkFailure.GetType().Name}: {walkFailure.Message}); navigation surface: {DescribePrimaryNavigationSurface(window)}");
+                        continue;
+                    }
+
+                    recordPointerAction();
+                    RecordStep(steps, $"sr6 keyboard leg tab walk: clicked {candidateTabId}");
+                    if (await WaitForConditionWithinAsync(
+                            () => FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI") is not null,
+                            ct,
+                            TimeSpan.FromSeconds(10)))
+                    {
+                        escRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                        break;
+                    }
+                }
+            }
             if (escRow is null)
             {
                 throw new InvalidOperationException(
-                    "sr6 keyboard leg failed: the AttributeImprove_BOD row is not visible for the Escape-close proof.");
+                    "sr6 keyboard leg failed: the AttributeImprove_AGI row is not visible on any candidate tab for the Escape-close proof.");
             }
-            await RoutePointerClickAsync(escRow);
-            recordPointerAction();
-            RecordStep(steps, "sr6 keyboard leg: opened a fresh advance modal for the Escape-close proof");
-            bool escOpened = await WaitForConditionWithinAsync(
-                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
-                ct,
-                TimeSpan.FromSeconds(15));
+            // State publications rebuild the parity rows, so re-find a fresh
+            // TopLevel-rooted reference for each press attempt (the same
+            // bounded retry the natural-limit leg uses).
+            bool escOpened = false;
+            for (int escAttempt = 1; escAttempt <= 3 && !escOpened; escAttempt++)
+            {
+                Button? freshEscRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                if (freshEscRow is null)
+                {
+                    continue;
+                }
+                try
+                {
+                    await RoutePointerClickAsync(freshEscRow);
+                    recordPointerAction();
+                }
+                catch (InvalidOperationException routingFailure)
+                {
+                    RecordStep(steps, $"sr6 keyboard leg attempt {escAttempt} routing failed: {routingFailure.Message}");
+                }
+                escOpened = await WaitForConditionWithinAsync(
+                    () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
+                    ct,
+                    TimeSpan.FromSeconds(8));
+            }
             if (!escOpened)
             {
                 throw new InvalidOperationException(
-                    "sr6 keyboard leg failed: the advance window did not open for the Escape-close proof.");
+                    "sr6 keyboard leg failed: the advance window did not open for the Agility Escape-close proof.");
             }
+            RecordStep(steps, "sr6 keyboard leg: opened a fresh Agility advance modal for the Escape-close proof");
             Sr6CareerAttributeAdvanceWindow? escWindow = await Dispatcher.UIThread.InvokeAsync(
                 ResolveSingleAdvanceWindow);
             if (escWindow is null)
