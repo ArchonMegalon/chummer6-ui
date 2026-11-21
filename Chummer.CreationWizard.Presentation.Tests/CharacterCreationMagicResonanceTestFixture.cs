@@ -500,6 +500,15 @@ internal sealed class StubMagicResonanceService : ICharacterCreationMagicResonan
 
     internal int LoadCalls { get; private set; }
     internal int PreviewCalls { get; private set; }
+    internal CharacterCreationMagicResonanceState StateForTests
+    {
+        get => _state;
+        set => _state = value;
+    }
+
+    internal string? LastConfirmDigest { get; private set; }
+
+    internal bool LastConfirmExplicitlyConfirmed { get; private set; }
     internal int ConfirmCalls { get; private set; }
 
     public CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> Load(
@@ -533,6 +542,8 @@ internal sealed class StubMagicResonanceService : ICharacterCreationMagicResonan
         CharacterCreationMagicResonanceConfirmRequest request)
     {
         ConfirmCalls++;
+        LastConfirmDigest = request.PreviewDigest;
+        LastConfirmExplicitlyConfirmed = request.ExplicitlyConfirmed;
         if (_receipt is not null && string.Equals(_idempotencyKey, request.IdempotencyKey, StringComparison.Ordinal))
             return new(CharacterCreationFoundationOutcomes.Success, _receipt, []);
         if (!request.ExplicitlyConfirmed)
