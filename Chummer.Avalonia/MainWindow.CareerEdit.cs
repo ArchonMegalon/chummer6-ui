@@ -374,7 +374,13 @@ public partial class MainWindow
                 CaptureInitiatingFocusForAdvanceDialog(this);
             var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
-            RestoreInitiatingFocusAfterAdvanceDialogClose(this, initiatingFocus, initiatingFocusName);
+            // The modal's close sequence is still unwinding when
+            // ShowDialog's task completes; restore on the NEXT dispatcher
+            // pass so the window's own focus cleanup cannot clobber the
+            // restored focus (gen10v evidence: an immediate restore was
+            // observed unfocused by the journey's single-shot probe).
+            Dispatcher.UIThread.Post(() =>
+                RestoreInitiatingFocusAfterAdvanceDialogClose(this, initiatingFocus, initiatingFocusName));
             if (!ContextStillCurrent())
             {
                 // Owner/workspace/revision moved while the dialog was open; the

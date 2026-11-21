@@ -7595,21 +7595,52 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 throw new InvalidOperationException(
                     "sr6 keyboard leg failed: the advance window did not close after the Escape key press.");
             }
-            (bool focusReturned, string focusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+            // Controller9415: the Escape-close press already happened exactly
+            // once; what follows is an OUTCOME observation, never a re-press.
+            // The product restores the initiating focus on its next dispatcher
+            // pass after the modal's close sequence unwinds, so observe the
+            // focus return boundedly instead of single-shot (gen10v evidence:
+            // the single-shot read landed before the restore took effect).
+            (bool focusReturned, string focusDiag) = (false, "focus-return observation never ran");
+            DateTimeOffset focusReturnDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+            while (DateTimeOffset.UtcNow < focusReturnDeadline)
             {
-                Button? rowAfterEscape = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
-                if (rowAfterEscape is null)
+                ct.ThrowIfCancellationRequested();
+                (focusReturned, focusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    return (false, "the Agility improve row no longer renders after the modal close");
-                }
-                if (!rowAfterEscape.IsEffectivelyVisible)
+                    Button? rowAfterEscape = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                    if (rowAfterEscape is null)
+                    {
+                        return (false, "the Agility improve row no longer renders after the modal close");
+                    }
+                    if (!rowAfterEscape.IsEffectivelyVisible)
+                    {
+                        return (false, "the Agility improve row is not effectively visible after the modal close");
+                    }
+                    bool focused = rowAfterEscape.IsFocused || rowAfterEscape.IsKeyboardFocusWithin;
+                    string focusOwner = "none";
+                    try
+                    {
+                        Control? focusedElement = window.FocusManager?.GetFocusedElement() as Control;
+                        focusOwner = focusedElement is null
+                            ? "none"
+                            : focusedElement.GetType().Name
+                                + (string.IsNullOrEmpty(focusedElement.Name) ? string.Empty : ":" + focusedElement.Name);
+                    }
+                    catch (Exception)
+                    {
+                        focusOwner = "unknown";
+                    }
+                    return (focused, "rowIsFocused=" + rowAfterEscape.IsFocused
+                        + " keyboardFocusWithin=" + rowAfterEscape.IsKeyboardFocusWithin
+                        + " focusOwner=" + focusOwner);
+                });
+                if (focusReturned)
                 {
-                    return (false, "the Agility improve row is not effectively visible after the modal close");
+                    break;
                 }
-                bool focused = rowAfterEscape.IsFocused || rowAfterEscape.IsKeyboardFocusWithin;
-                return (focused, "rowIsFocused=" + rowAfterEscape.IsFocused
-                    + " keyboardFocusWithin=" + rowAfterEscape.IsKeyboardFocusWithin);
-            });
+                await Task.Delay(PollInterval);
+            }
             if (!focusReturned)
             {
                 throw new InvalidOperationException(
