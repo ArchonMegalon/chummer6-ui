@@ -6826,6 +6826,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                     RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} press {walkPress} NOT DELIVERED pre-dispatch (target not live) - recorded as non-delivery, not a click");
                                     prevPressNotLive = true;
                                     prevTabDeselected = false;
+                                    // Mirror the menu-command route: a not-live
+                                    // press is followed by a settle wait + reprobe
+                                    // (the post-Apply workspace republish rebuilds
+                                    // the tab strip; immediate re-presses all go
+                                    // stale against the rebuild in flight).
+                                    await Task.Delay(750, ct);
                                     continue;
                                 }
                                 if (walkDelivery.Kind == PointerDeliveryKind.Delivered)
