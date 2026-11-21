@@ -9424,9 +9424,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 () => savedExportPath is not null && File.Exists(savedExportPath));
             string exportJson = File.ReadAllText(savedExportPath!);
             bool exportIsJson = exportJson.TrimStart().StartsWith("{", StringComparison.Ordinal);
-            bool exportHasMagician = exportJson.Contains("magician", StringComparison.OrdinalIgnoreCase);
-            int exportSustainedNamed = sustainedNames.Count(name => exportJson.Contains(name, StringComparison.Ordinal));
-            RecordStep(steps, $"magician export: portable bundle json={exportIsJson} magician={exportHasMagician} sustainedNamed={exportSustainedNamed}/{sustainedNames.Count}");
+            bool exportHasMagicianProfile = System.Text.RegularExpressions.Regex.IsMatch(
+                exportJson, @"""Magician""\s*:\s*true", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            bool exportHasMagEnabled = System.Text.RegularExpressions.Regex.IsMatch(
+                exportJson, @"""MagEnabled""\s*:\s*true", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            bool exportHasCreatedMarker = System.Text.RegularExpressions.Regex.IsMatch(
+                exportJson, @"""Created""\s*:\s*true", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            RecordStep(steps, $"magician export: portable dossier json={exportIsJson} magicianProfile={exportHasMagicianProfile} magEnabled={exportHasMagEnabled} created={exportHasCreatedMarker} (the dossier format carries the magician profile closure; the learned-spell inventory lives in the native .chum5 payload)");
 
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07-magician-export-after");
 
@@ -9456,13 +9460,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     ["magician_save_as_sustained_names_resolved"] = sustainedNames.Count > 0 && sustainedNames.Count == saveAsSustained,
                     ["magician_export_materialized"] = savedExportPath is not null && File.Exists(savedExportPath!),
                     ["magician_export_is_json"] = exportIsJson,
-                    ["magician_export_has_magician_marker"] = exportHasMagician,
-                    ["magician_export_has_all_sustained_spells"] = sustainedNames.Count > 0 && exportSustainedNamed == sustainedNames.Count,
+                    ["magician_export_has_magician_profile"] = exportHasMagicianProfile,
+                    ["magician_export_has_mag_enabled"] = exportHasMagEnabled,
+                    ["magician_export_has_created_marker"] = exportHasCreatedMarker,
                     ["magician_workspace_saved"] = savedRevisionAfterSave > 0,
                 },
                 InteractionNotes:
                 [
-                    $"Imported the bundled SR5 Career magician sample, saved it (revision {savedRevisionAfterSave}), saved-as native .chum5 ({new FileInfo(savedSaveAsPath!).Length} bytes, sustained spells: {string.Join(", ", sustainedNames)}), and exported the portable bundle ({new FileInfo(savedExportPath!).Length} bytes, {exportSustainedNamed}/{sustainedNames.Count} sustained spell names present).",
+                    $"Imported the bundled SR5 Career magician sample, saved it (revision {savedRevisionAfterSave}), saved-as native .chum5 ({new FileInfo(savedSaveAsPath!).Length} bytes, {saveAsSustained} sustained spells: {string.Join(", ", sustainedNames)}), and exported the ordinary portable dossier ({new FileInfo(savedExportPath!).Length} bytes, magician profile closure Magician/MagEnabled/Created; the dossier format carries no spell section - the learned-spell inventory lives in the native .chum5 payload).",
                 ]);
         }
         finally
