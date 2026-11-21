@@ -9962,7 +9962,54 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     /// "target-not-live-at-press" result is retryable, thrown faults escape to
     /// the caller as fail-closed failures, and the returned delivery string is
     /// always the typed route result (never a fabricated success).
+    /// </summary>    /// <summary>
+    /// Controller9539 companion (gen10j evidence): the career-rewards parity
+    /// grid can still be re-laid-out by the section render that follows the
+    /// preceding tab navigation when an improve row first becomes visible.
+    /// A press issued inside that rebuild window resolves stale geometry -
+    /// the synthetic release hit-tests onto the scroll presenter instead of
+    /// the row and the row detaches under the re-raise tick - which the 9415
+    /// fail-closed core then honestly reports as a not-delivered press. This
+    /// is ordinary readiness work BEFORE the first press, never a post-fault
+    /// retry: wait until the row instance is IDENTICAL across spaced re-finds
+    /// (no section rebuild in flight), then apply the same BringIntoView +
+    /// layout-pump readiness the proven blocked-cap cancel press uses.
+    /// Returns the settled row, or null when the row never stabilizes within
+    /// the budget.
     /// </summary>
+    private static async Task<Control?> WaitForSettledCareerRewardsRowAsync(
+        MainWindow window,
+        string improveRowAutomationId,
+        CancellationToken ct)
+    {
+        System.Diagnostics.Stopwatch settleClock = System.Diagnostics.Stopwatch.StartNew();
+        while (settleClock.Elapsed < TimeSpan.FromSeconds(8))
+        {
+            Control? first = FindVisibleCareerRewardsButton(window, improveRowAutomationId);
+            if (first is null)
+            {
+                await Task.Delay(200, ct);
+                continue;
+            }
+            await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(first));
+            await Task.Delay(300, ct);
+            Control? second = FindVisibleCareerRewardsButton(window, improveRowAutomationId);
+            if (second is not null
+                && ReferenceEquals(first, second)
+                && second.GetVisualRoot() is not null)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    second.BringIntoView();
+                    ForceHeadlessLayoutPump(second);
+                });
+                return second;
+            }
+            await Task.Delay(150, ct);
+        }
+        return null;
+    }
+
     private static async Task<string> PressImproveRowWithDeliveryDisciplineAsync(
         MainWindow window,
         string improveRowAutomationId,
@@ -9970,6 +10017,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         CancellationToken ct,
         Action recordPointerAction)
     {
+        // Pre-press readiness runs BEFORE any press: the settle proves the
+        // parity grid has stopped rebuilding, and BringIntoView + the layout
+        // pump mirror the proven blocked-cap cancel-press recipe. No press
+        // has been issued yet, so this is readiness work, not a retry.
+        Control? settledRow = await WaitForSettledCareerRewardsRowAsync(window, improveRowAutomationId, ct);
+        if (settledRow is null)
+        {
+            // Typed PRE-press not-live result: the row instance never
+            // stabilized, so no press was issued; the delivery-discipline
+            // core's bounded not-live retry applies (each retry re-settles
+            // before pressing again).
+            RecordStep(steps, $"sr6 improve row {improveRowAutomationId} not live at press (row instance never stabilized across spaced re-finds)");
+            return "delivered=false;reason=target-not-live-at-press;settle=unstable-row-instance;";
+        }
         // waitForClick:true engages the resolved route's re-raise loop - the
         // first synthetic raise on a freshly-bound control is occasionally
         // swallowed by the button press-state machine, and the re-raise loop
