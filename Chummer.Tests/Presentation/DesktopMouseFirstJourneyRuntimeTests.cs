@@ -195,6 +195,33 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
     }
 
     [TestMethod]
+    public void ClassifyDialogPressForRetry_represses_only_on_explicit_pre_dispatch_non_delivery()
+    {
+        // Controller9579 (Create retry): a re-press is justified ONLY by an
+        // explicit pre-dispatch non-delivery (target-not-live-at-press:
+        // nothing was raised, so a fresh press cannot double-commit).
+        // delivered=True (committed once), an ambiguous delivered=False
+        // without the pre-dispatch reason (probe passed, activation unseen),
+        // a malformed token, and a missing segment must ALL refuse the
+        // re-press - the original result is retained, fail closed.
+        Assert.IsTrue(DesktopMouseFirstJourneyRunner.ClassifyDialogPressForRetry(
+            "press=dialog;delivered=False;reason=target-not-live-at-press;enabled=True;"),
+            "explicit pre-dispatch non-delivery is the ONLY retryable verdict");
+        Assert.IsFalse(DesktopMouseFirstJourneyRunner.ClassifyDialogPressForRetry(
+            "press=dialog;delivered=True;enabled=True;"),
+            "a delivered press must never re-press (double-commit guard)");
+        Assert.IsFalse(DesktopMouseFirstJourneyRunner.ClassifyDialogPressForRetry(
+            "press=dialog;delivered=False;enabled=True;"),
+            "ambiguous non-delivery without the pre-dispatch reason must not re-press");
+        Assert.IsFalse(DesktopMouseFirstJourneyRunner.ClassifyDialogPressForRetry(
+            "press=dialog;delivered=TrueOops;enabled=True;"),
+            "malformed delivery token must not re-press");
+        Assert.IsFalse(DesktopMouseFirstJourneyRunner.ClassifyDialogPressForRetry(
+            "press=dialog;enabled=True;"),
+            "missing delivery segment must not re-press");
+    }
+
+    [TestMethod]
     public void ParsePointerDeliveryResult_rejects_malformed_delivered_tokens()
     {
         // Controller9547: the typed parser must reject malformed delivered

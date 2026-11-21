@@ -2622,6 +2622,33 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
         private static readonly string[] CareerRewardsTabCandidates = ["tab-info", "tab-attributes"];
 
+            /// <summary>
+            /// Controller9579 (journey 6643-6680): reads the ACTUAL selected-tab state.
+            /// Returns true only when the tab-strip container for that id is realized
+            /// AND currently selected. Row absence is never de-selection proof.
+            /// </summary>
+            internal static bool IsPrimaryNavigationTabSelected(MainWindow window, string tabId)
+            {
+                var sectionHost = window.ControlsForAutomation.SectionHost;
+                TabStrip? tabStrip = sectionHost?.FindControl<TabStrip>("LoadedRunnerTabStrip");
+                if (tabStrip is null)
+                {
+                    return false;
+                }
+                int index = 0;
+                foreach (object? item in tabStrip.Items)
+                {
+                    if (item is NavigatorTabItem tab
+                        && string.Equals(tab.Id, tabId, StringComparison.Ordinal)
+                        && tabStrip.ContainerFromIndex(index) is TabItem { IsSelected: true })
+                    {
+                        return true;
+                    }
+                    index++;
+                }
+                return false;
+            }
+
         private static string DescribePrimaryNavigationSurface(MainWindow window)
         {
             TabStrip? tabStrip = window.ControlsForAutomation.SectionHost.FindControl<TabStrip>("LoadedRunnerTabStrip");
@@ -6751,9 +6778,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             // the same candidate after an outcome miss is
                             // safe - no possible delivery of a committed
                             // command.
+                            // Controller9415 gen10: the post-apply workspace
+                            // republish can RESET the section host's selected
+                            // tab after this click lands (gen10s evidence:
+                            // host ended on Character Card). Tab navigation
+                            // cannot commit character state.
+                            // Controller9579: a re-press requires EXPLICIT
+                            // proof - a pre-dispatch non-delivery
+                            // (target-not-live-at-press: nothing was raised)
+                            // or an OBSERVED tab de-selection (actual
+                            // selected-tab state; row absence is never
+                            // de-selection proof). Non-delivery is recorded
+                            // honestly, never as a click.
                             bool rowFound = false;
+                            bool prevPressNotLive = false;
+                            bool prevTabDeselected = false;
                             for (int walkPress = 1; walkPress <= 3 && !rowFound; walkPress++)
                             {
+                                if (walkPress > 1 && !prevPressNotLive && !prevTabDeselected)
+                                {
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} no re-press (press {walkPress}): prior press had neither explicit non-delivery nor proven de-selection - honest stop");
+                                    break;
+                                }
                                 string walkRouting;
                                 try
                                 {
@@ -6764,30 +6810,33 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 }
                                 catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
                                 {
-                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} not clickable (press {walkPress}, {walkFailure.GetType().Name}: {walkFailure.Message})");
+                                    // Controller9539/9579: a thrown fault is
+                                    // neither explicit non-delivery nor proven
+                                    // de-selection - fail closed, no re-press.
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} not clickable (press {walkPress}, {walkFailure.GetType().Name}: {walkFailure.Message}) - fail closed");
+                                    break;
+                                }
+                                PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
+                                bool explicitNotLive = walkDelivery.Kind == PointerDeliveryKind.NotDelivered
+                                    && walkRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal);
+                                if (explicitNotLive)
+                                {
+                                    // Pre-press not-live: NOTHING was raised.
+                                    // Honest non-delivery record - never a click.
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} press {walkPress} NOT DELIVERED pre-dispatch (target not live) - recorded as non-delivery, not a click");
+                                    prevPressNotLive = true;
+                                    prevTabDeselected = false;
                                     continue;
                                 }
-                                // Controller9568: a re-press of the same tab
-                                // candidate requires an EXPLICIT NON-DELIVERY
-                                // (pre-press not-live: nothing was raised) or an
-                                // OBSERVED DE-SELECTION (the walk outcome below
-                                // re-presses only when the row is still absent -
-                                // i.e. the tab de-selected itself via the
-                                // republish reset). No blind re-press.
-                                PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
-                                if (walkDelivery.Kind == PointerDeliveryKind.NotDelivered
-                                    && !walkRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+                                if (walkDelivery.Kind == PointerDeliveryKind.Delivered)
                                 {
-                                    // Delivered=false without the pre-press
-                                    // reason: the press MIGHT have delivered
-                                    // (probe passed, activation unseen). Treat
-                                    // the outcome wait as the delivery verdict;
-                                    // the existing row-wait below is that
-                                    // observation. Do not fail here.
-                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} routing not delivered without pre-press reason ({walkRouting.Split(';')[0]}); relying on the outcome wait");
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: pressed {candidateTabId} (press {walkPress}, delivered)");
+                                }
+                                else
+                                {
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} press {walkPress} inconclusive delivery ({walkDelivery.Kind}: {walkRouting.Split(';')[0]}); the outcome wait is the delivery verdict - not recorded as a click");
                                 }
                                 recordPointerAction();
-                                RecordStep(steps, $"sr6 natural-limit tab walk: clicked {candidateTabId} (press {walkPress})");
                                 if (await WaitForConditionWithinAsync(
                                         () => FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD") is not null,
                                         ct,
@@ -6797,7 +6846,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 }
                                 else
                                 {
-                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} pressed but row absent after wait (press {walkPress}) - possible republish tab reset");
+                                    // Controller9579: row absence alone is NOT
+                                    // de-selection proof. Re-press only when the
+                                    // tab ACTUALLY de-selected (observable state).
+                                    bool tabStillSelected = IsPrimaryNavigationTabSelected(window, candidateTabId);
+                                    prevTabDeselected = !tabStillSelected;
+                                    prevPressNotLive = false;
+                                    if (prevTabDeselected)
+                                    {
+                                        RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} row absent AND tab observed de-selected (press {walkPress}) - republish reset proven, one re-press allowed");
+                                    }
+                                    else
+                                    {
+                                        RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} row absent but tab STILL SELECTED after press {walkPress} - no de-selection proof, no further re-press on this candidate");
+                                    }
                                 }
                             }
                             if (rowFound)
@@ -9780,61 +9842,93 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             ct);
     }
 
-    private static async Task ClickDialogActionAsync(MainWindow window, string actionId, List<string> steps, CancellationToken ct, Action recordPointerAction)
-    {
-        string actionName = DesktopDialogAccessibility.BuildActionName(actionId);
-        await WaitForAsync(
-            steps,
-            $"dialog action {actionId} available",
-            () => FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName) is not null,
-            ct);
-
-        Button button = FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName)
-            ?? throw new InvalidOperationException($"Dialog action '{actionId}' was not found.");
-        bool clickObserved = false;
-        void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
-        button.Click += OnClick;
-        try
+        private static async Task<string> ClickDialogActionAsync(
+            MainWindow window,
+            string actionId,
+            List<string> steps,
+            CancellationToken ct,
+            Action recordPointerAction)
         {
-            await RoutePointerClickAsync(button);
-        }
-        finally
-        {
-            button.Click -= OnClick;
-        }
-
-        recordPointerAction();
-        RecordStep(steps, $"click dialog action {actionId}; delivered={clickObserved}; enabled={button.IsEffectivelyEnabled}");
-    }
-
-    private static async Task ClickDialogActionUntilAsync(
-        MainWindow window,
-        string actionId,
-        List<string> steps,
-        CancellationToken ct,
-        Action recordPointerAction,
-        string transitionDescription,
-        Func<bool> transitionPredicate,
-        int maxAttempts = 3,
-        TimeSpan? settleTimeout = null)
-    {
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
-        {
-            await ClickDialogActionAsync(window, actionId, steps, ct, recordPointerAction);
-            if (await WaitForConditionWithinAsync(transitionPredicate, ct, settleTimeout ?? TransitionSettleTimeout))
+            string actionName = DesktopDialogAccessibility.BuildActionName(actionId);
+            await WaitForAsync(
+                steps,
+                $"dialog action {actionId} available",
+                () => FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName) is not null,
+                ct);
+    
+            Button button = FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName)
+                ?? throw new InvalidOperationException($"Dialog action '{actionId}' was not found.");
+            string routing = await RoutePointerClickAsync(button);
+    
+            recordPointerAction();
+            PointerDeliveryResult delivery = ParsePointerDeliveryResult(routing);
+            if (delivery.Kind == PointerDeliveryKind.Delivered)
             {
-                RecordStep(steps, $"wait success: {transitionDescription}");
-                return;
+                RecordStep(steps, $"click dialog action {actionId}; delivered=True (probe verified); enabled={button.IsEffectivelyEnabled}");
             }
-
-            if (attempt < maxAttempts)
+            else if (delivery.Kind == PointerDeliveryKind.NotDelivered
+                && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
             {
-                RecordStep(steps, $"retry dialog action {actionId} after attempt {attempt} did not trigger {transitionDescription}");
+                RecordStep(steps, $"click dialog action {actionId}; NOT DELIVERED pre-dispatch (target not live) - recorded as non-delivery, not a click");
             }
+            else
+            {
+                RecordStep(steps, $"click dialog action {actionId}; delivery inconclusive ({delivery.Kind}: {routing.Split(';')[0]}); the transition wait is the delivery verdict - not recorded as a click");
+            }
+            return routing;
         }
+    
+        /// <summary>
+        /// Controller9579 (create retry): classification for re-press decisions.
+        /// Re-press is allowed ONLY on the explicit pre-dispatch non-delivery
+        /// literal (nothing was raised - a fresh press is safe and cannot double
+        /// commit). An observation timeout with a passed probe is NOT proof of
+        /// non-delivery, so it never re-presses.
+        /// </summary>
+        internal static bool ClassifyDialogPressForRetry(string routing)
+            => ParsePointerDeliveryResult(routing).Kind == PointerDeliveryKind.NotDelivered
+                && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal);
 
-        throw new TimeoutException($"Timed out while waiting for {transitionDescription}.");
-    }
+        private static async Task ClickDialogActionUntilAsync(
+            MainWindow window,
+            string actionId,
+            List<string> steps,
+            CancellationToken ct,
+            Action recordPointerAction,
+            string transitionDescription,
+            Func<bool> transitionPredicate,
+            int maxAttempts = 3,
+            TimeSpan? settleTimeout = null)
+        {
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                string routing = await ClickDialogActionAsync(window, actionId, steps, ct, recordPointerAction);
+                if (await WaitForConditionWithinAsync(transitionPredicate, ct, settleTimeout ?? TransitionSettleTimeout))
+                {
+                    RecordStep(steps, $"wait success: {transitionDescription}");
+                    return;
+                }
+    
+                // Controller9579: a re-press requires explicit proof of
+                // non-delivery. `reason=target-not-live-at-press` means nothing
+                // was raised (fresh press safe). An observation timeout after a
+                // passed probe is AMBIGUOUS - the press may have delivered, so
+                // re-pressing could double-commit. Fail closed: keep the
+                // ORIGINAL result, record honestly, stop pressing.
+                if (attempt < maxAttempts && ClassifyDialogPressForRetry(routing))
+                {
+                    RecordStep(steps, $"retry dialog action {actionId} after attempt {attempt}: explicit pre-dispatch non-delivery - fresh press allowed");
+                    continue;
+                }
+                if (attempt < maxAttempts)
+                {
+                    RecordStep(steps, $"retry dialog action {actionId} after attempt {attempt} did not trigger {transitionDescription} - observation inconclusive, NO re-press (fail closed, original result retained)");
+                }
+                break;
+            }
+    
+            throw new TimeoutException($"Timed out while waiting for {transitionDescription}.");
+        }
 
     private static async Task SetDialogTextFieldAsync(MainWindow window, string fieldId, string value, List<string> steps, CancellationToken ct)
     {

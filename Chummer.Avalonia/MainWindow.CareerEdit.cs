@@ -417,7 +417,7 @@ public partial class MainWindow
             // and is owner-scoped; the loop checks the CURRENT generation
             // immediately before every Focus attempt and exits silently when
             // a newer cycle took over.
-            _ = RunDeferredFocusRestoreAsync(this, initiatingFocus, initiatingFocusName, restoreGeneration);
+            _ = RunDeferredFocusRestoreAsync(this, initiatingFocus, initiatingFocusName, restoreGeneration, DisplayStillCurrent);
             if (!ContextStillCurrent())
             {
                 // Owner/workspace/revision moved while the dialog was open; the
@@ -483,7 +483,8 @@ public partial class MainWindow
         TopLevel owner,
         IInputElement? initiatingFocus,
         string? initiatingFocusName,
-        int restoreGeneration)
+        int restoreGeneration,
+        Func<bool>? displayStillCurrent = null)
     {
         return Dispatcher.UIThread.InvokeAsync(async () =>
         {
@@ -492,6 +493,24 @@ public partial class MainWindow
                 if (!Sr6FocusRestoreDiagnostics.IsCurrentCycle(restoreGeneration, owner))
                 {
                     Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " stale-exit attempt" + restoreAttempt);
+                    return;
+                }
+                // Controller9579 gap A: the display context (owner window +
+                // workspace + account) must still be current immediately before
+                // every Focus attempt - including the by-name re-resolve, which
+                // must never land keyboard focus inside a switched-away workspace.
+                // Deliberately NOT the revision: the revision advances on every
+                // Apply and post-Apply focus restore must keep working.
+                if (displayStillCurrent is not null && !displayStillCurrent())
+                {
+                    Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " context-switch refusal attempt" + restoreAttempt);
+                    return;
+                }
+                // Controller9579 gap B: refuse on owner-close. A closed owner
+                // window must not receive focus restoration.
+                if (owner is Window ownerWindow && !ownerWindow.IsVisible)
+                {
+                    Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " owner-closed refusal attempt" + restoreAttempt);
                     return;
                 }
                 if (RestoreInitiatingFocusAfterAdvanceDialogClose(owner, initiatingFocus, initiatingFocusName))

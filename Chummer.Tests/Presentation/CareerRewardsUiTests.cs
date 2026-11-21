@@ -1301,6 +1301,83 @@ public sealed class CareerRewardsUiTests
         });
     }
     [TestMethod]
+    public void Queued_context_switch_refuses_stale_deferred_focus_restore()
+    {
+        // Controller9579 gen11: the deferred focus-restore callback is queued
+        // with the captured display context (owner + workspace + account).
+        // A same-owner context switch (workspace/account change - NOT a
+        // revision advance, which legitimately happens on every Apply) that
+        // lands while the callback is still in flight must refuse: no Focus
+        // call, an honest refusal entry, focus stays where it was. The cycle
+        // generation alone cannot catch this - the owner reference and the
+        // generation are unchanged - so the display predicate is the guard.
+        WithHeadlessUi(() =>
+        {
+            Button rowA = new Button { Name = "AttributeImprove_A", Content = "A" };
+            Button rowB = new Button { Name = "AttributeImprove_B", Content = "B" };
+            Window owner = new Window { Width = 320, Height = 220, Content = new StackPanel { Children = { rowA, rowB } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(rowA.Focus(), "precondition: A focused");
+                var (capA, nameA) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(rowA, capA, "precondition: capture A is the row");
+                int cycleA = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+
+                // The captured display predicate: context is current while the
+                // flag holds; a workspace/account switch flips it - exactly the
+                // shape the production call site passes (DisplayStillCurrent).
+                bool contextCurrent = true;
+                Func<bool> displayStillCurrent = () => contextCurrent;
+
+                // Queue the deferred restore; it is an in-flight GUI operation.
+                MainWindow.RunDeferredFocusRestoreAsync(owner, capA, nameA, cycleA, displayStillCurrent);
+
+                // The context switches BEFORE the queued callback drains.
+                contextCurrent = false;
+                Dispatcher.UIThread.RunJobs();
+                System.Threading.Thread.Sleep(150);
+                Dispatcher.UIThread.RunJobs();
+
+                // The refusal is honest: recorded in the ring...
+                string ring = string.Join("|", MainWindow.Sr6FocusRestoreDiagnostics.Snapshot());
+                Assert.IsTrue(ring.Contains("context-switch refusal"),
+                    "the context-switch refusal must be recorded honestly, ring: " + ring);
+                // ...and focus must not have moved to another row.
+                Assert.IsFalse(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "a refused cycle must never move focus to another row");
+                Assert.IsTrue(rowA.IsFocused || rowA.IsKeyboardFocusWithin,
+                    "focus must STAY on the original row after the context switch");
+
+                // The positive side: a CURRENT context still restores. Focus B,
+                // begin a newer cycle (A's is now stale by generation too),
+                // drain B's deferred restore with the predicate held true.
+                Assert.IsTrue(rowB.Focus(), "precondition: B focused after the switch");
+                var (capB, nameB) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(rowB, capB, "precondition: capture B is the row");
+                int cycleB = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+                Assert.AreNotEqual(cycleA, cycleB, "cycle B must be a newer generation");
+                contextCurrent = true;
+                MainWindow.RunDeferredFocusRestoreAsync(owner, capB, nameB, cycleB, displayStillCurrent);
+                Dispatcher.UIThread.RunJobs();
+                System.Threading.Thread.Sleep(150);
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(MainWindow.Sr6FocusRestoreDiagnostics.LastRestoreOutcome().Focused,
+                    "a current-context restore still succeeds after the fix");
+                Assert.IsTrue(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "B stays focused after its own restore");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+
+    [TestMethod]
     public void Menu_item_activation_is_measured_by_the_menu_click_probe()
     {
         // Controller9415 gen10: MenuItem activation raises
