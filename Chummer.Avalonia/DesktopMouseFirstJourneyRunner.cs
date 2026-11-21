@@ -10309,6 +10309,36 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     + $"enabled={control.IsEffectivelyEnabled};visible={control.IsVisible};{attached};{inputDiagnostics}");
             }
 
+            // Controller9544 companion: pre-press hit-test probe. If the
+            // resolved point does not hit-test back onto the control (a
+            // freshly-opened popup is not yet hit-testable at the resolved
+            // point; a mid-rebuild grid detaches the row), NO input may be
+            // raised - raising into a scene that would swallow it is exactly
+            // the ambiguous press the discipline forbids. Report the typed
+            // PRE-press not-live result so the caller's bounded not-live
+            // retry applies; no physical press was issued.
+            {
+                Point probeInControl = rootVisual.TranslatePoint(rootPosition, control) ?? default;
+                bool probeHit = control.GetVisualsAt(probeInControl)
+                    .Any(v => ReferenceEquals(v, control) || control.IsVisualAncestorOf(v));
+                if (!probeHit)
+                {
+                    object? probeTarget = rootVisual is InputElement ie ? ie.InputHitTest(rootPosition) : null;
+                    string probeTargetText = probeTarget is Control pc
+                        ? (pc.GetType().Name + ":" + (global::Avalonia.Automation.AutomationProperties.GetAutomationId(pc) ?? pc.Name ?? string.Empty))
+                        : probeTarget?.GetType().Name ?? "null";
+                    control.RemoveHandler(Button.ClickEvent, ClickProbe);
+                    completion.TrySetResult(
+                        "delivered=false;reason=target-not-live-at-press;probe=miss;"
+                        + "realTarget=" + probeTargetText + ";"
+                        + "rootPos=" + rootPosition.X.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)
+                        + "," + rootPosition.Y.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + ";"
+                        + "bounds=" + control.Bounds.Width.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)
+                        + "x" + control.Bounds.Height.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + ";");
+                    return;
+                }
+            }
+
             RaiseSyntheticClick();
 
             if (!waitForClick || delivered)
