@@ -1065,6 +1065,378 @@ public sealed class CareerRewardsUiTests
             }
         });
     }
+    [TestMethod]
+    public void Advance_window_initial_focus_lands_on_the_enabled_apply_action()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            try
+            {
+                advance.Show();
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+
+                var apply = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-apply");
+                Assert.IsNotNull(apply, "apply must exist");
+                Assert.IsTrue(apply.IsEnabled, "the snapshot quote is advanceable so Apply must be enabled");
+                Assert.IsTrue(apply.IsFocused,
+                    "initial focus must land on the enabled Advance action, not nowhere (Controller9534)");
+            }
+            finally
+            {
+                advance.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Resolved_pointer_route_dispatches_exactly_once_per_call()
+    {
+        // Controller9544: one helper call = ONE physical dispatch. The
+        // waitForClick:true re-raise timer could multiply presses past
+        // the discipline's accounting; count actual Click deliveries on
+        // a live button through the REAL resolved route.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Content = "improve", IsEnabled = true };
+            int clicks = 0;
+            row.AddHandler(Button.ClickEvent, (_, _) => clicks++);
+            Window host = new Window { Content = new StackPanel { Children = { row } } };
+            host.Show();
+            try
+            {
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(host);
+
+                Task<string>? routeTask = null;
+                Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    routeTask = DesktopMouseFirstJourneyRunner.RoutePointerClickResolvedAsync(
+                        row,
+                        waitForClick: false,
+                        liveTarget: () => row);
+                });
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsNotNull(routeTask, "the route task must be assigned synchronously");
+                Assert.IsTrue(routeTask.IsCompletedSuccessfully, "the single dispatch must complete under the headless pump");
+                string routing = routeTask.Result;
+                Assert.IsTrue(
+                    routing.StartsWith("delivered=True", StringComparison.OrdinalIgnoreCase),
+                    "the settled live button must deliver on the first dispatch: " + routing);
+                Assert.AreEqual(1, clicks, "exactly ONE physical dispatch per call (Controller9544)");
+            }
+            finally
+            {
+                host.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Escape_close_of_advance_dialog_restores_initiating_focus()
+    {
+        // Controller9547 / gen9 finding 4: after the SR6 advance modal
+        // closes, focus must return to the control that initiated the
+        // advance. Capture before ShowDialog, Escape-close, then the
+        // restore must land on the same still-visible row.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.IsNotNull(captured, "the focused row must be captured pre-open");
+                Assert.AreEqual("AttributeImprove_AGI", capturedName, "capture must carry the resolvable name");
+                Assert.AreSame(row, captured, "capture must be the row instance");
+
+                Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+                Task<object?> dialogTask = advance.ShowDialog<object?>(owner);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+                Assert.IsFalse(row.IsFocused, "the modal must be focus-trapped while visible");
+
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(advance, global::Avalonia.Input.Key.Escape);
+                Dispatcher.UIThread.RunJobs();
+                WaitCompletion(dialogTask, timeoutMs: 3000);
+                Assert.IsNull(dialogTask.GetAwaiter().GetResult(), "Escape must cancel without a commit");
+
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(owner, captured, capturedName);
+                Assert.IsTrue(restored, "restore must report success for the still-visible row");
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(row.IsFocused || row.IsKeyboardFocusWithin,
+                    "focus must return to the initiating row after the modal close");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Escape_close_restore_reaches_a_rebuilt_row_by_name()
+    {
+        // Parity-grid rebuild: the initiating row instance is detached
+        // while the modal is open and a NEW instance with the same name
+        // renders. The restore must re-resolve by name and land on the
+        // NEW instance - not silently report success on a dead reference.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(row, captured, "precondition: capture is the original row");
+
+                // Simulate the parity-grid rebuild while "the modal" is up:
+                // detach the original row and render a same-named successor.
+                var panel = (StackPanel)owner.Content!;
+                Button rebuilt = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI (rebuilt)" };
+                panel.Children.Clear();
+                panel.Children.Add(rebuilt);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(owner);
+                Assert.IsFalse(rebuilt.IsFocused, "precondition: the rebuilt row does not hold focus");
+
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(owner, captured, capturedName);
+                Assert.IsTrue(restored, "restore must re-resolve the rebuilt row by name");
+                Dispatcher.UIThread.RunJobs();
+                Assert.AreSame(rebuilt, owner.FocusManager?.GetFocusedElement() as Control,
+                    "focus must land on the rebuilt instance");
+                Assert.IsTrue(rebuilt.IsFocused || rebuilt.IsKeyboardFocusWithin,
+                    "the rebuilt row must hold focus after restore");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Older_restore_cycle_cannot_focus_behind_a_newer_open_modal()
+    {
+        // Controller9568: close A, open B before A's delayed restore
+        // callback, drain A's callback - focus must STAY in B's
+        // initiator, and A's stale cycle must exit silently.
+        WithHeadlessUi(() =>
+        {
+            Button rowA = new Button { Name = "AttributeImprove_A", Content = "A" };
+            Button rowB = new Button { Name = "AttributeImprove_B", Content = "B" };
+            Window owner = new Window { Width = 320, Height = 220, Content = new StackPanel { Children = { rowA, rowB } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(rowA.Focus(), "precondition: A focused");
+                var (capA, nameA) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(rowA, capA, "precondition: capture A is the row");
+                int cycleA = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+
+                // Open B's cycle BEFORE A's delayed callback runs.
+                Assert.IsTrue(rowB.Focus(), "precondition: B focused after A closed");
+                var (capB, nameB) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(rowB, capB, "precondition: capture B is the row");
+                int cycleB = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+                Assert.AreNotEqual(cycleA, cycleB, "cycle B must be a newer generation");
+
+                // Drain A's stale deferred callback: the deferred loop IS the
+                // product's delayed restore callback and checks the generation
+                // before every Focus attempt - it must exit silently without
+                // focusing anything.
+                MainWindow.RunDeferredFocusRestoreAsync(owner, capA, nameA, cycleA);
+                Dispatcher.UIThread.RunJobs();
+                System.Threading.Thread.Sleep(150);
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "focus must STAY on B's initiator after A's stale callback is drained");
+
+                // A's cycle is stale by generation - a deferred loop seeded
+                // with cycleA would exit silently without focusing.
+                Assert.IsFalse(MainWindow.Sr6FocusRestoreDiagnostics.IsCurrentCycle(cycleA, owner),
+                    "A's generation must no longer be current after B began");
+                Assert.IsTrue(MainWindow.Sr6FocusRestoreDiagnostics.IsCurrentCycle(cycleB, owner),
+                    "B's generation must be current");
+
+                // The same for the by-name path: draining A's stale deferred
+                // callback by name must not steal focus from B either.
+                MainWindow.RunDeferredFocusRestoreAsync(owner, null, nameA, cycleA);
+                Dispatcher.UIThread.RunJobs();
+                System.Threading.Thread.Sleep(150);
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "focus must STAY on B after the stale by-name restore");
+
+                // B's own restore still works (drained through the deferred
+                // loop exactly as the product posts it).
+                MainWindow.RunDeferredFocusRestoreAsync(owner, capB, nameB, cycleB);
+                Dispatcher.UIThread.RunJobs();
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(MainWindow.Sr6FocusRestoreDiagnostics.LastRestoreOutcome().Focused,
+                    "the current cycle's restore still succeeds");
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "B stays focused after its own restore");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Menu_item_activation_is_measured_by_the_menu_click_probe()
+    {
+        // Controller9415 gen10: MenuItem activation raises
+        // MenuItem.ClickEvent, not Button.ClickEvent. The delivery probe
+        // must listen to the real activation signal, otherwise an executed
+        // menu command reports delivered=false and the press discipline
+        // fail-closes on a live outcome (gen10n evidence).
+        WithHeadlessUi(() =>
+        {
+            MenuItem item = new MenuItem { Header = "new_character", IsEnabled = true };
+            int activations = 0;
+            item.AddHandler(MenuItem.ClickEvent, (_, _) => activations++);
+            Window host = new Window { Content = new StackPanel { Children = { item } } };
+            host.Show();
+            try
+            {
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(host);
+
+                Task<string>? routeTask = null;
+                Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    routeTask = DesktopMouseFirstJourneyRunner.RoutePointerClickResolvedAsync(
+                        item,
+                        waitForClick: false,
+                        liveTarget: () => item);
+                });
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsNotNull(routeTask, "the route task must be assigned synchronously");
+                Assert.IsTrue(routeTask.IsCompletedSuccessfully, "the route must complete under the headless pump");
+                string routing = routeTask.Result;
+                Assert.IsTrue(
+                    routing.StartsWith("delivered=True", StringComparison.OrdinalIgnoreCase),
+                    "a menu item activation must be reported as delivered through the MenuItem probe: " + routing);
+                Assert.AreEqual(1, activations, "exactly one MenuItem activation per dispatch");
+            }
+            finally
+            {
+                host.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Advance_window_tab_walk_reaches_close_and_escape_cancels_without_commit()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new Window { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            Task<object?> dialogTask = advance.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(advance);
+            try
+            {
+                var apply = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-apply");
+                var cancel = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-cancel");
+                Assert.IsNotNull(apply);
+                Assert.IsNotNull(cancel);
+                Assert.IsTrue(apply.IsFocused, "precondition: initial focus on Apply");
+
+                // Tab moves focus from Apply to Close (Cycle tab order).
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(apply, global::Avalonia.Input.Key.Tab);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+                Assert.IsTrue(cancel.IsFocused, "Tab must move focus from Apply to Close");
+                Assert.IsFalse(apply.IsFocused, "focus must have left Apply");
+
+                // Escape cancels: the dialog task completes with null (no
+                // commit) without ever clicking Apply.
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(advance, global::Avalonia.Input.Key.Escape);
+                Dispatcher.UIThread.RunJobs();
+                WaitCompletion(dialogTask, timeoutMs: 3000);
+                Assert.IsNull(dialogTask.GetAwaiter().GetResult(),
+                    "Escape must cancel without a commit outcome");
+            }
+            finally
+            {
+                if (!dialogTask.IsCompleted)
+                {
+                    advance.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Advance_window_enter_on_the_focused_apply_commits_the_quoted_advance()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new Window { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            Task<object?> dialogTask = advance.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(advance);
+            try
+            {
+                var apply = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-apply");
+                Assert.IsNotNull(apply);
+                Assert.IsTrue(apply.IsFocused, "precondition: initial focus on Apply");
+
+                // Enter on the default (focused) Apply commits the quote.
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(apply, global::Avalonia.Input.Key.Enter);
+                Dispatcher.UIThread.RunJobs();
+                WaitCompletion(dialogTask, timeoutMs: 3000);
+                var outcome = dialogTask.GetAwaiter().GetResult()
+                    as Sr6CareerAttributeAdvanceWindow.Sr6CareerAttributeAdvanceOutcome;
+                Assert.IsNotNull(outcome, "Enter must commit the quoted advance");
+                Assert.AreEqual("Body", outcome!.DisplayAttribute);
+                Assert.AreEqual(25, outcome.KarmaCost);
+                Assert.AreEqual(5, outcome.TargetNaturalRating);
+            }
+            finally
+            {
+                if (!dialogTask.IsCompleted)
+                {
+                    advance.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
 
     [TestMethod]
     public void Decoy_controls_in_other_windows_never_bind_across_modals()

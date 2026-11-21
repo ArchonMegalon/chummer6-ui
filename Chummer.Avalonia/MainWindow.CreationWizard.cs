@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Avalonia.Controls;
 using Chummer.Application.Characters;
 using Chummer.Application.Owners;
@@ -49,6 +49,24 @@ public partial class MainWindow
     private Chummer.Contracts.Workspaces.CharacterWorkspaceId? _creationSr6WizardWorkspaceId;
     private OwnerContextStamp? _creationSr6WizardOwner;
     private string? _creationSr6WizardSnapshotDigest;
+    // Gen6 T795: owned-window migration of the SR5 creation wizard. The SAME
+    // CharacterCreationWizardControl instance is reparented between the inline
+    // center-surface host and the owned window; journeys and UI automation keep
+    // working because FindWizardControl scans desktop windows too.
+    private Controls.OwnedWizardWindow? _creationWizardOwnedWindow;
+    private bool _creationWizardOwnedWindowBound;
+    // Gen8: true while the wizard is parked after a Cancel (footer Cancel or
+    // owned-window X) in the default owned mode. While parked the active inline
+    // wizard is NOT exposed; the shell shows the safe park surface and Resume
+    // reopens the owned window. Cleared whenever the wizard is re-hosted.
+    private bool _creationWizardParked;
+    // Gen6 F03: reuse identity of the owned wizard host (workspace + owner) so the
+    // same captured context reuses its window instead of recreating surfaces.
+    private string? _creationWizardOwnedWindowWorkspaceId;
+    private Chummer.Application.Owners.OwnerContextStamp? _creationWizardOwnedWindowOwner;
+    // Gen6 F08: last bound desktop state, used to publish the readable
+    // selected-step context (label + "Step n of m") to the owned host.
+    private Presentation.Overview.CharacterCreationWizardDesktopState? _lastCreationWizardDesktopState;
 
     private void InitializeCreationWizard()
     {
@@ -68,6 +86,10 @@ public partial class MainWindow
 
         CharacterCreationWizardControl.StepRequested += CreationWizard_OnStepRequested;
         CharacterCreationWizardControl.ContinueRequested += CreationWizard_OnContinueRequested;
+        // Wave4 W1: footer Cancel is shown only while the wizard is owned-hosted;
+        // the handler mirrors the user X contract (owned window closes, draft
+        // preserved, inline restore) via the programmatic close path.
+        CharacterCreationWizardControl.CancelRequested += CreationWizard_OnCancelRequested;
         CharacterCreationWizardControl.BuildGhostQuestionSubmitted += CreationWizard_OnBuildGhostQuestionSubmitted;
         CharacterCreationWizardControl.RecoverCheckpointRequested += CreationWizard_OnRecoverCheckpointRequested;
         CharacterCreationWizardControl.ExportCheckpointRequested += CreationWizard_OnExportCheckpointRequested;
@@ -96,12 +118,17 @@ public partial class MainWindow
     private void DetachCreationWizard()
     {
         _creationWizardLifetime.Cancel();
+        CloseCreationWizardOwnedWindow();
         CloseSr6WizardWindow();
         _creationAttributesWindow?.Close();
         _creationSkillsWindow?.Close();
         _creationAttributesWindow = null;
         CharacterCreationWizardControl.StepRequested -= CreationWizard_OnStepRequested;
         CharacterCreationWizardControl.ContinueRequested -= CreationWizard_OnContinueRequested;
+        // Gen7: symmetric unsubscribe - CancelRequested was subscribed in the
+        // attach block (wave-4 W1 footer cancel) but never released here, so a
+        // detached wizard kept the closed host in its invocation list.
+        CharacterCreationWizardControl.CancelRequested -= CreationWizard_OnCancelRequested;
         CharacterCreationWizardControl.BuildGhostQuestionSubmitted -= CreationWizard_OnBuildGhostQuestionSubmitted;
         CharacterCreationWizardControl.RecoverCheckpointRequested -= CreationWizard_OnRecoverCheckpointRequested;
         CharacterCreationWizardControl.ExportCheckpointRequested -= CreationWizard_OnExportCheckpointRequested;
@@ -137,10 +164,14 @@ public partial class MainWindow
             && snapshot is not null && string.Equals(snapshot.RulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal))
         {
             // Moving into the separate SR6 window also leaves the SR5 conversation context.
+            // Gen6 F03: the SR5 owned wizard host must not stay alive/empty behind the
+            // SR6 window -- retire it explicitly on the qualified SR6 branch.
+            CloseCreationWizardOwnedWindow();
             RetireCreationWizardBuildGhostTurn();
             CharacterCreationWizardControl.ResetBuildGhostConversation();
             _boundCreationWizardSnapshot = null;
             _boundCreationWizardOwner = null;
+            _lastCreationWizardDesktopState = null;
             _lastBoundJourneyState = null;
             _creationJourneyPreview = null;
             _creationJourneyFinishOwner = default;
@@ -153,8 +184,26 @@ public partial class MainWindow
         }
         CharacterCreationWizardControl.IsVisible = snapshot is not null;
         CharacterCreationWizardControl.IsHitTestVisible = snapshot is not null;
+        // Gen9 finding 1: decide park persistence BEFORE anything re-exposes the
+        // wizard. A same-owner refresh of the SAME draft while the park surface
+        // is active must not resurrect the wizard (inline or owned) -- Resume is
+        // the only route back. Identity keys on workspace + owner only; content
+        // revisions (new saves arriving while parked) still stay parked.
+        bool parkKept = _creationWizardParked
+            && snapshot is not null
+            && _boundCreationWizardSnapshot is { } parkedSnapshot
+            && string.Equals(parkedSnapshot.WorkspaceId, snapshot.WorkspaceId, StringComparison.Ordinal)
+            && _boundCreationWizardOwner == overview.DisplayOwnerContext;
+        if (parkKept)
+        {
+            CharacterCreationWizardControl.IsVisible = false;
+            CharacterCreationWizardControl.IsHitTestVisible = false;
+        }
         if (snapshot is null)
         {
+            // Gen6 F03: a completed/absent draft must retire the owned wizard host
+            // immediately -- an alive/empty owned window is a stray surface.
+            CloseCreationWizardOwnedWindow();
             if (_boundCreationWizardSnapshot is not null && overview.Profile?.Created == true)
             {
                 TryDeleteWizardCheckpoint(_boundCreationWizardSnapshot.WorkspaceId);
@@ -162,6 +211,7 @@ public partial class MainWindow
 
             _boundCreationWizardSnapshot = null;
             _boundCreationWizardOwner = null;
+            _lastCreationWizardDesktopState = null;
             RetireCreationWizardBuildGhostTurn();
             CharacterCreationWizardControl.ResetBuildGhostConversation();
             _creationContactPreparedPreview = null;
@@ -174,19 +224,11 @@ public partial class MainWindow
             return;
         }
 
-        // An unfinished character owns the center surface. The unrestricted editor remains
-        // unreachable until canonical finalization makes CreationWizard null.
-        ClassicFormPortHostControl.IsVisible = false;
-        ClassicFormPortHostControl.IsHitTestVisible = false;
-        SectionHostControl.IsVisible = false;
-        SectionHostControl.IsHitTestVisible = false;
-        RightShellRegion.IsVisible = false;
-        RightShellRegion.IsHitTestVisible = false;
-        RightShellRegion.Opacity = 0d;
-        ApplyPaneWidth(RightShellRegion, false, RightShellWidth, 0d, RightShellWidth);
-        if (ContentRegion.ColumnDefinitions.Count >= 3)
-            ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
-
+        // Gen6 T795/F02: the shared bind path (editor lock, owner/revision
+        // invalidation, session Bind, snapshot/owner capture, SetState,
+        // finalization/prerequisite availability, checkpoint persistence) MUST run
+        // for both hosts. The host is only chosen afterwards -- the owned window
+        // never bypasses the authority path the inline host performs.
         bool wizardIdentityChanged = _boundCreationWizardSnapshot is null
             || _boundCreationWizardOwner != overview.DisplayOwnerContext
             || _boundCreationWizardSnapshot.WorkspaceId != snapshot.WorkspaceId;
@@ -238,6 +280,8 @@ public partial class MainWindow
         CharacterCreationWizardControl.SetQualitiesSelection(overview.CreationQualities is { } qualities
             ? CharacterCreationQualitiesInteraction.SelectedIds(qualities) : []);
         CharacterCreationWizardControl.SetState(state);
+        _lastCreationWizardDesktopState = state;
+        UpdateCreationWizardOwnedStepContext();
         CharacterCreationWizardControl.SetStartingCashState(overview.CreationFinalization?.StartingCashSource);
         CharacterCreationWizardControl.SetFinalizeAvailability(
             overview.CreationFinalization is { } finalization && finalization.CanReview,
@@ -250,8 +294,47 @@ public partial class MainWindow
             && _creationWizardBuildGhostPreferenceEnabled
             && CreationWizard_HasLinkedAiOwner(overview));
         TryPersistWizardCheckpoint();
-    
+
         CharacterCreationWizardControl.SetPrerequisiteState(CreationWizard_LoadPrerequisiteState());
+
+        // Gen6 F02 P1: the active-draft editor locking is COMMON path -- it must
+        // run BEFORE host choice so the unrestricted main editor stays
+        // unreachable for unfinished creation in BOTH hosts (an owned wizard
+        // window must never coexist with an unlocked editor underneath it).
+        // An unfinished character owns the center surface. The unrestricted editor remains
+        // unreachable until canonical finalization makes CreationWizard null.
+        ClassicFormPortHostControl.IsVisible = false;
+        ClassicFormPortHostControl.IsHitTestVisible = false;
+        SectionHostControl.IsVisible = false;
+        SectionHostControl.IsHitTestVisible = false;
+        RightShellRegion.IsVisible = false;
+        RightShellRegion.IsHitTestVisible = false;
+        RightShellRegion.Opacity = 0d;
+        ApplyPaneWidth(RightShellRegion, false, RightShellWidth, 0d, RightShellWidth);
+        if (ContentRegion.ColumnDefinitions.Count >= 3)
+            ContentRegion.ColumnDefinitions[2].Width = new GridLength(0);
+
+        // Gen6 F01/F02 + wave-4 W6: host choice happens AFTER the shared bind
+        // path above. The owned window is the delivered default host; the inline
+        // center surface remains the headless-journey path and the opt-out via
+        // CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW=0.
+        if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
+        {
+            // Gen9 finding 1: while parked with the SAME draft identity, the
+            // refresh path stops here -- the park surface stays, the owned
+            // window stays closed, and Resume remains the only reopen route.
+            if (!parkKept)
+            {
+                RouteCreationWizardToOwnedWindow(overview, snapshot);
+            }
+            return;
+        }
+
+        CloseCreationWizardOwnedWindow();
+
+        CharacterCreationWizardControl.IsVisible = true;
+        if (!InlineWizardHost.Children.Contains(CharacterCreationWizardControl))
+            InlineWizardHost.Children.Add(CharacterCreationWizardControl);
 }
 
     private void CreationWizard_OnContactPreviewRequested(
@@ -1904,4 +1987,210 @@ public partial class MainWindow
         openWindow?.Close();
     }
 
+    /// <summary>
+    /// Gen6 T795: reparents the SR5 creation wizard control into an owned
+    /// window while a creation draft is active, and back into the inline
+    /// center-surface host when the draft ends. The same control instance
+    /// moves; event wiring and state binding are untouched.
+    /// </summary>
+    /// <summary>
+    /// Gen6 F08: pushes the readable selected-step context (label and
+    /// "Step n of m" from the bound desktop state) into the owned wizard
+    /// host's chrome caption and native title. Raw ActiveStepId identifiers
+    /// are never user-visible.
+    /// </summary>
+    private void UpdateCreationWizardOwnedStepContext()
+    {
+        if (_creationWizardOwnedWindow is not { } open)
+            return;
+        if (_lastCreationWizardDesktopState is not { } state)
+        {
+            open.SetStepContext(null, 0, 0);
+            return;
+        }
+        int count = state.Steps.Count;
+        for (int i = 0; i < count; i++)
+        {
+            if (state.Steps[i].IsSelected)
+            {
+                open.SetStepContext(state.Steps[i].Label, i + 1, count);
+                return;
+            }
+        }
+        open.SetStepContext(null, 0, count);
+    }
+
+    private void RouteCreationWizardToOwnedWindow(CharacterOverviewState overview, CharacterCreationWizardSnapshot snapshot)
+    {
+        // The shared bind path already ran in ApplyCreationWizardState before this
+        // routing call (gen6 F02). Here only the host is chosen/wired.
+        if (_creationWizardOwnedWindow is { IsVisible: true } open
+            && _creationWizardOwnedWindowBound
+            && _creationWizardOwnedWindowWorkspaceId == snapshot.WorkspaceId
+            && _creationWizardOwnedWindowOwner == overview.DisplayOwnerContext)
+        {
+            UpdateCreationWizardOwnedStepContext();
+            return;
+        }
+
+        // Gen8: leaving the parked state - the wizard is going back to the owned
+        // window, so the park surface must disappear.
+        _creationWizardParked = false;
+        CreationWizardParkPanel.IsVisible = false;
+        CloseCreationWizardOwnedWindow();
+        // Gen6 F01: the control is a child of the inline host grid -- an element can
+        // never hold two logical parents. Remove it explicitly BEFORE assigning it
+        // to the owned window's content presenter.
+        InlineWizardHost.Children.Remove(CharacterCreationWizardControl);
+        // Gen8: the park surface hid the control; the re-host must restore
+        // visibility or the reopened owned window would show an empty shell.
+        CharacterCreationWizardControl.IsVisible = true;
+        CharacterCreationWizardControl.IsHitTestVisible = true;
+        var hosted = new Controls.OwnedWizardWindow("Character Creation", CharacterCreationWizardControl);
+        _creationWizardOwnedWindow = hosted;
+        _creationWizardOwnedWindowBound = true;
+        _creationWizardOwnedWindowWorkspaceId = snapshot.WorkspaceId;
+        _creationWizardOwnedWindowOwner = overview.DisplayOwnerContext;
+        hosted.Closed += (_, _) =>
+        {
+            if (!ReferenceEquals(_creationWizardOwnedWindow, hosted))
+                return;
+            _creationWizardOwnedWindow = null;
+            _creationWizardOwnedWindowBound = false;
+            _creationWizardOwnedWindowWorkspaceId = null;
+            _creationWizardOwnedWindowOwner = null;
+            // Gen6 F01 P1: a user-initiated close (X / Alt+F4) reaches this
+            // handler with the hosted control still inside the closing
+            // window's ContentPresenter -- the programmatic path detaches
+            // via SetContent(null) BEFORE Close(), but the user-close path
+            // must detach explicitly here too, or the restore below would
+            // re-parent a control that still has a visual parent.
+            hosted.SetContent(null);
+            // Gen8: a user X close in the default owned mode parks the wizard
+            // (draft preserved, inline wizard hidden, Resume surface shown);
+            // the inline opt-out keeps the proven inline restore.
+            if (Creation.OwnedCreationWizardGate.IsSessionEnabled())
+            {
+                ParkCreationWizardAfterCancel();
+            }
+            else
+            {
+                // Returning the control to the inline host keeps the center surface
+                // authoritative when the user closes the wizard window.
+                ReturnCreationWizardToInlineHost();
+            }
+        };
+        UpdateCreationWizardOwnedStepContext();
+        // Wave4 W1: owned-hosted wizard offers footer Cancel; the inline host
+        // keeps Cancel hidden (its affordances live in the shell toolbar).
+        CharacterCreationWizardControl.ShowCancelInFooter();
+        hosted.SetFooterHint("Cancel keeps your draft; you can resume any time.");
+        hosted.Show(this);
+    }
+
+    /// <summary>
+    /// Wave4 W1 / Gen8: footer Cancel from the owned-hosted wizard. Gen8
+    /// contract: Cancel exits the owned wizard while KEEPING the draft, and
+    /// the active inline wizard is NOT re-exposed inside MainWindow in the
+    /// default owned mode (an extra-window wizard must not silently become an
+    /// inline editor). The shell instead parks on a safe summary surface with
+    /// a Resume affordance that reopens the owned window. No discard, commit,
+    /// or replay happens on either path.
+    /// </summary>
+    private void CreationWizard_OnCancelRequested(object? sender, EventArgs e)
+    {
+        ParkCreationWizardAfterCancel();
+    }
+
+    /// <summary>
+    /// Gen8: park the wizard after Cancel (footer Cancel or the owned window's
+    /// user close) when the owned route is the active host mode. The wizard
+    /// control is detached from the owned window and hidden from the inline
+    /// host; draft identity/state stay bound and the park surface with Resume
+    /// becomes the visible shell content.
+    /// </summary>
+    private void ParkCreationWizardAfterCancel()
+    {
+        CloseCreationWizardOwnedWindow();
+        if (!Creation.OwnedCreationWizardGate.IsSessionEnabled())
+        {
+            // Explicit inline opt-out keeps the proven inline restore behavior.
+            return;
+        }
+        _creationWizardParked = true;
+        // The active inline wizard must not stay visible in the shell.
+        CharacterCreationWizardControl.IsVisible = false;
+        CharacterCreationWizardControl.IsHitTestVisible = false;
+        CreationWizardParkPanel.IsVisible = true;
+    }
+
+    /// <summary>
+    /// Gen8: Resume from the park surface. Re-runs the owned-host routing for
+    /// the still-bound snapshot so the SAME draft identity reopens the owned
+    /// wizard window (fresh layout pass, no replay of any prior operation).
+    /// </summary>
+    private void CreationWizardParkResumeButton_OnClick(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _creationWizardParked = false;
+        CreationWizardParkPanel.IsVisible = false;
+        if (_boundCreationWizardSnapshot is { } snapshot
+            && _adapter is { } adapter
+            && adapter.State.CreationWizard is { } current
+            && string.Equals(current.WorkspaceId, snapshot.WorkspaceId, StringComparison.Ordinal))
+        {
+            RouteCreationWizardToOwnedWindow(adapter.State, snapshot);
+        }
+    }
+
+    /// <summary>
+    /// Gen9 (finding 1) native-route seam: re-applies the CURRENT session
+    /// state exactly as an external state refresh would, WITHOUT changing
+    /// the draft identity. Used by the journey harness to prove the park
+    /// survives a same-owner refresh on real window bytes.
+    /// </summary>
+    public void RefreshCreationWizardStateForAutomation()
+    {
+        if (_adapter?.State is { } overview)
+        {
+            ApplyCreationWizardState(overview);
+        }
+    }
+
+    /// <summary>Gen6 T795/F03: closes the owned creation wizard window, if any.</summary>
+    private void CloseCreationWizardOwnedWindow()
+    {
+        Controls.OwnedWizardWindow? openWindow = _creationWizardOwnedWindow;
+        _creationWizardOwnedWindow = null;
+        _creationWizardOwnedWindowBound = false;
+        _creationWizardOwnedWindowWorkspaceId = null;
+        _creationWizardOwnedWindowOwner = null;
+        if (openWindow is not null)
+        {
+            // Detach the hosted control first so the Closed handler sees the
+            // control already returned to the inline host (no re-entry).
+            openWindow.SetContent(null);
+            openWindow.Close();
+        }
+        // Gen8: non-cancel closes (detach, finalization, SR6 branch, opt-out)
+        // also clear any parked surface so a stale banner cannot survive.
+        _creationWizardParked = false;
+        CreationWizardParkPanel.IsVisible = false;
+        ReturnCreationWizardToInlineHost();
+    }
+
+    /// <summary>Gen6 T795/F01: puts the wizard control back into the inline center-surface host.</summary>
+    private void ReturnCreationWizardToInlineHost()
+    {
+        // Gen6 F01: Parent-based detection is unreliable here -- the control's
+        // visual parent is the window's ContentPresenter (never the Window itself),
+        // and after SetContent(null) the Parent is already cleared. Restore
+        // unconditionally: adding twice to the same grid is impossible after the
+        // explicit Remove, and Contains guards the normal path.
+        if (!InlineWizardHost.Children.Contains(CharacterCreationWizardControl))
+            InlineWizardHost.Children.Add(CharacterCreationWizardControl);
+        // Wave4 W1: footer Cancel is owned-host-only; hide it on inline restore.
+        CharacterCreationWizardControl.HideCancelInFooter();
+        // Visibility is caller-managed: the null-snapshot branch already set
+        // IsVisible=false before this call; active-draft callers keep it true.
+    }
 }

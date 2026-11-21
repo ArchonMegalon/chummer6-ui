@@ -1,9 +1,12 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Avalonia.Layout;
 using Chummer.Contracts.Characters;
 using Chummer.Presentation.Overview;
@@ -24,6 +27,34 @@ namespace Chummer.Avalonia.Controls;
 /// </summary>
 public sealed class Sr6CareerAttributeAdvanceWindow : Window
 {
+    /// <summary>
+    /// Gen10 (Controller9403 item 3): renders the modal itself for journey
+    /// evidence captures so dialog screenshots show the quote/blocker surface
+    /// instead of the MainWindow page behind it. Mirrors the window renderer
+    /// used by DesktopDialogWindow/OwnedWizardWindow.
+    /// </summary>
+    internal byte[] CaptureScreenshotBytesForAutomation()
+    {
+        PixelSize pixelSize = new(
+            Math.Max(1, (int)Math.Ceiling(Bounds.Width)),
+            Math.Max(1, (int)Math.Ceiling(Bounds.Height)));
+
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            InvalidateMeasure();
+            InvalidateArrange();
+            InvalidateVisual();
+            Measure(new Size(pixelSize.Width, pixelSize.Height));
+            Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
+        bitmap.Render(this);
+        using MemoryStream output = new();
+        bitmap.Save(output);
+        return output.ToArray();
+    }
     /// <summary>
     /// Gen17 (Controller8300, T660): live-instance registry so same-modal
     /// resolution can enumerate exactly the advance windows that exist, in
@@ -77,6 +108,13 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         CanResize = true;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
+        // Gen10 item 3: keyboard navigation - Tab cycles inside the dialog and
+        // the selected quote card receives initial focus so Enter/arrow use is
+        // possible without the mouse.
+        global::Avalonia.Input.KeyboardNavigation.SetTabNavigation(this, global::Avalonia.Input.KeyboardNavigationMode.Cycle);
+        // Gen6 T796: shared desktop design tokens (owned wizard window pattern).
+        FontFamily = new global::Avalonia.Media.FontFamily("Segoe UI,Verdana,Arial");
+        FontSize = 13;
 
         Sr6CareerAttributeQuote? selected = ResolveSelectedQuote(editor, requestedAttributeName);
         _preApplyCommand = selected is null ? null : BuildCommand(selected);
@@ -126,6 +164,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             Classes = { "shell-action" },
             MinWidth = 150,
             IsEnabled = pendingCommand is not null && selected is { CanAdvance: true },
+            // Gen10 item 3: keyboard-only use - Enter presses the quoted advance.
+            IsDefault = true,
         };
         var blockedNotice = new TextBlock
         {
@@ -142,6 +182,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             Content = "Close",
             Classes = { "shell-action quiet" },
             MinWidth = 90,
+            // Gen10 item 3: Escape / IsCancel closes the dialog without a commit.
+            IsCancel = true,
         };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(applyButton, "sr6-career-attribute-advance-apply");
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(cancelButton, "sr6-career-attribute-advance-cancel");
@@ -201,6 +243,25 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
                 blockedNotice,
                 actionsPanel,
             },
+        };
+        // Gen10 item 3 (Controller9534 correction): initial focus MUST land on a
+        // real focusable control. The quote cards never carry a "selected"
+        // class (BuildQuoteCard only tags "shell-card"), so the previous
+        // lookup silently no-opped and the window opened with no focus at
+        // all. Focus the enabled Advance action, falling back to Close; both
+        // are real button tab stops, so keyboard-only use works immediately.
+        Opened += (_, _) =>
+        {
+            Control initialFocus = applyButton.IsEnabled ? applyButton : cancelButton;
+            initialFocus.Focus();
+        };
+        KeyDown += (_, e) =>
+        {
+            if (e.Key == global::Avalonia.Input.Key.Escape)
+            {
+                Close(null);
+                e.Handled = true;
+            }
         };
     }
 

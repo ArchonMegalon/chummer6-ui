@@ -37,6 +37,9 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string PdfSaveReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_RECEIPT";
     public const string PdfSaveTargetEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET";
     public const string PdfSaveTraceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TRACE";
+    public const string MagicianExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT";
+    public const string MagicianExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT_RECEIPT";
+    public const string WizardCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL";
     // T545/7867: two-process career reward recovery leg. Phase A awards karma
     // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
     // (process exits = process restart). Phase B is a fresh process that must
@@ -45,6 +48,7 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string RewardHoldEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD";
     public const string RewardAckEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_ACK";
     public const string RewardRecoveryReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_RECOVERY_RECEIPT";
+    public const string CareerAwardReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CAREER_AWARD_RECEIPT";
 
     public static bool RewardHoldRequested => string.Equals(
         Environment.GetEnvironmentVariable(RewardHoldEnvironmentVariable) ?? string.Empty,
@@ -84,6 +88,46 @@ public static class DesktopMouseFirstJourneyRuntime
             operationId,
             acknowledged,
             recoveredFromDurableRecord,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
+    /// <summary>
+    /// Gen5 (WIN-009): writes the genuine-mode career award's durable facts so
+    /// a fresh-process reopen leg can assert the awarded karma persisted on
+    /// the CREATED workspace (not the print/export sample) and that the
+    /// persisted alias matches. No-op when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CAREER_AWARD_RECEIPT.
+    /// </summary>
+    public static void WriteCareerAwardReceipt(
+        decimal karmaBefore,
+        decimal karmaAfter,
+        bool karmaIncreased,
+        string? workspaceId,
+        string? characterName,
+        string? characterAlias)
+    {
+        string? path = Environment.GetEnvironmentVariable(CareerAwardReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            workspaceId,
+            karmaBefore,
+            karmaAfter,
+            karmaIncreased,
+            characterName,
+            characterAlias,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
@@ -210,7 +254,13 @@ public static class DesktopMouseFirstJourneyRuntime
         string? priorityTalent = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityTalentEnvironmentVariable));
         string? priorityTalentChoice = NormalizeNullable(Environment.GetEnvironmentVariable(PriorityTalentChoiceEnvironmentVariable));
 
-        if (!string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+        // WIN-009 gen2 (T748): Sum-to-Ten shares the Priority prerequisite
+        // draft machinery (the same authority, grid and confirmation flow), so
+        // the journey plan must retain the heritage/talent facts for SumToTen
+        // as well - only genuinely table-less methods drop them.
+        bool prerequisiteTableMethod = string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
+        if (!prerequisiteTableMethod)
         {
             priorityHeritage = null;
             priorityTalent = null;
@@ -260,11 +310,39 @@ public static class DesktopMouseFirstJourneyRuntime
         StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// WIN-009 gen7: when this process is launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL=1, the journey runner
+    /// executes a dedicated creation-wizard cancel leg: open the new-character
+    /// dialog, create an SR5 draft, wait for the creation wizard footer, click
+    /// the footer Cancel button (the real user route), and verify the draft is
+    /// abandoned (no workspace published) and the inline host restored cleanly.
+    /// </summary>
+    public static bool WizardCancelRequested => string.Equals(
+        Environment.GetEnvironmentVariable(WizardCancelEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Gen-9 item 2: writes the SR6 row-to-confirm leg's durable facts so a
     /// fresh-process reopen leg can assert the advanced attribute rank and
     /// debited karma survived persistence. No-op when no receipt path is
     /// configured via CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE_RECEIPT.
     /// </summary>
+    /// <summary>
+    /// Gen9 (WIN-009 finding 6): one SR6 advance operation's own facts,
+    /// so a multi-advance journey writes COHERENT per-operation records
+    /// instead of splicing the first operation's karma with the final
+    /// operation's target rating.
+    /// </summary>
+    public sealed record Sr6AdvanceOperationReceipt(
+        int OperationIndex,
+        string AttributeId,
+        int RankBefore,
+        int RankAfter,
+        int QuotedKarmaCost,
+        int KarmaBefore,
+        int KarmaAfter);
+
     public static void WriteSr6AdvanceReceipt(
         decimal karmaBefore,
         decimal karmaAfter,
@@ -275,7 +353,9 @@ public static class DesktopMouseFirstJourneyRuntime
         int? quotedTargetNaturalRating = null,
         string? naturalRatingAfter = null,
         decimal? nuyenAfter = null,
-        int? savedRevision = null)
+        int? savedRevision = null,
+        System.Collections.Generic.IReadOnlyList<Sr6AdvanceOperationReceipt>? operations = null,
+        int? finalTargetNaturalRating = null)
     {
         string? path = Environment.GetEnvironmentVariable(Sr6AdvanceReceiptEnvironmentVariable);
         if (string.IsNullOrWhiteSpace(path))
@@ -295,6 +375,8 @@ public static class DesktopMouseFirstJourneyRuntime
             naturalRatingAfter,
             nuyenAfter,
             savedRevision,
+            operations,
+            finalTargetNaturalRating,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
@@ -305,6 +387,20 @@ public static class DesktopMouseFirstJourneyRuntime
 
         File.WriteAllText(path, json);
     }
+
+    /// <summary>
+    /// Controller9543 fictional-magician export checkpoint: when set, the
+    /// mouse-first journey runs a dedicated leg that imports the bundled
+    /// SR5 Career magician sample (Soma-Career.chum5) through the
+    /// production import coordinator, saves it through the product save
+    /// command, and drives the native .chum5 Save-As download and the
+    /// portable export dialog download to disk, writing a durable receipt
+    /// with the saved revision, file sizes, and sustained-spell counts.
+    /// </summary>
+    public static bool MagicianExportRequested => string.Equals(
+        Environment.GetEnvironmentVariable(MagicianExportEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// WIN-008 item 1: writes the native PDF save leg's durable facts so the
@@ -336,6 +432,57 @@ public static class DesktopMouseFirstJourneyRuntime
             characterName,
             characterAlias,
             rulesetId,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
+    /// <summary>
+    /// Controller9543: writes the magician-export leg durable facts (the
+    /// imported bundled SR5 Career magician sample, its saved revision,
+    /// the native .chum5 Save-As download and portable export payloads)
+    /// so the harness can independently verify the exported files. No-op
+    /// when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT_RECEIPT.
+    /// </summary>
+    public static void WriteMagicianExportReceipt(
+        string? workspaceId,
+        long? savedRevision,
+        string? saveAsFileName,
+        long? saveAsBytes,
+        string? exportFileName,
+        long? exportBytes,
+        string? rulesetId,
+        string? sourceSample,
+        int sustainedSpellCount,
+        int totalSpellCount,
+        string? tradition)
+    {
+        string? path = Environment.GetEnvironmentVariable(MagicianExportReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            workspaceId,
+            savedRevision,
+            saveAsFileName,
+            saveAsBytes,
+            exportFileName,
+            exportBytes,
+            rulesetId,
+            sourceSample,
+            sustainedSpellCount,
+            totalSpellCount,
+            tradition,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));

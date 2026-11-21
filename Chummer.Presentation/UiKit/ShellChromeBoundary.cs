@@ -106,7 +106,8 @@ public static class AccessibilityPrimitiveBoundary
         string characterState,
         string serviceState,
         string timeState,
-        string complianceState)
+        string complianceState,
+        string? saveState = null)
     {
         return string.Join(
             " | ",
@@ -115,7 +116,8 @@ public static class AccessibilityPrimitiveBoundary
                 characterState,
                 serviceState,
                 timeState,
-                complianceState
+                complianceState,
+                saveState
             }.Where(value => !string.IsNullOrWhiteSpace(value)));
     }
 

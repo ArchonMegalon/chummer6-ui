@@ -68,13 +68,40 @@
 
       <Grid x:Name="CenterShellRegion" Grid.Column="1">
         <Border x:Name="SectionRegion" Classes="shell-card" Padding="0">
-          <Grid>
+          <Grid x:Name="InlineWizardHost">
             <controls:ClassicFormPortHostControl x:Name="ClassicFormPortHostControl"
                                                  IsVisible="False" />
             <controls:SectionHostControl x:Name="SectionHostControl" />
             <controls:CharacterCreationWizardControl x:Name="CharacterCreationWizardControl"
                                                       IsVisible="False" />
           </Grid>
+        </Border>
+        <!-- Gen8: wizard parked after Cancel - safe shell + Resume (overlays the section region) -->
+        <Border x:Name="CreationWizardParkPanel"
+                IsVisible="False"
+                Background="{DynamicResource ChummerShellSurfaceBrush}">
+          <StackPanel HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Spacing="10"
+                      MaxWidth="460">
+            <TextBlock Classes="shell-section-title"
+                       Text="Character creation paused"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       AutomationProperties.AutomationId="creation-wizard-park-title" />
+            <TextBlock Classes="shell-caption"
+                       Text="Your draft is kept. Resume reopens the creation wizard window; nothing was applied or discarded."
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       AutomationProperties.AutomationId="creation-wizard-park-message" />
+            <Button x:Name="CreationWizardResumeButton"
+                    Classes="shell-action"
+                    Content="Resume character creation"
+                    HorizontalAlignment="Center"
+                    Click="CreationWizardParkResumeButton_OnClick"
+                    AutomationProperties.AutomationId="creation-wizard-resume" />
+          </StackPanel>
         </Border>
       </Grid>
 

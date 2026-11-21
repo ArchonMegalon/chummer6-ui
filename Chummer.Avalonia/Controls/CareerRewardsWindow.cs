@@ -90,17 +90,32 @@ public sealed class CareerRewardsWindow : Window
         _contextIsCurrent = contextIsCurrent ?? (() => true);
         Closed += (_, _) => _closed = true;
         Title = isKarmaMode ? "Award Karma" : "Adjust Nuyen";
-        Width = 420;
-        MinHeight = 300;
+        Width = 460;
+        SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         CanResize = false;
         ShowInTaskbar = false;
+        // Gen6 T796: shared desktop design tokens (owned wizard window pattern).
+        FontFamily = new global::Avalonia.Media.FontFamily("Segoe UI,Verdana,Arial");
+        FontSize = 13;
 
-        StackPanel root = new() { Margin = new Thickness(14), Spacing = 10 };
+        Grid outer = new()
+        {
+            RowDefinitions = new RowDefinitions("*,Auto"),
+            Margin = new Thickness(14),
+            RowSpacing = 10,
+        };
+
+        ScrollViewer contentScroll = new()
+        {
+            VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+        };
+
+        StackPanel root = new() { Spacing = 10 };
 
         _balanceText = new TextBlock
         {
-            FontSize = 12,
+            FontSize = 11,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.Gray
         };
@@ -138,6 +153,10 @@ public sealed class CareerRewardsWindow : Window
         _reasonBox = new TextBox
         {
             Watermark = "e.g. Extraction run for Mr. Johnson",
+            Height = 56,
+            TextWrapping = TextWrapping.Wrap,
+            AcceptsReturn = true,
+            TextAlignment = TextAlignment.Left,
         };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(_reasonBox, ReasonAutomationId);
         root.Children.Add(_reasonBox);
@@ -160,26 +179,31 @@ public sealed class CareerRewardsWindow : Window
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(cancelButton, CancelAutomationId);
         cancelButton.Click += (_, _) => Close(null);
 
-        StackPanel buttonRow = new()
+
+        contentScroll.Content = root;
+        Grid.SetRow(contentScroll, 0);
+        outer.Children.Add(contentScroll);
+
+        StackPanel footerRow = new()
         {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Margin = new Thickness(0, 6, 0, 0)
         };
         _checkButton = new Button { Content = "Check recorded reward", IsVisible = false };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(_checkButton, "career-rewards-check");
         _checkButton.Click += async (_, _) => await CheckRecordedRewardAsync().ConfigureAwait(true);
-        buttonRow.Children.Add(_checkButton);
+        footerRow.Children.Add(_checkButton);
         _acknowledgeButton = new Button { Content = "Acknowledge recorded reward", IsVisible = false };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(_acknowledgeButton, "career-rewards-acknowledge");
         _acknowledgeButton.Click += (_, _) => AcknowledgeRecordedReward();
-        buttonRow.Children.Add(_acknowledgeButton);
-        buttonRow.Children.Add(_applyButton);
-        buttonRow.Children.Add(cancelButton);
-        root.Children.Add(buttonRow);
+        footerRow.Children.Add(_acknowledgeButton);
+        footerRow.Children.Add(_applyButton);
+        footerRow.Children.Add(cancelButton);
+        Grid.SetRow(footerRow, 1);
+        outer.Children.Add(footerRow);
 
-        Content = root;
+        Content = outer;
         if (pendingResult?.Status is CareerRewardApplyStatus.Uncertain or CareerRewardApplyStatus.Confirmed)
         {
             LastResult = pendingResult;

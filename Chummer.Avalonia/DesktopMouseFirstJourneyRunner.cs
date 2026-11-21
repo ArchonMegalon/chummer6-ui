@@ -156,7 +156,51 @@ internal static class DesktopMouseFirstJourneyRunner
         await journeyTask;
     }
 
-    private static async Task RunJourneyAsync(
+        // WIN-009 gen11b: honor the plan's CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_TALENT_CHOICE
+        // at the wizard's talent page (mirrors the heritage metatype override above).
+        // A request that is not enabled is a hard journey failure - that refusal IS
+        // the negative acceptance evidence. No request keeps the historical behavior
+        // (first enabled choice).
+        private static string SelectTalentChoiceForPlan(
+            CharacterCreationWizardControl wizard,
+            DesktopMouseFirstJourneyPlan plan)
+        {
+            var choices = wizard.GetPriorityTalentChoices();
+            string? wanted = plan.PriorityTalentChoice;
+            if (!string.IsNullOrWhiteSpace(wanted))
+            {
+                var match = choices.FirstOrDefault(c => c.IsEnabled
+                    && TalentChoiceLabelMatches(c.Label, wanted));
+                if (match.Label is not null && !string.IsNullOrEmpty(match.SelectionId))
+                {
+                    return match.SelectionId;
+                }
+                throw new InvalidOperationException(
+                    "journey: requested talent choice '" + wanted
+                    + "' is not enabled in the wizard (available: "
+                    + string.Join(", ", choices.Select(c =>
+                        c.Label + (c.IsEnabled ? string.Empty : " [disabled]")))
+                    + ")");
+            }
+            foreach (var candidate in choices)
+            {
+                if (candidate.IsEnabled)
+                {
+                    return candidate.SelectionId;
+                }
+            }
+            throw new InvalidOperationException("journey: no enabled talent choice available");
+        }
+
+        // The wizard renders the priorities.xml <name> as the label
+        // ('Magician - 4 Magic/7 Spells'); the <value> is the short choice
+        // ('Magician'). Accept either form so the env override stays stable.
+        private static bool TalentChoiceLabelMatches(string label, string wanted)
+            => string.Equals(label, wanted, StringComparison.OrdinalIgnoreCase)
+                || (label.Contains(" - ", StringComparison.Ordinal)
+                    && string.Equals(label.Split(" - ")[0], wanted, StringComparison.OrdinalIgnoreCase));
+
+        private static async Task RunJourneyAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,
         DesktopMouseFirstJourneyPlan plan,
@@ -390,7 +434,9 @@ internal static class DesktopMouseFirstJourneyRunner
                     steps,
                     screenshotPaths,
                     journeyTimeout.Token,
-                    recordPointerAction);
+                    recordPointerAction,
+                    plan.CharacterName,
+                    plan.CharacterAlias);
                 userJourneyWorkflows.Add(sr6Evidence);
                 DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
                 foreach (KeyValuePair<string, bool> sr6Assertion in sr6Evidence.Assertions)
@@ -423,6 +469,11 @@ internal static class DesktopMouseFirstJourneyRunner
                     }
                 }
 
+                // Gen5 (WIN-009): the SR6 phase-A receipt must carry the
+                // DOCUMENT-BACKED identity of the open workspace, not a
+                // hardcoded fixture name/alias — the phase-B reopen leg
+                // cross-checks the receipt against the persisted document.
+                CharacterOverviewState sr6ReceiptSnapshot = window.SnapshotStateForAutomation();
                 DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
                     context,
                     new DesktopMouseFirstJourneyEvidence(
@@ -435,9 +486,9 @@ internal static class DesktopMouseFirstJourneyRunner
                         UsedComboSelectionFallback: getUsedComboSelectionFallback(),
                         ObservedInputEvents: observedInputEvents,
                         ScenarioId: plan.ScenarioId,
-                        WorkspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
-                        CharacterName: "Win109 Sr6 Qualifier",
-                        CharacterAlias: "W09S",
+                        WorkspaceId: sr6ReceiptSnapshot.WorkspaceId?.Value,
+                        CharacterName: sr6ReceiptSnapshot.Profile?.Name,
+                        CharacterAlias: sr6ReceiptSnapshot.Profile?.Alias,
                         RulesetId: "sr6",
                         BuildMethod: null,
                         MetatypeCategory: null,
@@ -452,6 +503,84 @@ internal static class DesktopMouseFirstJourneyRunner
                         VerificationNotes:
                         [
                             "T492 native SR6 verification: the Sr6CreationWizardWindow finalized the draft through the Core finalization authority, the CareerRewardsWindow awarded karma, the AttributeImprove_Body row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative SR6 career advancement service, the karma debit and reopened-dialog cancel path were verified, and the file-menu save persisted the workspace for the fresh-process reopen leg."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
+            if (DesktopMouseFirstJourneyRuntime.MagicianExportRequested)
+            {
+                RecordStep(steps, "magician export leg: import bundled SR5 Career magician, save, save-as native .chum5, export portable bundle");
+                DesktopUserJourneyWorkflowEvidence magicianEvidence = await ExerciseMagicianExportLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(magicianEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> magicianAssertion in magicianEvidence.Assertions)
+                {
+                    if (!magicianAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Magician export leg assertion failed: {magicianAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: magician export leg assertion {magicianAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                var magicianVisibleState = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: magicianVisibleState.WorkspaceId?.Value,
+                        CharacterName: magicianVisibleState.Profile?.Name,
+                        CharacterAlias: magicianVisibleState.Profile?.Alias,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: magicianVisibleState.Session?.HasSavedWorkspace ?? false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "Controller9543 fictional-magician export checkpoint: the bundled SR5 Career magician sample (Soma-Career.chum5) was imported through the production import coordinator, saved through the product save command into the durable state root, saved-as native .chum5 through the real DownloadAsync dispatch, and exported as the ordinary portable export bundle through the real ExportAsync dispatch; both payloads were verified to carry the magician markers and the learned sustained spells."
                         ],
                         UserJourneyWorkflows: userJourneyWorkflows));
                 Environment.ExitCode = 0;
@@ -536,6 +665,85 @@ internal static class DesktopMouseFirstJourneyRunner
                 return;
             }
 
+            if (DesktopMouseFirstJourneyRuntime.WizardCancelRequested)
+            {
+                RecordStep(steps, "wizard cancel leg: footer Cancel closes the wizard and keeps the draft");
+                DesktopUserJourneyWorkflowEvidence cancelEvidence = await ExerciseWizardCancelLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(cancelEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> cancelAssertion in cancelEvidence.Assertions)
+                {
+                    if (!cancelAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Wizard cancel leg assertion failed: {cancelAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: wizard cancel leg assertion {cancelAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                CharacterOverviewState cancelReceiptSnapshot = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: cancelReceiptSnapshot.WorkspaceId?.Value,
+                        CharacterName: cancelReceiptSnapshot.Profile?.Name,
+                        CharacterAlias: cancelReceiptSnapshot.Profile?.Alias,
+                        RulesetId: null,
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "WIN-009 gen10: the creation wizard footer Cancel button delivered its press through the real pointer route, CancelRequested fired, the owned window closed, the wizard control was restored to the inline host with the footer Cancel hidden, and the draft was preserved for later resume."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
+
             if (string.Equals(
                     Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY"),
                     "1",
@@ -557,6 +765,9 @@ internal static class DesktopMouseFirstJourneyRunner
                 }
 
                 string? savedCharacterName = saved.RootElement.GetProperty("characterName").GetString();
+                string? savedCharacterAlias = saved.RootElement.TryGetProperty("characterAlias", out System.Text.Json.JsonElement savedAliasElement)
+                    && savedAliasElement.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? savedAliasElement.GetString() : null;
                 await window.InitializationForAutomation.WaitAsync(journeyTimeout.Token);
                 ICharacterOverviewPresenter presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
                 await presenter.LoadAsync(new CharacterWorkspaceId(savedWorkspaceId), journeyTimeout.Token);
@@ -570,6 +781,13 @@ internal static class DesktopMouseFirstJourneyRunner
                 CharacterOverviewState restoredOverview = window.SnapshotStateForAutomation();
                 var restoredWorkspaceId = restoredOverview.WorkspaceId
                     ?? throw new InvalidOperationException("Reopen did not leave a workspace loaded.");
+                // Gen10 item 4 (Controller9350): the verified ruleset id is
+                // captured here so the reopen pass receipt can carry the
+                // ACTUAL edition the reopened workspace restored - the inner
+                // reopen-verify block previously let it go out of scope and
+                // the receipt recorded RulesetId: null.
+                string? reopenedRulesetVerified = restoredOverview.Session
+                    .FindWorkspace(restoredWorkspaceId)?.RulesetId;
                 if (!string.Equals(restoredWorkspaceId.Value, savedWorkspaceId, StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException("Reopen loaded a different workspace than the saved receipt.");
@@ -594,6 +812,62 @@ internal static class DesktopMouseFirstJourneyRunner
                 if (!restoredCreated)
                 {
                     throw new InvalidOperationException("The reopened profile is not marked created; finalization did not persist.");
+                }
+
+                // Gen5 (WIN-009): the reopen receipt must carry the ACTUAL
+                // persisted alias, not the character name fallback.
+                string restoredAlias = restoredOverview.Profile?.Alias ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(savedCharacterAlias)
+                    && !string.Equals(restoredAlias, savedCharacterAlias, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"The reopened profile alias '{restoredAlias}' does not match the saved alias '{savedCharacterAlias}'.");
+                }
+                RecordStep(steps, $"reopen alias verified: alias={restoredAlias}");
+
+                // WIN-009 gen2 (T747): the reopen-verify leg repeats the exact
+                // character check against the RETAINED document so the draft
+                // binding is proven to survive the cold process boundary.
+                // Gated to the same wizard-driven Priority plans the first leg
+                // checks; the saved receipt carries the plan identity.
+                string savedBuildMethod = saved.RootElement.TryGetProperty("buildMethod", out System.Text.Json.JsonElement savedBuildMethodElement)
+                    && savedBuildMethodElement.ValueKind == System.Text.Json.JsonValueKind.String
+                        ? savedBuildMethodElement.GetString() ?? string.Empty : string.Empty;
+                // WIN-009 gen2 (T748): Sum-to-Ten plans run the same
+                // exact-character reopen verification - the draft binding is
+                // method-symmetric in the Core pipeline.
+                if (string.Equals(savedBuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(savedBuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
+                {
+                    string savedRulesetIdForExactCheck = saved.RootElement.TryGetProperty("rulesetId", out System.Text.Json.JsonElement savedRulesetForExactElement)
+                        && savedRulesetForExactElement.ValueKind == System.Text.Json.JsonValueKind.String
+                            ? savedRulesetForExactElement.GetString() ?? string.Empty : string.Empty;
+                    string? savedPriorityHeritage = saved.RootElement.TryGetProperty("priorityHeritage", out System.Text.Json.JsonElement savedHeritageElement)
+                        && savedHeritageElement.ValueKind == System.Text.Json.JsonValueKind.String
+                            ? savedHeritageElement.GetString() : null;
+                    string? savedMetatype = saved.RootElement.TryGetProperty("metatype", out System.Text.Json.JsonElement savedMetatypeElement)
+                        && savedMetatypeElement.ValueKind == System.Text.Json.JsonValueKind.String
+                            ? savedMetatypeElement.GetString() : null;
+                    ExactCharacterEvidence reopenedExact = await ReadWorkspaceExactCharacterEvidenceAsync(
+                        window,
+                        savedRulesetIdForExactCheck,
+                        restoredWorkspaceId.Value,
+                        savedPriorityHeritage,
+                        savedMetatype,
+                        journeyTimeout.Token);
+                    if (!reopenedExact.Succeeded)
+                    {
+                        throw new InvalidOperationException(
+                            "reopen exact-character check failed against the retained document: "
+                            + reopenedExact.Diagnostics);
+                    }
+                    RecordStep(
+                        steps,
+                        "reopen exact-character verified: "
+                        + $"metatype={reopenedExact.MetatypeName}; metatype_source={reopenedExact.MetatypeSourceId}; "
+                        + $"heritage_rank={reopenedExact.HeritageRank}; "
+                        + $"normal_points={reopenedExact.NormalPointUsed}/{reopenedExact.NormalPointTotal}; "
+                        + $"special_points={reopenedExact.SpecialPointUsed}/{reopenedExact.SpecialPointTotal} (document-backed)");
                 }
 
                 if (restoredOverview.CreationWizard is not null)
@@ -669,7 +943,14 @@ internal static class DesktopMouseFirstJourneyRunner
                     // comparison - every field is consumed unconditionally.
                     string attributeId = sr6Saved.RootElement.GetProperty("attributeId").GetString()
                         ?? throw new InvalidOperationException("The SR6 advance receipt attributeId is not a string.");
-                    int expectedRank = sr6Saved.RootElement.GetProperty("quotedTargetNaturalRating").GetInt32();
+                    // Gen10 item 4: the top-level quotedTargetNaturalRating now names the
+        // FIRST operation's quoted target; the cold-reopen check verifies the
+        // FINAL committed rank, which lives in finalTargetNaturalRating
+        // (fallback to the legacy top-level field for pre-gen10 receipts).
+        int expectedRank = sr6Saved.RootElement.TryGetProperty("finalTargetNaturalRating", out var finalRankElement)
+            && finalRankElement.ValueKind == System.Text.Json.JsonValueKind.Number
+            ? finalRankElement.GetInt32()
+            : sr6Saved.RootElement.GetProperty("quotedTargetNaturalRating").GetInt32();
                     int expectedRevisionValue = sr6Saved.RootElement.GetProperty("savedRevision").GetInt32();
 
                     var sr6SectionHost = window.ControlsForAutomation.SectionHost;
@@ -747,6 +1028,79 @@ internal static class DesktopMouseFirstJourneyRunner
                 }
                 }
 
+                // Gen5 (WIN-009): the career award receipt is OPTIONAL by env
+                // presence - the harness sets it only for genuine-mode career
+                // scenarios. When set, the receipt file is REQUIRED and the
+                // reopened balances must match the awarded karma on the
+                // CREATED workspace (gen31 awarded the print/export sample).
+                string? careerReceiptPath = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.CareerAwardReceiptEnvironmentVariable);
+                if (!string.IsNullOrWhiteSpace(careerReceiptPath))
+                {
+                    if (!File.Exists(careerReceiptPath))
+                    {
+                        throw new InvalidOperationException(
+                            "The career award receipt file does not exist: " + careerReceiptPath);
+                    }
+                    JsonDocument careerSaved;
+                    try
+                    {
+                        careerSaved = JsonDocument.Parse(File.ReadAllText(careerReceiptPath));
+                    }
+                    catch (Exception unreadableCareerReceipt) when (unreadableCareerReceipt is IOException or UnauthorizedAccessException or JsonException)
+                    {
+                        throw new InvalidOperationException(
+                            "The career award receipt is present but unreadable: " + unreadableCareerReceipt.Message);
+                    }
+                    using (careerSaved)
+                    {
+                        string? careerWorkspaceId = careerSaved.RootElement.TryGetProperty("workspaceId", out System.Text.Json.JsonElement careerWorkspaceElement)
+                            && careerWorkspaceElement.ValueKind == System.Text.Json.JsonValueKind.String
+                                ? careerWorkspaceElement.GetString() : null;
+                        if (string.IsNullOrWhiteSpace(careerWorkspaceId))
+                        {
+                            throw new InvalidOperationException("The career award receipt does not carry a workspaceId.");
+                        }
+                        if (!string.Equals(careerWorkspaceId, restoredWorkspaceId.Value, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace '{restoredWorkspaceId.Value}' does not match the career award receipt workspace '{careerWorkspaceId}'. The award may have landed on the print/export sample.");
+                        }
+                        decimal expectedCareerKarma = careerSaved.RootElement.GetProperty("karmaAfter").GetDecimal();
+                        if (!careerSaved.RootElement.TryGetProperty("karmaIncreased", out System.Text.Json.JsonElement careerIncreasedElement)
+                            || careerIncreasedElement.ValueKind != System.Text.Json.JsonValueKind.True)
+                        {
+                            throw new InvalidOperationException("The career award receipt does not record an increased karma balance.");
+                        }
+                        var careerSectionHost = window.ControlsForAutomation.SectionHost;
+                        decimal reopenedCareerKarma = 0m;
+                        bool careerKarmaMatches = await WaitForConditionWithinAsync(
+                            () =>
+                            {
+                                reopenedCareerKarma = ReadCareerRewardsKarmaBalance(careerSectionHost);
+                                return reopenedCareerKarma == expectedCareerKarma;
+                            },
+                            journeyTimeout.Token,
+                            TimeSpan.FromSeconds(10));
+                        if (!careerKarmaMatches)
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened workspace shows karma {reopenedCareerKarma}, which does not match the career award receipt's {expectedCareerKarma}.");
+                        }
+                        string? careerAlias = careerSaved.RootElement.TryGetProperty("characterAlias", out System.Text.Json.JsonElement careerAliasElement)
+                            && careerAliasElement.ValueKind == System.Text.Json.JsonValueKind.String
+                                ? careerAliasElement.GetString() : null;
+                        if (!string.IsNullOrWhiteSpace(careerAlias)
+                            && !string.Equals(restoredAlias, careerAlias, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                $"The reopened alias '{restoredAlias}' does not match the career award receipt alias '{careerAlias}'.");
+                        }
+                        RecordStep(
+                            steps,
+                            $"career award reopen verified: workspaceId={restoredWorkspaceId.Value}; karma {reopenedCareerKarma} matches the receipt; alias {restoredAlias} (document-backed identity)");
+                    }
+                }
+
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-reopen-restored");
                 RecordStep(steps, $"reopen verified: workspaceId={restoredWorkspaceId}, name={restoredName}, profileCreated={restoredCreated}, wizardVisible={restoredOverview.CreationWizard is not null}");
 
@@ -767,8 +1121,8 @@ internal static class DesktopMouseFirstJourneyRunner
                         ScenarioId: plan.ScenarioId,
                         WorkspaceId: restoredWorkspaceId.Value,
                         CharacterName: restoredName,
-                        CharacterAlias: savedCharacterName,
-                        RulesetId: null,
+                        CharacterAlias: restoredAlias,
+                        RulesetId: reopenedRulesetVerified,
                         BuildMethod: plan.BuildMethod,
                         MetatypeCategory: plan.MetatypeCategory,
                         PriorityHeritage: plan.PriorityHeritage,
@@ -915,7 +1269,13 @@ internal static class DesktopMouseFirstJourneyRunner
             // table with the canonical spread from the Core prerequisite tests.
             // Life-Modules plans skip this block: their build method is already
             // authoritative from the create dialog.
-            if (string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+            // WIN-009 gen2 (T748): Sum-to-Ten drives the SAME prerequisite
+            // table (the wizard renders the priority grid for any
+            // prerequisite-table method; the Core treats Priority and
+            // SumToTen symmetrically across the draft pipeline).
+            bool prerequisiteTablePlan = string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
+            if (prerequisiteTablePlan)
             {
             await WaitForAsync(
                 steps,
@@ -923,13 +1283,46 @@ internal static class DesktopMouseFirstJourneyRunner
                 () => wizard.PriorityGridHost.Children.Count > 0
                     && wizard.PriorityConfirmButton.IsVisible,
                 journeyTimeout.Token);
+            // WIN-009: the plan's priority-heritage rank (env
+            // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_HERITAGE) drives the
+            // heritage row when set. The remaining four categories take the
+            // remaining distinct ranks (talent keeps E whenever available) so
+            // the Sum-to-Ten assignment still totals exactly 10. The default
+            // (no env) remains the canonical A/E/B/C/D spread.
+            string heritageRank = string.IsNullOrWhiteSpace(plan.PriorityHeritage)
+                ? "A"
+                : plan.PriorityHeritage!;
+            string[] remainingRanks = new[] { "A", "B", "C", "D", "E" }
+                .Where(rank => !string.Equals(rank, heritageRank, StringComparison.Ordinal))
+                .ToArray();
+            string talentRank;
+            string attributesRank;
+            string skillsRank;
+            string resourcesRank;
+            if (remainingRanks.Contains("E"))
+            {
+                talentRank = "E";
+                string[] rest = remainingRanks.Where(rank => rank != "E").ToArray();
+                attributesRank = rest[0];
+                skillsRank = rest[1];
+                resourcesRank = rest[2];
+            }
+            else
+            {
+                // heritage E consumes the zero rank; the canonical complement
+                // A/B/C/D keeps the Sum-to-Ten total at exactly 10.
+                talentRank = "A";
+                attributesRank = "B";
+                skillsRank = "C";
+                resourcesRank = "D";
+            }
             foreach ((string Category, string Rank) priorityPick in new[]
                      {
-                         ("heritage", "A"),
-                         ("talent", "E"),
-                         ("attributes", "B"),
-                         ("skills", "C"),
-                         ("resources", "D"),
+                         ("heritage", heritageRank),
+                         ("talent", talentRank),
+                         ("attributes", attributesRank),
+                         ("skills", skillsRank),
+                         ("resources", resourcesRank),
                      })
             {
                 string categoryLocal = priorityPick.Category;
@@ -959,7 +1352,32 @@ internal static class DesktopMouseFirstJourneyRunner
                 () => wizard.GetPriorityHeritageChoices().Any(choice => choice.IsEnabled),
                 journeyTimeout.Token);
             string heritageChoiceId = await Dispatcher.UIThread.InvokeAsync(() =>
-                wizard.GetPriorityHeritageChoices().FirstOrDefault(c => c.IsEnabled).SelectionId);
+            {
+                var heritageChoices = wizard.GetPriorityHeritageChoices();
+                if (!string.IsNullOrWhiteSpace(plan.Metatype))
+                {
+                    // WIN-009: select the plan-requested metatype explicitly
+                    // (e.g. Dwarf at heritage rank C). A request that is not
+                    // enabled at the assigned rank is a hard journey failure -
+                    // that refusal IS the negative acceptance evidence.
+                    var wanted = heritageChoices.FirstOrDefault(c => c.IsEnabled
+                        && string.Equals(c.Label, plan.Metatype, StringComparison.OrdinalIgnoreCase));
+                    if (wanted.Label is null || string.IsNullOrEmpty(wanted.SelectionId))
+                    {
+                        throw new InvalidOperationException(
+                            "journey: requested heritage metatype '" + plan.Metatype
+                            + "' is not enabled at rank " + heritageRank
+                            + " (available: "
+                            + string.Join(", ", heritageChoices.Select(c =>
+                                c.Label + (c.IsEnabled ? string.Empty : " [disabled]")))
+                            + ")");
+                    }
+                    RecordStep(steps, "heritage choice requested metatype " + plan.Metatype
+                        + " at rank " + heritageRank + " -> " + wanted.Label);
+                    return wanted.SelectionId;
+                }
+                return heritageChoices.FirstOrDefault(c => c.IsEnabled).SelectionId;
+            });
             await ClickWizardButtonUntilEffectAsync(
                 wizard,
                 "creation-wizard-priority-heritage-choice-" + heritageChoiceId,
@@ -978,7 +1396,7 @@ internal static class DesktopMouseFirstJourneyRunner
                 () => wizard.GetPriorityTalentChoices().Any(choice => choice.IsEnabled),
                 journeyTimeout.Token);
             string talentChoiceId = await Dispatcher.UIThread.InvokeAsync(() =>
-                wizard.GetPriorityTalentChoices().FirstOrDefault(c => c.IsEnabled).SelectionId);
+                SelectTalentChoiceForPlan(wizard, plan));
             await ClickWizardButtonUntilEffectAsync(
                 wizard,
                 "creation-wizard-priority-talent-choice-" + talentChoiceId,
@@ -1000,7 +1418,7 @@ internal static class DesktopMouseFirstJourneyRunner
                 journeyTimeout.Token,
                 recordPointerAction);
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02a-priority-confirmed");
-            } // end Priority build-method gate
+            } // end prerequisite-table (Priority / SumToTen) gate
 
             // For Priority builds the Core marks foundation as life-modules-only
             // (never enterable) and gates the attributes step on deep-stage
@@ -1106,11 +1524,15 @@ internal static class DesktopMouseFirstJourneyRunner
                 RecordStep(steps, $"wizard step graph after authoritative priority draft: {stepSummary}");
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-priority-graph-evidence");
             }
-            if (!string.IsNullOrWhiteSpace(plan.Metatype))
+            if (!string.IsNullOrWhiteSpace(plan.Metatype)
+                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
             {
                 // Metatype/nationality option cards live on the foundation step,
                 // which the Core marks life-modules-only for Priority builds.
                 // plan.Metatype is non-empty only for Life-Modules plans.
+                // (WIN-009 Priority plans carry plan.Metatype as the requested
+                // heritage metatype, already selected at the heritage step.)
                 await SelectWizardOptionAsync(
                     window,
                     wizard,
@@ -1123,8 +1545,12 @@ internal static class DesktopMouseFirstJourneyRunner
 
             // The foundation (Life-Modules) flow only applies when the journey
             // plan drives a Life-Modules build; Priority builds route through
-            // the prerequisite draft instead.
-            if (!string.IsNullOrWhiteSpace(plan.Metatype))
+            // the prerequisite draft instead. (WIN-009 Priority plans may carry
+            // plan.Metatype as the requested heritage metatype, already applied
+            // at the heritage step - the foundation flow keys on the method.)
+            if (!string.IsNullOrWhiteSpace(plan.Metatype)
+                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
             {
             string nationalityOptionId =
                 await WaitForWizardNationalityOptionAsync(window, steps, journeyTimeout.Token);
@@ -1432,9 +1858,34 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     createdWorkspaceId,
                     journeyTimeout.Token);
                 int starterAttributeSum = starterAttributeEvidence.Sum;
+                // WIN-009 gen2 (T747): wizard-driven Priority plans no longer
+                // accept a bare positive sum. The runner binds the SAME
+                // workspace's finalized document to its OWN creation drafts
+                // (the finalization archive in the auxiliary state) and asserts
+                // the metatype/heritage identity, every draft-derived attribute
+                // total, and both point budgets exactly. The check runs here
+                // (before save) and again in the reopen-verify leg against the
+                // retained document after the cold process boundary.
+                bool wizardDrivenPriorityPlan = string.Equals(
+                    plan.BuildMethod,
+                    "Priority",
+                    StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
+                ExactCharacterEvidence exactCharacterEvidence = wizardDrivenPriorityPlan
+                    ? await ReadWorkspaceExactCharacterEvidenceAsync(
+                        window,
+                        expectedRulesetId,
+                        createdWorkspaceId,
+                        plan.PriorityHeritage,
+                        plan.Metatype,
+                        journeyTimeout.Token)
+                    : ExactCharacterEvidence.Failed(
+                        "not a wizard-driven Priority plan; the exact-character check does not apply");
                 bool starterAttributesMatchSeededWorkspace =
                     starterAttributeEvidence.IsValid
-                    && starterAttributeSum == SeededStarterNaturalAttributeTotal;
+                    && (wizardDrivenPriorityPlan
+                        ? exactCharacterEvidence.Succeeded
+                        : starterAttributeSum == SeededStarterNaturalAttributeTotal);
                 bool sectionPreviewOmitsReviewCopy = sectionReviewPanel is null || !sectionReviewPanel.IsVisible;
                 bool visibleWorkspaceNonblank = !string.IsNullOrWhiteSpace(ReadWindowTextSnapshot(window))
                     && !string.IsNullOrWhiteSpace(openedOverviewState.ActiveSectionJson);
@@ -1451,6 +1902,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     + $"natural_attribute_evidence={(starterAttributeEvidence.IsValid ? "valid" : starterAttributeEvidence.Diagnostics)}; "
                     + $"state_open_count={openedOverviewState.OpenWorkspaces.Count}; "
                     + $"session_open_count={openedOverviewState.Session.OpenWorkspaces.Count}");
+                if (wizardDrivenPriorityPlan)
+                {
+                    RecordStep(
+                        steps,
+                        "file-new exact-character evidence: "
+                        + $"metatype={exactCharacterEvidence.MetatypeName}; "
+                        + $"metatype_source={exactCharacterEvidence.MetatypeSourceId}; "
+                        + $"heritage_rank={exactCharacterEvidence.HeritageRank}; "
+                        + $"normal_points={exactCharacterEvidence.NormalPointUsed}/{exactCharacterEvidence.NormalPointTotal}; "
+                        + $"special_points={exactCharacterEvidence.SpecialPointUsed}/{exactCharacterEvidence.SpecialPointTotal}; "
+                        + (exactCharacterEvidence.Succeeded
+                            ? "verdict=exact-match"
+                            : "verdict=mismatch: " + exactCharacterEvidence.Diagnostics));
+                }
                 string fileNewAfterScreenshot = RequireScreenshotPath(
                     await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "file_new_character_visible_workspace-after"),
                     "file_new_character_visible_workspace",
@@ -1467,7 +1932,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         ["new_character_action_opened_visible_workspace"] = newCharacterActionOpenedVisibleWorkspace,
                         ["visible_workspace_nonblank"] = visibleWorkspaceNonblank,
                         ["starter_attributes_match_seeded_workspace"] = starterAttributesMatchSeededWorkspace,
-                        ["section_preview_omits_review_copy"] = sectionPreviewOmitsReviewCopy
+                        ["section_preview_omits_review_copy"] = sectionPreviewOmitsReviewCopy,
+                        // WIN-009 gen2 (T747): for wizard-driven Priority plans this
+                        // is the exact-character verdict; for other plans the exact
+                        // check does not apply and the step trail says so.
+                        ["exact_character_matches_creation_drafts"] =
+                            !wizardDrivenPriorityPlan || exactCharacterEvidence.Succeeded
                     },
                     InteractionNotes:
                     [
@@ -1561,6 +2031,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // career sample itself (Profile.Created=true), so evidence is
             // produced even when the creation leg never reaches career mode
             // (Priority deep stages stay blocked in this scenario).
+            // Gen5 (WIN-009): the print/export leg above may have closed the
+            // created workspace and imported the bundled career sample for a
+            // stable print document. Trusting the pre-print finalization flag
+            // here awarded karma on the SAMPLE while claiming a genuine
+            // Creation-to-Career transition (gen31 step 239). The created
+            // workspace is now explicitly restored and identity-verified
+            // before the career leg runs in genuine mode.
+            bool genuineCareerWorkspace = GenuineCareerTransition && finalizationApplied;
+            if (genuineCareerWorkspace)
+            {
+                await RestoreCreatedWorkspaceForCareerLegAsync(
+                    window,
+                    steps,
+                    createdWorkspaceId,
+                    expectedCharacterName,
+                    expectedCharacterAlias,
+                    expectedRulesetId,
+                    plan.PriorityHeritage,
+                    plan.Metatype,
+                    recordPointerAction,
+                    journeyTimeout.Token);
+            }
             userJourneyWorkflows.Add(await ExerciseCareerRewardsWorkflowAsync(
                 window,
                 context,
@@ -1568,7 +2060,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 screenshotPaths,
                 journeyTimeout.Token,
                 recordPointerAction,
-                genuineCareerWorkspace: GenuineCareerTransition && finalizationApplied));
+                genuineCareerWorkspace: genuineCareerWorkspace));
 
             // T492: native SR6 row-to-confirm verification leg. Gated on
             // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE=1: imports an
@@ -1587,7 +2079,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     steps,
                     screenshotPaths,
                     journeyTimeout.Token,
-                    recordPointerAction));
+                    recordPointerAction,
+                    plan.CharacterName,
+                    plan.CharacterAlias));
             }
 
             DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
@@ -2082,6 +2576,34 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06c-career-rewards-applied"),
                 "career_rewards_roundtrip", "applied");
 
+            if (genuineCareerWorkspace)
+            {
+                // Gen5 (WIN-009): persist the award so the fresh-process
+                // reopen can assert the karma survived on the CREATED
+                // workspace, then write the career award receipt carrying the
+                // post-award identity for the reopen leg.
+                await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+                await WaitForAsync(
+                    steps,
+                    "career leg: workspace saved after award (last command save_character)",
+                    () => string.Equals(
+                        window.SnapshotStateForAutomation().LastCommandId,
+                        "save_character",
+                        StringComparison.Ordinal),
+                    ct);
+                CharacterOverviewState savedAwardState = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteCareerAwardReceipt(
+                    karmaBefore,
+                    karmaAfter,
+                    karmaIncreased,
+                    savedAwardState.WorkspaceId?.Value,
+                    savedAwardState.Profile?.Name,
+                    savedAwardState.Profile?.Alias);
+                RecordStep(
+                    steps,
+                    $"career award receipt written: workspaceId={savedAwardState.WorkspaceId?.Value}; karma {karmaBefore} -> {karmaAfter}; name={savedAwardState.Profile?.Name}; alias={savedAwardState.Profile?.Alias}");
+            }
+
             return new DesktopUserJourneyWorkflowEvidence(
                 Id: "career_rewards_roundtrip",
                 ScreenshotPaths: [stripShot, dialogShot, appliedShot],
@@ -2145,6 +2667,167 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     // and verify the dialog closed. Throws when the route cannot complete (a
     // product gap must be surfaced, never masked with a synthetic grant).
     // ----- T545 / controller 7867 correction-legs: two-process reward recovery -----
+
+    /// <summary>
+    /// Gen5 (WIN-009): restores the journey-created workspace before the
+    /// genuine-mode career rewards leg and proves the restored identity.
+    /// The print/export leg closes the created workspace and imports the
+    /// bundled career sample; awarding karma on whatever is loaded without
+    /// re-checking identity awarded the SAMPLE (gen31 step 239). The
+    /// restored workspace must match the created id, carry the created
+    /// identity (name + alias + Created flag), be clean and persisted, and
+    /// pass the document-backed exact-character check.
+    /// </summary>
+    private static async Task RestoreCreatedWorkspaceForCareerLegAsync(
+        MainWindow window,
+        List<string> steps,
+        string? createdWorkspaceId,
+        string expectedCharacterName,
+        string expectedCharacterAlias,
+        string expectedRulesetId,
+        string? priorityHeritage,
+        string? metatype,
+        Action recordPointerAction,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(createdWorkspaceId))
+        {
+            throw new InvalidOperationException(
+                "The genuine career leg requires the journey-created workspace id; none was recorded.");
+        }
+
+        CharacterOverviewState current = window.SnapshotStateForAutomation();
+        if (string.Equals(current.WorkspaceId?.Value, createdWorkspaceId, StringComparison.Ordinal))
+        {
+            RecordStep(steps, "career leg: created workspace still active; no restore needed");
+        }
+        else
+        {
+            RecordStep(
+                steps,
+                "career leg: active workspace " + (current.WorkspaceId?.Value ?? "(none)")
+                + " is not the created workspace " + createdWorkspaceId
+                + "; closing the open workspace first (the presenter load path only switches workspaces when none is open), then restoring the created one");
+            await window.InitializationForAutomation.WaitAsync(ct);
+            // The saved state is durable (the creation leg saved before the
+            // print/export leg ran); the presenter load route refuses to
+            // switch while another workspace holds the shell, so mirror the
+            // print/export helper's own close route: save (idempotent for a
+            // clean workspace), then Windows > Close All.
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "career leg: open workspace saved before close (last command save_character)",
+                () => string.Equals(
+                    window.SnapshotStateForAutomation().LastCommandId,
+                    "save_character",
+                    StringComparison.Ordinal),
+                ct);
+            MenuItem windowsMenu = await OpenMenuAsync(window, "WindowsMenuButton", "Windows", steps, ct, () => { });
+            await ClickOpenMenuCommandAsync(windowsMenu, "close_all", "Windows", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "career leg: open workspace closed (no active workspace)",
+                () => window.SnapshotStateForAutomation().WorkspaceId is null,
+                ct);
+            ICharacterOverviewPresenter presenter = App.Services!.GetRequiredService<ICharacterOverviewPresenter>();
+            await presenter.LoadAsync(new CharacterWorkspaceId(createdWorkspaceId), ct);
+            await WaitForAsync(
+                steps,
+                "career leg: created workspace visible in the automation snapshot",
+                () => string.Equals(
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                    createdWorkspaceId,
+                    StringComparison.Ordinal),
+                ct,
+                TimeSpan.FromMinutes(2));
+        }
+
+        CharacterOverviewState restored = window.SnapshotStateForAutomation();
+        CharacterWorkspaceId restoredId = restored.WorkspaceId
+            ?? throw new InvalidOperationException("The career leg did not leave a workspace loaded.");
+        if (!string.Equals(restoredId.Value, createdWorkspaceId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"The career leg loaded workspace '{restoredId.Value}' instead of the created '{createdWorkspaceId}'.");
+        }
+
+        OpenWorkspaceState? workspaceEntry = restored.Session.FindWorkspace(restoredId);
+        if (workspaceEntry is null || !workspaceEntry.HasSavedWorkspace || workspaceEntry.IsDirty)
+        {
+            throw new InvalidOperationException("The career leg's restored workspace is not clean and persisted.");
+        }
+
+        string? identityError = BuildCareerWorkspaceIdentityError(
+            restored.WorkspaceId,
+            restored.Profile,
+            createdWorkspaceId,
+            expectedCharacterName,
+            expectedCharacterAlias);
+        if (identityError is not null)
+        {
+            throw new InvalidOperationException(identityError);
+        }
+        RecordStep(
+            steps,
+            $"career leg identity verified: workspaceId={restoredId.Value}; name={restored.Profile?.Name}; alias={restored.Profile?.Alias}; created={restored.Profile?.Created}");
+
+        ExactCharacterEvidence restoredExact = await ReadWorkspaceExactCharacterEvidenceAsync(
+            window,
+            expectedRulesetId,
+            createdWorkspaceId,
+            priorityHeritage,
+            metatype,
+            ct);
+        if (!restoredExact.Succeeded)
+        {
+            throw new InvalidOperationException(
+                "career leg exact-character check failed against the restored document: " + restoredExact.Diagnostics);
+        }
+        RecordStep(
+            steps,
+            "career leg exact-character verified: "
+            + $"metatype={restoredExact.MetatypeName}; heritage_rank={restoredExact.HeritageRank}; "
+            + $"normal_points={restoredExact.NormalPointUsed}/{restoredExact.NormalPointTotal}; "
+            + $"special_points={restoredExact.SpecialPointUsed}/{restoredExact.SpecialPointTotal} (document-backed)");
+    }
+
+    /// <summary>
+    /// Gen5: pure identity classifier for the restored career workspace so
+    /// focused tests can pin the refusal without a live journey. Returns
+    /// null when the restored state carries the created workspace's identity;
+    /// otherwise a diagnostic naming the first mismatch.
+    /// </summary>
+    internal static string? BuildCareerWorkspaceIdentityError(
+        CharacterWorkspaceId? restoredWorkspaceId,
+        CharacterProfileSection? profile,
+        string createdWorkspaceId,
+        string expectedCharacterName,
+        string expectedCharacterAlias)
+    {
+        if (restoredWorkspaceId is null
+            || !string.Equals(restoredWorkspaceId?.Value, createdWorkspaceId, StringComparison.Ordinal))
+        {
+            return $"restored workspace '{restoredWorkspaceId?.Value ?? "none"}' is not the created workspace '{createdWorkspaceId}'.";
+        }
+        if (profile is null)
+        {
+            return "the restored workspace carries no profile section.";
+        }
+        if (!string.Equals(profile.Name, expectedCharacterName, StringComparison.Ordinal))
+        {
+            return $"restored profile name '{profile.Name}' does not match the created '{expectedCharacterName}'.";
+        }
+        if (!string.Equals(profile.Alias, expectedCharacterAlias, StringComparison.Ordinal))
+        {
+            return $"restored profile alias '{profile.Alias}' does not match the created '{expectedCharacterAlias}'.";
+        }
+        if (!profile.Created)
+        {
+            return "the restored profile is not marked created.";
+        }
+        return null;
+    }
 
     /// <summary>
     /// Loads the saved career workspace passed via
@@ -3389,6 +4072,78 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     }
 
     /// <summary>
+    /// WIN-009 gen2 (T747): evidence for the exact-character check. The
+    /// wizard-driven Priority route must prove the finalized workspace
+    /// document IS the character the creation drafts describe - metatype
+    /// identity, heritage rank, every draft-derived attribute total, and
+    /// both point budgets - instead of a bare positive attribute sum.
+    /// Succeeded=false means a binding, parse, or comparison precondition
+    /// failed; Diagnostics explains exactly which one.
+    /// </summary>
+    internal sealed record ExactCharacterEvidence(
+        bool Succeeded,
+        string Diagnostics,
+        string MetatypeName,
+        string MetatypeSourceId,
+        string HeritageRank,
+        int NormalPointTotal,
+        int NormalPointUsed,
+        int SpecialPointTotal,
+        int SpecialPointUsed,
+        IReadOnlyDictionary<string, int> AttributeTotals,
+        IReadOnlyDictionary<string, int> AttributeMinimums)
+    {
+        public static ExactCharacterEvidence Failed(string diagnostics) => new(
+            false,
+            diagnostics,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            -1,
+            -1,
+            -1,
+            -1,
+            new Dictionary<string, int>(),
+            new Dictionary<string, int>());
+
+        public static ExactCharacterEvidence Match(
+            string diagnostics,
+            string metatypeName,
+            string metatypeSourceId,
+            string heritageRank,
+            int normalPointTotal,
+            int normalPointUsed,
+            int specialPointTotal,
+            int specialPointUsed,
+            IReadOnlyDictionary<string, int> attributeTotals,
+            IReadOnlyDictionary<string, int> attributeMinimums) => new(
+            true,
+            diagnostics,
+            metatypeName,
+            metatypeSourceId,
+            heritageRank,
+            normalPointTotal,
+            normalPointUsed,
+            specialPointTotal,
+            specialPointUsed,
+            attributeTotals,
+            attributeMinimums);
+    }
+
+    /// <summary>Parsed XML rows backing the exact-character check.</summary>
+    internal sealed record ExactCharacterRows(
+        bool Succeeded,
+        string Diagnostics,
+        string MetatypeName,
+        IReadOnlyDictionary<string, int> Totals,
+        IReadOnlyDictionary<string, int> Minimums)
+    {
+        public static ExactCharacterRows Failed(string diagnostics) => new(
+            false, diagnostics, string.Empty,
+            new Dictionary<string, int>(), new Dictionary<string, int>());
+    }
+
+    /// <summary>
     /// Gen-12 (clarification 7737): the legacy <c>totalattributes</c> creation
     /// budget is no longer persisted for SR5 payloads, so the seeded starter
     /// attribute assertion reads the actual workspace document through the
@@ -3413,6 +4168,67 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         return ReadWorkspaceNaturalAttributeTotalAsync(expectedRulesetId, expectedWorkspaceId,
             () => window.SnapshotStateForAutomation().WorkspaceId,
             boundClient.CaptureOwnerContext, boundClient.GetWorkspaceAsync, ct);
+    }
+
+    /// <summary>
+    /// WIN-009 gen2 (T747): window-bound exact-character evidence read.
+    /// Same owner-bound seam and retry discipline as the starter-attribute
+    /// read; the classification itself is the pure
+    /// ClassifyExactCharacterAgainstCreationDrafts function so tests can
+    /// exercise every refusal branch without a window.
+    /// </summary>
+    private static Task<ExactCharacterEvidence> ReadWorkspaceExactCharacterEvidenceAsync(
+        MainWindow window,
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        CancellationToken ct)
+    {
+        IChummerClient client = App.Services?.GetRequiredService<IChummerClient>()
+            ?? throw new InvalidOperationException(
+                "exact character evidence failed: the app service provider is unavailable.");
+        IOwnerBoundWorkspaceMutationClient boundClient = client as IOwnerBoundWorkspaceMutationClient
+            ?? throw new InvalidOperationException(
+                "exact character evidence failed: the workspace client is not owner-bound.");
+        return ReadWorkspaceExactCharacterEvidenceAsync(
+            expectedRulesetId, expectedWorkspaceId, expectedHeritageRank, expectedMetatypeName,
+            () => window.SnapshotStateForAutomation().WorkspaceId,
+            boundClient.CaptureOwnerContext, boundClient.GetWorkspaceAsync, ct);
+    }
+
+    // The journey and regression tests use the same asynchronous observation.
+    internal static async Task<ExactCharacterEvidence> ReadWorkspaceExactCharacterEvidenceAsync(
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        // Same harness-timing retry discipline as the starter-attribute
+        // evidence: owner-authority transition races are re-tried by
+        // RE-CAPTURING the owner stamp and the active workspace binding from
+        // scratch (never reusing a stale stamp).
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await ReadWorkspaceExactCharacterEvidenceOnceAsync(
+                    expectedRulesetId, expectedWorkspaceId, expectedHeritageRank, expectedMetatypeName,
+                    activeWorkspace, captureOwner, readWorkspace, ct);
+            }
+            catch (InvalidOperationException ex) when (
+                attempt < 5
+                && (ex.Message.Contains("Owner authority changed before dispatch", StringComparison.Ordinal)
+                    || ex.Message.Contains("The acquired owner authority does not match the requested operation", StringComparison.Ordinal)))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
+            }
+        }
     }
 
     // The journey and regression tests use the same asynchronous observation.
@@ -4157,6 +4973,663 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     }
 
     /// <summary>
+    /// WIN-009 gen2 (T747): parses EVERY attribute row (natural and special)
+    /// for exactly one scalar totalvalue and metatypemin each, plus exactly
+    /// one scalar metatype element. Duplicate, missing, or malformed rows
+    /// reject the evidence instead of silently comparing a partial set.
+    /// </summary>
+    internal static ExactCharacterRows ParseExactCharacterRows(XElement root)
+    {
+        Dictionary<string, int> totals = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, int> minimums = new(StringComparer.OrdinalIgnoreCase);
+        List<string> problems = new();
+        if (root.Elements("attributes").Count() > 1)
+            return ExactCharacterRows.Failed("duplicate attributes containers");
+        if (root.Elements("metatype").ToArray() is not [var metatypeElement]
+            || metatypeElement.HasElements || metatypeElement.HasAttributes)
+        {
+            return ExactCharacterRows.Failed("workspace requires exactly one scalar metatype element");
+        }
+        string metatypeName = metatypeElement.Value.Trim();
+        if (string.IsNullOrWhiteSpace(metatypeName))
+        {
+            return ExactCharacterRows.Failed("workspace metatype element is blank");
+        }
+
+        foreach (XElement attribute in root.Element("attributes")?.Elements("attribute")
+            ?? Enumerable.Empty<XElement>())
+        {
+            if (attribute.Elements("name").ToArray() is not [var nameElement]
+                || nameElement.HasElements || nameElement.HasAttributes)
+            {
+                problems.Add("attribute entry requires exactly one scalar name");
+                continue;
+            }
+            string name = nameElement.Value.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                problems.Add("attribute entry with blank name");
+                continue;
+            }
+            if (attribute.Elements("totalvalue").ToArray() is not [var total]
+                || total.HasElements || total.HasAttributes
+                || !int.TryParse(total.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int totalValue)
+                || totalValue < 0)
+            {
+                problems.Add("attribute " + name + " has missing or malformed totalvalue");
+                continue;
+            }
+            if (attribute.Elements("metatypemin").ToArray() is not [var min]
+                || min.HasElements || min.HasAttributes
+                || !int.TryParse(min.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int minValue)
+                || minValue < 0)
+            {
+                problems.Add("attribute " + name + " has missing or malformed metatypemin");
+                continue;
+            }
+            if (totals.ContainsKey(name) || minimums.ContainsKey(name))
+            {
+                problems.Add("duplicate attribute entry: " + name);
+                continue;
+            }
+            totals[name] = totalValue;
+            minimums[name] = minValue;
+        }
+
+        if (problems.Count > 0)
+        {
+            return ExactCharacterRows.Failed(
+                "workspace attribute parse rejected: " + string.Join("; ", problems));
+        }
+
+        return new ExactCharacterRows(
+            true,
+            "parsed " + totals.Count + " attribute rows",
+            metatypeName,
+            totals,
+            minimums);
+    }
+
+    /// <summary>
+    /// WIN-009 gen2 (T747): the pure exact-character classifier. Returns
+    /// null ONLY when the workspace document's XML facts and the finalized
+    /// creation drafts agree on every checked identity: metatype name and
+    /// source id, heritage rank, every draft-derived attribute total and
+    /// metatype minimum, the fully-spent normal budget, and the special
+    /// allocation budget. Any refusal is a distinct diagnostic; nothing is
+    /// silently defaulted.
+    /// </summary>
+    internal static string? ClassifyExactCharacterAgainstCreationDrafts(
+        IReadOnlyDictionary<string, int> xmlTotals,
+        IReadOnlyDictionary<string, int> xmlMinimums,
+        string xmlMetatypeName,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        CharacterCreationPrerequisiteDraft? prerequisite,
+        CharacterCreationAttributesDraft? attributes,
+        string? loadedWorkspaceId)
+    {
+        const string prefix = "exact-character mismatch: ";
+        if (prerequisite is null)
+        {
+            return prefix + "the finalized document carries no prerequisite draft";
+        }
+        if (attributes is null)
+        {
+            return prefix + "the finalized document carries no attributes draft";
+        }
+
+        // REVIEW8657-1: the archived drafts must belong to the workspace that was
+        // actually loaded (the caller re-verifies the active workspace across the
+        // read await; here the DRAFT identity is bound to that same loaded id), and
+        // the attributes draft must reference the exact archived prerequisite via
+        // revision/digest/authority - a swapped or foreign draft chain is refused.
+        if (!string.IsNullOrWhiteSpace(loadedWorkspaceId))
+        {
+            if (!string.Equals(prerequisite.WorkspaceId.Value, loadedWorkspaceId, StringComparison.Ordinal))
+            {
+                return prefix + "prerequisite draft workspace '" + prerequisite.WorkspaceId.Value
+                    + "' does not match the loaded workspace '" + loadedWorkspaceId + "'";
+            }
+            if (!string.Equals(attributes.WorkspaceId.Value, loadedWorkspaceId, StringComparison.Ordinal))
+            {
+                return prefix + "attributes draft workspace '" + attributes.WorkspaceId.Value
+                    + "' does not match the loaded workspace '" + loadedWorkspaceId + "'";
+            }
+        }
+        if (attributes.PrerequisiteDraftRevision != prerequisite.DraftRevision)
+        {
+            return prefix + "attributes draft prerequisite revision " + attributes.PrerequisiteDraftRevision
+                + " does not match the archived prerequisite revision " + prerequisite.DraftRevision;
+        }
+        if (!string.Equals(attributes.PrerequisiteDraftDigest, prerequisite.DraftDigest, StringComparison.Ordinal))
+        {
+            return prefix + "attributes draft prerequisite digest '" + attributes.PrerequisiteDraftDigest
+                + "' does not match the archived prerequisite digest '" + prerequisite.DraftDigest + "'";
+        }
+        if (!string.Equals(attributes.PrerequisiteAuthorityDigest, prerequisite.AuthorityDigest, StringComparison.Ordinal))
+        {
+            return prefix + "attributes draft prerequisite authority '" + attributes.PrerequisiteAuthorityDigest
+                + "' does not match the archived prerequisite authority '" + prerequisite.AuthorityDigest + "'";
+        }
+
+        // REVIEW8657-2: an empty, partial, or duplicated archived projection set
+        // silently skips per-attribute comparisons. Require a complete, unique
+        // applicable set (all eight naturals projected), every allocation bound to
+        // a projected row, and the special budget bound to at least one special
+        // allocation whenever it records spend.
+        string[] naturals = { "BOD", "AGI", "REA", "STR", "CHA", "INT", "LOG", "WIL" };
+        if (attributes.Attributes.Count == 0)
+        {
+            return prefix + "the archived attributes draft carries an empty attribute projection set";
+        }
+        List<string> duplicateProjections = attributes.Attributes
+            .GroupBy(a => a.AttributeId, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (duplicateProjections.Count > 0)
+        {
+            return prefix + "duplicate draft attribute projection rows for "
+                + string.Join(",", duplicateProjections);
+        }
+        List<string> missingProjections = naturals
+            .Where(n => !attributes.Attributes.Any(a => string.Equals(a.AttributeId, n, StringComparison.Ordinal)))
+            .ToList();
+        if (missingProjections.Count > 0)
+        {
+            return prefix + "draft attribute projection set is missing natural attributes "
+                + string.Join(",", missingProjections);
+        }
+        List<string> duplicateAllocations = attributes.Allocations
+            .GroupBy(a => a.AttributeId, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (duplicateAllocations.Count > 0)
+        {
+            return prefix + "duplicate draft allocation rows for "
+                + string.Join(",", duplicateAllocations);
+        }
+        foreach (CharacterCreationAttributeAllocation allocation in attributes.Allocations)
+        {
+            if (!attributes.Attributes.Any(a => string.Equals(a.AttributeId, allocation.AttributeId, StringComparison.Ordinal)))
+            {
+                return prefix + "draft allocation references attribute " + allocation.AttributeId
+                    + " that the archived projection set omits";
+            }
+        }
+        bool hasSpecialAllocation = attributes.Allocations.Any(a => attributes.Attributes.Any(r =>
+                string.Equals(r.AttributeId, a.AttributeId, StringComparison.Ordinal)
+                && string.Equals(r.Category, "special", StringComparison.Ordinal)));
+        if (attributes.SpecialPointUsed > 0 && !hasSpecialAllocation)
+        {
+            return prefix + "draft records special budget used " + attributes.SpecialPointUsed
+                + " with no special allocation binding";
+        }
+        CharacterCreationPriorityHeritageSelection? heritage = prerequisite.HeritageSelection;
+        if (heritage is null)
+        {
+            return prefix + "the prerequisite draft carries no heritage selection";
+        }
+        if (!string.IsNullOrWhiteSpace(expectedMetatypeName)
+            && !string.Equals(xmlMetatypeName, expectedMetatypeName, StringComparison.Ordinal))
+        {
+            return prefix + "workspace metatype '" + xmlMetatypeName
+                + "' does not match the plan's metatype '" + expectedMetatypeName + "'";
+        }
+        if (!string.Equals(xmlMetatypeName, heritage.MetatypeName, StringComparison.Ordinal))
+        {
+            return prefix + "workspace metatype '" + xmlMetatypeName
+                + "' does not match the draft heritage selection '" + heritage.MetatypeName + "'";
+        }
+        if (!string.Equals(attributes.MetatypeSourceId, heritage.MetatypeSourceId, StringComparison.Ordinal))
+        {
+            return prefix + "attributes draft metatype source '" + attributes.MetatypeSourceId
+                + "' does not match the heritage selection source '" + heritage.MetatypeSourceId + "'";
+        }
+        if (!string.IsNullOrWhiteSpace(expectedHeritageRank))
+        {
+            CharacterCreationPriorityAssignment? heritageAssignment = prerequisite.Assignments
+                .FirstOrDefault(a => string.Equals(a.CategoryId, "heritage", StringComparison.Ordinal));
+            if (heritageAssignment is null)
+            {
+                return prefix + "the prerequisite draft carries no heritage assignment";
+            }
+            if (!string.Equals(heritageAssignment.Rank, expectedHeritageRank, StringComparison.Ordinal))
+            {
+                return prefix + "heritage assignment rank '" + heritageAssignment.Rank
+                    + "' does not match the plan's heritage rank '" + expectedHeritageRank + "'";
+            }
+        }
+
+        // WIN-009 gen3 (T772): bind the expected applicable projection and
+        // allocation set to the heritage selection's actual attribute ranges.
+        // The real creation contract emits exactly one projection and one
+        // allocation row per heritage range (zero-spend rows included), so an
+        // omitted applicable special row can no longer silently skip its XML
+        // comparison and normal spend must be allocation-backed. The expected
+        // set is derived from the contract, never an invented unconditional
+        // MAG/RES/ESS list.
+        bool supportedSpecialTalent = ExactCharacterSupportedSpecialAuthority(prerequisite.TalentSelection);
+        List<string> omittedHeritageProjections = heritage.Attributes
+            .Where(r => !attributes.Attributes.Any(a => string.Equals(a.AttributeId, r.AttributeId, StringComparison.Ordinal)))
+            .Select(r => r.AttributeId)
+            .ToList();
+        if (omittedHeritageProjections.Count > 0)
+        {
+            return prefix + "heritage attribute ranges have no draft projection rows: "
+                + string.Join(",", omittedHeritageProjections);
+        }
+        List<string> omittedHeritageAllocations = heritage.Attributes
+            .Where(r => !attributes.Allocations.Any(b => string.Equals(b.AttributeId, r.AttributeId, StringComparison.Ordinal)))
+            .Select(r => r.AttributeId)
+            .ToList();
+        if (omittedHeritageAllocations.Count > 0)
+        {
+            return prefix + "heritage attribute ranges have no draft allocation rows: "
+                + string.Join(",", omittedHeritageAllocations);
+        }
+        List<string> unbackedSpecialRows = attributes.Attributes
+            .Where(a => string.Equals(a.Category, "special", StringComparison.Ordinal)
+                && !string.Equals(a.AttributeId, "MAGAdept", StringComparison.Ordinal)
+                && !heritage.Attributes.Any(r => string.Equals(r.AttributeId, a.AttributeId, StringComparison.Ordinal)))
+            .Select(a => a.AttributeId)
+            .ToList();
+        if (unbackedSpecialRows.Count > 0)
+        {
+            return prefix + "draft special projection rows " + string.Join(",", unbackedSpecialRows)
+                + " are not backed by the heritage attribute ranges";
+        }
+
+        // WIN-009 gen4 (REVIEW8769 U3): MAGAdept rows are not heritage ranges;
+        // their presence requires the source-admitted separate-magic contract.
+        // Core CharacterCreationAttributesService folds the Mystic Adept
+        // power-point policy anchors into the draft ONLY when the prerequisite
+        // talent is Mystic Adept AND the policy has UsesSeparateMagicAttribute
+        // true AND integrity passes - so the full anchor set is the proof.
+        // Absence refuses; authority is never inferred from the draft rows.
+        List<string> unbackedMagAdeptRows = attributes.Attributes
+            .Where(a => string.Equals(a.AttributeId, "MAGAdept", StringComparison.Ordinal)
+                && !ExactCharacterSeparateMagicProof(attributes.SourceAnchorIds))
+            .Select(a => a.AttributeId)
+            .ToList();
+        if (unbackedMagAdeptRows.Count > 0)
+        {
+            return prefix + "draft MAGAdept projection rows " + string.Join(",", unbackedMagAdeptRows)
+                + " carry no source-admitted separate-magic policy proof";
+        }
+
+        List<string> mismatches = new();
+        foreach (CharacterCreationAttributeProjection row in attributes.Attributes)
+        {
+            if (!xmlTotals.TryGetValue(row.AttributeId, out int xmlTotal))
+            {
+                mismatches.Add("workspace is missing attribute " + row.AttributeId + " totalvalue");
+                continue;
+            }
+            if (xmlTotal != row.Current)
+            {
+                mismatches.Add(row.AttributeId + " total " + xmlTotal
+                    + " does not match draft current " + row.Current);
+            }
+            if (!xmlMinimums.TryGetValue(row.AttributeId, out int xmlMinimum))
+            {
+                mismatches.Add("workspace is missing attribute " + row.AttributeId + " metatypemin");
+                continue;
+            }
+            if (xmlMinimum != row.Minimum)
+            {
+                mismatches.Add(row.AttributeId + " metatypemin " + xmlMinimum
+                    + " does not match draft minimum " + row.Minimum);
+            }
+        }
+        if (mismatches.Count > 0)
+        {
+            return prefix + string.Join("; ", mismatches);
+        }
+
+        List<string> missingNaturals = naturals
+            .Where(n => !xmlTotals.ContainsKey(n) || !xmlMinimums.ContainsKey(n))
+            .ToList();
+        if (missingNaturals.Count > 0)
+        {
+            return prefix + "workspace is missing natural attribute rows: "
+                + string.Join(",", missingNaturals);
+        }
+        int normalSpent = naturals.Sum(n => Math.Max(0, xmlTotals[n] - xmlMinimums[n]));
+        if (normalSpent != attributes.NormalPointUsed)
+        {
+            return prefix + "normal attribute budget spent " + normalSpent
+                + " does not match the draft's used " + attributes.NormalPointUsed;
+        }
+        if (attributes.NormalPointUsed != attributes.NormalPointTotal)
+        {
+            return prefix + "normal attribute budget " + attributes.NormalPointUsed
+                + "/" + attributes.NormalPointTotal + " is not fully spent";
+        }
+        if (prerequisite.EffectiveNormalAttributePoints != attributes.NormalPointTotal)
+        {
+            return prefix + "prerequisite draft effective normal points "
+                + prerequisite.EffectiveNormalAttributePoints
+                + " do not match the attributes draft total " + attributes.NormalPointTotal;
+        }
+
+        // Only allocation-backed special rows count as special-point spends:
+        // essence and metatype-granted special minimums are metatype facts,
+        // not creation-budget spends. WIN-009 gen3 (T772): the special set is
+        // bound to the heritage selection's actual attribute ranges (not the
+        // draft's self-declared row category), non-spendable specials must
+        // carry zero allocations, and Mystic Adept separate-magic rows are
+        // bound when present.
+        int specialSpent = 0;
+        foreach (CharacterCreationMetatypeAttributeProjection range in heritage.Attributes)
+        {
+            if (naturals.Contains(range.AttributeId, StringComparer.Ordinal))
+            {
+                continue;
+            }
+            CharacterCreationAttributeAllocation allocation = attributes.Allocations
+                .First(b => string.Equals(b.AttributeId, range.AttributeId, StringComparison.Ordinal));
+            CharacterCreationPriorityTalentSelection? rangeTalent = prerequisite.TalentSelection;
+            bool spendable = string.Equals(range.AttributeId, "EDG", StringComparison.Ordinal)
+                || (string.Equals(range.AttributeId, "MAG", StringComparison.Ordinal)
+                    && supportedSpecialTalent && rangeTalent!.Magic > 0)
+                || (string.Equals(range.AttributeId, "RES", StringComparison.Ordinal)
+                    && supportedSpecialTalent && rangeTalent!.Resonance > 0);
+            if (!spendable && allocation.PriorityPoints != 0)
+            {
+                return prefix + "special attribute " + range.AttributeId
+                    + " is not spendable in the creation contract but the draft allocated "
+                    + allocation.PriorityPoints;
+            }
+            if (!xmlTotals.TryGetValue(range.AttributeId, out int specialTotal)
+                || !xmlMinimums.TryGetValue(range.AttributeId, out int specialMinimum))
+            {
+                return prefix + "workspace is missing special attribute " + range.AttributeId + " rows";
+            }
+            // Allocation-backed spend (mirrors Core CharacterCreationAttributesService):
+            // special budget usage is the sum of allocation PriorityPoints over special
+            // rows. The XML delta (total - metatypemin) may exceed the allocation for
+            // metatype-granted facts (essence 6/0 on Dwarf) that are not spends; only
+            // require the delta to COVER the allocated points.
+            if (specialTotal - specialMinimum < allocation.PriorityPoints)
+            {
+                return prefix + "special attribute " + range.AttributeId
+                    + " shows " + Math.Max(0, specialTotal - specialMinimum)
+                    + " raised points but the draft allocated " + allocation.PriorityPoints;
+            }
+            specialSpent += allocation.PriorityPoints;
+        }
+        bool separateMagicProof = ExactCharacterSeparateMagicProof(attributes.SourceAnchorIds);
+        bool magAdeptTalent = prerequisite.TalentSelection is not null
+            && string.Equals(prerequisite.TalentSelection.Value, "Mystic Adept", StringComparison.Ordinal);
+        foreach (CharacterCreationAttributeAllocation adeptAllocation in attributes.Allocations)
+        {
+            if (!string.Equals(adeptAllocation.AttributeId, "MAGAdept", StringComparison.Ordinal))
+            {
+                continue;
+            }
+            if ((!separateMagicProof || !magAdeptTalent) && adeptAllocation.PriorityPoints != 0)
+            {
+                return prefix + "MAGAdept allocation " + adeptAllocation.PriorityPoints
+                    + " is not spendable: the separate-magic contract is not source-admitted";
+            }
+            if (!xmlTotals.TryGetValue(adeptAllocation.AttributeId, out int adeptTotal)
+                || !xmlMinimums.TryGetValue(adeptAllocation.AttributeId, out int adeptMinimum))
+            {
+                return prefix + "workspace is missing special attribute MAGAdept rows";
+            }
+            if (adeptTotal - adeptMinimum < adeptAllocation.PriorityPoints)
+            {
+                return prefix + "special attribute MAGAdept"
+                    + " shows " + Math.Max(0, adeptTotal - adeptMinimum)
+                    + " raised points but the draft allocated " + adeptAllocation.PriorityPoints;
+            }
+            specialSpent += adeptAllocation.PriorityPoints;
+        }
+        if (specialSpent != attributes.SpecialPointUsed)
+        {
+            return prefix + "special attribute budget spent " + specialSpent
+                + " does not match the draft's used " + attributes.SpecialPointUsed;
+        }
+        if (attributes.SpecialPointUsed > attributes.SpecialPointTotal)
+        {
+            return prefix + "special attribute budget spent " + attributes.SpecialPointUsed
+                + " exceeds the draft total " + attributes.SpecialPointTotal;
+        }
+        int normalAllocationSpend = attributes.Allocations
+            .Where(b => naturals.Contains(b.AttributeId, StringComparer.Ordinal))
+            .Sum(b => b.PriorityPoints);
+        if (normalAllocationSpend != attributes.NormalPointUsed)
+        {
+            return prefix + "normal allocation-backed spend " + normalAllocationSpend
+                + " does not match the draft's used " + attributes.NormalPointUsed;
+        }
+        if (prerequisite.TotalSpecialAttributePoints != attributes.SpecialPointTotal)
+        {
+            return prefix + "prerequisite draft special points "
+                + prerequisite.TotalSpecialAttributePoints
+                + " do not match the attributes draft total " + attributes.SpecialPointTotal;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// WIN-009 gen4 (REVIEW8769 U3): the only Core route that folds a Mystic
+    /// Adept power-point policy anchor into the attributes draft is
+    /// state.SeparateMagicPolicy, which CharacterCreationAttributesService
+    /// assigns ONLY when the prerequisite talent is Mystic Adept AND the
+    /// projected MysticAdeptPowerPointPolicy has UsesSeparateMagicAttribute
+    /// true AND policy integrity passes. Requiring the FULL policy anchor
+    /// triple (karmamysadpp + mysadeptsecondmagattribute +
+    /// priorityspellsasadeptpowers) against ONE settings base anchor
+    /// therefore proves the source-admitted separate-magic contract; absence
+    /// refuses instead of inferring authority from draft rows.
+    /// </summary>
+    private static bool ExactCharacterSeparateMagicProof(IEnumerable<string>? sourceAnchorIds)
+    {
+        if (sourceAnchorIds is null)
+        {
+            return false;
+        }
+        HashSet<string> anchors = new(sourceAnchorIds, StringComparer.Ordinal);
+        const string karmaSuffix = ":karmacost/karmamysadpp";
+        foreach (string anchor in anchors)
+        {
+            if (anchor.Length <= karmaSuffix.Length
+                || !anchor.EndsWith(karmaSuffix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+            string settingsBase = anchor[..^karmaSuffix.Length];
+            if (anchors.Contains(settingsBase + ":mysadeptsecondmagattribute")
+                && anchors.Contains(settingsBase + ":priorityspellsasadeptpowers"))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// WIN-009 gen3 (T772): mirrors Core CharacterCreationAttributesService.
+    /// HasSupportedSpecialAttributeAuthority so the exact-character checker
+    /// binds applicable special attributes (MAG/RES) to the same talent
+    /// contract the creation rules use, instead of inventing an unconditional
+    /// MAG/RES/ESS set.
+    /// </summary>
+    private static bool ExactCharacterSupportedSpecialAuthority(CharacterCreationPriorityTalentSelection? talent)
+    {
+        if (talent is null || talent.Depth is not null || talent.GrantedQualities is null)
+        {
+            return false;
+        }
+        if (string.Equals(talent.Value, "Mundane", StringComparison.Ordinal))
+        {
+            return talent.Magic is null && talent.Resonance is null && talent.GrantedQualities.Count == 0;
+        }
+        if (talent.GrantedQualities.Count != 1 || !string.Equals(talent.GrantedQualities[0], talent.Value, StringComparison.Ordinal))
+        {
+            return false;
+        }
+        return talent.Value switch
+        {
+            "Adept" or "Magician" or "Mystic Adept" or "Aspected Magician" =>
+                talent.Magic > 0 && talent.Resonance is null,
+            "Technomancer" => talent.Resonance > 0 && talent.Magic is null,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// WIN-009 gen2 (T747): single-attempt exact-character read. Same
+    /// binding, owner-capture, and post-await re-verification discipline as
+    /// the starter-attribute Once; on a verified read it classifies the XML
+    /// facts against the document's own finalization-archive drafts.
+    /// </summary>
+    private static async Task<ExactCharacterEvidence> ReadWorkspaceExactCharacterEvidenceOnceAsync(
+        string expectedRulesetId,
+        string? expectedWorkspaceId,
+        string? expectedHeritageRank,
+        string? expectedMetatypeName,
+        Func<CharacterWorkspaceId?> activeWorkspace,
+        Func<OwnerContextStamp> captureOwner,
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+            Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(expectedWorkspaceId))
+        {
+            return ExactCharacterEvidence.Failed("created workspace identity is missing");
+        }
+        if (NormalizeRulesetFamily(expectedRulesetId) != "sr5")
+        {
+            return ExactCharacterEvidence.Failed("exact character evidence requires the SR5 journey");
+        }
+        CharacterWorkspaceId? workspaceId = activeWorkspace();
+        if (workspaceId is null)
+        {
+            return ExactCharacterEvidence.Failed("no active workspace in overview snapshot");
+        }
+        if (!string.Equals(workspaceId.Value.Value, expectedWorkspaceId, StringComparison.Ordinal))
+        {
+            return ExactCharacterEvidence.Failed(
+                "workspace binding mismatch: overview reports " + workspaceId.Value.Value
+                + ", expected workspace was " + expectedWorkspaceId);
+        }
+
+        OwnerContextStamp owner = captureOwner();
+        if (!owner.IsValid)
+        {
+            return ExactCharacterEvidence.Failed("pre-await owner context is not valid");
+        }
+
+        CommandResult<WorkspaceDocumentSnapshot> read = await readWorkspace(
+            owner, workspaceId.Value, ct);
+        ct.ThrowIfCancellationRequested();
+
+        CharacterWorkspaceId? postAwaitWorkspace = activeWorkspace();
+        if (!string.Equals(
+                postAwaitWorkspace?.Value,
+                workspaceId.Value.Value,
+                StringComparison.Ordinal))
+        {
+            return ExactCharacterEvidence.Failed(
+                "workspace transitioned across the read await: pre=" + workspaceId.Value.Value
+                + " post=" + (postAwaitWorkspace?.Value ?? "null"));
+        }
+
+        OwnerContextStamp postAwaitOwner = captureOwner();
+        if (postAwaitOwner != owner)
+        {
+            return ExactCharacterEvidence.Failed(
+                "owner authority transitioned across the read await (revision "
+                + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")");
+        }
+
+        if (!read.Success || read.Outcome != WorkspaceOperationOutcome.Success
+            || read.Value?.Document is not { } document
+            || document.Format != WorkspaceDocumentFormat.NativeXml)
+        {
+            return ExactCharacterEvidence.Failed("workspace read failed or document is not NativeXml");
+        }
+        if (read.Value.Id != workspaceId.Value)
+        {
+            return ExactCharacterEvidence.Failed("workspace response does not match the expected workspace");
+        }
+        if (!RulesetFamilyMatches(document.RulesetId, expectedRulesetId, out string rulesetDiagnostic))
+        {
+            return ExactCharacterEvidence.Failed(rulesetDiagnostic);
+        }
+
+        XElement? root;
+        try
+        {
+            root = XDocument.Parse(document.State.Payload, LoadOptions.PreserveWhitespace).Root;
+        }
+        catch (System.Xml.XmlException parseFailure)
+        {
+            return ExactCharacterEvidence.Failed(
+                "workspace payload is not parseable XML: " + parseFailure.Message);
+        }
+        if (root is not { Name.LocalName: "character" })
+        {
+            return ExactCharacterEvidence.Failed("workspace payload root is not <character>");
+        }
+        if (root.Elements("gameedition").ToArray() is not [var edition]
+            || edition.HasElements || edition.HasAttributes)
+        {
+            return ExactCharacterEvidence.Failed("workspace requires exactly one scalar gameedition element");
+        }
+        string? documentEdition = edition.Value.Trim();
+        if (!DocumentEditionMatches(documentEdition, expectedRulesetId, out string editionDiagnostic))
+        {
+            return ExactCharacterEvidence.Failed(editionDiagnostic);
+        }
+
+        ExactCharacterRows parsed = ParseExactCharacterRows(root);
+        if (!parsed.Succeeded)
+        {
+            return ExactCharacterEvidence.Failed(parsed.Diagnostics);
+        }
+
+        WorkspaceDocumentAuxiliaryState auxiliary = document.AuxiliaryState;
+        CharacterCreationFinalizationArchive? archive = auxiliary.CharacterCreationFinalizationArchive;
+        CharacterCreationPrerequisiteDraft? prerequisite = archive?.State.CharacterCreationPrerequisiteDraft;
+        CharacterCreationAttributesDraft? attributes = archive?.State.CharacterCreationAttributesDraft;
+        string? verdict = ClassifyExactCharacterAgainstCreationDrafts(
+            parsed.Totals,
+            parsed.Minimums,
+            parsed.MetatypeName,
+            expectedHeritageRank,
+            expectedMetatypeName,
+            prerequisite,
+            attributes,
+            workspaceId.Value.Value);
+        if (verdict is not null)
+        {
+            return ExactCharacterEvidence.Failed(verdict);
+        }
+
+        CharacterCreationPriorityHeritageSelection heritage = prerequisite!.HeritageSelection!;
+        string heritageRank = prerequisite.Assignments
+            .FirstOrDefault(a => string.Equals(a.CategoryId, "heritage", StringComparison.Ordinal))?.Rank
+            ?? string.Empty;
+        return ExactCharacterEvidence.Match(
+            "exact match: metatype, heritage rank, every draft attribute, and both budgets verified",
+            heritage.MetatypeName,
+            heritage.MetatypeSourceId,
+            heritageRank,
+            attributes!.NormalPointTotal,
+            attributes.NormalPointUsed,
+            attributes.SpecialPointTotal,
+            attributes.SpecialPointUsed,
+            parsed.Totals,
+            parsed.Minimums);
+    }
+
+    /// <summary>
     /// Fixture-only funding used when the real manual-karma route refuses an
     /// SR6 dossier (the SR6 canonical settings profile never maps to a
     /// settings.xml row, so Core's exchange-rate gate cannot pass). This is
@@ -4280,13 +5753,250 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         return created;
     }
 
-        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSr6AdvanceLegAsync(
+        /// <summary>
+        /// WIN-009 gen7: dedicated creation-wizard cancel leg. Drives the
+        /// REAL new-character dialog to publish an SR5 draft, waits for the
+        /// creation wizard (owned window by default), verifies the footer
+        /// buttons occupy distinct grid columns (the wave-4 review defect),
+        /// then clicks the footer Cancel button through the real pointer route
+        /// and verifies the CancelRequested semantics: the owned window closes,
+        /// the wizard control is restored to the inline host with the footer
+        /// Cancel hidden, and the draft is PRESERVED for later resume.
+        /// </summary>
+        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseWizardCancelLegAsync(
             MainWindow window,
             DesktopMouseFirstJourneyContext context,
             List<string> steps,
             List<string> screenshotPaths,
             CancellationToken ct,
             Action recordPointerAction)
+        {
+            var assertions = new Dictionary<string, bool>();
+            try
+            {
+                await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
+                await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
+                await SetDialogTextFieldAsync(window, "newCharacterName", "Win109 Cancel Probe", steps, ct);
+                await SetDialogTextFieldAsync(window, "newCharacterAlias", "W109C", steps, ct);
+                await SetDialogSelectFieldAsync(
+                    window,
+                    "newCharacterRulesetId",
+                    "sr5",
+                    steps,
+                    ct,
+                    recordPointerAction,
+                    () => { },
+                    () => { });
+                await SetDialogSelectFieldAsync(
+                    window,
+                    "newCharacterBuildMethod",
+                    "Priority",
+                    steps,
+                    ct,
+                    recordPointerAction,
+                    () => { },
+                    () => { });
+                await ClickDialogActionUntilAsync(
+                    window,
+                    "create_character",
+                    steps,
+                    ct,
+                    recordPointerAction,
+                    "wizard-cancel draft published after create_character",
+                    () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+                    maxAttempts: 3,
+                    settleTimeout: WorkspacePublishedWaitTimeout);
+
+                // A draft workspace is published as soon as creation starts (the
+                // wizard edits the draft in place); capture its identity BEFORE
+                // cancel so the leg can prove what the cancel abandoned.
+                CharacterOverviewState draftSnapshot = window.SnapshotStateForAutomation();
+                string? draftWorkspaceId = draftSnapshot.WorkspaceId?.Value;
+                assertions["draft workspace published before cancel"] = draftWorkspaceId is not null;
+
+                CharacterCreationWizardControl wizard =
+                    await WaitForWizardControlAsync(window, steps, ct);
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-01-wizard-open");
+
+                // Wave-4 review defect: the footer grid had only five columns while
+                // FinalizeButton declared Grid.Column=5. Verify both final buttons
+                // share the last footer column and are never simultaneously visible,
+                // and that the Cancel button is a distinct visible footer button.
+                int finalizeColumn = Grid.GetColumn(wizard.FinalizeButton);
+                int finishAiColumn = Grid.GetColumn(wizard.FinishWithAiButton);
+                assertions["footer finalize and finish-ai share column 5"] =
+                    finalizeColumn == 5 && finishAiColumn == 5;
+                assertions["footer finalize and finish-ai not simultaneously visible"] =
+                    !(wizard.FinalizeButton.IsVisible && wizard.FinishWithAiButton.IsVisible);
+                assertions["footer cancel button visible"] = wizard.CancelButton.IsVisible;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-02-footer-columns");
+
+                // Click the footer Cancel button through the REAL pointer route
+                // (RoutePointerClickAsync) with click observation; only a DELIVERED
+                // press counts as the cancel action (gen16 pointer-honesty rule).
+                Button cancelButton = wizard.CancelButton;
+                assertions["footer cancel button is enabled"] = cancelButton.IsEffectivelyEnabled;
+                wizard.BringIntoView();
+                ForceHeadlessLayoutPump(wizard);
+                cancelButton.BringIntoView();
+                ForceHeadlessLayoutPump(cancelButton);
+
+                string cancelDiagnostics = await RoutePointerClickAsync(cancelButton, waitForClick: true);
+                PointerDeliveryResult cancelDelivery = ParsePointerDeliveryResult(cancelDiagnostics);
+                assertions["footer cancel press delivered"] =
+                    cancelDelivery.Kind == PointerDeliveryKind.Delivered;
+                recordPointerAction();
+                RecordStep(steps, $"wizard footer cancel press; {cancelDiagnostics}");
+
+                // Gen8 cancel semantics (MainWindow.CreationWizard.cs): in the
+                // default owned mode the wizard PARKS instead of returning to
+                // the inline host -- the owned window closes, the inline wizard
+                // is hidden, the safe park surface appears with the draft
+                // retained, and Resume re-opens the owned window for the SAME
+                // workspace. Poll for that end state.
+                bool cancelCompleted = false;
+                bool parkVisible = false;
+                bool inlineHidden = false;
+                bool ownedClosed = false;
+                for (int attempt = 0; attempt < 30 && !cancelCompleted; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    parkVisible = window.GetVisualDescendants()
+                        .OfType<Border>()
+                        .Any(border => border.Name == "CreationWizardParkPanel" && border.IsVisible);
+                    inlineHidden = !(FindWizardControl(window) is { IsVisible: true });
+                    ownedClosed = !(global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime cancelDesktop
+                        && cancelDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                            .Any(w => w.IsVisible));
+                    cancelCompleted = parkVisible && inlineHidden && ownedClosed;
+                }
+                assertions["wizard parked with owned window closed"] = cancelCompleted;
+                assertions["draft identity preserved after cancel"] =
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value == draftWorkspaceId;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-03-after-cancel");
+
+                // Real Resume: the park surface's Resume button re-opens the
+                // owned window for the same draft. Drive it through the real
+                // pointer route (pointer-honesty rule).
+                Button? resumeButton = window.GetVisualDescendants()
+                    .OfType<Button>()
+                    .FirstOrDefault(button => button.Name == "CreationWizardResumeButton" && button.IsVisible);
+                assertions["resume button visible on park surface"] = resumeButton is not null;
+                if (resumeButton is not null)
+                {
+                    resumeButton.BringIntoView();
+                    ForceHeadlessLayoutPump(resumeButton);
+                    string resumeDiagnostics = await RoutePointerClickAsync(resumeButton, waitForClick: true);
+                    PointerDeliveryResult resumeDelivery = ParsePointerDeliveryResult(resumeDiagnostics);
+                    assertions["resume press delivered"] =
+                        resumeDelivery.Kind == PointerDeliveryKind.Delivered;
+                    recordPointerAction();
+                    RecordStep(steps, $"park resume press; {resumeDiagnostics}");
+                }
+
+                bool resumed = false;
+                for (int attempt = 0; attempt < 30 && !resumed; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    CharacterCreationWizardControl? resumedWizard = FindWizardControl(window);
+                    bool ownedReopened = global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime resumeDesktop
+                        && resumeDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                            .Any(w => w.IsVisible);
+                    resumed = ownedReopened && resumedWizard is not null;
+                }
+                assertions["resume re-opened the owned wizard window"] = resumed;
+                assertions["draft identity preserved after resume"] =
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value == draftWorkspaceId;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-04-after-resume");
+
+                // Post-resume shell interaction: cancel the wizard again to
+                // prove the shell still accepts input and the park surface
+                // re-appears (round-trip).
+                CharacterCreationWizardControl? resumedWizardControl = FindWizardControl(window);
+                assertions["wizard control reachable after resume"] = resumedWizardControl is not null;
+                if (resumedWizardControl is not null)
+                {
+                    Button secondCancel = resumedWizardControl.CancelButton;
+                    secondCancel.BringIntoView();
+                    ForceHeadlessLayoutPump(secondCancel);
+                    string secondCancelDiagnostics = await RoutePointerClickAsync(secondCancel, waitForClick: true);
+                    PointerDeliveryResult secondCancelDelivery = ParsePointerDeliveryResult(secondCancelDiagnostics);
+                    assertions["second cancel press delivered"] =
+                        secondCancelDelivery.Kind == PointerDeliveryKind.Delivered;
+                    recordPointerAction();
+                    RecordStep(steps, $"second cancel press; {secondCancelDiagnostics}");
+                }
+
+                bool parkedAgain = false;
+                for (int attempt = 0; attempt < 30 && !parkedAgain; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    parkedAgain = window.GetVisualDescendants()
+                        .OfType<Border>()
+                        .Any(border => border.Name == "CreationWizardParkPanel" && border.IsVisible);
+                }
+                assertions["second cancel parks again"] = parkedAgain;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-05-second-park");
+
+                // Gen9 (finding 1) native route: a same-owner state refresh
+                // while parked must NOT reopen the wizard. Drive the real
+                // refresh seam and assert the park end-state survives.
+                await Dispatcher.UIThread.InvokeAsync(
+                    () => window.RefreshCreationWizardStateForAutomation());
+                bool stillParkedAfterRefresh = false;
+                bool ownedReopenedByRefresh = false;
+                for (int attempt = 0; attempt < 30 && !stillParkedAfterRefresh; attempt++)
+                {
+                    await Task.Delay(100, ct);
+                    stillParkedAfterRefresh = window.GetVisualDescendants()
+                        .OfType<Border>()
+                        .Any(border => border.Name == "CreationWizardParkPanel" && border.IsVisible);
+                    ownedReopenedByRefresh = global::Avalonia.Application.Current?.ApplicationLifetime
+                        is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime refreshDesktop
+                        && refreshDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                            .Any(w => w.IsVisible);
+                }
+                assertions["park survives same-owner refresh"] =
+                    stillParkedAfterRefresh && !ownedReopenedByRefresh;
+                assertions["draft identity preserved across refresh"] =
+                    window.SnapshotStateForAutomation().WorkspaceId?.Value == draftWorkspaceId;
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "wc-06-refresh-while-parked");
+
+                assertions["shell responsive after cancel"] = window.IsVisible;
+
+                RecordStep(steps, "wizard cancel leg completed");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                assertions["leg completed without exception"] = false;
+                Console.Error.WriteLine($"Wizard cancel leg exception: {ex}");
+            }
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "wizard-cancel-leg",
+                ScreenshotPaths: screenshotPaths,
+                Assertions: assertions,
+                InteractionNotes:
+                [
+                    "Creation wizard footer cancel leg: footer buttons verified in distinct grid columns, the footer Cancel press was delivered through the real pointer route, the wizard parked with the owned window closed and the draft identity preserved, Resume re-opened the owned window for the same draft, a second cancel parked again, and the shell stayed responsive."
+                ]);
+        }
+
+        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSr6AdvanceLegAsync(
+            MainWindow window,
+            DesktopMouseFirstJourneyContext context,
+            List<string> steps,
+            List<string> screenshotPaths,
+            CancellationToken ct,
+            Action recordPointerAction,
+            string characterName,
+            string characterAlias)
         {
         // Gen18 (T664/T672): the FINAL Body rank the natural-limit demo
         // committed - visible to the receipt write at the end of the leg
@@ -4304,8 +6014,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // on the resulting career workspace.
             await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
             await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
-            await SetDialogTextFieldAsync(window, "newCharacterName", "Win109 Sr6 Qualifier", steps, ct);
-            await SetDialogTextFieldAsync(window, "newCharacterAlias", "W09S6", steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterName", characterName, steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterAlias", characterAlias, steps, ct);
             await SetDialogSelectFieldAsync(
                 window,
                 "newCharacterRulesetId",
@@ -4898,27 +6608,33 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     $"sr6 advance leg: exact-debit assertion failed: karma {karmaBefore} -> {karmaAfter} but quoted cost {quotedKarmaCost}.");
             }
 
-            // The persisted natural rating after apply must equal the quoted
-            // target (the quote's TargetNaturalRating is what Core committed).
-            string naturalRatingAfter = string.Empty;
-            try
+            // Controller9415: the observed natural rating must be read from the
+            // loaded Core/native projection (the committed workspace document),
+            // asserted equal to the quote's target, and persisted as the
+            // operation's own fact. The old modal-detail scrape could return
+            // empty after modal close and had no equality assertion.
+            string? observedWorkspaceId = window.SnapshotStateForAutomation().WorkspaceId?.Value;
+            StarterAttributeEvidence observedAfterFirstOp = await ReadWorkspaceAttributeRankAsync(
+                window, observedWorkspaceId, "Body", ct);
+            if (observedAfterFirstOp.Sum <= 0
+                || observedAfterFirstOp.Sum != quotedTargetNaturalRating)
             {
-                naturalRatingAfter = await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    string detail = CaptureDialogTextForAutomation("sr6-career-attribute-advance-detail");
-                    var m = System.Text.RegularExpressions.Regex.Match(detail, @"natural (\d+)");
-                    return m.Success ? m.Groups[1].Value : string.Empty;
-                });
+                throw new InvalidOperationException(
+                    "sr6 advance leg: observed natural rating after the first apply (" + observedAfterFirstOp.Sum
+                    + ", " + observedAfterFirstOp.Diagnostics + ") does not equal the quoted target ("
+                    + quotedTargetNaturalRating + ").");
             }
-            catch (Exception)
-            {
-                naturalRatingAfter = string.Empty;
-            }
+            string naturalRatingAfter = observedAfterFirstOp.Sum.ToString(System.Globalization.CultureInfo.InvariantCulture);
             // Gen-9 item 2 (natural-limit rejection demo), gen-10 finding 2
             // semantics: drive Body advances until Core itself refuses with the
             // natural-maximum blocker. An arbitrary refusal or a disabled Apply
             // is NOT proof of the cap; the assertion is on Core's own quote
             // blocker text, plus karma unchanged across the blocked attempt.
+            // Gen9 (finding 6): every committed advance's own facts, written
+            // into the receipt's operations array so each operation stays
+            // internally coherent. Hoisted above the cap-loop block scope so
+            // the receipt site can consume it.
+            var sr6CapOperations = new List<(int From, int To, int Cost, int KarmaBefore, int KarmaAfter)>();
             bool naturalLimitRejected = false;
             Func<string> readCapQuoteText = () =>
             {
@@ -5027,21 +6743,64 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} control absent");
                                 continue;
                             }
-                            try
+                            // Controller9415 gen10: the post-apply workspace
+                            // republish can RESET the section host's selected
+                            // tab after this click lands (gen10s evidence:
+                            // host ended on Character Card). Tab navigation
+                            // cannot commit character state, so re-pressing
+                            // the same candidate after an outcome miss is
+                            // safe - no possible delivery of a committed
+                            // command.
+                            bool rowFound = false;
+                            for (int walkPress = 1; walkPress <= 3 && !rowFound; walkPress++)
                             {
-                                await RoutePointerClickAsync(tabControl);
+                                string walkRouting;
+                                try
+                                {
+                                    walkRouting = await RoutePointerClickResolvedAsync(
+                                        tabControl,
+                                        waitForClick: false,
+                                        liveTarget: () => FindVisiblePrimaryNavigationControl(window, candidateTabId));
+                                }
+                                catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
+                                {
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} not clickable (press {walkPress}, {walkFailure.GetType().Name}: {walkFailure.Message})");
+                                    continue;
+                                }
+                                // Controller9568: a re-press of the same tab
+                                // candidate requires an EXPLICIT NON-DELIVERY
+                                // (pre-press not-live: nothing was raised) or an
+                                // OBSERVED DE-SELECTION (the walk outcome below
+                                // re-presses only when the row is still absent -
+                                // i.e. the tab de-selected itself via the
+                                // republish reset). No blind re-press.
+                                PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
+                                if (walkDelivery.Kind == PointerDeliveryKind.NotDelivered
+                                    && !walkRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+                                {
+                                    // Delivered=false without the pre-press
+                                    // reason: the press MIGHT have delivered
+                                    // (probe passed, activation unseen). Treat
+                                    // the outcome wait as the delivery verdict;
+                                    // the existing row-wait below is that
+                                    // observation. Do not fail here.
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} routing not delivered without pre-press reason ({walkRouting.Split(';')[0]}); relying on the outcome wait");
+                                }
+                                recordPointerAction();
+                                RecordStep(steps, $"sr6 natural-limit tab walk: clicked {candidateTabId} (press {walkPress})");
+                                if (await WaitForConditionWithinAsync(
+                                        () => FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD") is not null,
+                                        ct,
+                                        TimeSpan.FromSeconds(10)))
+                                {
+                                    rowFound = true;
+                                }
+                                else
+                                {
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} pressed but row absent after wait (press {walkPress}) - possible republish tab reset");
+                                }
                             }
-                            catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
-                            {
-                                RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} not clickable ({walkFailure.GetType().Name}: {walkFailure.Message})");
-                                continue;
-                            }
-                            recordPointerAction();
-                            RecordStep(steps, $"sr6 natural-limit tab walk: clicked {candidateTabId}");
-                            if (await WaitForConditionWithinAsync(
-                                    () => FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD") is not null,
-                                    ct,
-                                    TimeSpan.FromSeconds(10)))
+                            if (rowFound)
                             {
                                 limitRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
                                 break;
@@ -5151,6 +6910,81 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 + "sr6_attribute_natural_limit refusal (" + capBindingDiag + ").");
                         }
                         await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
+                        // Item 3: demonstrate the modal at a narrow (resized) window
+                        // size - readable content, complete actions. Resize the
+                        // live modal, pump, capture, then restore before the
+                        // hardened cancel press.
+                        decimal narrowWidth = await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            double before = advanceWindow.Width;
+                            advanceWindow.Width = 360;
+                            return (decimal)before;
+                        });
+                        await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(advanceWindow));
+                        // Controller9534: a width360 capture alone does not
+                        // prove unclipped actions. Assert the real geometry:
+                        // BOTH action buttons must be present, effectively
+                        // visible, and their bounds must sit fully inside the
+                        // window client rectangle at the narrow size.
+                        (bool unclippedOk, string unclippedDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            Button? narrowApply = FindInWindow<Button>(advanceWindow, "sr6-career-attribute-advance-apply");
+                            Button? narrowCancel = FindInWindow<Button>(advanceWindow, "sr6-career-attribute-advance-cancel");
+                            if (narrowApply is null || narrowCancel is null)
+                            {
+                                return (false, "missing action buttons at narrow width (apply="
+                                    + (narrowApply is not null) + ", cancel=" + (narrowCancel is not null) + ")");
+                            }
+                            if (!narrowApply.IsEffectivelyVisible || !narrowCancel.IsEffectivelyVisible)
+                            {
+                                return (false, "action buttons not effectively visible at narrow width (apply="
+                                    + narrowApply.IsEffectivelyVisible + ", cancel=" + narrowCancel.IsEffectivelyVisible + ")");
+                            }
+                            Point? applyTopLeftNullable = narrowApply.TranslatePoint(default, advanceWindow);
+                            Point? cancelTopLeftNullable = narrowCancel.TranslatePoint(default, advanceWindow);
+                            if (applyTopLeftNullable is null || cancelTopLeftNullable is null)
+                            {
+                                return (false, "TranslatePoint returned null at narrow width (apply="
+                                    + (applyTopLeftNullable is not null) + ", cancel=" + (cancelTopLeftNullable is not null) + ")");
+                            }
+                            if (narrowApply.Bounds.Width <= 0 || narrowApply.Bounds.Height <= 0
+                                || narrowCancel.Bounds.Width <= 0 || narrowCancel.Bounds.Height <= 0)
+                            {
+                                return (false, "nonpositive action bounds at narrow width (apply="
+                                    + narrowApply.Bounds.Width + "x" + narrowApply.Bounds.Height
+                                    + ", cancel=" + narrowCancel.Bounds.Width + "x" + narrowCancel.Bounds.Height + ")");
+                            }
+                            Point applyTopLeft = applyTopLeftNullable.Value;
+                            Point applyBottomRight = applyTopLeft + new Vector(narrowApply.Bounds.Width, narrowApply.Bounds.Height);
+                            Point cancelTopLeft = cancelTopLeftNullable.Value;
+                            Point cancelBottomRight = cancelTopLeft + new Vector(narrowCancel.Bounds.Width, narrowCancel.Bounds.Height);
+                            Rect client = new Rect(default, new Size(advanceWindow.Bounds.Width, advanceWindow.Bounds.Height));
+                            if (!client.Contains(applyTopLeft) || !client.Contains(applyBottomRight))
+                            {
+                                return (false, "apply action clipped at narrow width (bounds "
+                                    + applyTopLeft + ".." + applyBottomRight + " vs client " + client + ")");
+                            }
+                            if (!client.Contains(cancelTopLeft) || !client.Contains(cancelBottomRight))
+                            {
+                                return (false, "cancel action clipped at narrow width (bounds "
+                                    + cancelTopLeft + ".." + cancelBottomRight + " vs client " + client + ")");
+                            }
+                            return (true, "apply@" + applyTopLeft + ".." + applyBottomRight
+                                + " cancel@" + cancelTopLeft + ".." + cancelBottomRight
+                                + " client=" + client.Width.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + "x"
+                                + client.Height.ToString("F0", System.Globalization.CultureInfo.InvariantCulture));
+                        });
+                        if (!unclippedOk)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: narrow-size modal does not prove unclipped actions: "
+                                + unclippedDiag);
+                        }
+                        string narrowShot = await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06e-sr6-narrow-size");
+                        await Dispatcher.UIThread.InvokeAsync(() => advanceWindow.Width = (double)narrowWidth);
+                        await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(advanceWindow));
+                        RecordStep(steps, "sr6 natural-limit: captured narrow-size modal (06e-sr6-narrow-size, width 360, actions verified unclipped: "
+                            + unclippedDiag + ")");
                         // Cancel the blocked dialog: no apply is possible and no mutation may occur.
                         // Gen17 (Controller8300, T659): this is the branch the
                         // gen16 phaseA receipt proved EXECUTED, and it still
@@ -5688,6 +7522,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     lastCommittedTargetRating = capTo;
                     sr6FinalCommittedTargetRating = capTo;
                     lastCommittedCost = capCost;
+                    sr6CapOperations.Add((capFrom, capTo, capCost, karmaBeforeVal, karmaAfterVal));
                 }
 
                 if (!reachedCap)
@@ -5741,6 +7576,235 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 naturalLimitRejected = true;
             }
 
+            // Item 3: keyboard navigation + Escape affordance proof on the
+            // affected wizard. Body sits at its natural cap by this point
+            // in the journey, so its improve row no longer renders; target
+            // the non-capped Agility row instead. Open one fresh modal,
+            // capture it at its ordinary size, then close it with the
+            // Escape key (routed KeyDown) and prove a no-mutation closure.
+            Button? escRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+            if (escRow is null)
+            {
+                foreach (string candidateTabId in CareerRewardsTabCandidates)
+                {
+                    // The strict section-JSON render-wait inside
+                    // ClickSummaryNavigationTabAsync can outrun the SR6
+                    // attributes publication; the leg only needs the parity
+                    // row controls, so click the tab directly and poll for
+                    // the improve row with its own budget.
+                    Control? tabControl = FindVisiblePrimaryNavigationControl(window, candidateTabId);
+                    if (tabControl is null)
+                    {
+                        RecordStep(steps, $"sr6 keyboard leg tab walk: {candidateTabId} control absent");
+                        continue;
+                    }
+
+                    // Controller9415 gen10: press through the resolved route
+                    // with a live re-resolver, and accept by OUTCOME (the
+                    // AGI row rendering) like every other navigation leg.
+                    // A TabItem does not raise Button.ClickEvent, so the
+                    // post-raise Click probe is structurally blind here - the
+                    // routing string is used ONLY for its pre-press not-live
+                    // verdict (nothing delivered - safe to retry), never as
+                    // an acceptance gate.
+                    bool tabWalked = false;
+                    for (int walkAttempt = 1; walkAttempt <= 3 && !tabWalked; walkAttempt++)
+                    {
+                        string walkRouting;
+                        try
+                        {
+                            walkRouting = await RoutePointerClickResolvedAsync(
+                                tabControl,
+                                waitForClick: true,
+                                liveTarget: () => FindVisiblePrimaryNavigationControl(window, candidateTabId));
+                        }
+                        catch (Exception walkFault)
+                        {
+                            // Controller9539: a thrown routing fault must not
+                            // be swallowed and re-tried - the press may have
+                            // delivered. Fail closed.
+                            throw new InvalidOperationException(
+                                "sr6 keyboard leg tab walk failed on " + candidateTabId
+                                + ": " + walkFault.Message, walkFault);
+                        }
+                        PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
+                        if (walkDelivery.Kind == PointerDeliveryKind.NotDelivered
+                            && walkRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+                        {
+                            // NOTHING was delivered: settle and retry the
+                            // same candidate (bounded). No re-press after a
+                            // possible delivery is possible here because the
+                            // result asserts no input was raised.
+                            RecordStep(
+                                steps,
+                                $"sr6 keyboard leg tab walk: {candidateTabId} not live at press attempt {walkAttempt} ({walkRouting}); settling before retry");
+                            await Task.Delay(250, ct);
+                            continue;
+                        }
+                        // Delivered or any other not-delivered kind: let the
+                        // outcome decide (navigation cannot commit state).
+                        recordPointerAction();
+                        RecordStep(steps, $"sr6 keyboard leg tab walk: pressed {candidateTabId} ({walkRouting.Split(';')[0]})");
+                        tabWalked = true;
+                    }
+                    if (!tabWalked)
+                    {
+                        RecordStep(
+                            steps,
+                            $"sr6 keyboard leg tab walk: {candidateTabId} never live at press after 3 attempts; trying next candidate");
+                        continue;
+                    }
+                    if (await WaitForConditionWithinAsync(
+                            () => FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI") is not null,
+                            ct,
+                            TimeSpan.FromSeconds(10)))
+                    {
+                        escRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                        break;
+                    }
+                }
+            }
+            if (escRow is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the AttributeImprove_AGI row is not visible on any candidate tab for the Escape-close proof.");
+            }
+            List<string> initiatingFocusLog = new List<string>();
+            // State publications rebuild the parity rows, so re-find a fresh
+            // TopLevel-rooted reference for each press attempt (the same
+            // bounded retry the natural-limit leg uses).
+            // Controller9539: the open press runs through the 9415 delivery-discipline
+            // core - only an explicit PRE-press target-not-live result retries
+            // the press; any other not-delivered result or a thrown fault fails
+            // closed; the modal is observed ONCE after delivery and a slow
+            // observation NEVER re-presses a possibly-committed command.
+            Sr6CareerAttributeAdvanceWindow? escWindow =
+                await PressThenObserveWithDeliveryDisciplineAsync<Sr6CareerAttributeAdvanceWindow>(
+                    () => PressImproveRowWithDeliveryDisciplineAsync(
+                        window, "AttributeImprove_AGI", steps, ct, recordPointerAction, initiatingFocusLog),
+                    async () =>
+                    {
+                        bool opened = await WaitForConditionWithinAsync(
+                            () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
+                            ct,
+                            TimeSpan.FromSeconds(8));
+                        if (!opened)
+                        {
+                            return null;
+                        }
+                        return await Dispatcher.UIThread.InvokeAsync(ResolveSingleAdvanceWindow);
+                    },
+                    async () => await Dispatcher.UIThread.InvokeAsync(ResolveSingleAdvanceWindow),
+                    message => RecordStep(steps, message),
+                    maxNotLiveRetries: 3,
+                    failContext: "sr6 keyboard leg",
+                    ct);
+            if (escWindow is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: exactly one visible active advance window could not be resolved for the Escape-close proof.");
+            }
+            await Dispatcher.UIThread.InvokeAsync(() => escWindow.Focus());
+            await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(escWindow));
+            string escOrdinaryShot = await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06f-sr6-keyboard-ordinary");
+            decimal escKarmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
+            decimal escNuyenBefore = ReadCareerRewardsNuyenBalance(sectionHost);
+            long escRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
+            // Controller9547: the initiating focus was ARRANGED and OBSERVED
+            // pre-open inside the press helper - the modal is focus-trapped
+            // while visible, so the row behind it cannot be probed now
+            // (gen10t evidence: rowIsFocused=False under the open modal).
+            // Verify the recorded pre-open observation instead of probing the
+            // row under the modal, then press Escape.
+            if (initiatingFocusLog.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the press helper recorded no initiating-focus observation.");
+            }
+            string initiatingFocus = initiatingFocusLog[initiatingFocusLog.Count - 1];
+            if (!initiatingFocus.StartsWith("arranged:", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the Agility improve row did not hold initiating focus before the modal opened ("
+                    + initiatingFocus + ").");
+            }
+            RecordStep(steps, "sr6 keyboard leg: initiating focus verified pre-open on the Agility row (" + initiatingFocus + ")");
+            await Dispatcher.UIThread.InvokeAsync(() => SendKeyStroke(escWindow, Key.Escape, KeyModifiers.None));
+            RecordStep(steps, "sr6 keyboard leg: pressed Escape on the advance modal");
+            bool escClosed = await WaitForConditionWithinAsync(
+                () => ResolveSingleAdvanceWindow() is null,
+                ct,
+                TimeSpan.FromSeconds(10));
+            if (!escClosed)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the advance window did not close after the Escape key press.");
+            }
+            // Controller9415: the Escape-close press already happened exactly
+            // once; what follows is an OUTCOME observation, never a re-press.
+            // The product restores the initiating focus on its next dispatcher
+            // pass after the modal's close sequence unwinds, so observe the
+            // focus return boundedly instead of single-shot (gen10v evidence:
+            // the single-shot read landed before the restore took effect).
+            (bool focusReturned, string focusDiag) = (false, "focus-return observation never ran");
+            DateTimeOffset focusReturnDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+            while (DateTimeOffset.UtcNow < focusReturnDeadline)
+            {
+                ct.ThrowIfCancellationRequested();
+                (focusReturned, focusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    Button? rowAfterEscape = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                    if (rowAfterEscape is null)
+                    {
+                        return (false, "the Agility improve row no longer renders after the modal close");
+                    }
+                    if (!rowAfterEscape.IsEffectivelyVisible)
+                    {
+                        return (false, "the Agility improve row is not effectively visible after the modal close");
+                    }
+                    bool focused = rowAfterEscape.IsFocused || rowAfterEscape.IsKeyboardFocusWithin;
+                    string focusOwner = "none";
+                    try
+                    {
+                        Control? focusedElement = window.FocusManager?.GetFocusedElement() as Control;
+                        focusOwner = focusedElement is null
+                            ? "none"
+                            : focusedElement.GetType().Name
+                                + (string.IsNullOrEmpty(focusedElement.Name) ? string.Empty : ":" + focusedElement.Name);
+                    }
+                    catch (Exception)
+                    {
+                        focusOwner = "unknown";
+                    }
+                    return (focused, "rowIsFocused=" + rowAfterEscape.IsFocused
+                        + " keyboardFocusWithin=" + rowAfterEscape.IsKeyboardFocusWithin
+                        + " focusOwner=" + focusOwner);
+                });
+                if (focusReturned)
+                {
+                    break;
+                }
+                await Task.Delay(PollInterval);
+            }
+            if (!focusReturned)
+            {
+                string restoreDiag = string.Join("|", MainWindow.Sr6FocusRestoreDiagnostics.Snapshot());
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: focus did not return to the underlying route after the Escape close ("
+                    + focusDiag + "; restoreDiag=" + restoreDiag + ").");
+            }
+            RecordStep(steps, "sr6 keyboard leg: focus returned to the Agility route after the Escape close (" + focusDiag + ")");
+            decimal escKarmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
+            decimal escNuyenAfter = ReadCareerRewardsNuyenBalance(sectionHost);
+            long escRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+            if (escKarmaBefore != escKarmaAfter || escNuyenBefore != escNuyenAfter || escRevisionBefore != escRevisionAfter)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: Escape closure mutated balances/revision "
+                    + $"(karma {escKarmaBefore}->{escKarmaAfter}, nuyen {escNuyenBefore}->{escNuyenAfter}, revision {escRevisionBefore}->{escRevisionAfter}).");
+            }
+            RecordStep(steps, "sr6 keyboard leg: Escape closed the modal cleanly (balances/revision unchanged)");
+
 
             // 8066 acceptance leg: adjust nuyen through the real CareerRewardsWindow
             // nuyen route (Gain default) and verify the balance moved.
@@ -5783,9 +7847,19 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 sr6WorkspaceId,
                 attributeId: "Body",
                 quotedKarmaCost: quotedKarmaCost,
-                quotedTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : quotedTargetNaturalRating,
-                naturalRatingAfter: string.IsNullOrEmpty(naturalRatingAfter) ? null : naturalRatingAfter,
+                // Gen10 item 4 (Controller9350): top-level receipt fields must
+                // describe the FIRST operation's own facts so they pair with
+                // karmaBefore/karmaAfter/quotedKarmaCost (also first-op). The
+                // final committed target stays separately named in
+                // finalTargetNaturalRating for the cold-reopen phaseB check.
+                quotedTargetNaturalRating: quotedTargetNaturalRating,
+                // Controller9415: persist the OBSERVED first-operation natural
+                // rating (read from the loaded projection and asserted equal to
+                // the quote) - never a copy of the quote.
+                naturalRatingAfter: naturalRatingAfter,
                 nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
+                operations: BuildSr6AdvanceOperations(karmaBefore, karmaAfter, quotedKarmaCost, quotedBodyCardText, sr6FinalCommittedTargetRating, sr6CapOperations),
+                finalTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : null,
                 savedRevision: window.SnapshotStateForAutomation().ContentRevision is { } savedRev && savedRev > 0 ? (int?)savedRev : null);
             RecordStep(steps, $"sr6 advance receipt written (workspaceId={sr6WorkspaceId ?? "none"})");
 
@@ -5805,10 +7879,45 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 },
                 InteractionNotes:
                 [
-                    $"SR6 career attribute advancement round trip: the AttributeImprove_BOD row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative advancement service (karma {karmaBefore} -> {karmaAfter}), the reopened editor dialog was cancelled, and the file menu save persisted the workspace."
+                    $"SR6 career attribute advancement round trip: the AttributeImprove_BOD row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative advancement service (karma {karmaBefore} -> {karmaAfter}). The Apply-close did not auto-reopen the dialog; a fresh Advance (where exercised) opens the next operation explicitly, and the file menu save persisted the workspace."
                 ]);
         }
 
+
+        /// <summary>
+        /// Gen9 (WIN-009 finding 6): builds the per-operation advance records.
+        /// Operation 1 is the wizard-stage advance (its karma facts are the
+        /// receipt's top-level karmaBefore/karmaAfter), followed by every
+        /// natural-limit demo advance. Each entry is internally coherent;
+        /// the last entry's RankAfter equals finalTargetNaturalRating.
+        /// </summary>
+        private static System.Collections.Generic.List<global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt> BuildSr6AdvanceOperations(
+            decimal firstKarmaBefore,
+            decimal firstKarmaAfter,
+            int firstQuotedCost,
+            string firstQuoteCardText,
+            int finalTargetNaturalRating,
+            System.Collections.Generic.IReadOnlyList<(int From, int To, int Cost, int KarmaBefore, int KarmaAfter)> capOperations)
+        {
+            var operations = new System.Collections.Generic.List<global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt>();
+            int firstFrom = 0;
+            var firstMatch = System.Text.RegularExpressions.Regex.Match(
+                firstQuoteCardText ?? string.Empty,
+                @"(\d+)\s*->\s*(\d+)\s*\|\s*(\d+) karma");
+            if (firstMatch.Success)
+            {
+                firstFrom = int.Parse(firstMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+            }
+            operations.Add(new global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt(
+                1, "Body", firstFrom, firstQuotedCost > 0 && firstMatch.Success ? int.Parse(firstMatch.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture) : firstFrom,
+                firstQuotedCost, (int)firstKarmaBefore, (int)firstKarmaAfter));
+            foreach (var cap in capOperations)
+            {
+                operations.Add(new global::Chummer.Desktop.Runtime.DesktopMouseFirstJourneyRuntime.Sr6AdvanceOperationReceipt(
+                    operations.Count + 1, "Body", cap.From, cap.To, cap.Cost, cap.KarmaBefore, cap.KarmaAfter));
+            }
+            return operations;
+        }
 
         private static System.Collections.Generic.IEnumerable<Sr6CreationWizardWindow> VisibleSr6WizardWindows()
         {
@@ -5944,11 +8053,48 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // finalize through a wizard that does not surface a tradition editor.
             const string MetatypeIdForAssignedRank = "dwarf";
             const string TalentIdForAssignedRank = "adept";
+            // Controller9415 gen10: the foundation step's ListBoxes materialize
+            // with the step-2 render, the same publication race the priority
+            // step's combo wait already handles. Wait with the same bounded
+            // retry + wizard-state diagnostics instead of a single-shot read.
+            bool foundationReady = false;
+            for (int attempt = 0; attempt < 3 && !foundationReady; attempt++)
+            {
+                foundationReady = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<ListBox>().Count() >= 2,
+                    ct,
+                    TimeSpan.FromSeconds(15));
+                if (foundationReady)
+                {
+                    break;
+                }
+                string foundationDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    var counterId = "sr6-creation-wizard-step-counter";
+                    var visibleWizards = ((global::Avalonia.Application.Current?.ApplicationLifetime
+                        is IClassicDesktopStyleApplicationLifetime diagDesktop)
+                        ? diagDesktop.Windows.OfType<Sr6CreationWizardWindow>() : []).
+                        Select(w =>
+                        {
+                            var counterText = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), counterId, StringComparison.Ordinal))?.Text ?? "?";
+                            var authorityText = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text ?? "?";
+                            var footerText = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text ?? "?";
+                            var stepTitle = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-step-title", StringComparison.Ordinal))?.Text ?? "?";
+                            return w.IsVisible.ToString() + "/" + counterText + "/title=" + stepTitle + "/authority=" + authorityText + "/footer=" + footerText;
+                        });
+                    return "attempt " + attempt.ToString() + ": wizards=[" + string.Join(",", visibleWizards) + "]";
+                });
+                RecordStep(steps, $"sr6 wizard: foundation ListBoxes wait miss {foundationDiag}");
+            }
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 var lists = Active().GetVisualDescendants().OfType<ListBox>().ToList();
                 if (lists.Count < 2)
-                    throw new InvalidOperationException("sr6 wizard: foundation ListBoxes not found");
+                    throw new InvalidOperationException("sr6 wizard: foundation ListBoxes not found after wait");
                 var metatypeItems = lists[0].Items.OfType<string>().ToList();
                 var talentItems = lists[1].Items.OfType<string>().ToList();
                 string? metatypeId = metatypeItems.FirstOrDefault(item => string.Equals(item, MetatypeIdForAssignedRank, StringComparison.Ordinal))
@@ -6262,7 +8408,36 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         automationId,
                         StringComparison.Ordinal) && b.IsVisible)
                 ?? throw new InvalidOperationException($"sr6 wizard: footer button {automationId} not visible"));
-            await RoutePointerClickAsync(button, waitForClick: true);
+            // Controller9415 gen10: the footer press must account for its own
+            // delivery. A pre-press not-live report means NO input was raised
+            // (safe to retry after a settle); anything delivered must never
+            // be re-pressed.
+            string footerRouting;
+            for (int footerAttempt = 1; ; footerAttempt++)
+            {
+                footerRouting = await RoutePointerClickAsync(button, waitForClick: true);
+                PointerDeliveryResult footerDelivery = ParsePointerDeliveryResult(footerRouting);
+                if (footerDelivery.Kind == PointerDeliveryKind.NotDelivered
+                    && footerRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+                {
+                    if (footerAttempt >= 3)
+                    {
+                        throw new InvalidOperationException(
+                            $"sr6 wizard: footer {automationId} not live at press after {footerAttempt} attempts: {footerRouting}");
+                    }
+                    RecordStep(steps, $"sr6 wizard: footer {automationId} not live at press attempt {footerAttempt} - settling before retry");
+                    await Task.Delay(250, ct);
+                    button = await Dispatcher.UIThread.InvokeAsync(() =>
+                        W().GetVisualDescendants().OfType<Button>()
+                            .FirstOrDefault(b => string.Equals(
+                                AutomationProperties.GetAutomationId(b),
+                                automationId,
+                                StringComparison.Ordinal) && b.IsVisible)
+                        ?? throw new InvalidOperationException($"sr6 wizard: footer button {automationId} not visible on retry"));
+                    continue;
+                }
+                break;
+            }
             recordPointerAction();
             // Wait until the counter text changes or the window closes.
             try
@@ -6289,7 +8464,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 RecordStep(steps, $"sr6 wizard: footer {automationId} counter wait skipped ({walkFailure.Message})");
             }
 
-            RecordStep(steps, $"sr6 wizard: footer {automationId} clicked");
+            RecordStep(steps, $"sr6 wizard: footer {automationId} clicked ({footerRouting.Split(';')[0]})");
         }
 
         private static Button? FindVisibleCareerRewardsButton(MainWindow window, string buttonName)
@@ -7139,6 +9314,169 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             ct);
     }
 
+    /// <summary>
+    /// Controller9543 fictional-magician export checkpoint (T857): the bundled
+    /// Soma-Career.chum5 sample IS a current SR5 Career magician (magician=True,
+    /// Hermetic tradition, 10 learned spells incl. 5 sustained-duration spells
+    /// with real SR5/SG sources). The leg imports it through the production
+    /// import coordinator, saves it through the product save command (durable
+    /// state-root save), then drives the native .chum5 Save-As download and the
+    /// portable export dialog download to disk, verifying both payloads carry
+    /// the magician markers and sustained spells before the receipt is written.
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseMagicianExportLegAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string exportDirectory = Directory.CreateTempSubdirectory("chummer-journey-magician-export").FullName;
+        string? savedSaveAsPath = null;
+        string? savedExportPath = null;
+        MainWindowDesktopFileCoordinator.SaveDownloadOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, request.Download.FileName);
+            File.WriteAllBytes(targetPath, Convert.FromBase64String(request.Download.ContentBase64));
+            savedSaveAsPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Saved native .chum5 to {request.Download.FileName}."));
+        };
+        MainWindowDesktopFileCoordinator.SaveExportOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, request.Export.FileName);
+            File.WriteAllBytes(targetPath, Convert.FromBase64String(request.Export.ContentBase64));
+            savedExportPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Exported workspace bundle to {request.Export.FileName}."));
+        };
+        try
+        {
+            await CloseWorkspaceAndLoadCareerSampleAsync(window, steps, ct, recordPointerAction);
+            RecordStep(steps, "magician export: bundled SR5 Career magician sample imported");
+
+            // Save the imported magician workspace through the product save
+            // command so a current Windows-saved document exists in the durable
+            // state root (the "Windows-saved" requirement). Settled means the
+            // workspace content revision equals the persisted revision and the
+            // persisted revision is positive.
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "magician workspace save settled (ContentRevision == SavedRevision > 0)",
+                () =>
+                {
+                    CharacterOverviewState snap = window.SnapshotStateForAutomation();
+                    return snap.SavedRevision > 0 && snap.ContentRevision == snap.SavedRevision;
+                },
+                ct);
+            long savedRevisionAfterSave = window.SnapshotStateForAutomation().SavedRevision;
+            RecordStep(steps, $"magician export: saved revision {savedRevisionAfterSave}");
+
+            // Native .chum5 Save-As download: File menu > "Save Dossier As..."
+            // command > presenter DownloadAsync > PendingDownload dispatch >
+            // SaveDownloadOverride writes the native document to disk.
+            await ClickFileMenuCommandAsync(window, "save_character_as", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "native .chum5 save-as payload materialized on disk",
+                () => savedSaveAsPath is not null && File.Exists(savedSaveAsPath),
+                ct);
+            string saveAsXml = File.ReadAllText(savedSaveAsPath!);
+            bool saveAsHasMagician = saveAsXml.Contains("<magician>True</magician>", StringComparison.Ordinal);
+            bool saveAsHasTradition = saveAsXml.Contains("Hermetic", StringComparison.Ordinal);
+            int saveAsSustained = System.Text.RegularExpressions.Regex.Matches(
+                saveAsXml, System.Text.RegularExpressions.Regex.Escape("<duration>S</duration>")).Count;
+            int saveAsSpellCount = System.Text.RegularExpressions.Regex.Matches(
+                saveAsXml, System.Text.RegularExpressions.Regex.Escape("<spell>")).Count;
+            List<string> sustainedNames = new List<string>();
+            foreach (System.Text.RegularExpressions.Match spellBlock in System.Text.RegularExpressions.Regex.Matches(
+                saveAsXml, "<spell>(?s).*?</spell>"))
+            {
+                if (!spellBlock.Value.Contains("<duration>S</duration>", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                System.Text.RegularExpressions.Match nameMatch = System.Text.RegularExpressions.Regex.Match(
+                    spellBlock.Value, "<name>(.*?)</name>");
+                if (nameMatch.Success)
+                {
+                    sustainedNames.Add(nameMatch.Groups[1].Value);
+                }
+            }
+            RecordStep(steps, $"magician export: save-as payload magician={saveAsHasMagician} sustainedSpells={saveAsSustained} totalSpells={saveAsSpellCount} sustainedNames=[{string.Join(", ", sustainedNames)}]");
+
+            // Portable export: File menu > "Export Dossier..." > dialog >
+            // Download action > presenter ExportAsync > SaveExportOverride.
+            await ClickFileMenuCommandAsync(window, "export_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.export_character", steps, ct);
+            await ClickDialogActionUntilAsync(
+                window,
+                "download",
+                steps,
+                ct,
+                recordPointerAction,
+                "export bundle materialized through the download override",
+                () => savedExportPath is not null && File.Exists(savedExportPath));
+            string exportJson = File.ReadAllText(savedExportPath!);
+            bool exportIsJson = exportJson.TrimStart().StartsWith("{", StringComparison.Ordinal);
+            bool exportHasMagicianProfile = System.Text.RegularExpressions.Regex.IsMatch(
+                exportJson, @"""Magician""\s*:\s*true", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            bool exportHasMagEnabled = System.Text.RegularExpressions.Regex.IsMatch(
+                exportJson, @"""MagEnabled""\s*:\s*true", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            bool exportHasCreatedMarker = System.Text.RegularExpressions.Regex.IsMatch(
+                exportJson, @"""Created""\s*:\s*true", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            RecordStep(steps, $"magician export: portable dossier json={exportIsJson} magicianProfile={exportHasMagicianProfile} magEnabled={exportHasMagEnabled} created={exportHasCreatedMarker} (the dossier format carries the magician profile closure; the learned-spell inventory lives in the native .chum5 payload)");
+
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07-magician-export-after");
+
+            DesktopMouseFirstJourneyRuntime.WriteMagicianExportReceipt(
+                workspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                savedRevision: savedRevisionAfterSave > 0 ? savedRevisionAfterSave : null,
+                saveAsFileName: Path.GetFileName(savedSaveAsPath!),
+                saveAsBytes: new FileInfo(savedSaveAsPath!).Length,
+                exportFileName: Path.GetFileName(savedExportPath!),
+                exportBytes: new FileInfo(savedExportPath!).Length,
+                rulesetId: "sr5",
+                sourceSample: "Samples/Legacy/Soma-Career.chum5",
+                sustainedSpellCount: saveAsSustained,
+                totalSpellCount: saveAsSpellCount,
+                tradition: saveAsHasTradition ? "Hermetic" : null);
+            RecordStep(steps, "magician export receipt written");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "magician_export_workflow",
+                ScreenshotPaths: [],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["magician_save_as_materialized"] = savedSaveAsPath is not null && File.Exists(savedSaveAsPath!),
+                    ["magician_save_as_has_magician_marker"] = saveAsHasMagician,
+                    ["magician_save_as_has_tradition_marker"] = saveAsHasTradition,
+                    ["magician_save_as_has_sustained_spells"] = saveAsSustained > 0,
+                    ["magician_save_as_sustained_names_resolved"] = sustainedNames.Count > 0 && sustainedNames.Count == saveAsSustained,
+                    ["magician_export_materialized"] = savedExportPath is not null && File.Exists(savedExportPath!),
+                    ["magician_export_is_json"] = exportIsJson,
+                    ["magician_export_has_magician_profile"] = exportHasMagicianProfile,
+                    ["magician_export_has_mag_enabled"] = exportHasMagEnabled,
+                    ["magician_export_has_created_marker"] = exportHasCreatedMarker,
+                    ["magician_workspace_saved"] = savedRevisionAfterSave > 0,
+                },
+                InteractionNotes:
+                [
+                    $"Imported the bundled SR5 Career magician sample, saved it (revision {savedRevisionAfterSave}), saved-as native .chum5 ({new FileInfo(savedSaveAsPath!).Length} bytes, {saveAsSustained} sustained spells: {string.Join(", ", sustainedNames)}), and exported the ordinary portable dossier ({new FileInfo(savedExportPath!).Length} bytes, magician profile closure Magician/MagEnabled/Created; the dossier format carries no spell section - the learned-spell inventory lives in the native .chum5 payload).",
+                ]);
+        }
+        finally
+        {
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride = null;
+            MainWindowDesktopFileCoordinator.SaveExportOverride = null;
+        }
+    }
+
     private static Control? FindVisibleValidationActionControl(MainWindow window)
     {
         TabStrip? tabStrip = window.ControlsForAutomation.SectionHost.FindControl<TabStrip>("SectionActionTabStrip");
@@ -7347,31 +9685,80 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             $"menu command {commandId} available",
             () => menu.Items.OfType<MenuItem>().Any(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled),
             ct);
-        MenuItem commandItem = menu.Items.OfType<MenuItem>()
-            .First(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled);
-        // Menu popups recompose between resolve and click; a detached
-        // command item can no longer resolve a top-level visual. Re-resolve
-        // from the live menu items on each attempt (T496).
+        // Gen10 item 4 (Controller9350): the popup can be closed by a state
+        // publication BETWEEN the dispatcher frame that resolves the command
+        // item and the frame that presses it. The gen9 guard detected that
+        // detach but still burned the attempt: the probe ran in its own
+        // frame, then RoutePointerClickAsync ran the press in yet another.
+        // The narrow fix: pass a LIVE resolver into the click route so the
+        // command item is resolved inside the SAME dispatcher frame that
+        // presses it - no publication can slip between resolve and press.
+        // Retry only re-opens the popup (T496).
         for (int menuAttempt = 1; ; menuAttempt++)
         {
+            // Controller9415: only an explicit PRE-press target-not-live result
+            // may retry. RoutePointerClickResolvedAsync reports "delivered=false;
+            // reason=target-not-live-at-press" when the live resolver finds no
+            // attached command item at press time - no input was delivered, so
+            // re-opening the popup and re-resolving is safe. Any other failure
+            // (including an InvalidOperationException raised AFTER input
+            // delivery) escapes: re-clicking a possibly-committed command is
+            // exactly the replay risk the boundary forbids.
+            string routing;
             try
             {
-                await RoutePointerClickAsync(commandItem);
-                break;
+                routing = await RoutePointerClickResolvedAsync(
+                    menu,
+                    waitForClick: false,
+                    liveTarget: () => menu.Items.OfType<MenuItem>()
+                        .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled));
             }
-            catch (InvalidOperationException routingFailure) when (menuAttempt < 3)
+            catch (Exception routingFault)
             {
-                RecordStep(steps, $"menu command {commandId} attempt {menuAttempt} routing failed: {routingFailure.Message}");
-                await Task.Delay(250, ct);
-                // T496: the popup itself can close between attempts (state
-                // publications steal focus); re-open it before re-resolving.
-                await RoutePointerClickAsync(menu);
-                await WaitForAsync(steps, $"menu command {commandId} popup reopened",
-                    () => menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled), ct);
-                commandItem = menu.Items.OfType<MenuItem>()
-                    .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled)
-                    ?? throw new InvalidOperationException($"menu command {commandId} no longer available after routing failure.");
+                // No press may have been delivered here (resolve happens before
+                // the press inside the route). Still fail closed: a thrown fault
+                // must not be retried with a re-click - it must fail/reconcile.
+                throw new InvalidOperationException(
+                    $"menu command {commandId} routing fault at attempt {menuAttempt}: {routingFault.Message}",
+                    routingFault);
             }
+            PointerDeliveryResult menuDelivery = ParsePointerDeliveryResult(routing);
+            if (menuDelivery.Kind == PointerDeliveryKind.NotDelivered
+                && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+            {
+                if (menuAttempt >= 3)
+                {
+                    throw new InvalidOperationException(
+                        $"menu command {commandId} was not attached at press time after {menuAttempt} popup re-open attempts.");
+                }
+                RecordStep(steps, $"menu command {commandId} attempt {menuAttempt} target not live at press - resolving popup state");
+                await Task.Delay(250, ct);
+                // T496 + gen10p: a PRE-press not-live result means NO input
+                // was delivered - the popup is usually still OPEN and the
+                // item simply was not hit-testable at the resolved point
+                // (freshly composed popup). Clicking the menu AGAIN would
+                // CLOSE the open popup, detaching the command item and
+                // guaranteeing the remaining attempts fail. Reopen only when
+                // the popup actually closed, then wait for it to be open
+                // (or reopen it) before re-probing.
+                bool popupStillOpen = await Dispatcher.UIThread.InvokeAsync(() => menu.IsSubMenuOpen);
+                if (!popupStillOpen)
+                {
+                    await RoutePointerClickAsync(menu);
+                }
+                await WaitForAsync(steps, $"menu command {commandId} popup open for reprobe",
+                    () => menu.IsSubMenuOpen
+                        && menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled), ct);
+                continue;
+            }
+            if (menuDelivery.Kind != PointerDeliveryKind.Delivered)
+            {
+                // Any other not-delivered result is unexpected: fail closed
+                // without a re-click.
+                throw new InvalidOperationException(
+                    $"menu command {commandId} click was not delivered: {routing}");
+            }
+            break;
         }
         recordPointerAction();
         RecordStep(steps, $"click {menuLabel} menu command {commandId}");
@@ -7783,6 +10170,33 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         string screenshotPath = Path.Combine(screenshotDirectory, $"{fileStem}.png");
         byte[] pngBytes = await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            // Gen10 (Controller9403 item 3): the SR6 advancement modal derives from
+            // plain Window, so the OwnedWizardWindow/DialogWindow preference chain
+            // never matched it and dialog-leg screenshots silently fell back to
+            // MainWindow - exactly the "MainWindow-only screenshot labelled as
+            // dialog proof" defect. Prefer a visible Sr6CareerAttributeAdvanceWindow
+            // first so 06b/06c/06d captures show the actual modal.
+            var sr6Advance = global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime captureDesktop
+                ? captureDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.Sr6CareerAttributeAdvanceWindow>()
+                    .FirstOrDefault(w => w.IsVisible)
+                : null;
+            if (sr6Advance is not null)
+            {
+                return sr6Advance.CaptureScreenshotBytesForAutomation();
+            }
+            // Gen8: the owned creation wizard window is not a DesktopDialogWindow;
+            // prefer it when visible so wizard-leg screenshots show the wizard,
+            // not a blank MainWindow behind it.
+            var ownedWizard = global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime captureDesktop2
+                ? captureDesktop2.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                    .FirstOrDefault(w => w.IsVisible)
+                : null;
+            if (ownedWizard is not null)
+            {
+                return ownedWizard.CaptureScreenshotBytesForAutomation();
+            }
             DesktopDialogWindow? dialogWindow = ResolveVisibleDialogWindow();
             return dialogWindow?.CaptureScreenshotBytesForAutomation() ?? window.CaptureScreenshotBytesForAutomation();
         });
@@ -7925,6 +10339,236 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     /// inactive window refuses resolution (returns null) so the caller
     /// records an honest refusal instead of clicking an unowned control.
     /// </summary>
+    /// <summary>
+    /// Controller9539/9415 press-observation core: presses via
+    /// <paramref name="pressAsync"/>, then observes via
+    /// <paramref name="observeAsync"/> EXACTLY ONCE per delivered press.
+    /// Retries the press only when the delivery string is the explicit
+    /// pre-press "target-not-live-at-press" result (bounded by
+    /// <paramref name="maxNotLiveRetries"/>). Any other not-delivered result,
+    /// a thrown press fault, or a post-delivery observation timeout fails
+    /// closed: a possibly-committed command is NEVER re-pressed because an
+    /// observation timed out.
+    /// </summary>
+    internal static async Task<T> PressThenObserveWithDeliveryDisciplineAsync<T>(
+        Func<Task<string>> pressAsync,
+        Func<Task<T?>> observeAsync,
+        Func<Task<T?>>? reconcileAsync,
+        Action<string> recordStep,
+        int maxNotLiveRetries,
+        string failContext,
+        CancellationToken ct) where T : class
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            string routing;
+            try
+            {
+                routing = await pressAsync();
+            }
+            catch (Exception pressFault)
+            {
+                // A thrown fault may or may not have delivered input; either
+                // way a re-press is forbidden - fail closed.
+                throw new InvalidOperationException(
+                    failContext + ": press fault at attempt " + attempt + ": " + pressFault.Message,
+                    pressFault);
+            }
+            // Controller9547: classify through the typed parser everywhere.
+            // The parser is case-insensitive on the bool token and REJECTS
+            // malformed delivered segments (a substring Contains test would
+            // happily accept "delivered=TrueOops").
+            PointerDeliveryResult delivery = ParsePointerDeliveryResult(routing);
+            if (delivery.Kind == PointerDeliveryKind.NotDelivered
+                && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+            {
+                if (attempt > maxNotLiveRetries)
+                {
+                    throw new InvalidOperationException(
+                        failContext + ": the press target was not live at press after " + (attempt - 1)
+                        + " bounded not-live retries.");
+                }
+                recordStep(failContext + " attempt " + attempt + " target not live at press - retrying within the pre-press budget");
+                await Task.Delay(250, ct);
+                continue;
+            }
+            if (delivery.Kind != PointerDeliveryKind.Delivered)
+            {
+                // Any other kind (NotDelivered-without-not-live, Missing,
+                // Malformed) is unexpected: fail closed without a re-click.
+                throw new InvalidOperationException(
+                    failContext + ": the press was not delivered: " + routing);
+            }
+            // Delivered (or a result that claims delivery): observe ONCE.
+            // No re-press on an observation timeout.
+            T? observed;
+            try
+            {
+                observed = await observeAsync();
+            }
+            catch (Exception observeFault)
+            {
+                throw new InvalidOperationException(
+                    failContext + ": observation fault after a delivered press (no re-press): " + observeFault.Message,
+                    observeFault);
+            }
+            if (observed is not null)
+            {
+                return observed;
+            }
+            if (reconcileAsync is not null)
+            {
+                T? reconciled;
+                try
+                {
+                    reconciled = await reconcileAsync();
+                }
+                catch (Exception reconcileFault)
+                {
+                    throw new InvalidOperationException(
+                        failContext + ": reconciliation fault after a delivered press (no re-press): " + reconcileFault.Message,
+                        reconcileFault);
+                }
+                if (reconciled is not null)
+                {
+                    recordStep(failContext + ": observation timed out but reconciliation found the target (no re-press)");
+                    return reconciled;
+                }
+            }
+            throw new InvalidOperationException(
+                failContext + ": the delivered press did not produce the observed target (observation failed, no re-press attempted per Controller9539).");
+        }
+    }
+
+/// <summary>
+    /// Controller9539: press an improve row with the 9415 delivery discipline.
+    /// The resolver runs inside the press frame; only an explicit pre-press
+    /// "target-not-live-at-press" result is retryable, thrown faults escape to
+    /// the caller as fail-closed failures, and the returned delivery string is
+    /// always the typed route result (never a fabricated success).
+    /// </summary>    /// <summary>
+    /// Controller9539 companion (gen10j evidence): the career-rewards parity
+    /// grid can still be re-laid-out by the section render that follows the
+    /// preceding tab navigation when an improve row first becomes visible.
+    /// A press issued inside that rebuild window resolves stale geometry -
+    /// the synthetic release hit-tests onto the scroll presenter instead of
+    /// the row and the row detaches under the re-raise tick - which the 9415
+    /// fail-closed core then honestly reports as a not-delivered press. This
+    /// is ordinary readiness work BEFORE the first press, never a post-fault
+    /// retry: wait until the row instance is IDENTICAL across spaced re-finds
+    /// (no section rebuild in flight), then apply the same BringIntoView +
+    /// layout-pump readiness the proven blocked-cap cancel press uses.
+    /// Returns the settled row, or null when the row never stabilizes within
+    /// the budget.
+    /// </summary>
+    private static async Task<Control?> WaitForSettledCareerRewardsRowAsync(
+        MainWindow window,
+        string improveRowAutomationId,
+        CancellationToken ct)
+    {
+        System.Diagnostics.Stopwatch settleClock = System.Diagnostics.Stopwatch.StartNew();
+        while (settleClock.Elapsed < TimeSpan.FromSeconds(8))
+        {
+            Control? first = FindVisibleCareerRewardsButton(window, improveRowAutomationId);
+            if (first is null)
+            {
+                await Task.Delay(200, ct);
+                continue;
+            }
+            await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(first));
+            await Task.Delay(300, ct);
+            Control? second = FindVisibleCareerRewardsButton(window, improveRowAutomationId);
+            if (second is not null
+                && ReferenceEquals(first, second)
+                && second.GetVisualRoot() is not null)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    second.BringIntoView();
+                    ForceHeadlessLayoutPump(second);
+                });
+                return second;
+            }
+            await Task.Delay(150, ct);
+        }
+        return null;
+    }
+
+    private static async Task<string> PressImproveRowWithDeliveryDisciplineAsync(
+        MainWindow window,
+        string improveRowAutomationId,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        List<string>? initiatingFocusLog = null)
+    {
+        // Pre-press readiness runs BEFORE any press: the settle proves the
+        // parity grid has stopped rebuilding, and BringIntoView + the layout
+        // pump mirror the proven blocked-cap cancel-press recipe. No press
+        // has been issued yet, so this is readiness work, not a retry.
+        Control? settledRow = await WaitForSettledCareerRewardsRowAsync(window, improveRowAutomationId, ct);
+        if (settledRow is null)
+        {
+            // Typed PRE-press not-live result: the row instance never
+            // stabilized, so no press was issued; the delivery-discipline
+            // core's bounded not-live retry applies (each retry re-settles
+            // before pressing again).
+            RecordStep(steps, $"sr6 improve row {improveRowAutomationId} not live at press (row instance never stabilized across spaced re-finds)");
+            return "delivered=false;reason=target-not-live-at-press;settle=unstable-row-instance;";
+        }
+        // Controller9547: the initiating focus is ARRANGED and OBSERVED here,
+        // before the dispatch can open the modal - the modal is focus-trapped
+        // while visible, so the row behind it cannot be probed afterwards
+        // (gen10t evidence: rowIsFocused=False under the open modal). A real
+        // pointer press focuses the pressed row; the synthetic route skips
+        // pointer-focus, so arranging the known initiating state here models
+        // the real user scenario instead of fabricating focus after the modal
+        // is open (which would hide the focus-return behavior this proof
+        // exists to verify).
+        (bool focusArranged, string focusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (settledRow is not Button rowButton)
+            {
+                return (false, "settled row is not a Button");
+            }
+            rowButton.Focus();
+            ForceHeadlessLayoutPump(rowButton);
+            return (rowButton.IsFocused || rowButton.IsKeyboardFocusWithin,
+                "rowIsFocused=" + rowButton.IsFocused
+                + " keyboardFocusWithin=" + rowButton.IsKeyboardFocusWithin);
+        });
+        initiatingFocusLog?.Add((focusArranged ? "arranged:" : "missing:") + focusDiag);
+        RecordStep(steps, $"sr6 improve row {improveRowAutomationId} initiating focus arranged pre-dispatch ({focusDiag})");
+        // Controller9544: ONE dispatch per call. The pre-press settle above
+        // is the readiness work; the resolved route re-resolves the live
+        // target inside the press frame and raises exactly one synthetic
+        // press. waitForClick:false means Finish() fires immediately after
+        // that single dispatch - no hidden timer re-presses can multiply
+        // physical presses past the discipline's accounting.
+        string routing = await RoutePointerClickResolvedAsync(
+            window,
+            waitForClick: false,
+            liveTarget: () => FindVisibleCareerRewardsButton(window, improveRowAutomationId));
+        // Controller9547: classify through the typed parser - a substring
+        // test cannot distinguish "delivered=True" from "delivered=TrueOops".
+        PointerDeliveryResult delivery = ParsePointerDeliveryResult(routing);
+        if (delivery.Kind == PointerDeliveryKind.NotDelivered
+            && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+        {
+            RecordStep(steps, $"sr6 improve row {improveRowAutomationId} target not live at press");
+            return routing;
+        }
+        if (delivery.Kind == PointerDeliveryKind.Delivered)
+        {
+            recordPointerAction();
+            RecordStep(steps, $"sr6 improve row {improveRowAutomationId} press delivered (one dispatch)");
+            return routing;
+        }
+        // NotDelivered-without-not-live, Missing, Malformed: typed and
+        // returned unchanged for the core's fail-closed handling.
+        return routing;
+    }
+
     internal static Sr6CareerAttributeAdvanceWindow? ResolveSingleAdvanceWindow()
     {
         // Same-modal resolution uses the window class's live-instance
@@ -8043,16 +10687,48 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     }
 
     private static async Task<string> RoutePointerClickAsync(Control control, bool waitForClick)
+        => await RoutePointerClickResolvedAsync(control, waitForClick, liveTarget: null);
+
+    /// <summary>
+    /// Gen10 item 4 (Controller9350): optional live-target resolver variant.
+    /// The resolver runs INSIDE the same dispatcher frame as the press, so a
+    /// popup recomposed between the caller's resolve and this frame cannot
+    /// detach the pressed target (the PhaseA save-menu detach defect).
+    /// </summary>
+    internal static async Task<string> RoutePointerClickResolvedAsync(
+        Control control,
+        bool waitForClick,
+        System.Func<Control>? liveTarget)
     {
         TaskCompletionSource<string> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            // Re-resolve the live target in THIS frame before any geometry
+            // work, so resolve + press are atomic against popup recomposition.
+            if (liveTarget is not null)
+            {
+                Control? resolved = liveTarget();
+                if (resolved is null || resolved.GetVisualRoot() is null)
+                {
+                    completion.TrySetResult(
+                        "delivered=false;reason=target-not-live-at-press;");
+                    return;
+                }
+                control = resolved;
+            }
             (Visual rootVisual, Point rootPosition) = ResolveClickRoot(control);
 
             bool delivered = false;
             string inputDiagnostics = string.Empty;
             void ClickProbe(object? sender, RoutedEventArgs args) => delivered = true;
             control.AddHandler(Button.ClickEvent, ClickProbe);
+            // Controller9415 gen10: MenuItem activation raises
+            // MenuItem.ClickEvent, not Button.ClickEvent. A menu command
+            // that executes closes its own popup during the same raise,
+            // so the post-raise hit-test diagnostics go dark - the
+            // activation event is the only honest delivery signal for
+            // menu items.
+            control.AddHandler(MenuItem.ClickEvent, ClickProbe);
 
             void RaiseSyntheticClick()
             {
@@ -8111,11 +10787,54 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             void Finish()
             {
                 control.RemoveHandler(Button.ClickEvent, ClickProbe);
+                control.RemoveHandler(MenuItem.ClickEvent, ClickProbe);
                 string pressedState = (control as Button)?.IsPressed.ToString() ?? "n/a";
                 string attached = control.GetVisualRoot() is not null ? "attached" : "detached";
                 completion.TrySetResult(
                     $"delivered={delivered};isPressed={pressedState};"
                     + $"enabled={control.IsEffectivelyEnabled};visible={control.IsVisible};{attached};{inputDiagnostics}");
+            }
+
+            // Controller9544 companion: pre-press hit-test probe. If the
+            // resolved point does not hit-test back onto the control (a
+            // freshly-opened popup is not yet hit-testable at the resolved
+            // point; a mid-rebuild grid detaches the row), NO input may be
+            // raised - raising into a scene that would swallow it is exactly
+            // the ambiguous press the discipline forbids. Report the typed
+            // PRE-press not-live result so the caller's bounded not-live
+            // retry applies; no physical press was issued. The probe gates
+            // ONLY the one-dispatch (waitForClick:false) discipline route:
+            // waitForClick:true callers keep the re-raise loop, whose layout
+            // pumps between raises are the readiness work that makes a later
+            // raise land (gen10k-proven footer/dialog/menu-open behavior).
+            if (!waitForClick)
+            {
+                // Controller9568: the transform must be valid (not the
+                // defaulted point) and the ROOT-scoped InputHitTest must land
+                // on the target or a descendant of it. Subtree GetVisualsAt
+                // probing cannot see occluders; the root hit-test can.
+                Point? probeInControlTransform = rootVisual.TranslatePoint(rootPosition, control);
+                object? probeHitTarget = rootVisual is InputElement probeRoot ? probeRoot.InputHitTest(rootPosition) : null;
+                bool probeHit = probeInControlTransform is not null
+                    && probeHitTarget is Control probeHitControl
+                    && (ReferenceEquals(probeHitControl, control) || control.IsVisualAncestorOf(probeHitControl));
+                if (!probeHit)
+                {
+                    object? probeTarget = rootVisual is InputElement ie ? ie.InputHitTest(rootPosition) : null;
+                    string probeTargetText = probeTarget is Control pc
+                        ? (pc.GetType().Name + ":" + (global::Avalonia.Automation.AutomationProperties.GetAutomationId(pc) ?? pc.Name ?? string.Empty))
+                        : probeTarget?.GetType().Name ?? "null";
+                    control.RemoveHandler(Button.ClickEvent, ClickProbe);
+                    control.RemoveHandler(MenuItem.ClickEvent, ClickProbe);
+                    completion.TrySetResult(
+                        "delivered=false;reason=target-not-live-at-press;probe=miss;"
+                        + "realTarget=" + probeTargetText + ";"
+                        + "rootPos=" + rootPosition.X.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)
+                        + "," + rootPosition.Y.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + ";"
+                        + "bounds=" + control.Bounds.Width.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)
+                        + "x" + control.Bounds.Height.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + ";");
+                    return;
+                }
             }
 
             RaiseSyntheticClick();
@@ -8538,7 +11257,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         });
     }
 
-    private static void SendKeyStroke(InputElement target, Key key, KeyModifiers modifiers = KeyModifiers.None)
+    internal static void SendKeyStroke(InputElement target, Key key, KeyModifiers modifiers = KeyModifiers.None)
     {
         KeyEventArgs keyDown = new()
         {
@@ -8702,7 +11421,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     private static CharacterCreationWizardControl? FindWizardControl(MainWindow window)
         => window.GetVisualDescendants()
             .OfType<CharacterCreationWizardControl>()
-            .FirstOrDefault(control => control.IsVisible);
+            .FirstOrDefault(control => control.IsVisible)
+            // Gen6 T795: the owned-window host moves the SAME control into a
+            // separate top-level window; scan the desktop set as the fallback.
+            ?? (global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.Windows
+                    .SelectMany(w => w.GetVisualDescendants())
+                    .OfType<CharacterCreationWizardControl>()
+                    .FirstOrDefault(control => control.IsVisible)
+                : null);
 
     private static async Task<CharacterCreationWizardControl> WaitForWizardControlAsync(
         MainWindow window,

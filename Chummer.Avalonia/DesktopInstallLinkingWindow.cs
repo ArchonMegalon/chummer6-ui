@@ -47,6 +47,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _moreToolsAccountButton;
     private readonly Button _copyLoginUrlButton;
     private readonly Button _redeemClaimCodeButton;
+    private readonly Button _fetchClaimCodeButton;
     private bool _redeemInFlight;
     private readonly Button _unlinkButton;
     private readonly Button _exitButton;
@@ -205,6 +206,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _redeemClaimCodeButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
             RedeemClaimCodeAsync);
+        _fetchClaimCodeButton = CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.get_claim_code", _language),
+            GetFallbackClaimCodeAsync);
         _unlinkButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.unlink_copy", _language),
             UnlinkCopyAsync);
@@ -220,7 +224,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Children =
             {
                 _claimCodeTextBox,
-                _redeemClaimCodeButton
+                _redeemClaimCodeButton,
+                _fetchClaimCodeButton
             }
         };
         _browserFallbackHeadingText = new TextBlock
@@ -1237,6 +1242,29 @@ internal sealed class DesktopInstallLinkingWindow : Window
     }
 
     /// <summary>
+    /// Recovery-specific observation identity for the validated adoption:
+    /// the same installation/head/key identity and owner-transition
+    /// handling as the shared predicate, but WITHOUT the
+    /// BrowserApprovalReturnState requirement - the validated adoption
+    /// intentionally clears the retained approval fields, so a recovery
+    /// success must not be misread as an owner/operation transition.
+    /// This never replaces the shared browser-operation predicate.
+    /// </summary>
+    private static bool IsSameRecoveryObservation(DesktopInstallLinkingState current,
+        DesktopInstallLinkingState observed)
+    {
+        bool expectedOwner = current.OwnerTransitionRevision == observed.OwnerTransitionRevision
+            || (!DesktopInstallLinkingRuntime.IsClaimed(observed)
+                && DesktopInstallLinkingRuntime.IsClaimed(current)
+                && observed.OwnerTransitionRevision < long.MaxValue
+                && current.OwnerTransitionRevision == observed.OwnerTransitionRevision + 1);
+        return expectedOwner
+            && string.Equals(current.InstallationId, observed.InstallationId, StringComparison.Ordinal)
+            && string.Equals(current.HeadId, observed.HeadId, StringComparison.Ordinal)
+            && string.Equals(current.PublicKey, observed.PublicKey, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Observation ended without a terminal outcome: present an explicit
     /// re-check affordance instead of implying the dialog is still watching.
     /// </summary>
@@ -1432,6 +1460,141 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _redeemClaimCodeButton.Content = originalRedeemText;
                 _redeemClaimCodeButton.IsEnabled = true;
                 _claimCodeTextBox.IsEnabled = true;
+            }
+        }
+    }
+
+    private async Task GetFallbackClaimCodeAsync()
+    {
+        // Controller9308 defect 2: single-flight recovery with visible progress,
+        // mirroring the claim-code redemption path.
+        if (_redeemInFlight || _windowLifetimeCancellation?.IsCancellationRequested == true)
+        {
+            return;
+        }
+
+        DesktopInstallLinkingState recoveryState = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+        if (recoveryState.OwnerTransitionRevision != _state.OwnerTransitionRevision
+            || !IsSameObservedOperation(recoveryState, _state))
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
+            return;
+        }
+
+        _redeemInFlight = true;
+        string originalRecoveryText = _fetchClaimCodeButton.Content as string ?? string.Empty;
+        _fetchClaimCodeButton.IsEnabled = false;
+        _fetchClaimCodeButton.Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language);
+        try
+        {
+            SetStatus("Checking chummer.run for an existing link...");
+            DesktopInstallRecoveryResult result = await DesktopInstallLinkingRuntime
+                .RecoverLinkedInstallAsync(_state.HeadId, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            // Controller9308 defect 2: post-await fence - a delayed recovery
+            // outcome must never repaint a closed window, a newer owner, or a
+            // newer observed operation (mirrors the redemption fence).
+            if (_windowLifetimeCancellation?.IsCancellationRequested == true)
+                return;
+            DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+            // Controller9326: the validated adoption clears the retained
+            // approval fields, so a recovered success must be compared
+            // with the recovery-specific identity (return-state-insensitive),
+            // not the shared browser-operation predicate.
+            Func<DesktopInstallLinkingState, DesktopInstallLinkingState, bool> sameObservation =
+                result.Recovered ? IsSameRecoveryObservation : IsSameObservedOperation;
+            if (!result.Recovered && DesktopInstallLinkingRuntime.IsClaimed(current))
+            {
+                // Controller9326: the copy became linked while the recovery
+                // check was in flight (concurrent adoption, browser callback,
+                // or claim redemption). A delayed negative outcome must never
+                // replace that newer linked UI state - re-assert it instead.
+                _state = current;
+                RefreshSummary();
+                RefreshActionState();
+                if (Owner is MainWindow ownerWindow)
+                {
+                    ownerWindow.ApplyInstallLinkingChrome(_state);
+                }
+                SetStatus(!string.IsNullOrWhiteSpace(_state.LastClaimMessage)
+                    ? _state.LastClaimMessage
+                    : FormatClaimStatus(_state, _language));
+                UpdateMatrixHandoffState("Grant accepted");
+                return;
+            }
+            if (!sameObservation(result.State, recoveryState)
+                || (!result.Recovered && result.State.OwnerTransitionRevision != recoveryState.OwnerTransitionRevision)
+                || current.OwnerTransitionRevision != result.State.OwnerTransitionRevision
+                // Controller9350 gen10 item 1c: exact operation fence - the
+                // durable state must still BE the runtime's adopted save. A
+                // later retained operation (same identity, unchanged owner
+                // revision) bumps StateRevision; a stale recovered repaint
+                // over it is refused (fails closed to recovery_stopped).
+                || (result.Recovered && current.StateRevision != result.State.StateRevision)
+                || !sameObservation(current, result.State))
+            {
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.recovery_stopped", _language));
+                return;
+            }
+
+            _state = result.State;
+            if (result.Recovered)
+            {
+                // Controller9326: the pre-adoption observer captured the
+                // stale retained approval; its return-state comparison
+                // would fail after adoption and repaint recovery_stopped
+                // over the success. Retire that observation and rebase it
+                // onto the adopted state (same shape as StartClaimPolling).
+                _handoffPollCancellation?.Cancel();
+                _handoffPollCancellation?.Dispose();
+                _handoffPollCancellation = new CancellationTokenSource();
+                _observedOperation = _state;
+                _ = PollForClaimedInstallAsync(_state, _handoffPollCancellation.Token);
+                // Controller9308 defect 3: the validated adoption is the same
+                // owner transition the browser-callback path produces, so the
+                // owner chrome must be refreshed from the adopted state here.
+                RefreshSummary();
+                RefreshActionState();
+                if (Owner is MainWindow ownerWindow)
+                {
+                    ownerWindow.ApplyInstallLinkingChrome(_state);
+                }
+                SetStatus(result.AlreadyLinked
+                    ? result.Message
+                    : "Link restored from chummer.run. This copy is ready to use.");
+                UpdateMatrixHandoffState("Grant accepted");
+                return;
+            }
+
+            RefreshSummary();
+            if (result.NotLinked)
+            {
+                // Controller9308 defect 4: the Hub authoritatively answered
+                // "not linked" - route through the existing fallback surface
+                // (heading/summary/detail/URL/claim-code hint) with the account
+                // portal URL, not just the visibility flag.
+                SetStatus(result.Message);
+                ShowManualBrowserFallback(
+                    DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri(
+                        DesktopInstallLinkingRuntime.BuildAccountPortalRelativePathForInstall(_state)),
+                    null);
+                return;
+            }
+
+            SetStatus(result.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            // Window closed during the check: not an error.
+        }
+        finally
+        {
+            _redeemInFlight = false;
+            if (_windowLifetimeCancellation?.IsCancellationRequested != true)
+            {
+                _fetchClaimCodeButton.Content = originalRecoveryText;
+                _fetchClaimCodeButton.IsEnabled = true;
             }
         }
     }

@@ -5,6 +5,26 @@
              RequestedThemeVariant="Dark">
   <Application.Resources>
     <ResourceDictionary>
+      <!-- Gen6 desktop design tokens (T793): density, spacing, typography, shape.
+           Theme-invariant scalars; colors live in the ThemeDictionaries below. -->
+      <FontFamily x:Key="ChummerShellFontFamily">Segoe UI,Verdana,Arial</FontFamily>
+      <x:Double x:Key="ChummerShellFontSizeBody">13</x:Double>
+      <x:Double x:Key="ChummerShellFontSizeSmall">12</x:Double>
+      <x:Double x:Key="ChummerShellFontSizeCaption">11</x:Double>
+      <x:Double x:Key="ChummerShellFontSizeTitle">16</x:Double>
+      <x:Double x:Key="ChummerShellControlHeight">30</x:Double>
+      <x:Double x:Key="ChummerShellControlHeightCompact">26</x:Double>
+      <x:Double x:Key="ChummerShellTitlebarHeight">32</x:Double>
+      <x:Double x:Key="ChummerShellMenuBarHeight">26</x:Double>
+      <x:Double x:Key="ChummerShellStatusBarHeight">24</x:Double>
+      <x:Double x:Key="ChummerShellToolbarHeight">32</x:Double>
+      <Thickness x:Key="ChummerShellSpacingTight">4</Thickness>
+      <Thickness x:Key="ChummerShellSpacing">8</Thickness>
+      <Thickness x:Key="ChummerShellSpacingWide">12</Thickness>
+      <Thickness x:Key="ChummerShellSpacingSection">16</Thickness>
+      <CornerRadius x:Key="ChummerShellCornerSmall">3</CornerRadius>
+      <CornerRadius x:Key="ChummerShellCornerMedium">4</CornerRadius>
+      <Thickness x:Key="ChummerShellFocusRingThickness">2</Thickness>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#E3EAF3" />
@@ -394,6 +414,21 @@
     </Style>
     <Style Selector="Button.shell-action.quiet">
       <Setter Property="Background" Value="{DynamicResource ChummerShellQuietButtonBrush}" />
+    </Style>
+    <!-- Gen8 item 3: disabled actions (wizard step pills, blocked buttons) must stay
+         readable - Fluent's default disabled gray was too low-contrast on the shell
+         surface. Keep muted but legible: real foreground + visible border. -->
+    <Style Selector="Button:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Opacity" Value="0.72" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="Button TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="Button:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="Button.tool-icon">
       <Setter Property="Padding" Value="6,2" />
