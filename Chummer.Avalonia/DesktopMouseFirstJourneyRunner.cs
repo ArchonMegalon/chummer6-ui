@@ -8194,7 +8194,36 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         automationId,
                         StringComparison.Ordinal) && b.IsVisible)
                 ?? throw new InvalidOperationException($"sr6 wizard: footer button {automationId} not visible"));
-            await RoutePointerClickAsync(button, waitForClick: true);
+            // Controller9415 gen10: the footer press must account for its own
+            // delivery. A pre-press not-live report means NO input was raised
+            // (safe to retry after a settle); anything delivered must never
+            // be re-pressed.
+            string footerRouting;
+            for (int footerAttempt = 1; ; footerAttempt++)
+            {
+                footerRouting = await RoutePointerClickAsync(button, waitForClick: true);
+                PointerDeliveryResult footerDelivery = ParsePointerDeliveryResult(footerRouting);
+                if (footerDelivery.Kind == PointerDeliveryKind.NotDelivered
+                    && footerRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+                {
+                    if (footerAttempt >= 3)
+                    {
+                        throw new InvalidOperationException(
+                            $"sr6 wizard: footer {automationId} not live at press after {footerAttempt} attempts: {footerRouting}");
+                    }
+                    RecordStep(steps, $"sr6 wizard: footer {automationId} not live at press attempt {footerAttempt} - settling before retry");
+                    await Task.Delay(250, ct);
+                    button = await Dispatcher.UIThread.InvokeAsync(() =>
+                        W().GetVisualDescendants().OfType<Button>()
+                            .FirstOrDefault(b => string.Equals(
+                                AutomationProperties.GetAutomationId(b),
+                                automationId,
+                                StringComparison.Ordinal) && b.IsVisible)
+                        ?? throw new InvalidOperationException($"sr6 wizard: footer button {automationId} not visible on retry"));
+                    continue;
+                }
+                break;
+            }
             recordPointerAction();
             // Wait until the counter text changes or the window closes.
             try
@@ -8221,7 +8250,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 RecordStep(steps, $"sr6 wizard: footer {automationId} counter wait skipped ({walkFailure.Message})");
             }
 
-            RecordStep(steps, $"sr6 wizard: footer {automationId} clicked");
+            RecordStep(steps, $"sr6 wizard: footer {automationId} clicked ({footerRouting.Split(';')[0]})");
         }
 
         private static Button? FindVisibleCareerRewardsButton(MainWindow window, string buttonName)
@@ -10372,7 +10401,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // raised - raising into a scene that would swallow it is exactly
             // the ambiguous press the discipline forbids. Report the typed
             // PRE-press not-live result so the caller's bounded not-live
-            // retry applies; no physical press was issued.
+            // retry applies; no physical press was issued. The probe gates
+            // ONLY the one-dispatch (waitForClick:false) discipline route:
+            // waitForClick:true callers keep the re-raise loop, whose layout
+            // pumps between raises are the readiness work that makes a later
+            // raise land (gen10k-proven footer/dialog/menu-open behavior).
+            if (!waitForClick)
             {
                 Point probeInControl = rootVisual.TranslatePoint(rootPosition, control) ?? default;
                 bool probeHit = control.GetVisualsAt(probeInControl)
@@ -10384,7 +10418,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         ? (pc.GetType().Name + ":" + (global::Avalonia.Automation.AutomationProperties.GetAutomationId(pc) ?? pc.Name ?? string.Empty))
                         : probeTarget?.GetType().Name ?? "null";
                     control.RemoveHandler(Button.ClickEvent, ClickProbe);
-                control.RemoveHandler(MenuItem.ClickEvent, ClickProbe);
+                    control.RemoveHandler(MenuItem.ClickEvent, ClickProbe);
                     completion.TrySetResult(
                         "delivered=false;reason=target-not-live-at-press;probe=miss;"
                         + "realTarget=" + probeTargetText + ";"
