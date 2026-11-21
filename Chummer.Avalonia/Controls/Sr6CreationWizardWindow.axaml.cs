@@ -402,6 +402,148 @@ public partial class Sr6CreationWizardWindow : Window
     private CheckBox? _lossAcknowledgement;
     private bool _finalizeBusy;
 
+    // Talent-matching domain for the current talent (null = domain not applicable).
+    // Catalog options for the talent domain from the state the Core authority
+    // published (null = domain options not published for this draft).
+    private IEnumerable<(string Id, string Label)> DomainOptions(string domain)
+    {
+        Sr6CreationFoundationState foundation = _state!.Foundation;
+        switch (domain)
+        {
+            case "spells":
+                foreach (Sr6CreationSpellOption o in foundation.SpellOptions ?? [])
+                {
+                    yield return (o.Id, $"{o.SourceName} ({o.Kind})");
+                }
+                break;
+            case "complex-forms":
+                foreach (Sr6CreationComplexFormOption o in foundation.ComplexFormOptions ?? [])
+                {
+                    yield return (o.Id, o.SourceName);
+                }
+                break;
+            case "adept-powers":
+                foreach (Sr6CreationAdeptPowerOption o in foundation.AdeptPowerOptions ?? [])
+                {
+                    yield return (o.Id, o.SourceName);
+                }
+                break;
+        }
+    }
+
+    private static string? TalentDomainFor(string? talentId) => talentId switch
+    {
+        "magician" or "mystic-adept" or "aspected-magician" => "spells",
+        "technomancer" => "complex-forms",
+        "adept" or "mystic-adept" => "adept-powers",
+        _ => null,
+    };
+
+    // Catalog ids currently saved in the foundation selection for the talent domain.
+    private IReadOnlyList<string> SavedTalentDomainIds()
+    {
+        var saved = _state?.Foundation.Selection?.Selection;
+        if (saved is null)
+        {
+            return [];
+        }
+        return TalentDomainFor(CurrentTalentId) switch
+        {
+            "spells" => saved.Spells?.CatalogIds ?? [],
+            "complex-forms" => saved.ComplexForms?.Choices.Select(c => c.CatalogId).ToList() ?? [],
+            "adept-powers" => saved.AdeptPowers?.Choices.Select(c => c.CatalogId).ToList() ?? [],
+            _ => [],
+        };
+    }
+
+    // Replace the saved talent-domain ids and invalidate the held preview. The
+    // next EnsurePreviewHeld rebuilds the whole selection (current domain ids
+    // are seeded from the saved selection) and Core validates it through the
+    // ordinary Prepare seam.
+    private void StoreTalentDomainIds(IReadOnlyList<string> ids)
+    {
+        var saved = _state?.Foundation.Selection?.Selection;
+        if (saved is null)
+        {
+            return;
+        }
+        string? domain = TalentDomainFor(CurrentTalentId);
+        Sr6CreationFoundationSelection updated = domain switch
+        {
+            "spells" => saved with { Spells = new Sr6CreationSpellSelection(ids) },
+            "complex-forms" => saved with { ComplexForms = new Sr6CreationComplexFormSelection(
+                ids.Select(id => new Sr6CreationComplexFormChoice(id)).ToList()) },
+            // Rating 1 keeps the previous draft behavior for rating-less picks; the
+            // preview rejects ratings beyond the option maximum through Core.
+            "adept-powers" => saved with { AdeptPowers = new Sr6CreationAdeptPowerSelection(
+                ids.Select(id => new Sr6CreationAdeptPowerChoice(id, 1)).ToList()) },
+            _ => saved,
+        };
+        if (ReferenceEquals(updated, saved))
+        {
+            return;
+        }
+        _state = _state! with { Foundation = _state.Foundation with { Selection = _state.Foundation.Selection with { Selection = updated } } };
+        _preparedPreview = null;
+        _confirmedPreviewDigest = null;
+        UpdateFooterForDirtySelection();
+    }
+
+    private void RenderTalentDomainEditor(StackPanel panel)
+    {
+        string? domain = TalentDomainFor(CurrentTalentId);
+        if (domain is null)
+        {
+            return; // mundane talents have no talent domain
+        }
+        panel.Children.Add(new TextBlock
+        {
+            Classes = { "shell-caption" },
+            TextWrapping = TextWrapping.Wrap,
+            Text = "Talent domain: choose the known formulas for the draft. Free slots apply first; extra picks cost character points on the confirm preview.",
+        });
+        IReadOnlyList<string> savedIds = SavedTalentDomainIds();
+        foreach ((string optionIdSeed, string optionLabel) in DomainOptions(domain))
+        {
+            var row = new CheckBox
+            {
+                Content = optionLabel,
+                IsChecked = savedIds.Contains(optionIdSeed),
+            };
+            global::Avalonia.Automation.AutomationProperties.SetAutomationId(row, $"sr6-talent-domain-{optionIdSeed}");
+            string optionId = optionIdSeed;
+            row.IsCheckedChanged += (_, _) =>
+            {
+                var current = SavedTalentDomainIds().ToList();
+                bool has = current.Contains(optionId);
+                if (row.IsChecked == true && !has)
+                {
+                    current.Add(optionId);
+                }
+                else if (row.IsChecked != true && has)
+                {
+                    current.Remove(optionId);
+                }
+                else
+                {
+                    return; // no change
+                }
+                StoreTalentDomainIds(current);
+            };
+            panel.Children.Add(row);
+        }
+        var options = DomainOptions(domain).ToList();
+        if (options.Count == 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Classes = { "shell-caption" },
+                TextWrapping = TextWrapping.Wrap,
+                Text = "The rules authority has not published catalog options for this talent domain yet; the draft keeps its saved selections.",
+            });
+        }
+    }
+
     private void RenderFinalizeStep()
     {
         if (!RequireCurrentContext()) return;
@@ -674,6 +816,14 @@ public partial class Sr6CreationWizardWindow : Window
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(confirmDigest, "sr6-confirm-digest");
         panel.Children.Add(confirmDigest);
 
+        // T877 SR6 increment: the talent-matching domain (spells for magician/
+        // mystic-adept/aspected-magician, complex forms for technomancer, adept
+        // powers for adept/mystic-adept) gets real catalog inputs here instead of
+        // silently committing the zero-spend shape. Choices edit the saved
+        // foundation selection and invalidate the held preview; the ordinary
+        // Prepare seam (Core Sr6CreationSpellRules / complex-form / power rules)
+        // validates limits, slots and blockers exactly as before.
+        RenderTalentDomainEditor(panel);
         var confirmCheck = new CheckBox
         {
             Content = "I confirm this preview should be applied to the character draft.",

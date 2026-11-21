@@ -173,6 +173,103 @@ public sealed class Sr6CreationWizardWindowTests
         });
 
     [TestMethod]
+    public void Talent_domain_editor_renders_published_catalog_on_confirm_step()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "magician", [])
+            {
+                Spells = new(["sr6-spell-test-a"]),
+            };
+            presenter.SavedState = foundation with
+            {
+                SpellOptions = [new("sr6-spell-test-a", "Test Spell A", "spell", "combat", "anchor-a"),
+                    new("sr6-spell-test-b", "Test Spell B", "spell", "detection", "anchor-b")],
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "magician";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            // The confirm step now surfaces the talent-domain catalog as checkboxes,
+            // seeded from the saved selection (sr6-spell-test-a checked).
+            var domainChecks = window.GetVisualDescendants().OfType<CheckBox>()
+                .Where(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c)?
+                    .StartsWith("sr6-talent-domain-", StringComparison.Ordinal) == true).ToArray();
+            Assert.AreEqual(2, domainChecks.Length, "both published catalog options must render");
+            Assert.IsTrue(domainChecks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-a").IsChecked == true,
+                "the saved selection seeds the checkbox state");
+            Assert.IsTrue(domainChecks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-b").IsChecked != true,
+                "unpicked catalog options start unchecked");
+        });
+
+    [TestMethod]
+    public void Toggling_a_talent_domain_pick_updates_selection_and_voids_the_acknowledgement()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "magician", [])
+            {
+                Spells = new(["sr6-spell-test-a"]),
+            };
+            presenter.SavedState = foundation with
+            {
+                SpellOptions = [new("sr6-spell-test-a", "Test Spell A", "spell", "combat", "anchor-a"),
+                    new("sr6-spell-test-b", "Test Spell B", "spell", "detection", "anchor-b")],
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "magician";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            var confirmCheck = window.GetVisualDescendants().OfType<CheckBox>()
+                .First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-confirm-checkbox");
+            confirmCheck.IsChecked = true;
+            Click(window, "FinishButton");
+            Assert.AreEqual(1, presenter.Confirms);
+            // Back out to attributes, come forward: the domain editor is re-rendered;
+            // toggling the unpicked spell must update the saved selection and VOID
+            // the earlier acknowledgement (new preview digest).
+            var domainB = window.GetVisualDescendants().OfType<CheckBox>()
+                .First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-b");
+            domainB.IsChecked = true;
+            Assert.IsFalse(window.FindControl<Button>("FinishButton")!.IsEnabled,
+                "a domain change voids the earlier acknowledgement (finish needs a fresh ack)");
+            // The window is the draft authority for this bounded editor, and the
+            // Blocked stub leaves Back/Next disabled, so the draft is read from the
+            // window state (same reflection pattern as the digest-gate test).
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+            var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+            var draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            Assert.IsTrue(draft.Spells!.CatalogIds.Contains("sr6-spell-test-b"),
+                "the toggle must land in the in-window draft selection");
+            var heldDigest = (string?)typeof(Sr6CreationWizardWindow)
+                .GetField("_confirmedPreviewDigest", Priv)!.GetValue(window);
+            Assert.IsNull(heldDigest, "a domain change must void the held acknowledgement digest");
+            // A stale or fresh press cannot dispatch again: the Blocked outcome keeps
+            // the confirmation latched and all footer buttons disabled.
+            Click(window, "FinishButton");
+            Assert.AreEqual(1, presenter.Confirms, "the stale acknowledgement must not dispatch the new preview");
+        });
+    [TestMethod]
     public void Store_read_failure_on_open_surfaces_as_blockers_not_crash()
         => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
         {
