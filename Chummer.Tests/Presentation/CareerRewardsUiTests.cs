@@ -1135,6 +1135,50 @@ public sealed class CareerRewardsUiTests
         });
     }
     [TestMethod]
+    public void Menu_item_activation_is_measured_by_the_menu_click_probe()
+    {
+        // Controller9415 gen10: MenuItem activation raises
+        // MenuItem.ClickEvent, not Button.ClickEvent. The delivery probe
+        // must listen to the real activation signal, otherwise an executed
+        // menu command reports delivered=false and the press discipline
+        // fail-closes on a live outcome (gen10n evidence).
+        WithHeadlessUi(() =>
+        {
+            MenuItem item = new MenuItem { Header = "new_character", IsEnabled = true };
+            int activations = 0;
+            item.AddHandler(MenuItem.ClickEvent, (_, _) => activations++);
+            Window host = new Window { Content = new StackPanel { Children = { item } } };
+            host.Show();
+            try
+            {
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(host);
+
+                Task<string>? routeTask = null;
+                Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    routeTask = DesktopMouseFirstJourneyRunner.RoutePointerClickResolvedAsync(
+                        item,
+                        waitForClick: false,
+                        liveTarget: () => item);
+                });
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsNotNull(routeTask, "the route task must be assigned synchronously");
+                Assert.IsTrue(routeTask.IsCompletedSuccessfully, "the route must complete under the headless pump");
+                string routing = routeTask.Result;
+                Assert.IsTrue(
+                    routing.StartsWith("delivered=True", StringComparison.OrdinalIgnoreCase),
+                    "a menu item activation must be reported as delivered through the MenuItem probe: " + routing);
+                Assert.AreEqual(1, activations, "exactly one MenuItem activation per dispatch");
+            }
+            finally
+            {
+                host.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
     public void Advance_window_tab_walk_reaches_close_and_escape_cancels_without_commit()
     {
         WithHeadlessUi(() =>

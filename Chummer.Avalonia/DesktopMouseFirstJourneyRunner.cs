@@ -10244,6 +10244,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             string inputDiagnostics = string.Empty;
             void ClickProbe(object? sender, RoutedEventArgs args) => delivered = true;
             control.AddHandler(Button.ClickEvent, ClickProbe);
+            // Controller9415 gen10: MenuItem activation raises
+            // MenuItem.ClickEvent, not Button.ClickEvent. A menu command
+            // that executes closes its own popup during the same raise,
+            // so the post-raise hit-test diagnostics go dark - the
+            // activation event is the only honest delivery signal for
+            // menu items.
+            control.AddHandler(MenuItem.ClickEvent, ClickProbe);
 
             void RaiseSyntheticClick()
             {
@@ -10302,6 +10309,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             void Finish()
             {
                 control.RemoveHandler(Button.ClickEvent, ClickProbe);
+                control.RemoveHandler(MenuItem.ClickEvent, ClickProbe);
                 string pressedState = (control as Button)?.IsPressed.ToString() ?? "n/a";
                 string attached = control.GetVisualRoot() is not null ? "attached" : "detached";
                 completion.TrySetResult(
@@ -10328,6 +10336,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         ? (pc.GetType().Name + ":" + (global::Avalonia.Automation.AutomationProperties.GetAutomationId(pc) ?? pc.Name ?? string.Empty))
                         : probeTarget?.GetType().Name ?? "null";
                     control.RemoveHandler(Button.ClickEvent, ClickProbe);
+                control.RemoveHandler(MenuItem.ClickEvent, ClickProbe);
                     completion.TrySetResult(
                         "delivered=false;reason=target-not-live-at-press;probe=miss;"
                         + "realTarget=" + probeTargetText + ";"
