@@ -7643,9 +7643,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
             if (!focusReturned)
             {
+                string restoreDiag = string.Join("|", MainWindow.Sr6FocusRestoreDiagnostics.Snapshot());
                 throw new InvalidOperationException(
                     "sr6 keyboard leg failed: focus did not return to the underlying route after the Escape close ("
-                    + focusDiag + ").");
+                    + focusDiag + "; restoreDiag=" + restoreDiag + ").");
             }
             RecordStep(steps, "sr6 keyboard leg: focus returned to the Agility route after the Escape close (" + focusDiag + ")");
             decimal escKarmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);

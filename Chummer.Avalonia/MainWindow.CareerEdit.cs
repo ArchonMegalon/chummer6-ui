@@ -379,8 +379,25 @@ public partial class MainWindow
             // pass so the window's own focus cleanup cannot clobber the
             // restored focus (gen10v evidence: an immediate restore was
             // observed unfocused by the journey's single-shot probe).
-            Dispatcher.UIThread.Post(() =>
-                RestoreInitiatingFocusAfterAdvanceDialogClose(this, initiatingFocus, initiatingFocusName));
+            // The modal's close sequence keeps unwinding after ShowDialog's
+            // task completes; the window's own focus cleanup can land after
+            // any single restore attempt and clear it (gen10v/gen10w
+            // evidence: focusOwner=none across the entire observation). The
+            // restore is therefore SELF-VERIFYING and BOUNDED-RETRIED: each
+            // attempt re-resolves the live row, focuses it, and confirms
+            // through the focus manager before succeeding. Focus management
+            // only - never a re-press (Controller9415).
+            _ = Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                for (int restoreAttempt = 0; restoreAttempt < 10; restoreAttempt++)
+                {
+                    if (RestoreInitiatingFocusAfterAdvanceDialogClose(this, initiatingFocus, initiatingFocusName))
+                    {
+                        return;
+                    }
+                    await Task.Delay(60).ConfigureAwait(true);
+                }
+            });
             if (!ContextStillCurrent())
             {
                 // Owner/workspace/revision moved while the dialog was open; the
@@ -480,7 +497,9 @@ public partial class MainWindow
                 && same.GetVisualRoot() is not null
                 && same.Focus())
             {
-                return true;
+                bool confirmed = ReferenceEquals(owner.FocusManager?.GetFocusedElement(), same);
+                Sr6FocusRestoreDiagnostics.Record("same-instance focused=" + confirmed);
+                return confirmed;
             }
             if (!string.IsNullOrEmpty(initiatingFocusName))
             {
@@ -488,18 +507,55 @@ public partial class MainWindow
                     .OfType<Control>()
                     .FirstOrDefault(candidate => string.Equals(candidate.Name, initiatingFocusName, StringComparison.Ordinal)
                         && candidate.IsEffectivelyVisible);
-                if (rebuilt is not null)
+                if (rebuilt is not null && rebuilt.Focus()
+                    && ReferenceEquals(owner.FocusManager?.GetFocusedElement(), rebuilt))
                 {
-                    return rebuilt.Focus();
+                    Sr6FocusRestoreDiagnostics.Record("by-name '" + initiatingFocusName + "' focused=True");
+                    return true;
                 }
+                Sr6FocusRestoreDiagnostics.Record("by-name '" + initiatingFocusName + "' focused=False");
             }
+            Sr6FocusRestoreDiagnostics.Record("no visible target (name='" + (initiatingFocusName ?? "<null>") + "')");
             return false;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             // Focus restoration is best-effort accessibility behavior; never
             // fail a completed mutation on it.
+            Sr6FocusRestoreDiagnostics.Record("exception " + ex.GetType().Name);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Bounded diagnostics ring for the advancement-modal focus restoration
+    /// (gen10w): the journey dumps the most recent attempts when the
+    /// focus-return proof fails, so failures carry measured facts instead of
+    /// theory. Never carries user data - only restoration attempt outcomes.
+    /// </summary>
+    internal static class Sr6FocusRestoreDiagnostics
+    {
+        private static readonly object Gate = new();
+        private static readonly List<string> Entries = new();
+
+        public static void Record(string entry)
+        {
+            lock (Gate)
+            {
+                Entries.Add(entry);
+                if (Entries.Count > 64)
+                {
+                    Entries.RemoveRange(0, Entries.Count - 64);
+                }
+            }
+        }
+
+        public static IReadOnlyList<string> Snapshot()
+        {
+            lock (Gate)
+            {
+                return Entries.ToArray();
+            }
         }
     }
 
