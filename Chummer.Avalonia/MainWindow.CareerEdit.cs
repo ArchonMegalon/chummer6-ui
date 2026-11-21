@@ -513,7 +513,11 @@ public partial class MainWindow
                     Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " owner-closed refusal attempt" + restoreAttempt);
                     return;
                 }
-                if (RestoreInitiatingFocusAfterAdvanceDialogClose(owner, initiatingFocus, initiatingFocusName))
+                // Controller9591 gap 2: hand the LIVE guard to the helper so
+                // every Focus attempt inside it is individually guarded - the
+                // loop-level check alone cannot cover the two Focus sites
+                // against a switch that lands between them.
+                if (RestoreInitiatingFocusAfterAdvanceDialogClose(owner, initiatingFocus, initiatingFocusName, displayStillCurrent))
                 {
                     Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " restored attempt" + restoreAttempt);
                     return;
@@ -552,11 +556,16 @@ public partial class MainWindow
     /// it is still visible, then re-resolve by name for a parity-grid
     /// rebuild. Returns false when no visible target could be focused; the
     /// completed mutation is never failed on focus restoration.
+    /// Controller9591 gap 2: the live display guard is re-checked
+    /// immediately before EVERY Focus attempt - the same-instance attempt
+    /// AND the by-name fallback after a failed/reentrant attempt - so a
+    /// context that switched between attempts never receives focus.
     /// </summary>
     internal static bool RestoreInitiatingFocusAfterAdvanceDialogClose(
         TopLevel owner,
         IInputElement? initiatingFocus,
-        string? initiatingFocusName)
+        string? initiatingFocusName,
+        Func<bool>? displayStillCurrent = null)
     {
         try
         {
@@ -564,18 +573,37 @@ public partial class MainWindow
             // IsEffectivelyVisible=true, but Focus() on a control with no
             // visual root fails: fall through to the name re-resolve instead
             // of returning that failure (rebuild-phase evidence).
-            if (initiatingFocus is Control same
-                && same.IsEffectivelyVisible
-                && ReferenceEquals(same.GetVisualRoot(), owner)
-                && same.Focus())
+            if (initiatingFocus is Control same)
             {
-                bool confirmed = ReferenceEquals(owner.FocusManager?.GetFocusedElement(), same);
-                Sr6FocusRestoreDiagnostics.Record("same-instance focused=" + confirmed);
-                Sr6FocusRestoreDiagnostics.RecordLastRestoreOutcome(confirmed, "same-instance");
-                return confirmed;
+                // Controller9591 gap 2: the guard is evaluated again at THIS
+                // branch entry - including after any prior failed attempt -
+                // before the same-instance Focus is allowed.
+                if (displayStillCurrent is not null && !displayStillCurrent())
+                {
+                    Sr6FocusRestoreDiagnostics.Record("guard refusal before same-instance focus");
+                    return false;
+                }
+                if (same.IsEffectivelyVisible
+                    && ReferenceEquals(same.GetVisualRoot(), owner)
+                    && same.Focus())
+                {
+                    bool confirmed = ReferenceEquals(owner.FocusManager?.GetFocusedElement(), same);
+                    Sr6FocusRestoreDiagnostics.Record("same-instance focused=" + confirmed);
+                    Sr6FocusRestoreDiagnostics.RecordLastRestoreOutcome(confirmed, "same-instance");
+                    return confirmed;
+                }
             }
             if (!string.IsNullOrEmpty(initiatingFocusName))
             {
+                // Controller9591 gap 2: the guard is evaluated again before
+                // the by-name fallback - including when this attempt follows
+                // a FAILED same-instance attempt - so a context that switched
+                // between attempts never receives keyboard focus.
+                if (displayStillCurrent is not null && !displayStillCurrent())
+                {
+                    Sr6FocusRestoreDiagnostics.Record("guard refusal before by-name focus");
+                    return false;
+                }
                 Control? rebuilt = owner.GetVisualDescendants()
                     .OfType<Control>()
                     .FirstOrDefault(candidate => string.Equals(candidate.Name, initiatingFocusName, StringComparison.Ordinal)

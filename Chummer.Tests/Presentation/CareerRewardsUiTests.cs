@@ -1229,6 +1229,147 @@ public sealed class CareerRewardsUiTests
         });
     }
     [TestMethod]
+    public void Deferred_focus_restore_guard_is_consulted_before_every_focus_attempt()
+    {
+        // Controller9591 gap 2: the helper's two Focus sites (same-instance
+        // and the by-name fallback) must each consult the live guard. The
+        // initiating row is detached so the same-instance attempt fails and
+        // the by-name fallback runs: the guard must be consulted exactly
+        // TWICE (once per branch) and the restore must still land.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(row, captured, "precondition: capture is the row");
+
+                // Rebuild-over: detach the original row, render a same-named
+                // successor (the same-instance attempt will fail).
+                var panel = (StackPanel)owner.Content!;
+                Button rebuilt = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI (rebuilt)" };
+                panel.Children.Clear();
+                panel.Children.Add(rebuilt);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(owner);
+
+                int guardCalls = 0;
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(
+                    owner, captured, capturedName, displayStillCurrent: () => { guardCalls++; return true; });
+                Assert.IsTrue(restored, "the by-name fallback must restore when the guard stays current");
+                Assert.AreEqual(2, guardCalls,
+                    "the guard must be consulted once per Focus branch (same-instance, then by-name fallback)");
+                Dispatcher.UIThread.RunJobs();
+                Assert.AreSame(rebuilt, owner.FocusManager?.GetFocusedElement() as Control,
+                    "focus must land on the rebuilt instance");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Context_change_between_attempts_refuses_by_name_focus_restoration()
+    {
+        // Controller9591 gap 2: the context switches AFTER the same-instance
+        // attempt failed but BEFORE the by-name fallback evaluates - the
+        // fallback must consult the guard, observe the switch, and refuse
+        // without focusing anything.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(row, captured, "precondition: capture is the row");
+
+                // Rebuild-over so the same-instance attempt fails and the
+                // helper reaches the by-name fallback.
+                var panel = (StackPanel)owner.Content!;
+                Button rebuilt = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI (rebuilt)" };
+                panel.Children.Clear();
+                panel.Children.Add(rebuilt);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(owner);
+
+                int guardCalls = 0;
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(
+                    owner, captured, capturedName, displayStillCurrent: () => ++guardCalls <= 1);
+                Assert.IsFalse(restored, "the switched context must refuse the by-name restore");
+                Assert.AreEqual(2, guardCalls,
+                    "the guard must be consulted at the same-instance branch AND again at the by-name fallback");
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsFalse(rebuilt.IsFocused, "the rebuilt row must NOT receive focus after the switch");
+
+                IReadOnlyList<string> ring = MainWindow.Sr6FocusRestoreDiagnostics.Snapshot();
+                int refusalIndex = LastIndexOf(ring, "guard refusal before by-name focus");
+                Assert.IsTrue(refusalIndex >= 0, "the refusal must be recorded honestly in the diagnostics ring");
+                Assert.AreEqual(-1, FirstFocusConfirmationAfter(ring, refusalIndex),
+                    "no focus confirmation may follow the refusal in the ring");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Context_change_refuses_focus_restoration_before_the_first_focus()
+    {
+        // Controller9591 gap 2: a switched context must be refused before the
+        // SAME-INSTANCE focus too - the row stays attached and focused, so
+        // absent the guard the restore would have succeeded; the guard must
+        // preempt it with a single consultation.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(row, captured, "precondition: capture is the row");
+
+                int guardCalls = 0;
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(
+                    owner, captured, capturedName, displayStillCurrent: () => { guardCalls++; return false; });
+                Assert.IsFalse(restored, "the switched context must refuse before any Focus");
+                Assert.AreEqual(1, guardCalls,
+                    "the refusal at the same-instance branch must short-circuit without consulting the by-name branch");
+
+                IReadOnlyList<string> ring = MainWindow.Sr6FocusRestoreDiagnostics.Snapshot();
+                int refusalIndex = LastIndexOf(ring, "guard refusal before same-instance focus");
+                Assert.IsTrue(refusalIndex >= 0, "the pre-focus refusal must be recorded honestly in the diagnostics ring");
+                Assert.AreEqual(-1, FirstFocusConfirmationAfter(ring, refusalIndex),
+                    "no focus confirmation may follow the pre-focus refusal in the ring");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
     public void Older_restore_cycle_cannot_focus_behind_a_newer_open_modal()
     {
         // Controller9568: close A, open B before A's delayed restore
@@ -2030,6 +2171,30 @@ public sealed class CareerRewardsUiTests
                 host.Close();
             }
         });
+    }
+
+    private static int LastIndexOf(IReadOnlyList<string> ring, string entry)
+    {
+        for (int i = ring.Count - 1; i >= 0; i--)
+        {
+            if (string.Equals(ring[i], entry, StringComparison.Ordinal))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int FirstFocusConfirmationAfter(IReadOnlyList<string> ring, int fromIndex)
+    {
+        for (int i = fromIndex + 1; i < ring.Count; i++)
+        {
+            if (ring[i].Contains("focused=", StringComparison.Ordinal))
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static void WithHeadlessUi(Action action)
