@@ -387,16 +387,33 @@ public partial class MainWindow
             // attempt re-resolves the live row, focuses it, and confirms
             // through the focus manager before succeeding. Focus management
             // only - never a re-press (Controller9415).
+            // Gen10x ring evidence: rapid successive modals (the natural
+            // -limit demo) posted ~10 concurrent restore loops whose delayed
+            // continuations interleaved and clobbered each other's focus.
+            // Each new cycle therefore INVALIDATES the pending older loops
+            // via a generation token - a stale loop exits silently instead
+            // of fighting the newest capture over keyboard focus.
+            Sr6FocusRestoreDiagnostics.Record("capture type="
+                + (initiatingFocus?.GetType().Name ?? "<null>")
+                + " name=" + (initiatingFocusName ?? "<null>"));
+            int restoreGeneration = Sr6FocusRestoreDiagnostics.BeginRestoreCycle();
             _ = Dispatcher.UIThread.InvokeAsync(async () =>
             {
                 for (int restoreAttempt = 0; restoreAttempt < 10; restoreAttempt++)
                 {
+                    if (!Sr6FocusRestoreDiagnostics.IsCurrentCycle(restoreGeneration))
+                    {
+                        Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " stale-exit attempt" + restoreAttempt);
+                        return;
+                    }
                     if (RestoreInitiatingFocusAfterAdvanceDialogClose(this, initiatingFocus, initiatingFocusName))
                     {
+                        Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " restored attempt" + restoreAttempt);
                         return;
                     }
                     await Task.Delay(60).ConfigureAwait(true);
                 }
+                Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " exhausted");
             });
             if (!ContextStillCurrent())
             {
@@ -515,7 +532,10 @@ public partial class MainWindow
                 }
                 Sr6FocusRestoreDiagnostics.Record("by-name '" + initiatingFocusName + "' focused=False");
             }
-            Sr6FocusRestoreDiagnostics.Record("no visible target (name='" + (initiatingFocusName ?? "<null>") + "')");
+            if (initiatingFocus is not null || !string.IsNullOrEmpty(initiatingFocusName))
+            {
+                Sr6FocusRestoreDiagnostics.Record("no visible target (name='" + (initiatingFocusName ?? "<null>") + "')");
+            }
             return false;
         }
         catch (Exception ex)
@@ -547,6 +567,27 @@ public partial class MainWindow
                 {
                     Entries.RemoveRange(0, Entries.Count - 64);
                 }
+            }
+        }
+
+        private static int _cycle;
+
+        /// <summary>Begins a restore cycle and invalidates every pending older one.</summary>
+        public static int BeginRestoreCycle()
+        {
+            lock (Gate)
+            {
+                _cycle++;
+                Record("cycle" + _cycle + " begin");
+                return _cycle;
+            }
+        }
+
+        public static bool IsCurrentCycle(int generation)
+        {
+            lock (Gate)
+            {
+                return generation == _cycle;
             }
         }
 
