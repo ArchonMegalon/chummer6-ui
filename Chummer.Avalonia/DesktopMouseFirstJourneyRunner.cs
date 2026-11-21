@@ -6621,21 +6621,41 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} control absent");
                                 continue;
                             }
-                            try
+                            // Controller9415 gen10: the post-apply workspace
+                            // republish can RESET the section host's selected
+                            // tab after this click lands (gen10s evidence:
+                            // host ended on Character Card). Tab navigation
+                            // cannot commit character state, so re-pressing
+                            // the same candidate after an outcome miss is
+                            // safe - no possible delivery of a committed
+                            // command.
+                            bool rowFound = false;
+                            for (int walkPress = 1; walkPress <= 3 && !rowFound; walkPress++)
                             {
-                                await RoutePointerClickAsync(tabControl);
+                                try
+                                {
+                                    await RoutePointerClickAsync(tabControl);
+                                }
+                                catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
+                                {
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} not clickable (press {walkPress}, {walkFailure.GetType().Name}: {walkFailure.Message})");
+                                    continue;
+                                }
+                                recordPointerAction();
+                                RecordStep(steps, $"sr6 natural-limit tab walk: clicked {candidateTabId} (press {walkPress})");
+                                if (await WaitForConditionWithinAsync(
+                                        () => FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD") is not null,
+                                        ct,
+                                        TimeSpan.FromSeconds(10)))
+                                {
+                                    rowFound = true;
+                                }
+                                else
+                                {
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} pressed but row absent after wait (press {walkPress}) - possible republish tab reset");
+                                }
                             }
-                            catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
-                            {
-                                RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} not clickable ({walkFailure.GetType().Name}: {walkFailure.Message})");
-                                continue;
-                            }
-                            recordPointerAction();
-                            RecordStep(steps, $"sr6 natural-limit tab walk: clicked {candidateTabId}");
-                            if (await WaitForConditionWithinAsync(
-                                    () => FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD") is not null,
-                                    ct,
-                                    TimeSpan.FromSeconds(10)))
+                            if (rowFound)
                             {
                                 limitRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
                                 break;
