@@ -6756,10 +6756,56 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             return (decimal)before;
                         });
                         await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(advanceWindow));
+                        // Controller9534: a width360 capture alone does not
+                        // prove unclipped actions. Assert the real geometry:
+                        // BOTH action buttons must be present, effectively
+                        // visible, and their bounds must sit fully inside the
+                        // window client rectangle at the narrow size.
+                        (bool unclippedOk, string unclippedDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            Button? narrowApply = FindInWindow<Button>(advanceWindow, "sr6-career-attribute-advance-apply");
+                            Button? narrowCancel = FindInWindow<Button>(advanceWindow, "sr6-career-attribute-advance-cancel");
+                            if (narrowApply is null || narrowCancel is null)
+                            {
+                                return (false, "missing action buttons at narrow width (apply="
+                                    + (narrowApply is not null) + ", cancel=" + (narrowCancel is not null) + ")");
+                            }
+                            if (!narrowApply.IsEffectivelyVisible || !narrowCancel.IsEffectivelyVisible)
+                            {
+                                return (false, "action buttons not effectively visible at narrow width (apply="
+                                    + narrowApply.IsEffectivelyVisible + ", cancel=" + narrowCancel.IsEffectivelyVisible + ")");
+                            }
+                            Point applyTopLeft = narrowApply.TranslatePoint(default, advanceWindow) ?? default;
+                            Point applyBottomRight = applyTopLeft + new Vector(narrowApply.Bounds.Width, narrowApply.Bounds.Height);
+                            Point cancelTopLeft = narrowCancel.TranslatePoint(default, advanceWindow) ?? default;
+                            Point cancelBottomRight = cancelTopLeft + new Vector(narrowCancel.Bounds.Width, narrowCancel.Bounds.Height);
+                            Rect client = new Rect(default, new Size(advanceWindow.Bounds.Width, advanceWindow.Bounds.Height));
+                            if (!client.Contains(applyTopLeft) || !client.Contains(applyBottomRight))
+                            {
+                                return (false, "apply action clipped at narrow width (bounds "
+                                    + applyTopLeft + ".." + applyBottomRight + " vs client " + client + ")");
+                            }
+                            if (!client.Contains(cancelTopLeft) || !client.Contains(cancelBottomRight))
+                            {
+                                return (false, "cancel action clipped at narrow width (bounds "
+                                    + cancelTopLeft + ".." + cancelBottomRight + " vs client " + client + ")");
+                            }
+                            return (true, "apply@" + applyTopLeft + ".." + applyBottomRight
+                                + " cancel@" + cancelTopLeft + ".." + cancelBottomRight
+                                + " client=" + client.Width.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + "x"
+                                + client.Height.ToString("F0", System.Globalization.CultureInfo.InvariantCulture));
+                        });
+                        if (!unclippedOk)
+                        {
+                            throw new InvalidOperationException(
+                                "sr6 natural-limit leg failed: narrow-size modal does not prove unclipped actions: "
+                                + unclippedDiag);
+                        }
                         string narrowShot = await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06e-sr6-narrow-size");
                         await Dispatcher.UIThread.InvokeAsync(() => advanceWindow.Width = (double)narrowWidth);
                         await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(advanceWindow));
-                        RecordStep(steps, "sr6 natural-limit: captured narrow-size modal (06e-sr6-narrow-size, width 360, restored)");
+                        RecordStep(steps, "sr6 natural-limit: captured narrow-size modal (06e-sr6-narrow-size, width 360, actions verified unclipped: "
+                            + unclippedDiag + ")");
                         // Cancel the blocked dialog: no apply is possible and no mutation may occur.
                         // Gen17 (Controller8300, T659): this is the branch the
                         // gen16 phaseA receipt proved EXECUTED, and it still
@@ -7374,18 +7420,32 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         continue;
                     }
 
+                    string walkRouting;
                     try
                     {
-                        await RoutePointerClickAsync(tabControl);
+                        walkRouting = await RoutePointerClickAsync(tabControl);
                     }
-                    catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
+                    catch (Exception walkFault)
                     {
-                        // Transient routing failures (control rebuilt between
-                        // discovery and click during state publications) retry
-                        // on the next candidate just like unreachable tabs.
+                        // Controller9539: a thrown routing fault must not be
+                        // swallowed and re-tried against the next candidate -
+                        // the press may have delivered. Fail closed.
+                        throw new InvalidOperationException(
+                            "sr6 keyboard leg tab walk failed on " + candidateTabId
+                            + ": " + walkFault.Message, walkFault);
+                    }
+                    if (walkRouting.Contains("delivered=false", StringComparison.Ordinal))
+                    {
+                        // The tab press did not deliver navigation (the control
+                        // was rebuilt between discovery and press). This is a
+                        // PRE-press not-live state for a navigation affordance
+                        // with no typed target-not-live variant; retrying on
+                        // the next candidate tab is safe because a navigation
+                        // click cannot commit character state. Record and move
+                        // on without counting a pointer action.
                         RecordStep(
                             steps,
-                            $"sr6 keyboard leg tab walk: {candidateTabId} not clickable ({walkFailure.GetType().Name}: {walkFailure.Message}); navigation surface: {DescribePrimaryNavigationSurface(window)}");
+                            $"sr6 keyboard leg tab walk: {candidateTabId} not delivered ({walkRouting}); trying next candidate");
                         continue;
                     }
 
@@ -7409,36 +7469,32 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // State publications rebuild the parity rows, so re-find a fresh
             // TopLevel-rooted reference for each press attempt (the same
             // bounded retry the natural-limit leg uses).
-            bool escOpened = false;
-            for (int escAttempt = 1; escAttempt <= 3 && !escOpened; escAttempt++)
-            {
-                Button? freshEscRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
-                if (freshEscRow is null)
-                {
-                    continue;
-                }
-                try
-                {
-                    await RoutePointerClickAsync(freshEscRow);
-                    recordPointerAction();
-                }
-                catch (InvalidOperationException routingFailure)
-                {
-                    RecordStep(steps, $"sr6 keyboard leg attempt {escAttempt} routing failed: {routingFailure.Message}");
-                }
-                escOpened = await WaitForConditionWithinAsync(
-                    () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
-                    ct,
-                    TimeSpan.FromSeconds(8));
-            }
-            if (!escOpened)
-            {
-                throw new InvalidOperationException(
-                    "sr6 keyboard leg failed: the advance window did not open for the Agility Escape-close proof.");
-            }
-            RecordStep(steps, "sr6 keyboard leg: opened a fresh Agility advance modal for the Escape-close proof");
-            Sr6CareerAttributeAdvanceWindow? escWindow = await Dispatcher.UIThread.InvokeAsync(
-                ResolveSingleAdvanceWindow);
+            // Controller9539: the open press runs through the 9415 delivery-discipline
+            // core - only an explicit PRE-press target-not-live result retries
+            // the press; any other not-delivered result or a thrown fault fails
+            // closed; the modal is observed ONCE after delivery and a slow
+            // observation NEVER re-presses a possibly-committed command.
+            Sr6CareerAttributeAdvanceWindow? escWindow =
+                await PressThenObserveWithDeliveryDisciplineAsync<Sr6CareerAttributeAdvanceWindow>(
+                    () => PressImproveRowWithDeliveryDisciplineAsync(
+                        window, "AttributeImprove_AGI", steps, ct, recordPointerAction),
+                    async () =>
+                    {
+                        bool opened = await WaitForConditionWithinAsync(
+                            () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
+                            ct,
+                            TimeSpan.FromSeconds(8));
+                        if (!opened)
+                        {
+                            return null;
+                        }
+                        return await Dispatcher.UIThread.InvokeAsync(ResolveSingleAdvanceWindow);
+                    },
+                    async () => await Dispatcher.UIThread.InvokeAsync(ResolveSingleAdvanceWindow),
+                    message => RecordStep(steps, message),
+                    maxNotLiveRetries: 3,
+                    failContext: "sr6 keyboard leg",
+                    ct);
             if (escWindow is null)
             {
                 throw new InvalidOperationException(
@@ -7450,6 +7506,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             decimal escKarmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
             decimal escNuyenBefore = ReadCareerRewardsNuyenBalance(sectionHost);
             long escRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
+            // Controller9534: prove focus RETURN after the close. The row that
+            // opened the modal (initial focus lives on Apply inside the modal)
+            // must regain focus once the modal closes - focus must not be left
+            // dangling on nothing.
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Button? rowBeforeEscape = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                if (rowBeforeEscape is null)
+                {
+                    throw new InvalidOperationException(
+                        "sr6 keyboard leg failed: the Agility improve row vanished before the Escape press.");
+                }
+                rowBeforeEscape.Focus();
+            });
             await Dispatcher.UIThread.InvokeAsync(() => SendKeyStroke(escWindow, Key.Escape, KeyModifiers.None));
             RecordStep(steps, "sr6 keyboard leg: pressed Escape on the advance modal");
             bool escClosed = await WaitForConditionWithinAsync(
@@ -7461,6 +7531,28 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 throw new InvalidOperationException(
                     "sr6 keyboard leg failed: the advance window did not close after the Escape key press.");
             }
+            (bool focusReturned, string focusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Button? rowAfterEscape = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                if (rowAfterEscape is null)
+                {
+                    return (false, "the Agility improve row no longer renders after the modal close");
+                }
+                if (!rowAfterEscape.IsEffectivelyVisible)
+                {
+                    return (false, "the Agility improve row is not effectively visible after the modal close");
+                }
+                bool focused = rowAfterEscape.IsFocused || rowAfterEscape.IsKeyboardFocusWithin;
+                return (focused, "rowIsFocused=" + rowAfterEscape.IsFocused
+                    + " keyboardFocusWithin=" + rowAfterEscape.IsKeyboardFocusWithin);
+            });
+            if (!focusReturned)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: focus did not return to the underlying route after the Escape close ("
+                    + focusDiag + ").");
+            }
+            RecordStep(steps, "sr6 keyboard leg: focus returned to the Agility route after the Escape close (" + focusDiag + ")");
             decimal escKarmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
             decimal escNuyenAfter = ReadCareerRewardsNuyenBalance(sectionHost);
             long escRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
@@ -9764,6 +9856,133 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     /// inactive window refuses resolution (returns null) so the caller
     /// records an honest refusal instead of clicking an unowned control.
     /// </summary>
+    /// <summary>
+    /// Controller9539/9415 press-observation core: presses via
+    /// <paramref name="pressAsync"/>, then observes via
+    /// <paramref name="observeAsync"/> EXACTLY ONCE per delivered press.
+    /// Retries the press only when the delivery string is the explicit
+    /// pre-press "target-not-live-at-press" result (bounded by
+    /// <paramref name="maxNotLiveRetries"/>). Any other not-delivered result,
+    /// a thrown press fault, or a post-delivery observation timeout fails
+    /// closed: a possibly-committed command is NEVER re-pressed because an
+    /// observation timed out.
+    /// </summary>
+    internal static async Task<T> PressThenObserveWithDeliveryDisciplineAsync<T>(
+        Func<Task<string>> pressAsync,
+        Func<Task<T?>> observeAsync,
+        Func<Task<T?>>? reconcileAsync,
+        Action<string> recordStep,
+        int maxNotLiveRetries,
+        string failContext,
+        CancellationToken ct) where T : class
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            string routing;
+            try
+            {
+                routing = await pressAsync();
+            }
+            catch (Exception pressFault)
+            {
+                // A thrown fault may or may not have delivered input; either
+                // way a re-press is forbidden - fail closed.
+                throw new InvalidOperationException(
+                    failContext + ": press fault at attempt " + attempt + ": " + pressFault.Message,
+                    pressFault);
+            }
+            if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
+            {
+                if (attempt > maxNotLiveRetries)
+                {
+                    throw new InvalidOperationException(
+                        failContext + ": the press target was not live at press after " + (attempt - 1)
+                        + " bounded not-live retries.");
+                }
+                recordStep(failContext + " attempt " + attempt + " target not live at press - retrying within the pre-press budget");
+                await Task.Delay(250, ct);
+                continue;
+            }
+            if (routing.Contains("delivered=false", StringComparison.Ordinal))
+            {
+                // Any other not-delivered result is unexpected: fail closed
+                // without a re-click.
+                throw new InvalidOperationException(
+                    failContext + ": the press was not delivered: " + routing);
+            }
+            // Delivered (or a result that claims delivery): observe ONCE.
+            // No re-press on an observation timeout.
+            T? observed;
+            try
+            {
+                observed = await observeAsync();
+            }
+            catch (Exception observeFault)
+            {
+                throw new InvalidOperationException(
+                    failContext + ": observation fault after a delivered press (no re-press): " + observeFault.Message,
+                    observeFault);
+            }
+            if (observed is not null)
+            {
+                return observed;
+            }
+            if (reconcileAsync is not null)
+            {
+                T? reconciled;
+                try
+                {
+                    reconciled = await reconcileAsync();
+                }
+                catch (Exception reconcileFault)
+                {
+                    throw new InvalidOperationException(
+                        failContext + ": reconciliation fault after a delivered press (no re-press): " + reconcileFault.Message,
+                        reconcileFault);
+                }
+                if (reconciled is not null)
+                {
+                    recordStep(failContext + ": observation timed out but reconciliation found the target (no re-press)");
+                    return reconciled;
+                }
+            }
+            throw new InvalidOperationException(
+                failContext + ": the delivered press did not produce the observed target (observation failed, no re-press attempted per Controller9539).");
+        }
+    }
+
+/// <summary>
+    /// Controller9539: press an improve row with the 9415 delivery discipline.
+    /// The resolver runs inside the press frame; only an explicit pre-press
+    /// "target-not-live-at-press" result is retryable, thrown faults escape to
+    /// the caller as fail-closed failures, and the returned delivery string is
+    /// always the typed route result (never a fabricated success).
+    /// </summary>
+    private static async Task<string> PressImproveRowWithDeliveryDisciplineAsync(
+        MainWindow window,
+        string improveRowAutomationId,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string routing = await RoutePointerClickResolvedAsync(
+            window,
+            waitForClick: false,
+            liveTarget: () => FindVisibleCareerRewardsButton(window, improveRowAutomationId));
+        if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
+        {
+            RecordStep(steps, $"sr6 improve row {improveRowAutomationId} target not live at press");
+            return routing;
+        }
+        if (routing.Contains("delivered=false", StringComparison.Ordinal))
+        {
+            return routing;
+        }
+        recordPointerAction();
+        RecordStep(steps, $"sr6 improve row {improveRowAutomationId} press delivered ({routing.Split(';')[0]})");
+        return routing;
+    }
+
     internal static Sr6CareerAttributeAdvanceWindow? ResolveSingleAdvanceWindow()
     {
         // Same-modal resolution uses the window class's live-instance

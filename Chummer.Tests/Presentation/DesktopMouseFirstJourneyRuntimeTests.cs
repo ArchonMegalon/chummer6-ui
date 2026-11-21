@@ -1,11 +1,154 @@
 using Chummer.Desktop.Runtime;
+using Chummer.Avalonia;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
 
 namespace Chummer.Tests.Presentation;
 
 [TestClass]
 public sealed class DesktopMouseFirstJourneyRuntimeTests
 {
+    [TestMethod]
+    public async Task Press_discipline_never_represses_after_a_possibly_delivered_press()
+    {
+        // Controller9539 regression: after a press whose delivery was observed
+        // (delivered=true), a starved observation + failed reconciliation must
+        // fail closed with EXACTLY ONE press - the pre-9539 loop re-pressed
+        // after the observation timeout.
+        int presses = 0;
+        InvalidOperationException? failure = null;
+        try
+        {
+            await DesktopMouseFirstJourneyRunner.PressThenObserveWithDeliveryDisciplineAsync<object>(
+                async () =>
+                {
+                    presses++;
+                    await Task.Delay(1);
+                    return "delivered=true;isPressed=True;enabled=True;visible=True;attached;";
+                },
+                async () =>
+                {
+                    await Task.Delay(1);
+                    return (object?)null; // observation starved
+                },
+                async () =>
+                {
+                    await Task.Delay(1);
+                    return (object?)null; // reconciliation also finds nothing
+                },
+                _ => { },
+                maxNotLiveRetries: 3,
+                failContext: "discipline-regression",
+                System.Threading.CancellationToken.None);
+        }
+        catch (InvalidOperationException caught)
+        {
+            failure = caught;
+        }
+        Assert.IsNotNull(failure, "a delivered press with a starved observation must fail closed");
+        StringAssert.Contains(failure!.Message, "no re-press",
+            "the failure must name the no-re-press discipline");
+        Assert.AreEqual(1, presses,
+            "exactly ONE press may be issued; a second press after possible delivery is the replay hazard");
+    }
+
+    [TestMethod]
+    public async Task Press_discipline_retries_only_explicit_target_not_live_results()
+    {
+        // Explicit pre-press target-not-live results retry (bounded) and then
+        // succeed; one press per attempt, no extra presses after delivery.
+        int presses = 0;
+        object? observed = await DesktopMouseFirstJourneyRunner.PressThenObserveWithDeliveryDisciplineAsync<object>(
+            async () =>
+            {
+                presses++;
+                await Task.Delay(1);
+                return presses <= 2
+                    ? "delivered=false;reason=target-not-live-at-press;"
+                    : "delivered=true;isPressed=True;enabled=True;visible=True;attached;";
+            },
+            async () =>
+            {
+                await Task.Delay(1);
+                return presses >= 3 ? new object() : (object?)null;
+            },
+            reconcileAsync: null,
+            _ => { },
+            maxNotLiveRetries: 3,
+            failContext: "discipline-regression",
+            System.Threading.CancellationToken.None);
+        Assert.IsNotNull(observed);
+        Assert.AreEqual(3, presses, "two bounded not-live retries then one delivered press");
+    }
+
+    [TestMethod]
+    public async Task Press_discipline_fails_closed_on_other_not_delivered_results()
+    {
+        int presses = 0;
+        InvalidOperationException? failure = null;
+        try
+        {
+            await DesktopMouseFirstJourneyRunner.PressThenObserveWithDeliveryDisciplineAsync<object>(
+                async () =>
+                {
+                    presses++;
+                    await Task.Delay(1);
+                    return "delivered=false;isPressed=False;enabled=True;visible=True;attached;";
+                },
+                async () =>
+                {
+                    await Task.Delay(1);
+                    return new object();
+                },
+                reconcileAsync: null,
+                _ => { },
+                maxNotLiveRetries: 3,
+                failContext: "discipline-regression",
+                System.Threading.CancellationToken.None);
+        }
+        catch (InvalidOperationException caught)
+        {
+            failure = caught;
+        }
+        Assert.IsNotNull(failure, "an unexpected not-delivered result must fail closed");
+        StringAssert.Contains(failure!.Message, "was not delivered");
+        Assert.AreEqual(1, presses, "no re-press after an ambiguous not-delivered result");
+    }
+
+    [TestMethod]
+    public async Task Press_discipline_fails_closed_on_a_thrown_press_fault()
+    {
+        int presses = 0;
+        InvalidOperationException? failure = null;
+        try
+        {
+            await DesktopMouseFirstJourneyRunner.PressThenObserveWithDeliveryDisciplineAsync<object>(
+                async () =>
+                {
+                    presses++;
+                    await Task.Delay(1);
+                    throw new InvalidOperationException("synthetic routing collapse");
+                },
+                async () =>
+                {
+                    await Task.Delay(1);
+                    return new object();
+                },
+                reconcileAsync: null,
+                _ => { },
+                maxNotLiveRetries: 3,
+                failContext: "discipline-regression",
+                System.Threading.CancellationToken.None);
+        }
+        catch (InvalidOperationException caught)
+        {
+            failure = caught;
+        }
+        Assert.IsNotNull(failure, "a thrown press fault must fail closed");
+        StringAssert.Contains(failure!.Message, "press fault at attempt 1");
+        Assert.AreEqual(1, presses, "no re-press after a thrown routing fault");
+    }
+
     [TestMethod]
     public void ReadPlan_uses_defaults_when_environment_is_empty()
     {
