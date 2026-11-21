@@ -1092,6 +1092,49 @@ public sealed class CareerRewardsUiTests
         });
     }
     [TestMethod]
+    public void Resolved_pointer_route_dispatches_exactly_once_per_call()
+    {
+        // Controller9544: one helper call = ONE physical dispatch. The
+        // waitForClick:true re-raise timer could multiply presses past
+        // the discipline's accounting; count actual Click deliveries on
+        // a live button through the REAL resolved route.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Content = "improve", IsEnabled = true };
+            int clicks = 0;
+            row.AddHandler(Button.ClickEvent, (_, _) => clicks++);
+            Window host = new Window { Content = new StackPanel { Children = { row } } };
+            host.Show();
+            try
+            {
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(host);
+
+                Task<string>? routeTask = null;
+                Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    routeTask = DesktopMouseFirstJourneyRunner.RoutePointerClickResolvedAsync(
+                        row,
+                        waitForClick: false,
+                        liveTarget: () => row);
+                });
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsNotNull(routeTask, "the route task must be assigned synchronously");
+                Assert.IsTrue(routeTask.IsCompletedSuccessfully, "the single dispatch must complete under the headless pump");
+                string routing = routeTask.Result;
+                Assert.IsTrue(
+                    routing.StartsWith("delivered=True", StringComparison.OrdinalIgnoreCase),
+                    "the settled live button must deliver on the first dispatch: " + routing);
+                Assert.AreEqual(1, clicks, "exactly ONE physical dispatch per call (Controller9544)");
+            }
+            finally
+            {
+                host.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
     public void Advance_window_tab_walk_reaches_close_and_escape_cancels_without_commit()
     {
         WithHeadlessUi(() =>

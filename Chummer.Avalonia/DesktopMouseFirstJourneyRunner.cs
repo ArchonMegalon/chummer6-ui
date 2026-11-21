@@ -6775,9 +6775,23 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 return (false, "action buttons not effectively visible at narrow width (apply="
                                     + narrowApply.IsEffectivelyVisible + ", cancel=" + narrowCancel.IsEffectivelyVisible + ")");
                             }
-                            Point applyTopLeft = narrowApply.TranslatePoint(default, advanceWindow) ?? default;
+                            Point? applyTopLeftNullable = narrowApply.TranslatePoint(default, advanceWindow);
+                            Point? cancelTopLeftNullable = narrowCancel.TranslatePoint(default, advanceWindow);
+                            if (applyTopLeftNullable is null || cancelTopLeftNullable is null)
+                            {
+                                return (false, "TranslatePoint returned null at narrow width (apply="
+                                    + (applyTopLeftNullable is not null) + ", cancel=" + (cancelTopLeftNullable is not null) + ")");
+                            }
+                            if (narrowApply.Bounds.Width <= 0 || narrowApply.Bounds.Height <= 0
+                                || narrowCancel.Bounds.Width <= 0 || narrowCancel.Bounds.Height <= 0)
+                            {
+                                return (false, "nonpositive action bounds at narrow width (apply="
+                                    + narrowApply.Bounds.Width + "x" + narrowApply.Bounds.Height
+                                    + ", cancel=" + narrowCancel.Bounds.Width + "x" + narrowCancel.Bounds.Height + ")");
+                            }
+                            Point applyTopLeft = applyTopLeftNullable.Value;
                             Point applyBottomRight = applyTopLeft + new Vector(narrowApply.Bounds.Width, narrowApply.Bounds.Height);
-                            Point cancelTopLeft = narrowCancel.TranslatePoint(default, advanceWindow) ?? default;
+                            Point cancelTopLeft = cancelTopLeftNullable.Value;
                             Point cancelBottomRight = cancelTopLeft + new Vector(narrowCancel.Bounds.Width, narrowCancel.Bounds.Height);
                             Rect client = new Rect(default, new Size(advanceWindow.Bounds.Width, advanceWindow.Bounds.Height));
                             if (!client.Contains(applyTopLeft) || !client.Contains(applyBottomRight))
@@ -7434,7 +7448,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             "sr6 keyboard leg tab walk failed on " + candidateTabId
                             + ": " + walkFault.Message, walkFault);
                     }
-                    if (walkRouting.Contains("delivered=false", StringComparison.Ordinal))
+                    PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
+                    if (walkDelivery.Kind == PointerDeliveryKind.NotDelivered)
                     {
                         // The tab press did not deliver navigation (the control
                         // was rebuilt between discovery and press). This is a
@@ -7506,20 +7521,32 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             decimal escKarmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
             decimal escNuyenBefore = ReadCareerRewardsNuyenBalance(sectionHost);
             long escRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
-            // Controller9534: prove focus RETURN after the close. The row that
-            // opened the modal (initial focus lives on Apply inside the modal)
-            // must regain focus once the modal closes - focus must not be left
-            // dangling on nothing.
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            // Controller9547: the INITIATING focus must be captured BEFORE the
+            // modal opens - the row that opens the modal holds focus at open
+            // time (the product's own Opened handler moves initial focus to
+            // the Advance action inside the modal). Fabricating focus after
+            // the modal is open hides exactly the focus-return behavior this
+            // proof exists to verify. The settle helper above already proved
+            // the row was live before the press; assert the row STILL holds
+            // focus right before the Escape press instead of forcing it.
+            (bool rowHeldFocus, string rowFocusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                Button? rowBeforeEscape = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
-                if (rowBeforeEscape is null)
+                Button? rowStillThere = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
+                if (rowStillThere is null)
                 {
-                    throw new InvalidOperationException(
-                        "sr6 keyboard leg failed: the Agility improve row vanished before the Escape press.");
+                    return (false, "the Agility improve row vanished before the Escape press");
                 }
-                rowBeforeEscape.Focus();
+                return (rowStillThere.IsFocused || rowStillThere.IsKeyboardFocusWithin,
+                    "rowIsFocused=" + rowStillThere.IsFocused
+                    + " keyboardFocusWithin=" + rowStillThere.IsKeyboardFocusWithin);
             });
+            if (!rowHeldFocus)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the Agility improve row did not hold initiating focus before the Escape press ("
+                    + rowFocusDiag + ").");
+            }
+            RecordStep(steps, "sr6 keyboard leg: initiating focus verified on the Agility row before the Escape press");
             await Dispatcher.UIThread.InvokeAsync(() => SendKeyStroke(escWindow, Key.Escape, KeyModifiers.None));
             RecordStep(steps, "sr6 keyboard leg: pressed Escape on the advance modal");
             bool escClosed = await WaitForConditionWithinAsync(
@@ -9252,7 +9279,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     $"menu command {commandId} routing fault at attempt {menuAttempt}: {routingFault.Message}",
                     routingFault);
             }
-            if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
+            PointerDeliveryResult menuDelivery = ParsePointerDeliveryResult(routing);
+            if (menuDelivery.Kind == PointerDeliveryKind.NotDelivered
+                && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
             {
                 if (menuAttempt >= 3)
                 {
@@ -9268,7 +9297,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     () => menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled), ct);
                 continue;
             }
-            if (routing.Contains("delivered=false", StringComparison.Ordinal))
+            if (menuDelivery.Kind != PointerDeliveryKind.Delivered)
             {
                 // Any other not-delivered result is unexpected: fail closed
                 // without a re-click.
@@ -9891,11 +9920,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     failContext + ": press fault at attempt " + attempt + ": " + pressFault.Message,
                     pressFault);
             }
-            // The pre-press literal is hand-written lowercase, but Finish()
-            // interpolates a C# bool ("delivered=True"/"delivered=False"):
-            // classify the delivered flag CASE-INSENSITIVELY (Controller9539
-            // correction; standing True/False lesson).
-            if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.OrdinalIgnoreCase))
+            // Controller9547: classify through the typed parser everywhere.
+            // The parser is case-insensitive on the bool token and REJECTS
+            // malformed delivered segments (a substring Contains test would
+            // happily accept "delivered=TrueOops").
+            PointerDeliveryResult delivery = ParsePointerDeliveryResult(routing);
+            if (delivery.Kind == PointerDeliveryKind.NotDelivered
+                && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
             {
                 if (attempt > maxNotLiveRetries)
                 {
@@ -9907,11 +9938,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 await Task.Delay(250, ct);
                 continue;
             }
-            if (!routing.Contains("delivered=true", StringComparison.OrdinalIgnoreCase))
+            if (delivery.Kind != PointerDeliveryKind.Delivered)
             {
-                // Any other not-delivered result (including the C#-cased
-                // "delivered=False") is unexpected: fail closed without a
-                // re-click.
+                // Any other kind (NotDelivered-without-not-live, Missing,
+                // Malformed) is unexpected: fail closed without a re-click.
                 throw new InvalidOperationException(
                     failContext + ": the press was not delivered: " + routing);
             }
@@ -10031,28 +10061,33 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             RecordStep(steps, $"sr6 improve row {improveRowAutomationId} not live at press (row instance never stabilized across spaced re-finds)");
             return "delivered=false;reason=target-not-live-at-press;settle=unstable-row-instance;";
         }
-        // waitForClick:true engages the resolved route's re-raise loop - the
-        // first synthetic raise on a freshly-bound control is occasionally
-        // swallowed by the button press-state machine, and the re-raise loop
-        // is what makes the proven cap-loop presses deliver reliably.
+        // Controller9544: ONE dispatch per call. The pre-press settle above
+        // is the readiness work; the resolved route re-resolves the live
+        // target inside the press frame and raises exactly one synthetic
+        // press. waitForClick:false means Finish() fires immediately after
+        // that single dispatch - no hidden timer re-presses can multiply
+        // physical presses past the discipline's accounting.
         string routing = await RoutePointerClickResolvedAsync(
             window,
-            waitForClick: true,
+            waitForClick: false,
             liveTarget: () => FindVisibleCareerRewardsButton(window, improveRowAutomationId));
-        // Finish() interpolates a C# bool ("delivered=True"/"delivered=False"),
-        // so the delivered flag MUST be classified case-insensitively
-        // (Controller9539 correction; standing True/False lesson).
-        if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.OrdinalIgnoreCase))
+        // Controller9547: classify through the typed parser - a substring
+        // test cannot distinguish "delivered=True" from "delivered=TrueOops".
+        PointerDeliveryResult delivery = ParsePointerDeliveryResult(routing);
+        if (delivery.Kind == PointerDeliveryKind.NotDelivered
+            && routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
         {
             RecordStep(steps, $"sr6 improve row {improveRowAutomationId} target not live at press");
             return routing;
         }
-        if (!routing.Contains("delivered=true", StringComparison.OrdinalIgnoreCase))
+        if (delivery.Kind == PointerDeliveryKind.Delivered)
         {
+            recordPointerAction();
+            RecordStep(steps, $"sr6 improve row {improveRowAutomationId} press delivered (one dispatch)");
             return routing;
         }
-        recordPointerAction();
-        RecordStep(steps, $"sr6 improve row {improveRowAutomationId} press delivered ({routing.Split(';')[0]})");
+        // NotDelivered-without-not-live, Missing, Malformed: typed and
+        // returned unchanged for the core's fail-closed handling.
         return routing;
     }
 
@@ -10182,7 +10217,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     /// popup recomposed between the caller's resolve and this frame cannot
     /// detach the pressed target (the PhaseA save-menu detach defect).
     /// </summary>
-    private static async Task<string> RoutePointerClickResolvedAsync(
+    internal static async Task<string> RoutePointerClickResolvedAsync(
         Control control,
         bool waitForClick,
         System.Func<Control>? liveTarget)

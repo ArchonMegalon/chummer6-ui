@@ -1,6 +1,7 @@
 using Chummer.Desktop.Runtime;
 using Chummer.Avalonia;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Threading.Tasks;
 
 namespace Chummer.Tests.Presentation;
@@ -191,6 +192,33 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
         Assert.IsNotNull(failure, "a thrown press fault must fail closed");
         StringAssert.Contains(failure!.Message, "press fault at attempt 1");
         Assert.AreEqual(1, presses, "no re-press after a thrown routing fault");
+    }
+
+    [TestMethod]
+    public void ParsePointerDeliveryResult_rejects_malformed_delivered_tokens()
+    {
+        // Controller9547: the typed parser must reject malformed delivered
+        // segments ("delivered=TrueOops") instead of accepting them as
+        // delivered, which a substring Contains test would do.
+        DesktopMouseFirstJourneyRunner.PointerDeliveryResult malformed =
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=TrueOops;enabled=True;");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Malformed, malformed.Kind);
+
+        DesktopMouseFirstJourneyRunner.PointerDeliveryResult missing =
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("no-delivered-segment");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Missing, missing.Kind);
+
+        DesktopMouseFirstJourneyRunner.PointerDeliveryResult delivered =
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=True;enabled=True;");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered, delivered.Kind);
+
+        DesktopMouseFirstJourneyRunner.PointerDeliveryResult lowerCase =
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=true;");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.Delivered, lowerCase.Kind);
+
+        DesktopMouseFirstJourneyRunner.PointerDeliveryResult notDelivered =
+            DesktopMouseFirstJourneyRunner.ParsePointerDeliveryResult("delivered=False;enabled=True;");
+        Assert.AreEqual(DesktopMouseFirstJourneyRunner.PointerDeliveryKind.NotDelivered, notDelivered.Kind);
     }
 
     [TestMethod]
