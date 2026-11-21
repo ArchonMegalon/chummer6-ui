@@ -9891,7 +9891,11 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     failContext + ": press fault at attempt " + attempt + ": " + pressFault.Message,
                     pressFault);
             }
-            if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
+            // The pre-press literal is hand-written lowercase, but Finish()
+            // interpolates a C# bool ("delivered=True"/"delivered=False"):
+            // classify the delivered flag CASE-INSENSITIVELY (Controller9539
+            // correction; standing True/False lesson).
+            if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.OrdinalIgnoreCase))
             {
                 if (attempt > maxNotLiveRetries)
                 {
@@ -9903,10 +9907,11 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 await Task.Delay(250, ct);
                 continue;
             }
-            if (routing.Contains("delivered=false", StringComparison.Ordinal))
+            if (!routing.Contains("delivered=true", StringComparison.OrdinalIgnoreCase))
             {
-                // Any other not-delivered result is unexpected: fail closed
-                // without a re-click.
+                // Any other not-delivered result (including the C#-cased
+                // "delivered=False") is unexpected: fail closed without a
+                // re-click.
                 throw new InvalidOperationException(
                     failContext + ": the press was not delivered: " + routing);
             }
@@ -9965,16 +9970,23 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         CancellationToken ct,
         Action recordPointerAction)
     {
+        // waitForClick:true engages the resolved route's re-raise loop - the
+        // first synthetic raise on a freshly-bound control is occasionally
+        // swallowed by the button press-state machine, and the re-raise loop
+        // is what makes the proven cap-loop presses deliver reliably.
         string routing = await RoutePointerClickResolvedAsync(
             window,
-            waitForClick: false,
+            waitForClick: true,
             liveTarget: () => FindVisibleCareerRewardsButton(window, improveRowAutomationId));
-        if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
+        // Finish() interpolates a C# bool ("delivered=True"/"delivered=False"),
+        // so the delivered flag MUST be classified case-insensitively
+        // (Controller9539 correction; standing True/False lesson).
+        if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.OrdinalIgnoreCase))
         {
             RecordStep(steps, $"sr6 improve row {improveRowAutomationId} target not live at press");
             return routing;
         }
-        if (routing.Contains("delivered=false", StringComparison.Ordinal))
+        if (!routing.Contains("delivered=true", StringComparison.OrdinalIgnoreCase))
         {
             return routing;
         }

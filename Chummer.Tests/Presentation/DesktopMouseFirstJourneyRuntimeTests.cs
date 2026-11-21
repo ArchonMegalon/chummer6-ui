@@ -24,7 +24,8 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
                 {
                     presses++;
                     await Task.Delay(1);
-                    return "delivered=true;isPressed=True;enabled=True;visible=True;attached;";
+                    // C#-bool casing as Finish() actually emits it.
+                    return "delivered=True;isPressed=True;enabled=True;visible=True;attached;";
                 },
                 async () =>
                 {
@@ -64,8 +65,10 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
                 presses++;
                 await Task.Delay(1);
                 return presses <= 2
+                    // Resolver's hand-written lowercase pre-press literal.
                     ? "delivered=false;reason=target-not-live-at-press;"
-                    : "delivered=true;isPressed=True;enabled=True;visible=True;attached;";
+                    // Finish()'s C#-bool cased delivery result.
+                    : "delivered=True;isPressed=True;enabled=True;visible=True;attached;";
             },
             async () =>
             {
@@ -93,7 +96,9 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
                 {
                     presses++;
                     await Task.Delay(1);
-                    return "delivered=false;isPressed=False;enabled=True;visible=True;attached;";
+                    // C#-bool casing as Finish() actually emits it: this
+                    // result is NOT delivered and must fail closed.
+                    return "delivered=False;isPressed=False;enabled=True;visible=True;attached;";
                 },
                 async () =>
                 {
@@ -113,6 +118,45 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
         Assert.IsNotNull(failure, "an unexpected not-delivered result must fail closed");
         StringAssert.Contains(failure!.Message, "was not delivered");
         Assert.AreEqual(1, presses, "no re-press after an ambiguous not-delivered result");
+    }
+
+    [TestMethod]
+    public async Task Press_discipline_classifies_csharp_bool_casing_case_insensitively()
+    {
+        // Controller9539 casing regression (exposed by the gen10i phase A run):
+        // Finish() interpolates a C# bool, so the post-press result is
+        // "delivered=False" (capital F) for a not-delivered press. A lowercase
+        // Contains() would misclassify that as delivered and observe once -
+        // the leg must instead FAIL CLOSED on the ambiguous result.
+        int presses = 0;
+        InvalidOperationException? failure = null;
+        try
+        {
+            await DesktopMouseFirstJourneyRunner.PressThenObserveWithDeliveryDisciplineAsync<object>(
+                async () =>
+                {
+                    presses++;
+                    await Task.Delay(1);
+                    return "delivered=False;isPressed=False;enabled=True;visible=True;attached;";
+                },
+                async () =>
+                {
+                    await Task.Delay(1);
+                    return new object();
+                },
+                reconcileAsync: null,
+                _ => { },
+                maxNotLiveRetries: 3,
+                failContext: "casing-regression",
+                System.Threading.CancellationToken.None);
+        }
+        catch (InvalidOperationException caught)
+        {
+            failure = caught;
+        }
+        Assert.IsNotNull(failure, "delivered=False (C# casing) must classify as NOT delivered");
+        StringAssert.Contains(failure!.Message, "was not delivered");
+        Assert.AreEqual(1, presses, "no re-press after the ambiguous C#-cased result");
     }
 
     [TestMethod]
