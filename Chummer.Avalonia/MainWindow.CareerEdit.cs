@@ -5,6 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Avalonia.Input;
+using Avalonia.VisualTree;
+using System.Linq;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Workspaces;
@@ -361,8 +364,17 @@ public partial class MainWindow
             {
                 return true;
             }
+            // Controller9547: capture the initiating focus BEFORE the modal
+            // can open - the modal is focus-trapped while visible, so the
+            // row behind it cannot be probed afterwards (gen10t evidence),
+            // and gen10u proved the row does NOT regain focus on close
+            // without an explicit restoration (the removed artificial
+            // Focus() had masked that gap).
+            (IInputElement? initiatingFocus, string? initiatingFocusName) =
+                CaptureInitiatingFocusForAdvanceDialog(this);
             var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
+            RestoreInitiatingFocusAfterAdvanceDialogClose(this, initiatingFocus, initiatingFocusName);
             if (!ContextStillCurrent())
             {
                 // Owner/workspace/revision moved while the dialog was open; the
@@ -414,6 +426,74 @@ public partial class MainWindow
             // Cancel repeatedly (six observed auto-reopens in phaseA). An
             // explicit Advance action opens the next operation.
             return true;
+        }
+    }
+
+    /// <summary>
+    /// Captures the initiating focus immediately before an advancement modal
+    /// opens (Controller9547): the focused element plus its resolvable name,
+    /// so the close path can restore focus even when the parity grid rebuilt
+    /// the row while the modal was open.
+    /// </summary>
+    internal static (IInputElement? Element, string? Name) CaptureInitiatingFocusForAdvanceDialog(TopLevel owner)
+    {
+        try
+        {
+            IInputElement? focused = owner.FocusManager?.GetFocusedElement();
+            string? name = (focused as Control)?.Name;
+            return (focused, name);
+        }
+        catch (Exception)
+        {
+            // Focus capture is best-effort; an advancement must never fail
+            // because the platform focus manager was unavailable.
+            return (null, null);
+        }
+    }
+
+    /// <summary>
+    /// Restores the initiating focus after an advancement modal closes
+    /// (gen9 finding 4 / Controller9547): prefer the captured instance while
+    /// it is still visible, then re-resolve by name for a parity-grid
+    /// rebuild. Returns false when no visible target could be focused; the
+    /// completed mutation is never failed on focus restoration.
+    /// </summary>
+    internal static bool RestoreInitiatingFocusAfterAdvanceDialogClose(
+        TopLevel owner,
+        IInputElement? initiatingFocus,
+        string? initiatingFocusName)
+    {
+        try
+        {
+            // A detached (rebuilt-over) initiating instance can still report
+            // IsEffectivelyVisible=true, but Focus() on a control with no
+            // visual root fails: fall through to the name re-resolve instead
+            // of returning that failure (rebuild-phase evidence).
+            if (initiatingFocus is Control same
+                && same.IsEffectivelyVisible
+                && same.GetVisualRoot() is not null
+                && same.Focus())
+            {
+                return true;
+            }
+            if (!string.IsNullOrEmpty(initiatingFocusName))
+            {
+                Control? rebuilt = owner.GetVisualDescendants()
+                    .OfType<Control>()
+                    .FirstOrDefault(candidate => string.Equals(candidate.Name, initiatingFocusName, StringComparison.Ordinal)
+                        && candidate.IsEffectivelyVisible);
+                if (rebuilt is not null)
+                {
+                    return rebuilt.Focus();
+                }
+            }
+            return false;
+        }
+        catch (Exception)
+        {
+            // Focus restoration is best-effort accessibility behavior; never
+            // fail a completed mutation on it.
+            return false;
         }
     }
 

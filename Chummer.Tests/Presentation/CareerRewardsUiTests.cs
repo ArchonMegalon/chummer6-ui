@@ -1135,6 +1135,99 @@ public sealed class CareerRewardsUiTests
         });
     }
     [TestMethod]
+    public void Escape_close_of_advance_dialog_restores_initiating_focus()
+    {
+        // Controller9547 / gen9 finding 4: after the SR6 advance modal
+        // closes, focus must return to the control that initiated the
+        // advance. Capture before ShowDialog, Escape-close, then the
+        // restore must land on the same still-visible row.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.IsNotNull(captured, "the focused row must be captured pre-open");
+                Assert.AreEqual("AttributeImprove_AGI", capturedName, "capture must carry the resolvable name");
+                Assert.AreSame(row, captured, "capture must be the row instance");
+
+                Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+                Task<object?> dialogTask = advance.ShowDialog<object?>(owner);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+                Assert.IsFalse(row.IsFocused, "the modal must be focus-trapped while visible");
+
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(advance, global::Avalonia.Input.Key.Escape);
+                Dispatcher.UIThread.RunJobs();
+                WaitCompletion(dialogTask, timeoutMs: 3000);
+                Assert.IsNull(dialogTask.GetAwaiter().GetResult(), "Escape must cancel without a commit");
+
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(owner, captured, capturedName);
+                Assert.IsTrue(restored, "restore must report success for the still-visible row");
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(row.IsFocused || row.IsKeyboardFocusWithin,
+                    "focus must return to the initiating row after the modal close");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Escape_close_restore_reaches_a_rebuilt_row_by_name()
+    {
+        // Parity-grid rebuild: the initiating row instance is detached
+        // while the modal is open and a NEW instance with the same name
+        // renders. The restore must re-resolve by name and land on the
+        // NEW instance - not silently report success on a dead reference.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(row, captured, "precondition: capture is the original row");
+
+                // Simulate the parity-grid rebuild while "the modal" is up:
+                // detach the original row and render a same-named successor.
+                var panel = (StackPanel)owner.Content!;
+                Button rebuilt = new Button { Name = "AttributeImprove_AGI", Content = "improve AGI (rebuilt)" };
+                panel.Children.Clear();
+                panel.Children.Add(rebuilt);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(owner);
+                Assert.IsFalse(rebuilt.IsFocused, "precondition: the rebuilt row does not hold focus");
+
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(owner, captured, capturedName);
+                Assert.IsTrue(restored, "restore must re-resolve the rebuilt row by name");
+                Dispatcher.UIThread.RunJobs();
+                Assert.AreSame(rebuilt, owner.FocusManager?.GetFocusedElement() as Control,
+                    "focus must land on the rebuilt instance");
+                Assert.IsTrue(rebuilt.IsFocused || rebuilt.IsKeyboardFocusWithin,
+                    "the rebuilt row must hold focus after restore");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
     public void Menu_item_activation_is_measured_by_the_menu_click_probe()
     {
         // Controller9415 gen10: MenuItem activation raises
