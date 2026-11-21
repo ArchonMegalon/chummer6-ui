@@ -6745,6 +6745,21 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 + "sr6_attribute_natural_limit refusal (" + capBindingDiag + ").");
                         }
                         await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06d-sr6-natural-cap-refusal");
+                        // Item 3: demonstrate the modal at a narrow (resized) window
+                        // size - readable content, complete actions. Resize the
+                        // live modal, pump, capture, then restore before the
+                        // hardened cancel press.
+                        decimal narrowWidth = await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            double before = advanceWindow.Width;
+                            advanceWindow.Width = 360;
+                            return (decimal)before;
+                        });
+                        await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(advanceWindow));
+                        string narrowShot = await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06e-sr6-narrow-size");
+                        await Dispatcher.UIThread.InvokeAsync(() => advanceWindow.Width = (double)narrowWidth);
+                        await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(advanceWindow));
+                        RecordStep(steps, "sr6 natural-limit: captured narrow-size modal (06e-sr6-narrow-size, width 360, restored)");
                         // Cancel the blocked dialog: no apply is possible and no mutation may occur.
                         // Gen17 (Controller8300, T659): this is the branch the
                         // gen16 phaseA receipt proved EXECUTED, and it still
@@ -7335,6 +7350,63 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 RecordStep(steps, "sr6 natural-limit demo: karma unchanged across the blocked cap attempt (pass condition)");
                 naturalLimitRejected = true;
             }
+
+            // Item 3: keyboard navigation + Escape affordance proof on the
+            // affected wizard. Open one fresh modal, capture it at its
+            // ordinary size, then close it with the Escape key (routed
+            // KeyDown) and prove a clean no-mutation closure.
+            Button? escRow = FindVisibleCareerRewardsButton(window, "AttributeImprove_BOD");
+            if (escRow is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the AttributeImprove_BOD row is not visible for the Escape-close proof.");
+            }
+            await RoutePointerClickAsync(escRow);
+            recordPointerAction();
+            RecordStep(steps, "sr6 keyboard leg: opened a fresh advance modal for the Escape-close proof");
+            bool escOpened = await WaitForConditionWithinAsync(
+                () => FindCareerRewardsDialogButton("sr6-career-attribute-advance-apply") is not null,
+                ct,
+                TimeSpan.FromSeconds(15));
+            if (!escOpened)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the advance window did not open for the Escape-close proof.");
+            }
+            Sr6CareerAttributeAdvanceWindow? escWindow = await Dispatcher.UIThread.InvokeAsync(
+                ResolveSingleAdvanceWindow);
+            if (escWindow is null)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: exactly one visible active advance window could not be resolved for the Escape-close proof.");
+            }
+            await Dispatcher.UIThread.InvokeAsync(() => escWindow.Focus());
+            await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(escWindow));
+            string escOrdinaryShot = await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "06f-sr6-keyboard-ordinary");
+            decimal escKarmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
+            decimal escNuyenBefore = ReadCareerRewardsNuyenBalance(sectionHost);
+            long escRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
+            await Dispatcher.UIThread.InvokeAsync(() => SendKeyStroke(escWindow, Key.Escape, KeyModifiers.None));
+            RecordStep(steps, "sr6 keyboard leg: pressed Escape on the advance modal");
+            bool escClosed = await WaitForConditionWithinAsync(
+                () => ResolveSingleAdvanceWindow() is null,
+                ct,
+                TimeSpan.FromSeconds(10));
+            if (!escClosed)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the advance window did not close after the Escape key press.");
+            }
+            decimal escKarmaAfter = ReadCareerRewardsKarmaBalance(sectionHost);
+            decimal escNuyenAfter = ReadCareerRewardsNuyenBalance(sectionHost);
+            long escRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+            if (escKarmaBefore != escKarmaAfter || escNuyenBefore != escNuyenAfter || escRevisionBefore != escRevisionAfter)
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: Escape closure mutated balances/revision "
+                    + $"(karma {escKarmaBefore}->{escKarmaAfter}, nuyen {escNuyenBefore}->{escNuyenAfter}, revision {escRevisionBefore}->{escRevisionAfter}).");
+            }
+            RecordStep(steps, "sr6 keyboard leg: Escape closed the modal cleanly (balances/revision unchanged)");
 
 
             // 8066 acceptance leg: adjust nuyen through the real CareerRewardsWindow
