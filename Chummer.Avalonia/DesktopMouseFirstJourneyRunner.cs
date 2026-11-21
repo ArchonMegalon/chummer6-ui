@@ -2622,32 +2622,67 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
         private static readonly string[] CareerRewardsTabCandidates = ["tab-info", "tab-attributes"];
 
-            /// <summary>
-            /// Controller9579 (journey 6643-6680): reads the ACTUAL selected-tab state.
-            /// Returns true only when the tab-strip container for that id is realized
-            /// AND currently selected. Row absence is never de-selection proof.
-            /// </summary>
-            internal static bool IsPrimaryNavigationTabSelected(MainWindow window, string tabId)
+        /// <summary>
+        /// Controller9591 (gen13b review): three-state observation of the ACTUAL
+        /// selected-tab state. Returns TRUE only when the tab-strip container for
+        /// that id is realized AND currently selected; FALSE only when the
+        /// container is realized AND positively observed unselected; NULL when the
+        /// observation is UNKNOWN (tab strip absent, no matching tab item, or the
+        /// container is unrealized). Callers must treat NULL as no de-selection
+        /// proof - an unknown observation is never permission to re-press.
+        /// </summary>
+        internal static bool? TryGetPrimaryNavigationTabSelection(MainWindow window, string tabId)
+        {
+            var sectionHost = window.ControlsForAutomation.SectionHost;
+            TabStrip? tabStrip = sectionHost?.FindControl<TabStrip>("LoadedRunnerTabStrip");
+            if (tabStrip is null)
             {
-                var sectionHost = window.ControlsForAutomation.SectionHost;
-                TabStrip? tabStrip = sectionHost?.FindControl<TabStrip>("LoadedRunnerTabStrip");
-                if (tabStrip is null)
-                {
-                    return false;
-                }
-                int index = 0;
-                foreach (object? item in tabStrip.Items)
-                {
-                    if (item is NavigatorTabItem tab
-                        && string.Equals(tab.Id, tabId, StringComparison.Ordinal)
-                        && tabStrip.ContainerFromIndex(index) is TabItem { IsSelected: true })
-                    {
-                        return true;
-                    }
-                    index++;
-                }
-                return false;
+                return null; // strip absent: observation unknown
             }
+            int index = 0;
+            foreach (object? item in tabStrip.Items)
+            {
+                if (item is NavigatorTabItem tab
+                    && string.Equals(tab.Id, tabId, StringComparison.Ordinal))
+                {
+                    // Container may be unrealized (virtualized): unknown, not unselected.
+                    // Controller9591 follow-up: production TabStrip containers are
+                    // TabStripItem (styled via primitives|TabStripItem), NOT TabItem -
+                    // match ISelectable so the observation actually applies to the
+                    // realized production containers.
+                    return tabStrip.ContainerFromIndex(index) is ISelectable { IsSelected: true } ? true
+                        : tabStrip.ContainerFromIndex(index) is ISelectable ? false : (bool?)null;
+                }
+                index++;
+            }
+            return null; // no matching tab item: observation unknown
+        }
+
+        /// <summary>
+        /// Controller9591: strip-level core of TryGetPrimaryNavigationTabSelection,
+        /// exposed for focused headless tests that build their own TabStrip
+        /// fixtures (missing strip, missing tab, unrealized container, selected,
+        /// unselected).
+        /// </summary>
+        internal static bool? TryGetPrimaryNavigationTabSelection(TabStrip? tabStrip, string tabId)
+        {
+            if (tabStrip is null)
+            {
+                return null;
+            }
+            int index = 0;
+            foreach (object? item in tabStrip.Items)
+            {
+                if (item is NavigatorTabItem tab
+                    && string.Equals(tab.Id, tabId, StringComparison.Ordinal))
+                {
+                    return tabStrip.ContainerFromIndex(index) is ISelectable { IsSelected: true } ? true
+                        : tabStrip.ContainerFromIndex(index) is ISelectable ? false : (bool?)null;
+                }
+                index++;
+            }
+            return null;
+        }
 
         private static string DescribePrimaryNavigationSurface(MainWindow window)
         {
@@ -6852,19 +6887,25 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                                 }
                                 else
                                 {
-                                    // Controller9579: row absence alone is NOT
-                                    // de-selection proof. Re-press only when the
-                                    // tab ACTUALLY de-selected (observable state).
-                                    bool tabStillSelected = IsPrimaryNavigationTabSelected(window, candidateTabId);
-                                    prevTabDeselected = !tabStillSelected;
+                                    // Controller9591 (gen13b review): row absence alone is NOT
+                                    // de-selection proof, and an UNKNOWN observation (absent strip,
+                                    // no matching tab, unrealized container) is NOT unselected.
+                                    // Re-press requires a POSITIVELY observed realized-unselected
+                                    // container; unknown is fail-closed like still-selected.
+                                    bool? tabSelection = TryGetPrimaryNavigationTabSelection(window, candidateTabId);
+                                    prevTabDeselected = tabSelection is false;
                                     prevPressNotLive = false;
                                     if (prevTabDeselected)
                                     {
-                                        RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} row absent AND tab observed de-selected (press {walkPress}) - republish reset proven, one re-press allowed");
+                                        RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} row absent AND tab POSITIVELY observed de-selected (press {walkPress}) - republish reset proven, one re-press allowed");
+                                    }
+                                    else if (tabSelection is null)
+                                    {
+                                        RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} row absent and tab observation UNKNOWN after press {walkPress} (no strip/tab/unrealized container) - unknown is not de-selection proof, no re-press on this candidate");
                                     }
                                     else
                                     {
-                                        RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} row absent but tab STILL SELECTED after press {walkPress} - no de-selection proof, no further re-press on this candidate");
+                                        RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} row absent but tab POSITIVELY observed STILL SELECTED after press {walkPress} - no de-selection proof, no further re-press on this candidate");
                                     }
                                 }
                             }

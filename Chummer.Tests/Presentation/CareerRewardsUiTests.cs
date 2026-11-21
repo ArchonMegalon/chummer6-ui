@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
 using Avalonia.Interactivity;
@@ -1973,7 +1974,65 @@ public sealed class CareerRewardsUiTests
         Assert.IsNull(global::Chummer.Avalonia.DesktopMouseFirstJourneyRunner.MapSr6AttributeShortCode("  "));
     }
 
-        private static void WithHeadlessUi(Action action)
+    [TestMethod]
+    public void Primary_navigation_tab_selection_probe_reports_known_and_unknown_observations()
+    {
+        WithHeadlessUi(() =>
+        {
+            // Case 1: missing strip -> unknown (never de-selection proof).
+            Assert.IsNull(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection((TabStrip?)null, "tab-info"));
+
+            // Cases 2 + 3 on a detached strip: containers never realize off the
+            // visual tree, so even matching items stay unrealized.
+            var detached = new TabStrip();
+            detached.Items.Add(new NavigatorTabItem("tab-info", "Info", "sec", "g", true));
+            detached.Items.Add(new NavigatorTabItem("tab-attributes", "Attributes", "sec", "g", true));
+            detached.Items.Add(new NavigatorTabItem("tab-ghost", "Ghost", "sec", "g", true));
+
+            // Case 3: matching tab whose container is unrealized -> unknown.
+            Assert.IsNull(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection(detached, "tab-info"));
+            Assert.IsNull(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection(detached, "tab-attributes"));
+            Assert.IsNull(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection(detached, "tab-ghost"));
+            // Case 2: strip with no matching tab item -> unknown.
+            Assert.IsNull(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection(detached, "tab-absent"));
+
+            // Cases 4 + 5 on a shown, pumped strip: containers must realize.
+            var realized = new TabStrip();
+            realized.Items.Add(new NavigatorTabItem("tab-info", "Info", "sec", "g", true));
+            realized.Items.Add(new NavigatorTabItem("tab-attributes", "Attributes", "sec", "g", true));
+            Window host = new Window { Width = 320, Height = 220, Content = realized };
+            host.Show();
+            try
+            {
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(host);
+                realized.SelectedIndex = 0;
+                Dispatcher.UIThread.RunJobs();
+
+                // Containers realize as TabStripItem (the production shell
+                // container type), so assert realization via the strip's own
+                // item-container state instead of a TabItem cast.
+                Assert.IsNotNull(realized.ContainerFromIndex(0),
+                    "the shown strip must realize the first container for the probe to observe selection");
+                Assert.IsNotNull(realized.ContainerFromIndex(1),
+                    "the shown strip must realize the second container for the probe to observe de-selection");
+
+                // Case 4: realized + positively observed selected -> true.
+                Assert.IsTrue(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection(realized, "tab-info").Value);
+                // Case 5: realized + positively observed UNselected -> false,
+                // the ONLY observation that permits a re-press.
+                Assert.IsFalse(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection(realized, "tab-attributes").Value);
+                // Case 2 again on the realized strip: no matching item -> unknown.
+                Assert.IsNull(DesktopMouseFirstJourneyRunner.TryGetPrimaryNavigationTabSelection(realized, "tab-absent"));
+            }
+            finally
+            {
+                host.Close();
+            }
+        });
+    }
+
+    private static void WithHeadlessUi(Action action)
     {
         lock (AvaloniaHeadlessSessionGate.SyncRoot)
         {
