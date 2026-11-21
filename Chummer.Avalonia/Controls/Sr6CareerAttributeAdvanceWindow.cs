@@ -108,6 +108,10 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
         CanResize = true;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
+        // Gen10 item 3: keyboard navigation - Tab cycles inside the dialog and
+        // the selected quote card receives initial focus so Enter/arrow use is
+        // possible without the mouse.
+        global::Avalonia.Input.KeyboardNavigation.SetTabNavigation(this, global::Avalonia.Input.KeyboardNavigationMode.Cycle);
         // Gen6 T796: shared desktop design tokens (owned wizard window pattern).
         FontFamily = new global::Avalonia.Media.FontFamily("Segoe UI,Verdana,Arial");
         FontSize = 13;
@@ -160,6 +164,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             Classes = { "shell-action" },
             MinWidth = 150,
             IsEnabled = pendingCommand is not null && selected is { CanAdvance: true },
+            // Gen10 item 3: keyboard-only use - Enter presses the quoted advance.
+            IsDefault = true,
         };
         var blockedNotice = new TextBlock
         {
@@ -176,6 +182,8 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
             Content = "Close",
             Classes = { "shell-action quiet" },
             MinWidth = 90,
+            // Gen10 item 3: Escape / IsCancel closes the dialog without a commit.
+            IsCancel = true,
         };
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(applyButton, "sr6-career-attribute-advance-apply");
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(cancelButton, "sr6-career-attribute-advance-cancel");
@@ -235,6 +243,26 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
                 blockedNotice,
                 actionsPanel,
             },
+        };
+        // Gen10 item 3: initial focus lands on the selected quote card; Escape
+        // cancels (no commit) via IsCancel on the Close button.
+        Opened += (_, _) =>
+        {
+            var selectedCard = quotesPanel.Children
+                .OfType<Border>()
+                .FirstOrDefault(b => b.Classes.Contains("selected"));
+            if (selectedCard is not null)
+            {
+                selectedCard.Focus();
+            }
+        };
+        KeyDown += (_, e) =>
+        {
+            if (e.Key == global::Avalonia.Input.Key.Escape)
+            {
+                Close(null);
+                e.Handled = true;
+            }
         };
     }
 
