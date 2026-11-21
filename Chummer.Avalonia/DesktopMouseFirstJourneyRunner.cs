@@ -7839,11 +7839,48 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // finalize through a wizard that does not surface a tradition editor.
             const string MetatypeIdForAssignedRank = "dwarf";
             const string TalentIdForAssignedRank = "adept";
+            // Controller9415 gen10: the foundation step's ListBoxes materialize
+            // with the step-2 render, the same publication race the priority
+            // step's combo wait already handles. Wait with the same bounded
+            // retry + wizard-state diagnostics instead of a single-shot read.
+            bool foundationReady = false;
+            for (int attempt = 0; attempt < 3 && !foundationReady; attempt++)
+            {
+                foundationReady = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<ListBox>().Count() >= 2,
+                    ct,
+                    TimeSpan.FromSeconds(15));
+                if (foundationReady)
+                {
+                    break;
+                }
+                string foundationDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    var counterId = "sr6-creation-wizard-step-counter";
+                    var visibleWizards = ((global::Avalonia.Application.Current?.ApplicationLifetime
+                        is IClassicDesktopStyleApplicationLifetime diagDesktop)
+                        ? diagDesktop.Windows.OfType<Sr6CreationWizardWindow>() : []).
+                        Select(w =>
+                        {
+                            var counterText = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), counterId, StringComparison.Ordinal))?.Text ?? "?";
+                            var authorityText = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text ?? "?";
+                            var footerText = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text ?? "?";
+                            var stepTitle = w.GetVisualDescendants().OfType<TextBlock>()
+                                .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-step-title", StringComparison.Ordinal))?.Text ?? "?";
+                            return w.IsVisible.ToString() + "/" + counterText + "/title=" + stepTitle + "/authority=" + authorityText + "/footer=" + footerText;
+                        });
+                    return "attempt " + attempt.ToString() + ": wizards=[" + string.Join(",", visibleWizards) + "]";
+                });
+                RecordStep(steps, $"sr6 wizard: foundation ListBoxes wait miss {foundationDiag}");
+            }
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 var lists = Active().GetVisualDescendants().OfType<ListBox>().ToList();
                 if (lists.Count < 2)
-                    throw new InvalidOperationException("sr6 wizard: foundation ListBoxes not found");
+                    throw new InvalidOperationException("sr6 wizard: foundation ListBoxes not found after wait");
                 var metatypeItems = lists[0].Items.OfType<string>().ToList();
                 var talentItems = lists[1].Items.OfType<string>().ToList();
                 string? metatypeId = metatypeItems.FirstOrDefault(item => string.Equals(item, MetatypeIdForAssignedRank, StringComparison.Ordinal))
