@@ -44,6 +44,8 @@ public partial class MainWindow
     private bool _creationLifestylesBusy;
     private CharacterCreationLifestylePreparedPreview? _creationLifestylePreparedPreview;
     private CreationSkillsAllocationWindow? _creationSkillsWindow;
+    private CreationMagicResonanceWindow? _creationMagicResonanceWindow;
+    private bool _creationMagicResonanceBusy;
     private readonly Dictionary<Chummer.Contracts.Workspaces.CharacterWorkspaceId, CharacterCreationQualitiesInteraction> _pendingQualitySelections = new();
     private Sr6CreationWizardWindow? _creationSr6WizardWindow;
     private Chummer.Contracts.Workspaces.CharacterWorkspaceId? _creationSr6WizardWorkspaceId;
@@ -728,10 +730,85 @@ public partial class MainWindow
         }
     }
 
-    private void CreationWizard_OnMagicResonanceOptionClickRequested(
+    private async void CreationWizard_OnMagicResonanceOptionClickRequested(
         object? sender, CharacterCreationMagicResonanceOptionClickRequested request)
-        => CharacterCreationWizardControl.QualitiesStatus(
-            "Magic/Resonance editing is not available in this Windows build yet.");
+        => await CreationWizard_EditMagicResonanceAsync();
+
+    /// <summary>
+    /// Opens the modal Magic/Resonance editor. Load/Prepare/Confirm run through the
+    /// Core-bound presenter; the fresh overview is re-captured after every await and
+    /// the refreshed state is applied only when the workspace still matches (Chain-B
+    /// display-revalidation discipline).
+    /// </summary>
+    private async Task CreationWizard_EditMagicResonanceAsync()
+    {
+        if (_creationMagicResonanceBusy || _creationWizardLifetime.IsCancellationRequested)
+            return;
+        _creationMagicResonanceBusy = true;
+        CharacterCreationWizardControl.MagicResonanceMutationBusy(true);
+        CharacterCreationWizardControl.MagicResonanceStatus("Loading authoritative Magic/Resonance\u2026");
+        try
+        {
+            CharacterOverviewState overview = _adapter.State;
+            if (overview.WorkspaceId is not { } workspaceId)
+                return;
+
+            var presenter = new CharacterCreationMagicResonanceInteractionPresenter(
+                App.Services?.GetService(typeof(IOwnerBoundCharacterCreationMagicResonanceService))
+                    as IOwnerBoundCharacterCreationMagicResonanceService
+                ?? throw new InvalidOperationException(
+                    "magic/resonance service unavailable \u2014 cannot edit magic choices honestly"));
+            CharacterCreationMagicResonanceInteractionLoadResult loaded =
+                await Task.Run(() => presenter.Load(overview));
+            if (_creationWizardLifetime.IsCancellationRequested || !IsCreationWizardWindowUsable())
+            {
+                CharacterCreationWizardControl.MagicResonanceStatus(
+                    "Magic/Resonance loading was cancelled. The loaded view was discarded.");
+                return;
+            }
+            if (loaded is not { Outcome: "ok", State: { } state })
+            {
+                CharacterCreationWizardControl.MagicResonanceStatus(
+                    "Magic/Resonance could not be loaded: " + (loaded.Error ?? loaded.Outcome));
+                return;
+            }
+            if (!presenter.IsCurrentContext(_adapter.State))
+            {
+                CharacterCreationWizardControl.MagicResonanceStatus(
+                    "The workspace changed while Magic/Resonance was loading. The loaded view was discarded.");
+                return;
+            }
+
+            var dialog = new CreationMagicResonanceWindow(presenter, state, () => _adapter.State);
+            _creationMagicResonanceWindow = dialog;
+            await dialog.ShowDialog<object?>(this);
+            _creationMagicResonanceWindow = null;
+            CharacterCreationWizardControl.MagicResonanceStatus(dialog.Status);
+            if (dialog.Confirmed
+                && _adapter.State.WorkspaceId == workspaceId
+                && _adapter.State.DisplayOwnerContext == overview.DisplayOwnerContext)
+            {
+                await _adapter.LoadAsync(workspaceId, _creationWizardLifetime.Token);
+                if (!_creationWizardLifetime.IsCancellationRequested && IsCreationWizardWindowUsable()
+                    && _adapter.State.WorkspaceId == workspaceId
+                    && _adapter.State.DisplayOwnerContext == overview.DisplayOwnerContext)
+                    ApplyCreationWizardState(_adapter.State);
+            }
+        }
+        catch (OperationCanceledException) when (_creationWizardLifetime.IsCancellationRequested) { }
+        catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            CharacterCreationWizardControl.MagicResonanceStatus(
+                "Magic/Resonance could not be loaded. Reload the character and check its prerequisites.");
+        }
+        finally
+        {
+            _creationMagicResonanceBusy = false;
+            _creationMagicResonanceWindow?.Close();
+            _creationMagicResonanceWindow = null;
+            CharacterCreationWizardControl.MagicResonanceMutationBusy(false);
+        }
+    }
 
     private CharacterCreationLifeModuleJourneyInteractionState? _lastBoundJourneyState;
     private CharacterCreationLifeModuleFinishPreview? _creationJourneyPreview;

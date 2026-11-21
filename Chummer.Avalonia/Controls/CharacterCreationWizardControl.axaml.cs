@@ -101,6 +101,8 @@ public partial class CharacterCreationWizardControl : UserControl
     private bool _attributesMutationBusy;
     private string? _skillsMutationStatus;
     private bool _skillsMutationBusy;
+    private bool _magicResonanceMutationBusy;
+    private string _magicResonanceMutationStatus = string.Empty;
     private HashSet<string> _selectedQualityIds = new(StringComparer.Ordinal);
     private bool _resourcesMutationBusy;
     private string? _foundationStatus;
@@ -1463,6 +1465,18 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
+    public void MagicResonanceStatus(string message)
+    {
+        _magicResonanceMutationStatus = message;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void MagicResonanceMutationBusy(bool busy)
+    {
+        _magicResonanceMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
     private static string BuildResourcesResultStatus(string outcome, IReadOnlyList<string> blockers)
     {
         string suffix = blockers.Count == 0 ? string.Empty : $" (blocked: {string.Join(", ", blockers)})";
@@ -1720,7 +1734,44 @@ public partial class CharacterCreationWizardControl : UserControl
             RenderJourneyStepHeader();
         if (_state?.ActiveStepId == CharacterCreationWizardStepIds.MagicResonance)
         {
-            LegalOptionList.Children.Add(Caption("Magic/Resonance editing is not available in this Windows build yet. These choices cannot be applied here."));
+            string magicAuthorityBlocker = CharacterCreationMagicResonancePresentationContract.PresentationProjectionInvalid;
+            bool magicReady = _state is { } ms
+                && !ms.CompletionBlockers.Contains(magicAuthorityBlocker)
+                && !ms.Budgets.Any(b => b.Blockers.Contains(magicAuthorityBlocker));
+            var magicEdit = new Button { Content = "Edit magic and resonance\u2026", IsEnabled = magicReady && !_magicResonanceMutationBusy };
+            AutomationProperties.SetAutomationId(magicEdit, "creation-wizard-edit-magic-resonance");
+            magicEdit.Click += (_, _) =>
+            {
+                if (magicReady && !_magicResonanceMutationBusy)
+                    MagicResonanceOptionClickRequested?.Invoke(this, new CharacterCreationMagicResonanceOptionClickRequested(new CharacterCreationWizardDesktopOption(
+                        OptionId: "magic-resonance:editor",
+                        VersionId: null,
+                        Label: "Edit magic and resonance",
+                        IsEnabled: true,
+                        DisableReasonKey: null,
+                        DisableReasonArguments: new Dictionary<string, string>(StringComparer.Ordinal),
+                        Costs: [],
+                        Consequences: [],
+                        SourceAnchorIds: [],
+                        SourceId: null,
+                        SourcePage: null)));
+            };
+            LegalOptionList.Children.Add(magicEdit);
+            if (_magicResonanceMutationBusy)
+                LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
+            if (!string.IsNullOrWhiteSpace(_magicResonanceMutationStatus))
+                LegalOptionList.Children.Add(Caption(_magicResonanceMutationStatus));
+            if (magicReady)
+            {
+                if (string.IsNullOrWhiteSpace(_magicResonanceMutationStatus))
+                    LegalOptionList.Children.Add(Caption(
+                        "Magic/Resonance is ready to edit. Open the editor to choose your tradition, spells and powers."));
+            }
+            else
+            {
+                LegalOptionList.Children.Add(Caption(
+                    "Magic/Resonance editing opens once the magic authority is available for this workspace."));
+            }
             return;
         }
         if (qualities)
