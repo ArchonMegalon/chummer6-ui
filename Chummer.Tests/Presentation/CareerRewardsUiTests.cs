@@ -1065,6 +1065,125 @@ public sealed class CareerRewardsUiTests
             }
         });
     }
+    [TestMethod]
+    public void Advance_window_initial_focus_lands_on_the_enabled_apply_action()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            try
+            {
+                advance.Show();
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+
+                var apply = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-apply");
+                Assert.IsNotNull(apply, "apply must exist");
+                Assert.IsTrue(apply.IsEnabled, "the snapshot quote is advanceable so Apply must be enabled");
+                Assert.IsTrue(apply.IsFocused,
+                    "initial focus must land on the enabled Advance action, not nowhere (Controller9534)");
+            }
+            finally
+            {
+                advance.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Advance_window_tab_walk_reaches_close_and_escape_cancels_without_commit()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new Window { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            Task<object?> dialogTask = advance.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(advance);
+            try
+            {
+                var apply = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-apply");
+                var cancel = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-cancel");
+                Assert.IsNotNull(apply);
+                Assert.IsNotNull(cancel);
+                Assert.IsTrue(apply.IsFocused, "precondition: initial focus on Apply");
+
+                // Tab moves focus from Apply to Close (Cycle tab order).
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(apply, global::Avalonia.Input.Key.Tab);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(advance);
+                Assert.IsTrue(cancel.IsFocused, "Tab must move focus from Apply to Close");
+                Assert.IsFalse(apply.IsFocused, "focus must have left Apply");
+
+                // Escape cancels: the dialog task completes with null (no
+                // commit) without ever clicking Apply.
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(advance, global::Avalonia.Input.Key.Escape);
+                Dispatcher.UIThread.RunJobs();
+                WaitCompletion(dialogTask, timeoutMs: 3000);
+                Assert.IsNull(dialogTask.GetAwaiter().GetResult(),
+                    "Escape must cancel without a commit outcome");
+            }
+            finally
+            {
+                if (!dialogTask.IsCompleted)
+                {
+                    advance.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Advance_window_enter_on_the_focused_apply_commits_the_quoted_advance()
+    {
+        WithHeadlessUi(() =>
+        {
+            Window owner = new Window { Width = 300, Height = 200 };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            Window advance = new Sr6CareerAttributeAdvanceWindow(MakeAdvanceSnapshot(), "Body");
+            Task<object?> dialogTask = advance.ShowDialog<object?>(owner);
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(advance);
+            try
+            {
+                var apply = DesktopMouseFirstJourneyRunner.FindInWindow<Button>(
+                    (Sr6CareerAttributeAdvanceWindow)advance, "sr6-career-attribute-advance-apply");
+                Assert.IsNotNull(apply);
+                Assert.IsTrue(apply.IsFocused, "precondition: initial focus on Apply");
+
+                // Enter on the default (focused) Apply commits the quote.
+                DesktopMouseFirstJourneyRunner.SendKeyStroke(apply, global::Avalonia.Input.Key.Enter);
+                Dispatcher.UIThread.RunJobs();
+                WaitCompletion(dialogTask, timeoutMs: 3000);
+                var outcome = dialogTask.GetAwaiter().GetResult()
+                    as Sr6CareerAttributeAdvanceWindow.Sr6CareerAttributeAdvanceOutcome;
+                Assert.IsNotNull(outcome, "Enter must commit the quoted advance");
+                Assert.AreEqual("Body", outcome!.DisplayAttribute);
+                Assert.AreEqual(25, outcome.KarmaCost);
+                Assert.AreEqual(5, outcome.TargetNaturalRating);
+            }
+            finally
+            {
+                if (!dialogTask.IsCompleted)
+                {
+                    advance.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
 
     [TestMethod]
     public void Decoy_controls_in_other_windows_never_bind_across_modals()

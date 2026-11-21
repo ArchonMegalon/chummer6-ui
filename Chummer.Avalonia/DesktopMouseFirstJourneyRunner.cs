@@ -10402,7 +10402,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         });
     }
 
-    private static void SendKeyStroke(InputElement target, Key key, KeyModifiers modifiers = KeyModifiers.None)
+    internal static void SendKeyStroke(InputElement target, Key key, KeyModifiers modifiers = KeyModifiers.None)
     {
         KeyEventArgs keyDown = new()
         {

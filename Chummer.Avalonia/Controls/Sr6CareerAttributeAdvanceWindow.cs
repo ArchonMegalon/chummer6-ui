@@ -244,17 +244,16 @@ public sealed class Sr6CareerAttributeAdvanceWindow : Window
                 actionsPanel,
             },
         };
-        // Gen10 item 3: initial focus lands on the selected quote card; Escape
-        // cancels (no commit) via IsCancel on the Close button.
+        // Gen10 item 3 (Controller9534 correction): initial focus MUST land on a
+        // real focusable control. The quote cards never carry a "selected"
+        // class (BuildQuoteCard only tags "shell-card"), so the previous
+        // lookup silently no-opped and the window opened with no focus at
+        // all. Focus the enabled Advance action, falling back to Close; both
+        // are real button tab stops, so keyboard-only use works immediately.
         Opened += (_, _) =>
         {
-            var selectedCard = quotesPanel.Children
-                .OfType<Border>()
-                .FirstOrDefault(b => b.Classes.Contains("selected"));
-            if (selectedCard is not null)
-            {
-                selectedCard.Focus();
-            }
+            Control initialFocus = applyButton.IsEnabled ? applyButton : cancelButton;
+            initialFocus.Focus();
         };
         KeyDown += (_, e) =>
         {
