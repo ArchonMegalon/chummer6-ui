@@ -6632,14 +6632,37 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             bool rowFound = false;
                             for (int walkPress = 1; walkPress <= 3 && !rowFound; walkPress++)
                             {
+                                string walkRouting;
                                 try
                                 {
-                                    await RoutePointerClickAsync(tabControl);
+                                    walkRouting = await RoutePointerClickResolvedAsync(
+                                        tabControl,
+                                        waitForClick: false,
+                                        liveTarget: () => FindVisiblePrimaryNavigationControl(window, candidateTabId));
                                 }
                                 catch (Exception walkFailure) when (walkFailure is TimeoutException || walkFailure is InvalidOperationException)
                                 {
                                     RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} not clickable (press {walkPress}, {walkFailure.GetType().Name}: {walkFailure.Message})");
                                     continue;
+                                }
+                                // Controller9568: a re-press of the same tab
+                                // candidate requires an EXPLICIT NON-DELIVERY
+                                // (pre-press not-live: nothing was raised) or an
+                                // OBSERVED DE-SELECTION (the walk outcome below
+                                // re-presses only when the row is still absent -
+                                // i.e. the tab de-selected itself via the
+                                // republish reset). No blind re-press.
+                                PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
+                                if (walkDelivery.Kind == PointerDeliveryKind.NotDelivered
+                                    && !walkRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+                                {
+                                    // Delivered=false without the pre-press
+                                    // reason: the press MIGHT have delivered
+                                    // (probe passed, activation unseen). Treat
+                                    // the outcome wait as the delivery verdict;
+                                    // the existing row-wait below is that
+                                    // observation. Do not fail here.
+                                    RecordStep(steps, $"sr6 natural-limit tab walk: {candidateTabId} routing not delivered without pre-press reason ({walkRouting.Split(';')[0]}); relying on the outcome wait");
                                 }
                                 recordPointerAction();
                                 RecordStep(steps, $"sr6 natural-limit tab walk: clicked {candidateTabId} (press {walkPress})");
@@ -10501,9 +10524,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // raise land (gen10k-proven footer/dialog/menu-open behavior).
             if (!waitForClick)
             {
-                Point probeInControl = rootVisual.TranslatePoint(rootPosition, control) ?? default;
-                bool probeHit = control.GetVisualsAt(probeInControl)
-                    .Any(v => ReferenceEquals(v, control) || control.IsVisualAncestorOf(v));
+                // Controller9568: the transform must be valid (not the
+                // defaulted point) and the ROOT-scoped InputHitTest must land
+                // on the target or a descendant of it. Subtree GetVisualsAt
+                // probing cannot see occluders; the root hit-test can.
+                Point? probeInControlTransform = rootVisual.TranslatePoint(rootPosition, control);
+                object? probeHitTarget = rootVisual is InputElement probeRoot ? probeRoot.InputHitTest(rootPosition) : null;
+                bool probeHit = probeInControlTransform is not null
+                    && probeHitTarget is Control probeHitControl
+                    && (ReferenceEquals(probeHitControl, control) || control.IsVisualAncestorOf(probeHitControl));
                 if (!probeHit)
                 {
                     object? probeTarget = rootVisual is InputElement ie ? ie.InputHitTest(rootPosition) : null;

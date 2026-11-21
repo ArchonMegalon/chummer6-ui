@@ -1228,6 +1228,79 @@ public sealed class CareerRewardsUiTests
         });
     }
     [TestMethod]
+    public void Older_restore_cycle_cannot_focus_behind_a_newer_open_modal()
+    {
+        // Controller9568: close A, open B before A's delayed restore
+        // callback, drain A's callback - focus must STAY in B's
+        // initiator, and A's stale cycle must exit silently.
+        WithHeadlessUi(() =>
+        {
+            Button rowA = new Button { Name = "AttributeImprove_A", Content = "A" };
+            Button rowB = new Button { Name = "AttributeImprove_B", Content = "B" };
+            Window owner = new Window { Width = 320, Height = 220, Content = new StackPanel { Children = { rowA, rowB } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(rowA.Focus(), "precondition: A focused");
+                var (capA, nameA) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(rowA, capA, "precondition: capture A is the row");
+                int cycleA = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+
+                // Open B's cycle BEFORE A's delayed callback runs.
+                Assert.IsTrue(rowB.Focus(), "precondition: B focused after A closed");
+                var (capB, nameB) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(rowB, capB, "precondition: capture B is the row");
+                int cycleB = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+                Assert.AreNotEqual(cycleA, cycleB, "cycle B must be a newer generation");
+
+                // Drain A's stale deferred callback: the deferred loop IS the
+                // product's delayed restore callback and checks the generation
+                // before every Focus attempt - it must exit silently without
+                // focusing anything.
+                MainWindow.RunDeferredFocusRestoreAsync(owner, capA, nameA, cycleA);
+                Dispatcher.UIThread.RunJobs();
+                System.Threading.Thread.Sleep(150);
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "focus must STAY on B's initiator after A's stale callback is drained");
+
+                // A's cycle is stale by generation - a deferred loop seeded
+                // with cycleA would exit silently without focusing.
+                Assert.IsFalse(MainWindow.Sr6FocusRestoreDiagnostics.IsCurrentCycle(cycleA, owner),
+                    "A's generation must no longer be current after B began");
+                Assert.IsTrue(MainWindow.Sr6FocusRestoreDiagnostics.IsCurrentCycle(cycleB, owner),
+                    "B's generation must be current");
+
+                // The same for the by-name path: draining A's stale deferred
+                // callback by name must not steal focus from B either.
+                MainWindow.RunDeferredFocusRestoreAsync(owner, null, nameA, cycleA);
+                Dispatcher.UIThread.RunJobs();
+                System.Threading.Thread.Sleep(150);
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "focus must STAY on B after the stale by-name restore");
+
+                // B's own restore still works (drained through the deferred
+                // loop exactly as the product posts it).
+                MainWindow.RunDeferredFocusRestoreAsync(owner, capB, nameB, cycleB);
+                Dispatcher.UIThread.RunJobs();
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(MainWindow.Sr6FocusRestoreDiagnostics.LastRestoreOutcome().Focused,
+                    "the current cycle's restore still succeeds");
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsTrue(rowB.IsFocused || rowB.IsKeyboardFocusWithin,
+                    "B stays focused after its own restore");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
     public void Menu_item_activation_is_measured_by_the_menu_click_probe()
     {
         // Controller9415 gen10: MenuItem activation raises

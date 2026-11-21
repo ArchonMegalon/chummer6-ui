@@ -250,19 +250,26 @@ public partial class MainWindow
         // capture inside the route runs (gen10y: capture type=<null>).
         (IInputElement? initiatingFocus, string? initiatingFocusName) =
             CaptureInitiatingFocusForAdvanceDialog(this);
+        // Controller9568: the restore cycle begins HERE - before the modal
+        // can open - so any queued restore from a PREVIOUS dialog cycle is
+        // invalidated before this cycle's modal opens; an older queued
+        // restore can otherwise focus behind the next open modal.
+        int restoreGeneration = Sr6FocusRestoreDiagnostics.BeginRestoreCycle(this);
         await RunUiActionAsync(
-            () => OpenCareerAttributeAdvanceDialogAsync(attributeName, initiatingFocus, initiatingFocusName),
+            () => OpenCareerAttributeAdvanceDialogAsync(
+                attributeName, initiatingFocus, initiatingFocusName, restoreGeneration),
             "career-attribute-advance").ConfigureAwait(true);
     }
 
     private async Task OpenCareerAttributeAdvanceDialogAsync(
         string attributeName,
         IInputElement? initiatingFocus,
-        string? initiatingFocusName)
+        string? initiatingFocusName,
+        int restoreGeneration)
     {
         // SR6 runners route through Core's owner-bound advancement service
         // (dedicated dialog); the SR5 XML-mutation editor below stays SR5-only.
-        if (await TryOpenSr6CareerAttributeAdvanceDialogAsync(attributeName, initiatingFocus, initiatingFocusName).ConfigureAwait(true))
+        if (await TryOpenSr6CareerAttributeAdvanceDialogAsync(attributeName, initiatingFocus, initiatingFocusName, restoreGeneration).ConfigureAwait(true))
         {
             return;
         }
@@ -334,7 +341,8 @@ public partial class MainWindow
     private async Task<bool> TryOpenSr6CareerAttributeAdvanceDialogAsync(
         string attributeName,
         IInputElement? initiatingFocus,
-        string? initiatingFocusName)
+        string? initiatingFocusName,
+        int restoreGeneration)
     {
         // Observe transitions synchronously, before queued UI refreshes can
         // coalesce a workspace switch away and back into the same identity.
@@ -405,25 +413,11 @@ public partial class MainWindow
             Sr6FocusRestoreDiagnostics.Record("capture (handler-entry) type="
                 + (initiatingFocus?.GetType().Name ?? "<null>")
                 + " name=" + (initiatingFocusName ?? "<null>"));
-            int restoreGeneration = Sr6FocusRestoreDiagnostics.BeginRestoreCycle();
-            _ = Dispatcher.UIThread.InvokeAsync(async () =>
-            {
-                for (int restoreAttempt = 0; restoreAttempt < 10; restoreAttempt++)
-                {
-                    if (!Sr6FocusRestoreDiagnostics.IsCurrentCycle(restoreGeneration))
-                    {
-                        Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " stale-exit attempt" + restoreAttempt);
-                        return;
-                    }
-                    if (RestoreInitiatingFocusAfterAdvanceDialogClose(this, initiatingFocus, initiatingFocusName))
-                    {
-                        Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " restored attempt" + restoreAttempt);
-                        return;
-                    }
-                    await Task.Delay(60).ConfigureAwait(true);
-                }
-                Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " exhausted");
-            });
+            // Controller9568: the cycle was begun at HANDLER ENTRY (pre-open)
+            // and is owner-scoped; the loop checks the CURRENT generation
+            // immediately before every Focus attempt and exits silently when
+            // a newer cycle took over.
+            _ = RunDeferredFocusRestoreAsync(this, initiatingFocus, initiatingFocusName, restoreGeneration);
             if (!ContextStillCurrent())
             {
                 // Owner/workspace/revision moved while the dialog was open; the
@@ -479,6 +473,39 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// Controller9568: the deferred focus-restore loop, extracted so the
+    /// cross-modal regression can drive cycles directly. Owner-scoped: the
+    /// loop exits when a newer cycle takes over (generation token) or when
+    /// the cycle no longer belongs to this owner (owner/context change).
+    /// Focus management only - never a re-press (Controller9415).
+    /// </summary>
+    internal static Task RunDeferredFocusRestoreAsync(
+        TopLevel owner,
+        IInputElement? initiatingFocus,
+        string? initiatingFocusName,
+        int restoreGeneration)
+    {
+        return Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            for (int restoreAttempt = 0; restoreAttempt < 10; restoreAttempt++)
+            {
+                if (!Sr6FocusRestoreDiagnostics.IsCurrentCycle(restoreGeneration, owner))
+                {
+                    Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " stale-exit attempt" + restoreAttempt);
+                    return;
+                }
+                if (RestoreInitiatingFocusAfterAdvanceDialogClose(owner, initiatingFocus, initiatingFocusName))
+                {
+                    Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " restored attempt" + restoreAttempt);
+                    return;
+                }
+                await Task.Delay(60).ConfigureAwait(true);
+            }
+            Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " exhausted");
+        });
+    }
+
+    /// <summary>
     /// Captures the initiating focus immediately before an advancement modal
     /// opens (Controller9547): the focused element plus its resolvable name,
     /// so the close path can restore focus even when the parity grid rebuilt
@@ -520,11 +547,12 @@ public partial class MainWindow
             // of returning that failure (rebuild-phase evidence).
             if (initiatingFocus is Control same
                 && same.IsEffectivelyVisible
-                && same.GetVisualRoot() is not null
+                && ReferenceEquals(same.GetVisualRoot(), owner)
                 && same.Focus())
             {
                 bool confirmed = ReferenceEquals(owner.FocusManager?.GetFocusedElement(), same);
                 Sr6FocusRestoreDiagnostics.Record("same-instance focused=" + confirmed);
+                Sr6FocusRestoreDiagnostics.RecordLastRestoreOutcome(confirmed, "same-instance");
                 return confirmed;
             }
             if (!string.IsNullOrEmpty(initiatingFocusName))
@@ -580,23 +608,47 @@ public partial class MainWindow
         }
 
         private static int _cycle;
+        private static object? _cycleOwner;
 
-        /// <summary>Begins a restore cycle and invalidates every pending older one.</summary>
-        public static int BeginRestoreCycle()
+        /// <summary>Begins an owner-scoped restore cycle and invalidates every pending older one.</summary>
+        public static int BeginRestoreCycle(object owner)
         {
             lock (Gate)
             {
                 _cycle++;
+                _cycleOwner = owner;
                 Record("cycle" + _cycle + " begin");
                 return _cycle;
             }
         }
 
-        public static bool IsCurrentCycle(int generation)
+        /// <summary>True only when the generation is current AND still owned by this owner (owner/context change cancels).</summary>
+        public static bool IsCurrentCycle(int generation, object owner)
         {
             lock (Gate)
             {
-                return generation == _cycle;
+                return generation == _cycle && ReferenceEquals(_cycleOwner, owner);
+            }
+        }
+
+        private static bool _lastRestoreOutcome;
+        private static string _lastRestoreBranch = string.Empty;
+
+        /// <summary>Records the most recent restore attempt's outcome for regression assertions.</summary>
+        public static void RecordLastRestoreOutcome(bool focused, string branch)
+        {
+            lock (Gate)
+            {
+                _lastRestoreOutcome = focused;
+                _lastRestoreBranch = branch;
+            }
+        }
+
+        public static (bool Focused, string Branch) LastRestoreOutcome()
+        {
+            lock (Gate)
+            {
+                return (_lastRestoreOutcome, _lastRestoreBranch);
             }
         }
 
