@@ -85,6 +85,7 @@ public enum DesktopRemoteCallbackRecoveryProjection
     Linked
 }
 
+
 public sealed record DesktopInstallLinkingState(
     string InstallationId,
     string HeadId,
@@ -130,6 +131,14 @@ internal readonly record struct DesktopInstallOwnerAuthorityStamp(
 
 public static class DesktopInstallLinkingRuntime
 {
+    // Controller9403 point 3: deterministic test seam. When a test sets this
+    // hook, the runtime invokes it synchronously AFTER a successful durable
+    // adoption save (TrySaveState succeeded, claimedState revision bumped) and
+    // BEFORE the result is returned - exactly the window between the save and
+    // the window's stale-repaint fence read, where a newer retained operation
+    // can land in production. Tests must clear it in a finally.
+    public static Action<DesktopInstallLinkingState>? TestPostAdoptionSaveHook;
+
     private sealed record RemoteCallbackPollRequest(
         string InstallationId,
         string HeadId,
@@ -946,6 +955,8 @@ public static class DesktopInstallLinkingRuntime
                     claimedState,
                     NotLinked: false);
             }
+
+            TestPostAdoptionSaveHook?.Invoke(claimedState);
 
             return new DesktopInstallRecoveryResult(
                 true,

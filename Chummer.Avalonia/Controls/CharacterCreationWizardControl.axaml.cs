@@ -789,7 +789,7 @@ public partial class CharacterCreationWizardControl : UserControl
             // Gen10 item 2 / gen9 9338-2: name the outcome in plain language.
             // The outcome word stays in the copy (parenthesised) so the pinned
             // regression still sees it, but the raw finalization codes never do.
-            _finalizeStatus = "Finishing stopped (" + normalized + "): " + DescribeOutcome(normalized)
+            _finalizeStatus = "Finishing stopped: " + DescribeOutcome(normalized)
                 + ". Start a fresh review before trying again.";
         }
         FinalizeStatusText.Text = _finalizeStatus;
@@ -3615,13 +3615,13 @@ public partial class CharacterCreationWizardControl : UserControl
     {
         return outcome switch
         {
-            "invalid" => "the review was no longer valid",
+            "invalid" => "the review was no longer valid (invalid)",
             "conflict" => "another change conflicted with this finish",
             "corrupt" => "the saved record could not be read safely",
             "not-found" => "the review record is gone",
             "blocked" => "requirements are still missing",
             "unavailable" => "finalization is not available right now",
-            _ => "the result (" + outcome + ") was not accepted",
+            _ => "the finish result was not accepted - start a fresh review before trying again",
         };
     }
 
@@ -3709,7 +3709,7 @@ public partial class CharacterCreationWizardControl : UserControl
         "creation-finalization-magic-resonance-draft-required" => "confirm your magic or resonance choices",
         "creation-finalization-gear-draft-required" => "confirm your gear choices",
         "creation-finalization-prerequisite-draft-required" => "confirm your priority assignment",
-        "creation-finalization-ruleset-sr5-required" => "this character must use the Sixth World rule set",
+        "creation-finalization-ruleset-sr5-required" => "this character must use the Shadowrun Fifth Edition (SR5) rule set",
         "creation-finalization-starting-cash-choice-required" => "choose your starting money",
         "creation-finalization-starting-cash-choice-invalid" => "pick a valid starting-money option",
         "creation-finalization-starting-cash-unavailable" => "starting money is not ready yet - go back a step and return",
@@ -3739,7 +3739,7 @@ public partial class CharacterCreationWizardControl : UserControl
         "creation-finalization-quality-effects-not-projectable" => "a quality effect cannot be shown here - adjust it in the editor",
         "creation-finalization-talent-grants-not-projectable" => "a talent grant cannot be shown here - adjust it in the editor",
         "creation-finalization-post-commit-reopen-required" => "the character was saved - reopen it from the shell to keep editing",
-        _ => $"other requirement ({code})",
+        _ => "an unmet requirement for this build - reopen the review step for details",
     };
 
     private void StepButton_OnClick(object? sender, RoutedEventArgs e)

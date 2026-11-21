@@ -6486,22 +6486,23 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     $"sr6 advance leg: exact-debit assertion failed: karma {karmaBefore} -> {karmaAfter} but quoted cost {quotedKarmaCost}.");
             }
 
-            // The persisted natural rating after apply must equal the quoted
-            // target (the quote's TargetNaturalRating is what Core committed).
-            string naturalRatingAfter = string.Empty;
-            try
+            // Controller9415: the observed natural rating must be read from the
+            // loaded Core/native projection (the committed workspace document),
+            // asserted equal to the quote's target, and persisted as the
+            // operation's own fact. The old modal-detail scrape could return
+            // empty after modal close and had no equality assertion.
+            string? observedWorkspaceId = window.SnapshotStateForAutomation().WorkspaceId?.Value;
+            StarterAttributeEvidence observedAfterFirstOp = await ReadWorkspaceAttributeRankAsync(
+                window, observedWorkspaceId, "Body", ct);
+            if (observedAfterFirstOp.Sum <= 0
+                || observedAfterFirstOp.Sum != quotedTargetNaturalRating)
             {
-                naturalRatingAfter = await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    string detail = CaptureDialogTextForAutomation("sr6-career-attribute-advance-detail");
-                    var m = System.Text.RegularExpressions.Regex.Match(detail, @"natural (\d+)");
-                    return m.Success ? m.Groups[1].Value : string.Empty;
-                });
+                throw new InvalidOperationException(
+                    "sr6 advance leg: observed natural rating after the first apply (" + observedAfterFirstOp.Sum
+                    + ", " + observedAfterFirstOp.Diagnostics + ") does not equal the quoted target ("
+                    + quotedTargetNaturalRating + ").");
             }
-            catch (Exception)
-            {
-                naturalRatingAfter = string.Empty;
-            }
+            string naturalRatingAfter = observedAfterFirstOp.Sum.ToString(System.Globalization.CultureInfo.InvariantCulture);
             // Gen-9 item 2 (natural-limit rejection demo), gen-10 finding 2
             // semantics: drive Body advances until Core itself refuses with the
             // natural-maximum blocker. An arbitrary refusal or a disabled Apply
@@ -7383,9 +7384,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 // final committed target stays separately named in
                 // finalTargetNaturalRating for the cold-reopen phaseB check.
                 quotedTargetNaturalRating: quotedTargetNaturalRating,
-                naturalRatingAfter: quotedTargetNaturalRating > 0
-                    ? quotedTargetNaturalRating.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    : null,
+                // Controller9415: persist the OBSERVED first-operation natural
+                // rating (read from the loaded projection and asserted equal to
+                // the quote) - never a copy of the quote.
+                naturalRatingAfter: naturalRatingAfter,
                 nuyenAfter: ReadCareerRewardsNuyenBalance(sectionHost),
                 operations: BuildSr6AdvanceOperations(karmaBefore, karmaAfter, quotedKarmaCost, quotedBodyCardText, sr6FinalCommittedTargetRating, sr6CapOperations),
                 finalTargetNaturalRating: sr6FinalCommittedTargetRating > 0 ? sr6FinalCommittedTargetRating : null,
@@ -8996,6 +8998,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         // Retry only re-opens the popup (T496).
         for (int menuAttempt = 1; ; menuAttempt++)
         {
+            // Controller9415: only an explicit PRE-press target-not-live result
+            // may retry. RoutePointerClickResolvedAsync reports "delivered=false;
+            // reason=target-not-live-at-press" when the live resolver finds no
+            // attached command item at press time - no input was delivered, so
+            // re-opening the popup and re-resolving is safe. Any other failure
+            // (including an InvalidOperationException raised AFTER input
+            // delivery) escapes: re-clicking a possibly-committed command is
+            // exactly the replay risk the boundary forbids.
             string routing;
             try
             {
@@ -9004,23 +9014,40 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     waitForClick: false,
                     liveTarget: () => menu.Items.OfType<MenuItem>()
                         .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled));
-                if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
+            }
+            catch (Exception routingFault)
+            {
+                // No press may have been delivered here (resolve happens before
+                // the press inside the route). Still fail closed: a thrown fault
+                // must not be retried with a re-click - it must fail/reconcile.
+                throw new InvalidOperationException(
+                    $"menu command {commandId} routing fault at attempt {menuAttempt}: {routingFault.Message}",
+                    routingFault);
+            }
+            if (routing.Contains("delivered=false;reason=target-not-live-at-press", StringComparison.Ordinal))
+            {
+                if (menuAttempt >= 3)
                 {
                     throw new InvalidOperationException(
-                        $"menu command {commandId} not attached at press time (popup closed before resolve).");
+                        $"menu command {commandId} was not attached at press time after {menuAttempt} popup re-open attempts.");
                 }
-                break;
-            }
-            catch (InvalidOperationException routingFailure) when (menuAttempt < 3)
-            {
-                RecordStep(steps, $"menu command {commandId} attempt {menuAttempt} routing failed: {routingFailure.Message}");
+                RecordStep(steps, $"menu command {commandId} attempt {menuAttempt} target not live at press - reopening popup");
                 await Task.Delay(250, ct);
                 // T496: the popup itself can close between attempts (state
                 // publications steal focus); re-open it before re-resolving.
                 await RoutePointerClickAsync(menu);
                 await WaitForAsync(steps, $"menu command {commandId} popup reopened",
                     () => menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled), ct);
+                continue;
             }
+            if (routing.Contains("delivered=false", StringComparison.Ordinal))
+            {
+                // Any other not-delivered result is unexpected: fail closed
+                // without a re-click.
+                throw new InvalidOperationException(
+                    $"menu command {commandId} click was not delivered: {routing}");
+            }
+            break;
         }
         recordPointerAction();
         RecordStep(steps, $"click {menuLabel} menu command {commandId}");

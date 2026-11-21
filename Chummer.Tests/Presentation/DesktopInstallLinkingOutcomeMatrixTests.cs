@@ -1300,6 +1300,72 @@ public sealed class DesktopInstallLinkingOutcomeMatrixTests
     }
 
     [TestMethod]
+    public async Task Recovery_success_cannot_repaint_when_newer_retained_operation_lands_after_adoption_save()
+    {
+        // Controller9403 point 3: the durable adoption save must SUCCEED (the
+        // store CAS must NOT refuse it) so the window's own
+        // recovered-revision fence is what refuses the stale repaint. A newer
+        // retained operation lands AFTER the adoption save, advancing
+        // StateRevision (same installation identity, unchanged owner
+        // revision) while the window's continuation is still queued on the
+        // dispatcher: the stale success must not repaint owner chrome/status
+        // over the newer state, and it must fail closed to recovery_stopped.
+        // The injection uses the runtime's deterministic test seam
+        // (TestPostAdoptionSaveHook): it runs synchronously after the durable
+        // save and before the result reaches the window.
+        using RecoveryStatusHubFixture hub = new(linked: true);
+        PrepareRetainedApproval();
+        await WithWindowAsync(async window =>
+        {
+            SyncWindowState(window);
+
+            DesktopInstallLinkingRuntime.TestPostAdoptionSaveHook = adopted =>
+            {
+                DesktopInstallLinkingRuntime.TestPostAdoptionSaveHook = null;
+                DesktopInstallLinkingState injected = adopted with
+                {
+                    BrowserApprovalRequest = "newer-retained-op-after-adoption"
+                };
+                SaveState(injected);
+            };
+            try
+            {
+                Task handler = InvokeRecoveryHandlerAsync(window);
+                for (int i = 0; i < 60 && !handler.IsCompleted; i++)
+                {
+                    await StepLoopAsync(1);
+                }
+                Assert.IsTrue(handler.IsCompleted, "the recovery handler must complete under pumping");
+                await handler;
+                await StepLoopAsync(2);
+
+                DesktopInstallLinkingState after = LoadState();
+                // The newer retained op is durable: the injected save advanced
+                // the store revision past the runtime's adopted save.
+                StringAssert.Contains(after.BrowserApprovalRequest ?? string.Empty,
+                    "newer-retained-op-after-adoption",
+                    "the newer retained operation must be the durable record");
+                Assert.IsTrue(DesktopInstallLinkingRuntime.IsClaimed(after),
+                    "the durable adoption must survive the newer retained operation");
+
+                string status = GetStatus(window);
+                StringAssert.DoesNotMatch(status,
+                    new System.Text.RegularExpressions.Regex("Link restored"),
+                    "the stale recovered success must never repaint over the newer retained operation");
+                StringAssert.DoesNotMatch(status,
+                    new System.Text.RegularExpressions.Regex("already linked"),
+                    "the stale success copy must not appear over the newer state");
+                StringAssert.Contains(status, "has stopped",
+                    "the stale repaint refusal must fail closed to the recovery-stopped copy; got: " + status);
+            }
+            finally
+            {
+                DesktopInstallLinkingRuntime.TestPostAdoptionSaveHook = null;
+            }
+        });
+    }
+
+    [TestMethod]
     public async Task Recovery_conflicting_retained_operation_refuses_stale_adoption_repaint()
     {
         // Controller9350 gen10 item 1c: a later retained operation that lands

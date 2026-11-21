@@ -729,6 +729,74 @@ public sealed class CharacterCreationWizardFinalizeAvailabilityAvaloniaTests
     }
 
     [TestMethod]
+    public void Known_sr5_blocker_names_shadowrun_fifth_edition_and_unknown_codes_stay_neutral()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+
+            var status = control.FindControl<TextBlock>("FinalizeStatusText")!;
+
+            // Controller9403 point 2: the SR5 rule-set blocker must name the
+            // edition explicitly (never "Sixth World"), and an unknown blocker
+            // code must stay a neutral actionable sentence - no raw code, no
+            // raw id, ever.
+            control.SetFinalizeAvailability(false, ["creation-finalization-ruleset-sr5-required"]);
+            string sr5 = status.Text ?? string.Empty;
+            StringAssert.Contains(sr5, "Shadowrun Fifth Edition (SR5)",
+                "the SR5 rule-set blocker must name the edition; got: " + sr5);
+            StringAssert.DoesNotMatch(sr5,
+                new System.Text.RegularExpressions.Regex("Sixth World"),
+                "the SR5 blocker must not use the Sixth World shorthand; got: " + sr5);
+
+            control.SetFinalizeAvailability(false, ["creation-finalization-unknown-definitely-not-a-real-code"]);
+            string unknown = status.Text ?? string.Empty;
+            StringAssert.DoesNotMatch(unknown,
+                new System.Text.RegularExpressions.Regex("creation-finalization-"),
+                "an unknown blocker code must never leak as a raw code; got: " + unknown);
+            StringAssert.Contains(unknown, "reopen the review step",
+                "the unknown-blocker fallback must stay actionable; got: " + unknown);
+
+            host.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Unknown_finalization_outcomes_stay_neutral_and_known_ones_stay_plain()
+    {
+        WithHeadlessUi(() =>
+        {
+            CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+
+            var status = control.FindControl<TextBlock>("FinalizeStatusText")!;
+
+            control.SetFinalizeAvailability(true, Array.Empty<string>());
+            control.SetFinalizeResult("totally-unmade-up-outcome", Array.Empty<string>());
+            string unknownOutcome = status.Text ?? string.Empty;
+            Assert.IsFalse(unknownOutcome.Contains("Character finalized"),
+                "an unknown outcome must never paint success copy");
+            StringAssert.DoesNotMatch(unknownOutcome,
+                new System.Text.RegularExpressions.Regex("totally-unmade-up-outcome"),
+                "an unknown outcome must never leak as a raw id; got: " + unknownOutcome);
+            StringAssert.Contains(unknownOutcome, "start a fresh review",
+                "the unknown-outcome fallback must stay actionable; got: " + unknownOutcome);
+
+            // Known outcomes keep their plain-language naming (invalid keeps
+            // its natural name so the pinned gen9 assertion still holds).
+            control.SetFinalizeResult("conflict", Array.Empty<string>());
+            string conflict = status.Text ?? string.Empty;
+            StringAssert.Contains(conflict, "conflicted with this finish",
+                "conflict must keep its plain-language naming; got: " + conflict);
+
+            host.Close();
+        });
+    }
+
+    [TestMethod]
     public void Applied_and_replayed_outcomes_paint_finalized_copy()
     {
         WithHeadlessUi(() =>
