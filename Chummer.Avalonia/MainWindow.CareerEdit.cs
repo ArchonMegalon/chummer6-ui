@@ -488,6 +488,12 @@ public partial class MainWindow
     {
         return Dispatcher.UIThread.InvokeAsync(async () =>
         {
+            // Controller9589 correction B (2026-11-21): the helper receives ONE combined
+            // live predicate built here - cycle currency + owner-window lifetime + the
+            // display context - so each helper focus attempt consults all three facts
+            // as they are AT THAT MOMENT, not as they were when the loop started.
+            // The revision is deliberately excluded (successful Apply must restore).
+            Func<bool> deferredFocusGuard = BuildDeferredFocusGuard(restoreGeneration, owner, displayStillCurrent);
             for (int restoreAttempt = 0; restoreAttempt < 10; restoreAttempt++)
             {
                 if (!Sr6FocusRestoreDiagnostics.IsCurrentCycle(restoreGeneration, owner))
@@ -513,11 +519,15 @@ public partial class MainWindow
                     Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " owner-closed refusal attempt" + restoreAttempt);
                     return;
                 }
-                // Controller9591 gap 2: hand the LIVE guard to the helper so
-                // every Focus attempt inside it is individually guarded - the
-                // loop-level check alone cannot cover the two Focus sites
-                // against a switch that lands between them.
-                if (RestoreInitiatingFocusAfterAdvanceDialogClose(owner, initiatingFocus, initiatingFocusName, displayStillCurrent))
+                // Controller9591 gap 2 + Controller9589 correction B (2026-11-21):
+                // hand the COMBINED live guard to the helper - cycle currency,
+                // owner-window lifetime AND the display predicate are re-evaluated
+                // at every Focus attempt inside the helper, so a reentrant failed
+                // first Focus (or any switch between the two attempts) cannot let
+                // a stale cycle or a closed owner receive focus. The revision is
+                // deliberately NOT part of this guard: a successful Apply advances
+                // the revision and focus restoration must still work.
+                if (RestoreInitiatingFocusAfterAdvanceDialogClose(owner, initiatingFocus, initiatingFocusName, deferredFocusGuard))
                 {
                     Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " restored attempt" + restoreAttempt);
                     return;
@@ -526,6 +536,33 @@ public partial class MainWindow
             }
             Sr6FocusRestoreDiagnostics.Record("cycle" + restoreGeneration + " exhausted");
         });
+    }
+
+    /// <summary>
+    /// Controller9589 correction B: builds the combined live focus guard used by
+    /// the deferred restore loop - cycle currency + owner-window lifetime + the
+    /// display predicate, evaluated at call time. Exposed for the focused
+    /// between-attempt regressions so tests exercise exactly the predicate the
+    /// production loop passes to the helper. The revision is deliberately NOT a
+    /// term: a successful Apply advances the revision and must still restore.
+    /// </summary>
+    internal static Func<bool> BuildDeferredFocusGuard(
+        int restoreGeneration,
+        TopLevel owner,
+        Func<bool>? displayStillCurrent)
+    {
+        return () =>
+        {
+            if (!Sr6FocusRestoreDiagnostics.IsCurrentCycle(restoreGeneration, owner))
+            {
+                return false;
+            }
+            if (owner is Window guardOwnerWindow && !guardOwnerWindow.IsVisible)
+            {
+                return false;
+            }
+            return displayStillCurrent?.Invoke() ?? true;
+        };
     }
 
     /// <summary>
@@ -556,10 +593,13 @@ public partial class MainWindow
     /// it is still visible, then re-resolve by name for a parity-grid
     /// rebuild. Returns false when no visible target could be focused; the
     /// completed mutation is never failed on focus restoration.
-    /// Controller9591 gap 2: the live display guard is re-checked
-    /// immediately before EVERY Focus attempt - the same-instance attempt
-    /// AND the by-name fallback after a failed/reentrant attempt - so a
-    /// context that switched between attempts never receives focus.
+    /// Controller9591 gap 2 + Controller9589 correction B: the live guard is
+    /// re-checked immediately before EVERY Focus attempt - the same-instance
+    /// attempt AND the by-name fallback after a failed/reentrant attempt - so
+    /// a context that switched between attempts never receives focus. The
+    /// guard the deferred loop passes is the COMBINED predicate (restore-cycle
+    /// currency + owner-window lifetime + display context); the revision is
+    /// deliberately excluded so a successful Apply still restores focus.
     /// </summary>
     internal static bool RestoreInitiatingFocusAfterAdvanceDialogClose(
         TopLevel owner,

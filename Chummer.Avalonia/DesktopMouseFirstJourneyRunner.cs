@@ -2635,27 +2635,11 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         {
             var sectionHost = window.ControlsForAutomation.SectionHost;
             TabStrip? tabStrip = sectionHost?.FindControl<TabStrip>("LoadedRunnerTabStrip");
-            if (tabStrip is null)
-            {
-                return null; // strip absent: observation unknown
-            }
-            int index = 0;
-            foreach (object? item in tabStrip.Items)
-            {
-                if (item is NavigatorTabItem tab
-                    && string.Equals(tab.Id, tabId, StringComparison.Ordinal))
-                {
-                    // Container may be unrealized (virtualized): unknown, not unselected.
-                    // Controller9591 follow-up: production TabStrip containers are
-                    // TabStripItem (styled via primitives|TabStripItem), NOT TabItem -
-                    // match ISelectable so the observation actually applies to the
-                    // realized production containers.
-                    return tabStrip.ContainerFromIndex(index) is ISelectable { IsSelected: true } ? true
-                        : tabStrip.ContainerFromIndex(index) is ISelectable ? false : (bool?)null;
-                }
-                index++;
-            }
-            return null; // no matching tab item: observation unknown
+            // Controller9589 correction A (2026-11-21): single observation implementation -
+            // the window-level overload resolves the strip and delegates to the strip-level
+            // core that the focused headless tests exercise, so production and tests share
+            // one observation implementation.
+            return TryGetPrimaryNavigationTabSelection(tabStrip, tabId);
         }
 
         /// <summary>
@@ -2676,8 +2660,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 if (item is NavigatorTabItem tab
                     && string.Equals(tab.Id, tabId, StringComparison.Ordinal))
                 {
-                    return tabStrip.ContainerFromIndex(index) is ISelectable { IsSelected: true } ? true
-                        : tabStrip.ContainerFromIndex(index) is ISelectable ? false : (bool?)null;
+                    // Container may be unrealized (virtualized): unknown, not unselected.
+                    // Controller9591/9589: production TabStrip containers are TabStripItem
+                    // (styled via primitives|TabStripItem), NOT TabItem - match ISelectable so
+                    // the observation applies to the realized production containers.
+                    // Capture the container lookup ONCE - one observation per call.
+                    object? container = tabStrip.ContainerFromIndex(index);
+                    return container is ISelectable { IsSelected: true } ? true
+                        : container is ISelectable ? false : (bool?)null;
                 }
                 index++;
             }

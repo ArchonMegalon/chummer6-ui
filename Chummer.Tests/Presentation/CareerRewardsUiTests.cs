@@ -1277,6 +1277,125 @@ public sealed class CareerRewardsUiTests
         });
     }
     [TestMethod]
+    public void Owner_close_between_attempts_refuses_by_name_focus_restoration()
+    {
+        // Controller9589 correction B: the owner window CLOSES after the
+        // same-instance attempt fails but before the by-name fallback - the
+        // combined guard (cycle + owner lifetime + display) must refuse the
+        // fallback: a closed owner never receives focus restoration.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_OC", Content = "improve OC" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(row, captured, "precondition: capture is the row");
+                int cycle = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+
+                // Rebuild-over so the same-instance attempt fails and the
+                // helper reaches the by-name fallback.
+                var panel = (StackPanel)owner.Content!;
+                Button rebuilt = new Button { Name = "AttributeImprove_OC", Content = "improve OC (rebuilt)" };
+                panel.Children.Clear();
+                panel.Children.Add(rebuilt);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(owner);
+
+                // The guard the PRODUCTION loop passes: combined predicate.
+                Func<bool> guard = MainWindow.BuildDeferredFocusGuard(cycle, owner, displayStillCurrent: null);
+                int guardCalls = 0;
+                // Owner closes between attempts: after the first consult the
+                // window is hidden (Close + RunJobs drains it).
+                Func<bool> guardClosing = () =>
+                {
+                    guardCalls++;
+                    if (guardCalls == 1)
+                    {
+                        return guard();
+                    }
+                    owner.Close();
+                    Dispatcher.UIThread.RunJobs();
+                    return guard();
+                };
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(
+                    owner, captured, capturedName, displayStillCurrent: guardClosing);
+                Assert.IsFalse(restored, "the closed owner must refuse the by-name restore");
+                Assert.AreEqual(2, guardCalls, "the guard must be consulted at both focus attempts");
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsFalse(rebuilt.IsFocused, "the rebuilt row must NOT receive focus after owner close");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
+    public void Superseding_cycle_between_attempts_refuses_by_name_focus_restoration()
+    {
+        // Controller9589 correction B: a NEWER restore cycle begins after the
+        // same-instance attempt fails but before the by-name fallback - the
+        // combined guard must refuse the stale cycle at the fallback.
+        WithHeadlessUi(() =>
+        {
+            Button row = new Button { Name = "AttributeImprove_SC", Content = "improve SC" };
+            Window owner = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { row } } };
+            owner.Show();
+            Dispatcher.UIThread.RunJobs();
+            PumpLayout(owner);
+            try
+            {
+                Assert.IsTrue(row.Focus(), "precondition: the row takes focus");
+                Dispatcher.UIThread.RunJobs();
+                var (captured, capturedName) = MainWindow.CaptureInitiatingFocusForAdvanceDialog(owner);
+                Assert.AreSame(row, captured, "precondition: capture is the row");
+                int cycle = MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+
+                var panel = (StackPanel)owner.Content!;
+                Button rebuilt = new Button { Name = "AttributeImprove_SC", Content = "improve SC (rebuilt)" };
+                panel.Children.Clear();
+                panel.Children.Add(rebuilt);
+                Dispatcher.UIThread.RunJobs();
+                PumpLayout(owner);
+
+                Func<bool> guard = MainWindow.BuildDeferredFocusGuard(cycle, owner, displayStillCurrent: null);
+                int guardCalls = 0;
+                Func<bool> guardSuperseded = () =>
+                {
+                    guardCalls++;
+                    if (guardCalls == 1)
+                    {
+                        return guard();
+                    }
+                    // A newer interaction begins its own cycle before the
+                    // fallback evaluates.
+                    MainWindow.Sr6FocusRestoreDiagnostics.BeginRestoreCycle(owner);
+                    return guard();
+                };
+                bool restored = MainWindow.RestoreInitiatingFocusAfterAdvanceDialogClose(
+                    owner, captured, capturedName, displayStillCurrent: guardSuperseded);
+                Assert.IsFalse(restored, "the superseded cycle must refuse the by-name restore");
+                Assert.AreEqual(2, guardCalls, "the guard must be consulted at both focus attempts");
+                Dispatcher.UIThread.RunJobs();
+                Assert.IsFalse(rebuilt.IsFocused, "the rebuilt row must NOT receive focus from the stale cycle");
+                Assert.IsFalse(MainWindow.Sr6FocusRestoreDiagnostics.IsCurrentCycle(cycle, owner),
+                    "the original cycle must be stale after the superseding cycle began");
+            }
+            finally
+            {
+                owner.Close();
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+    [TestMethod]
     public void Context_change_between_attempts_refuses_by_name_focus_restoration()
     {
         // Controller9591 gap 2: the context switches AFTER the same-instance
