@@ -9325,13 +9325,24 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     throw new InvalidOperationException(
                         $"menu command {commandId} was not attached at press time after {menuAttempt} popup re-open attempts.");
                 }
-                RecordStep(steps, $"menu command {commandId} attempt {menuAttempt} target not live at press - reopening popup");
+                RecordStep(steps, $"menu command {commandId} attempt {menuAttempt} target not live at press - resolving popup state");
                 await Task.Delay(250, ct);
-                // T496: the popup itself can close between attempts (state
-                // publications steal focus); re-open it before re-resolving.
-                await RoutePointerClickAsync(menu);
-                await WaitForAsync(steps, $"menu command {commandId} popup reopened",
-                    () => menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled), ct);
+                // T496 + gen10p: a PRE-press not-live result means NO input
+                // was delivered - the popup is usually still OPEN and the
+                // item simply was not hit-testable at the resolved point
+                // (freshly composed popup). Clicking the menu AGAIN would
+                // CLOSE the open popup, detaching the command item and
+                // guaranteeing the remaining attempts fail. Reopen only when
+                // the popup actually closed, then wait for it to be open
+                // (or reopen it) before re-probing.
+                bool popupStillOpen = await Dispatcher.UIThread.InvokeAsync(() => menu.IsSubMenuOpen);
+                if (!popupStillOpen)
+                {
+                    await RoutePointerClickAsync(menu);
+                }
+                await WaitForAsync(steps, $"menu command {commandId} popup open for reprobe",
+                    () => menu.IsSubMenuOpen
+                        && menu.Items.OfType<MenuItem>().Any(item => item.IsEnabled), ct);
                 continue;
             }
             if (menuDelivery.Kind != PointerDeliveryKind.Delivered)
