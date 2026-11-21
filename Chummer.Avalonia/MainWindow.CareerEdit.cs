@@ -243,16 +243,26 @@ public partial class MainWindow
 
     private async void SectionHost_OnCareerAttributeAdvanceRequested(object? sender, string attributeName)
     {
+        // Controller9547 / gen10y ring evidence: the initiating focus must be
+        // captured SYNCHRONOUSLY at handler entry - the Click dispatch still
+        // holds the row focused, but the open route's own awaits can let a
+        // parity-grid rebuild detach the row and CLEAR focus before the
+        // capture inside the route runs (gen10y: capture type=<null>).
+        (IInputElement? initiatingFocus, string? initiatingFocusName) =
+            CaptureInitiatingFocusForAdvanceDialog(this);
         await RunUiActionAsync(
-            () => OpenCareerAttributeAdvanceDialogAsync(attributeName),
+            () => OpenCareerAttributeAdvanceDialogAsync(attributeName, initiatingFocus, initiatingFocusName),
             "career-attribute-advance").ConfigureAwait(true);
     }
 
-    private async Task OpenCareerAttributeAdvanceDialogAsync(string attributeName)
+    private async Task OpenCareerAttributeAdvanceDialogAsync(
+        string attributeName,
+        IInputElement? initiatingFocus,
+        string? initiatingFocusName)
     {
         // SR6 runners route through Core's owner-bound advancement service
         // (dedicated dialog); the SR5 XML-mutation editor below stays SR5-only.
-        if (await TryOpenSr6CareerAttributeAdvanceDialogAsync(attributeName).ConfigureAwait(true))
+        if (await TryOpenSr6CareerAttributeAdvanceDialogAsync(attributeName, initiatingFocus, initiatingFocusName).ConfigureAwait(true))
         {
             return;
         }
@@ -321,7 +331,10 @@ public partial class MainWindow
     /// not SR6 or the client surface is unavailable, so the caller falls back
     /// to the SR5 editor route.
     /// </summary>
-    private async Task<bool> TryOpenSr6CareerAttributeAdvanceDialogAsync(string attributeName)
+    private async Task<bool> TryOpenSr6CareerAttributeAdvanceDialogAsync(
+        string attributeName,
+        IInputElement? initiatingFocus,
+        string? initiatingFocusName)
     {
         // Observe transitions synchronously, before queued UI refreshes can
         // coalesce a workspace switch away and back into the same identity.
@@ -364,14 +377,10 @@ public partial class MainWindow
             {
                 return true;
             }
-            // Controller9547: capture the initiating focus BEFORE the modal
-            // can open - the modal is focus-trapped while visible, so the
-            // row behind it cannot be probed afterwards (gen10t evidence),
-            // and gen10u proved the row does NOT regain focus on close
-            // without an explicit restoration (the removed artificial
-            // Focus() had masked that gap).
-            (IInputElement? initiatingFocus, string? initiatingFocusName) =
-                CaptureInitiatingFocusForAdvanceDialog(this);
+            // The initiating focus was captured at HANDLER ENTRY (pre-await,
+            // gen10y evidence) and passed in; the in-route capture was too
+            // late - the open route's awaits can clear focus via a parity
+            // -grid rebuild before it ran.
             var dialog = new Sr6CareerAttributeAdvanceWindow(editor, attributeName);
             object? outcome = await dialog.ShowDialog<object?>(this).ConfigureAwait(true);
             // The modal's close sequence is still unwinding when
@@ -393,7 +402,7 @@ public partial class MainWindow
             // Each new cycle therefore INVALIDATES the pending older loops
             // via a generation token - a stale loop exits silently instead
             // of fighting the newest capture over keyboard focus.
-            Sr6FocusRestoreDiagnostics.Record("capture type="
+            Sr6FocusRestoreDiagnostics.Record("capture (handler-entry) type="
                 + (initiatingFocus?.GetType().Name ?? "<null>")
                 + " name=" + (initiatingFocusName ?? "<null>"));
             int restoreGeneration = Sr6FocusRestoreDiagnostics.BeginRestoreCycle();
