@@ -9459,12 +9459,27 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         string screenshotPath = Path.Combine(screenshotDirectory, $"{fileStem}.png");
         byte[] pngBytes = await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            // Gen10 (Controller9403 item 3): the SR6 advancement modal derives from
+            // plain Window, so the OwnedWizardWindow/DialogWindow preference chain
+            // never matched it and dialog-leg screenshots silently fell back to
+            // MainWindow - exactly the "MainWindow-only screenshot labelled as
+            // dialog proof" defect. Prefer a visible Sr6CareerAttributeAdvanceWindow
+            // first so 06b/06c/06d captures show the actual modal.
+            var sr6Advance = global::Avalonia.Application.Current?.ApplicationLifetime
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime captureDesktop
+                ? captureDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.Sr6CareerAttributeAdvanceWindow>()
+                    .FirstOrDefault(w => w.IsVisible)
+                : null;
+            if (sr6Advance is not null)
+            {
+                return sr6Advance.CaptureScreenshotBytesForAutomation();
+            }
             // Gen8: the owned creation wizard window is not a DesktopDialogWindow;
             // prefer it when visible so wizard-leg screenshots show the wizard,
             // not a blank MainWindow behind it.
             var ownedWizard = global::Avalonia.Application.Current?.ApplicationLifetime
-                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime captureDesktop
-                ? captureDesktop.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
+                is global::Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime captureDesktop2
+                ? captureDesktop2.Windows.OfType<global::Chummer.Avalonia.Controls.OwnedWizardWindow>()
                     .FirstOrDefault(w => w.IsVisible)
                 : null;
             if (ownedWizard is not null)

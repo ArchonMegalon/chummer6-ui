@@ -1,9 +1,12 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Avalonia.Layout;
 using Chummer.Contracts.Characters;
 using Chummer.Presentation.Overview;
@@ -24,6 +27,34 @@ namespace Chummer.Avalonia.Controls;
 /// </summary>
 public sealed class Sr6CareerAttributeAdvanceWindow : Window
 {
+    /// <summary>
+    /// Gen10 (Controller9403 item 3): renders the modal itself for journey
+    /// evidence captures so dialog screenshots show the quote/blocker surface
+    /// instead of the MainWindow page behind it. Mirrors the window renderer
+    /// used by DesktopDialogWindow/OwnedWizardWindow.
+    /// </summary>
+    internal byte[] CaptureScreenshotBytesForAutomation()
+    {
+        PixelSize pixelSize = new(
+            Math.Max(1, (int)Math.Ceiling(Bounds.Width)),
+            Math.Max(1, (int)Math.Ceiling(Bounds.Height)));
+
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            InvalidateMeasure();
+            InvalidateArrange();
+            InvalidateVisual();
+            Measure(new Size(pixelSize.Width, pixelSize.Height));
+            Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
+        bitmap.Render(this);
+        using MemoryStream output = new();
+        bitmap.Save(output);
+        return output.ToArray();
+    }
     /// <summary>
     /// Gen17 (Controller8300, T660): live-instance registry so same-modal
     /// resolution can enumerate exactly the advance windows that exist, in
