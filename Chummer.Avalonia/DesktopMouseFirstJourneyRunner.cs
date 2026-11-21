@@ -156,7 +156,51 @@ internal static class DesktopMouseFirstJourneyRunner
         await journeyTask;
     }
 
-    private static async Task RunJourneyAsync(
+        // WIN-009 gen11b: honor the plan's CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_TALENT_CHOICE
+        // at the wizard's talent page (mirrors the heritage metatype override above).
+        // A request that is not enabled is a hard journey failure - that refusal IS
+        // the negative acceptance evidence. No request keeps the historical behavior
+        // (first enabled choice).
+        private static string SelectTalentChoiceForPlan(
+            CharacterCreationWizardControl wizard,
+            DesktopMouseFirstJourneyPlan plan)
+        {
+            var choices = wizard.GetPriorityTalentChoices();
+            string? wanted = plan.PriorityTalentChoice;
+            if (!string.IsNullOrWhiteSpace(wanted))
+            {
+                var match = choices.FirstOrDefault(c => c.IsEnabled
+                    && TalentChoiceLabelMatches(c.Label, wanted));
+                if (match.Label is not null && !string.IsNullOrEmpty(match.SelectionId))
+                {
+                    return match.SelectionId;
+                }
+                throw new InvalidOperationException(
+                    "journey: requested talent choice '" + wanted
+                    + "' is not enabled in the wizard (available: "
+                    + string.Join(", ", choices.Select(c =>
+                        c.Label + (c.IsEnabled ? string.Empty : " [disabled]")))
+                    + ")");
+            }
+            foreach (var candidate in choices)
+            {
+                if (candidate.IsEnabled)
+                {
+                    return candidate.SelectionId;
+                }
+            }
+            throw new InvalidOperationException("journey: no enabled talent choice available");
+        }
+
+        // The wizard renders the priorities.xml <name> as the label
+        // ('Magician - 4 Magic/7 Spells'); the <value> is the short choice
+        // ('Magician'). Accept either form so the env override stays stable.
+        private static bool TalentChoiceLabelMatches(string label, string wanted)
+            => string.Equals(label, wanted, StringComparison.OrdinalIgnoreCase)
+                || (label.Contains(" - ", StringComparison.Ordinal)
+                    && string.Equals(label.Split(" - ")[0], wanted, StringComparison.OrdinalIgnoreCase));
+
+        private static async Task RunJourneyAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,
         DesktopMouseFirstJourneyPlan plan,
@@ -459,6 +503,84 @@ internal static class DesktopMouseFirstJourneyRunner
                         VerificationNotes:
                         [
                             "T492 native SR6 verification: the Sr6CreationWizardWindow finalized the draft through the Core finalization authority, the CareerRewardsWindow awarded karma, the AttributeImprove_Body row opened the Sr6CareerAttributeAdvanceWindow quote modal, Apply committed through the authoritative SR6 career advancement service, the karma debit and reopened-dialog cancel path were verified, and the file-menu save persisted the workspace for the fresh-process reopen leg."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
+            if (DesktopMouseFirstJourneyRuntime.MagicianExportRequested)
+            {
+                RecordStep(steps, "magician export leg: import bundled SR5 Career magician, save, save-as native .chum5, export portable bundle");
+                DesktopUserJourneyWorkflowEvidence magicianEvidence = await ExerciseMagicianExportLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(magicianEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> magicianAssertion in magicianEvidence.Assertions)
+                {
+                    if (!magicianAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Magician export leg assertion failed: {magicianAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: magician export leg assertion {magicianAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                var magicianVisibleState = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: magicianVisibleState.WorkspaceId?.Value,
+                        CharacterName: magicianVisibleState.Profile?.Name,
+                        CharacterAlias: magicianVisibleState.Profile?.Alias,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: magicianVisibleState.Session?.HasSavedWorkspace ?? false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "Controller9543 fictional-magician export checkpoint: the bundled SR5 Career magician sample (Soma-Career.chum5) was imported through the production import coordinator, saved through the product save command into the durable state root, saved-as native .chum5 through the real DownloadAsync dispatch, and exported as the ordinary portable export bundle through the real ExportAsync dispatch; both payloads were verified to carry the magician markers and the learned sustained spells."
                         ],
                         UserJourneyWorkflows: userJourneyWorkflows));
                 Environment.ExitCode = 0;
@@ -1274,7 +1396,7 @@ internal static class DesktopMouseFirstJourneyRunner
                 () => wizard.GetPriorityTalentChoices().Any(choice => choice.IsEnabled),
                 journeyTimeout.Token);
             string talentChoiceId = await Dispatcher.UIThread.InvokeAsync(() =>
-                wizard.GetPriorityTalentChoices().FirstOrDefault(c => c.IsEnabled).SelectionId);
+                SelectTalentChoiceForPlan(wizard, plan));
             await ClickWizardButtonUntilEffectAsync(
                 wizard,
                 "creation-wizard-priority-talent-choice-" + talentChoiceId,
@@ -9190,6 +9312,164 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 return first > 0 && first == second;
             },
             ct);
+    }
+
+    /// <summary>
+    /// Controller9543 fictional-magician export checkpoint (T857): the bundled
+    /// Soma-Career.chum5 sample IS a current SR5 Career magician (magician=True,
+    /// Hermetic tradition, 10 learned spells incl. 5 sustained-duration spells
+    /// with real SR5/SG sources). The leg imports it through the production
+    /// import coordinator, saves it through the product save command (durable
+    /// state-root save), then drives the native .chum5 Save-As download and the
+    /// portable export dialog download to disk, verifying both payloads carry
+    /// the magician markers and sustained spells before the receipt is written.
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseMagicianExportLegAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string exportDirectory = Directory.CreateTempSubdirectory("chummer-journey-magician-export").FullName;
+        string? savedSaveAsPath = null;
+        string? savedExportPath = null;
+        MainWindowDesktopFileCoordinator.SaveDownloadOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, request.Download.FileName);
+            File.WriteAllBytes(targetPath, Convert.FromBase64String(request.Download.ContentBase64));
+            savedSaveAsPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Saved native .chum5 to {request.Download.FileName}."));
+        };
+        MainWindowDesktopFileCoordinator.SaveExportOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, request.Export.FileName);
+            File.WriteAllBytes(targetPath, Convert.FromBase64String(request.Export.ContentBase64));
+            savedExportPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Exported workspace bundle to {request.Export.FileName}."));
+        };
+        try
+        {
+            await CloseWorkspaceAndLoadCareerSampleAsync(window, steps, ct, recordPointerAction);
+            RecordStep(steps, "magician export: bundled SR5 Career magician sample imported");
+
+            // Save the imported magician workspace through the product save
+            // command so a current Windows-saved document exists in the durable
+            // state root (the "Windows-saved" requirement). Settled means the
+            // workspace content revision equals the persisted revision and the
+            // persisted revision is positive.
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "magician workspace save settled (ContentRevision == SavedRevision > 0)",
+                () =>
+                {
+                    CharacterOverviewState snap = window.SnapshotStateForAutomation();
+                    return snap.SavedRevision > 0 && snap.ContentRevision == snap.SavedRevision;
+                },
+                ct);
+            long savedRevisionAfterSave = window.SnapshotStateForAutomation().SavedRevision;
+            RecordStep(steps, $"magician export: saved revision {savedRevisionAfterSave}");
+
+            // Native .chum5 Save-As download: File menu > "Save Dossier As..."
+            // command > presenter DownloadAsync > PendingDownload dispatch >
+            // SaveDownloadOverride writes the native document to disk.
+            await ClickFileMenuCommandAsync(window, "save_character_as", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "native .chum5 save-as payload materialized on disk",
+                () => savedSaveAsPath is not null && File.Exists(savedSaveAsPath),
+                ct);
+            string saveAsXml = File.ReadAllText(savedSaveAsPath!);
+            bool saveAsHasMagician = saveAsXml.Contains("<magician>True</magician>", StringComparison.Ordinal);
+            bool saveAsHasTradition = saveAsXml.Contains("Hermetic", StringComparison.Ordinal);
+            int saveAsSustained = System.Text.RegularExpressions.Regex.Matches(
+                saveAsXml, System.Text.RegularExpressions.Regex.Escape("<duration>S</duration>")).Count;
+            int saveAsSpellCount = System.Text.RegularExpressions.Regex.Matches(
+                saveAsXml, System.Text.RegularExpressions.Regex.Escape("<spell>")).Count;
+            List<string> sustainedNames = new List<string>();
+            foreach (System.Text.RegularExpressions.Match spellBlock in System.Text.RegularExpressions.Regex.Matches(
+                saveAsXml, "<spell>(?s).*?</spell>"))
+            {
+                if (!spellBlock.Value.Contains("<duration>S</duration>", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                System.Text.RegularExpressions.Match nameMatch = System.Text.RegularExpressions.Regex.Match(
+                    spellBlock.Value, "<name>(.*?)</name>");
+                if (nameMatch.Success)
+                {
+                    sustainedNames.Add(nameMatch.Groups[1].Value);
+                }
+            }
+            RecordStep(steps, $"magician export: save-as payload magician={saveAsHasMagician} sustainedSpells={saveAsSustained} totalSpells={saveAsSpellCount} sustainedNames=[{string.Join(", ", sustainedNames)}]");
+
+            // Portable export: File menu > "Export Dossier..." > dialog >
+            // Download action > presenter ExportAsync > SaveExportOverride.
+            await ClickFileMenuCommandAsync(window, "export_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.export_character", steps, ct);
+            await ClickDialogActionUntilAsync(
+                window,
+                "download",
+                steps,
+                ct,
+                recordPointerAction,
+                "export bundle materialized through the download override",
+                () => savedExportPath is not null && File.Exists(savedExportPath));
+            string exportJson = File.ReadAllText(savedExportPath!);
+            bool exportIsJson = exportJson.TrimStart().StartsWith("{", StringComparison.Ordinal);
+            bool exportHasMagician = exportJson.Contains("magician", StringComparison.OrdinalIgnoreCase);
+            int exportSustainedNamed = sustainedNames.Count(name => exportJson.Contains(name, StringComparison.Ordinal));
+            RecordStep(steps, $"magician export: portable bundle json={exportIsJson} magician={exportHasMagician} sustainedNamed={exportSustainedNamed}/{sustainedNames.Count}");
+
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07-magician-export-after");
+
+            DesktopMouseFirstJourneyRuntime.WriteMagicianExportReceipt(
+                workspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                savedRevision: savedRevisionAfterSave > 0 ? savedRevisionAfterSave : null,
+                saveAsFileName: Path.GetFileName(savedSaveAsPath!),
+                saveAsBytes: new FileInfo(savedSaveAsPath!).Length,
+                exportFileName: Path.GetFileName(savedExportPath!),
+                exportBytes: new FileInfo(savedExportPath!).Length,
+                rulesetId: "sr5",
+                sourceSample: "Samples/Legacy/Soma-Career.chum5",
+                sustainedSpellCount: saveAsSustained,
+                totalSpellCount: saveAsSpellCount,
+                tradition: saveAsHasTradition ? "Hermetic" : null);
+            RecordStep(steps, "magician export receipt written");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "magician_export_workflow",
+                ScreenshotPaths: [],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["magician_save_as_materialized"] = savedSaveAsPath is not null && File.Exists(savedSaveAsPath!),
+                    ["magician_save_as_has_magician_marker"] = saveAsHasMagician,
+                    ["magician_save_as_has_tradition_marker"] = saveAsHasTradition,
+                    ["magician_save_as_has_sustained_spells"] = saveAsSustained > 0,
+                    ["magician_save_as_sustained_names_resolved"] = sustainedNames.Count > 0 && sustainedNames.Count == saveAsSustained,
+                    ["magician_export_materialized"] = savedExportPath is not null && File.Exists(savedExportPath!),
+                    ["magician_export_is_json"] = exportIsJson,
+                    ["magician_export_has_magician_marker"] = exportHasMagician,
+                    ["magician_export_has_all_sustained_spells"] = sustainedNames.Count > 0 && exportSustainedNamed == sustainedNames.Count,
+                    ["magician_workspace_saved"] = savedRevisionAfterSave > 0,
+                },
+                InteractionNotes:
+                [
+                    $"Imported the bundled SR5 Career magician sample, saved it (revision {savedRevisionAfterSave}), saved-as native .chum5 ({new FileInfo(savedSaveAsPath!).Length} bytes, sustained spells: {string.Join(", ", sustainedNames)}), and exported the portable bundle ({new FileInfo(savedExportPath!).Length} bytes, {exportSustainedNamed}/{sustainedNames.Count} sustained spell names present).",
+                ]);
+        }
+        finally
+        {
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride = null;
+            MainWindowDesktopFileCoordinator.SaveExportOverride = null;
+        }
     }
 
     private static Control? FindVisibleValidationActionControl(MainWindow window)
