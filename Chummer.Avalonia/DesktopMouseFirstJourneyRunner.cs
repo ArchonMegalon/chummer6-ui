@@ -7524,6 +7524,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 throw new InvalidOperationException(
                     "sr6 keyboard leg failed: the AttributeImprove_AGI row is not visible on any candidate tab for the Escape-close proof.");
             }
+            List<string> initiatingFocusLog = new List<string>();
             // State publications rebuild the parity rows, so re-find a fresh
             // TopLevel-rooted reference for each press attempt (the same
             // bounded retry the natural-limit leg uses).
@@ -7535,7 +7536,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             Sr6CareerAttributeAdvanceWindow? escWindow =
                 await PressThenObserveWithDeliveryDisciplineAsync<Sr6CareerAttributeAdvanceWindow>(
                     () => PressImproveRowWithDeliveryDisciplineAsync(
-                        window, "AttributeImprove_AGI", steps, ct, recordPointerAction),
+                        window, "AttributeImprove_AGI", steps, ct, recordPointerAction, initiatingFocusLog),
                     async () =>
                     {
                         bool opened = await WaitForConditionWithinAsync(
@@ -7564,32 +7565,25 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             decimal escKarmaBefore = ReadCareerRewardsKarmaBalance(sectionHost);
             decimal escNuyenBefore = ReadCareerRewardsNuyenBalance(sectionHost);
             long escRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
-            // Controller9547: the INITIATING focus must be captured BEFORE the
-            // modal opens - the row that opens the modal holds focus at open
-            // time (the product's own Opened handler moves initial focus to
-            // the Advance action inside the modal). Fabricating focus after
-            // the modal is open hides exactly the focus-return behavior this
-            // proof exists to verify. The settle helper above already proved
-            // the row was live before the press; assert the row STILL holds
-            // focus right before the Escape press instead of forcing it.
-            (bool rowHeldFocus, string rowFocusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                Button? rowStillThere = FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI");
-                if (rowStillThere is null)
-                {
-                    return (false, "the Agility improve row vanished before the Escape press");
-                }
-                return (rowStillThere.IsFocused || rowStillThere.IsKeyboardFocusWithin,
-                    "rowIsFocused=" + rowStillThere.IsFocused
-                    + " keyboardFocusWithin=" + rowStillThere.IsKeyboardFocusWithin);
-            });
-            if (!rowHeldFocus)
+            // Controller9547: the initiating focus was ARRANGED and OBSERVED
+            // pre-open inside the press helper - the modal is focus-trapped
+            // while visible, so the row behind it cannot be probed now
+            // (gen10t evidence: rowIsFocused=False under the open modal).
+            // Verify the recorded pre-open observation instead of probing the
+            // row under the modal, then press Escape.
+            if (initiatingFocusLog.Count == 0)
             {
                 throw new InvalidOperationException(
-                    "sr6 keyboard leg failed: the Agility improve row did not hold initiating focus before the Escape press ("
-                    + rowFocusDiag + ").");
+                    "sr6 keyboard leg failed: the press helper recorded no initiating-focus observation.");
             }
-            RecordStep(steps, "sr6 keyboard leg: initiating focus verified on the Agility row before the Escape press");
+            string initiatingFocus = initiatingFocusLog[initiatingFocusLog.Count - 1];
+            if (!initiatingFocus.StartsWith("arranged:", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "sr6 keyboard leg failed: the Agility improve row did not hold initiating focus before the modal opened ("
+                    + initiatingFocus + ").");
+            }
+            RecordStep(steps, "sr6 keyboard leg: initiating focus verified pre-open on the Agility row (" + initiatingFocus + ")");
             await Dispatcher.UIThread.InvokeAsync(() => SendKeyStroke(escWindow, Key.Escape, KeyModifiers.None));
             RecordStep(steps, "sr6 keyboard leg: pressed Escape on the advance modal");
             bool escClosed = await WaitForConditionWithinAsync(
@@ -10165,7 +10159,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         string improveRowAutomationId,
         List<string> steps,
         CancellationToken ct,
-        Action recordPointerAction)
+        Action recordPointerAction,
+        List<string>? initiatingFocusLog = null)
     {
         // Pre-press readiness runs BEFORE any press: the settle proves the
         // parity grid has stopped rebuilding, and BringIntoView + the layout
@@ -10181,6 +10176,29 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             RecordStep(steps, $"sr6 improve row {improveRowAutomationId} not live at press (row instance never stabilized across spaced re-finds)");
             return "delivered=false;reason=target-not-live-at-press;settle=unstable-row-instance;";
         }
+        // Controller9547: the initiating focus is ARRANGED and OBSERVED here,
+        // before the dispatch can open the modal - the modal is focus-trapped
+        // while visible, so the row behind it cannot be probed afterwards
+        // (gen10t evidence: rowIsFocused=False under the open modal). A real
+        // pointer press focuses the pressed row; the synthetic route skips
+        // pointer-focus, so arranging the known initiating state here models
+        // the real user scenario instead of fabricating focus after the modal
+        // is open (which would hide the focus-return behavior this proof
+        // exists to verify).
+        (bool focusArranged, string focusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (settledRow is not Button rowButton)
+            {
+                return (false, "settled row is not a Button");
+            }
+            rowButton.Focus();
+            ForceHeadlessLayoutPump(rowButton);
+            return (rowButton.IsFocused || rowButton.IsKeyboardFocusWithin,
+                "rowIsFocused=" + rowButton.IsFocused
+                + " keyboardFocusWithin=" + rowButton.IsKeyboardFocusWithin);
+        });
+        initiatingFocusLog?.Add((focusArranged ? "arranged:" : "missing:") + focusDiag);
+        RecordStep(steps, $"sr6 improve row {improveRowAutomationId} initiating focus arranged pre-dispatch ({focusDiag})");
         // Controller9544: ONE dispatch per call. The pre-press settle above
         // is the readiness work; the resolved route re-resolves the live
         // target inside the press frame and raises exactly one synthetic
