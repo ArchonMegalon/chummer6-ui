@@ -7434,38 +7434,61 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         continue;
                     }
 
-                    string walkRouting;
-                    try
+                    // Controller9415 gen10: press through the resolved route
+                    // with a live re-resolver, and accept by OUTCOME (the
+                    // AGI row rendering) like every other navigation leg.
+                    // A TabItem does not raise Button.ClickEvent, so the
+                    // post-raise Click probe is structurally blind here - the
+                    // routing string is used ONLY for its pre-press not-live
+                    // verdict (nothing delivered - safe to retry), never as
+                    // an acceptance gate.
+                    bool tabWalked = false;
+                    for (int walkAttempt = 1; walkAttempt <= 3 && !tabWalked; walkAttempt++)
                     {
-                        walkRouting = await RoutePointerClickAsync(tabControl);
+                        string walkRouting;
+                        try
+                        {
+                            walkRouting = await RoutePointerClickResolvedAsync(
+                                tabControl,
+                                waitForClick: true,
+                                liveTarget: () => FindVisiblePrimaryNavigationControl(window, candidateTabId));
+                        }
+                        catch (Exception walkFault)
+                        {
+                            // Controller9539: a thrown routing fault must not
+                            // be swallowed and re-tried - the press may have
+                            // delivered. Fail closed.
+                            throw new InvalidOperationException(
+                                "sr6 keyboard leg tab walk failed on " + candidateTabId
+                                + ": " + walkFault.Message, walkFault);
+                        }
+                        PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
+                        if (walkDelivery.Kind == PointerDeliveryKind.NotDelivered
+                            && walkRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal))
+                        {
+                            // NOTHING was delivered: settle and retry the
+                            // same candidate (bounded). No re-press after a
+                            // possible delivery is possible here because the
+                            // result asserts no input was raised.
+                            RecordStep(
+                                steps,
+                                $"sr6 keyboard leg tab walk: {candidateTabId} not live at press attempt {walkAttempt} ({walkRouting}); settling before retry");
+                            await Task.Delay(250, ct);
+                            continue;
+                        }
+                        // Delivered or any other not-delivered kind: let the
+                        // outcome decide (navigation cannot commit state).
+                        recordPointerAction();
+                        RecordStep(steps, $"sr6 keyboard leg tab walk: pressed {candidateTabId} ({walkRouting.Split(';')[0]})");
+                        tabWalked = true;
                     }
-                    catch (Exception walkFault)
+                    if (!tabWalked)
                     {
-                        // Controller9539: a thrown routing fault must not be
-                        // swallowed and re-tried against the next candidate -
-                        // the press may have delivered. Fail closed.
-                        throw new InvalidOperationException(
-                            "sr6 keyboard leg tab walk failed on " + candidateTabId
-                            + ": " + walkFault.Message, walkFault);
-                    }
-                    PointerDeliveryResult walkDelivery = ParsePointerDeliveryResult(walkRouting);
-                    if (walkDelivery.Kind == PointerDeliveryKind.NotDelivered)
-                    {
-                        // The tab press did not deliver navigation (the control
-                        // was rebuilt between discovery and press). This is a
-                        // PRE-press not-live state for a navigation affordance
-                        // with no typed target-not-live variant; retrying on
-                        // the next candidate tab is safe because a navigation
-                        // click cannot commit character state. Record and move
-                        // on without counting a pointer action.
                         RecordStep(
                             steps,
-                            $"sr6 keyboard leg tab walk: {candidateTabId} not delivered ({walkRouting}); trying next candidate");
+                            $"sr6 keyboard leg tab walk: {candidateTabId} never live at press after 3 attempts; trying next candidate");
                         continue;
                     }
-
-                    recordPointerAction();
-                    RecordStep(steps, $"sr6 keyboard leg tab walk: clicked {candidateTabId}");
                     if (await WaitForConditionWithinAsync(
                             () => FindVisibleCareerRewardsButton(window, "AttributeImprove_AGI") is not null,
                             ct,
