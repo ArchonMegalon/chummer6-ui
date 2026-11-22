@@ -459,6 +459,7 @@ public partial class Sr6CreationWizardWindow : Window
             "spells" => saved.Spells?.CatalogIds ?? [],
             "complex-forms" => saved.ComplexForms?.Choices.Select(c => c.CatalogId).ToList() ?? [],
             "adept-powers" => saved.AdeptPowers?.Choices.Select(c => c.CatalogId).ToList() ?? [],
+            "tradition" => saved.Tradition is { } t ? [t.TraditionId] : [],
             _ => [],
         };
     }
@@ -492,6 +493,7 @@ public partial class Sr6CreationWizardWindow : Window
             "adept-powers" => saved with { AdeptPowers = new Sr6CreationAdeptPowerSelection(
                 ids.Select(id => saved.AdeptPowers?.Choices.FirstOrDefault(c => c.CatalogId == id)
                     ?? new Sr6CreationAdeptPowerChoice(id, 1)).ToList()) },
+            "tradition" => ids.Count == 1 ? saved with { Tradition = new Sr6CreationTraditionSelection(ids[0]) } : saved,
             _ => saved,
         };
         if (ReferenceEquals(updated, saved))
@@ -518,7 +520,9 @@ public partial class Sr6CreationWizardWindow : Window
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text = domain == "spells" ? "Spell options" : "Adept power options",
+                    Text = domain == "spells" ? "Spell options"
+                        : domain == "tradition" ? "Tradition"
+                        : "Adept power options",
                 });
             }
             else
@@ -572,6 +576,52 @@ public partial class Sr6CreationWizardWindow : Window
                     Text = "The rules authority has not published catalog options for this talent domain yet; the draft keeps its saved selections.",
                 });
             }
+        }
+    }
+
+    // T888 magical-tradition domain: the confirm step renders the tradition
+    // catalog the Core authority publishes (foundation.TraditionOptions, gated
+    // to magician/mystic-adept/aspected-magician) as single-select radio rows.
+    // Choosing a tradition edits the saved foundation selection and invalidates
+    // the held preview exactly like the talent-domain picks, so the ordinary
+    // Prepare seam validates the tradition through Core before any confirm.
+    private void RenderTraditionEditor(StackPanel panel)
+    {
+        Sr6CreationFoundationState foundation = _state!.Foundation;
+        if ((foundation.TraditionOptions ?? []).Count == 0)
+        {
+            return; // mundane talents and drafts without published options keep the zero-selection shape
+        }
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Tradition",
+        });
+        string savedId = SavedTalentDomainIds("tradition").FirstOrDefault() ?? "";
+        foreach (Sr6CreationTraditionOption option in foundation.TraditionOptions ?? [])
+        {
+            var row = new RadioButton
+            {
+                Content = option.Name,
+                GroupName = "sr6-tradition",
+                IsChecked = string.Equals(option.Id, savedId, StringComparison.Ordinal),
+            };
+            global::Avalonia.Automation.AutomationProperties.SetAutomationId(row, $"sr6-tradition-{option.Id}");
+            string optionId = option.Id;
+            row.IsCheckedChanged += (_, _) =>
+            {
+                if (row.IsChecked != true)
+                {
+                    return; // deselection of a radio group is not a store path
+    
+                }
+                var current = SavedTalentDomainIds("tradition").ToList();
+                if (current.Count == 1 && current[0] == optionId)
+                {
+                    return; // no change
+                }
+                StoreTalentDomainIds("tradition", [optionId]);
+            };
+            panel.Children.Add(row);
         }
     }
 
@@ -855,6 +905,7 @@ public partial class Sr6CreationWizardWindow : Window
         // Prepare seam (Core Sr6CreationSpellRules / complex-form / power rules)
         // validates limits, slots and blockers exactly as before.
         RenderTalentDomainEditor(panel);
+        RenderTraditionEditor(panel);
         var confirmCheck = new CheckBox
         {
             Content = "I confirm this preview should be applied to the character draft.",
@@ -895,6 +946,12 @@ public partial class Sr6CreationWizardWindow : Window
         FooterStatusText.Text = _preparedPreview is null
             ? "Selections changed - the wizard will request a fresh preview from the rules authority before you can confirm."
             : "Preview held for the current selection.";
+        // Any selection mutation voids the held acknowledgement digest; the Finish
+        // gate binds to the same invariant so a stale ack can never stay enabled.
+        if (_confirmedPreviewDigest is null)
+        {
+            FinishButton.IsEnabled = false;
+        }
     }
 
     private void ShowBlockers(IReadOnlyList<string> blockers, string outcome)

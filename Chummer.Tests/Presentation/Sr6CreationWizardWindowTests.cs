@@ -373,6 +373,108 @@ public sealed class Sr6CreationWizardWindowTests
             Assert.AreEqual(3, draft.AdeptPowers!.Choices.Single().Rating, "A still carries rating 3");
         });
     [TestMethod]
+    public void Tradition_picker_renders_published_catalog_on_confirm_step()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "magician", [])
+            {
+                Spells = new(["sr6-spell-test-a"]),
+            };
+            presenter.SavedState = foundation with
+            {
+                SpellOptions = [new("sr6-spell-test-a", "Test Spell A", "spell", "combat", "anchor-a")],
+                TraditionOptions = [new("shinto", "Shinto", "anchor-t"),
+                    new("witchcraft", "Witchcraft", "anchor-w")],
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "magician";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            // The confirm step surfaces the published tradition catalog as single-select
+            // radio rows seeded from the saved selection (none saved yet -> none checked).
+            var radios = window.GetVisualDescendants().OfType<RadioButton>()
+                .Where(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c)?
+                    .StartsWith("sr6-tradition-", StringComparison.Ordinal) == true).ToArray();
+            Assert.HasCount(2, radios, "both published tradition options must render");
+            Assert.IsFalse(radios.Any(r => r.IsChecked == true), "no saved tradition -> none checked");
+            // Picking a tradition lands in the in-window draft selection.
+            radios.First(r => global::Avalonia.Automation.AutomationProperties.GetAutomationId(r) == "sr6-tradition-shinto").IsChecked = true;
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+            var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+            var draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            Assert.AreEqual("shinto", draft.Tradition!.TraditionId, "the pick lands in the in-window draft");
+        });
+
+    [TestMethod]
+    public void Tradition_pick_voids_the_held_acknowledgement_and_survives_restep()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "mystic-adept", [])
+            {
+                Spells = new(["sr6-spell-test-a"]),
+                Tradition = new("shinto"),
+            };
+            presenter.SavedState = foundation with
+            {
+                SpellOptions = [new("sr6-spell-test-a", "Test Spell A", "spell", "combat", "anchor-a")],
+                TraditionOptions = [new("shinto", "Shinto", "anchor-t"),
+                    new("witchcraft", "Witchcraft", "anchor-w"),
+                    new("hermetic", "Hermetic", "anchor-h")],
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mystic-adept";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            // Saved tradition shinto seeds checked.
+            var shinto = window.GetVisualDescendants().OfType<RadioButton>()
+                .First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-tradition-shinto");
+            Assert.IsTrue(shinto.IsChecked == true, "the saved tradition seeds the radio state");
+            var confirmCheck = window.GetVisualDescendants().OfType<CheckBox>()
+                .First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-confirm-checkbox");
+            confirmCheck.IsChecked = true;
+            // Switching to witchcraft stores the new id, voids the ack digest.
+            var witch = window.GetVisualDescendants().OfType<RadioButton>()
+                .First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-tradition-witchcraft");
+            witch.IsChecked = true;
+            Assert.IsFalse(window.FindControl<Button>("FinishButton")!.IsEnabled,
+                "a tradition change voids the earlier acknowledgement (finish needs a fresh ack)");
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+            var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+            var draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            Assert.AreEqual("witchcraft", draft.Tradition!.TraditionId, "the switch landed in the draft");
+            // Navigate back and forward again: the re-rendered picker seeds from the NEW saved id.
+            Click(window, "BackButton");
+            Click(window, "NextButton");
+            var witchAfter = window.GetVisualDescendants().OfType<RadioButton>()
+                .First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-tradition-witchcraft");
+            Assert.IsTrue(witchAfter.IsChecked == true, "the new tradition survives the re-render");
+        });
+
+    [TestMethod]
     public void Store_read_failure_on_open_surfaces_as_blockers_not_crash()
         => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
         {
