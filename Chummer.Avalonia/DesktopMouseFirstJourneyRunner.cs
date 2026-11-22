@@ -11012,22 +11012,42 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             "validation_or_export_smoke",
             "before");
 
-        await RoutePointerClickAsync(validationControl);
-        recordPointerAction();
-        RecordStep(steps, $"click visible validation action {validationAction.Id}");
-        await WaitForAsync(
-            steps,
-            "validation result rendered",
-            () =>
+        // T890/Controller9864: the single pre-resolved validate press could
+        // land on a container detached by the tab-info section load (P4C/P4C2
+        // deterministic failure: recorded click step, no observed input
+        // event, no error, 20s timeout). Mirror the T496 tab discipline:
+        // re-resolve the live container inside every attempt, press with
+        // waitForClick diagnostics, observe the transition, and re-press on
+        // a freshly resolved control when the transition was not observed.
+        bool validationRendered = false;
+        for (int validationAttempt = 1; validationAttempt <= 3 && !validationRendered; validationAttempt++)
+        {
+            validationControl = FindVisibleValidationActionControl(window)
+                ?? throw new InvalidOperationException("The validation workflow has no visible routed Section Actions control.");
+            string validationPressDiagnostics = await RoutePointerClickAsync(validationControl, waitForClick: true);
+            recordPointerAction();
+            RecordStep(steps, $"click visible validation action {validationAction.Id} (attempt {validationAttempt}); {validationPressDiagnostics}");
+            validationRendered = await WaitForConditionWithinAsync(
+                () =>
+                {
+                    CharacterOverviewState state = window.SnapshotStateForAutomation();
+                    return string.Equals(state.ActiveActionId, validationAction.Id, StringComparison.Ordinal)
+                        && string.Equals(state.ActiveSectionId, "validate", StringComparison.Ordinal)
+                        && !state.IsBusy
+                        && string.IsNullOrWhiteSpace(state.Error)
+                        && !string.IsNullOrWhiteSpace(state.ActiveSectionJson);
+                },
+                ct,
+                TimeSpan.FromSeconds(12));
+            if (!validationRendered)
             {
-                CharacterOverviewState state = window.SnapshotStateForAutomation();
-                return string.Equals(state.ActiveActionId, validationAction.Id, StringComparison.Ordinal)
-                    && string.Equals(state.ActiveSectionId, "validate", StringComparison.Ordinal)
-                    && !state.IsBusy
-                    && string.IsNullOrWhiteSpace(state.Error)
-                    && !string.IsNullOrWhiteSpace(state.ActiveSectionJson);
-            },
-            ct);
+                RecordStep(steps, $"validation result not rendered after attempt {validationAttempt}; re-pressing a freshly resolved control");
+            }
+        }
+        if (!validationRendered)
+        {
+            throw new TimeoutException("Timed out while waiting for validation result rendered.");
+        }
         CharacterOverviewState validatedState = window.SnapshotStateForAutomation();
         string afterScreenshot = RequireScreenshotPath(
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "validation_or_export_smoke-after"),
