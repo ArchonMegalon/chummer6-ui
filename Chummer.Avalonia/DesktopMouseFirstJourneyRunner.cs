@@ -7370,20 +7370,30 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // re-prepares afterwards instead of dispatching a dead digest. Picks
             // compose within one rendering: StoreTalentDomainIds rewrites only its
             // own domain slice of the saved selection.
-            bool allocationReserved = await Dispatcher.UIThread.InvokeAsync(async () =>
+            bool allocationReserved = false;
+            for (int allocationAttempt = 0; allocationAttempt < 4; allocationAttempt++)
             {
-                Button? increase = Active().GetVisualDescendants().OfType<Button>()
-                    .FirstOrDefault(b => AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase");
-                if (increase is null || !increase.IsEnabled) return false;
-                increase.BringIntoView();
-                string routing = await RoutePointerClickAsync(increase);
-                recordPointerAction();
-                RecordStep(steps, "sr6 magic leg: reserve power point; " + routing);
-                return routing.Contains("delivered=True", StringComparison.OrdinalIgnoreCase)
-                    && Active().GetVisualDescendants().OfType<TextBlock>().Any(t =>
-                        AutomationProperties.GetAutomationId(t) == "sr6-power-points-value"
-                        && t.Text == "Power points reserved: 1");
-            });
+                string allocationRouting = await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    Button? increase = Active().GetVisualDescendants().OfType<Button>()
+                        .FirstOrDefault(b => AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase");
+                    if (increase is null || !increase.IsEnabled) return "unavailable";
+                    increase.BringIntoView();
+                    return await RoutePointerClickAsync(increase);
+                });
+                RecordStep(steps, "sr6 magic leg: reserve power point; " + allocationRouting);
+                if (allocationRouting.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
+                {
+                    recordPointerAction();
+                    allocationReserved = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<TextBlock>().Any(t =>
+                            AutomationProperties.GetAutomationId(t) == "sr6-power-points-value"
+                            && t.Text == "Power points reserved: 1"));
+                    break;
+                }
+                if (!allocationRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal)) break;
+                await Task.Delay(750);
+            }
             assertions["sr6_power_point_reserved"] = allocationReserved;
             if (!allocationReserved)
                 return await fail(new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_power_point_reserved"] = false },
