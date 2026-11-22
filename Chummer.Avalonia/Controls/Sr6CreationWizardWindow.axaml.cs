@@ -513,6 +513,44 @@ public partial class Sr6CreationWizardWindow : Window
         {
             return; // mundane talents have no talent domain
         }
+        if (CurrentTalentId is "mystic-adept" or "adept"
+            && _state?.Foundation.TalentOptions is { MaximumSelectedPowerPoints: > 0 } talentOptions)
+        {
+            var allocation = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            var label = new TextBlock();
+            var decrease = new Button { Content = "−" };
+            var increase = new Button { Content = "+" };
+            AutomationProperties.SetAutomationId(increase, "sr6-power-points-increase");
+            AutomationProperties.SetAutomationId(decrease, "sr6-power-points-decrease");
+            AutomationProperties.SetAutomationId(label, "sr6-power-points-value");
+            void RefreshAllocation()
+            {
+                int value = _state?.Foundation.Selection?.Selection.TalentAllocation?.SelectedPowerPoints ?? 0;
+                label.Text = $"Power points reserved: {value}";
+                decrease.IsEnabled = value > 0;
+                increase.IsEnabled = value < talentOptions.MaximumSelectedPowerPoints;
+            }
+            void ChangeAllocation(int delta)
+            {
+                if (!RequireCurrentContext() || _state?.Foundation.Selection is not { } decision) return;
+                int value = decision.Selection.TalentAllocation?.SelectedPowerPoints ?? 0;
+                int next = value + delta;
+                if (next < 0 || next > talentOptions.MaximumSelectedPowerPoints) return;
+                var updated = decision.Selection with { TalentAllocation = new Sr6CreationTalentSelection(next) };
+                _state = _state with { Foundation = _state.Foundation with { Selection = decision with { Selection = updated } } };
+                _preparedPreview = null;
+                _confirmedPreviewDigest = null;
+                UpdateFooterForDirtySelection();
+                RefreshAllocation();
+            }
+            decrease.Click += (_, _) => ChangeAllocation(-1);
+            increase.Click += (_, _) => ChangeAllocation(1);
+            RefreshAllocation();
+            allocation.Children.Add(label);
+            allocation.Children.Add(decrease);
+            allocation.Children.Add(increase);
+            panel.Children.Add(allocation);
+        }
         bool multiDomain = domains.Count > 1;
         foreach (string domain in domains)
         {

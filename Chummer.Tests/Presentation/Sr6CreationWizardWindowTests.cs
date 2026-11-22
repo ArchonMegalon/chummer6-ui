@@ -283,6 +283,7 @@ public sealed class Sr6CreationWizardWindowTests
             };
             presenter.SavedState = foundation with
             {
+                TalentOptions = new(1, 0, false, 0, 0, false),
                 SpellOptions = [new("sr6-spell-test-a", "Test Spell A", "spell", "combat", "anchor-a"),
                     new("sr6-spell-test-b", "Test Spell B", "spell", "detection", "anchor-b")],
                 AdeptPowerOptions = [new("sr6-power-test-a", "Test Power A", null, null, "use-a", 4, 6, "anchor-pa"),
@@ -304,6 +305,11 @@ public sealed class Sr6CreationWizardWindowTests
                 .Where(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c)?
                     .StartsWith("sr6-talent-domain-", StringComparison.Ordinal) == true).ToArray();
             Assert.HasCount(4, checks, "both domains must render: two spells + two powers");
+            var reserve = window.GetVisualDescendants().OfType<Button>().Single(b =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase");
+            reserve.RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.IsFalse(reserve.IsEnabled, "the Core maximum bounds the allocation");
+            Assert.IsFalse(window.FindControl<Button>("FinishButton")!.IsEnabled, "changing allocation voids confirmation");
             Assert.AreEqual(2, checks.Count(c => Equals(c.Tag, "spells")), "spell rows must identify their actual domain");
             Assert.AreEqual(2, checks.Count(c => Equals(c.Tag, "adept-powers")), "power rows must not be confused with a second spell");
             Assert.IsTrue(checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-a").IsChecked == true,
@@ -320,6 +326,7 @@ public sealed class Sr6CreationWizardWindowTests
             var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
             var draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
             Assert.IsTrue(draft.Spells!.CatalogIds.Contains("sr6-spell-test-b"), "the spell toggle landed");
+            Assert.AreEqual(1, draft.TalentAllocation!.SelectedPowerPoints, "the explicit allocation survives other domain edits");
             var rated = draft.AdeptPowers!.Choices.Single(c => c.CatalogId == "sr6-power-test-a");
             Assert.AreEqual(2, rated.Rating, "an unchanged rated choice must keep its rating when a spell toggles");
         });
