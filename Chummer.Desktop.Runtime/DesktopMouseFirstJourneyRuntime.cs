@@ -40,6 +40,33 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string MagicianExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT";
     public const string MagicianExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT_RECEIPT";
     public const string WizardCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL";
+
+    /// <summary>
+    /// WIN-009 gen17: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR5_MAGIC_EDIT=1, the journey runner
+    /// executes the SR5 magic-resonance editor leg: drive the priority creation
+    /// wizard to the magician talent, open the real CreationMagicResonanceWindow
+    /// from the wizard magic step, choose a tradition, tick spells, confirm, then
+    /// finalize and save. Verifies the gen17 editor fixes (seed-before-render and
+    /// the confirm pre-read boundary) against native bytes.
+    /// </summary>
+    public const string Sr5MagicEditEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR5_MAGIC_EDIT";
+
+    /// <summary>
+    /// WIN-009 gen17: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_MAGIC_EDIT=1, the journey runner
+    /// executes the SR6 mystic-adept editor leg: create an SR6 draft, drive the
+    /// Sr6CreationWizardWindow with the mystic-adept foundation, verify the confirm
+    /// step renders BOTH talent domains (spells + adept powers), pick a spell and a
+    /// power, confirm, finalize, and save. Verifies the gen17 dual-domain editor fix
+    /// against native bytes.
+    /// </summary>
+    public const string Sr6MagicEditEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_MAGIC_EDIT";
+    // WIN-009 gen18 (Controller9637): the magic-editor legs export their picked
+    // spell/power ids to this sidecar after a successful save; the fresh-process
+    // reopen-verify leg reads it and verifies the retained document carries the
+    // same selections (spells by source id, powers by source id + rating).
+    public const string MagicReopenSidecarEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGIC_REOPEN_SIDECAR";
     // T545/7867: two-process career reward recovery leg. Phase A awards karma
     // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
     // (process exits = process restart). Phase B is a fresh process that must
@@ -292,6 +319,22 @@ public static class DesktopMouseFirstJourneyRuntime
     /// </summary>
     public static bool Sr6AdvanceRequested => string.Equals(
         Environment.GetEnvironmentVariable(Sr6AdvanceEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-009 gen17: true when the SR5 magic-resonance editor leg is requested.
+    /// </summary>
+    public static bool Sr5MagicEditRequested => string.Equals(
+        Environment.GetEnvironmentVariable(Sr5MagicEditEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-009 gen17: true when the SR6 mystic-adept editor leg is requested.
+    /// </summary>
+    public static bool Sr6MagicEditRequested => string.Equals(
+        Environment.GetEnvironmentVariable(Sr6MagicEditEnvironmentVariable) ?? string.Empty,
         "1",
         StringComparison.OrdinalIgnoreCase);
 
