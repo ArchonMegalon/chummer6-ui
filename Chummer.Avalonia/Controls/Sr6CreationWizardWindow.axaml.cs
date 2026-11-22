@@ -541,6 +541,7 @@ public partial class Sr6CreationWizardWindow : Window
                 var row = new CheckBox
                 {
                     Content = optionLabel,
+                    Tag = domain,
                     IsChecked = savedIds.Contains(optionIdSeed),
                 };
                 global::Avalonia.Automation.AutomationProperties.SetAutomationId(row, $"sr6-talent-domain-{optionIdSeed}");

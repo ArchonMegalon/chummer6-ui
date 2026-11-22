@@ -6913,7 +6913,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     List<CheckBox> candidates = await Dispatcher.UIThread.InvokeAsync(() =>
                         Active().GetVisualDescendants().OfType<CheckBox>()
                         .Where(c => AutomationProperties.GetAutomationId(c) is { Length: > 0 } domainId
-                            && domainId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
+                            && domainId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal)
+                            && string.Equals(c.Tag as string, domainLabel, StringComparison.Ordinal))
                         .ToList());
                     foreach (CheckBox candidate in candidates)
                     {
@@ -7370,7 +7371,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // compose within one rendering: StoreTalentDomainIds rewrites only its
             // own domain slice of the saved selection.
             string pickedSpellId = await PickFirstDomainCheckboxAsync(
-                steps, recordPointerAction, "spell", excludeIds: []);
+                steps, recordPointerAction, "spells", excludeIds: []);
             assertions["sr6_spell_picked"] = pickedSpellId.Length > 0;
             RecordStep(steps, "sr6 magic leg: spell picked='" + pickedSpellId + "'");
             if (pickedSpellId.Length == 0)
@@ -7381,7 +7382,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     "06m-sr6-spell-pick-missing");
             }
             string pickedPowerId = await PickFirstDomainCheckboxAsync(
-                steps, recordPointerAction, "power", excludeIds: [pickedSpellId]);
+                steps, recordPointerAction, "adept-powers", excludeIds: [pickedSpellId]);
             assertions["sr6_power_picked"] = pickedPowerId.Length > 0;
             RecordStep(steps, "sr6 magic leg: adept power picked='" + pickedPowerId + "'");
             if (pickedPowerId.Length == 0)

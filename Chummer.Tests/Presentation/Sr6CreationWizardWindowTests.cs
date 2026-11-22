@@ -304,6 +304,8 @@ public sealed class Sr6CreationWizardWindowTests
                 .Where(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c)?
                     .StartsWith("sr6-talent-domain-", StringComparison.Ordinal) == true).ToArray();
             Assert.HasCount(4, checks, "both domains must render: two spells + two powers");
+            Assert.AreEqual(2, checks.Count(c => Equals(c.Tag, "spells")), "spell rows must identify their actual domain");
+            Assert.AreEqual(2, checks.Count(c => Equals(c.Tag, "adept-powers")), "power rows must not be confused with a second spell");
             Assert.IsTrue(checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-a").IsChecked == true,
                 "the saved spell seeds checked");
             Assert.IsTrue(checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-power-test-a").IsChecked == true,
