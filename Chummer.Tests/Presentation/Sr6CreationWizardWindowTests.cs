@@ -290,7 +290,8 @@ public sealed class Sr6CreationWizardWindowTests
                     new("sr6-power-test-b", "Test Power B", null, null, "use-b", 4, 6, "anchor-pb")],
                 Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
             };
-            using var scope = new WizardScope(presenter);
+            bool ownerCurrent = true;
+            using var scope = new WizardScope(presenter, () => ownerCurrent);
             var window = scope.Window;
             var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
             string[] choices = ["A", "B", "C", "D", "E"];
@@ -317,6 +318,17 @@ public sealed class Sr6CreationWizardWindowTests
             Assert.IsTrue(checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-power-test-a").IsChecked == true,
                 "the saved power seeds checked (both domains seeded from the same selection)");
 
+            Button RatingButton(string verb) => window.GetVisualDescendants().OfType<Button>().Single(b =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(b) == $"sr6-power-rating-{verb}-sr6-power-test-a");
+            var raiseRating = RatingButton("increase");
+            var lowerRating = RatingButton("decrease");
+            lowerRating.RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.IsFalse(lowerRating.IsEnabled, "rating one is the lower bound");
+            for (int i = 0; i < 5; i++)
+                raiseRating.RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.IsFalse(raiseRating.IsEnabled, "increasing stops at Core maximum six");
+            lowerRating.RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.IsFalse(window.FindControl<Button>("FinishButton")!.IsEnabled, "rating changes void confirmation");
             // A rated power (rating 2) SURVIVES toggling the unrelated spell:
             // rating preservation applies across domains.
             checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-b").IsChecked = true;
@@ -328,7 +340,11 @@ public sealed class Sr6CreationWizardWindowTests
             Assert.IsTrue(draft.Spells!.CatalogIds.Contains("sr6-spell-test-b"), "the spell toggle landed");
             Assert.AreEqual(1, draft.TalentAllocation!.SelectedPowerPoints, "the explicit allocation survives other domain edits");
             var rated = draft.AdeptPowers!.Choices.Single(c => c.CatalogId == "sr6-power-test-a");
-            Assert.AreEqual(2, rated.Rating, "an unchanged rated choice must keep its rating when a spell toggles");
+            Assert.AreEqual(5, rated.Rating, "the edited rating must survive an unrelated spell toggle");
+            ownerCurrent = false;
+            raiseRating.RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.AreSame(stateObj, typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window),
+                "a stale owner cannot mutate the held rating draft");
         });
 
     [TestMethod]

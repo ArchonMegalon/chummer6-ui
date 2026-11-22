@@ -7423,6 +7423,35 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     "Failed: the adept power pick did not land via pointer delivery.",
                     "06m-sr6-power-pick-missing");
             }
+            bool powerRatingEdited = false;
+            for (int ratingAttempt = 0; ratingAttempt < 4; ratingAttempt++)
+            {
+                string routing = await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    Button? increase = Active().GetVisualDescendants().OfType<Button>().FirstOrDefault(b =>
+                        AutomationProperties.GetAutomationId(b) == "sr6-power-rating-increase-" + pickedPowerId);
+                    if (increase is null || !increase.IsEnabled) return "unavailable";
+                    increase.BringIntoView();
+                    return await RoutePointerClickAsync(increase);
+                });
+                RecordStep(steps, "sr6 magic leg: increase power rating; " + routing);
+                if (routing.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
+                {
+                    recordPointerAction();
+                    powerRatingEdited = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<TextBlock>().Any(t =>
+                            AutomationProperties.GetAutomationId(t) == "sr6-power-rating-value-" + pickedPowerId
+                            && (t.Text ?? string.Empty).StartsWith("Rating 2 / ", StringComparison.Ordinal)));
+                    break;
+                }
+                if (!routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal)) break;
+                await Task.Delay(750);
+            }
+            assertions["sr6_power_rating_edited"] = powerRatingEdited;
+            if (!powerRatingEdited)
+                return await fail(new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_power_rating_edited"] = false },
+                    "The rated power did not visibly change to rating two after a delivered press.",
+                    "06m-sr6-power-rating-missing");
             string pickedTraditionId = await PickFirstTraditionRadioAsync(steps, recordPointerAction);
             assertions["sr6_tradition_picked"] = pickedTraditionId.Length > 0;
             RecordStep(steps, "sr6 magic leg: tradition picked='" + pickedTraditionId + "'");
@@ -7615,7 +7644,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     new MagicReopenSidecarPayload
                     {
                         Spells = pickedSpellId.Length > 0 ? [pickedSpellId] : [],
-                        Powers = pickedPowerId.Length > 0 ? [new MagicReopenPowerPayload { Id = pickedPowerId, Rating = 1 }] : [],
+                        Powers = pickedPowerId.Length > 0 ? [new MagicReopenPowerPayload { Id = pickedPowerId, Rating = 2 }] : [],
                         Tradition = pickedTraditionId.Length > 0 ? pickedTraditionId : string.Empty,
                     }, jsonOptions);
                 string sidecarDir = Path.GetDirectoryName(magicSidecarPath) ?? string.Empty;
@@ -7623,7 +7652,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     Directory.CreateDirectory(sidecarDir);
                 File.WriteAllText(magicSidecarPath, sidecarJson);
                 RecordStep(steps, "sr6 magic leg: magic-reopen sidecar written with spell '"
-                    + pickedPowerId + "' rating 1 + tradition '" + pickedTraditionId + "'");
+                    + pickedPowerId + "' rating 2 + tradition '" + pickedTraditionId + "'");
             }
 
             return new DesktopUserJourneyWorkflowEvidence(

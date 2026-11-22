@@ -506,6 +506,24 @@ public partial class Sr6CreationWizardWindow : Window
         UpdateFooterForDirtySelection();
     }
 
+    private void StoreAdeptPowerRating(string catalogId, int rating)
+    {
+        if (!RequireCurrentContext() || _state?.Foundation.Selection is not { } decision) return;
+        var option = _state.Foundation.AdeptPowerOptions?.SingleOrDefault(p => p.Id == catalogId);
+        if (option is null || rating < 1 || rating > option.MaximumRating) return;
+        var choices = decision.Selection.AdeptPowers?.Choices;
+        if (choices is null || !choices.Any(p => p.CatalogId == catalogId)) return;
+        var updated = decision.Selection with
+        {
+            AdeptPowers = new Sr6CreationAdeptPowerSelection(choices.Select(p =>
+                p.CatalogId == catalogId ? p with { Rating = rating } : p).ToArray())
+        };
+        _state = _state with { Foundation = _state.Foundation with { Selection = decision with { Selection = updated } } };
+        _preparedPreview = null;
+        _confirmedPreviewDigest = null;
+        UpdateFooterForDirtySelection();
+    }
+
     private void RenderTalentDomainEditor(StackPanel panel)
     {
         IReadOnlyList<string> domains = TalentDomainsFor(CurrentTalentId);
@@ -603,7 +621,39 @@ public partial class Sr6CreationWizardWindow : Window
                     }
                     StoreTalentDomainIds(rowDomain, current);
                 };
-                panel.Children.Add(row);
+                if (domain == "adept-powers"
+                    && _state?.Foundation.AdeptPowerOptions?.SingleOrDefault(p => p.Id == optionIdSeed) is { } powerOption)
+                {
+                    var ratingRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                    var ratingLabel = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+                    var lower = new Button { Content = "−" };
+                    var higher = new Button { Content = "+" };
+                    AutomationProperties.SetAutomationId(lower, "sr6-power-rating-decrease-" + optionIdSeed);
+                    AutomationProperties.SetAutomationId(higher, "sr6-power-rating-increase-" + optionIdSeed);
+                    AutomationProperties.SetAutomationId(ratingLabel, "sr6-power-rating-value-" + optionIdSeed);
+                    int CurrentRating() => _state?.Foundation.Selection?.Selection.AdeptPowers?.Choices
+                        .FirstOrDefault(p => p.CatalogId == optionIdSeed)?.Rating ?? 1;
+                    void RefreshRating()
+                    {
+                        int rating = CurrentRating();
+                        ratingLabel.Text = $"Rating {rating} / {powerOption.MaximumRating}";
+                        lower.IsEnabled = row.IsChecked == true && rating > 1;
+                        higher.IsEnabled = row.IsChecked == true && rating < powerOption.MaximumRating;
+                    }
+                    lower.Click += (_, _) => { StoreAdeptPowerRating(optionIdSeed, CurrentRating() - 1); RefreshRating(); };
+                    higher.Click += (_, _) => { StoreAdeptPowerRating(optionIdSeed, CurrentRating() + 1); RefreshRating(); };
+                    row.IsCheckedChanged += (_, _) => RefreshRating();
+                    RefreshRating();
+                    ratingRow.Children.Add(row);
+                    ratingRow.Children.Add(lower);
+                    ratingRow.Children.Add(ratingLabel);
+                    ratingRow.Children.Add(higher);
+                    panel.Children.Add(ratingRow);
+                }
+                else
+                {
+                    panel.Children.Add(row);
+                }
                 rendered++;
             }
             if (rendered == 0)
