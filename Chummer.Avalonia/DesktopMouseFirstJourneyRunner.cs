@@ -583,7 +583,9 @@ internal static class DesktopMouseFirstJourneyRunner
                         ActiveDialogId: null,
                         VerificationNotes:
                         [
-                            "WIN-009 gen18b magic-editor leg: the changed-editor routes were driven on native bytes - the SR6 route drove the mystic-adept wizard, picked a spell AND an adept power from the dual talent domains, picked a magical tradition through the new radios, confirmed, finalized and saved; the fresh-process reopen verified spell + rated power + tradition against the retained document. The SR5 route opened the real CreationMagicResonanceWindow from the wizard magic step, chose a tradition, ticked spells, and confirmed through the Core-bound presenter."
+                            DesktopMouseFirstJourneyRuntime.Sr6MagicEditRequested
+                                ? "SR6 magic-editor creation route completed in this process. Consult this receipt's workflow assertions and steps for the observed selections, finalization and save. Fresh-process reopen is a separate scenario and is not claimed by this receipt."
+                                : "SR5 magic-editor creation route completed in this process: wizard magic editor, Core confirmation, finalization and save. Consult workflow assertions and steps for observed inputs. Fresh-process reopen is a separate scenario and is not claimed by this receipt."
                         ],
                         UserJourneyWorkflows: userJourneyWorkflows));
                 Environment.ExitCode = 0;
