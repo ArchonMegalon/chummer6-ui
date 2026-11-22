@@ -538,5 +538,46 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
             Assert.AreEqual(("sr6-power-a", 2), expectations.PowerExpectations[0]);
             Assert.AreEqual("qabala", expectations.TraditionId);
         }
+
+        [TestMethod]
+        public void Parse_refuses_duplicate_properties_when_the_file_carries_a_bom()
+        {
+            // Controller9848: the single-read contract BOM-adjusts ONE shared
+            // slice for both the duplicate scan and JsonDocument.Parse; a
+            // BOM-prefixed duplicate must still be refused, not skipped.
+            string json = """{"spells":[],"powers":[{"id":"sr6-power-a","id":"sr6-power-b","rating":2}]}""";
+            string path = Path.Combine(Path.GetTempPath(), "t888-sidecar-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(path, json, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("duplicate JSON property name"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_fails_closed_on_a_utf16_encoded_sidecar()
+        {
+            // Controller9848: the prior shape read the file as text for the
+            // parse and as bytes for the scan, so a non-UTF-8 file could
+            // yield two different views of the same bytes. The single-read
+            // contract hands ONE byte slice to both lanes, so a UTF-16
+            // sidecar fails closed in that lane instead of parsing.
+            string json = """{"spells":["sr6-spell-a"],"powers":[]}""";
+            string path = Path.Combine(Path.GetTempPath(), "t888-sidecar-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllBytes(path, System.Text.Encoding.Unicode.GetBytes(json));
+            // The strict UTF-8 parser raises an internal JsonReaderException
+            // (a JsonException subclass) here; that type cannot be named in
+            // source, so catch the public base and pin the fail-closed
+            // contract through its actual runtime type name.
+            try
+            {
+                DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path);
+                Assert.Fail("a UTF-16 encoded sidecar must fail closed, not parse");
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                Assert.IsTrue(ex.GetType().Name.Contains("Json"),
+                    "expected a JSON reader failure, got: " + ex.GetType().FullName);
+            }
+        }
     }
 }

@@ -7878,15 +7878,17 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         /// first-process magic-editor legs. Format: {"spells":[id,...],
         /// "powers":[{"id":...,"rating":n},...]}.
         /// </summary>
-        private static void EnsureNoDuplicateJsonProperties(string json, string path)
+        private static void EnsureNoDuplicateJsonProperties(ReadOnlySpan<byte> utf8Json, string path)
         {
             // Controller9836: TryGetProperty is last-wins, so a sidecar that
             // repeats a property name (id/rating inside a power entry, or a
             // container at the root) silently hides its earlier value. Reject
             // any object carrying a repeated property name before parse.
-            byte[] utf8 = File.ReadAllBytes(path);
-            int bom = utf8.Length >= 3 && utf8[0] == 0xEF && utf8[1] == 0xBB && utf8[2] == 0xBF ? 3 : 0;
-            Utf8JsonReader reader = new(utf8.AsSpan(bom), new JsonReaderOptions
+            // Controller9848: this scan and JsonDocument.Parse MUST observe the
+            // SAME immutable input; the caller hands over the exact byte slice
+            // it will parse and this method never re-reads the file itself -
+            // path is diagnostics-only from here on.
+            Utf8JsonReader reader = new(utf8Json, new JsonReaderOptions
             {
                 CommentHandling = JsonCommentHandling.Disallow,
                 AllowTrailingCommas = false
@@ -7916,9 +7918,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         }
         internal static MagicSelectionExpectations ParseMagicReopenSidecar(string path)
         {
-            string json = File.ReadAllText(path);
-            EnsureNoDuplicateJsonProperties(json, path);
-            using JsonDocument doc = JsonDocument.Parse(json);
+            // Controller9848: one single immutable read. The duplicate-property
+            // scan and JsonDocument.Parse consume the exact same bytes - the
+            // former double read (ReadAllText for Parse, ReadAllBytes for the
+            // scan) could observe different content than what gets parsed,
+            // so both lanes now share this one BOM-adjusted slice.
+            byte[] utf8 = File.ReadAllBytes(path);
+            int bom = utf8.Length >= 3 && utf8[0] == 0xEF && utf8[1] == 0xBB && utf8[2] == 0xBF ? 3 : 0;
+            ReadOnlySpan<byte> utf8Json = utf8.AsSpan(bom);
+            EnsureNoDuplicateJsonProperties(utf8Json, path);
+            using JsonDocument doc = JsonDocument.Parse(utf8Json.ToArray());
             JsonElement rootElement = doc.RootElement;
             List<string> spells = new();
             List<(string, int)> powers = new();
