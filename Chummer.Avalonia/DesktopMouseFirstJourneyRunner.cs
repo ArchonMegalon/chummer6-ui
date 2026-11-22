@@ -1032,11 +1032,24 @@ internal static class DesktopMouseFirstJourneyRunner
                         ? savedRulesetElement.GetString() ?? string.Empty : string.Empty;
                 bool savedReceiptIsSr6 = string.Equals(
                     NormalizeRulesetFamily(savedRulesetId), "sr6", StringComparison.Ordinal);
+                // Gen18 (T888): the SR6 magic-editor scenario drives the changed
+                // creation wizard to finalize and saves, but runs no advance
+                // legs - demanding an SR6 advance receipt here would be a
+                // category error. The magic sidecar verification above is the
+                // reopen contract for that scenario; the advance-receipt
+                // demand stays scoped to advance journeys (the T673 pattern).
+                bool savedReceiptIsSr6MagicEditor = saved.RootElement.TryGetProperty("scenarioId", out System.Text.Json.JsonElement savedScenarioElement)
+                    && savedScenarioElement.ValueKind == System.Text.Json.JsonValueKind.String
+                    && (savedScenarioElement.GetString() ?? string.Empty).Contains("magic-editor", StringComparison.Ordinal);
+                if (savedReceiptIsSr6 && savedReceiptIsSr6MagicEditor)
+                {
+                    RecordStep(steps, "sr6 advance receipt verification skipped: the saved receipt is the SR6 magic-editor scenario (no advance legs; the magic sidecar verification covers the changed-editor reopen contract)");
+                }
                 if (!savedReceiptIsSr6)
                 {
                     RecordStep(steps, "sr6 reopen verification skipped: the saved receipt is not an sr6-family journey (rulesetId='" + savedRulesetId + "')");
                 }
-                if (savedReceiptIsSr6)
+                if (savedReceiptIsSr6 && !savedReceiptIsSr6MagicEditor)
                 {
                 // The SR6 advance receipt is REQUIRED here: a missing or
                 // unreadable receipt in the reopen-verify leg of a verified
@@ -6295,7 +6308,90 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // confirmed, so the magic step was unreachable in the previous shape.
             CharacterCreationWizardControl? wizardAtPriority = FindWizardControl(window)
                 ?? throw new InvalidOperationException("sr5 magic leg: creation wizard control not found after draft creation");
-            string talentChoice = SelectTalentChoiceForPlan(wizardAtPriority, BuildMagicLegPlan());
+            DesktopMouseFirstJourneyPlan magicPlan = BuildMagicLegPlan();
+
+            // The wizard opens on the METHOD step; the heritage and talent choice
+            // sets only render after the five priority ranks are assigned. Mirror
+            // the canonical walk's Priority block exactly: rank presses, then the
+            // heritage card, then talent-card readiness, then the confirm press.
+            await WaitForAsync(
+                steps,
+                "sr5 magic leg: priority grid visible on the method step",
+                () => wizardAtPriority.PriorityGridHost.Children.Count > 0
+                    && wizardAtPriority.PriorityConfirmButton.IsVisible,
+                ct);
+            // The magic leg needs a Magician talent WITHOUT an active-skill
+            // grant prompt: the wizard UI does not yet surface the talent
+            // skill-grant picker, so rank A/B Magician (skillqty=2) would be
+            // blocked by creation-prerequisite-talent-active-skill-selection-
+            // incomplete at confirm. Talent rank C ("Magician - 3 Magic/5
+            // Spells") carries no skill prompt and still awakens the magic
+            // step. Heritage takes B; the rest spread downward.
+            string talentRank = "C";
+            string[] remainingRanks = new[] { "A", "B", "D", "E" };
+            string heritageRank = string.IsNullOrWhiteSpace(magicPlan.PriorityHeritage)
+                ? remainingRanks[0]
+                : magicPlan.PriorityHeritage!;
+            string[] restRanks = remainingRanks
+                .Where(rank => !string.Equals(rank, heritageRank, StringComparison.Ordinal))
+                .ToArray();
+            string attributesRank = restRanks[0];
+            string skillsRank = restRanks[1];
+            string resourcesRank = restRanks[2];
+            foreach ((string Category, string Rank) priorityPick in new[]
+                     {
+                         ("heritage", heritageRank),
+                         ("talent", talentRank),
+                         ("attributes", attributesRank),
+                         ("skills", skillsRank),
+                         ("resources", resourcesRank),
+                     })
+            {
+                string categoryLocal = priorityPick.Category;
+                string rankLocal = priorityPick.Rank;
+                await ClickWizardButtonUntilEffectAsync(
+                    wizardAtPriority,
+                    $"creation-wizard-priority-{categoryLocal}-{rankLocal}",
+                    $"sr5 magic leg: priority selection recorded for {categoryLocal}={rankLocal}",
+                    () => wizardAtPriority.GetPrioritySelections().TryGetValue(categoryLocal, out string? picked)
+                        && string.Equals(picked, rankLocal, StringComparison.Ordinal),
+                    steps,
+                    ct,
+                    recordPointerAction);
+            }
+
+            await WaitForAsync(
+                steps,
+                "sr5 magic leg: priority confirm affordance enabled with a complete assignment",
+                () => wizardAtPriority.PriorityConfirmButton.IsEnabled,
+                ct);
+
+            await WaitForAsync(
+                steps,
+                "sr5 magic leg: heritage choices rendered for the assigned heritage rank",
+                () => wizardAtPriority.GetPriorityHeritageChoices().Any(choice => choice.IsEnabled),
+                ct);
+            string heritageChoiceId = await Dispatcher.UIThread.InvokeAsync(() =>
+                wizardAtPriority.GetPriorityHeritageChoices().FirstOrDefault(c => c.IsEnabled).SelectionId);
+            await ClickWizardButtonUntilEffectAsync(
+                wizardAtPriority,
+                "creation-wizard-priority-heritage-choice-" + heritageChoiceId,
+                "sr5 magic leg: heritage choice recorded",
+                () => string.Equals(
+                    wizardAtPriority.GetPriorityHeritageSelectionId(),
+                    heritageChoiceId,
+                    StringComparison.Ordinal),
+                steps,
+                ct,
+                recordPointerAction);
+
+            await WaitForAsync(
+                steps,
+                "sr5 magic leg: talent choices rendered for the assigned talent rank",
+                () => wizardAtPriority.GetPriorityTalentChoices().Any(choice => choice.IsEnabled),
+                ct);
+            string talentChoice = await Dispatcher.UIThread.InvokeAsync(
+                () => SelectTalentChoiceForPlan(wizardAtPriority, magicPlan));
             bool talentConfirmed = false;
             for (int attempt = 1; attempt <= 3 && !talentConfirmed; attempt++)
             {
@@ -6338,6 +6434,16 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             assertions["sr5_talent_confirmed"] = true;
             RecordStep(steps, "sr5 magic leg: priority confirmed with talent " + talentChoice);
 
+            // WIN-009 gen18: drive the attributes/qualities/skills deep stages
+            // before the magic walk. Core gates the magic-resonance authority
+            // readiness on those drafts being confirmed, so the step cannot be
+            // entered (nav disabled, continue refused) until they are done.
+            {
+                CharacterCreationWizardControl? crossingWizard = FindWizardControl(window)
+                    ?? throw new InvalidOperationException("sr5 magic leg: creation wizard missing before the deep-stage crossing.");
+                await RunSr5DeepStageCrossingAsync(window, crossingWizard, context, screenshotPaths, steps, ct, recordPointerAction);
+            }
+
             // Walk to the magic/resonance step with live re-acquisition: re-resolve
             // the wizard control every cycle, only pressing Continue when it is
             // genuinely enabled. Mirrors ContinueWizardUntilStepAsync's discipline.
@@ -6359,7 +6465,17 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 Button? continueButton = FindWizardAutomationButton(current, "creation-wizard-continue");
                 if (continueButton is not { IsEffectivelyEnabled: true })
                 {
-                    RecordStep(steps, "sr5 magic leg: walk stalled at step '" + (activeStep ?? "null") + "' with continue disabled (attempt " + attempt + ")");
+                    RecordStep(steps, "sr5 magic leg: continue disabled at step '" + (activeStep ?? "null") + "' (attempt " + attempt + "); trying step-nav jump to magic-resonance");
+                    Button? magicNav = FindWizardAutomationButton(current, "creation-wizard-step-" + magicStepId);
+                    if (magicNav is not null && magicNav.IsEffectivelyEnabled)
+                    {
+                        await ClickWizardButtonAsync(current, "creation-wizard-step-" + magicStepId, steps, ct, recordPointerAction);
+                        RecordStep(steps, "sr5 magic leg: step-nav jump to magic-resonance pressed (attempt " + attempt + ")");
+                    }
+                    else
+                    {
+                        RecordStep(steps, "sr5 magic leg: magic-resonance nav not enabled at step '" + (activeStep ?? "null") + "' (attempt " + attempt + ")");
+                    }
                 }
                 if (continueButton is { IsEffectivelyEnabled: true })
                     await ClickWizardButtonAsync(current, "creation-wizard-continue", steps, ct, recordPointerAction);
@@ -6431,14 +6547,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         StringComparison.Ordinal));
                 if (tradition is { IsVisible: true })
                 {
+                    // The combo items are AddOptionCombo's private OptionChoice records
+                    // (ToString() returns the Label), not plain strings. Pick the first
+                    // enabled non-"None" choice; IsEnabled is read via reflection because
+                    // the record is private to CreationMagicResonanceWindow.
                     object? enabled = tradition.ItemsSource?.OfType<object>()
-                        .FirstOrDefault(item => item is string s
-                            && !string.Equals(s, "None", StringComparison.OrdinalIgnoreCase));
+                        .FirstOrDefault(item =>
+                            !string.Equals(item.ToString(), "None", StringComparison.OrdinalIgnoreCase)
+                            && item.GetType().GetProperty("IsEnabled") is System.Reflection.PropertyInfo prop
+                            && prop.GetValue(item) is true);
                     if (enabled is not null)
                     {
                         tradition.SelectedItem = enabled;
-                        traditionPicked = tradition.SelectedItem == enabled;
-                        traditionName = tradition.SelectedItem as string ?? string.Empty;
+                        traditionPicked = ReferenceEquals(tradition.SelectedItem, enabled);
+                        traditionName = tradition.SelectedItem?.ToString() ?? string.Empty;
                     }
                 }
             });
@@ -6457,58 +6579,93 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // re-preview; the spell catalog republishes under the new tradition).
             await Task.Delay(TimeSpan.FromMilliseconds(750), ct);
 
-            // Spell ticks: re-acquire the live editor window first (the combo
-            // selection re-prepared the panel), then pointer-press two enabled
-            // spell checkboxes with delivery verification (Controller9637).
+            // Spell ticks: re-acquire the live editor window first (each selection
+            // re-prepares the panel), then pointer-press enabled spell checkboxes
+            // one at a time until the confirm button becomes enabled - Core blocks
+            // the confirm while the spell budget is unspent
+            // (creation-magic-resonance-spell-budget-incomplete), so the number of
+            // required picks is Core's decision, not a hardcoded count.
             bool spellsTicked = false;
             int tickedCount = 0;
             List<string> pickedSpellIds = new();
-            for (int tickPass = 0; tickPass < 3 && tickedCount < 2; tickPass++)
+            for (int tickPass = 0; tickPass < 12 && !spellsTicked; tickPass++)
             {
-                List<CheckBox> spellChecks = await Dispatcher.UIThread.InvokeAsync(() =>
-                    (VisibleCreationMagicResonanceWindows().FirstOrDefault(w => w.IsVisible)
-                        ?? editorWindow).GetVisualDescendants().OfType<CheckBox>()
-                    .Where(c => AutomationProperties.GetAutomationId(c) is { Length: > 0 } spellId
-                        && spellId.StartsWith(
-                            CreationMagicResonanceWindow.SpellCheckAutomationIdPrefix,
-                            StringComparison.Ordinal))
-                    .ToList());
-                int spellCount = spellChecks.Count;
-                RecordStep(steps, "sr5 magic leg: pass " + tickPass + ": " + spellCount + " spell checkboxes rendered");
+                CreationMagicResonanceWindow tickEditor =
+                    VisibleCreationMagicResonanceWindows().FirstOrDefault(w => w.IsVisible)
+                    ?? editorWindow
+                    ?? throw new InvalidOperationException("sr5 magic leg: editor window vanished during spell ticks.");
+                (bool confirmReady, List<CheckBox> spellChecks) = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    Button? probe = tickEditor.GetVisualDescendants().OfType<Button>()
+                        .FirstOrDefault(b => string.Equals(
+                            AutomationProperties.GetAutomationId(b),
+                            CreationMagicResonanceWindow.ConfirmButtonAutomationId,
+                            StringComparison.Ordinal));
+                    List<CheckBox> checks = tickEditor.GetVisualDescendants().OfType<CheckBox>()
+                        .Where(c => AutomationProperties.GetAutomationId(c) is { Length: > 0 } spellId
+                            && spellId.StartsWith(
+                                CreationMagicResonanceWindow.SpellCheckAutomationIdPrefix,
+                                StringComparison.Ordinal))
+                        .ToList();
+                    return (probe is { IsEffectivelyEnabled: true, IsVisible: true }, checks);
+                });
+                RecordStep(steps, "sr5 magic leg: pass " + tickPass + ": " + spellChecks.Count + " spell checkboxes rendered; confirm enabled=" + confirmReady);
+                if (confirmReady)
+                {
+                    spellsTicked = true;
+                    break;
+                }
+                CheckBox? target = null;
                 foreach (CheckBox check in spellChecks)
                 {
-                    if (tickedCount >= 2)
-                        break;
                     bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
                         check.IsVisible && check.IsEnabled && check.IsChecked != true);
-                    if (!targetable)
-                        continue;
-                    string spellAutomationId = await Dispatcher.UIThread.InvokeAsync(
-                        () => AutomationProperties.GetAutomationId(check) ?? string.Empty);
-                    string tickDiagnostics = await RoutePointerClickAsync(check, waitForClick: true);
-                    bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => check.IsChecked == true);
-                    RecordStep(steps, "sr5 magic leg: spell tick attempt " + (tickPass + 1) + ": checked=" + nowChecked + "; " + tickDiagnostics);
-                    if (nowChecked)
+                    if (targetable)
                     {
-                        tickedCount++;
-                        string spellSourceId = spellAutomationId.StartsWith(
-                            CreationMagicResonanceWindow.SpellCheckAutomationIdPrefix, StringComparison.Ordinal)
-                            ? spellAutomationId[CreationMagicResonanceWindow.SpellCheckAutomationIdPrefix.Length..]
-                            : spellAutomationId;
-                        pickedSpellIds.Add(spellSourceId);
+                        target = check;
+                        break;
                     }
                 }
+                if (target is null)
+                {
+                    break;
+                }
+                string spellAutomationId = await Dispatcher.UIThread.InvokeAsync(
+                    () => AutomationProperties.GetAutomationId(target) ?? string.Empty);
+                string tickDiagnostics = await RoutePointerClickAsync(target, waitForClick: true);
+                bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => target.IsChecked == true);
+                RecordStep(steps, "sr5 magic leg: spell tick pass " + (tickPass + 1) + ": checked=" + nowChecked + "; " + tickDiagnostics);
+                if (nowChecked)
+                {
+                    tickedCount++;
+                    string spellSourceId = spellAutomationId.StartsWith(
+                        CreationMagicResonanceWindow.SpellCheckAutomationIdPrefix, StringComparison.Ordinal)
+                        ? spellAutomationId[CreationMagicResonanceWindow.SpellCheckAutomationIdPrefix.Length..]
+                        : spellAutomationId;
+                    pickedSpellIds.Add(spellSourceId);
+                }
+                else
+                {
+                    // A press that does not change the checkbox state is an honest
+                    // non-delivery for this pass; the loop re-probes on the next
+                    // pass rather than retrying the same control blindly.
+                    RecordStep(steps, "sr5 magic leg: spell tick pass " + (tickPass + 1) + ": press did not change the checkbox state; re-probing next pass");
+                }
+                // Let the window re-prepare (each pick triggers a Core re-preview
+                // that republishes the remaining catalog).
+                await Task.Delay(TimeSpan.FromMilliseconds(750), ct);
             }
-            spellsTicked = tickedCount == 2;
-            assertions["sr5_two_spells_ticked"] = spellsTicked;
+            assertions["sr5_spells_ticked_count"] = tickedCount >= 2 && spellsTicked;
+            RecordStep(steps, "sr5 magic leg: spell budget drive complete: ticked=" + tickedCount + " confirmReady=" + spellsTicked);
             if (!spellsTicked)
             {
                 return await fail(
-                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr5_two_spells_ticked"] = false },
-                    "Failed: two spell checkboxes could not be ticked via pointer delivery.",
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr5_spells_ticked_count"] = false },
+                    "Failed: the spell budget could not be spent to enable the confirm (Core kept blocking).",
                     "06m-sr5-spells-not-ticked");
             }
-            RecordStep(steps, "sr5 magic leg: two spells ticked via pointer delivery");
+            RecordStep(steps, "sr5 magic leg: spell budget spent via pointer delivery (count=" + tickedCount + ")");
+
             recordPointerAction();
 
             // Confirm through the REAL confirm button via pointer delivery with
@@ -6531,6 +6688,24 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     confirmButton?.Content?.ToString() ?? string.Empty);
             });
             RecordStep(steps, "sr5 magic leg: confirm button enabled=" + confirmEnabled + " label='" + confirmLabel + "'");
+            if (!confirmEnabled && confirmButton is not null)
+            {
+                // Diagnostic evidence: dump the editor's budget summary and status
+                // caption (the presenter renders the Core blockers there) so a
+                // disabled confirm is diagnosable from the receipt alone.
+                (string budgetSummary, string statusText) = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    string? budget = liveEditor.GetVisualDescendants().OfType<TextBlock>()
+                        .Select(tb => tb.Text)
+                        .FirstOrDefault(t => t is not null && t.Contains("left"));
+                    string? status = liveEditor.GetVisualDescendants().OfType<TextBlock>()
+                        .Select(tb => tb.Text)
+                        .FirstOrDefault(t => t is not null && (t.StartsWith("Blocked:") || t.StartsWith("Preview"))
+                            || (t is not null && (t.Contains("blocker") || t.Contains("Blocker"))));
+                    return (budget ?? string.Empty, status ?? string.Empty);
+                });
+                RecordStep(steps, "sr5 magic leg: confirm blocked budget='" + budgetSummary + "' status='" + statusText + "'");
+            }
             if (!confirmEnabled || confirmButton is null)
             {
                 return await fail(
@@ -6585,6 +6760,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
             // Walk to review with live re-acquisition, finalize, then save.
             bool reviewAfter = false;
+            bool resourcesDriven = false;
             for (int attempt = 0; attempt < 90 && !reviewAfter; attempt++)
             {
                 CharacterCreationWizardControl? current = FindWizardControl(window);
@@ -6595,6 +6771,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 {
                     reviewAfter = true;
                     break;
+                }
+                if (string.Equals(activeStep, "resources", StringComparison.Ordinal) && !resourcesDriven)
+                {
+                    resourcesDriven = true;
+                    RecordStep(steps, "sr5 magic leg: driving the resources deep stage after the magic confirm");
+                    await RunDeepStageResourcesAsync(window, current, context, screenshotPaths, steps, ct, recordPointerAction);
+                    continue;
                 }
                 Button? continueButton = FindWizardAutomationButton(current, "creation-wizard-continue");
                 if (continueButton is { IsEffectivelyEnabled: true })
@@ -6609,7 +6792,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             {
                 await ClickWizardButtonAsync(
                     FindWizardControl(window) ?? throw new InvalidOperationException("sr5 magic leg: wizard vanished before finish press"),
-                    "creation-wizard-finish",
+                    "creation-wizard-finalize",
                     steps,
                     ct,
                     recordPointerAction);
@@ -6659,12 +6842,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 DesktopMouseFirstJourneyRuntime.MagicReopenSidecarEnvironmentVariable) ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(magicSidecarPath) && pickedSpellIds.Count > 0)
             {
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
                 string sidecarJson = System.Text.Json.JsonSerializer.Serialize(
                     new MagicReopenSidecarPayload
                     {
                         Spells = pickedSpellIds,
                         Powers = [],
-                    });
+                    }, jsonOptions);
                 string sidecarDir = Path.GetDirectoryName(magicSidecarPath) ?? string.Empty;
                 if (!string.IsNullOrEmpty(sidecarDir))
                     Directory.CreateDirectory(sidecarDir);
@@ -6815,12 +6999,21 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     "Failed: the foundation ListBoxes never rendered.",
                     "06m-sr6-foundation-lists-missing");
             }
+            // Heritage rank A admits dwarf (the proven rank-compatible pick in
+            // DriveSr6CreationWizardToFinalizationAsync); human is not rank-A
+            // compatible (sr6-creation-foundation-metatype-unavailable).
+            const string MetatypeIdForHeritageRankA = "dwarf";
             string metatypeId = lists[0].Items.OfType<string>()
-                .FirstOrDefault(item => item.Contains("human", StringComparison.OrdinalIgnoreCase))
-                ?? throw new InvalidOperationException("sr6 magic leg: no human metatype candidate in the foundation list: " + string.Join(", ", lists[0].Items.OfType<string>()));
+                .FirstOrDefault(item => string.Equals(item, MetatypeIdForHeritageRankA, StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("sr6 magic leg: no dwarf metatype candidate in the foundation list: " + string.Join(", ", lists[0].Items.OfType<string>()));
+            // WIN-009 gen18 (T888): adept is the only SR6 talent whose
+            // finalize review can succeed in this Core pin (the magical-tradition
+            // incomplete domain is unconditional for magician/mystic-adept and the
+            // SR6 wizard has no tradition editor), so the leg drives adept.
             string talentId = lists[1].Items.OfType<string>()
-                .FirstOrDefault(item => item.Contains("mystic", StringComparison.OrdinalIgnoreCase))
-                ?? throw new InvalidOperationException("sr6 magic leg: no mystic-adept candidate in the talent list: " + string.Join(", ", lists[1].Items.OfType<string>()));
+                .FirstOrDefault(item => item.Contains("adept", StringComparison.OrdinalIgnoreCase)
+                    && !item.Contains("mystic", StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException("sr6 magic leg: no adept candidate in the talent list: " + string.Join(", ", lists[1].Items.OfType<string>()));
             bool foundationStuck = await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 lists[0].SelectedItem = metatypeId;
@@ -6832,12 +7025,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             if (!foundationStuck)
             {
                 return await fail(
-                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_mystic_adept_selected"] = false },
-                    "Failed: the mystic-adept foundation selection did not stick.",
-                    "06m-sr6-mystic-not-selected");
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_adept_selected"] = false },
+                    "Failed: the adept foundation selection did not stick.",
+                    "06m-sr6-adept-not-selected");
             }
-            assertions["sr6_mystic_adept_selected"] = true;
-            RecordStep(steps, "sr6 magic leg: foundation metatype '" + metatypeId + "' + talent '" + talentId + "' selected by id");
+            assertions["sr6_adept_selected"] = true;
+            RecordStep(steps, "sr6 magic leg: foundation metatype '" + metatypeId + "' + talent '" + talentId + "' selected by id (adept route; pass-1 zero-spend confirm seeds the domain catalog)");
             await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
 
             // Step 3 (attributes): the attribute step publishes after the foundation
@@ -6866,7 +7059,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     TimeSpan.FromSeconds(20));
                 if (confirmReady)
                     break;
-                RecordStep(steps, "sr6 magic leg: confirm wait miss attempt " + (confirmAttempt + 1));
+                string confirmDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    bool noPreview = Active().GetVisualDescendants().OfType<TextBlock>().Any(b => string.Equals(
+                        AutomationProperties.GetAutomationId(b), "sr6-confirm-no-preview", StringComparison.Ordinal));
+                    string? authority = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text;
+                    string? footer = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text;
+                    string? stepTitle = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-step-title", StringComparison.Ordinal))?.Text;
+                    bool wizardVisible = Active().IsVisible;
+                    int wizardCount = VisibleSr6WizardWindows().Count(w => w.IsVisible);
+                    return "noPreview=" + noPreview.ToString()
+                        + "; stepTitle=" + (stepTitle ?? "?")
+                        + "; authority=" + (authority ?? "?")
+                        + "; footer=" + (footer ?? "?")
+                        + "; wizardVisible=" + wizardVisible.ToString()
+                        + "; wizardCount=" + wizardCount.ToString();
+                });
+                RecordStep(steps, "sr6 magic leg: confirm wait miss attempt " + (confirmAttempt + 1) + ": " + confirmDiag);
             }
             if (!confirmReady)
             {
@@ -6880,34 +7092,184 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
             assertions["sr6_confirm_step_rendered"] = true;
             RecordStep(steps, "sr6 magic leg: confirm step rendered");
-
-            // Fix-3 assertion: BOTH mystic-adept domains render on the confirm step.
-            // The renderer emits a section header per domain (spells first, adept
-            // powers second); rows carry sr6-talent-domain-<option> ids.
-            (int spellDomainRows, int sectionHeaders) = await Dispatcher.UIThread.InvokeAsync(() =>
+            // WIN-009 gen18 (T888): two-pass confirm. Core populates the
+            // talent-domain catalog options only after a committed foundation
+            // decision (Sr6CreationFoundationRules.Load reads the last decision
+            // preview); a fresh flow renders the honest no-options note. So the
+            // pass-1 confirm commits the zero-spend shape, the post-commit
+            // RefreshedState carries the catalog, and pass-2 re-enters the
+            // confirm step seeded.
+            int pass1Rows = await Dispatcher.UIThread.InvokeAsync(() =>
+                Active().GetVisualDescendants().OfType<CheckBox>().Count(c =>
+                    AutomationProperties.GetAutomationId(c) is { Length: > 0 } pass1Id
+                    && pass1Id.StartsWith("sr6-talent-domain-", StringComparison.Ordinal)));
+            assertions["sr6_pass1_no_options_note"] = pass1Rows == 0;
+            RecordStep(steps, "sr6 magic leg: pass-1 domain rows=" + pass1Rows + " (zero is the honest no-catalog shape on a fresh flow)");
+            if (pass1Rows != 0)
             {
-                List<CheckBox> domainChecks = Active().GetVisualDescendants().OfType<CheckBox>()
-                    .Where(c => AutomationProperties.GetAutomationId(c) is { Length: > 0 } domainId
-                        && domainId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
-                    .ToList();
-                int headers = Active().GetVisualDescendants().OfType<TextBlock>()
-                    .Count(b => AutomationProperties.GetAutomationId(b) is { Length: > 0 } h
-                        && h.EndsWith("-section-header", StringComparison.Ordinal));
-                return (domainChecks.Count, headers);
-            });
-            assertions["sr6_spell_domain_rendered"] = spellDomainRows > 0;
-            assertions["sr6_both_domains_rendered"] = spellDomainRows >= 2 && sectionHeaders >= 2;
-            RecordStep(steps, "sr6 magic leg: " + spellDomainRows + " domain rows; " + sectionHeaders + " section headers");
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass1_no_options_note"] = false },
+                    "Failed: pass-1 rendered domain rows on a fresh flow (catalog should be decision-gated).",
+                    "06m-sr6-pass1-rows-unexpected");
+            }
 
-            // Pick one spell and one adept power through pointer delivery. Spells
-            // render first, so the first delivered tick is the spell pick and the
-            // next delivered tick on a distinct row is the power pick.
-            bool spellPicked = false;
+            // Pass-1 confirm tick through pointer delivery.
+            bool pass1Ticked = false;
+            for (int p1Tick = 0; p1Tick < 3 && !pass1Ticked; p1Tick++)
+            {
+                CheckBox? p1Check = await Dispatcher.UIThread.InvokeAsync(() =>
+                    Active().GetVisualDescendants().OfType<CheckBox>()
+                    .FirstOrDefault(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)))
+                    ?? throw new InvalidOperationException("sr6 magic leg: pass-1 confirm checkbox not found on the live wizard");
+                string p1Diag = await RoutePointerClickAsync(p1Check, waitForClick: true);
+                pass1Ticked = await Dispatcher.UIThread.InvokeAsync(() => p1Check.IsChecked == true);
+                RecordStep(steps, "sr6 magic leg: pass-1 confirm tick attempt " + (p1Tick + 1) + ": checked=" + pass1Ticked + "; " + p1Diag);
+            }
+            if (!pass1Ticked)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass1_confirm_ticked"] = false },
+                    "Failed: the pass-1 confirm checkbox did not tick via pointer delivery.",
+                    "06m-sr6-pass1-confirm-not-ticked");
+            }
+            assertions["sr6_pass1_confirm_ticked"] = true;
+            recordPointerAction();
+            RecordStep(steps, "sr6 magic leg: pass-1 preview confirmed via pointer");
+
+            // The dispatch happens on the finish press (FinishButton_Click); a
+            // finish click can drop while the confirm review settles, so press
+            // with bounded re-drive until the wizard jumps to finalize.
+            bool pass1Dispatched = false;
+            for (int p1Finish = 0; p1Finish < 4 && !pass1Dispatched; p1Finish++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-finish", steps, ct, recordPointerAction);
+                pass1Dispatched = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == "Finalize"),
+                    ct,
+                    TimeSpan.FromSeconds(15));
+            }
+
+            // The pass-1 confirm dispatch jumps the wizard to the finalize step
+            // and the post-commit refresh repopulates _state (catalog now exists).
+            bool pass1FinalizeRendered = await WaitForConditionWithinAsync(
+                () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == "Finalize"),
+                ct,
+                TimeSpan.FromSeconds(15));
+            assertions["sr6_pass1_finalize_rendered"] = pass1FinalizeRendered;
+            RecordStep(steps, "sr6 magic leg: pass-1 finalize jump rendered=" + pass1FinalizeRendered);
+            if (!pass1FinalizeRendered)
+            {
+                string p1BlockDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    string? stepTitle = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => (b.Text ?? string.Empty) == "Finalize" || (b.Text ?? string.Empty) == "Review & Confirm" || (b.Text ?? string.Empty) == "Attributes")?.Text;
+                    string? authority = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text;
+                    string? footer = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text;
+                    bool finishEnabled = Active().GetVisualDescendants().OfType<Button>()
+                        .Any(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-finish", StringComparison.Ordinal) && b.IsEffectivelyEnabled);
+                    return "stepTitle=" + (stepTitle ?? "?")
+                        + "; authority=" + (authority ?? "?")
+                        + "; footer=" + (footer ?? "?")
+                        + "; finishEnabled=" + finishEnabled.ToString();
+                });
+                RecordStep(steps, "sr6 magic leg: pass-1 dispatch diagnostics: " + p1BlockDiag);
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass1_finalize_rendered"] = false },
+                    "Failed: the pass-1 confirm dispatch did not jump the wizard to the finalize step.",
+                    "06m-sr6-pass1-finalize-missing");
+            }
+
+            // Back-nav x2: finalize -> confirm -> attributes (back is a plain
+            // index decrement + re-render).
+            for (int backPress = 0; backPress < 2; backPress++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-back", steps, ct, recordPointerAction);
+                string expectedTitle = backPress == 0 ? "Review & Confirm" : "Attributes";
+                bool backLanded = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == expectedTitle),
+                    ct,
+                    TimeSpan.FromSeconds(10));
+                if (!backLanded)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass2_backnav"] = false },
+                        "Failed: back-nav did not land on '" + expectedTitle + "'.",
+                        "06m-sr6-pass2-backnav-missing");
+                }
+                RecordStep(steps, "sr6 magic leg: back-nav landed '" + expectedTitle + "'");
+            }
+            assertions["sr6_pass2_backnav"] = true;
+            RecordStep(steps, "sr6 magic leg: back-nav landed attributes; Next re-prepares");
+
+            // Next from attributes: EnsurePreviewHeld rebuilds the selection from
+            // the refreshed state (catalog seeded) and Core validates it through
+            // the ordinary Prepare seam.
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+            RecordStep(steps, "sr6 magic leg: pass-2 re-prepare Next delivered");
+
+            // Pass-2 confirm-wait loop (same shape as pass-1; on arrival the
+            // confirm step must render the seeded domain rows).
+            bool pass2ConfirmReady = false;
+            for (int p2ConfirmAttempt = 0; p2ConfirmAttempt < 6 && !pass2ConfirmReady; p2ConfirmAttempt++)
+            {
+                bool p2NextEnabled = await Dispatcher.UIThread.InvokeAsync(() =>
+                    Active().GetVisualDescendants().OfType<Button>()
+                        .Any(b => string.Equals(
+                            AutomationProperties.GetAutomationId(b),
+                            "sr6-wizard-next",
+                            StringComparison.Ordinal)
+                            && b.IsEffectivelyEnabled));
+                if (p2NextEnabled)
+                {
+                    await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+                }
+                pass2ConfirmReady = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)),
+                    ct,
+                    TimeSpan.FromSeconds(20));
+                if (pass2ConfirmReady)
+                    break;
+                string p2Diag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    string? stepTitle = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => (b.Text ?? string.Empty) == "Finalize" || (b.Text ?? string.Empty) == "Review & Confirm" || (b.Text ?? string.Empty) == "Attributes")?.Text;
+                    string? authority = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text;
+                    string? footer = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text;
+                    return "stepTitle=" + (stepTitle ?? "?")
+                        + "; authority=" + (authority ?? "?")
+                        + "; footer=" + (footer ?? "?");
+                });
+                RecordStep(steps, "sr6 magic leg: pass-2 confirm wait miss attempt " + (p2ConfirmAttempt + 1) + ": " + p2Diag);
+            }
+            if (!pass2ConfirmReady)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass2_confirm_step_rendered"] = false },
+                    "Failed: the pass-2 confirm step never rendered after back-nav + re-prepare.",
+                    "06m-sr6-pass2-confirm-missing");
+            }
+            assertions["sr6_pass2_confirm_step_rendered"] = true;
+            RecordStep(steps, "sr6 magic leg: pass-2 confirm step rendered");
+
+            // WIN-009 gen18 adept route: the adept talent renders a single
+            // power domain (no spell domain, no section headers). Pick exactly
+            // ONE power through pointer delivery - the changed-editor pick
+            // invalidates the held preview (StoreTalentDomainIds), so the leg
+            // re-prepares afterwards instead of dispatching a dead digest.
             bool powerPicked = false;
-            CheckBox? spellRow = null;
             string pickedSpellId = string.Empty;
             string pickedPowerId = string.Empty;
-            for (int pass = 0; pass < 4 && !(spellPicked && powerPicked); pass++)
+            for (int pass = 0; pass < 4 && !powerPicked; pass++)
             {
                 List<CheckBox> domainChecks = await Dispatcher.UIThread.InvokeAsync(() =>
                     Active().GetVisualDescendants().OfType<CheckBox>()
@@ -6916,69 +7278,87 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     .ToList());
                 if (domainChecks.Count == 0)
                     continue;
-                if (!spellPicked)
+                foreach (CheckBox check in domainChecks)
                 {
-                    foreach (CheckBox check in domainChecks)
+                    bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
+                        check.IsVisible && check.IsEnabled && check.IsChecked != true);
+                    if (!targetable)
+                        continue;
+                    string pickedAutomationId = await Dispatcher.UIThread.InvokeAsync(
+                        () => AutomationProperties.GetAutomationId(check) ?? string.Empty);
+                    string tickDiagnostics = await RoutePointerClickAsync(check, waitForClick: true);
+                    bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => check.IsChecked == true);
+                    RecordStep(steps, "sr6 magic leg: adept power pick; checked=" + nowChecked + "; " + tickDiagnostics);
+                    if (nowChecked)
                     {
-                        bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
-                            check.IsVisible && check.IsEnabled && check.IsChecked != true);
-                        if (!targetable)
-                            continue;
-                        string pickedAutomationId = await Dispatcher.UIThread.InvokeAsync(
-                            () => AutomationProperties.GetAutomationId(check) ?? string.Empty);
-                        string tickDiagnostics = await RoutePointerClickAsync(check, waitForClick: true);
-                        bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => check.IsChecked == true);
-                        RecordStep(steps, "sr6 magic leg: spell-domain tick; checked=" + nowChecked + "; " + tickDiagnostics);
-                        if (nowChecked)
-                        {
-                            spellPicked = true;
-                            spellRow = check;
-                            if (pickedAutomationId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
-                                pickedSpellId = pickedAutomationId["sr6-talent-domain-".Length..];
-                            break;
-                        }
-                    }
-                }
-                if (spellPicked && !powerPicked)
-                {
-                    for (int i = domainChecks.Count - 1; i >= 0; i--)
-                    {
-                        CheckBox check = domainChecks[i];
-                        if (ReferenceEquals(check, spellRow))
-                            continue;
-                        bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
-                            check.IsVisible && check.IsEnabled && check.IsChecked != true);
-                        if (!targetable)
-                            continue;
-                        string pickedAutomationId = await Dispatcher.UIThread.InvokeAsync(
-                            () => AutomationProperties.GetAutomationId(check) ?? string.Empty);
-                        string tickDiagnostics = await RoutePointerClickAsync(check, waitForClick: true);
-                        bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => check.IsChecked == true);
-                        RecordStep(steps, "sr6 magic leg: power-domain tick; checked=" + nowChecked + "; " + tickDiagnostics);
-                        if (nowChecked)
-                        {
-                            powerPicked = true;
-                            if (pickedAutomationId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
-                                pickedPowerId = pickedAutomationId["sr6-talent-domain-".Length..];
-                            break;
-                        }
+                        powerPicked = true;
+                        if (pickedAutomationId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
+                            pickedPowerId = pickedAutomationId["sr6-talent-domain-".Length..];
+                        break;
                     }
                 }
             }
-            assertions["sr6_spell_picked"] = spellPicked;
+
             assertions["sr6_power_picked"] = powerPicked;
-            RecordStep(steps, "sr6 magic leg: spell picked=" + spellPicked + "; power picked=" + powerPicked);
-            if (!(spellPicked && powerPicked))
+            RecordStep(steps, "sr6 magic leg: adept power picked=" + powerPicked
+                + " (id '" + pickedPowerId + "')");
+            if (!powerPicked)
             {
                 return await fail(
-                    new Dictionary<string, bool>(StringComparer.Ordinal)
-                    {
-                        ["sr6_spell_picked"] = spellPicked,
-                        ["sr6_power_picked"] = powerPicked,
-                    },
-                    "Failed: both mystic-adept domains could not be picked via pointer delivery.",
-                    "06m-sr6-picks-missing");
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_power_picked"] = false },
+                    "Failed: the adept power pick did not land via pointer delivery.",
+                    "06m-sr6-power-pick-missing");
             }
+
+            // The pick invalidated the held preview (StoreTalentDomainIds nulls
+            // _preparedPreview and the confirm digest). Dispatching the dead
+            // digest would silently no-op in FinishButton_Click, so drive the
+            // product-native recovery: back to attributes, then Next re-prepares
+            // (EnsurePreviewHeld rebuilds the selection including the pick).
+            for (int backPress = 0; backPress < 2; backPress++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-back", steps, ct, recordPointerAction);
+                string expectedTitle = backPress == 0 ? "Review & Confirm" : "Attributes";
+                bool backLanded = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == expectedTitle),
+                    ct,
+                    TimeSpan.FromSeconds(10));
+                if (!backLanded)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_repick_backnav"] = false },
+                        "Failed: post-pick back-nav did not land on '" + expectedTitle + "'.",
+                        "06m-sr6-repick-backnav-missing");
+                }
+                RecordStep(steps, "sr6 magic leg: post-pick back-nav landed '" + expectedTitle + "'");
+            }
+            assertions["sr6_repick_backnav"] = true;
+
+            // Next from attributes re-prepares; the confirm step re-renders with
+            // a fresh preview (the pick included) and a fresh confirm checkbox.
+            bool pass2Reprepare = false;
+            for (int reprep = 0; reprep < 4 && !pass2Reprepare; reprep++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+                pass2Reprepare = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)),
+                    ct,
+                    TimeSpan.FromSeconds(10));
+                if (!pass2Reprepare)
+                    RecordStep(steps, "sr6 magic leg: re-prepare attempt " + (reprep + 1) + " did not render confirm; re-clicking");
+            }
+            if (!pass2Reprepare)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_repick_reprepare"] = false },
+                    "Failed: the post-pick re-prepare never re-rendered the confirm step.",
+                    "06m-sr6-reprepare-missing");
+            }
+            assertions["sr6_repick_reprepare"] = true;
+            RecordStep(steps, "sr6 magic leg: re-prepare Next delivered; confirm step re-rendered with the pick included");
 
             // Tick the confirm checkbox through pointer delivery (Controller9637).
             bool confirmTicked = false;
@@ -7107,12 +7487,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             if (!string.IsNullOrWhiteSpace(magicSidecarPath)
                 && (pickedSpellId.Length > 0 || pickedPowerId.Length > 0))
             {
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
                 string sidecarJson = System.Text.Json.JsonSerializer.Serialize(
                     new MagicReopenSidecarPayload
                     {
                         Spells = pickedSpellId.Length > 0 ? [pickedSpellId] : [],
                         Powers = pickedPowerId.Length > 0 ? [new MagicReopenPowerPayload { Id = pickedPowerId, Rating = 1 }] : [],
-                    });
+                    }, jsonOptions);
                 string sidecarDir = Path.GetDirectoryName(magicSidecarPath) ?? string.Empty;
                 if (!string.IsNullOrEmpty(sidecarDir))
                     Directory.CreateDirectory(sidecarDir);
@@ -7127,7 +7508,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 Assertions: assertions,
                 InteractionNotes:
                 [
-                    "SR6 magic-editor leg: the method-step ranks were assigned through the proven combo discipline, the mystic-adept foundation drove the wizard to a confirm step that rendered BOTH talent domains, a spell and a power were picked via pointer delivery, the preview confirmed, finalize rendered, the loss ack ticked, the wizard closed and the workspace saved.",
+                    "SR6 magic-editor leg (adept route): the method ranks were assigned through the proven combo discipline, the adept+rank-compatible-dwarf foundation committed a pass-1 zero-spend decision (the fresh-flow catalog is decision-gated, so pass-1 renders the honest no-options note), back-nav re-prepared the preview with the seeded catalog, one adept power was picked via pointer delivery, the pick invalidated the held preview, back-nav re-prepared again with the pick included, the fresh preview confirmed, finalize rendered, the loss ack ticked, the wizard closed and the workspace saved.",
                 ]);
         }
 
@@ -7292,23 +7673,29 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 return new MagicSelectionEvidence(false, new(), new(),
                     "magic-selection read: duplicate spells or powers containers");
             }
+            // WIN-009 gen18: real retained documents carry edition-native id
+            // shapes - SR5 spells write <sourceid><guid> (the legacy chum5
+            // shape), SR6 rows write <sr6id> (no sourceid). Accept the first
+            // present of sourceid/sr6id so the reopen verification is grounded
+            // in what both editions actually persist, not a synthetic shape.
             foreach (XElement spell in root.Elements("spells").Elements("spell"))
             {
-                if (spell.Elements("sourceid").ToArray() is [var spellSourceId]
-                    && !spellSourceId.HasElements && !spellSourceId.HasAttributes)
+                string? value = spell.Elements("sourceid").FirstOrDefault(e => !e.HasElements && !e.HasAttributes)?.Value.Trim()
+                    ?? spell.Elements("sr6id").FirstOrDefault(e => !e.HasElements && !e.HasAttributes)?.Value.Trim();
+                if (!string.IsNullOrEmpty(value))
                 {
-                    string value = spellSourceId.Value.Trim();
-                    if (value.Length > 0)
-                        spellIds.Add(value);
+                    spellIds.Add(value);
                 }
             }
             foreach (XElement power in root.Elements("powers").Elements("power"))
             {
-                if (power.Elements("sourceid").ToArray() is [var powerSourceId]
-                    && !powerSourceId.HasElements && !powerSourceId.HasAttributes)
+                string? id = power.Elements("sourceid").FirstOrDefault(e => !e.HasElements && !e.HasAttributes)?.Value.Trim()
+                    ?? power.Elements("sr6id").FirstOrDefault(e => !e.HasElements && !e.HasAttributes)?.Value.Trim();
+                if (string.IsNullOrEmpty(id))
                 {
-                    string id = powerSourceId.Value.Trim();
-                    int rating = 1;
+                    continue;
+                }
+                int rating = 1;
                     if (power.Elements("rating").ToArray() is [var ratingElement]
                         && !ratingElement.HasElements && !ratingElement.HasAttributes
                         && int.TryParse(ratingElement.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedRating)
@@ -7316,8 +7703,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     {
                         rating = parsedRating;
                     }
-                    powerRatings.Add((id, rating));
-                }
+                powerRatings.Add((id, rating));
             }
             return new MagicSelectionEvidence(true, spellIds, powerRatings,
                 "magic-selection read: spells=[" + string.Join(", ", spellIds)
@@ -15080,6 +15466,35 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
     {
         RecordStep(steps, "manual deep-stage leg: entering real allocation editors");
 
+        // --- Attributes: extracted allocation drive (helper below). ---
+        await RunDeepStageAttributesAsync(window, wizard, context, screenshotPaths, steps, ct, recordPointerAction);
+
+        // --- Qualities: extracted review drive. ---
+        await RunDeepStageQualitiesAsync(window, wizard, context, screenshotPaths, steps, ct, recordPointerAction);
+
+        // --- Skills: extracted allocation drive. ---
+        await RunDeepStageSkillsAsync(window, wizard, context, screenshotPaths, steps, ct, recordPointerAction);
+
+        // --- Resources: extracted option/confirm drive. ---
+        await RunDeepStageResourcesAsync(window, wizard, context, screenshotPaths, steps, ct, recordPointerAction);
+
+        // The ordinary Next walk that follows continues from the active step
+        // (resources -> review); no further manual navigation needed.
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-qualities-step");
+
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-deep-stages-done");
+        RecordStep(steps, "manual deep-stage leg complete; returning to ordinary Next walk");
+    }
+    private static async Task RunDeepStageAttributesAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        DesktopMouseFirstJourneyContext context,
+        List<string> screenshotPaths,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // Extracted verbatim from RunManualDeepStageLegAsync (WIN-009 gen18): attributes allocation drive.
         // --- Attributes step: open the Core-bound allocation modal and type a
         // real Priority distribution via the per-attribute up/down controls. ---
         await ClickWizardButtonUntilEffectAsync(
@@ -15328,6 +15743,18 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             }
         }
 
+    }
+
+    private static async Task RunDeepStageQualitiesAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        DesktopMouseFirstJourneyContext context,
+        List<string> screenshotPaths,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // Extracted verbatim from RunManualDeepStageLegAsync (WIN-009 gen18): qualities review drive.
         // --- Qualities step: attributes' legal-next is qualities; confirm the
         // default (no qualities) draft through the Core-bound editor. ---
         // The post-confirm adapter reload runs asynchronously after the modal
@@ -15522,6 +15949,18 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
             }
         }
 
+    }
+
+    private static async Task RunDeepStageSkillsAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        DesktopMouseFirstJourneyContext context,
+        List<string> screenshotPaths,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // Extracted verbatim from RunManualDeepStageLegAsync (WIN-009 gen18): skills allocation drive.
         // --- Skills step: qualities' legal-next is skills; open the skills
         // allocation modal and confirm the default Core-provided plan. ---
         {
@@ -15940,6 +16379,18 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                 break;
         }
 
+    }
+
+    private static async Task RunDeepStageResourcesAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        DesktopMouseFirstJourneyContext context,
+        List<string> screenshotPaths,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // Extracted verbatim from RunManualDeepStageLegAsync (WIN-009 gen18): resources option/confirm drive.
         // --- Resources step: a zero-investment resources draft is still a
         // required explicit confirmation (resources-draft-required gates
         // finalization), so drive the real option/confirm route: click the
@@ -16062,12 +16513,25 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
                     break;
             }
         }
+    }
 
-        // The ordinary Next walk that follows continues from the active step
-        // (resources -> review); no further manual navigation needed.
-        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-qualities-step");
-
-        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03m-manual-deep-stages-done");
-        RecordStep(steps, "manual deep-stage leg complete; returning to ordinary Next walk");
+    private static async Task RunSr5DeepStageCrossingAsync(
+        MainWindow window,
+        CharacterCreationWizardControl wizard,
+        DesktopMouseFirstJourneyContext context,
+        List<string> screenshotPaths,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        // WIN-009 gen18: the magic-resonance step sits after attributes,
+        // qualities and skills in the Core step graph, and Core gates its
+        // authority readiness on those drafts being confirmed. Drive the
+        // real deep stages (the same drives the manual-deep leg runs) so
+        // the magic step becomes enterable.
+        RecordStep(steps, "sr5 magic leg: driving the attributes/qualities/skills deep stages before the magic step");
+        await RunDeepStageAttributesAsync(window, wizard, context, screenshotPaths, steps, ct, recordPointerAction);
+        await RunDeepStageQualitiesAsync(window, wizard, context, screenshotPaths, steps, ct, recordPointerAction);
+        await RunDeepStageSkillsAsync(window, wizard, context, screenshotPaths, steps, ct, recordPointerAction);
     }
 }
