@@ -1,0 +1,10 @@
+{
+  "stamp": "1.0.0-preview.20261122.gen21",
+  "exe": "D:\\sources\\chummer\\_scratch\\gen37\\gen21_build\\publish\\Chummer.Avalonia.exe",
+  "appExeSha256": "bfe379117959f2c0f292871e638a970c82a4aba20bc25c7bf0205c0cc024e9e1",
+  "appExeBytes": 60491272,
+  "coreHead": "0b4b372981298531f8099c88c1c017741de42a65",
+  "builtAt": "2026-11-22T22:49:40.699244",
+  "wave": "gen21 (T888 single-read sidecar contract at 1de354434: ParseMagicReopenSidecar reads the sidecar once and feeds the same immutable BOM-adjusted bytes to both the Utf8JsonReader duplicate-property scan and JsonDocument.Parse, path diagnostics-only; 5 parser regressions total; rt lane 28/28; wizard lane 19/19 retained)",
+  "head": "1de3544340cfb878a88135ca05f48dad5288d49f"
+}
