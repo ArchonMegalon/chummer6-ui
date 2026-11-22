@@ -269,6 +269,109 @@ public sealed class Sr6CreationWizardWindowTests
             Click(window, "FinishButton");
             Assert.AreEqual(1, presenter.Confirms, "the stale acknowledgement must not dispatch the new preview");
         });
+
+    [TestMethod]
+    public void Mystic_adept_renders_both_spell_and_power_domains()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "mystic-adept", [])
+            {
+                Spells = new(["sr6-spell-test-a"]),
+                AdeptPowers = new([new("sr6-power-test-a", 2)]),
+            };
+            presenter.SavedState = foundation with
+            {
+                SpellOptions = [new("sr6-spell-test-a", "Test Spell A", "spell", "combat", "anchor-a"),
+                    new("sr6-spell-test-b", "Test Spell B", "spell", "detection", "anchor-b")],
+                AdeptPowerOptions = [new("sr6-power-test-a", "Test Power A", null, null, "use-a", 4, 6, "anchor-pa"),
+                    new("sr6-power-test-b", "Test Power B", null, null, "use-b", 4, 6, "anchor-pb")],
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mystic-adept";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            var checks = window.GetVisualDescendants().OfType<CheckBox>()
+                .Where(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c)?
+                    .StartsWith("sr6-talent-domain-", StringComparison.Ordinal) == true).ToArray();
+            Assert.HasCount(4, checks, "both domains must render: two spells + two powers");
+            Assert.IsTrue(checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-a").IsChecked == true,
+                "the saved spell seeds checked");
+            Assert.IsTrue(checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-power-test-a").IsChecked == true,
+                "the saved power seeds checked (both domains seeded from the same selection)");
+
+            // A rated power (rating 2) SURVIVES toggling the unrelated spell:
+            // rating preservation applies across domains.
+            checks.First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-spell-test-b").IsChecked = true;
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+            var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+            var draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            Assert.IsTrue(draft.Spells!.CatalogIds.Contains("sr6-spell-test-b"), "the spell toggle landed");
+            var rated = draft.AdeptPowers!.Choices.Single(c => c.CatalogId == "sr6-power-test-a");
+            Assert.AreEqual(2, rated.Rating, "an unchanged rated choice must keep its rating when a spell toggles");
+        });
+
+    [TestMethod]
+    public void Adept_power_rating_survives_toggling_another_power()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "adept", [])
+            {
+                AdeptPowers = new([new("sr6-power-test-a", 3)]),
+            };
+            presenter.SavedState = foundation with
+            {
+                AdeptPowerOptions = [new("sr6-power-test-a", "Test Power A", null, null, "use-a", 4, 6, "anchor-pa"),
+                    new("sr6-power-test-b", "Test Power B", null, null, "use-b", 4, 6, "anchor-pb")],
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "adept";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            // Toggle power B on: A's saved rating 3 must survive the rebuild; B
+            // enters at rating 1 as a new pick.
+            var powerB = window.GetVisualDescendants().OfType<CheckBox>()
+                .First(c => global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-talent-domain-sr6-power-test-b");
+            powerB.IsChecked = true;
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+            var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+            var draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            var a = draft.AdeptPowers!.Choices.Single(c => c.CatalogId == "sr6-power-test-a");
+            var b = draft.AdeptPowers!.Choices.Single(c => c.CatalogId == "sr6-power-test-b");
+            Assert.AreEqual(3, a.Rating, "the unchanged choice keeps its saved rating 3");
+            Assert.AreEqual(1, b.Rating, "a newly picked power enters at rating 1");
+            // Drop B again: the pick is discarded with its rating.
+            powerB.IsChecked = false;
+            stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+            selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+            draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            Assert.HasCount(1, draft.AdeptPowers!.Choices, "dropping the pick discards it");
+            Assert.AreEqual(3, draft.AdeptPowers!.Choices.Single().Rating, "A still carries rating 3");
+        });
     [TestMethod]
     public void Store_read_failure_on_open_surfaces_as_blockers_not_crash()
         => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>

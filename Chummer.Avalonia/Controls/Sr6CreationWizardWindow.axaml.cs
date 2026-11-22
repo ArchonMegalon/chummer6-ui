@@ -431,23 +431,30 @@ public partial class Sr6CreationWizardWindow : Window
         }
     }
 
-    private static string? TalentDomainFor(string? talentId) => talentId switch
+    private static string? TalentDomainFor(string? talentId) => TalentDomainsFor(talentId).FirstOrDefault();
+
+    // Every talent domain the talent can exercise: mystic-adept carries BOTH
+    // spells and adept powers; other talents map to their single domain as
+    // before. Order is stable (spells first) so confirm-step rendering is
+    // deterministic for tests and users.
+    private static IReadOnlyList<string> TalentDomainsFor(string? talentId) => talentId switch
     {
-        "magician" or "mystic-adept" or "aspected-magician" => "spells",
-        "technomancer" => "complex-forms",
-        "adept" or "mystic-adept" => "adept-powers",
-        _ => null,
+        "technomancer" => ["complex-forms"],
+        "adept" => ["adept-powers"],
+        "mystic-adept" => ["spells", "adept-powers"],
+        "magician" or "aspected-magician" => ["spells"],
+        _ => [],
     };
 
-    // Catalog ids currently saved in the foundation selection for the talent domain.
-    private IReadOnlyList<string> SavedTalentDomainIds()
+    // Catalog ids currently saved in the foundation selection for a talent domain.
+    private IReadOnlyList<string> SavedTalentDomainIds(string domain)
     {
         var saved = _state?.Foundation.Selection?.Selection;
         if (saved is null)
         {
             return [];
         }
-        return TalentDomainFor(CurrentTalentId) switch
+        return domain switch
         {
             "spells" => saved.Spells?.CatalogIds ?? [],
             "complex-forms" => saved.ComplexForms?.Choices.Select(c => c.CatalogId).ToList() ?? [],
@@ -460,23 +467,31 @@ public partial class Sr6CreationWizardWindow : Window
     // next EnsurePreviewHeld rebuilds the whole selection (current domain ids
     // are seeded from the saved selection) and Core validates it through the
     // ordinary Prepare seam.
-    private void StoreTalentDomainIds(IReadOnlyList<string> ids)
+    private void StoreTalentDomainIds(string domain, IReadOnlyList<string> ids)
     {
+        // Guard the edit handler against a stale owner/workspace: the context check
+        // closes the window and refuses the write when the character moved on.
+        if (!RequireCurrentContext())
+        {
+            return;
+        }
         var saved = _state?.Foundation.Selection?.Selection;
         if (saved is null)
         {
             return;
         }
-        string? domain = TalentDomainFor(CurrentTalentId);
         Sr6CreationFoundationSelection updated = domain switch
         {
             "spells" => saved with { Spells = new Sr6CreationSpellSelection(ids) },
             "complex-forms" => saved with { ComplexForms = new Sr6CreationComplexFormSelection(
                 ids.Select(id => new Sr6CreationComplexFormChoice(id)).ToList()) },
-            // Rating 1 keeps the previous draft behavior for rating-less picks; the
-            // preview rejects ratings beyond the option maximum through Core.
+            // Rating preservation: an unchanged catalog id keeps its saved choice
+            // (including a previously raised rating); only newly picked ids enter at
+            // rating 1. The preview rejects ratings beyond the option maximum
+            // through Core. Ratings for dropped ids are discarded with the pick.
             "adept-powers" => saved with { AdeptPowers = new Sr6CreationAdeptPowerSelection(
-                ids.Select(id => new Sr6CreationAdeptPowerChoice(id, 1)).ToList()) },
+                ids.Select(id => saved.AdeptPowers?.Choices.FirstOrDefault(c => c.CatalogId == id)
+                    ?? new Sr6CreationAdeptPowerChoice(id, 1)).ToList()) },
             _ => saved,
         };
         if (ReferenceEquals(updated, saved))
@@ -491,56 +506,72 @@ public partial class Sr6CreationWizardWindow : Window
 
     private void RenderTalentDomainEditor(StackPanel panel)
     {
-        string? domain = TalentDomainFor(CurrentTalentId);
-        if (domain is null)
+        IReadOnlyList<string> domains = TalentDomainsFor(CurrentTalentId);
+        if (domains.Count == 0)
         {
             return; // mundane talents have no talent domain
         }
-        panel.Children.Add(new TextBlock
+        bool multiDomain = domains.Count > 1;
+        foreach (string domain in domains)
         {
-            Classes = { "shell-caption" },
-            TextWrapping = TextWrapping.Wrap,
-            Text = "Talent domain: choose the known formulas for the draft. Free slots apply first; extra picks cost character points on the confirm preview.",
-        });
-        IReadOnlyList<string> savedIds = SavedTalentDomainIds();
-        foreach ((string optionIdSeed, string optionLabel) in DomainOptions(domain))
-        {
-            var row = new CheckBox
+            if (multiDomain)
             {
-                Content = optionLabel,
-                IsChecked = savedIds.Contains(optionIdSeed),
-            };
-            global::Avalonia.Automation.AutomationProperties.SetAutomationId(row, $"sr6-talent-domain-{optionIdSeed}");
-            string optionId = optionIdSeed;
-            row.IsCheckedChanged += (_, _) =>
+                panel.Children.Add(new TextBlock
+                {
+                    Text = domain == "spells" ? "Spell options" : "Adept power options",
+                });
+            }
+            else
             {
-                var current = SavedTalentDomainIds().ToList();
-                bool has = current.Contains(optionId);
-                if (row.IsChecked == true && !has)
+                panel.Children.Add(new TextBlock
                 {
-                    current.Add(optionId);
-                }
-                else if (row.IsChecked != true && has)
-                {
-                    current.Remove(optionId);
-                }
-                else
-                {
-                    return; // no change
-                }
-                StoreTalentDomainIds(current);
-            };
-            panel.Children.Add(row);
-        }
-        var options = DomainOptions(domain).ToList();
-        if (options.Count == 0)
-        {
-            panel.Children.Add(new TextBlock
+                    Classes = { "shell-caption" },
+                    TextWrapping = TextWrapping.Wrap,
+                    Text = "Talent domain: choose the known formulas for the draft. Free slots apply first; extra picks cost character points on the confirm preview.",
+                });
+            }
+            IReadOnlyList<string> savedIds = SavedTalentDomainIds(domain);
+            int rendered = 0;
+            foreach ((string optionIdSeed, string optionLabel) in DomainOptions(domain))
             {
-                Classes = { "shell-caption" },
-                TextWrapping = TextWrapping.Wrap,
-                Text = "The rules authority has not published catalog options for this talent domain yet; the draft keeps its saved selections.",
-            });
+                var row = new CheckBox
+                {
+                    Content = optionLabel,
+                    IsChecked = savedIds.Contains(optionIdSeed),
+                };
+                global::Avalonia.Automation.AutomationProperties.SetAutomationId(row, $"sr6-talent-domain-{optionIdSeed}");
+                string optionId = optionIdSeed;
+                string rowDomain = domain;
+                row.IsCheckedChanged += (_, _) =>
+                {
+                    var current = SavedTalentDomainIds(rowDomain).ToList();
+                    bool has = current.Contains(optionId);
+                    if (row.IsChecked == true && !has)
+                    {
+                        current.Add(optionId);
+                    }
+                    else if (row.IsChecked != true && has)
+                    {
+                        current.Remove(optionId);
+                    }
+                    else
+                    {
+                        return; // no change
+                    }
+                    StoreTalentDomainIds(rowDomain, current);
+                };
+                panel.Children.Add(row);
+                rendered++;
+            }
+            if (rendered == 0)
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Classes = { "shell-caption" },
+                    TextWrapping = TextWrapping.Wrap,
+                    Text = "The rules authority has not published catalog options for this talent domain yet; the draft keeps its saved selections.",
+                });
+            }
         }
     }
 

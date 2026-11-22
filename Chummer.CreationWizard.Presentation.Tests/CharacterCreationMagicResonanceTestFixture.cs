@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Xml.Linq;
 using Chummer.Application.Characters;
 using Chummer.Contracts.Characters;
@@ -511,10 +513,20 @@ internal sealed class StubMagicResonanceService : ICharacterCreationMagicResonan
     internal bool LastConfirmExplicitlyConfirmed { get; private set; }
     internal int ConfirmCalls { get; private set; }
 
+    /// <summary>Test injection: the next Load throws (simulated read fault).</summary>
+    internal bool LoadThrows { get; set; }
+    /// <summary>
+    /// Test injection: Confirm commits first, then throws - the genuine lost-response
+    /// shape where the caller cannot know whether the operation landed.
+    /// </summary>
+    internal bool LoseResponse { get; set; }
+
     public CharacterCreationFoundationResult<CharacterCreationMagicResonanceState> Load(
         CharacterCreationMagicResonanceLoadRequest request)
     {
         LoadCalls++;
+        if (LoadThrows)
+            throw new IOException("injected load fault");
         return request.WorkspaceId == _state.Binding.WorkspaceId
             ? new(CharacterCreationFoundationOutcomes.Success, _state, _state.Blockers)
             : new(CharacterCreationFoundationOutcomes.Missing, null,
@@ -564,6 +576,8 @@ internal sealed class StubMagicResonanceService : ICharacterCreationMagicResonan
             preview,
             request.IdempotencyKey);
         _idempotencyKey = request.IdempotencyKey;
+        if (LoseResponse)
+            throw new IOException("injected lost response: commit landed, response lost");
         return new(CharacterCreationFoundationOutcomes.Success, _receipt, []);
     }
 }

@@ -93,6 +93,17 @@ namespace Chummer.Avalonia.Creation
 
             CharacterCreationMagicResonanceSelections saved = _editor.Selections;
 
+            // Seed the interactive collections BEFORE the rows are built so a reopen
+            // renders the character's actual state: spell/complex-form checkboxes read
+            // the selection sets at construction and adept-power rows TryAdd against
+            // these levels.
+            foreach (CharacterCreationAdeptPowerAllocation allocation in saved.AdeptPowers)
+                _powerLevels[allocation.Identity.SourceId] = allocation.Levels;
+            foreach (CharacterCreationMagicResonanceOptionIdentity spell in saved.Spells)
+                _spellIds.Add(spell.SourceId);
+            foreach (CharacterCreationMagicResonanceOptionIdentity form in saved.ComplexForms)
+                _formIds.Add(form.SourceId);
+
             panel.Children.Add(SectionHeader("Talent"));
             panel.Children.Add(Caption(string.Format(
                 CultureInfo.InvariantCulture,
@@ -191,15 +202,6 @@ namespace Chummer.Avalonia.Creation
             AutomationProperties.SetAutomationId(cancelButton, CancelButtonAutomationId);
             cancelButton.Click += (_, _) => Close();
             panel.Children.Add(cancelButton);
-
-            // Seed the interactive collections from the projected current selections so
-            // a reopen shows the character's actual state rather than a blank editor.
-            foreach (CharacterCreationAdeptPowerAllocation allocation in saved.AdeptPowers)
-                _powerLevels[allocation.Identity.SourceId] = allocation.Levels;
-            foreach (CharacterCreationMagicResonanceOptionIdentity spell in saved.Spells)
-                _spellIds.Add(spell.SourceId);
-            foreach (CharacterCreationMagicResonanceOptionIdentity form in saved.ComplexForms)
-                _formIds.Add(form.SourceId);
 
             SetStatus(string.Empty);
             Reprepare();
@@ -325,6 +327,8 @@ namespace Chummer.Avalonia.Creation
             AutomationProperties.SetAutomationId(check, prefix + option.Identity.SourceId);
             check.IsCheckedChanged += (_, _) =>
             {
+                if (_reconciling)
+                    return;
                 if (InvalidateIfContextChanged())
                     return;
                 if (check.IsChecked == true)
@@ -357,11 +361,36 @@ namespace Chummer.Avalonia.Creation
             Reprepare();
         }
 
+        private bool _reconciling;
+
+        /// <summary>
+        /// Synchronizes spell/complex-form checkbox states to the current selection sets
+        /// under event suppression so re-prepare never re-enters the change handlers.
+        /// </summary>
+        private void ReconcileCheckStates()
+        {
+            if (_reconciling)
+                return;
+            _reconciling = true;
+            try
+            {
+                foreach (KeyValuePair<string, (CheckBox Check, TextBlock Cost)> entry in _spellChecks)
+                    entry.Value.Check.IsChecked = _spellIds.Contains(entry.Key);
+                foreach (KeyValuePair<string, (CheckBox Check, TextBlock Cost)> entry in _formChecks)
+                    entry.Value.Check.IsChecked = _formIds.Contains(entry.Key);
+            }
+            finally
+            {
+                _reconciling = false;
+            }
+        }
+
         /// <summary>Previews the current selection through Core and refreshes the summary.</summary>
         private void Reprepare()
         {
             if (InvalidateIfContextChanged())
                 return;
+            ReconcileCheckStates();
             foreach (KeyValuePair<string, TextBlock> entry in _powerValues)
                 entry.Value.Text = _powerLevels[entry.Key].ToString(CultureInfo.InvariantCulture);
 

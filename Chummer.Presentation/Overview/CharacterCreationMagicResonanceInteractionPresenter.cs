@@ -119,10 +119,24 @@ public sealed class CharacterCreationMagicResonanceInteractionPresenter
                 "Confirm the reviewed choices before submitting them.");
 
         // Chain-B pre-read: confirm only against the binding and snapshot Core reports now.
-        if (!TryLoadState(overview, out CharacterCreationMagicResonanceInteractionState? fresh, out string? error))
+        // The pre-read sits inside its own exception boundary: a throwing read is a
+        // recoverable PRE-dispatch failure — nothing was sent to Core, the one-dispatch
+        // fence stays open, and the editor remains usable after a reopen.
+        CharacterCreationMagicResonanceInteractionState? fresh;
+        string? error;
+        try
+        {
+            if (!TryLoadState(overview, out fresh, out error))
+                return CharacterCreationMagicResonanceInteractionConfirmResult.Fail(
+                    "creation-magic-confirm-preread-outcome-uncertain",
+                    error ?? "Magic/Resonance changed after review. Reopen the editor before confirming.");
+        }
+        catch (Exception prereadError) when (prereadError is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
             return CharacterCreationMagicResonanceInteractionConfirmResult.Fail(
                 "creation-magic-confirm-preread-outcome-uncertain",
-                error ?? "Magic/Resonance changed after review. Reopen the editor before confirming.");
+                "Magic/Resonance could not be re-read before confirming. Your saved choices have not changed; reopen the editor and try again.");
+        }
         if (fresh.State.Binding != prepared.State.State.Binding
             || !string.Equals(
                 fresh.State.SnapshotDigest,

@@ -159,6 +159,79 @@ public sealed class CharacterCreationMagicResonanceInteractionPresenterTests
     }
 
     [TestMethod]
+    public void Confirm_with_throwing_preread_fails_recoverably_and_never_dispatches()
+    {
+        TestContext context = CreateTest();
+        context.Presenter.Load(context.Overview);
+        CharacterCreationMagicResonanceInteractionPreparedPreview preview = RequirePrepared(
+            context.Presenter.Prepare(
+                context.Overview,
+                CharacterCreationMagicResonanceTestFixture.CompleteSelections,
+                mysticAdeptPowerPoints: 0));
+
+        // Inject a read fault so the Chain-B pre-read cannot complete. Nothing has
+        // been dispatched yet: the outcome must be recoverable, the one-dispatch
+        // fence stays open, and Core's Confirm is never reached.
+        context.Service.Shared.LoadThrows = true;
+        CharacterCreationMagicResonanceInteractionConfirmResult result =
+            context.Presenter.Confirm(context.Overview, preview, explicitlyConfirmed: true);
+
+        Assert.AreEqual("creation-magic-confirm-preread-outcome-uncertain", result.Outcome, result.Error);
+        Assert.IsNull(result.Receipt);
+        Assert.AreEqual(0, context.Service.ConfirmCalls,
+            "a pre-dispatch read fault must never reach Core's Confirm");
+
+        // Recoverable: with the fault cleared, the SAME presenter can still confirm
+        // through the ordinary path (the fence was never latched).
+        context.Service.Shared.LoadThrows = false;
+        CharacterCreationMagicResonanceInteractionConfirmResult recovered =
+            context.Presenter.Confirm(context.Overview, preview, explicitlyConfirmed: true);
+        Assert.AreEqual("ok", recovered.Outcome, recovered.Error);
+    }
+
+    [TestMethod]
+    public void Confirm_after_lost_response_latches_fence_and_reconciles_by_read()
+    {
+        TestContext context = CreateTest();
+        context.Presenter.Load(context.Overview);
+        CharacterCreationMagicResonanceInteractionPreparedPreview prepared = RequirePrepared(
+            context.Presenter.Prepare(
+                context.Overview,
+                CharacterCreationMagicResonanceTestFixture.CompleteSelections,
+                mysticAdeptPowerPoints: 0));
+
+        // Genuine lost response: the stub commits the confirmation, THEN throws, so
+        // the caller cannot know whether the operation landed.
+        context.Service.Shared.LoseResponse = true;
+        CharacterCreationMagicResonanceInteractionConfirmResult first =
+            context.Presenter.Confirm(context.Overview, prepared, explicitlyConfirmed: true);
+        Assert.AreEqual("creation-magic-confirm-outcome-uncertain", first.Outcome, first.Error);
+        Assert.IsNull(first.Receipt);
+
+        // The fence must stay latched: no automatic retry through this presenter.
+        context.Service.Shared.LoseResponse = false;
+        CharacterCreationMagicResonanceInteractionConfirmResult retry =
+            context.Presenter.Confirm(context.Overview, prepared, explicitlyConfirmed: true);
+        Assert.AreEqual("creation-magic-confirmation-already-dispatched", retry.Outcome);
+        Assert.AreEqual(1, context.Service.ConfirmCalls,
+            "a lost response must never trigger an automatic resubmit");
+
+        // Reconciliation is by READ, not resubmit: the overview is refreshed from
+        // the store's post-commit revision (the confirm advanced ContentRevision),
+        // and a fresh presenter then sees the committed state by ordinary read.
+        CharacterOverviewState refreshed = CreateOverview(context.Service);
+        CharacterCreationMagicResonanceInteractionLoadResult fresh =
+            new CharacterCreationMagicResonanceInteractionPresenter(context.Service).Load(refreshed);
+        Assert.AreEqual("ok", fresh.Outcome, fresh.Error);
+        Assert.IsNotNull(fresh.State);
+        Assert.IsTrue(fresh.State!.State.PendingDraft is not null,
+            "the lost confirm's committed state must be visible to a fresh read");
+        // NOTE: CanEdit legitimately stays true on a plain re-read (the fixture
+        // carries no blockers); the edit-refusal after a committed draft is
+        // enforced by Core at Prepare time (DraftDuplicate), not at Load time.
+    }
+
+    [TestMethod]
     public void Changed_context_refuses_prepare_and_confirm()
     {
         TestContext context = CreateTest();
