@@ -7527,7 +7527,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         internal sealed record MagicReopenPowerPayload
         {
             public string Id { get; init; } = string.Empty;
-            public int Rating { get; init; } = 1;
+            public int Rating { get; init; } = 1; // write sites always set this explicitly; the parser refuses defaults
         }
 
         internal sealed record MagicSelectionExpectations(
@@ -7737,11 +7737,26 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 foreach (JsonElement item in powersElement.EnumerateArray())
                 {
                     string? id = item.TryGetProperty("id", out JsonElement idElement) ? idElement.GetString() : null;
-                    int rating = item.TryGetProperty("rating", out JsonElement ratingElement)
-                        && ratingElement.ValueKind == JsonValueKind.Number
-                        ? ratingElement.GetInt32() : 1;
-                    if (!string.IsNullOrWhiteSpace(id))
-                        powers.Add((id.Trim(), rating));
+                    // Strict-rating fail-closed (Controller9648): a sidecar that
+                    // omits the rating or carries a non-number / non-positive
+                    // rating is a malformed harness handoff, not a rating-1
+                    // power. Refuse the whole sidecar instead of coercing a
+                    // fabricated default past the reopen verification.
+                    if (id is null || string.IsNullOrWhiteSpace(id))
+                    {
+                        throw new InvalidOperationException(
+                            "magic-reopen sidecar carries a power entry without an id: " + path);
+                    }
+                    if (!item.TryGetProperty("rating", out JsonElement ratingElement)
+                        || ratingElement.ValueKind != JsonValueKind.Number
+                        || !ratingElement.TryGetInt32(out int rating)
+                        || rating < 1)
+                    {
+                        throw new InvalidOperationException(
+                            "magic-reopen sidecar carries a power entry for '" + id.Trim()
+                            + "' without a positive integer rating: " + path);
+                    }
+                    powers.Add((id.Trim(), rating));
                 }
             }
             if (spells.Count == 0 && powers.Count == 0)

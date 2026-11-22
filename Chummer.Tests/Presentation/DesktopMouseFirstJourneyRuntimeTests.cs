@@ -2,6 +2,7 @@ using Chummer.Desktop.Runtime;
 using Chummer.Avalonia;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Chummer.Tests.Presentation;
@@ -383,6 +384,76 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
         private void Track(string key)
         {
             _originalValues[key] = Environment.GetEnvironmentVariable(key);
+        }
+    }
+
+    [TestClass]
+    public sealed class MagicReopenSidecarParsingTests
+    {
+        private static string WriteSidecar(string json)
+        {
+            string path = Path.Combine(Path.GetTempPath(), "t888-sidecar-" + Guid.NewGuid().ToString("N") + ".json");
+            File.WriteAllText(path, json);
+            return path;
+        }
+
+        [TestMethod]
+        public void Parse_accepts_an_explicit_positive_integer_rating()
+        {
+            string path = WriteSidecar("""{"spells":[],"powers":[{"id":"sr6-power-test-a","rating":3}]}""");
+            var expectations = DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path);
+            Assert.HasCount(1, expectations.PowerExpectations);
+            Assert.AreEqual(("sr6-power-test-a", 3), expectations.PowerExpectations[0]);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_a_power_entry_without_a_rating()
+        {
+            string path = WriteSidecar("""{"spells":[],"powers":[{"id":"sr6-power-test-a"}]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("without a positive integer rating"),
+                "the refusal names the missing-rating contract, not a coercion: " + failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_a_non_number_rating()
+        {
+            string path = WriteSidecar("""{"spells":[],"powers":[{"id":"sr6-power-test-a","rating":"two"}]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("without a positive integer rating"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_a_zero_and_negative_rating()
+        {
+            foreach (string rating in new[] { "0", "-2" })
+            {
+                string path = WriteSidecar("{\"spells\":[],\"powers\":[{\"id\":\"sr6-power-test-a\",\"rating\":" + rating + "}]}");
+                var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                    () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+                Assert.IsTrue(failure.Message.Contains("without a positive integer rating"), failure.Message);
+            }
+        }
+
+        [TestMethod]
+        public void Parse_refuses_a_power_entry_without_an_id()
+        {
+            string path = WriteSidecar("""{"spells":[],"powers":[{"rating":2}]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("without an id"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_still_accepts_the_historical_spell_only_shape()
+        {
+            string path = WriteSidecar("""{"spells":["sr6-spell-test-a"],"powers":[]}""");
+            var expectations = DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path);
+            Assert.HasCount(1, expectations.SpellIds);
+            Assert.AreEqual("sr6-spell-test-a", expectations.SpellIds[0]);
+            Assert.HasCount(0, expectations.PowerExpectations);
         }
     }
 }
