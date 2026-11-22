@@ -496,6 +496,38 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
         }
 
         [TestMethod]
+        public void Parse_refuses_a_duplicate_id_property_in_a_power_entry()
+        {
+            // Controller9836: TryGetProperty is last-wins, so {"id":"a","id":"b"}
+            // would otherwise read as "b" with no duplicate signal at all.
+            string path = WriteSidecar(
+                """{"spells":[],"powers":[{"id":"sr6-power-a","id":"sr6-power-b","rating":2}]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("duplicate JSON property name"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_a_duplicate_rating_property_in_a_power_entry()
+        {
+            string path = WriteSidecar(
+                """{"spells":[],"powers":[{"id":"sr6-power-a","rating":1,"rating":2}]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("duplicate JSON property name"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_duplicate_container_properties_at_the_root()
+        {
+            string path = WriteSidecar(
+                """{"spells":["sr6-spell-a"],"spells":["sr6-spell-b"]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("duplicate JSON property name"), failure.Message);
+        }
+
+        [TestMethod]
         public void Parse_carries_spell_power_and_tradition_together()
         {
             string path = WriteSidecar(

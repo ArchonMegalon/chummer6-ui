@@ -7878,9 +7878,47 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         /// first-process magic-editor legs. Format: {"spells":[id,...],
         /// "powers":[{"id":...,"rating":n},...]}.
         /// </summary>
+        private static void EnsureNoDuplicateJsonProperties(string json, string path)
+        {
+            // Controller9836: TryGetProperty is last-wins, so a sidecar that
+            // repeats a property name (id/rating inside a power entry, or a
+            // container at the root) silently hides its earlier value. Reject
+            // any object carrying a repeated property name before parse.
+            byte[] utf8 = File.ReadAllBytes(path);
+            int bom = utf8.Length >= 3 && utf8[0] == 0xEF && utf8[1] == 0xBB && utf8[2] == 0xBF ? 3 : 0;
+            Utf8JsonReader reader = new(utf8.AsSpan(bom), new JsonReaderOptions
+            {
+                CommentHandling = JsonCommentHandling.Disallow,
+                AllowTrailingCommas = false
+            });
+            List<HashSet<string>> objectScopes = new();
+            while (reader.Read())
+            {
+                switch (reader.TokenType)
+                {
+                    case JsonTokenType.StartObject:
+                        objectScopes.Add(new HashSet<string>(StringComparer.Ordinal));
+                        break;
+                    case JsonTokenType.EndObject:
+                        objectScopes.RemoveAt(objectScopes.Count - 1);
+                        break;
+                    case JsonTokenType.PropertyName:
+                        string propertyName = reader.GetString() ?? string.Empty;
+                        if (!objectScopes[^1].Add(propertyName))
+                        {
+                            throw new InvalidOperationException(
+                                "magic-reopen sidecar carries duplicate JSON property name '"
+                                + propertyName + "': " + path);
+                        }
+                        break;
+                }
+            }
+        }
         internal static MagicSelectionExpectations ParseMagicReopenSidecar(string path)
         {
-            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
+            string json = File.ReadAllText(path);
+            EnsureNoDuplicateJsonProperties(json, path);
+            using JsonDocument doc = JsonDocument.Parse(json);
             JsonElement rootElement = doc.RootElement;
             List<string> spells = new();
             List<(string, int)> powers = new();
