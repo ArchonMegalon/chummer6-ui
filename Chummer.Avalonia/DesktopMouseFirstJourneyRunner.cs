@@ -583,7 +583,7 @@ internal static class DesktopMouseFirstJourneyRunner
                         ActiveDialogId: null,
                         VerificationNotes:
                         [
-                            "WIN-009 gen17 magic-editor leg: the changed creation magic/resonance editor routes were driven on native bytes - the SR5 route opened the real CreationMagicResonanceWindow from the wizard magic step, chose a tradition, ticked spells, and confirmed through the Core-bound presenter; the SR6 route verified the mystic-adept confirm step renders BOTH talent domains (spells + adept powers) and picked a spell and a power. The character was finalized and saved for the fresh-process reopen verification."
+                            "WIN-009 gen18b magic-editor leg: the changed-editor routes were driven on native bytes - the SR6 route drove the mystic-adept wizard, picked a spell AND an adept power from the dual talent domains, picked a magical tradition through the new radios, confirmed, finalized and saved; the fresh-process reopen verified spell + rated power + tradition against the retained document. The SR5 route opened the real CreationMagicResonanceWindow from the wizard magic step, chose a tradition, ticked spells, and confirmed through the Core-bound presenter."
                         ],
                         UserJourneyWorkflows: userJourneyWorkflows));
                 Environment.ExitCode = 0;
@@ -976,6 +976,25 @@ internal static class DesktopMouseFirstJourneyRunner
                     {
                         RecordStep(steps, "reopen magic powers verified: "
                             + string.Join("; ", reopenedMagic.PowerRatings.Select(pr => pr.Id + "=r" + pr.Rating)));
+                    // Controller9775/T888: the tradition expectation is verified
+                    // document-backed like spells and powers. A decided tradition must
+                    // survive the cold process boundary with the exact saved slug.
+                    if (magicExpectations.TraditionId.Length > 0)
+                    {
+                        if (reopenedMagic.TraditionId.Length == 0)
+                        {
+                            throw new InvalidOperationException(
+                                "reopen magic-selection check: the saved tradition '" + magicExpectations.TraditionId
+                                + "' is absent from the retained document");
+                        }
+                        if (!string.Equals(reopenedMagic.TraditionId, magicExpectations.TraditionId, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                "reopen magic-selection check: retained tradition '" + reopenedMagic.TraditionId
+                                + "' does not match the saved tradition '" + magicExpectations.TraditionId + "'");
+                        }
+                        RecordStep(steps, "reopen magic tradition verified: " + reopenedMagic.TraditionId);
+                    }
                     }
                 }
                 // WIN-009 gen2 (T748): Sum-to-Ten plans run the same
@@ -6879,6 +6898,87 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             MagicFailAsyncDelegate fail)
         {
             Dictionary<string, bool> assertions = new(StringComparer.Ordinal);
+            // T888/Controller9775: pointer-delivery pick helpers for the
+            // mystic-adept dual-domain confirm step. Every press uses the proven
+            // RoutePointerClickAsync discipline and verifies the observed effect
+            // on the same control; an unobserved change is a failed pick.
+            async Task<string> PickFirstDomainCheckboxAsync(
+                List<string> steps,
+                Action recordPointerAction,
+                string domainLabel,
+                IReadOnlyList<string> excludeIds)
+            {
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    List<CheckBox> candidates = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<CheckBox>()
+                        .Where(c => AutomationProperties.GetAutomationId(c) is { Length: > 0 } domainId
+                            && domainId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
+                        .ToList());
+                    foreach (CheckBox candidate in candidates)
+                    {
+                        bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
+                            candidate.IsVisible && candidate.IsEnabled && candidate.IsChecked != true);
+                        if (!targetable)
+                            continue;
+                        string cid = await Dispatcher.UIThread.InvokeAsync(
+                            () => AutomationProperties.GetAutomationId(candidate) ?? string.Empty);
+                        string optionId = cid.StartsWith("sr6-talent-domain-", StringComparison.Ordinal)
+                            ? cid["sr6-talent-domain-".Length..]
+                            : string.Empty;
+                        if (optionId.Length == 0 || excludeIds.Contains(optionId, StringComparer.Ordinal))
+                        {
+                            continue; // not a pickable candidate for this pass
+                        }
+                        string tickDiagnostics = await RoutePointerClickAsync(candidate, waitForClick: true);
+                        bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => candidate.IsChecked == true);
+                        RecordStep(steps, "sr6 magic leg: " + domainLabel + " pick; checked=" + nowChecked + "; " + tickDiagnostics);
+                        if (nowChecked)
+                        {
+                            recordPointerAction();
+                            return optionId;
+                        }
+                    }
+                }
+                return string.Empty;
+            }
+
+            async Task<string> PickFirstTraditionRadioAsync(
+                List<string> steps,
+                Action recordPointerAction)
+            {
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    List<RadioButton> candidates = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<RadioButton>()
+                        .Where(r => AutomationProperties.GetAutomationId(r) is { Length: > 0 } radioId
+                            && radioId.StartsWith("sr6-tradition-", StringComparison.Ordinal))
+                        .ToList());
+                    foreach (RadioButton candidate in candidates)
+                    {
+                        bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
+                            candidate.IsVisible && candidate.IsEnabled && candidate.IsChecked != true);
+                        if (!targetable)
+                            continue;
+                        string rid = await Dispatcher.UIThread.InvokeAsync(
+                            () => AutomationProperties.GetAutomationId(candidate) ?? string.Empty);
+                        string optionId = rid.StartsWith("sr6-tradition-", StringComparison.Ordinal)
+                            ? rid["sr6-tradition-".Length..]
+                            : string.Empty;
+                        if (optionId.Length == 0)
+                            continue;
+                        string tickDiagnostics = await RoutePointerClickAsync(candidate, waitForClick: true);
+                        bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => candidate.IsChecked == true);
+                        RecordStep(steps, "sr6 magic leg: tradition pick; checked=" + nowChecked + "; " + tickDiagnostics);
+                        if (nowChecked)
+                        {
+                            recordPointerAction();
+                            return optionId;
+                        }
+                    }
+                }
+                return string.Empty;
+            }
             // WIN-009 gen18: SR6 route rewritten per Controller9637: the method
             // step's priority ranks are assigned through the proven drive's combo
             // discipline before any footer press, the foundation lists are driven
@@ -7006,14 +7106,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             string metatypeId = lists[0].Items.OfType<string>()
                 .FirstOrDefault(item => string.Equals(item, MetatypeIdForHeritageRankA, StringComparison.Ordinal))
                 ?? throw new InvalidOperationException("sr6 magic leg: no dwarf metatype candidate in the foundation list: " + string.Join(", ", lists[0].Items.OfType<string>()));
-            // WIN-009 gen18 (T888): adept is the only SR6 talent whose
-            // finalize review can succeed in this Core pin (the magical-tradition
-            // incomplete domain is unconditional for magician/mystic-adept and the
-            // SR6 wizard has no tradition editor), so the leg drives adept.
+            // WIN-009 gen18b (T888): mystic-adept is the real dual-domain SR6
+            // talent (spells AND adept powers; magician's power domain renders an
+            // honest empty note). The leg drives mystic-adept so the confirm step
+            // renders both domains plus the tradition editor added this wave; the
+            // sidecar gains a tradition expectation and the fresh-process reopen
+            // verifies spell + rated power + tradition against the saved document.
             string talentId = lists[1].Items.OfType<string>()
-                .FirstOrDefault(item => item.Contains("adept", StringComparison.OrdinalIgnoreCase)
-                    && !item.Contains("mystic", StringComparison.OrdinalIgnoreCase))
-                ?? throw new InvalidOperationException("sr6 magic leg: no adept candidate in the talent list: " + string.Join(", ", lists[1].Items.OfType<string>()));
+                .FirstOrDefault(item => item.Contains("mystic-adept", StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException("sr6 magic leg: no mystic-adept candidate in the talent list: " + string.Join(", ", lists[1].Items.OfType<string>()));
             bool foundationStuck = await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 lists[0].SelectedItem = metatypeId;
@@ -7025,12 +7126,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             if (!foundationStuck)
             {
                 return await fail(
-                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_adept_selected"] = false },
-                    "Failed: the adept foundation selection did not stick.",
-                    "06m-sr6-adept-not-selected");
+                new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_mystic_adept_selected"] = false },
+                    "Failed: the mystic-adept foundation selection did not stick.",
+                    "06m-sr6-mystic-adept-not-selected");
             }
-            assertions["sr6_adept_selected"] = true;
-            RecordStep(steps, "sr6 magic leg: foundation metatype '" + metatypeId + "' + talent '" + talentId + "' selected by id (adept route; pass-1 zero-spend confirm seeds the domain catalog)");
+            assertions["sr6_mystic_adept_selected"] = true;
+            RecordStep(steps, "sr6 magic leg: foundation metatype '" + metatypeId + "' + talent '" + talentId + "' selected by id (mystic-adept route; pass-1 zero-spend confirm seeds the domain catalogs)");
             await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
 
             // Step 3 (attributes): the attribute step publishes after the foundation
@@ -7261,55 +7362,45 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             assertions["sr6_pass2_confirm_step_rendered"] = true;
             RecordStep(steps, "sr6 magic leg: pass-2 confirm step rendered");
 
-            // WIN-009 gen18 adept route: the adept talent renders a single
-            // power domain (no spell domain, no section headers). Pick exactly
-            // ONE power through pointer delivery - the changed-editor pick
-            // invalidates the held preview (StoreTalentDomainIds), so the leg
-            // re-prepares afterwards instead of dispatching a dead digest.
-            bool powerPicked = false;
-            string pickedSpellId = string.Empty;
-            string pickedPowerId = string.Empty;
-            for (int pass = 0; pass < 4 && !powerPicked; pass++)
+            // WIN-009 gen18b (T888): the mystic-adept talent renders BOTH talent
+            // domains (spells AND adept powers) plus the tradition editor. Pick one
+            // spell, one power, and one tradition through pointer delivery; each
+            // pick invalidates the held preview (StoreTalentDomainIds), so the leg
+            // re-prepares afterwards instead of dispatching a dead digest. Picks
+            // compose within one rendering: StoreTalentDomainIds rewrites only its
+            // own domain slice of the saved selection.
+            string pickedSpellId = await PickFirstDomainCheckboxAsync(
+                steps, recordPointerAction, "spell", excludeIds: []);
+            assertions["sr6_spell_picked"] = pickedSpellId.Length > 0;
+            RecordStep(steps, "sr6 magic leg: spell picked='" + pickedSpellId + "'");
+            if (pickedSpellId.Length == 0)
             {
-                List<CheckBox> domainChecks = await Dispatcher.UIThread.InvokeAsync(() =>
-                    Active().GetVisualDescendants().OfType<CheckBox>()
-                    .Where(c => AutomationProperties.GetAutomationId(c) is { Length: > 0 } domainId
-                        && domainId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
-                    .ToList());
-                if (domainChecks.Count == 0)
-                    continue;
-                foreach (CheckBox check in domainChecks)
-                {
-                    bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
-                        check.IsVisible && check.IsEnabled && check.IsChecked != true);
-                    if (!targetable)
-                        continue;
-                    string pickedAutomationId = await Dispatcher.UIThread.InvokeAsync(
-                        () => AutomationProperties.GetAutomationId(check) ?? string.Empty);
-                    string tickDiagnostics = await RoutePointerClickAsync(check, waitForClick: true);
-                    bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => check.IsChecked == true);
-                    RecordStep(steps, "sr6 magic leg: adept power pick; checked=" + nowChecked + "; " + tickDiagnostics);
-                    if (nowChecked)
-                    {
-                        powerPicked = true;
-                        if (pickedAutomationId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal))
-                            pickedPowerId = pickedAutomationId["sr6-talent-domain-".Length..];
-                        break;
-                    }
-                }
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_spell_picked"] = false },
+                    "Failed: the spell pick did not land via pointer delivery.",
+                    "06m-sr6-spell-pick-missing");
             }
-
-            assertions["sr6_power_picked"] = powerPicked;
-            RecordStep(steps, "sr6 magic leg: adept power picked=" + powerPicked
-                + " (id '" + pickedPowerId + "')");
-            if (!powerPicked)
+            string pickedPowerId = await PickFirstDomainCheckboxAsync(
+                steps, recordPointerAction, "power", excludeIds: [pickedSpellId]);
+            assertions["sr6_power_picked"] = pickedPowerId.Length > 0;
+            RecordStep(steps, "sr6 magic leg: adept power picked='" + pickedPowerId + "'");
+            if (pickedPowerId.Length == 0)
             {
                 return await fail(
                     new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_power_picked"] = false },
                     "Failed: the adept power pick did not land via pointer delivery.",
                     "06m-sr6-power-pick-missing");
             }
-
+            string pickedTraditionId = await PickFirstTraditionRadioAsync(steps, recordPointerAction);
+            assertions["sr6_tradition_picked"] = pickedTraditionId.Length > 0;
+            RecordStep(steps, "sr6 magic leg: tradition picked='" + pickedTraditionId + "'");
+            if (pickedTraditionId.Length == 0)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_tradition_picked"] = false },
+                    "Failed: the tradition pick did not land via pointer delivery.",
+                    "06m-sr6-tradition-pick-missing");
+            }
             // The pick invalidated the held preview (StoreTalentDomainIds nulls
             // _preparedPreview and the confirm digest). Dispatching the dead
             // digest would silently no-op in FinishButton_Click, so drive the
@@ -7485,7 +7576,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             string magicSidecarPath = Environment.GetEnvironmentVariable(
                 DesktopMouseFirstJourneyRuntime.MagicReopenSidecarEnvironmentVariable) ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(magicSidecarPath)
-                && (pickedSpellId.Length > 0 || pickedPowerId.Length > 0))
+                && (pickedSpellId.Length > 0 || pickedPowerId.Length > 0 || pickedTraditionId.Length > 0))
             {
                 var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
                 string sidecarJson = System.Text.Json.JsonSerializer.Serialize(
@@ -7493,13 +7584,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     {
                         Spells = pickedSpellId.Length > 0 ? [pickedSpellId] : [],
                         Powers = pickedPowerId.Length > 0 ? [new MagicReopenPowerPayload { Id = pickedPowerId, Rating = 1 }] : [],
+                        Tradition = pickedTraditionId.Length > 0 ? pickedTraditionId : string.Empty,
                     }, jsonOptions);
                 string sidecarDir = Path.GetDirectoryName(magicSidecarPath) ?? string.Empty;
                 if (!string.IsNullOrEmpty(sidecarDir))
                     Directory.CreateDirectory(sidecarDir);
                 File.WriteAllText(magicSidecarPath, sidecarJson);
                 RecordStep(steps, "sr6 magic leg: magic-reopen sidecar written with spell '"
-                    + pickedSpellId + "' + power '" + pickedPowerId + "' (rating 1)");
+                    + pickedPowerId + "' rating 1 + tradition '" + pickedTraditionId + "'");
             }
 
             return new DesktopUserJourneyWorkflowEvidence(
@@ -7508,7 +7600,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 Assertions: assertions,
                 InteractionNotes:
                 [
-                    "SR6 magic-editor leg (adept route): the method ranks were assigned through the proven combo discipline, the adept+rank-compatible-dwarf foundation committed a pass-1 zero-spend decision (the fresh-flow catalog is decision-gated, so pass-1 renders the honest no-options note), back-nav re-prepared the preview with the seeded catalog, one adept power was picked via pointer delivery, the pick invalidated the held preview, back-nav re-prepared again with the pick included, the fresh preview confirmed, finalize rendered, the loss ack ticked, the wizard closed and the workspace saved.",
+"SR6 magic-editor leg (mystic-adept route): the method ranks were assigned through the proven combo discipline, the mystic-adept+rank-compatible-dwarf foundation committed a pass-1 zero-spend decision (the fresh-flow catalog is decision-gated, so pass-1 renders the honest no-options note), back-nav re-prepared the preview with the seeded catalogs, one spell and one adept power were picked via pointer delivery from the dual domains, the tradition was picked through the new single-select radios, each pick invalidated the held preview, back-nav re-prepared again with all picks included, the fresh preview confirmed, finalize rendered, the loss ack ticked, the wizard closed and the workspace saved.",
                 ]);
         }
 
@@ -7516,12 +7608,14 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             bool Succeeded,
             List<string> SpellIds,
             List<(string Id, int Rating)> PowerRatings,
-            string Diagnostics);
+            string Diagnostics,
+            string TraditionId);
 
         internal sealed record MagicReopenSidecarPayload
         {
             public List<string> Spells { get; init; } = [];
             public List<MagicReopenPowerPayload> Powers { get; init; } = [];
+            public string Tradition { get; init; } = string.Empty;
         }
 
         internal sealed record MagicReopenPowerPayload
@@ -7532,7 +7626,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
         internal sealed record MagicSelectionExpectations(
             List<string> SpellIds,
-            List<(string Id, int Rating)> PowerExpectations);
+            List<(string Id, int Rating)> PowerExpectations,
+            string TraditionId);
 
         /// <summary>
         /// WIN-009 gen18 (Controller9637): reads the retained workspace
@@ -7601,26 +7696,22 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             ct.ThrowIfCancellationRequested();
             if (string.IsNullOrWhiteSpace(expectedWorkspaceId))
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: workspace identity is missing");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: workspace identity is missing", string.Empty);
             }
             CharacterWorkspaceId? workspaceId = activeWorkspace();
             if (workspaceId is null)
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: no active workspace in overview snapshot");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: no active workspace in overview snapshot", string.Empty);
             }
             if (!string.Equals(workspaceId.Value.Value, expectedWorkspaceId, StringComparison.Ordinal))
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: workspace binding mismatch: overview reports " + workspaceId.Value.Value
-                    + ", expected " + expectedWorkspaceId);
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: workspace binding mismatch: overview reports " + workspaceId.Value.Value
+                    + ", expected " + expectedWorkspaceId, string.Empty);
             }
             OwnerContextStamp owner = captureOwner();
             if (!owner.IsValid)
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: pre-await owner context is not valid");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: pre-await owner context is not valid", string.Empty);
             }
             CommandResult<WorkspaceDocumentSnapshot> read = await readWorkspace(owner, workspaceId.Value, ct);
             ct.ThrowIfCancellationRequested();
@@ -7630,28 +7721,24 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     workspaceId.Value.Value,
                     StringComparison.Ordinal))
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: workspace transitioned across the read await: pre=" + workspaceId.Value.Value
-                    + " post=" + (postAwaitWorkspace?.Value ?? "null"));
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: workspace transitioned across the read await: pre=" + workspaceId.Value.Value
+                    + " post=" + (postAwaitWorkspace?.Value ?? "null"), string.Empty);
             }
             OwnerContextStamp postAwaitOwner = captureOwner();
             if (postAwaitOwner != owner)
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: owner authority transitioned across the read await (revision "
-                    + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: owner authority transitioned across the read await (revision "
+                    + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")", string.Empty);
             }
             if (!read.Success || read.Outcome != WorkspaceOperationOutcome.Success
                 || read.Value?.Document is not { } document
                 || document.Format != WorkspaceDocumentFormat.NativeXml)
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: workspace read failed or document is not NativeXml");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: workspace read failed or document is not NativeXml", string.Empty);
             }
             if (!string.Equals(read.Value.Id.Value, expectedWorkspaceId, StringComparison.Ordinal))
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: workspace response does not match the expected workspace");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: workspace response does not match the expected workspace", string.Empty);
             }
             XElement? root;
             try
@@ -7660,18 +7747,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
             catch (System.Xml.XmlException parseFailure)
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: workspace payload is not parseable XML: " + parseFailure.Message);
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: workspace payload is not parseable XML: " + parseFailure.Message, string.Empty);
             }
             if (root is not { Name.LocalName: "character" })
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: workspace payload root is not <character>");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: workspace payload root is not <character>", string.Empty);
             }
             if (root.Elements("spells").Count() > 1 || root.Elements("powers").Count() > 1)
             {
-                return new MagicSelectionEvidence(false, new(), new(),
-                    "magic-selection read: duplicate spells or powers containers");
+                return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: duplicate spells or powers containers", string.Empty);
             }
             // WIN-009 gen18: real retained documents carry edition-native id
             // shapes - SR5 spells write <sourceid><guid> (the legacy chum5
@@ -7695,19 +7779,37 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 {
                     continue;
                 }
-                int rating = 1;
-                    if (power.Elements("rating").ToArray() is [var ratingElement]
-                        && !ratingElement.HasElements && !ratingElement.HasAttributes
-                        && int.TryParse(ratingElement.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedRating)
-                        && parsedRating > 0)
-                    {
-                        rating = parsedRating;
-                    }
-                powerRatings.Add((id, rating));
+                // Controller9775: ratings fail closed at the document reader too. A power
+                // row without a positive integer <rating> is corrupt data, not rating 1 -
+                // fabricating a default would let a corrupt document pass the reopen check.
+                if (power.Elements("rating").ToArray() is not [var ratingElement]
+                    || ratingElement.HasElements || ratingElement.HasAttributes
+                    || !int.TryParse(ratingElement.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedRating)
+                    || parsedRating < 1)
+                {
+                    return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: power '" + id + "' carries no positive integer <rating>; failing closed", string.Empty);
+                }
+                powerRatings.Add((id, parsedRating));
             }
-            return new MagicSelectionEvidence(true, spellIds, powerRatings,
-                "magic-selection read: spells=[" + string.Join(", ", spellIds)
-                + "]; powers=[" + string.Join("; ", powerRatings.Select(pr => pr.Id + "=r" + pr.Rating)) + "]");
+            // Controller9775/T888: tradition evidence. A single <traditions><tradition>
+            // container is the projector shape for a decided magical tradition; zero
+            // containers is legal for drafts with no decided tradition. More than one
+            // container is a corrupt document and fails closed.
+            string traditionId = string.Empty;
+            if (root.Elements("traditions").ToArray() is [var traditionsElement])
+            {
+                if (traditionsElement.Elements("tradition").ToArray() is [var traditionElement])
+                {
+                    traditionId = traditionElement.Elements("sourceid").FirstOrDefault(e => !e.HasElements && !e.HasAttributes)?.Value.Trim() ?? string.Empty;
+                    if (traditionId.Length == 0)
+                    {
+                        return new MagicSelectionEvidence(false, new(), new(), "magic-selection read: the <traditions> container carries no readable <tradition> <sourceid>; failing closed", string.Empty);
+                    }
+                }
+            }
+            return new MagicSelectionEvidence(true, spellIds, powerRatings, "magic-selection read: spells=[" + string.Join(", ", spellIds)
+                + "]; powers=[" + string.Join("; ", powerRatings.Select(pr => pr.Id + "=r" + pr.Rating))
+                + "]; tradition=" + (traditionId.Length == 0 ? "<none>" : traditionId), traditionId);
         }
 
         /// <summary>
@@ -7729,6 +7831,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     string? value = item.GetString();
                     if (!string.IsNullOrWhiteSpace(value))
                         spells.Add(value.Trim());
+                // Controller9775: ambiguous duplicate ids are a malformed handoff.
+                if (spells.GroupBy(v => v, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
+                {
+                    throw new InvalidOperationException(
+                        "magic-reopen sidecar carries duplicate spell ids: " + path);
+                }
                 }
 }
             if (rootElement.TryGetProperty("powers", out JsonElement powersElement)
@@ -7757,14 +7865,31 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             + "' without a positive integer rating: " + path);
                     }
                     powers.Add((id.Trim(), rating));
+                // Controller9775: ambiguous duplicate ids are a malformed handoff.
+                if (powers.GroupBy(pr => pr.Item1, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
+                {
+                    throw new InvalidOperationException(
+                        "magic-reopen sidecar carries duplicate power ids: " + path);
+                }
                 }
             }
-            if (spells.Count == 0 && powers.Count == 0)
+            string traditionId = string.Empty;
+            if (rootElement.TryGetProperty("tradition", out JsonElement traditionElement)
+                && traditionElement.ValueKind == JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(traditionElement.GetString()))
+            {
+                traditionId = traditionElement.GetString()!.Trim();
+            }
+            // Controller9775: a sidecar must carry at least one expectation (spell,
+            // power, or tradition). A tradition-only sidecar is a legal shape for a
+            // leg that picked only the tradition; refusing to parse an empty one
+            // keeps an empty handoff from masquerading as a verified reopen.
+            if (spells.Count == 0 && powers.Count == 0 && traditionId.Length == 0)
             {
                 throw new InvalidOperationException(
                     "magic-reopen sidecar carries no expectations: " + path);
             }
-            return new MagicSelectionExpectations(spells, powers);
+            return new MagicSelectionExpectations(spells, powers, traditionId);
         }
 
         private static IReadOnlyList<CreationMagicResonanceWindow> VisibleCreationMagicResonanceWindows()

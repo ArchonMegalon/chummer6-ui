@@ -455,5 +455,56 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
             Assert.AreEqual("sr6-spell-test-a", expectations.SpellIds[0]);
             Assert.HasCount(0, expectations.PowerExpectations);
         }
+
+
+        [TestMethod]
+        public void Parse_accepts_a_tradition_only_sidecar_and_carries_the_slug()
+        {
+            string path = WriteSidecar("""{"spells":[],"powers":[],"tradition":"shinto"}""");
+            var expectations = DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path);
+            Assert.HasCount(0, expectations.SpellIds);
+            Assert.HasCount(0, expectations.PowerExpectations);
+            Assert.AreEqual("shinto", expectations.TraditionId);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_an_empty_sidecar_with_no_expectations()
+        {
+            string path = WriteSidecar("""{"spells":[],"powers":[],"tradition":""}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("carries no expectations"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_duplicate_spell_ids()
+        {
+            string path = WriteSidecar("""{"spells":["sr6-spell-a","sr6-spell-a"],"powers":[]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("duplicate spell ids"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_refuses_duplicate_power_ids()
+        {
+            string path = WriteSidecar(
+                """{"spells":[],"powers":[{"id":"sr6-power-a","rating":1},{"id":"SR6-POWER-A","rating":2}]}""");
+            var failure = Assert.ThrowsExactly<InvalidOperationException>(
+                () => DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path));
+            Assert.IsTrue(failure.Message.Contains("duplicate power ids"), failure.Message);
+        }
+
+        [TestMethod]
+        public void Parse_carries_spell_power_and_tradition_together()
+        {
+            string path = WriteSidecar(
+                """{"spells":["sr6-spell-a"],"powers":[{"id":"sr6-power-a","rating":2}],"tradition":"qabala"}""");
+            var expectations = DesktopMouseFirstJourneyRunner.ParseMagicReopenSidecar(path);
+            Assert.HasCount(1, expectations.SpellIds);
+            Assert.HasCount(1, expectations.PowerExpectations);
+            Assert.AreEqual(("sr6-power-a", 2), expectations.PowerExpectations[0]);
+            Assert.AreEqual("qabala", expectations.TraditionId);
+        }
     }
 }
