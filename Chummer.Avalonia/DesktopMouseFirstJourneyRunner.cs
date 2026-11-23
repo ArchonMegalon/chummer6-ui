@@ -6099,6 +6099,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // DPI fact: the dialog window itself reports its render scaling.
             decimal dialogRenderScaling = await Dispatcher.UIThread.InvokeAsync(() => (decimal)kbDialog.RenderScaling);
             RecordStep(steps, $"keyboard matrix: dialog renderScaling={dialogRenderScaling.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+            bool kbHadInitiatingFocus = kbDialog.HadInitiatingOwnerFocus;
+            RecordStep(steps, $"keyboard matrix: initiating owner focus at open = {kbHadInitiatingFocus}");
 
             // ---- Phase 2: Tab walk with delivered-input + focus-move proof
             string walkTrace = await Dispatcher.UIThread.InvokeAsync(() =>
@@ -6170,9 +6172,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     // Controller9415 discipline: focus counts as restored only
                     // when it lands back in the OWNER window's visual chain -
                     // dialog-internal content must not satisfy the assertion.
+                    // Tiered Controller9415 discipline. When the owner held
+                    // a focused control at dialog open, focus must land back
+                    // in that owner window's visual chain. When the shell had
+                    // no focus at all (menu-command flows on a fresh process),
+                    // the honest restore is owner-window activation: the
+                    // dialog must not trap keyboard focus after close.
+                    if (!kbHadInitiatingFocus)
+                    {
+                        bool ownerActive = window.IsActive;
+                        return (ownerActive, "focusOwner=" + owner + " ownerActive=" + ownerActive + " tier=ownerActivation");
+                    }
                     bool inOwnerRoot = focused is not null
                         && ReferenceEquals(focused.GetVisualRoot(), (Visual)window);
-                    return (inOwnerRoot, "focusOwner=" + owner + " inOwnerRoot=" + inOwnerRoot);
+                    return (inOwnerRoot, "focusOwner=" + owner + " inOwnerRoot=" + inOwnerRoot + " tier=controlRestore");
                 });
                 if (kbFocusReturned)
                 {
@@ -6186,7 +6199,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     .Where(entry => !string.IsNullOrEmpty(entry)));
                 RecordStep(steps, $"keyboard matrix: focus-restore diagnostics ring {kbRestoreDiag}");
             }
-            assertions["focus returned after escape close"] = kbFocusReturned;
+            assertions[kbHadInitiatingFocus
+                ? "focus returned to initiating owner control after escape close"
+                : "owner window active after escape close (no initiating focus)"] = kbFocusReturned;
             RecordStep(steps, $"keyboard matrix: focus after escape close {kbFocusDiag}");
 
             // No-mutation proof: identity + revision must be unchanged.

@@ -4876,6 +4876,12 @@ public partial class DesktopDialogWindow : Window
 
     private Control? _initiatingOwnerFocus;
     private bool _focusRestoreScheduled;
+
+    /// <summary>Whether the owner window held a focused control when this
+    /// dialog opened. False means the shell had no keyboard focus at all
+    /// (menu-command flows on a fresh process), so the honest restore is
+    /// owner-window activation, not a control-target restore.</summary>
+    internal bool HadInitiatingOwnerFocus => _initiatingOwnerFocus is not null;
     private static readonly object s_focusRestoreGate = new();
     private static readonly string[] s_focusRestoreRing = new string[8];
     private static int s_focusRestoreRingIndex;
@@ -4985,6 +4991,27 @@ public partial class DesktopDialogWindow : Window
         if (ownerWindow is null)
         {
             RecordFocusRestore("restore skipped: no owner window");
+            return;
+        }
+
+        if (_initiatingOwnerFocus is null)
+        {
+            // No control held focus in the owner when this dialog opened
+            // (menu-command flows on a fresh shell): the honest keyboard
+            // restore is owner-window activation, not a control target.
+            RecordFocusRestore("restore mode: owner activation (no initiating control)");
+            _ = Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                try
+                {
+                    ownerWindow.Activate();
+                    RecordFocusRestore("restore activation ownerActive=" + ownerWindow.IsActive);
+                }
+                catch (Exception activationFault)
+                {
+                    RecordFocusRestore("restore activation fault " + activationFault.GetType().Name);
+                }
+            });
             return;
         }
 
