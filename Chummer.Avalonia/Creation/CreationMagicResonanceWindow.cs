@@ -154,6 +154,7 @@ namespace Chummer.Avalonia.Creation
                     Width = 140,
                     HorizontalAlignment = HorizontalAlignment.Left,
                 };
+                DesktopShellTheme.ApplyShellNumericUpDownTheme(_mysticPoints);
                 AutomationProperties.SetAutomationId(_mysticPoints, MysticPointsSpinnerAutomationId);
                 _mysticPoints.ValueChanged += (_, _) => { if (!InvalidateIfContextChanged()) Reprepare(); };
                 panel.Children.Add(_mysticPoints);
@@ -248,6 +249,7 @@ namespace Chummer.Avalonia.Creation
                     return;
                 Reprepare();
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(combo);
             assign(combo);
             panel.Children.Add(combo);
             if (caption is not null && options.Count == 0)

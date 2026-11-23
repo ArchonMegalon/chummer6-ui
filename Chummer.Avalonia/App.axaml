@@ -47,6 +47,7 @@
           <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F7F7F7" />
           <SolidColorBrush x:Key="ChummerShellSelectionToolbarBrush" Color="#EEF2F6" />
+          <SolidColorBrush x:Key="ChummerShellToolbarBackgroundBrush" Color="#EEF2F6" />
           <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#F1F5F9" />
           <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#CBD5E1" />
@@ -56,7 +57,7 @@
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F2F5FA" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#111111" />
-          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#256EFF" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#2C5FB8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellProgressTrackBrush" Color="#D8E1EC" />
           <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#256EFF" />
@@ -134,7 +135,7 @@
           <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#111827" />
           <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#FFFFFF" />
           <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#475569" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#256EFF" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#2C5FB8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#545BC9" />
           <SolidColorBrush x:Key="ChummerShellQuietButtonBrush" Color="#24526DFF" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
@@ -165,16 +166,17 @@
           <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#050516" />
           <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#000008" />
           <SolidColorBrush x:Key="ChummerShellSelectionToolbarBrush" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ChummerShellToolbarBackgroundBrush" Color="#0C0C21" />
           <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#050516" />
           <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#080819" />
           <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#CC1C1C3B" />
           <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#40526DFF" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#90C39A" />
           <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#050516" />
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#01010D" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#080819" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ChummerShellProgressTrackBrush" Color="#0C0C21" />
           <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#9EA2FD" />
@@ -222,20 +224,20 @@
           <SolidColorBrush x:Key="ComboBoxItemBackground" Color="#050516" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="#0C0C21" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="#080819" />
-          <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundDisabled" Color="#080819" />
           <SolidColorBrush x:Key="ComboBoxItemForeground" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundPressed" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled" Color="#A3EDEDF8" />
           <SolidColorBrush x:Key="ListBoxItemBackground" Color="#050516" />
           <SolidColorBrush x:Key="ListBoxItemBackgroundPointerOver" Color="#0C0C21" />
-          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ListBoxItemBackgroundDisabled" Color="#080819" />
           <SolidColorBrush x:Key="ListBoxItemForeground" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ListBoxItemForegroundPointerOver" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ListBoxItemForegroundDisabled" Color="#A3EDEDF8" />
           <SolidColorBrush x:Key="TreeViewBackground" Color="#050516" />
           <SolidColorBrush x:Key="TreeViewForeground" Color="#EDEDF8" />
@@ -247,12 +249,12 @@
           <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#CC1C1C3B" />
           <SolidColorBrush x:Key="MenuItemBackground" Color="#050516" />
           <SolidColorBrush x:Key="MenuItemBackgroundPointerOver" Color="#0C0C21" />
-          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#40526DFF" />
+          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#1D4ED8" />
           <SolidColorBrush x:Key="MenuItemForeground" Color="#EDEDF8" />
           <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#A3EDEDF8" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#73526DFF" />
           <SolidColorBrush x:Key="ChummerShellQuietButtonBrush" Color="#24526DFF" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#EDEDF8" />

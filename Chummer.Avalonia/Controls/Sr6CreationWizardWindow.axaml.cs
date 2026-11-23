@@ -253,6 +253,7 @@ public partial class Sr6CreationWizardWindow : Window
             {
                 MinWidth = 120,
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(box);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(box, $"sr6-priority-{categoryId}");
             foreach (string rank in PriorityRanks)
             {
@@ -323,6 +324,7 @@ public partial class Sr6CreationWizardWindow : Window
                 Increment = 1,
                 MinWidth = 100,
             };
+            DesktopShellTheme.ApplyShellNumericUpDownTheme(input);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(input, $"sr6-pointbuy-{pool.Id}");
             input.ValueChanged += (_, _) =>
             {
@@ -831,6 +833,7 @@ public partial class Sr6CreationWizardWindow : Window
             // automation id set after construction
             MaxHeight = 160,
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(metatypeList);
         metatypeList.SelectionChanged += (_, _) =>
         {
             CurrentMetatypeId = metatypeList.SelectedItem as string;
@@ -848,6 +851,7 @@ public partial class Sr6CreationWizardWindow : Window
             // automation id set after construction
             MaxHeight = 160,
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(talentList);
         talentList.SelectionChanged += (_, _) =>
         {
             CurrentTalentId = talentList.SelectedItem as string;
@@ -906,6 +910,7 @@ public partial class Sr6CreationWizardWindow : Window
                 Increment = 1,
                 MinWidth = 80,
             };
+            DesktopShellTheme.ApplyShellNumericUpDownTheme(pointsInput);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(pointsInput, $"sr6-attribute-{option.AttributeId}-points");
             var adjustmentInput = new NumericUpDown
             {
@@ -916,6 +921,7 @@ public partial class Sr6CreationWizardWindow : Window
                 IsEnabled = option.AllowsAdjustmentPoints,
                 MinWidth = 80,
             };
+            DesktopShellTheme.ApplyShellNumericUpDownTheme(adjustmentInput);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(adjustmentInput, $"sr6-attribute-{option.AttributeId}-adjustment");
             pointsInput.ValueChanged += (_, _) =>
             {

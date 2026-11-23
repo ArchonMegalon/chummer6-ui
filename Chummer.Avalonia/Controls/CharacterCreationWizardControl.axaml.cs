@@ -1900,6 +1900,7 @@ public partial class CharacterCreationWizardControl : UserControl
                             { Content = o.Label, Tag = o.SourceValue }).ToArray(),
                             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
                         };
+                        DesktopShellTheme.ApplyShellComboBoxTheme(choice);
                         AutomationProperties.SetAutomationId(choice, $"creation-journey-input-{prompt.PromptId}");
                         if (drafts is not null && drafts.TryGetValue(prompt.PromptId, out string? draftChoice))
                         {
@@ -1922,6 +1923,7 @@ public partial class CharacterCreationWizardControl : UserControl
                             if (args.Property == TextBox.TextProperty)
                                 InvalidateJourneyPreviewOnEdit();
                         };
+                        DesktopShellTheme.ApplyShellTextInputTheme(input);
                         body.Children.Add(input);
                     }
                 }
@@ -2223,6 +2225,7 @@ public partial class CharacterCreationWizardControl : UserControl
             MinWidth = 260,
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(basePicker);
         foreach (CharacterCreationLifestyleCatalogOption option in step.Authority.LifestyleOptions
                      .Where(option => option.IsSelectable)
                      .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase))
@@ -2256,12 +2259,14 @@ public partial class CharacterCreationWizardControl : UserControl
             Watermark = "Lifestyle name",
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(nameBox);
         AutomationProperties.SetAutomationId(nameBox, "creation-wizard-lifestyle-create-name");
         nameBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(Caption("Name"));
         form.Children.Add(nameBox);
 
         ComboBox stylePicker = new() { IsEnabled = !_lifestyleMutationBusy };
+        DesktopShellTheme.ApplyShellComboBoxTheme(stylePicker);
         foreach (string style in CharacterCreationLifestyleStyleIds.All)
         {
             stylePicker.Items.Add(new ComboBoxItem { Content = style, Tag = style });
@@ -2283,6 +2288,7 @@ public partial class CharacterCreationWizardControl : UserControl
             .ToList()
             .FindIndex(increment => string.Equals(increment, createDraft?.IncrementId, StringComparison.Ordinal)));
         AutomationProperties.SetAutomationId(incrementPicker, "creation-wizard-lifestyle-create-increment");
+        DesktopShellTheme.ApplyShellComboBoxTheme(incrementPicker);
         form.Children.Add(Caption("Billing increment"));
         incrementPicker.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(incrementPicker);
@@ -2308,6 +2314,7 @@ public partial class CharacterCreationWizardControl : UserControl
             IsChecked = createDraft?.SplitCostWithRoommates == true,
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellCheckBoxTheme(splitCost);
         AutomationProperties.SetAutomationId(splitCost, "creation-wizard-lifestyle-create-split");
         splitCost.IsCheckedChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(splitCost);
@@ -2345,6 +2352,7 @@ public partial class CharacterCreationWizardControl : UserControl
             AllowSpin = true,
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellNumericUpDownTheme(editor);
         AutomationProperties.SetAutomationId(editor, automationId);
         editor.ValueChanged += (_, _) => RefreshPreviewBindingGates();
         row.Children.Add(editor);
@@ -2419,6 +2427,7 @@ public partial class CharacterCreationWizardControl : UserControl
             IsEnabled = canEdit && !_lifestyleMutationBusy,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(name);
         editButton.Classes.Add("shell-action");
         AutomationProperties.SetAutomationId(
             editButton,
@@ -3232,7 +3241,7 @@ public partial class CharacterCreationWizardControl : UserControl
         Control editor;
         if (string.Equals(field.ValueKind, CharacterCreationContactValueKinds.Text, StringComparison.Ordinal))
         {
-            editor = new TextBox
+            TextBox contactTextBox = new()
             {
                 Text = field.SerializedValue,
                 IsReadOnly = !field.IsEditable,
@@ -3244,6 +3253,8 @@ public partial class CharacterCreationWizardControl : UserControl
                     StringComparison.Ordinal),
                 TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
             };
+            DesktopShellTheme.ApplyShellTextInputTheme(contactTextBox);
+            editor = contactTextBox;
         }
         else
         {
@@ -3257,25 +3268,27 @@ public partial class CharacterCreationWizardControl : UserControl
                 item.Tag as string,
                 field.SerializedValue,
                 StringComparison.OrdinalIgnoreCase));
-            editor = new ComboBox
+            ComboBox contactComboBox = new()
             {
                 ItemsSource = items,
                 SelectedItem = selected,
                 IsEnabled = field.IsEditable && !_contactMutationBusy,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(contactComboBox);
+            editor = contactComboBox;
         }
 
         AutomationProperties.SetAutomationId(
             editor,
             $"creation-wizard-contact-{contactId:D}-field-{field.FieldId}");
-        if (editor is TextBox contactTextBox)
+        if (editor is TextBox wiredTextBox)
         {
-            contactTextBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
+            wiredTextBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
         }
-        else if (editor is ComboBox contactComboBox)
+        else if (editor is ComboBox wiredComboBox)
         {
-            contactComboBox.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
+            wiredComboBox.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
         }
         _contactEditors[(contactId, field.FieldId)] = editor;
         return editor;

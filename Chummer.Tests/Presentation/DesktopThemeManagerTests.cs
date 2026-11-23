@@ -756,7 +756,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(scaffoldSource, "Background = DesktopShellTheme.ResolveWindowBackgroundBrush(),");
         StringAssert.Contains(localCoProcessorSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
         StringAssert.Contains(runnerPassportSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
-        StringAssert.Contains(versionHistorySource, "DesktopShellTheme.ApplyShellTextInputTheme(historyBox);");
+        StringAssert.Contains(versionHistorySource, "DesktopShellTheme.ApplyShellReadOnlyTextBoxTheme(historyBox);");
         StringAssert.Contains(desktopDialogSource, "ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(sectionHost, "Background=\"{DynamicResource ChummerShellSurfaceBrush}\"");
@@ -794,21 +794,21 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(shellTheme, "ApplyInputBrushes(numericUpDown);");
         StringAssert.Contains(shellTheme, "ApplyListBrushes(listBox);");
         StringAssert.Contains(shellTheme, "ApplyListBrushes(treeView);");
-        StringAssert.Contains(shellTheme, "control.Background = ResolveThemeBrush(\"ChummerShellInputBackgroundBrush\", \"#162031\");");
-        StringAssert.Contains(shellTheme, "control.Foreground = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "control.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension(\"ChummerShellInputBackgroundBrush\"));");
+        StringAssert.Contains(shellTheme, "control.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension(\"ChummerShellInputForegroundBrush\"));");
         Assert.IsFalse(shellTheme.Contains("control.Background = ResolveThemeBrush(\"ComboBoxBackground\"", StringComparison.Ordinal));
         Assert.IsFalse(shellTheme.Contains("control.Foreground = ResolveThemeBrush(\"ComboBoxForeground\"", StringComparison.Ordinal));
-        StringAssert.Contains(shellTheme, "control.Background = ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#111827\");");
-        StringAssert.Contains(shellTheme, "control.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\");");
-        StringAssert.Contains(shellTheme, "textBox.CaretBrush = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
-        StringAssert.Contains(shellTheme, "textBox.SelectionForegroundBrush = ResolveThemeBrush(\"ChummerShellSelectionForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "control.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension(\"ChummerShellSurfaceBrush\"));");
+        StringAssert.Contains(shellTheme, "control.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension(\"ChummerShellForegroundBrush\"));");
+        StringAssert.Contains(shellTheme, "textBox.Bind(TextBox.CaretBrushProperty, new DynamicResourceExtension(\"ChummerShellInputForegroundBrush\"));");
+        StringAssert.Contains(shellTheme, "textBox.Bind(TextBox.SelectionForegroundBrushProperty, new DynamicResourceExtension(\"ChummerShellSelectionForegroundBrush\"));");
         StringAssert.Contains(shellTheme, "if (mirrorWriteInFlight)");
         StringAssert.Contains(shellTheme, "control.Resources[resourceKey] = brush;");
-        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemBackground\", \"ChummerShellSurfaceBrush\", \"#111827\");");
-        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemForeground\", \"ChummerShellForegroundBrush\", \"#E5E7EB\");");
-        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TextControlBackground\", \"ChummerShellInputBackgroundBrush\", \"#162031\");");
-        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TextControlForeground\", \"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
-        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ChummerShellSelectionForegroundBrush\", \"ChummerShellSelectionForegroundBrush\", \"#F8FAFC\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemBackground\", \"ChummerShellSurfaceBrush\", \"#050516\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemForeground\", \"ChummerShellForegroundBrush\", \"#EDEDF8\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TextControlBackground\", \"ChummerShellInputBackgroundBrush\", \"#080819\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TextControlForeground\", \"ChummerShellInputForegroundBrush\", \"#EDEDF8\");");
+        StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ChummerShellSelectionForegroundBrush\", \"ChummerShellSelectionForegroundBrush\", \"#EDEDF8\");");
 
         foreach (string selector in new[]
                  {
@@ -1170,8 +1170,8 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(originSurfaceSource, "Header = \"Advanced story controls\"");
         StringAssert.Contains(originSurfaceSource, "IsExpanded = IsOriginWizardAdvancedStoryControlsEffectivelyExpanded()");
         StringAssert.Contains(originSurfaceSource, "Optional dossier identity, life-path steering, and GM guidance for the story packet.");
-        StringAssert.Contains(originSurfaceSource, "CreateLegacyFieldGroup(" + Environment.NewLine + "                        \"Dossier\",");
-        Assert.IsFalse(originSurfaceSource.Contains("CreateLegacyFieldGroup(" + Environment.NewLine + "                        \"Runner\",", StringComparison.Ordinal));
+        StringAssert.Contains(originSurfaceSource, "CreateLegacyFieldGroup(" + NewLineSource() + "                        \"Dossier\",");
+        Assert.IsFalse(originSurfaceSource.Contains("CreateLegacyFieldGroup(" + NewLineSource() + "                        \"Runner\",", StringComparison.Ordinal));
         StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayNameField = NormalizeOriginIdentityFieldForDisplay(nameField);");
         StringAssert.Contains(originSurfaceSource, "DesktopDialogField displayAliasField = NormalizeOriginIdentityFieldForDisplay(aliasField);");
         StringAssert.Contains(originSurfaceSource, "IReadOnlyList<DesktopDialogField> displayFields = DesktopDialogFactory.NormalizeOriginWizardFieldsForDisplay(fields);");
@@ -1503,8 +1503,8 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostSource, "CreateAttributeValueStepper(");
         StringAssert.Contains(sectionHostSource, "$\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"");
         StringAssert.Contains(sectionHostSource, "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"");
-        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} starting value\"");
-        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} added value\"");
+        StringAssert.Contains(sectionHostSource, "$\"{fullName} starting value\"");
+        StringAssert.Contains(sectionHostSource, "$\"{fullName} added value\"");
         StringAssert.Contains(sectionHostSource, "static next => next.ToString(CultureInfo.InvariantCulture)");
         StringAssert.Contains(sectionHostSource, "AutomationProperties.SetName(stepper, accessibleName)");
         StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"*,128,128,72,120\")");
@@ -1855,17 +1855,17 @@ public sealed class DesktopThemeManagerTests
         foreach (string marker in new[]
                  {
                      "public static IBrush ResolveWindowBackgroundBrush()",
-                     "=> ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\", \"#050B16\");",
+                     "=> ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\", \"#01010D\");",
                      "public static IBrush ResolveSurfaceBrush()",
-                     "=> ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#111827\");",
+                     "=> ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#050516\");",
                      "public static IBrush ResolveSurfaceAltBrush()",
-                     "=> ResolveThemeBrush(\"ChummerShellSurfaceAltBrush\", \"#020617\");",
+                     "=> ResolveThemeBrush(\"ChummerShellSurfaceAltBrush\", \"#000008\");",
                      "public static IBrush ResolveSelectionToolbarBrush()",
-                     "=> ResolveThemeBrush(\"ChummerShellSelectionToolbarBrush\", \"#0B1220\");",
+                     "=> ResolveThemeBrush(\"ChummerShellSelectionToolbarBrush\", \"#0C0C21\");",
                      "public static IBrush ResolveSelectionPanelBrush()",
-                     "=> ResolveThemeBrush(\"ChummerShellSelectionPanelBrush\", \"#111827\");",
+                     "=> ResolveThemeBrush(\"ChummerShellSelectionPanelBrush\", \"#050516\");",
                      "public static IBrush ResolveSelectionInsetBrush()",
-                     "=> ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#0F172A\");"
+                     "=> ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#080819\");"
                  })
         {
             StringAssert.Contains(shellThemeSource, marker);
@@ -1936,7 +1936,8 @@ public sealed class DesktopThemeManagerTests
                         : string.Equals(creation.Type, "NumericUpDown", StringComparison.Ordinal)
                             ? lookahead.Contains($"ApplyShellNumericUpDownTheme({creation.Name}", StringComparison.Ordinal)
                             : lookahead.Contains($"ApplyShellTextInputTheme({creation.Name}", StringComparison.Ordinal)
-                              || lookahead.Contains($"ApplyTextBoxAccessibility({creation.Name}", StringComparison.Ordinal);
+                              || lookahead.Contains($"ApplyTextBoxAccessibility({creation.Name}", StringComparison.Ordinal)
+                              || lookahead.Contains($"ApplyShellReadOnlyTextBoxTheme({creation.Name}", StringComparison.Ordinal);
 
                     if (!themed)
                     {
@@ -2057,6 +2058,15 @@ public sealed class DesktopThemeManagerTests
                 static match => match.Groups["key"].Value,
                 static match => match.Groups["color"].Value,
                 StringComparer.Ordinal);
+    }
+
+    private static string NewLineSource()
+    {
+        // Test needles must match both LF-only and CRLF source files:
+        // Environment.NewLine is CRLF on Windows, but sources are stored LF-only.
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string probe = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        return probe.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
     }
 
     private static double GetContrastRatio(string foregroundHex, string backgroundHex)

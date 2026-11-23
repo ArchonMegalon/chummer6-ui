@@ -146,6 +146,7 @@ public sealed class CareerRewardsWindow : Window
         {
             Watermark = "0",
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(_amountBox);
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(_amountBox, AmountAutomationId);
         root.Children.Add(_amountBox);
 
@@ -158,6 +159,7 @@ public sealed class CareerRewardsWindow : Window
             AcceptsReturn = true,
             TextAlignment = TextAlignment.Left,
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(_reasonBox);
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(_reasonBox, ReasonAutomationId);
         root.Children.Add(_reasonBox);
 
