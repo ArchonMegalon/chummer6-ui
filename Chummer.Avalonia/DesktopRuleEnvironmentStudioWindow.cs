@@ -265,8 +265,10 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         if (!string.IsNullOrWhiteSpace(_projection.WorkspaceId))
         {
             actions.Add(CreateButton("Open current workspace", () => OpenWorkspaceInDesktopShellAsync(owner, _projection.WorkspaceId!)));
-            Button amendButton = CreateButton("Amend from portable export", () => RunAmendRoundTripAsync(owner, amendButton));
+            Button? holder = null;
+            Button amendButton = CreateButton("Amend from portable export", () => RunAmendRoundTripAsync(owner, holder!));
             amendButton.Name = "AmendRoundTripButton";
+            holder = amendButton;
             actions.Add(amendButton);
         }
 
