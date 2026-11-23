@@ -11538,7 +11538,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 // amend import commits a new workspace document.
                 string amendRouting = await RoutePointerClickResolvedAsync(
                     amendButton,
-                    waitForClick: true,
+                    waitForClick: false,
                     liveTarget: () => Dispatcher.UIThread.Invoke(() =>
                         FindDescendantByName<Button>(
                             window.OwnedWindows.FirstOrDefault(w => w is DesktopRuleEnvironmentStudioWindow),
@@ -12241,12 +12241,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     
             Button button = FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName)
                 ?? throw new InvalidOperationException($"Dialog action '{actionId}' was not found.");
-            string routing = await RoutePointerClickAsync(button, waitForClick);
+            string routing = await RoutePointerClickResolvedAsync(
+                button,
+                waitForClick: false,
+                liveTarget: () => FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName)!);
     
-            recordPointerAction();
             PointerDeliveryResult delivery = ParsePointerDeliveryResult(routing);
             if (delivery.Kind == PointerDeliveryKind.Delivered)
             {
+                recordPointerAction();
                 RecordStep(steps, $"click dialog action {actionId}; delivered=True (probe verified); enabled={button.IsEffectivelyEnabled}");
             }
             else if (delivery.Kind == PointerDeliveryKind.NotDelivered

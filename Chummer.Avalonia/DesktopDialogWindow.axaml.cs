@@ -5081,24 +5081,28 @@ public partial class DesktopDialogWindow : Window
         if (_adapter is null)
             return;
 
-        Button? cancelAffordance = _dialogActionsPanel.Children
-            .OfType<Button>()
-            .FirstOrDefault(button => button.IsVisible
-                && string.Equals(button.Tag as string, "cancel", StringComparison.Ordinal))
-            ?? _dialogActionsPanel.Children
-                .OfType<Button>()
-                .FirstOrDefault(button => button.IsVisible
-                    && string.Equals(button.Tag as string, "close", StringComparison.Ordinal));
+        e.Handled = TryExecuteEscapeAction(_dialogActionsPanel.Children.OfType<Button>(), actionId =>
+        {
+            RestoreInitiatingOwnerFocusAfterClose();
+            _ = ExecuteSafeAsync(
+                () => _adapter.ExecuteDialogActionAsync(actionId, CancellationToken.None),
+                $"execute action '{actionId}' (Escape affordance)");
+        });
+    }
 
-        if (cancelAffordance is null)
-            return;
+    internal static bool TryExecuteEscapeAction(IEnumerable<Button> actions, Action<string> execute)
+    {
+        // Effective state includes disabled/hidden ancestors: Escape cannot
+        // bypass the visible button's interaction boundary.
+        Button? affordance = actions.FirstOrDefault(button => button.IsEffectivelyVisible
+                && button.IsEffectivelyEnabled && string.Equals(button.Tag as string, "cancel", StringComparison.Ordinal))
+            ?? actions.FirstOrDefault(button => button.IsEffectivelyVisible
+                && button.IsEffectivelyEnabled && string.Equals(button.Tag as string, "close", StringComparison.Ordinal));
+        if (affordance is null)
+            return false;
 
-        string actionId = (cancelAffordance.Tag as string) ?? "cancel";
-        e.Handled = true;
-        RestoreInitiatingOwnerFocusAfterClose();
-        _ = ExecuteSafeAsync(
-            () => _adapter.ExecuteDialogActionAsync(actionId, CancellationToken.None),
-            $"execute action '{actionId}' (Escape affordance)");
+        execute((string)affordance.Tag!);
+        return true;
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
