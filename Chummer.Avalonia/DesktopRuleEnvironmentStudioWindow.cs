@@ -265,7 +265,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         if (!string.IsNullOrWhiteSpace(_projection.WorkspaceId))
         {
             actions.Add(CreateButton("Open current workspace", () => OpenWorkspaceInDesktopShellAsync(owner, _projection.WorkspaceId!)));
-            Button amendButton = CreateButton("Amend from portable export", () => RunAmendRoundTripAsync(owner));
+            Button amendButton = CreateButton("Amend from portable export", () => RunAmendRoundTripAsync(owner, amendButton));
             amendButton.Name = "AmendRoundTripButton";
             actions.Add(amendButton);
         }
@@ -295,14 +295,11 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
     }
 
     private WorkspaceAmendRoundTripRecord? _lastAmendRoundTrip;
+    private StackPanel? _amendBody;
 
-    private async Task RunAmendRoundTripAsync(Window owner)
+    private async Task RunAmendRoundTripAsync(Window owner, Button amendButton)
     {
-        Button? amendButton = this.FindControl<Button>("AmendRoundTripButton");
-        if (amendButton is not null)
-        {
-            amendButton.IsEnabled = false;
-        }
+        amendButton.IsEnabled = false;
 
         try
         {
@@ -362,7 +359,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
 
     private void RefreshAmendBody()
     {
-        StackPanel? body = this.FindControl<StackPanel>("AmendBody");
+        StackPanel? body = _amendBody;
         if (body is null || _lastAmendRoundTrip is null)
         {
             return;
@@ -458,6 +455,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
     {
         var body = new StackPanel { Spacing = 4 };
         body.Name = "AmendBody";
+        _amendBody = body;
         body.Children.Add(new TextBlock
         {
             Text = "Run a governed amend: export the current workspace as a portable dossier, re-import it, and record both receipts.",
