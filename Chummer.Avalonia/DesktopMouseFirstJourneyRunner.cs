@@ -6226,9 +6226,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 recordPointerAction,
                 "keyboard matrix cancel button closed the dialog",
                 () => ResolveVisibleDialogWindow() is null,
-                1,
+                3,
                 TimeSpan.FromSeconds(10),
-                waitForClick: true);
+                waitForClick: false);
             assertions["cancel button parity close"] = ResolveVisibleDialogWindow() is null;
             RecordStep(steps, "keyboard matrix: cancel button closed the dialog (pointer parity)");
 
@@ -12241,6 +12241,9 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     
             Button button = FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName)
                 ?? throw new InvalidOperationException($"Dialog action '{actionId}' was not found.");
+            // Readiness is input-free. Never use the legacy re-raise route to
+            // make a newly composed dialog hit-testable.
+            await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(button));
             string routing = await RoutePointerClickResolvedAsync(
                 button,
                 waitForClick: false,
