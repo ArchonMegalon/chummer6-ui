@@ -1,0 +1,271 @@
+=== WorkspaceService.Import @ -1 len 93129
+
+=== SR5-SWITCH-1 @ 4180
+return _characterFileQueries.ParseSummary(new CharacterDocument(ToXmlContent(envelope.Payload, WorkspaceDocumentFormat.NativeXml)));
+    }
+
+    public object ParseSection(string sectionId, WorkspacePayloadEnvelope envelope)
+    {
+        return _characterSectionQueries.ParseSection(sectionId, new CharacterDocument(ToXmlContent(envelope.Payload, WorkspaceDocumentFormat.NativeXml)));
+    }
+
+    public CharacterOverviewProjection ParseOverview(WorkspacePayloadEnvelope envelope)
+        => _characterSectionQueries.ParseOverview(
+            new CharacterDocument(ToXmlContent(envelope.Payload, WorkspaceDocumentFormat.NativeXml)));
+
+    public CharacterValidationResult Validate(WorkspacePayloadEnvelope envelope)
+    {
+        return _characterFileQueries.Validate(new CharacterDocument(ToXmlContent(envelope.Payload, WorkspaceDocumentFormat.NativeXml)));
+    }
+
+    public WorkspacePayloadEnvelope UpdateMetadata(WorkspacePayloadEnvelope envelope, UpdateWorkspaceMetadata command)
+    {
+        UpdateCharacterMetadataResult result = _characterMetadataCommands.UpdateMetadata(new UpdateCharacterMetadataCommand(
+            Document: new CharacterDocument(ToXmlContent(envelope.Payload, WorkspaceDocumentFormat.NativeXml)),
+            Update: new CharacterMetadataUpdate(
+                Name: command.Name,
+                Alias: command.Alias,
+                Notes: command.Notes)
+            {
+                GameNotes = command.GameNotes,
+                GroupNotes = command.GroupNotes
+            }));
+
+        return envelope with
+        {
+            SchemaVersion = envelope.SchemaVersion > 0 ? envelope.SchemaVersion : SchemaVersion,
+            PayloadKind = string.IsNullOrWhiteSpace(envelope.PayloadKind) ? PayloadKind : envelope.PayloadKind,
+            Payload = result.UpdatedDocument.Content
+        };
+    }
+
+    public WorkspaceDownloadReceipt BuildDownload(
+        CharacterWorkspaceId id,
+        WorkspacePayloadEnvelope envelope,
+        WorkspaceDocumentFormat format)
+    {
+        string xml = ToXmlContent(envelope.Payload, format);
+        byte[] contentBytes = Encoding.UTF8.GetBytes(xml);
+        string contentBase64 = Convert.ToBase64String(contentBytes);
+        string fileName = format switch
+        {
+            WorkspaceDocumentFormat.NativeXml => $"{id.Value}.chum5",
+            _ => throw new InvalidOperationException($"Workspace format '{format}' is not supported.")
+        };
+
+        return new WorkspaceDownloadReceipt(
+            Id: id,
+            Format: format,
+            ContentBase64: contentBase64,
+            FileName: fileName,
+            DocumentLength: xml.Length,
+            RulesetId: RulesetDefaults.NormalizeOptional(envelope.RulesetId) ?? RulesetDefaults.Sr5);
+    }
+
+    public DataExportBundle BuildExportBundle(WorkspacePayloadEnvelope envelope)
+    {
+        string xml = ToXmlContent(envelope.Payload, WorkspaceDocumentFormat.NativeXml);
+        if (TryBuildSinglePassExportBundle(xml, out DataExportBundle? bundle) && bundle is not null)
+        {
+            return bundle with
+            {
+                Lifestyles = TryParseExportSection<CharacterLifestylesSection>("lifestyles", envelope)
+            };
+        }
+
+        return new DataExportBundle(
+            Summary: ParseSummary(envelope),
+            Profile: TryParseExportSection<CharacterProfileSection>("profile", envelope),
+            Progress: TryParseExportSection<CharacterProgressSection>("progress", envelope),
+            Attributes: TryParseExportSection<CharacterAttributesSection>("attributes", envelope),
+            Skills: TryParseExportSection<CharacterSkillsSection>("skills", envelope),
+            Inventory: TryParseExportSection<CharacterInventorySection>("inventory", envelope),
+            Qualities: TryParseExportSection<CharacterQualitiesSection>("qualities", envelope),
+            Contacts: TryParseExportSection<CharacterContactsSection>("contacts", envelope),
+            Lifestyles: TryParseExportSection<CharacterLifestylesSection>("lifestyles", envelope));
+    }
+
+    private static bool TryBuildSinglePassExportBundle(string xml, out DataExportBundle? bundle)
+    {
+        try
+        {
+            XElement character = XDocument.Parse(xml, LoadOptions.None).Root
+                ?? throw new InvalidOperationException("SR5 workspace export XML did not contain a root element.");
+            CharacterProfileSection profile = BuildProfileSection(character);
+            CharacterProgressSection progress = BuildProgressSection(character);
+            CharacterFileSummary summary = new(
+                Name: profile.Name,
+                Alias: profile.Alias,
+                Metatype: profile.Metatype,
+                BuildMethod: profile.BuildMethod,
+                CreatedVersion: profile.CreatedVersion,
+                AppVersion: profile.AppVersion,
+                Karma: progress.Karma,
+                Nuyen: progress.Nuyen,
+                Created: profile.Created);
+
+            bundle = new DataE
+=== SR5-SWITCH-2 @ 15285
+ction BuildContactsSection(XElement character)
+    {
+        CharacterContactSummary[] contacts = character
+            .Element("contacts")?
+            .Elements("contact")
+            .Select(contact => new CharacterContactSummary(
+                Name: ReadValue(contact, "name"),
+                Role: ReadValue(contact, "role"),
+                Location: ReadValue(contact, "location"),
+                Connection: ParseInt(ReadValue(contact, "connection")),
+                Loyalty: ParseInt(ReadValue(contact, "loyalty"))))
+            .ToArray()
+            ?? [];
+
+        return new CharacterContactsSection(contacts.Length, contacts);
+    }
+
+    private TSection? TryParseExportSection<TSection>(string sectionId, WorkspacePayloadEnvelope envelope)
+        where TSection : class
+    {
+        try
+        {
+            return ParseSection(sectionId, envelope) as TSection;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string ToXmlContent(string content, WorkspaceDocumentFormat format)
+    {
+        if (format != WorkspaceDocumentFormat.NativeXml)
+        {
+            throw new InvalidOperationException($"Workspace format '{format}' is not supported.");
+        }
+
+        if (!string.IsNullOrEmpty(content) && content[0] == '\uFEFF')
+        {
+            return content[1..];
+        }
+
+        return content;
+    }
+
+    private static string[] ReadItemNames(XElement character, string collectionName, string itemName)
+        => character
+            .Element(collectionName)?
+            .Elements(itemName)
+            .Select(item => ReadValue(item, "name"))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToArray()
+        ?? [];
+
+    private static string ReadValue(XElement element, string childName)
+        => element.Element(childName)?.Value.Trim() ?? string.Empty;
+
+    private static string FirstNonBlank(params string[] values)
+        => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private static int ParseInt(string value)
+        => int.TryParse(value, out int parsed) ? parsed : 0;
+
+    private static decimal ParseDecimal(string value)
+        => decimal.TryParse(value, out decimal parsed) ? parsed : 0m;
+
+    private static bool ParseBool(string value)
+        => bool.TryParse(value, out bool parsed) && parsed;
+}
+
+=== PORTABILITY-BUILDER @ 52563
+
+                supersedesArtifactIds: []));
+    }
+
+    private static WorkspacePortabilityReceipt BuildExportPortabilityReceipt(
+        CharacterWorkspaceId id,
+        string rulesetId,
+        DataExportBundle bundle,
+        DateTimeOffset exportedAtUtc,
+        string payloadSha256)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? string.Empty;
+        string displayName = string.IsNullOrWhiteSpace(bundle.Summary.Name) ? id.Value : bundle.Summary.Name;
+        string[] missingSections = GetMissingPortableSections(bundle);
+        bool hasWarnings = missingSections.Length > 0;
+        string receiptId = BuildReceiptId("portable", id.Value, payloadSha256);
+        string sectionCoverageSummary = hasWarnings
+            ? $"Portable package is missing {string.Join(", ", missingSections)}; receiving surfaces should inspect before governed replace."
+            : "Portable package keeps profile, progress, attributes, skills, inventory, qualities, and contacts on the same governed receipt.";
+        WorkspacePortabilityCompatibilityReceipt compatibility = new(
+            SourceRulesetId: normalizedRulesetId,
+            TargetRulesetId: normalizedRulesetId,
+            State: hasWarnings
+                ? WorkspacePortabilityCompatibilityStates.CompatibleWithWarnings
+                : WorkspacePortabilityCompatibilityStates.Compatible,
+            WarningCodes: hasWarnings ? ["missing-sections"] : [],
+            BlockingCodes: []);
+        WorkspacePortabilityLossReceipt loss = new(
+            State: hasWarnings
+                ? WorkspacePortabilityLossStates.BoundedLoss
+                : WorkspacePortabilityLossStates.None,
+            Summary: hasWarnings
+                ? $"Portable dossier omitted {string.Join(", ", missingSections)} and needs inspect-only review before governed replace."
+                : "Portable dossier preserved the governed export sections without bounded loss.",
+            AffectedSections: missingSections);
+        WorkspacePortabilityProvenanceReceipt provenance = new(
+            ReceiptId: receiptId,
+            GeneratedAtUtc: exportedAtUtc,
+            SourceArtifactId: id.Value,
+            SourceFormatId: WorkspacePortabilityFormatIds.NativeWorkspaceXmlV1,
+            PayloadSha256: payloadSha256);
+        WorkspacePortabilityEnvelopeReceipt portabilityEnvelope = new(
+            OutputKind: WorkspacePortabilityOutputKinds.PortableDossier,
+            PortabilityPosture: hasWarnings
+                ? WorkspacePortabilityCompatibilityStates.CompatibleWithWarnings
+                : WorkspacePortabilityCompatibilityStates.Compatible,
+            Summary: hasWarnings
+                ? "Inspect-first dossier portability because one or more governed sections are absent from the export."
+                : "Portable dossier package can seed dossier, campaign, replay, recap, and external exchange consumers from one governed receipt.",
+            SupportedExchangeModes:
+            [
+                WorkspacePortabilityExchangeModes.InspectOnly,
+                WorkspacePortabilityExchangeModes.Merge,
+                WorkspacePortabilityExchangeModes.Replace
+            ]);
+        WorkspacePortabilityRevocationReceipt revocation = BuildRevocationReceipt(
+            WorkspacePortabilityOutputKinds.PortableDossier,
+            artifactId: receiptId,
+            summary: hasWarnings
+                ? "Portable dossier package stays revocable and should only supersede downstream artifacts after inspect-first review."
+                : "Portable dossier package stays revocable and can supersede downstream dossier-family artifacts on governed replace.",
+            supersedesArtifactIds:
+            [
+                id.Value
+            ]);
+        WorkspacePortabilityLineageEntry workspaceLineage = new(
+            StageId: "governed-workspace",
+            ArtifactId: id.Value,
+            FormatId: WorkspacePortabilityFormatIds.NativeWorkspaceXmlV1,
+            Summary: $"{displayName} starts from governed workspace truth on {normalizedRulesetId}.");
+        WorkspacePortabilityLineageEntry portablePackageLineage = new(
+            StageId: "portable-package",
+            ArtifactId: receiptId,
+            FormatId: WorkspacePortabilityFormatIds.P
+== bundle-import hits rc 1
+== TESTS Json refs
+    CharacterCareerReputationProjectorTests.cs:353:            "json" => saved with { Document = saved.Document with { Format = WorkspaceDocumentFormat.Json } },
+    InProcessChummerClientRulesetPluginTests.cs:361:                    Format: WorkspaceDocumentFormat.Json,
+    Presentation/CharacterOverviewPresenterTests.cs:444:        Assert.AreEqual(WorkspaceDocumentFormat.Json, presenter.State.PendingExport?.Format);
+    Presentation/CharacterOverviewPresenterTests.cs:1511:                    Format: WorkspaceDocumentFormat.Json,
+    Presentation/DesktopShellDownloadDispatchTests.cs:72:        presenter.Publish(CreateOverviewState(CreateReceipt("ws-1", WorkspaceDocumentFormat.Json, "ws-1-export.json"), 1));
+    Presentation/DesktopShellDownloadDispatchTests.cs:184:            Format: WorkspaceDocumentFormat.Json,
+    Presentation/DualHeadAcceptanceTests.cs:1084:        Assert.AreEqual(WorkspaceDocumentFormat.Json, avaloniaDataExporter.Format);
+    Presentation/DualHeadAcceptanceTests.cs:1089:        Assert.AreEqual(WorkspaceDocumentFormat.Json, avaloniaExportCharacter.Format);
+    RestartSafeWorkspacePersistenceTests.cs:43:                    Format: WorkspaceDocumentFormat.Json),
+    RestartSafeWorkspacePersistenceTests.cs:85:            Assert.AreEqual(WorkspaceDocumentFormat.Json, download.Value.Format);
+    WorkspaceContinuationCodecTests.cs:292:        snapshot = snapshot with { Workspace = snapshot.Workspace with { SavedRevision = 0, Document = snapshot.Workspace.Document with { Format = WorkspaceDocumentFormat.Json } } };
+    WorkspaceContinuationCodecTests.cs:298:        Assert.AreEqual(WorkspaceDocumentFormat.Json, candidate.Snapshot.Workspace.Document.Format);
+    WorkspaceContinuationReadViewTests.cs:109:                Format = WorkspaceDocumentFormat.Json,
+    WorkspaceContinuationSnapshotDigestTests.cs:39:            original with { Workspace = workspace with { Document = workspace.Document with { Format = WorkspaceDocumentFormat.Json } } },
+    WorkspaceServiceTests.cs:395:            WorkspaceDocumentFormat.Json));
+    WorkspaceServiceTests.cs:845:        Assert.AreEqual(WorkspaceDocumentFormat.Json, result.Value.Format);

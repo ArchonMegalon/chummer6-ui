@@ -1,0 +1,89 @@
+WIN-009 gen11 Priority-4 amend wave evidence (2026-11-23)
+
+Commits (branch windows/009-dwarf-journey-drive, pushed):
+  1de3544340cfb878a88135ca05f48dad5288d49f  gen21 baseline (prior accepted wave)
+  f6adbb597...  validation-leg re-press fix (runner)   -> gen22 bytes
+  b67658496...  honest amend leg (runner presses AmendRoundTripButton,
+                gates on receipt line texts, forbids replay) -> gen23 bytes
+  f6e4f79dd + a0ed641c5  product crash fix: RunAmendRoundTripAsync called
+                this.FindControl<Button>("AmendRoundTripButton") BEFORE its
+                try block; the programmatically-built studio window has no
+                Avalonia name scope -> unhandled InvalidOperationException
+                "Could not find parent name scope" killed the app (P4C4).
+                Fix: method receives its own Button instance; BuildAmendSection
+                stores its body panel in _amendBody. -> gen25 bytes
+  945ba2dddad7a98e6af889baa286f6e78d3d63ce  cosmetic: catch stores bare
+                ex.Message; renderer owns the "Amend round trip failed: "
+                prefix (double prefix seen on P4C5 removed).
+
+Published bytes (self-contained win-x64, disk-verified sha256):
+  gen22 EXE f05bf0dfc947f2a553c80ed2315f0c6e776b067513f5bf9f552fb205bfc70318
+        60,491,267 B  stamp 1.0.0-preview.20261122.gen22  head f6adbb597
+  gen23 EXE 01e3cb23d12b... (see g23_verpub) 60,491,278 B
+        stamp 1.0.0-preview.20261122.gen23  head b67658496
+  gen25 EXE c84dd9e87687... 60,491,261 B
+        stamp 1.0.0-preview.20261122.gen25  head a0ed641c5
+  coreHead pinned 0b4b372981298531f8099c88c1c017741de42a65 throughout.
+
+Journey legs (full SR5 wizard route + trace + manualDeepMode):
+  P4C  + P4C2 (gen21): DETERMINISTIC fail at validation leg - the runner's
+       single pre-resolved press landed on a container detached by the
+       tab-info section load (no observed input event); two identical
+       failures at 53,219 B err. Runner defect, not product.
+  P4C3 (gen22): PASS 275 steps. Validation leg now survives (attempt-1
+       honestly recorded delivered=False;detached, re-press delivered);
+       print composed real PDF 13,893 B (EOF verified); export bundle
+       materialized; Rules-Studio opened; amend step line VACUOUS
+       (waited on AmendBody.Children.Count>0, satisfied by the
+       construction-time explainer TextBlock - button never pressed).
+       This vacuous predicate also infected gen33 w4 receipts.
+  P4C4 (gen23): first HONEST amend press -> app crash (name scope).
+       No journey receipt exists for P4C4; journey_err_P4C4.txt carries
+       the unhandled dispatcher crash (tail in bundle). Product defect,
+       fixed in f6e4f79dd+a0ed641c5.
+  P4C5 (gen25): FULL HONEST EXECUTION. Amend press delivered
+       (delivered=True;attached;raise:hit=True;realTarget=AccessText).
+       Amend executed for the first time natively and produced:
+         "Amend round trip failed: Amend round trip failed: Workspace
+          format 'Json' is not supported."   (double prefix = cosmetic
+          defect, fixed in 945ba2ddd)
+       The runner failed the run fail-closed (success receipt withheld)
+       - correct behavior for a governed-failure line.
+
+CORE CONTRACT GAP (Root-owned, request filed):
+  Core WorkspaceService export (Chummer.Application/Workspaces/
+  WorkspaceService.cs, BuildExportReceipt ~line 1005-1007) serializes the
+  DataExportBundle to JSON and stamps Format: WorkspaceDocumentFormat.Json,
+  while every ruleset codec import switch accepts ONLY NativeXml:
+    Sr5WorkspaceCodec.cs:98 (dispatch) and :342 (ToXmlContent throw)
+    Sr4WorkspaceCodec.cs:130/520; Sr6WorkspaceCodec.cs:164/277
+  Core's own tests pin the Json export (WorkspaceServiceTests.cs:395/845).
+  Core's export declares a format its own import refuses; the UI amend
+  round trip (ExportAsync receipt.Format -> ImportAsync) is therefore
+  structurally refused. UI does not patch around Core contracts; request
+  filed with exact requested_paths.
+
+MAGICIAN EXPORT LEG (P4A, PASS on gen21 bytes):
+  Bundled Soma-Career.chum5 -> import -> save (rev 1) -> Save-As native
+  .chum5 (156,725 B, 10 spells/5 sustained) -> portable dossier export
+  (43,434 B). journey_receipt_P4A.json status=pass; workspaceId
+  27fde5e3d62c447684a69153efc425d9.
+
+Receipt SHA256:
+  4900e63c353d7559768217eb9381d5187b2c5a6efe3502ca041f6f2b558eef4f  journey_receipt_P4A.json
+  8b37995e4061ab088e76227037aa39a3eceef7110b52debfe7a107b262ecce6c  journey_err_P4A.txt
+  15649af8eac904cba2c2c75e799549aee87061f90f9859f5e18e4597249b71f3  launched_P4A.json
+  e4867bbfbc5abadc01d56f502cb7374990a2ad04249bb1b01820f5c3e1e2782f  magician_export_receipt.json
+  ab61505229e8c1bd82925f52e6f50f995a6c4ecdf543fa7049fa846d45a9a609  journey_receipt_P4C.json
+  44ab564c5d298fad83be9a9ab5e30adc3d414e8f694aada33cae3748e2b5851a  journey_err_P4C.txt
+  9cca864b3d51ad0893f7a6a57d5132ebc7cd4b02639c63556752fe27b3a60c56  journey_receipt_P4C2.json
+  5d7d165c227aa0ffe88a99a91028ae4b883a204fdbe700b7fbc0e984adef8d21  journey_err_P4C2.txt
+  176a54b2b32718b625a958a3bd5f843be4c78606d91b9dc393e66190bbabfe9d  journey_receipt_P4C3.json
+  1ef8c8ffec6c8329482eac4a5fa6cb99053247a1e6b4680c70bc4d9446aad4a3  journey_err_P4C3.txt
+  18a82c7cd78603aa49007e55c3e44c5f500fb4c7f3ce69f365707a90a89f8cc8  launched_P4C3.json
+  5a0ef4fd7017afd52045eb38524ee978d5183506d9c3108c18589497baa17d87  journey_err_P4C4.txt
+  1ade56a5797fe0d47dd3976e1b8d761823c0329dbbb560e0aa6429b9b19f44ca  launched_P4C4.json
+  98ce8b582efccfe284eeba096370212246fb736ffae93e9ccad66bb918083fd4  journey_receipt_P4C5.json
+  8542ed21d50bad0c50845caa82a52dd4bd2c38af8756cc24733751f9d1eabb25  journey_err_P4C5.txt
+  0028b2d89cb5c41cc32aa0cd523c3334cda3ee092fa7ebe399a1fb849c4a26a0  launched_P4C5.json
+  e2bf001fa40df0c18d7bf41eb3d5268ab42e9df43ba5a4077d5d9f641c28c379  rule_environment_studio_amend_P4C5.png

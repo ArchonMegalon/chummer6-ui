@@ -1,0 +1,334 @@
+{
+  "status": "pass",
+  "journeyMode": "mouse_first_live_binary",
+  "headId": "avalonia",
+  "version": "1.0.0-preview.20261122.gen21",
+  "releaseVersion": "1.0.0-preview.20261122.gen21",
+  "channelId": "preview",
+  "platform": "windows",
+  "arch": "x64",
+  "rid": "win-x64",
+  "hostClass": "NUC",
+  "scenarioId": "sr5-priority",
+  "processPath": "Chummer.Avalonia.exe",
+  "processPathDisclosure": "file_name_only",
+  "artifactDigest": "sha256:bfe379117959f2c0f292871e638a970c82a4aba20bc25c7bf0205c0cc024e9e1",
+  "artifactDigestSource": "process_path",
+  "framework": ".NET 10.0.3",
+  "operatingSystem": "Microsoft Windows 10.0.26200",
+  "startedAtUtc": "2026-11-22T22:49:15.6335168+00:00",
+  "completedAtUtc": "2026-11-22T22:49:27.1954497+00:00",
+  "recordedAtUtc": "2026-11-22T22:49:27.1954497+00:00",
+  "screenshotDirectory": "D:\\sources\\chummer\\_scratch\\gen37\\gen21_accept\\shots_P4A",
+  "tracePath": null,
+  "steps": [
+    "start mouse-first live binary journey (sr5-priority)",
+    "wait success: desktop shell initialized",
+    "magician export leg: import bundled SR5 Career magician, save, save-as native .chum5, export portable bundle",
+    "no workspace open; skipping close before sample import",
+    "career-sample shell state: workspaceId=null",
+    "career sample import: loading bundled payload via the File \u003E Open coordinator (sample controls hidden at this shell state)",
+    "wait success: career sample import triggered (WorkspaceId assigned)",
+    "clicked bundled demo runner button",
+    "clicked bundled demo runner button",
+    "wait success: career sample document revision stable",
+    "magician export: bundled SR5 Career magician sample imported",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command save_character available",
+    "click file menu command save_character",
+    "wait success: magician workspace save settled (ContentRevision == SavedRevision \u003E 0)",
+    "magician export: saved revision 1",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command save_character_as available",
+    "menu command save_character_as attempt 1 target not live at press - resolving popup state",
+    "wait success: menu command save_character_as popup open for reprobe",
+    "click file menu command save_character_as",
+    "wait success: native .chum5 save-as payload materialized on disk",
+    "magician export: save-as payload magician=True sustainedSpells=5 totalSpells=10 sustainedNames=[Increase [Attribute], Increase [Attribute], Improved Invisibility, Shapechange, Combat Sense]",
+    "click file menu",
+    "wait success: file menu commands visible",
+    "wait success: menu command export_character available",
+    "menu command export_character attempt 1 target not live at press - resolving popup state",
+    "wait success: menu command export_character popup open for reprobe",
+    "click file menu command export_character",
+    "wait success: dialog dialog.export_character visible",
+    "wait success: dialog action download available",
+    "click dialog action download; NOT DELIVERED pre-dispatch (target not live) - recorded as non-delivery, not a click",
+    "retry dialog action download after attempt 1: explicit pre-dispatch non-delivery - fresh press allowed",
+    "wait success: dialog action download available",
+    "click dialog action download; delivered=True (probe verified); enabled=True",
+    "wait success: export bundle materialized through the download override",
+    "magician export: portable dossier json=True magicianProfile=True magEnabled=True created=True (the dossier format carries the magician profile closure; the learned-spell inventory lives in the native .chum5 payload)",
+    "magician export receipt written"
+  ],
+  "screenshotPaths": [
+    "D:\\sources\\chummer\\_scratch\\gen37\\gen21_accept\\shots_P4A\\07-magician-export-after.png"
+  ],
+  "pointerActionCount": 8,
+  "textEntryActionCount": 0,
+  "directTextMutationCount": 0,
+  "usedForcedComboDropdownOpen": false,
+  "usedComboSelectionFallback": false,
+  "observedInputEvents": [
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:19.9520602+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.0305703+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.0310914+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.0321552+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.0324309+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.032447+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.3191554+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.3216305+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.3216817+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:20.5586675+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:21.5381805+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:21.5631539+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:21.5632068+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:21.5633082+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:21.563322+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:21.5633275+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character_as",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:22.0910717+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character_as",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:22.0931717+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character_as",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:22.0932904+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "save_character_as",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:22.3767287+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.2228363+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.2404959+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.2405676+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.2406317+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.2406476+00:00"
+    },
+    {
+      "eventKind": "tapped",
+      "controlType": "MenuItem",
+      "controlName": "FileMenuButton",
+      "controlTag": "file",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.2406551+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.759446+00:00"
+    },
+    {
+      "eventKind": "pointer_pressed",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.7612581+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.7613316+00:00"
+    },
+    {
+      "eventKind": "pointer_released",
+      "controlType": "MenuItem",
+      "controlName": null,
+      "controlTag": "export_character",
+      "dialogId": null,
+      "recordedAtUtc": "2026-11-22T22:49:23.9148404+00:00"
+    }
+  ],
+  "workspaceId": "27fde5e3d62c447684a69153efc425d9",
+  "characterName": "Soma",
+  "characterAlias": "Soma",
+  "rulesetId": "sr5",
+  "buildMethod": null,
+  "metatypeCategory": null,
+  "priorityHeritage": null,
+  "metatype": null,
+  "priorityTalent": null,
+  "priorityTalentChoice": null,
+  "hasSavedWorkspace": true,
+  "authenticationPortalOpened": false,
+  "authenticationPortalUri": null,
+  "activeDialogId": null,
+  "verificationNotes": [
+    "Controller9543 fictional-magician export checkpoint: the bundled SR5 Career magician sample (Soma-Career.chum5) was imported through the production import coordinator, saved through the product save command into the durable state root, saved-as native .chum5 through the real DownloadAsync dispatch, and exported as the ordinary portable export bundle through the real ExportAsync dispatch; both payloads were verified to carry the magician markers and the learned sustained spells."
+  ],
+  "error": null
+}

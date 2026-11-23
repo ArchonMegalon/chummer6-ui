@@ -1,0 +1,45 @@
+receipt exists: True
+== amend-related receipt fields: 6
+   /steps[247] => click AmendRoundTripButton (attempt 1); delivered=True;isPressed=False;enabled=False;visible=True;attached;raise:hit=True;realTarget=ScrollContentPresenter:PART_ContentPresenter;rootPos=700,186;inCtl=100,18;tlSize=860x660;bounds=200x36;
+   /steps[248] => wait success: amend round trip completed with both portability receipts
+   /steps[249] => amend receipt lines: Amend round trip failed: Amend round trip failed: Workspace format 'Json' is not supported.
+   /steps[275] => workflow assertion failed: print_export_workflow/amend_round_trip_portability_receipts; failing the run before the success receipt
+   /screenshotPaths[28] => D:\sources\chummer\_scratch\gen37\gen21_accept\shots_P4C5\rule_environment_studio_amend.png
+   /error => mouse-first journey: workflow 'print_export_workflow' assertion 'amend_round_trip_portability_receipts' failed; success receipt withheld
+status: fail
+repoHead: None
+steps: 277
+    click Windows menu command close_all
+    wait success: workspace closed (no active workspace)
+    career-sample shell state: workspaceId=null
+    career sample import: loading bundled payload via the File > Open coordinator (sample controls hidden at this shell state)
+    wait success: career sample import triggered (WorkspaceId assigned)
+    clicked bundled demo runner button
+    clicked bundled demo runner button
+    wait success: career sample document revision stable
+    click career Award Karma button; clickEventObserved=True; success gated on modal opening
+    click career rewards Apply; delivered=True;isPressed=False;enabled=False;visible=True;attached;raise:hit=True;realTarget=Panel:;rootPos=300,263;inCtl=46,18;tlSize=460x295;bounds=92x36;
+    career rewards dialog closed=True
+    career rewards apply receipt: karma 11 -> 16 (increased=True)
+    workflow assertion failed: print_export_workflow/amend_round_trip_portability_receipts; failing the run before the success receipt
+    failure dialog: none; presenter error: none
+
+== coord.py help
+usage: agent-coordination.py [-h] [--state-dir STATE_DIR]
+                             {doctor,next,report,request,controller-plan} ...
+
+Small, fail-closed Teable coordination client. Python 3.10+, standard library
+only.
+
+positional arguments:
+  {doctor,next,report,request,controller-plan}
+    doctor              Read-only binding and schema check; cannot verify
+                        write permission.
+    next                Read assigned tasks; never claim or execute them.
+    controller-plan     Offline schema/seed plan only; performs no network
+                        calls.
+
+options:
+  -h, --help            show this help message and exit
+  --state-dir STATE_DIR
+

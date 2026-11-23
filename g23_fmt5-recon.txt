@@ -1,0 +1,40 @@
+== CORE WorkspaceExportReceipt( hits
+    Chummer.Application/Workspaces/WorkspaceService.cs:1005:        return new WorkspaceExportReceipt(
+    Chummer.Contracts/Workspaces/CharacterWorkspaceModels.cs:176:public sealed record WorkspaceExportReceipt(
+    Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs:359:                Value: new WorkspaceExportReceipt(
+    Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs:1509:                Value: new WorkspaceExportReceipt(
+    Chummer.Tests/Presentation/DesktopShellDownloadDispatchTests.cs:182:        return new WorkspaceExportReceipt(
+== CORE Export decls
+    Chummer.Application/Workspaces/IWorkspaceService.cs:202:    CommandResult<WorkspaceExportReceipt> Export(CharacterWorkspaceId id);
+    Chummer.Application/Workspaces/IWorkspaceService.cs:204:    CommandResult<WorkspaceExportReceipt> Export(OwnerScope owner, CharacterWorkspaceId id);
+    Chummer.Application/Workspaces/WorkspaceService.cs:910:    public CommandResult<WorkspaceExportReceipt> Export(CharacterWorkspaceId id)
+    Chummer.Application/Workspaces/WorkspaceService.cs:915:    public CommandResult<WorkspaceExportReceipt> Export(OwnerScope owner, CharacterWorkspaceId id)
+    Chummer.Application/Workspaces/WorkspaceService.cs:920:    private CommandResult<WorkspaceExportReceipt> ExportCore(
+    Chummer.Tests/AiDigestServiceTests.cs:224:        public CommandResult<WorkspaceExportReceipt> Export(CharacterWorkspaceId id) => throw new NotSupportedException();
+    Chummer.Tests/AiDigestServiceTests.cs:226:        public CommandResult<WorkspaceExportReceipt> Export(OwnerScope owner, CharacterWorkspaceId id) => throw new NotSupportedException();
+    Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs:740:        public CommandResult<WorkspaceExportReceipt> ExportResult { get; init; } = new(false, null, "Export not configured.");
+    Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs:742:        public CommandResult<WorkspaceExportReceipt> Export(CharacterWorkspaceId id) => ExportResult;
+    Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs:744:        public CommandResult<WorkspaceExportReceipt> Export(OwnerScope owner, CharacterWorkspaceId id) => Export(id);
+    Chummer.Tests/OwnerScopedApiEndpointTests.cs:1021:        public CommandResult<WorkspaceExportReceipt> Export(CharacterWorkspaceId id) => throw new NotSupportedException();
+    Chummer.Tests/OwnerScopedApiEndpointTests.cs:1023:        public CommandResult<WorkspaceExportReceipt> Export(OwnerScope owner, CharacterWorkspaceId id) => throw new NotSupportedException();
+    Chummer.Tests/SessionServiceTests.cs:810:        public CommandResult<WorkspaceExportReceipt> Export(CharacterWorkspaceId id) => throw new NotSupportedException();
+    Chummer.Tests/SessionServiceTests.cs:812:        public CommandResult<WorkspaceExportReceipt> Export(OwnerScope owner, CharacterWorkspaceId id) => throw new NotSupportedException();
+== CORE Format: assignments
+    Chummer.Application/Workspaces/WorkspaceService.cs:1007:            Format: WorkspaceDocumentFormat.Json,
+    Chummer.Benchmarks/WorkspaceBenchmarkRuntime.cs:58:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.CoreEngine.Tests/Program.cs:2784:            Format: WorkspaceDocumentFormat.Json));
+    Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs:361:                    Format: WorkspaceDocumentFormat.Json,
+    Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs:1398:                    Format: WorkspaceDocumentFormat.NativeXml,
+    Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs:1511:                    Format: WorkspaceDocumentFormat.Json,
+    Chummer.Tests/Presentation/DesktopShellDownloadDispatchTests.cs:184:            Format: WorkspaceDocumentFormat.Json,
+    Chummer.Tests/Presentation/WorkspacePersistenceServiceTests.cs:103:                    Format: WorkspaceDocumentFormat.NativeXml,
+    Chummer.Tests/RestartSafeWorkspacePersistenceTests.cs:43:                    Format: WorkspaceDocumentFormat.Json),
+    Chummer.Tests/WorkspaceServiceTests.cs:222:        WorkspaceImportResult imported = workspaceService.Import(new WorkspaceImportDocument(xml, RulesetId: RulesetDefaults.Sr5, Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:782:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:806:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:832:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:927:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:958:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:1100:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:1124:            Format: WorkspaceDocumentFormat.NativeXml));
+    Chummer.Tests/WorkspaceServiceTests.cs:1127:            Format: WorkspaceDocumentFormat.NativeXml));

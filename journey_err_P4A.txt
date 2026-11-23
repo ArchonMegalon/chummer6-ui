@@ -1,0 +1,40 @@
+[mouse-first-journey] start mouse-first live binary journey (sr5-priority)
+[mouse-first-journey] wait success: desktop shell initialized
+[mouse-first-journey] magician export leg: import bundled SR5 Career magician, save, save-as native .chum5, export portable bundle
+[mouse-first-journey] no workspace open; skipping close before sample import
+[mouse-first-journey] career-sample shell state: workspaceId=null
+[mouse-first-journey] career sample import: loading bundled payload via the File > Open coordinator (sample controls hidden at this shell state)
+[mouse-first-journey] wait success: career sample import triggered (WorkspaceId assigned)
+[mouse-first-journey] clicked bundled demo runner button
+[mouse-first-journey] clicked bundled demo runner button
+[mouse-first-journey] wait success: career sample document revision stable
+[mouse-first-journey] magician export: bundled SR5 Career magician sample imported
+[mouse-first-journey] click file menu
+[mouse-first-journey] wait success: file menu commands visible
+[mouse-first-journey] wait success: menu command save_character available
+[mouse-first-journey] click file menu command save_character
+[mouse-first-journey] wait success: magician workspace save settled (ContentRevision == SavedRevision > 0)
+[mouse-first-journey] magician export: saved revision 1
+[mouse-first-journey] click file menu
+[mouse-first-journey] wait success: file menu commands visible
+[mouse-first-journey] wait success: menu command save_character_as available
+[mouse-first-journey] menu command save_character_as attempt 1 target not live at press - resolving popup state
+[mouse-first-journey] wait success: menu command save_character_as popup open for reprobe
+[mouse-first-journey] click file menu command save_character_as
+[mouse-first-journey] wait success: native .chum5 save-as payload materialized on disk
+[mouse-first-journey] magician export: save-as payload magician=True sustainedSpells=5 totalSpells=10 sustainedNames=[Increase [Attribute], Increase [Attribute], Improved Invisibility, Shapechange, Combat Sense]
+[mouse-first-journey] click file menu
+[mouse-first-journey] wait success: file menu commands visible
+[mouse-first-journey] wait success: menu command export_character available
+[mouse-first-journey] menu command export_character attempt 1 target not live at press - resolving popup state
+[mouse-first-journey] wait success: menu command export_character popup open for reprobe
+[mouse-first-journey] click file menu command export_character
+[mouse-first-journey] wait success: dialog dialog.export_character visible
+[mouse-first-journey] wait success: dialog action download available
+[mouse-first-journey] click dialog action download; NOT DELIVERED pre-dispatch (target not live) - recorded as non-delivery, not a click
+[mouse-first-journey] retry dialog action download after attempt 1: explicit pre-dispatch non-delivery - fresh press allowed
+[mouse-first-journey] wait success: dialog action download available
+[mouse-first-journey] click dialog action download; delivered=True (probe verified); enabled=True
+[mouse-first-journey] wait success: export bundle materialized through the download override
+[mouse-first-journey] magician export: portable dossier json=True magicianProfile=True magEnabled=True created=True (the dossier format carries the magician profile closure; the learned-spell inventory lives in the native .chum5 payload)
+[mouse-first-journey] magician export receipt written
