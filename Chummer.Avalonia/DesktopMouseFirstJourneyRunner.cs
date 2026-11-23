@@ -11224,15 +11224,34 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             // WIN-006/T33 evidence: governed amend round trip (export -> import,
             // both portability receipts surfaced in the studio body).
             string amendStatus = "amend button not reachable";
+            List<string> amendLines = [];
             Button? amendButton = Dispatcher.UIThread.Invoke(() =>
                 FindDescendantByName<Button>(
                     window.OwnedWindows.FirstOrDefault(w => w is DesktopRuleEnvironmentStudioWindow),
                     "AmendRoundTripButton"));
             if (amendButton is not null)
             {
-                await ClickToolStripButtonUntilEffectAsync(
-                    window,
-                    "RuleEnvironmentStudioButton",
+                // T890 gen22 root-cause fix: the construction-time explainer
+                // TextBlock inside AmendBody satisfied the old
+                // Children.Count > 0 predicate the moment the studio opened,
+                // so that flow never pressed AmendRoundTripButton and its
+                // receipts were vacuous. Press the real amend button through
+                // the resolved route and gate on the receipt LINES: the
+                // explainer starts "Run a governed amend", success lines start
+                // "Amend completed:", the governed failure line starts
+                // "Amend round trip failed:". A re-press is forbidden: each
+                // amend import commits a new workspace document.
+                string amendRouting = await RoutePointerClickResolvedAsync(
+                    amendButton,
+                    waitForClick: true,
+                    liveTarget: () => Dispatcher.UIThread.Invoke(() =>
+                        FindDescendantByName<Button>(
+                            window.OwnedWindows.FirstOrDefault(w => w is DesktopRuleEnvironmentStudioWindow),
+                            "AmendRoundTripButton")));
+                RecordStep(steps, "click AmendRoundTripButton (attempt 1); " + amendRouting);
+                amendStatus = "amend press delivered; awaiting receipt lines";
+                await WaitForAsync(
+                    steps,
                     "amend round trip completed with both portability receipts",
                     () =>
                     {
@@ -11243,12 +11262,37 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             return false;
                         }
                         StackPanel? amendBody = Dispatcher.UIThread.Invoke(() => FindDescendantByName<StackPanel>(studio, "AmendBody"));
-                        return amendBody is not null && Dispatcher.UIThread.Invoke(() => amendBody.Children.Count > 0);
+                        if (amendBody is null)
+                        {
+                            return false;
+                        }
+                        List<string> texts = Dispatcher.UIThread.Invoke(() =>
+                            amendBody.Children.OfType<TextBlock>()
+                                .Select(tb => tb.Text)
+                                .Where(text => text is not null)
+                                .Cast<string>()
+                                .ToList());
+                        if (texts.Count == 0)
+                        {
+                            return false;
+                        }
+                        bool amendSucceeded = texts.Any(text => text.StartsWith("Amend completed:", StringComparison.Ordinal));
+                        bool amendFailed = texts.Any(text => text.StartsWith("Amend round trip failed:", StringComparison.Ordinal));
+                        if (!amendSucceeded && !amendFailed)
+                        {
+                            return false;
+                        }
+                        amendLines.Clear();
+                        amendLines.AddRange(texts);
+                        amendStatus = amendSucceeded
+                            ? "amend body materialized with success receipt lines"
+                            : "amend round trip failed: "
+                                + (texts.FirstOrDefault(text => text.StartsWith("Amend round trip failed:", StringComparison.Ordinal)) ?? "unknown");
+                        return true;
                     },
-                    steps,
                     ct,
-                    recordPointerAction);
-                amendStatus = "amend body materialized with receipt lines";
+                    TimeSpan.FromSeconds(90));
+                RecordStep(steps, "amend receipt lines: " + string.Join(" | ", amendLines));
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "rule_environment_studio_amend");
             }
             else
@@ -11291,7 +11335,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 InteractionNotes:
                 [
                     $"Printed via the toolstrip Print button with conflict-recovery (PDF compose status: {(printPdfComposed ? "composed " + savedPrintBytes.Length + "-byte PDF with EOF marker" : "fell back to HTML: " + (pdfComposeError ?? "none"))}); exported via File menu > 'Export Dossier...' > Download; the desktop file coordinator overrode the native save pickers and wrote {Path.GetFileName(savedPrintPath!)} ({new FileInfo(savedPrintPath!).Length} bytes) and {Path.GetFileName(savedExportPath!)} ({new FileInfo(savedExportPath!).Length} bytes) to a temp evidence directory after importing the bundled career sample.",
-                    $"Rules Studio amend round trip: {amendStatus}."
+                    $"Rules Studio amend round trip: {amendStatus}. Receipt lines: {(amendLines.Count > 0 ? string.Join(" | ", amendLines) : "none")}."
                 ]);
         }
         finally
