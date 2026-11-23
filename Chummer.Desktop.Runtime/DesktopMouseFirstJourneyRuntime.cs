@@ -40,6 +40,7 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string MagicianExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT";
     public const string MagicianExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT_RECEIPT";
     public const string WizardCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL";
+    public const string KeyboardMatrixEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_KEYBOARD_MATRIX";
 
     /// <summary>
     /// WIN-009 gen17: when launched with
@@ -362,6 +363,22 @@ public static class DesktopMouseFirstJourneyRuntime
     /// </summary>
     public static bool WizardCancelRequested => string.Equals(
         Environment.GetEnvironmentVariable(WizardCancelEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-009 gen11: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_KEYBOARD_MATRIX=1, the journey runner
+    /// executes the Core-free keyboard matrix leg: open the real
+    /// dialog.new_character dialog via the file menu, walk focus with delivered
+    /// Tab/Shift+Tab keystrokes, close through the governed dialog Escape
+    /// affordance (which invokes the same dialog action route the visible cancel
+    /// button uses), observe bounded focus return, prove the workspace identity
+    /// and content revision did not mutate, and record per-window render-scaling
+    /// DPI facts for the owned-window matrix.
+    /// </summary>
+    public static bool KeyboardMatrixRequested => string.Equals(
+        Environment.GetEnvironmentVariable(KeyboardMatrixEnvironmentVariable) ?? string.Empty,
         "1",
         StringComparison.OrdinalIgnoreCase);
 
