@@ -78,6 +78,7 @@ public partial class DesktopDialogWindow : Window
         _dialogActionsPanel = this.FindControl<StackPanel>("DialogActionsPanel")!;
         Closing += OnClosing;
         Opened += OnOpened;
+        KeyDown += OnDialogWindowKeyDown;
     }
 
     public DesktopDialogWindow(CharacterOverviewViewModelAdapter adapter)
@@ -4870,6 +4871,42 @@ public partial class DesktopDialogWindow : Window
         double nextOffsetY = Math.Clamp(currentOffset.Y + deltaY, 0d, maxOffsetY);
         _dialogScrollViewer.Offset = new Vector(currentOffset.X, nextOffsetY);
         return true;
+    }
+
+    /// <summary>
+    /// WIN-009 gen11 keyboard matrix (Controller9923): governed Escape
+    /// affordance. Escape closes a dialog ONLY through the same
+    /// ExecuteDialogActionAsync route the visible cancel/close button uses,
+    /// and ONLY when that affordance is actually rendered. Dialogs without
+    /// a cancel affordance (master index, roster, dice roller) keep Escape
+    /// unhandled - the shell action set stays the single source of truth,
+    /// and window close cleanup (OnClosing) remains the governed path.
+    /// </summary>
+    private void OnDialogWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape)
+            return;
+
+        if (_adapter is null)
+            return;
+
+        Button? cancelAffordance = _dialogActionsPanel.Children
+            .OfType<Button>()
+            .FirstOrDefault(button => button.IsVisible
+                && string.Equals(button.Tag as string, "cancel", StringComparison.Ordinal))
+            ?? _dialogActionsPanel.Children
+                .OfType<Button>()
+                .FirstOrDefault(button => button.IsVisible
+                    && string.Equals(button.Tag as string, "close", StringComparison.Ordinal));
+
+        if (cancelAffordance is null)
+            return;
+
+        string actionId = (cancelAffordance.Tag as string) ?? "cancel";
+        e.Handled = true;
+        _ = ExecuteSafeAsync(
+            () => _adapter.ExecuteDialogActionAsync(actionId, CancellationToken.None),
+            $"execute action '{actionId}' (Escape affordance)");
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)

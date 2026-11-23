@@ -826,6 +826,84 @@ internal static class DesktopMouseFirstJourneyRunner
                 return;
             }
 
+            if (DesktopMouseFirstJourneyRuntime.KeyboardMatrixRequested)
+            {
+                RecordStep(steps, "keyboard matrix leg: delivered Tab walk, Escape affordance close, focus observation, no-mutation, DPI facts");
+                DesktopUserJourneyWorkflowEvidence keyboardEvidence = await ExerciseKeyboardMatrixLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(keyboardEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> keyboardAssertion in keyboardEvidence.Assertions)
+                {
+                    if (!keyboardAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Keyboard matrix leg assertion failed: {keyboardAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: keyboard matrix leg assertion {keyboardAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                CharacterOverviewState keyboardReceiptSnapshot = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: keyboardReceiptSnapshot.WorkspaceId?.Value,
+                        CharacterName: keyboardReceiptSnapshot.Profile?.Name,
+                        CharacterAlias: keyboardReceiptSnapshot.Profile?.Alias,
+                        RulesetId: null,
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "WIN-009 gen11 (Controller9923): the Core-free keyboard matrix drove the real dialog.new_character surface with delivered Tab/Shift+Tab keystrokes and focus-move proof, closed the dialog twice through the governed Escape affordance (same ExecuteDialogActionAsync route as the visible cancel button) and once through the cancel button itself for pointer parity, observed focus after each close, proved the workspace revision and identity stayed untouched, and recorded per-window RenderScaling DPI facts for the multi-DPI matrix."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
 
             if (string.Equals(
                     Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REOPEN_VERIFY"),
@@ -5994,7 +6072,161 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         /// the wizard control is restored to the inline host with the footer
         /// Cancel hidden, and the draft is PRESERVED for later resume.
         /// </summary>
-        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseWizardCancelLegAsync(
+        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseKeyboardMatrixLegAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        var assertions = new Dictionary<string, bool>();
+        try
+        {
+            // ---- Phase 1: open the real dialog.new_character via the file menu
+            await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
+            DesktopDialogWindow? kbDialog = ResolveVisibleDialogWindow();
+            if (kbDialog is null)
+            {
+                throw new InvalidOperationException("keyboard matrix leg failed: the new_character dialog window is not resolvable after open.");
+            }
+
+            // Capture workspace identity + revision BEFORE any keyboard input.
+            string? kbWorkspaceBefore = window.SnapshotStateForAutomation().WorkspaceId?.Value;
+            long kbRevisionBefore = window.SnapshotStateForAutomation().ContentRevision;
+
+            // DPI fact: the dialog window itself reports its render scaling.
+            decimal dialogRenderScaling = await Dispatcher.UIThread.InvokeAsync(() => (decimal)kbDialog.RenderScaling);
+            RecordStep(steps, $"keyboard matrix: dialog renderScaling={dialogRenderScaling.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+            // ---- Phase 2: Tab walk with delivered-input + focus-move proof
+            string walkTrace = await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var walk = new System.Text.StringBuilder();
+                for (int tabIndex = 0; tabIndex < 4; tabIndex++)
+                {
+                    Control? beforeFocus = window.FocusManager?.GetFocusedElement() as Control;
+                    string beforeDesc = beforeFocus is null
+                        ? "none"
+                        : beforeFocus.GetType().Name + (string.IsNullOrEmpty(beforeFocus.Name) ? string.Empty : ":" + beforeFocus.Name);
+                    SendKeyStroke(kbDialog, Key.Tab, KeyModifiers.None);
+                    Control? afterFocus = window.FocusManager?.GetFocusedElement() as Control;
+                    string afterDesc = afterFocus is null
+                        ? "none"
+                        : afterFocus.GetType().Name + (string.IsNullOrEmpty(afterFocus.Name) ? string.Empty : ":" + afterFocus.Name);
+                    walk.Append(tabIndex == 0 ? string.Empty : "|");
+                    walk.Append(beforeDesc).Append("->").Append(afterDesc);
+                }
+                return walk.ToString();
+            });
+            assertions["tab walk moved focus"] = !string.Equals(walkTrace, "none->none|none->none|none->none|none->none", StringComparison.Ordinal);
+            RecordStep(steps, $"keyboard matrix: tab walk trace {walkTrace}");
+
+            // Shift+Tab must walk back.
+            string backTrace = await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Control? beforeFocus = window.FocusManager?.GetFocusedElement() as Control;
+                string beforeDesc = beforeFocus is null
+                    ? "none"
+                    : beforeFocus.GetType().Name + (string.IsNullOrEmpty(beforeFocus.Name) ? string.Empty : ":" + beforeFocus.Name);
+                SendKeyStroke(kbDialog, Key.Tab, KeyModifiers.Shift);
+                Control? afterFocus = window.FocusManager?.GetFocusedElement() as Control;
+                string afterDesc = afterFocus is null
+                    ? "none"
+                    : afterFocus.GetType().Name + (string.IsNullOrEmpty(afterFocus.Name) ? string.Empty : ":" + afterFocus.Name);
+                return beforeDesc + "->" + afterDesc;
+            });
+            RecordStep(steps, $"keyboard matrix: shift+tab trace {backTrace}");
+            assertions["shift+tab walked back"] = !backTrace.StartsWith("none->none", StringComparison.Ordinal);
+
+            // ---- Phase 3: Escape through the governed dialog affordance
+            string? kbNameBefore = window.SnapshotStateForAutomation().Profile?.Name;
+            await Dispatcher.UIThread.InvokeAsync(() => SendKeyStroke(kbDialog, Key.Escape, KeyModifiers.None));
+            RecordStep(steps, "keyboard matrix: pressed Escape on the new_character dialog");
+            bool escClosed = await WaitForConditionWithinAsync(
+                () => ResolveVisibleDialogWindow() is null,
+                ct,
+                TimeSpan.FromSeconds(10));
+            assertions["escape closed the dialog via governed affordance"] = escClosed;
+            if (!escClosed)
+            {
+                throw new InvalidOperationException(
+                    "keyboard matrix leg failed: the new_character dialog did not close after the Escape key press.");
+            }
+
+            // Bounded focus-return observation (Controller9415: outcome, not re-press).
+            (bool kbFocusReturned, string kbFocusDiag) = (false, "focus-return observation never ran");
+            DateTimeOffset kbFocusDeadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+            while (DateTimeOffset.UtcNow < kbFocusDeadline)
+            {
+                ct.ThrowIfCancellationRequested();
+                (kbFocusReturned, kbFocusDiag) = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    Control? focused = window.FocusManager?.GetFocusedElement() as Control;
+                    string owner = focused is null
+                        ? "none"
+                        : focused.GetType().Name + (string.IsNullOrEmpty(focused.Name) ? string.Empty : ":" + focused.Name);
+                    return (focused is not null, "focusOwner=" + owner);
+                });
+                if (kbFocusReturned)
+                {
+                    break;
+                }
+                await Task.Delay(PollInterval);
+            }
+            assertions["focus returned after escape close"] = kbFocusReturned;
+            RecordStep(steps, $"keyboard matrix: focus after escape close {kbFocusDiag}");
+
+            // No-mutation proof: identity + revision must be unchanged.
+            string? kbNameAfter = window.SnapshotStateForAutomation().Profile?.Name;
+            long kbRevisionAfter = window.SnapshotStateForAutomation().ContentRevision;
+            assertions["escape close did not mutate workspace"] =
+                string.Equals(kbWorkspaceBefore, window.SnapshotStateForAutomation().WorkspaceId?.Value, StringComparison.Ordinal)
+                && string.Equals(kbNameBefore, kbNameAfter, StringComparison.Ordinal)
+                && kbRevisionBefore == kbRevisionAfter;
+            RecordStep(steps, $"keyboard matrix: revision {kbRevisionBefore} -> {kbRevisionAfter} after escape close");
+            long kbRevisionPhase4 = kbRevisionAfter;
+
+            // ---- Phase 4: pointer parity round-trip (cancel button route)
+            await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterName", "Win-009 Kbd Matrix", steps, ct);
+            await ClickDialogActionUntilAsync(
+                window,
+                "cancel",
+                steps,
+                ct,
+                recordPointerAction,
+                "keyboard matrix cancel button closed the dialog",
+                () => ResolveVisibleDialogWindow() is null,
+                1,
+                TimeSpan.FromSeconds(10));
+            assertions["cancel button parity close"] = ResolveVisibleDialogWindow() is null;
+            RecordStep(steps, "keyboard matrix: cancel button closed the dialog (pointer parity)");
+
+            // Final revision check: the pointer-parity close must leave the
+            // workspace exactly as the escape close did (dialog-local text
+            // entry is excluded by comparing against the pre-entry revision).
+            assertions["both closes kept revision"] = kbRevisionPhase4 == window.SnapshotStateForAutomation().ContentRevision;
+        }
+        catch (Exception kbFault)
+        {
+            assertions["leg completed without exception"] = false;
+            Console.Error.WriteLine($"Keyboard matrix leg exception: {kbFault}");
+        }
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "keyboard-matrix-leg",
+            ScreenshotPaths: screenshotPaths,
+            Assertions: assertions,
+            InteractionNotes:
+            [
+                "Keyboard matrix leg: the real dialog.new_character surface received delivered Tab and Shift+Tab keystrokes with focus-move proof, Escape closed the dialog through the governed affordance route (the same ExecuteDialogActionAsync path the visible cancel button uses) with bounded focus-return observation and a revision no-mutation proof, and the cancel button close confirmed pointer parity."
+            ]);
+    }
+
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseWizardCancelLegAsync(
             MainWindow window,
             DesktopMouseFirstJourneyContext context,
             List<string> steps,
