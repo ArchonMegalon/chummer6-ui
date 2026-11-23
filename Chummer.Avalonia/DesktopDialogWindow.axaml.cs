@@ -4952,7 +4952,7 @@ public partial class DesktopDialogWindow : Window
 
             // PopupRoot (the popup's visual root) does not carry the
             // placement target; the Popup control - its logical parent - does.
-            if (current.Parent is global::Avalonia.Controls.Popup popup
+            if (current.Parent is global::Avalonia.Controls.Primitives.Popup popup
                 && popup.PlacementTarget is Control placementTarget
                 && !ReferenceEquals(placementTarget, current))
             {
