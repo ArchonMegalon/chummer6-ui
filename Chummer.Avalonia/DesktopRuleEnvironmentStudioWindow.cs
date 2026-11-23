@@ -346,8 +346,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         }
         catch (Exception ex)
         {
-            _lastAmendRoundTrip = WorkspaceAmendRoundTripRecord.Failure(
-                $"Amend round trip failed: {ex.Message}");
+            _lastAmendRoundTrip = WorkspaceAmendRoundTripRecord.Failure(ex.Message);
             RefreshAmendBody();
         }
         finally
