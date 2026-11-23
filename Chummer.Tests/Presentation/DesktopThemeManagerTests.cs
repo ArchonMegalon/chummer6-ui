@@ -802,7 +802,8 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(shellTheme, "control.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#E5E7EB\");");
         StringAssert.Contains(shellTheme, "textBox.CaretBrush = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#F8FAFC\");");
         StringAssert.Contains(shellTheme, "textBox.SelectionForegroundBrush = ResolveThemeBrush(\"ChummerShellSelectionForegroundBrush\", \"#F8FAFC\");");
-        StringAssert.Contains(shellTheme, "control.Resources[resourceKey] = ResolveThemeBrush(themeResourceKey, fallbackHex);");
+        StringAssert.Contains(shellTheme, "if (mirrorWriteInFlight)");
+        StringAssert.Contains(shellTheme, "control.Resources[resourceKey] = brush;");
         StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemBackground\", \"ChummerShellSurfaceBrush\", \"#111827\");");
         StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"ComboBoxItemForeground\", \"ChummerShellForegroundBrush\", \"#E5E7EB\");");
         StringAssert.Contains(shellTheme, "SetLocalBrushResource(control, \"TextControlBackground\", \"ChummerShellInputBackgroundBrush\", \"#162031\");");

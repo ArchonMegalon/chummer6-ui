@@ -4,6 +4,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Chummer.Avalonia;
+using Chummer.Avalonia.Controls;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -69,6 +70,73 @@ public sealed class DesktopAppearanceTests
             finally
             {
                 host.Close();
+                app.Resources = previousResources;
+                app.RequestedThemeVariant = previous;
+                Dispatcher.UIThread.RunJobs();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Themed_dialog_pane_attach_wave_terminates_and_preserves_live_updates()
+    {
+        CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var app = global::Avalonia.Application.Current!;
+            var previous = app.RequestedThemeVariant;
+            var previousResources = app.Resources;
+            var resources = new ResourceDictionary();
+            var light = new ResourceDictionary();
+            var dark = new ResourceDictionary();
+            light["ChummerShellInputBackgroundBrush"] = Brushes.White;
+            light["ChummerShellInputForegroundBrush"] = Brushes.Black;
+            light["ChummerShellBorderBrush"] = Brushes.Gray;
+            light["ChummerShellSelectionBrush"] = Brushes.Blue;
+            light["ChummerShellSelectionForegroundBrush"] = Brushes.White;
+            light["ChummerShellSurfaceBrush"] = Brushes.White;
+            light["ChummerShellForegroundBrush"] = Brushes.Black;
+            light["ChummerShellTextMutedBrush"] = Brushes.DimGray;
+            light["ChummerShellMutedForegroundBrush"] = Brushes.DimGray;
+            light["ChummerShellActiveMenuBorderBrush"] = Brushes.Gray;
+            dark["ChummerShellInputBackgroundBrush"] = Brushes.Black;
+            dark["ChummerShellInputForegroundBrush"] = Brushes.White;
+            dark["ChummerShellBorderBrush"] = Brushes.Gray;
+            dark["ChummerShellSelectionBrush"] = Brushes.Blue;
+            dark["ChummerShellSelectionForegroundBrush"] = Brushes.White;
+            dark["ChummerShellSurfaceBrush"] = Brushes.Black;
+            dark["ChummerShellForegroundBrush"] = Brushes.White;
+            dark["ChummerShellTextMutedBrush"] = Brushes.DimGray;
+            dark["ChummerShellMutedForegroundBrush"] = Brushes.DimGray;
+            dark["ChummerShellActiveMenuBorderBrush"] = Brushes.Gray;
+            resources.ThemeDictionaries[ThemeVariant.Light] = light;
+            resources.ThemeDictionaries[ThemeVariant.Dark] = dark;
+            app.Resources = resources;
+            Window? host = null;
+            try
+            {
+                var fields = new DialogFieldDisplayItem[]
+                {
+                    new("f1", "Label", "v", "", false, true, "text"),
+                    new("f2", "Second", "v2", "", false, true, "text"),
+                };
+                var pane = new CommandDialogPaneControl();
+                pane.SetDialog("Dialog", "Message", "", fields, new DialogActionDisplayItem[] { });
+                host = new Window { Content = pane, Width = 720, Height = 420 };
+                host.Show();
+                Dispatcher.UIThread.RunJobs();
+                // Theme flips while the pane is attached re-publish the theme observables;
+                // mirror-write observers must terminate instead of re-writing forever.
+                DesktopAppearance.Apply("light");
+                Dispatcher.UIThread.RunJobs();
+                DesktopAppearance.Apply("dark");
+                Dispatcher.UIThread.RunJobs();
+                DesktopAppearance.Apply("system");
+                Dispatcher.UIThread.RunJobs();
+                Assert.AreSame(pane, host.Content);
+            }
+            finally
+            {
+                host?.Close();
                 app.Resources = previousResources;
                 app.RequestedThemeVariant = previous;
                 Dispatcher.UIThread.RunJobs();

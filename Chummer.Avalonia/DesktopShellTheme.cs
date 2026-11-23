@@ -482,14 +482,32 @@ internal static class DesktopShellTheme
     }
 
     private static void SetLocalBrushResource(Control control, string resourceKey, string themeResourceKey, string fallbackHex)
-        {
+    {
         if (resourceKey == themeResourceKey) return;
+        // The mirror write raises a resources-changed wave that synchronously re-enters this
+        // observer (set_Item -> NotifyResourcesChanged -> ResourceObservable -> OnNext). During
+        // mid-attach waves the resolved brush instance can alternate between host levels, so an
+        // identity-only check re-writes forever and overflows the stack. Guard each subscription
+        // with a closure-local in-flight flag: nested waves of our own write are suppressed,
+        // external theme changes still update the mirror live.
+        bool mirrorWriteInFlight = false;
         control.GetResourceObservable(themeResourceKey).Subscribe(new ResourceObserver(value =>
         {
-            if (value is IBrush brush
-                && (!control.Resources.TryGetResource(resourceKey, null, out object? current)
-                    || !ReferenceEquals(current, brush)))
-                control.Resources[resourceKey] = brush;
+            if (value is not IBrush brush)
+                return;
+            if (mirrorWriteInFlight)
+                return;
+            mirrorWriteInFlight = true;
+            try
+            {
+                if (!control.Resources.TryGetResource(resourceKey, null, out object? current)
+                    || !ReferenceEquals(current, brush))
+                    control.Resources[resourceKey] = brush;
+            }
+            finally
+            {
+                mirrorWriteInFlight = false;
+            }
         }));
     }
 
