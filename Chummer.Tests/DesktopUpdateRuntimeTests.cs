@@ -17,6 +17,27 @@ namespace Chummer.Tests;
 [TestClass]
 public sealed class DesktopUpdateRuntimeTests
 {
+    [TestMethod]
+    [DataRow("1.0.0-preview.20261123.gen31", "1.0.0-preview.20261118.b95573f9", true, 1)]
+    [DataRow("1.0.0-preview.20261118.b95573f9", "1.0.0-preview.20261123.gen31", true, -1)]
+    [DataRow("1.0.0-preview.20261123.gen31", "1.0.0-preview.20261123.gen9", true, 1)]
+    [DataRow("1.0.0-preview.20261123.gen9", "1.0.0-preview.20261123.gen31", true, -1)]
+    [DataRow("1.0.0-preview.20261123.abc123", "1.0.0-preview.20261123.def456", false, 0)]
+    [DataRow("1.0.0-preview.20261323.gen31", "1.0.0-preview.20261118.b95573f9", false, 0)]
+    [DataRow("1.0.0-preview.20261123.gen31", "1.0.0-stable.20261118.b95573f9", false, 0)]
+    public void TryCompareReleaseVersions_orders_dated_candidates_without_ordering_opaque_suffixes(
+        string installed, string manifest, bool expectedComparable, int expectedSign)
+    {
+        System.Reflection.MethodInfo? method = typeof(DesktopUpdateRuntime).GetMethod(
+            "TryCompareReleaseVersions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.IsNotNull(method);
+        object?[] arguments = [installed, manifest, 0];
+        bool comparable = (bool)method.Invoke(null, arguments)!;
+        Assert.AreEqual(expectedComparable, comparable);
+        if (comparable)
+            Assert.AreEqual(expectedSign, Math.Sign((int)arguments[2]!));
+    }
+
     private const string ManifestEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_MANIFEST";
     private const string UpdateModeEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_MODE";
     private const string UpdateEnabledEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_ENABLED";

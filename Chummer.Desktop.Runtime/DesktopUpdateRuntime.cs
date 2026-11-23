@@ -1279,6 +1279,38 @@ public static class DesktopUpdateRuntime
             return false;
         }
 
+        // Dated preview candidates use a different identity scheme from run- stamps.
+        // Never order opaque commit suffixes lexically: only the validated date,
+        // or an explicitly numeric generation on the same date, establishes order.
+        const string datedPattern = @"^(?<base>[0-9]+\.[0-9]+\.[0-9]+)-(?<channel>[a-z]+)\.(?<date>[0-9]{8})\.(?<suffix>[a-z0-9]+)$";
+        Match installedDated = Regex.Match(installed, datedPattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        Match manifestDated = Regex.Match(manifest, datedPattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (installedDated.Success && manifestDated.Success
+            && string.Equals(installedDated.Groups["channel"].Value, manifestDated.Groups["channel"].Value, StringComparison.OrdinalIgnoreCase)
+            && DateTime.TryParseExact(installedDated.Groups["date"].Value, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime installedDate)
+            && DateTime.TryParseExact(manifestDated.Groups["date"].Value, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime manifestDate)
+            && Version.TryParse(installedDated.Groups["base"].Value, out Version? installedBase)
+            && Version.TryParse(manifestDated.Groups["base"].Value, out Version? manifestBase))
+        {
+            comparison = installedBase.CompareTo(manifestBase);
+            if (comparison != 0)
+                return true;
+            comparison = installedDate.CompareTo(manifestDate);
+            if (comparison != 0)
+                return true;
+            string installedSuffix = installedDated.Groups["suffix"].Value;
+            string manifestSuffix = manifestDated.Groups["suffix"].Value;
+            if (installedSuffix.StartsWith("gen", StringComparison.OrdinalIgnoreCase)
+                && manifestSuffix.StartsWith("gen", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(installedSuffix.AsSpan(3), out int installedGeneration)
+                && int.TryParse(manifestSuffix.AsSpan(3), out int manifestGeneration))
+            {
+                comparison = installedGeneration.CompareTo(manifestGeneration);
+                return true;
+            }
+            return false;
+        }
+
         Match installedRunVersion = RunVersionPattern.Match(installed);
         Match manifestRunVersion = RunVersionPattern.Match(manifest);
         if (installedRunVersion.Success && manifestRunVersion.Success)
