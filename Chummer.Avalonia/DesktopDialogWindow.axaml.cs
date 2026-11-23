@@ -4198,6 +4198,7 @@ public partial class DesktopDialogWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
+        CaptureInitiatingOwnerFocus();
         Dispatcher.UIThread.Post(() =>
         {
             Activate();
@@ -4873,6 +4874,166 @@ public partial class DesktopDialogWindow : Window
         return true;
     }
 
+    private Control? _initiatingOwnerFocus;
+    private bool _focusRestoreScheduled;
+    private static readonly object s_focusRestoreGate = new();
+    private static readonly string[] s_focusRestoreRing = new string[8];
+    private static int s_focusRestoreRingIndex;
+
+    internal static string[] LastFocusRestoreSnapshot()
+    {
+        lock (s_focusRestoreGate)
+        {
+            return (string[])s_focusRestoreRing.Clone();
+        }
+    }
+
+    private static void RecordFocusRestore(string entry)
+    {
+        lock (s_focusRestoreGate)
+        {
+            s_focusRestoreRing[s_focusRestoreRingIndex] = entry;
+            s_focusRestoreRingIndex = (s_focusRestoreRingIndex + 1) % s_focusRestoreRing.Length;
+        }
+    }
+
+    private static string DescribeFocusTarget(Control? control)
+    {
+        if (control is null)
+        {
+            return "<null>";
+        }
+
+        string label = string.IsNullOrEmpty(control.Name)
+            ? global::Avalonia.Automation.AutomationProperties.GetAutomationId(control) ?? string.Empty
+            : control.Name;
+        return control.GetType().Name + ":" + label;
+    }
+
+    /// <summary>
+    /// WIN-009 gen11: capture what held keyboard focus in the owner window
+    /// immediately before the dialog steals activation, so the close path
+    /// can hand focus back (the same affordance family the SR6 career
+    /// advance modal received in gen13b).
+    /// </summary>
+    private void CaptureInitiatingOwnerFocus()
+    {
+        try
+        {
+            _initiatingOwnerFocus = (Owner as Window)?.FocusManager?.GetFocusedElement() as Control;
+            RecordFocusRestore("capture " + DescribeFocusTarget(_initiatingOwnerFocus));
+        }
+        catch (Exception captureFault)
+        {
+            _initiatingOwnerFocus = null;
+            RecordFocusRestore("capture fault " + captureFault.GetType().Name);
+        }
+    }
+
+    /// <summary>
+    /// Nearest still-attached, still-visible control in the initiating
+    /// visual chain. A menu-initiated dialog captures the menu command
+    /// item, whose popup TopLevel detaches when the menu closes; the walk
+    /// crosses that boundary via PopupRoot.PlacementTarget so the shell
+    /// element that opened the popup (the menu button) becomes the
+    /// restore target instead of failing on a detached control.
+    /// </summary>
+    private Control? ResolveRestorableFocusTarget(Control? captured)
+    {
+        Visual? current = captured;
+        while (current is not null)
+        {
+            if (current is Control candidate
+                && candidate.GetVisualRoot() is not null
+                && candidate.IsEffectivelyVisible)
+            {
+                return candidate;
+            }
+
+            if (current is global::Avalonia.Controls.Primitives.PopupRoot popupRoot
+                && popupRoot.PlacementTarget is Control placementTarget
+                && !ReferenceEquals(placementTarget, current))
+            {
+                current = placementTarget;
+                continue;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Bounded owner-focus restore after the dialog closes. Runs at most
+    /// once per close (Escape path and OnClosing both funnel here) and
+    /// records every observable state change in the diagnostics ring so a
+    /// failed restore is evidence, not a silent gap.
+    /// </summary>
+    internal void RestoreInitiatingOwnerFocusAfterClose()
+    {
+        if (_focusRestoreScheduled)
+        {
+            return;
+        }
+
+        _focusRestoreScheduled = true;
+        Window? ownerWindow = Owner as Window;
+        if (ownerWindow is null)
+        {
+            RecordFocusRestore("restore skipped: no owner window");
+            return;
+        }
+
+        _ = Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(3);
+            int attempt = 0;
+            string lastRecorded = string.Empty;
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                Control? target = ResolveRestorableFocusTarget(_initiatingOwnerFocus);
+                if (target is not null && ownerWindow.IsVisible)
+                {
+                    attempt++;
+                    try
+                    {
+                        target.Focus();
+                        bool focused = ReferenceEquals(ownerWindow.FocusManager?.GetFocusedElement(), target);
+                        string entry = "restore attempt" + attempt + " target=" + DescribeFocusTarget(target) + " focused=" + focused;
+                        if (!string.Equals(entry, lastRecorded, StringComparison.Ordinal))
+                        {
+                            RecordFocusRestore(entry);
+                            lastRecorded = entry;
+                        }
+                        if (focused)
+                        {
+                            return;
+                        }
+                    }
+                    catch (Exception restoreFault)
+                    {
+                        RecordFocusRestore("restore attempt" + attempt + " fault " + restoreFault.GetType().Name);
+                    }
+                }
+                else
+                {
+                    string entry = "restore probe: target=" + DescribeFocusTarget(target) + " ownerVisible=" + ownerWindow.IsVisible;
+                    if (!string.Equals(entry, lastRecorded, StringComparison.Ordinal))
+                    {
+                        RecordFocusRestore(entry);
+                        lastRecorded = entry;
+                    }
+                }
+
+                await Task.Delay(120);
+            }
+
+            RecordFocusRestore("restore exhausted: final target=" + DescribeFocusTarget(ResolveRestorableFocusTarget(_initiatingOwnerFocus)));
+        });
+    }
+
+
     /// <summary>
     /// WIN-009 gen11 keyboard matrix (Controller9923): governed Escape
     /// affordance. Escape closes a dialog ONLY through the same
@@ -4904,6 +5065,7 @@ public partial class DesktopDialogWindow : Window
 
         string actionId = (cancelAffordance.Tag as string) ?? "cancel";
         e.Handled = true;
+        RestoreInitiatingOwnerFocusAfterClose();
         _ = ExecuteSafeAsync(
             () => _adapter.ExecuteDialogActionAsync(actionId, CancellationToken.None),
             $"execute action '{actionId}' (Escape affordance)");
@@ -4911,6 +5073,8 @@ public partial class DesktopDialogWindow : Window
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
     {
+        RestoreInitiatingOwnerFocusAfterClose();
+
         if (_suppressCloseNotification)
             return;
 

@@ -6167,13 +6167,24 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     string owner = focused is null
                         ? "none"
                         : focused.GetType().Name + (string.IsNullOrEmpty(focused.Name) ? string.Empty : ":" + focused.Name);
-                    return (focused is not null, "focusOwner=" + owner);
+                    // Controller9415 discipline: focus counts as restored only
+                    // when it lands back in the OWNER window's visual chain -
+                    // dialog-internal content must not satisfy the assertion.
+                    bool inOwnerRoot = focused is not null
+                        && ReferenceEquals(focused.GetVisualRoot(), (Visual)window);
+                    return (inOwnerRoot, "focusOwner=" + owner + " inOwnerRoot=" + inOwnerRoot);
                 });
                 if (kbFocusReturned)
                 {
                     break;
                 }
                 await Task.Delay(PollInterval);
+            }
+            if (!kbFocusReturned)
+            {
+                string kbRestoreDiag = string.Join("|", DesktopDialogWindow.LastFocusRestoreSnapshot()
+                    .Where(entry => !string.IsNullOrEmpty(entry)));
+                RecordStep(steps, $"keyboard matrix: focus-restore diagnostics ring {kbRestoreDiag}");
             }
             assertions["focus returned after escape close"] = kbFocusReturned;
             RecordStep(steps, $"keyboard matrix: focus after escape close {kbFocusDiag}");
@@ -6201,7 +6212,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 "keyboard matrix cancel button closed the dialog",
                 () => ResolveVisibleDialogWindow() is null,
                 1,
-                TimeSpan.FromSeconds(10));
+                TimeSpan.FromSeconds(10),
+                waitForClick: true);
             assertions["cancel button parity close"] = ResolveVisibleDialogWindow() is null;
             RecordStep(steps, "keyboard matrix: cancel button closed the dialog (pointer parity)");
 
@@ -12202,7 +12214,8 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             string actionId,
             List<string> steps,
             CancellationToken ct,
-            Action recordPointerAction)
+            Action recordPointerAction,
+            bool waitForClick = false)
         {
             string actionName = DesktopDialogAccessibility.BuildActionName(actionId);
             await WaitForAsync(
@@ -12213,7 +12226,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     
             Button button = FindVisibleDescendant<Button>(ResolveDialogRoot(window), actionName)
                 ?? throw new InvalidOperationException($"Dialog action '{actionId}' was not found.");
-            string routing = await RoutePointerClickAsync(button);
+            string routing = await RoutePointerClickAsync(button, waitForClick);
     
             recordPointerAction();
             PointerDeliveryResult delivery = ParsePointerDeliveryResult(routing);
@@ -12253,11 +12266,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             string transitionDescription,
             Func<bool> transitionPredicate,
             int maxAttempts = 3,
-            TimeSpan? settleTimeout = null)
+            TimeSpan? settleTimeout = null,
+            bool waitForClick = false)
         {
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                string routing = await ClickDialogActionAsync(window, actionId, steps, ct, recordPointerAction);
+                string routing = await ClickDialogActionAsync(window, actionId, steps, ct, recordPointerAction, waitForClick);
                 if (await WaitForConditionWithinAsync(transitionPredicate, ct, settleTimeout ?? TransitionSettleTimeout))
                 {
                     RecordStep(steps, $"wait success: {transitionDescription}");
