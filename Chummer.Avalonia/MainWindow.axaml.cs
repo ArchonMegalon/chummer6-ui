@@ -129,6 +129,7 @@ public partial class MainWindow : Window
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
+        DesktopAppearance.Apply(_persistedPreferences.Theme);
         DesktopLocalizationCatalog.SetCurrentLanguageOverride(_persistedPreferences.Language);
         _installLinkingState = DesktopInstallLinkingRuntime.LoadOrCreateState(DesktopHeadId);
         InitializeComponent();

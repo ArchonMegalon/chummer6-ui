@@ -3104,7 +3104,9 @@ public partial class DesktopDialogWindow : Window
     {
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
         {
-            DesktopDialogFieldOption[] options = (field.Options ?? [])
+            DesktopDialogFieldOption[] options = (field.Id == "globalTheme"
+            ? DesktopAppearance.Options(field.Value).Select(option => new DesktopDialogFieldOption(option.Value, option.Label)).ToArray()
+            : field.Options ?? [])
                 .DistinctBy(option => option.Value, StringComparer.Ordinal)
                 .ToArray();
             ComboBox comboBox = new()
@@ -3881,7 +3883,9 @@ public partial class DesktopDialogWindow : Window
 
     private ComboBox BuildSelectComboBox(DesktopDialogField field, double minWidth)
     {
-        DesktopDialogFieldOption[] options = (field.Options ?? [])
+        DesktopDialogFieldOption[] options = (field.Id == "globalTheme"
+            ? DesktopAppearance.Options(field.Value).Select(option => new DesktopDialogFieldOption(option.Value, option.Label)).ToArray()
+            : field.Options ?? [])
             .DistinctBy(option => option.Value, StringComparer.Ordinal)
             .ToArray();
         ComboBox comboBox = new()
@@ -3990,7 +3994,9 @@ public partial class DesktopDialogWindow : Window
 
     private ListBox BuildSelectListBox(DesktopDialogField field)
     {
-        DesktopDialogFieldOption[] options = (field.Options ?? [])
+        DesktopDialogFieldOption[] options = (field.Id == "globalTheme"
+            ? DesktopAppearance.Options(field.Value).Select(option => new DesktopDialogFieldOption(option.Value, option.Label)).ToArray()
+            : field.Options ?? [])
             .DistinctBy(option => option.Value, StringComparer.Ordinal)
             .ToArray();
         ListBox listBox = new()

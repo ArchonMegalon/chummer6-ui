@@ -968,7 +968,9 @@ public partial class CommandDialogPaneControl : UserControl
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal)
             && string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
         {
-            DialogFieldOptionDisplayItem[] options = (field.Options ?? [])
+            DialogFieldOptionDisplayItem[] options = (field.Id == "globalTheme"
+                ? DesktopAppearance.Options(field.Value).Select(option => new DialogFieldOptionDisplayItem(option.Value, option.Label)).ToArray()
+                : field.Options ?? [])
                 .DistinctBy(option => option.Value, StringComparer.Ordinal)
                 .ToArray();
             ListBox listBox = new()
@@ -1012,7 +1014,9 @@ public partial class CommandDialogPaneControl : UserControl
 
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
         {
-            DialogFieldOptionDisplayItem[] options = (field.Options ?? [])
+            DialogFieldOptionDisplayItem[] options = (field.Id == "globalTheme"
+                ? DesktopAppearance.Options(field.Value).Select(option => new DialogFieldOptionDisplayItem(option.Value, option.Label)).ToArray()
+                : field.Options ?? [])
                 .DistinctBy(option => option.Value, StringComparer.Ordinal)
                 .ToArray();
             ComboBox comboBox = new()

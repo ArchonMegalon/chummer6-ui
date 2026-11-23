@@ -10,12 +10,14 @@ public partial class MainWindow
         if (ReferenceEquals(state, CharacterOverviewState.Empty) || _preferPersistedPreferencesOnNextRefresh)
         {
             DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
+            DesktopAppearance.Apply(_persistedPreferences.Theme);
             DesktopLocalizationCatalog.SetCurrentLanguageOverride(_persistedPreferences.Language);
             return state with { Preferences = _persistedPreferences };
         }
 
         DesktopPreferenceState normalized = DesktopPreferenceStateRuntime.Normalize(state.Preferences);
         DesktopPreferenceStateRuntime.SetCurrent(normalized);
+        DesktopAppearance.Apply(normalized.Theme);
         DesktopLocalizationCatalog.SetCurrentLanguageOverride(normalized.Language);
 
         if (normalized != _persistedPreferences)
@@ -35,6 +37,7 @@ public partial class MainWindow
         _persistedPreferences = normalized;
         DesktopPreferenceRuntime.SaveState(DesktopHeadId, normalized);
         DesktopPreferenceStateRuntime.SetCurrent(normalized);
+        DesktopAppearance.Apply(normalized.Theme);
         DesktopLocalizationCatalog.SetCurrentLanguageOverride(normalized.Language);
 
         _preferPersistedPreferencesOnNextRefresh = true;
