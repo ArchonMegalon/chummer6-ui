@@ -11019,14 +11019,42 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         // re-resolve the live container inside every attempt, press with
         // waitForClick diagnostics, observe the transition, and re-press on
         // a freshly resolved control when the transition was not observed.
+        // Controller9923 amendment: an observation timeout is NOT by itself
+        // authorization to redispatch. Elapsed time does not authorize
+        // another dispatched action. A re-press is only licensed when the
+        // preceding press PROVABLY delivered no input: the typed delivery
+        // parse (ParsePointerDeliveryResult) must classify the press as
+        // NotDelivered - the Click/MenuItem delivery probe on the pressed
+        // control never fired, so no click was delivered anywhere (the
+        // raise:hit/realTarget diagnostics document where a raised input
+        // went, e.g. a container detached by the tab-info section load).
+        // That is the proven pre-dispatch non-delivery that authorizes
+        // re-pressing a freshly resolved control. A DELIVERED press whose
+        // observation merely timed out is an uncertain outcome: it fails
+        // closed without re-dispatch, preserving the Controller9539
+        // uncertain-action reconciliation contract (never re-send a
+        // possibly-committed command; attribute read-only).
         bool validationRendered = false;
+        bool validationPressDelivered = false;
         for (int validationAttempt = 1; validationAttempt <= 3 && !validationRendered; validationAttempt++)
         {
             validationControl = FindVisibleValidationActionControl(window)
                 ?? throw new InvalidOperationException("The validation workflow has no visible routed Section Actions control.");
             string validationPressDiagnostics = await RoutePointerClickAsync(validationControl, waitForClick: true);
-            recordPointerAction();
-            RecordStep(steps, $"click visible validation action {validationAction.Id} (attempt {validationAttempt}); {validationPressDiagnostics}");
+            PointerDeliveryResult validationDelivery = ParsePointerDeliveryResult(validationPressDiagnostics);
+            validationPressDelivered = validationDelivery.Kind == PointerDeliveryKind.Delivered;
+            if (validationPressDelivered)
+            {
+                recordPointerAction();
+            }
+            RecordStep(steps, $"click visible validation action {validationAction.Id} (attempt {validationAttempt}); delivery={validationDelivery.Kind}; {validationPressDiagnostics}");
+            if (!validationPressDelivered && validationDelivery.Kind != PointerDeliveryKind.NotDelivered)
+            {
+                // Missing/Malformed diagnostics on a not-delivered press are
+                // unexpected: fail closed rather than guess about delivery.
+                throw new InvalidOperationException(
+                    "validation workflow: press diagnostics missing or malformed without delivery: " + validationPressDiagnostics);
+            }
             validationRendered = await WaitForConditionWithinAsync(
                 () =>
                 {
@@ -11041,12 +11069,20 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 TimeSpan.FromSeconds(12));
             if (!validationRendered)
             {
-                RecordStep(steps, $"validation result not rendered after attempt {validationAttempt}; re-pressing a freshly resolved control");
+                if (validationPressDelivered)
+                {
+                    // Uncertain outcome after a delivered press: fail closed,
+                    // never re-dispatch a possibly-committed command.
+                    throw new InvalidOperationException(
+                        "validation workflow: the press was delivered but the validation result did not render within the observation window; the outcome is uncertain and no re-dispatch is permitted (Controller9539 uncertain-action reconciliation). Diagnostics: "
+                        + validationPressDiagnostics);
+                }
+                RecordStep(steps, $"validation result not rendered after attempt {validationAttempt}; press provably delivered no input (typed NotDelivered, delivery probe never fired); re-resolving and re-pressing within the bounded budget");
             }
         }
         if (!validationRendered)
         {
-            throw new TimeoutException("Timed out while waiting for validation result rendered.");
+            throw new TimeoutException("Timed out while waiting for validation result rendered (only proven non-delivery presses were retried; no delivered press was ever re-dispatched).");
         }
         CharacterOverviewState validatedState = window.SnapshotStateForAutomation();
         string afterScreenshot = RequireScreenshotPath(
