@@ -331,7 +331,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Left,
-            ItemHeight = 32,
+            ItemHeight = double.NaN,
             Children =
             {
                 _moreToolsAccountButton,
@@ -349,7 +349,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
         }
 
         Content = DesktopShellTheme.CreateWindowSurface(
-            new Grid
+            new ScrollViewer
+            {
+                HorizontalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                Content = new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("320,*"),
                 ColumnSpacing = 14,
@@ -357,6 +361,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 {
                     CreateMatrixUplinkHero(),
                     CreateInstallLinkingPanel().At(0, 1)
+                }
                 }
             },
             padding: 12);
@@ -1747,6 +1752,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             recovery is DesktopRemoteCallbackRecoveryProjection.Running
                 or DesktopRemoteCallbackRecoveryProjection.InFlight);
         _moreToolsAccountButton.Content = BuildAccountButtonLabel(claimed, false, _language);
+        _moreToolsAccountButton.IsVisible = claimed;
         _followThroughButton.IsVisible = claimed;
         _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
         _unlinkButton.IsVisible = claimed;
