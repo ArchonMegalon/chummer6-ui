@@ -4950,15 +4950,18 @@ public partial class DesktopDialogWindow : Window
                 return candidate;
             }
 
-            if (current is global::Avalonia.Controls.Primitives.PopupRoot popupRoot
-                && popupRoot.PlacementTarget is Control placementTarget
+            // PopupRoot (the popup's visual root) does not carry the
+            // placement target; the Popup control - its logical parent - does.
+            if (current.Parent is global::Avalonia.Controls.Popup popup
+                && popup.PlacementTarget is Control placementTarget
                 && !ReferenceEquals(placementTarget, current))
             {
                 current = placementTarget;
                 continue;
             }
 
-            current = current.Parent;
+            // Visual.Parent is StyledElement?; non-visual parents end the walk.
+            current = current.Parent as Visual;
         }
 
         return null;
