@@ -37,7 +37,9 @@ public partial class StatusStripControl : UserControl, IStatusStripSurface
         CharacterStateText.Text = characterState;
         ServiceStateText.Text = serviceState;
         TimeStateText.Text = timeState;
-        ComplianceStateText.Text = complianceState;
+        ComplianceStateText.Text = StatusStripDisplayText.Summary(complianceState);
+        if (this.FindControl<Button>("StatusDetailsButton")?.Flyout is Flyout { Content: TextBlock details })
+            details.Text = complianceState;
         SaveStateText.Text = saveState;
         SaveStateText.IsVisible = !string.IsNullOrEmpty(saveState);
         SaveStateSeparator.IsVisible = !string.IsNullOrEmpty(saveState);

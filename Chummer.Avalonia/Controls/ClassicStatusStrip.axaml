@@ -58,11 +58,24 @@
               Background="{DynamicResource ChummerShellSurfaceAltBrush}"
               ClipToBounds="True"
               Padding="8,2">
-        <TextBlock x:Name="ComplianceStateText"
-                   Text="Workspace: Ready"
-                   FontSize="11"
-                   TextWrapping="NoWrap"
-                   TextTrimming="CharacterEllipsis" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <TextBlock x:Name="ComplianceStateText"
+                     Text="Workspace: Ready"
+                     FontSize="11"
+                     VerticalAlignment="Center"
+                     TextWrapping="NoWrap"
+                     TextTrimming="CharacterEllipsis" />
+          <Button x:Name="StatusDetailsButton" Grid.Column="1" Content="Details"
+                  AutomationProperties.AutomationId="StatusDetailsButton"
+                  AutomationProperties.Name="Show workspace status details"
+                  Padding="6,1" MinHeight="22" FontSize="11">
+            <Button.Flyout>
+              <Flyout>
+                <TextBlock x:Name="StatusDetailsText" MaxWidth="440" TextWrapping="Wrap" />
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+        </Grid>
       </Border>
     </Grid>
   </Border>

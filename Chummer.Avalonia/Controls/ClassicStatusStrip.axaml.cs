@@ -31,7 +31,9 @@ public partial class ClassicStatusStrip : UserControl, IStatusStripSurface
 
         if (this.FindControl<TextBlock>("ComplianceStateText") is { } complianceStateText)
         {
-            complianceStateText.Text = state.ComplianceState;
+            complianceStateText.Text = StatusStripDisplayText.Summary(state.ComplianceState);
+            if (this.FindControl<Button>("StatusDetailsButton")?.Flyout is Flyout { Content: TextBlock details })
+                details.Text = state.ComplianceState;
         }
 
         if (this.FindControl<ProgressBar>("WorkbenchProgressBar") is { } workbenchProgressBar)
