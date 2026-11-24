@@ -7662,13 +7662,57 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             bool allocationReserved = false;
             for (int allocationAttempt = 0; allocationAttempt < 4; allocationAttempt++)
             {
+                // T957 (Controller10375): the pass-2 confirm re-render can leave
+                // the first-found increase button with stale geometry - the
+                // root-scoped hit-test at its bounds lands on the bare scroll
+                // presenter (probe=miss identically on every attempt), so the
+                // one-dispatch probe route fail-closed forever. Settle the
+                // instance across spaced re-finds first (identity + visual
+                // root proves no rebuild is in flight), then BringIntoView +
+                // layout pump, then press through the waitForClick re-raise
+                // loop (gen10k-proven readiness). Outcome honesty is unchanged:
+                // delivered=True in the routing plus the reserved-count
+                // TextBlock verification below are still required.
+                Button? settledIncrease = null;
+                for (int settleTry = 0; settleTry < 6 && settledIncrease is null; settleTry++)
+                {
+                    Button? first = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<Button>()
+                            .LastOrDefault(b => AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase"));
+                    if (first is null)
+                    {
+                        await Task.Delay(200, ct);
+                        continue;
+                    }
+                    await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(first));
+                    await Task.Delay(300, ct);
+                    Button? second = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<Button>()
+                            .LastOrDefault(b => AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase"));
+                    if (second is not null && ReferenceEquals(first, second) && second.GetVisualRoot() is not null)
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            second.BringIntoView();
+                            ForceHeadlessLayoutPump(second);
+                        });
+                        settledIncrease = second;
+                    }
+                    else
+                    {
+                        await Task.Delay(150, ct);
+                    }
+                }
+                if (settledIncrease is null)
+                {
+                    RecordStep(steps, "sr6 magic leg: reserve power point; settle=unstable-instance (attempt " + (allocationAttempt + 1) + ")");
+                    continue;
+                }
+                Button increase = settledIncrease;
                 string allocationRouting = await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
-                    Button? increase = Active().GetVisualDescendants().OfType<Button>()
-                        .FirstOrDefault(b => AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase");
-                    if (increase is null || !increase.IsEnabled) return "unavailable";
-                    increase.BringIntoView();
-                    return await RoutePointerClickAsync(increase);
+                    if (!increase.IsVisible || !increase.IsEnabled) return "unavailable";
+                    return await RoutePointerClickAsync(increase, waitForClick: true);
                 });
                 RecordStep(steps, "sr6 magic leg: reserve power point; " + allocationRouting);
                 if (allocationRouting.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
