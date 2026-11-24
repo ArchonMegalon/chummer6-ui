@@ -129,7 +129,7 @@ internal readonly record struct DesktopInstallOwnerAuthorityStamp(
     string AuthorityInstanceId,
     long TransitionRevision);
 
-public static class DesktopInstallLinkingRuntime
+public static partial class DesktopInstallLinkingRuntime
 {
     // Controller9403 point 3: deterministic test seam. When a test sets this
     // hook, the runtime invokes it synchronously AFTER a successful durable

@@ -1193,13 +1193,13 @@ public class DialogCoordinatorTests
     [DataTestMethod]
     [DataRow(
         CharacterCreationBuildMethods.Priority,
-        CharacterCreationBootstrapProfiles.PrioritySettingsProfileId)]
+        CharacterCreationBuildMethods.Priority)]
     [DataRow(
         CharacterCreationBuildMethods.SumToTen,
-        CharacterCreationBootstrapProfiles.SumToTenSettingsProfileId)]
+        CharacterCreationBuildMethods.SumToTen)]
     [DataRow(
         CharacterCreationBuildMethods.LifeModules,
-        CharacterCreationBootstrapProfiles.LifeModulesSettingsProfileId)]
+        CharacterCreationBuildMethods.LifeModules)]
     public async Task CoordinateAsync_initial_supported_sr5_action_uses_atomic_core_bootstrap_without_legacy_continuation(
         string buildMethod,
         string expectedSettingsProfileId)
@@ -1258,7 +1258,9 @@ public class DialogCoordinatorTests
         Assert.AreEqual("Nova", capturedRequest.Name);
         Assert.AreEqual("Cipher", capturedRequest.Alias);
         Assert.AreEqual(buildMethod, capturedRequest.BuildMethod);
-        Assert.AreEqual(expectedSettingsProfileId, capturedRequest.SettingsProfileId);
+        CharacterCreationBootstrapProfiles.TryResolveCanonicalSettingsProfileId(
+            RulesetDefaults.Sr5, expectedSettingsProfileId, out string canonicalSettingsProfileId);
+        Assert.AreEqual(canonicalSettingsProfileId, capturedRequest.SettingsProfileId);
         Assert.AreEqual("ws-created", loadedWorkspaceId?.Value);
         Assert.IsNull(published.ActiveDialog);
         Assert.AreEqual($"Opened Nova · {buildMethod} · SR5", published.Notice);
