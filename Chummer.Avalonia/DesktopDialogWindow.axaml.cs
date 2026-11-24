@@ -3106,6 +3106,39 @@ public partial class DesktopDialogWindow : Window
 
     private Control CreateFieldControl(DesktopDialogField field)
     {
+        if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
+        {
+            CheckBox checkBox = new()
+            {
+                Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
+                Content = field.Label,
+                IsChecked = ParseCheckbox(field.Value),
+                IsEnabled = !field.IsReadOnly
+            };
+            DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
+            if (!field.IsReadOnly)
+            {
+                checkBox.IsCheckedChanged += (_, _) =>
+                {
+                    if (_suppressDialogUpdates)
+                    {
+                        return;
+                    }
+
+                    string nextValue = checkBox.IsChecked == true ? "true" : "false";
+                    if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    QueueDialogFieldUpdate(field.Id, nextValue);
+                };
+            }
+
+            ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
+            return checkBox;
+        }
+
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
         {
             DesktopDialogFieldOption[] options = (field.Id == "globalTheme"
