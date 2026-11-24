@@ -86,6 +86,7 @@
     <Compile Include="..\Chummer.CreationWizard.Presentation.Tests\CharacterCreationSkillsInteractionPresenterTests.cs" Link="Presentation\CharacterCreationSkillsInteractionPresenterTests.cs" />
     <Compile Include="..\Chummer.CreationWizard.Presentation.Tests\CharacterCreationAttributesInteractionPresenterTests.cs"
              Link="Presentation\CharacterCreationAttributesInteractionPresenterTests.cs" />
+    <Compile Include="..\Chummer.CreationWizard.Presentation.Tests\CharacterCreationMagicResonanceTestFixture.cs" Link="Presentation\CharacterCreationMagicResonanceTestFixture.cs" />
   </ItemGroup>
 	  <ItemGroup Condition="'$(ResolvedFocusedTestCompileFiles)' != ''">
 	    <_FocusedTestCompileFile Include="$([MSBuild]::Unescape('$(ResolvedFocusedTestCompileFiles)'))" />
@@ -313,6 +314,7 @@
     <Compile Include="Presentation\DesktopTrustPanelFactoryTests.cs" />
     <Compile Include="Presentation\CharacterCreationContactsAvaloniaTests.cs" />
     <Compile Include="Presentation\CharacterCreationAiFinishGateAvaloniaTests.cs" />
+    <Compile Include="Presentation\CreationMagicResonanceWindowTests.cs" />
     <Compile Include="Presentation\CharacterCreationAttributesAllocationAvaloniaTests.cs" />
     <Compile Include="Presentation\CharacterCreationSkillsAllocationAvaloniaTests.cs" />
     <Compile Include="Presentation\CharacterCreationLifestylesOwnerTests.cs" />
