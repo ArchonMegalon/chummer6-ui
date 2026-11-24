@@ -7709,12 +7709,54 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     continue;
                 }
                 Button increase = settledIncrease;
+                // T957b (Controller10375): pre-press root-scoped probe before
+                // any raise. Phase-B evidence on t957a: the settled instance
+                // stayed at rootPos 471,340 with every raise hit-testing to
+                // the bare ScrollContentPresenter - the press point sat below
+                // the content viewport fold, so the composed subtree was
+                // clipped and the presenter swallowed the hit identically on
+                // all four raises. Probe first (Controller9568 logic); on a
+                // miss nudge the owning ScrollViewer offset (down, then up) +
+                // pump + re-probe. Only a probe-verified button is pressed; a
+                // target that never probes live is left unpressed and the
+                // attempt loop re-settles - raising into a scene that would
+                // swallow the press is exactly the ambiguous press the
+                // discipline forbids.
+                bool chainDescribed = false;
+                string readinessDiagnostics = string.Empty;
+                bool probeVerified = false;
+                for (int probeAttempt = 0; probeAttempt < 5 && !probeVerified; probeAttempt++)
+                {
+                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeRootHitTestForButton(increase));
+                    if (probeHit)
+                    {
+                        probeVerified = true;
+                        readinessDiagnostics = probeDiag;
+                        break;
+                    }
+                    if (!chainDescribed)
+                    {
+                        chainDescribed = true;
+                        string ancestorChain = await Dispatcher.UIThread.InvokeAsync(() => DescribeVisualAncestorChainForDiagnostics(increase));
+                        RecordStep(steps, "sr6 magic leg: reserve target ancestor chain: " + ancestorChain);
+                    }
+                    bool scrollDown = probeAttempt % 2 == 0;
+                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
+                    await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(increase));
+                    readinessDiagnostics = probeDiag + nudgeDiag + " ";
+                    RecordStep(steps, "sr6 magic leg: reserve power point probe miss " + (probeAttempt + 1) + ": " + probeDiag + nudgeDiag);
+                }
+                if (!probeVerified)
+                {
+                    RecordStep(steps, "sr6 magic leg: reserve press skipped - probe never landed on the button (attempt " + (allocationAttempt + 1) + ")");
+                    continue;
+                }
                 string allocationRouting = await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
                     if (!increase.IsVisible || !increase.IsEnabled) return "unavailable";
                     return await RoutePointerClickAsync(increase, waitForClick: true);
                 });
-                RecordStep(steps, "sr6 magic leg: reserve power point; " + allocationRouting);
+                RecordStep(steps, "sr6 magic leg: reserve power point; probe=hit; " + allocationRouting + (readinessDiagnostics.Length > 0 ? "; readiness=" + readinessDiagnostics : string.Empty));
                 if (allocationRouting.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
                 {
                     recordPointerAction();
@@ -12770,6 +12812,87 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     /// drain the layout queue headlessly), then forces one compositor paint
     /// so the hit-tested scene matches live layout. Ordinary readiness work.
     /// </summary>
+    // T957b (Controller10375): pre-press root-scoped hit-test probe for the
+    // SR6 power-point reserve press. Mirrors the Controller9568 probe logic:
+    // the transform must resolve and the ROOT-scoped InputHitTest at the
+    // button center must land on the button or one of its descendants.
+    private static (bool Hit, string Diagnostics) ProbeRootHitTestForButton(Control control)
+    {
+        global::Avalonia.Controls.TopLevel? topLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(control);
+        if (topLevel is null)
+        {
+            return (false, "probe=no-toplevel;");
+        }
+        global::Avalonia.Point? centerInRoot = control.TranslatePoint(
+            new global::Avalonia.Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d), topLevel);
+        if (centerInRoot is not { } rootPos)
+        {
+            return (false, "probe=no-transform;");
+        }
+        object? hit = topLevel is global::Avalonia.Input.InputElement ie ? ie.InputHitTest(rootPos) : null;
+        bool ok = hit is global::Avalonia.Controls.Control hitControl
+            && (ReferenceEquals(hitControl, control) || control.IsVisualAncestorOf(hitControl));
+        string target = hit is global::Avalonia.Controls.Control hc
+            ? hc.GetType().Name + ":" + (global::Avalonia.Automation.AutomationProperties.GetAutomationId(hc) ?? hc.Name ?? string.Empty)
+            : hit?.GetType().Name ?? "null";
+        return (ok, "probe=" + (ok ? "hit" : "miss")
+            + ";rootPos=" + rootPos.X.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+            + "," + rootPos.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+            + ";bounds=" + control.Bounds.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+            + "x" + control.Bounds.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+            + ";realTarget=" + target + ";");
+    }
+
+    // T957b: nudge the nearest ancestor ScrollViewer so a button resting on
+    // the viewport fold moves fully inside the clip before the press.
+    private static string NudgeScrollViewerOffsetForControl(Control control, bool scrollDown)
+    {
+        global::Avalonia.Visual? cursor = control;
+        while (cursor is not null && cursor is not global::Avalonia.Controls.TopLevel)
+        {
+            if (cursor is global::Avalonia.Controls.ScrollViewer scrollViewer)
+            {
+                global::Avalonia.Vector oldOffset = scrollViewer.Offset;
+                double delta = Math.Max(24d, control.Bounds.Height);
+                double newY = scrollDown ? oldOffset.Y + delta : Math.Max(0d, oldOffset.Y - delta);
+                scrollViewer.Offset = new global::Avalonia.Vector(oldOffset.X, newY);
+                return "nudge=" + (scrollDown ? "down" : "up")
+                    + ";fromY=" + oldOffset.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";toY=" + scrollViewer.Offset.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture) + ";";
+            }
+            cursor = cursor.GetVisualParent();
+        }
+        return "nudge=no-scrollviewer;";
+    }
+
+    // T957b: receipt evidence - the pressed target's ancestor chain with
+    // per-node visibility/hit-test flags, so a swallowed press is diagnosable
+    // from the journey receipt alone.
+    private static string DescribeVisualAncestorChainForDiagnostics(Control control)
+    {
+        global::System.Text.StringBuilder sb = new();
+        global::Avalonia.Visual? cursor = control;
+        for (int depth = 0; cursor is not null && depth < 14; depth++)
+        {
+            if (cursor is Control typed)
+            {
+                sb.Append(typed.GetType().Name)
+                    .Append('[').Append(global::Avalonia.Automation.AutomationProperties.GetAutomationId(typed) ?? typed.Name ?? string.Empty).Append(']')
+                    .Append(":vis=").Append(typed.IsVisible)
+                    .Append(":hit=").Append(typed.IsHitTestVisible)
+                    .Append(":b=").Append(typed.Bounds.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture))
+                    .Append('x').Append(typed.Bounds.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture))
+                    .Append("; ");
+            }
+            else
+            {
+                sb.Append(cursor.GetType().Name).Append("; ");
+            }
+            cursor = cursor.GetVisualParent();
+        }
+        return sb.ToString();
+    }
+
     private static void ForceHeadlessLayoutPump(Control anyControl)
     {
         global::Avalonia.Controls.TopLevel? topLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(anyControl);
