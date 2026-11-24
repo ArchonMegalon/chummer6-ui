@@ -573,11 +573,12 @@ public static class DesktopMouseFirstJourneyRuntime
             return;
         }
 
-        // WIN-003 (Windows head): the user-journey trace producer was built for
-        // Linux CI and rejects non-Linux platforms in ValidateUserJourneyRunBindings.
-        // The pass receipt must not be gated on that binding — the trace JSON is a
-        // CI artifact, the receipt is the run's verification record. Write the
-        // receipt first; the trace binding continues below for Linux runs.
+        // The user-journey trace producer was built for Linux CI and rejects
+        // non-Linux platforms in ValidateUserJourneyRunBindings. Non-trace runs
+        // and Windows trace-mode runs publish the pass receipt directly; Linux
+        // trace runs validate every binding BEFORE any receipt byte reaches
+        // disk, so a rejected run leaves neither a pass receipt nor a staged
+        // trace behind (controller10558).
         DateTimeOffset receiptCompletedAtUtc = DateTimeOffset.UtcNow;
         DesktopMouseFirstJourneyReceipt passReceipt = new(
             Status: "pass",
@@ -626,10 +627,9 @@ public static class DesktopMouseFirstJourneyRuntime
             ActiveDialogId: evidence.ActiveDialogId,
             VerificationNotes: evidence.VerificationNotes,
             Error: null);
-        WriteJson(context.ReceiptPath, passReceipt);
-
         if (!userJourneyTraceRequested)
         {
+            WriteJson(context.ReceiptPath, passReceipt);
             return;
         }
 
@@ -637,19 +637,20 @@ public static class DesktopMouseFirstJourneyRuntime
         {
             // Windows trace-mode runs keep the receipt; only the Linux CI trace
             // JSON (tester/fixer shard bindings) is unavailable off Linux.
+            WriteJson(context.ReceiptPath, passReceipt);
             return;
         }
 
-        string? userJourneyTraceOutputPath = null;
-        IReadOnlyList<DesktopUserJourneyTraceWorkflow>? boundUserJourneyWorkflows = null;
-        if (userJourneyTraceRequested)
-        {
-            userJourneyTraceOutputPath = ValidateUserJourneyTraceTargetPath(context);
-            ValidateUserJourneyRunBindings(context, evidence);
-            boundUserJourneyWorkflows = ValidateAndBindUserJourneyWorkflows(
-                context,
-                evidence.UserJourneyWorkflows!);
-        }
+        // Linux trace runs validate every trace binding BEFORE any receipt byte
+        // reaches disk, so a rejected run leaves neither a pass receipt nor a
+        // staged trace behind (controller10558).
+        string? userJourneyTraceOutputPath = ValidateUserJourneyTraceTargetPath(context);
+        ValidateUserJourneyRunBindings(context, evidence);
+        IReadOnlyList<DesktopUserJourneyTraceWorkflow>? boundUserJourneyWorkflows = ValidateAndBindUserJourneyWorkflows(
+            context,
+            evidence.UserJourneyWorkflows!);
+
+        WriteJson(context.ReceiptPath, passReceipt);
 
         DateTimeOffset completedAtUtc = DateTimeOffset.UtcNow;
         DesktopMouseFirstJourneyReceipt receipt = new(
