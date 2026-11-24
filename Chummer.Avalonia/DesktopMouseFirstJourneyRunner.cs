@@ -6910,11 +6910,23 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 {
                     break;
                 }
+                // T957 (Controller10375): the spell list extends below the editor
+                // viewport; a scrolled-out checkbox still reports IsVisible=true
+                // (bounds-clip does not collapse it), so the press recompute sent
+                // the pointer outside the rendered window and delivery failed.
+                // House discipline: scroll the row into view first, pump layout,
+                // and re-verify the row is targetable before pressing.
+                bool scrolledIntoView = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    target.BringIntoView();
+                    ForceHeadlessLayoutPump(target);
+                    return target.IsVisible && target.IsEnabled && target.IsChecked != true;
+                });
                 string spellAutomationId = await Dispatcher.UIThread.InvokeAsync(
                     () => AutomationProperties.GetAutomationId(target) ?? string.Empty);
                 string tickDiagnostics = await RoutePointerClickAsync(target, waitForClick: true);
                 bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => target.IsChecked == true);
-                RecordStep(steps, "sr5 magic leg: spell tick pass " + (tickPass + 1) + ": checked=" + nowChecked + "; " + tickDiagnostics);
+                RecordStep(steps, "sr5 magic leg: spell tick pass " + (tickPass + 1) + ": checked=" + nowChecked + "; scrolledIntoView=" + scrolledIntoView + "; " + tickDiagnostics);
                 if (nowChecked)
                 {
                     tickedCount++;
@@ -7192,6 +7204,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         {
                             continue; // not a pickable candidate for this pass
                         }
+                        // T957 (Controller10375): scroll the row into view first -
+                        // a bounds-clipped checkbox still reports IsVisible=true,
+                        // and the press recompute would send the pointer outside
+                        // the rendered window (same defect as the SR5 spell ticks).
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            candidate.BringIntoView();
+                            ForceHeadlessLayoutPump(candidate);
+                        });
                         string tickDiagnostics = await RoutePointerClickAsync(candidate, waitForClick: true);
                         bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => candidate.IsChecked == true);
                         RecordStep(steps, "sr6 magic leg: " + domainLabel + " pick; checked=" + nowChecked + "; " + tickDiagnostics);
@@ -7229,6 +7250,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                             : string.Empty;
                         if (optionId.Length == 0)
                             continue;
+                        // T957 (Controller10375): scroll the row into view first -
+                        // same bounds-clip press gap as the SR5 spell ticks.
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            candidate.BringIntoView();
+                            ForceHeadlessLayoutPump(candidate);
+                        });
                         string tickDiagnostics = await RoutePointerClickAsync(candidate, waitForClick: true);
                         bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => candidate.IsChecked == true);
                         RecordStep(steps, "sr6 magic leg: tradition pick; checked=" + nowChecked + "; " + tickDiagnostics);
