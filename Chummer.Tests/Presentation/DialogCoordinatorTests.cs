@@ -614,6 +614,8 @@ public class DialogCoordinatorTests
                 Message: null,
                 Fields:
                 [
+                    new DesktopDialogField("newCharacterName", "Name", "Nova", "New Character"),
+                    new DesktopDialogField("newCharacterAlias", "Alias", "Cipher", "Runner"),
                     new DesktopDialogField("newCharacterRulesetId", "Ruleset", "sr6", "sr5", InputType: "select", Options:
                     [
                         new DesktopDialogFieldOption("sr5", "SR5"),
@@ -624,8 +626,8 @@ public class DialogCoordinatorTests
                         new DesktopDialogFieldOption("Priority", "Priority"),
                         new DesktopDialogFieldOption("Karma", "Karma")
                     ]),
-                    new DesktopDialogField("newCharacterSetting", "Character Setting", "Street Rules", "Core Rulebook"),
-                    new DesktopDialogField("newCharacterIgnoreRules", "Ignore Character Creation Rules", "true", "false", InputType: "checkbox")
+                    new DesktopDialogField("newCharacterSetting", "Character Setting", "Core Rulebook", "Core Rulebook"),
+                    new DesktopDialogField("newCharacterIgnoreRules", "Ignore Character Creation Rules", "false", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -648,7 +650,17 @@ public class DialogCoordinatorTests
                 return Task.CompletedTask;
             },
             UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
-            GetState: () => published);
+            GetState: () => published,
+            // Core-boundary double: the real Core seam (CharacterCreationBootstrapAuthority.
+            // TryValidateDocumentShape) rejects every non-SR5 ruleset with RulesetSr5Required
+            // before any document exists. The dialog must reach that seam and fail closed on it,
+            // not on an earlier UI-side settings gate.
+            CreateCharacterBootstrapAsync: static (_, _) => Task.FromResult(
+                new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
+                    CharacterCreationBootstrapOutcomes.Invalid,
+                    null,
+                    [CharacterCreationBootstrapBlockers.RulesetSr5Required])),
+            LoadWorkspaceAsync: static (_, _) => Task.CompletedTask);
 
         await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
 
@@ -657,6 +669,126 @@ public class DialogCoordinatorTests
         StringAssert.Contains(
             published.Error ?? string.Empty,
             CharacterCreationBootstrapBlockers.RulesetSr5Required);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_create_character_fails_closed_when_settings_profile_is_not_canonical()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.new_character",
+                Title: "New Character",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("newCharacterName", "Name", "Nova", "New Character"),
+                    new DesktopDialogField("newCharacterAlias", "Alias", "Cipher", "Runner"),
+                    new DesktopDialogField("newCharacterRulesetId", "Ruleset", "sr5", "sr5", InputType: "select", Options:
+                    [
+                        new DesktopDialogFieldOption("sr5", "SR5"),
+                        new DesktopDialogFieldOption("sr6", "SR6")
+                    ]),
+                    new DesktopDialogField("newCharacterBuildMethod", "Build Method", "Karma", "Priority", InputType: "select", Options:
+                    [
+                        new DesktopDialogFieldOption("Priority", "Priority"),
+                        new DesktopDialogFieldOption("Karma", "Karma")
+                    ]),
+                    new DesktopDialogField("newCharacterSetting", "Character Setting", "Street Rules", "Core Rulebook"),
+                    new DesktopDialogField("newCharacterIgnoreRules", "Ignore Character Creation Rules", "false", "false", InputType: "checkbox")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("create_character", "Create", true)
+                ])
+        };
+
+        bool createCalled = false;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            CreateCharacterBootstrapAsync: (_, _) =>
+            {
+                createCalled = true;
+                return Task.FromResult(
+                    new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
+                        CharacterCreationBootstrapOutcomes.Success,
+                        null,
+                        []));
+            },
+            LoadWorkspaceAsync: static (_, _) => Task.CompletedTask);
+
+        await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
+
+        Assert.IsFalse(createCalled);
+        Assert.AreEqual("dialog.new_character", published.ActiveDialog?.Id);
+        StringAssert.Contains(
+            published.Error ?? string.Empty,
+            CharacterCreationBootstrapBlockers.SettingsProfileInvalid);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_create_character_fails_closed_when_ignore_rules_is_set()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.new_character",
+                Title: "New Character",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("newCharacterName", "Name", "Nova", "New Character"),
+                    new DesktopDialogField("newCharacterAlias", "Alias", "Cipher", "Runner"),
+                    new DesktopDialogField("newCharacterRulesetId", "Ruleset", "sr5", "sr5", InputType: "select", Options:
+                    [
+                        new DesktopDialogFieldOption("sr5", "SR5"),
+                        new DesktopDialogFieldOption("sr6", "SR6")
+                    ]),
+                    new DesktopDialogField("newCharacterBuildMethod", "Build Method", "Karma", "Priority", InputType: "select", Options:
+                    [
+                        new DesktopDialogFieldOption("Priority", "Priority"),
+                        new DesktopDialogFieldOption("Karma", "Karma")
+                    ]),
+                    new DesktopDialogField("newCharacterSetting", "Character Setting", "Core Rulebook", "Core Rulebook"),
+                    new DesktopDialogField("newCharacterIgnoreRules", "Ignore Character Creation Rules", "true", "false", InputType: "checkbox")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("create_character", "Create", true)
+                ])
+        };
+
+        bool createCalled = false;
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            CreateCharacterBootstrapAsync: (_, _) =>
+            {
+                createCalled = true;
+                return Task.FromResult(
+                    new CharacterCreationBootstrapResult<CharacterCreationBootstrapReceipt>(
+                        CharacterCreationBootstrapOutcomes.Success,
+                        null,
+                        []));
+            },
+            LoadWorkspaceAsync: static (_, _) => Task.CompletedTask);
+
+        await coordinator.CoordinateAsync("create_character", context, CancellationToken.None);
+
+        Assert.IsFalse(createCalled);
+        Assert.AreEqual("dialog.new_character", published.ActiveDialog?.Id);
+        StringAssert.Contains(
+            published.Error ?? string.Empty,
+            CharacterCreationBootstrapBlockers.SettingsProfileInvalid);
     }
 
     [TestMethod]
