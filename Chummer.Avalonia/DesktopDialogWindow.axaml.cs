@@ -6,6 +6,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -1137,15 +1138,19 @@ public partial class DesktopDialogWindow : Window
 
         card.Children.Add(actionsPanel);
 
-        return new Border
+        Border workbenchCard = new()
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#020617"),
             CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10),
             Child = card
         };
+        // Bind (not one-shot assign) so the card paints the ThemeDictionaries brush for the
+        // active variant and follows live theme changes; a one-shot resolver call cannot see
+        // variant-scoped keys nor update after RequestedThemeVariant flips mid-session.
+        workbenchCard.Bind(Border.BackgroundProperty, new DynamicResourceExtension("ChummerShellSurfaceAltBrush"));
+        workbenchCard.Bind(Border.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
+        return workbenchCard;
     }
 
     private static Button CreateHorizonRouteButton(string label, Action onClick)
@@ -5292,15 +5297,7 @@ public partial class DesktopDialogWindow : Window
     }
 
     private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-    {
-        if (App.Current?.TryFindResource(resourceKey, out object? resource) == true
-            && resource is IBrush brush)
-        {
-            return brush;
-        }
-
-        return new SolidColorBrush(Color.Parse(fallbackHex));
-    }
+        => DesktopShellTheme.ResolveThemeBrush(resourceKey, fallbackHex);
 }
 
 internal static class DesktopDialogWindowExtensions

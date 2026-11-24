@@ -1475,15 +1475,7 @@ public partial class CommandDialogPaneControl : UserControl
     }
 
     private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-    {
-        if (global::Avalonia.Application.Current?.TryFindResource(resourceKey, out object? resource) == true
-            && resource is IBrush brush)
-        {
-            return brush;
-        }
-
-        return new SolidColorBrush(Color.Parse(fallbackHex));
-    }
+        => DesktopShellTheme.ResolveThemeBrush(resourceKey, fallbackHex);
 }
 
 public sealed record CommandPaletteItem(string Id, string Label, string Group, bool Enabled)

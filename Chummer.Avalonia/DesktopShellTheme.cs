@@ -12,9 +12,19 @@ namespace Chummer.Avalonia;
 internal static class DesktopShellTheme
 {
     public static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-        => App.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is IBrush brush
-            ? brush
-            : new SolidColorBrush(Color.Parse(fallbackHex));
+    {
+        // The 2-arg TryFindResource overload cannot resolve keys that live only inside
+        // ResourceDictionary.ThemeDictionaries (Light/Dark); pass the effective variant
+        // explicitly so variant-scoped shell brushes resolve instead of painting fallbacks.
+        if (App.Current is { } app
+            && app.TryFindResource(resourceKey, app.ActualThemeVariant, out object? resource) == true
+            && resource is IBrush brush)
+        {
+            return brush;
+        }
+
+        return new SolidColorBrush(Color.Parse(fallbackHex));
+    }
 
     public static IBrush ResolveWindowBackgroundBrush()
         => ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#01010D");
