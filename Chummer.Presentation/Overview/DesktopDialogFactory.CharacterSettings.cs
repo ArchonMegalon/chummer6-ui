@@ -69,6 +69,45 @@ public sealed partial class DesktopDialogFactory
                 string.Empty,
                 string.Empty,
                 IsReadOnly: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            // Controller10127: the native character-settings pane (CreateLegacyCharacterSettingsPane)
+            // requires these legacy default fields; the catalog refactor dropped them and the pane
+            // threw FindRequiredField. Seed them from the live preferences (WorkflowParityGateTests
+            // Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults).
+            new DesktopDialogField(
+                "characterPriority",
+                "Build Method",
+                NormalizeCharacterPriorityValue(preferences.CharacterPriority),
+                DesktopPreferenceState.Default.CharacterPriority,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                Options:
+                [
+                    new DesktopDialogFieldOption("Priority", "Priority"),
+                    new DesktopDialogFieldOption("SumToTen", "Sum To Ten"),
+                    new DesktopDialogFieldOption("Karma", "Karma")
+                ]),
+            new DesktopDialogField(
+                "characterKarmaNuyen",
+                "Karma/Nuyen Ratio",
+                preferences.KarmaNuyenRatio.ToString(),
+                "2",
+                InputType: "number",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "characterHouseRulesEnabled",
+                "Enable House Rules",
+                preferences.HouseRulesEnabled ? "true" : "false",
+                "false",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "characterNotes",
+                "Character Notes",
+                preferences.CharacterNotes,
+                string.Empty,
+                IsMultiline: true,
+                InputType: "multiline",
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
 

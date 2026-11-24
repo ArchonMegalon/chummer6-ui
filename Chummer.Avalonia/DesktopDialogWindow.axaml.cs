@@ -1164,7 +1164,7 @@ public partial class DesktopDialogWindow : Window
     {
         Grid row = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("156,*,156,*"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*"),
             ColumnSpacing = 8
         };
 
@@ -1225,7 +1225,7 @@ public partial class DesktopDialogWindow : Window
     {
         Grid row = new()
         {
-            ColumnDefinitions = new ColumnDefinitions(right is null ? "156,*" : "156,*,156,*"),
+            ColumnDefinitions = new ColumnDefinitions(right is null ? "Auto,*" : "Auto,*,Auto,*"),
             ColumnSpacing = 8,
             RowDefinitions = new RowDefinitions("Auto")
         };
@@ -1252,6 +1252,8 @@ public partial class DesktopDialogWindow : Window
                 Text = field.Label,
                 Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
                 FontWeight = FontWeight.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 340,
                 VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
             };
         }
@@ -1262,6 +1264,8 @@ public partial class DesktopDialogWindow : Window
                 Text = field.Label,
                 Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
                 FontWeight = FontWeight.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 340,
                 VerticalAlignment = field.IsMultiline ? global::Avalonia.Layout.VerticalAlignment.Top : global::Avalonia.Layout.VerticalAlignment.Center
             };
         }
@@ -1285,7 +1289,7 @@ public partial class DesktopDialogWindow : Window
         Grid row = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
-            ColumnDefinitions = new ColumnDefinitions("156,*,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"),
             ColumnSpacing = 8
         };
 

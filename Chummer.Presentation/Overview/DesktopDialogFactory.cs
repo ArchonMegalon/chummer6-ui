@@ -1318,7 +1318,11 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
         string rulesetToken = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         string selectedValue = ResolvePreferredBuildMethod(rulesetToken, preferredBuildMethod);
         DesktopDialogFieldOption selected = options
-            .First(option => string.Equals(option.Value, selectedValue, StringComparison.Ordinal));
+            .FirstOrDefault(option => string.Equals(option.Value, selectedValue, StringComparison.Ordinal))
+            ?? options.First(option => string.Equals(
+                NormalizeBuildMethodValue(option.Value),
+                NormalizeBuildMethodValue(selectedValue),
+                StringComparison.Ordinal));
         return new DesktopDialogField(
             Id: fieldId,
             Label: "Build Method",
@@ -2895,14 +2899,41 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
     private static string ResolvePreferredBuildMethod(string rulesetId, string? preferredBuildMethod)
     {
         DesktopDialogFieldOption[] options = BuildBuildMethodOptions(rulesetId).ToArray();
-        string normalizedPreferred = NormalizeBuildMethodValue(preferredBuildMethod);
-        return options
-            .Select(option => option.Value)
+        string trimmed = (preferredBuildMethod ?? string.Empty).Trim();
+        string normalizedPreferred = NormalizeBuildMethodValue(trimmed);
+        DesktopDialogFieldOption? matched = options
             .FirstOrDefault(option => string.Equals(
-                NormalizeBuildMethodValue(option),
+                NormalizeBuildMethodValue(option.Value),
                 normalizedPreferred,
-                StringComparison.Ordinal))
-            ?? options[0].Value;
+                StringComparison.Ordinal));
+        if (matched is null)
+        {
+            return options[0].Value;
+        }
+
+        // Preserve the caller's exact spelling when it is already this ruleset's option
+        // value, or when it is the "SumToTen" UI alias that DialogCoordinator translates to
+        // Core's "SumtoTen" wire value at the Core boundary. Core's pinned wire identity is
+        // CharacterCreationBuildMethods.SumToTen = "SumtoTen"; the dialog surface carries the
+        // UI alias so the priority route and the workflow context field keep their spelling.
+        if (string.Equals(trimmed, matched.Value, StringComparison.Ordinal)
+            || string.Equals(trimmed, "SumToTen", StringComparison.Ordinal))
+        {
+            return trimmed;
+        }
+
+        return matched.Value;
+    }
+
+    private static string NormalizeCharacterPriorityValue(string? value)
+    {
+        string normalized = NormalizeBuildMethodValue(
+            string.IsNullOrWhiteSpace(value)
+                ? DesktopPreferenceState.Default.CharacterPriority
+                : value);
+        return normalized is "Priority" or "SumToTen" or "Karma"
+            ? normalized
+            : DesktopPreferenceState.Default.CharacterPriority;
     }
 
     private static string NormalizeBuildMethodValue(string? buildMethod)
@@ -3808,6 +3839,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                         || string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase);
                 })
                 .Select(path => Path.GetRelativePath(rosterPath, path))
+                .Select(relative => relative.Replace('\\', '/'))
                 .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
                 .OrderBy(candidate => candidate, StringComparer.OrdinalIgnoreCase)
                 .ToArray()
@@ -3899,6 +3931,7 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                         || string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase);
                 })
                 .Select(path => Path.GetRelativePath(rosterPath, path))
+                .Select(relative => relative.Replace('\\', '/'))
                 .Where(name => !string.IsNullOrWhiteSpace(name))
                 .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
                 .ToArray()

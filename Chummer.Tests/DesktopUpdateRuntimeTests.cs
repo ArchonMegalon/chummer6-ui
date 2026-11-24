@@ -138,7 +138,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_no_matching_payload_surfaces_failure_reason()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-no-match-{Guid.NewGuid():N}.json");
         string manifestJson = $$"""
             {
@@ -199,7 +199,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_download_failure_records_apply_failure()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string missingPayloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-missing-artifact-{Guid.NewGuid():N}.zip");
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-download-failed-{Guid.NewGuid():N}.json");
         string manifestJson = $$"""
@@ -266,7 +266,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-blocked-{Guid.NewGuid():N}.json");
         string manifestJson = $$"""
             {
@@ -329,7 +329,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_notify_mode_records_available_update_without_staging_payload()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"run-29991231-235959";
+        string version = "99.0.0";
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-notify-{Guid.NewGuid():N}.json");
         string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-notify-should-not-download-{Guid.NewGuid():N}.zip");
         string manifestJson = $$"""
@@ -453,7 +453,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_rejects_artifact_that_fails_checksum_validation()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-size-{Guid.NewGuid():N}.zip");
         File.WriteAllText(payloadPath, "payload-data");
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-checksum-{Guid.NewGuid():N}.json");
@@ -523,7 +523,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_rejects_payload_without_checksum()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-no-sha-{Guid.NewGuid():N}.zip");
         File.WriteAllText(payloadPath, "payload-data");
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-no-sha-{Guid.NewGuid():N}.json");
@@ -589,7 +589,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_rejects_payload_without_size_metadata()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-no-size-{Guid.NewGuid():N}.zip");
         File.WriteAllText(payloadPath, "payload-data");
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-no-size-{Guid.NewGuid():N}.json");
@@ -655,7 +655,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_rejects_payload_archive_that_does_not_contain_launch_executable()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string payloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-missing-launch-{Guid.NewGuid():N}.zip");
         using (ZipArchive archive = ZipFile.Open(payloadPath, ZipArchiveMode.Create))
         {
@@ -746,7 +746,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_falls_back_between_matching_artifacts_on_failures()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string firstPayloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-fallback-1-{Guid.NewGuid():N}.zip");
         string secondPayloadPath = Path.Combine(Path.GetTempPath(), $"desktop-update-artifact-fallback-2-{Guid.NewGuid():N}.zip");
         File.WriteAllText(firstPayloadPath, "primary-payload");
@@ -834,7 +834,7 @@ public sealed class DesktopUpdateRuntimeTests
     public async Task CheckAndScheduleStartupUpdateAsync_bootstrap_installer_handoff_stages_payload_and_sidecar()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"run-20991231-{Guid.NewGuid():N}".Substring(0, 23);
+        string version = "99.0.0";
         string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-bootstrap-handoff-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempRoot);
         string installerSourcePath = Path.Combine(tempRoot, "chummer-avalonia-linux-x64-installer.deb");
@@ -971,7 +971,7 @@ public sealed class DesktopUpdateRuntimeTests
         string helperPath = Path.Combine(Path.GetTempPath(), $"desktop-update-helper-outside-base-{Guid.NewGuid():N}.exe");
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-helper-unavailable-{Guid.NewGuid():N}.json");
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
-        string version = $"0.0.0-test-{Guid.NewGuid():N}";
+        string version = "99.0.0";
         string manifestJson = $$"""
             {
               "channelId": "preview",
@@ -1110,6 +1110,10 @@ public sealed class DesktopUpdateRuntimeTests
             [StateRootEnvironmentVariable] = stateRootScope.Root
         });
 
+        string installerPath = Path.Combine(stateRootScope.Root, "downloads", "chummer-avalonia-win-x64-installer.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(installerPath)!);
+        File.WriteAllText(installerPath, "installer");
+
         string statePath = stateRootScope.StatePathForHead("avalonia");
         Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
         File.WriteAllText(
@@ -1117,7 +1121,7 @@ public sealed class DesktopUpdateRuntimeTests
             """
             {
               "HeadId": "avalonia",
-              "Platform": "linux",
+              "Platform": "windows",
               "Arch": "x64",
               "InstalledVersion": "run-20260617-110751",
               "ChannelId": "preview",
@@ -1127,15 +1131,61 @@ public sealed class DesktopUpdateRuntimeTests
               "LastError": null,
               "PendingUpdateVersion": "run-20260618-061500",
               "PendingUpdateChannelId": "preview",
+              "PendingInstallerPath": "<INSTALLER>",
+              "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z"
+            }
+            """);
+
+        string stateJson = File.ReadAllText(statePath).Replace("<INSTALLER>", installerPath.Replace("\\", "\\\\"));
+        File.WriteAllText(statePath, stateJson);
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("update_staged", status.Status);
+        Assert.IsTrue(status.HasVerifiedStagedUpdate, "verified staged update flag must be set when the installer file exists");
+        Assert.AreEqual("run-20260618-061500", status.PendingUpdateVersion);
+        StringAssert.Contains(status.RecommendedAction, "installing it in place", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [TestMethod]
+    public void GetCurrentStatus_reports_attention_required_when_staged_installer_file_is_missing()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "windows",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260617-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-18T06:00:00Z",
+              "LastManifestVersion": "run-20260618-061500",
+              "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+              "LastError": null,
+              "PendingUpdateVersion": "run-20260618-061500",
+              "PendingUpdateChannelId": "preview",
+              "PendingInstallerPath": "Z:\\missing\\installer.exe",
               "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z"
             }
             """);
 
         DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
 
-        Assert.AreEqual("update_staged", status.Status);
-        Assert.AreEqual("run-20260618-061500", status.PendingUpdateVersion);
-        StringAssert.Contains(status.RecommendedAction, "installing it in place", StringComparison.OrdinalIgnoreCase);
+        Assert.AreEqual("attention_required", status.Status);
+        Assert.IsFalse(status.HasVerifiedStagedUpdate);
+        StringAssert.Contains(status.RecommendedAction, "installer file", StringComparison.OrdinalIgnoreCase);
     }
 
     [TestMethod]
@@ -1535,6 +1585,7 @@ public sealed class DesktopUpdateRuntimeTests
               "LastCheckedAt": "2026-06-17T05:00:00Z",
               "LastManifestVersion": "run-20260617-055252",
               "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastManifestChannelId": "preview",
               "LastError": null
             }
             """);
@@ -1576,6 +1627,176 @@ public sealed class DesktopUpdateRuntimeTests
             """);
 
         Assert.IsFalse(DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"));
+    }
+
+    [TestMethod]
+    public void ShouldPromptForStartupUpdate_returns_false_for_cross_channel_manifest()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260616-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-17T05:00:00Z",
+              "LastManifestVersion": "run-20260617-055252",
+              "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastManifestChannelId": "stable",
+              "LastError": null
+            }
+            """);
+
+        Assert.IsFalse(DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"));
+    }
+
+    [TestMethod]
+    public void ShouldPromptForStartupUpdate_returns_false_for_incomparable_manifest_version()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260616-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-17T05:00:00Z",
+              "LastManifestVersion": "6.0.2-preview.20261118.b95573f9",
+              "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastManifestChannelId": "preview",
+              "LastError": null
+            }
+            """);
+
+        Assert.IsFalse(DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"));
+    }
+
+    [TestMethod]
+    public void ShouldPromptForStartupUpdate_returns_false_when_installed_is_newer_than_manifest()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260618-061500",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-17T05:00:00Z",
+              "LastManifestVersion": "run-20260617-055252",
+              "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastManifestChannelId": "preview",
+              "LastError": null
+            }
+            """);
+
+        Assert.IsFalse(DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"));
+    }
+
+    [TestMethod]
+    public void GetCurrentStatus_reports_current_for_cross_channel_manifest()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "windows",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260616-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-17T05:00:00Z",
+              "LastManifestVersion": "run-20260617-055252",
+              "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastManifestChannelId": "stable",
+              "LastError": null
+            }
+            """);
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("current", status.Status);
+        Assert.IsFalse(status.HasVerifiedStagedUpdate);
+    }
+
+    [TestMethod]
+    public void GetCurrentStatus_reports_current_for_incomparable_manifest_version()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "windows",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260616-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-17T05:00:00Z",
+              "LastManifestVersion": "6.0.2-preview.20261118.b95573f9",
+              "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastManifestChannelId": "preview",
+              "LastError": null
+            }
+            """);
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("current", status.Status);
     }
 
     [TestMethod]
