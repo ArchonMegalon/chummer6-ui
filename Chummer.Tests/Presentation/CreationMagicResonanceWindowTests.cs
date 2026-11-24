@@ -156,6 +156,78 @@ public sealed class CreationMagicResonanceWindowTests
             }
         });
 
+    [TestMethod]
+    public void Technomancer_selects_stream_and_forms_confirms_and_can_discard_edits_on_reopen()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var state = CharacterCreationMagicResonanceTestFixture.CreateState(
+                Digest(FixtureContent), talentKind: CharacterCreationMagicResonanceKinds.Technomancer);
+            var context = CreateContext(state);
+            string cleaner = CreationMagicResonanceWindow.ComplexFormCheckAutomationIdPrefix
+                + CharacterCreationMagicResonanceTestFixture.CleanerId.SourceId;
+            string editor = CreationMagicResonanceWindow.ComplexFormCheckAutomationIdPrefix
+                + CharacterCreationMagicResonanceTestFixture.EditorId.SourceId;
+
+            CreationMagicResonanceWindow Open()
+            {
+                var overview = CreateOverview(context.Bound, context.Shared);
+                var presenter = new CharacterCreationMagicResonanceInteractionPresenter(context.Bound);
+                var loaded = presenter.Load(overview);
+                Assert.AreEqual("ok", loaded.Outcome, loaded.Error);
+                var window = new CreationMagicResonanceWindow(
+                    presenter, loaded.State!, () => overview);
+                window.Show();
+                return window;
+            }
+
+            var initial = Open();
+            try
+            {
+                var confirm = Find<Button>(initial, CreationMagicResonanceWindow.ConfirmButtonAutomationId);
+                Assert.IsFalse(confirm.IsEnabled);
+                var stream = Find<ComboBox>(initial, CreationMagicResonanceWindow.StreamComboAutomationId);
+                Assert.AreEqual(2, stream.ItemCount);
+                stream.SelectedIndex = 1;
+                FindCheck(initial, cleaner).IsChecked = true;
+                Assert.IsFalse(confirm.IsEnabled);
+                FindCheck(initial, editor).IsChecked = true;
+                Assert.IsTrue(confirm.IsEnabled);
+                confirm.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.IsTrue(initial.Confirmed);
+            }
+            finally { CloseQuietly(initial); }
+
+            var saved = context.Shared.StateForTests;
+            Assert.AreEqual(CharacterCreationMagicResonanceTestFixture.StreamId, saved.PendingDraft!.Selections.Stream);
+            CollectionAssert.AreEquivalent(
+                CharacterCreationMagicResonanceTestFixture.TechnomancerSelections.ComplexForms.ToArray(),
+                saved.PendingDraft.Selections.ComplexForms.ToArray());
+
+            var reopened = Open();
+            try
+            {
+                Assert.AreEqual(1, Find<ComboBox>(reopened, CreationMagicResonanceWindow.StreamComboAutomationId).SelectedIndex);
+                Assert.IsTrue(FindCheck(reopened, cleaner).IsChecked == true && FindCheck(reopened, editor).IsChecked == true);
+                FindCheck(reopened, cleaner).IsChecked = false;
+                Assert.AreEqual(CharacterCreationMagicResonanceTestFixture.EditorId,
+                    context.Bound.LastPreviewSelections!.ComplexForms.Single());
+                Assert.IsFalse(Find<Button>(reopened, CreationMagicResonanceWindow.ConfirmButtonAutomationId).IsEnabled);
+                Find<Button>(reopened, CreationMagicResonanceWindow.CancelButtonAutomationId)
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Assert.IsFalse(reopened.IsVisible);
+                Assert.IsFalse(reopened.Confirmed);
+            }
+            finally { CloseQuietly(reopened); }
+
+            Assert.AreEqual(saved.PendingDraft.DraftDigest, context.Shared.StateForTests.PendingDraft!.DraftDigest);
+            var afterCancel = Open();
+            try
+            {
+                Assert.IsTrue(FindCheck(afterCancel, cleaner).IsChecked == true && FindCheck(afterCancel, editor).IsChecked == true);
+            }
+            finally { CloseQuietly(afterCancel); }
+        });
+
     private static string SpellOneAutomationId =>
         CreationMagicResonanceWindow.SpellCheckAutomationIdPrefix
         + CharacterCreationMagicResonanceTestFixture.SpellOneId.SourceId;
@@ -191,7 +263,12 @@ public sealed class CreationMagicResonanceWindowTests
                 preview,
                 idempotencyKey: "creation-magic-window-seed");
 
-        var shared = new StubMagicResonanceService(confirmed);
+        return CreateContext(confirmed);
+    }
+
+    private static TestContextFx CreateContext(CharacterCreationMagicResonanceState state)
+    {
+        var shared = new StubMagicResonanceService(state);
         var ownerBound = new OwnerBoundStubForWindow(shared);
         var presenter = new CharacterCreationMagicResonanceInteractionPresenter(ownerBound);
         CharacterOverviewState overview = CreateOverview(ownerBound, shared);

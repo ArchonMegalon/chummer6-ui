@@ -17,6 +17,15 @@ internal static class CharacterCreationMagicResonanceTestFixture
     internal static readonly CharacterCreationMagicResonanceOptionIdentity SpellTwoId =
         new(CharacterCreationMagicResonanceKinds.Spell, "82b4f523-a309-4ff4-9c94-a703cbb32dab");
 
+    internal static readonly CharacterCreationMagicResonanceOptionIdentity StreamId =
+        new(CharacterCreationMagicResonanceKinds.Stream, "7a3ecfbe-616e-425d-b204-329de37ffdbb");
+    internal static readonly CharacterCreationMagicResonanceOptionIdentity CleanerId =
+        new(CharacterCreationMagicResonanceKinds.ComplexForm, "373638b9-4334-4645-99f5-c3673e4f809b");
+    internal static readonly CharacterCreationMagicResonanceOptionIdentity EditorId =
+        new(CharacterCreationMagicResonanceKinds.ComplexForm, "6b4ed8d5-75c8-4415-9578-15afa4ac8494");
+    internal static CharacterCreationMagicResonanceSelections TechnomancerSelections { get; } =
+        new(null, StreamId, [], [], [CleanerId, EditorId]);
+
     internal static CharacterCreationMagicResonanceSelections CompleteSelections { get; } = new(
         TraditionId,
         null,
@@ -59,10 +68,10 @@ internal static class CharacterCreationMagicResonanceTestFixture
             talent,
             PendingDraft: null,
             Budget(CharacterCreationMagicResonanceKinds.Tradition, talent.RequiresTradition ? 1m : 0m, 0m),
-            Budget(CharacterCreationMagicResonanceKinds.Stream, 0m, 0m),
+            Budget(CharacterCreationMagicResonanceKinds.Stream, talent.RequiresStream ? 1m : 0m, 0m),
             Budget(CharacterCreationMagicResonanceKinds.AdeptPower, 0m, 0m),
             Budget(CharacterCreationMagicResonanceKinds.Spell, talent.SpellBudget, 0m),
-            Budget(CharacterCreationMagicResonanceKinds.ComplexForm, 0m, 0m),
+            Budget(CharacterCreationMagicResonanceKinds.ComplexForm, talent.ComplexFormBudget, 0m),
             Blockers: [],
             CanEdit: true,
             SnapshotDigest: string.Empty);
@@ -79,9 +88,18 @@ internal static class CharacterCreationMagicResonanceTestFixture
             blockers.Add(CharacterCreationMagicResonanceBlockers.TraditionRequired);
         if (!state.SelectedTalent.RequiresTradition && selections.Tradition is not null)
             blockers.Add(CharacterCreationMagicResonanceBlockers.TraditionInvalid);
-        if (selections.Stream is not null
-            || selections.AdeptPowers.Count != 0
-            || selections.ComplexForms.Count != 0)
+        decimal streamUsed = selections.Stream == StreamId ? 1m : 0m;
+        if (state.SelectedTalent.RequiresStream && streamUsed == 0m)
+            blockers.Add(CharacterCreationMagicResonanceBlockers.StreamRequired);
+        if (selections.Stream is not null && (!state.SelectedTalent.RequiresStream || streamUsed == 0m))
+            blockers.Add(CharacterCreationMagicResonanceBlockers.OptionInvalid);
+        if (selections.ComplexForms.Count < state.SelectedTalent.ComplexFormBudget)
+            blockers.Add(CharacterCreationMagicResonanceBlockers.ComplexFormBudgetIncomplete);
+        if (selections.ComplexForms.Count > state.SelectedTalent.ComplexFormBudget)
+            blockers.Add(CharacterCreationMagicResonanceBlockers.ComplexFormBudgetExceeded);
+        if (selections.ComplexForms.Distinct().Count() != selections.ComplexForms.Count
+            || selections.ComplexForms.Any(id => !state.Authority.ComplexForms.Any(option => option.Identity == id))
+            || selections.AdeptPowers.Count != 0)
             blockers.Add(CharacterCreationMagicResonanceBlockers.OptionInvalid);
         if (selections.Spells.Distinct().Count() != selections.Spells.Count
             || selections.Spells.Any(identity => identity != SpellOneId && identity != SpellTwoId))
@@ -98,6 +116,10 @@ internal static class CharacterCreationMagicResonanceTestFixture
             .Concat(selections.Tradition is null
                 ? []
                 : state.Authority.Traditions.Single().SourceAnchorIds)
+            .Concat(state.Authority.Streams.Where(option => option.Identity == selections.Stream)
+                .SelectMany(option => option.SourceAnchorIds))
+            .Concat(state.Authority.ComplexForms.Where(option => selections.ComplexForms.Contains(option.Identity))
+                .SelectMany(option => option.SourceAnchorIds))
             .Concat(selections.Spells.SelectMany(identity => state.Authority.Spells
                 .Where(option => option.Identity == identity)
                 .SelectMany(option => option.SourceAnchorIds)))
@@ -111,11 +133,11 @@ internal static class CharacterCreationMagicResonanceTestFixture
             selections,
             Budget(CharacterCreationMagicResonanceKinds.Tradition,
                 state.SelectedTalent.RequiresTradition ? 1m : 0m, traditionUsed),
-            Budget(CharacterCreationMagicResonanceKinds.Stream, 0m, 0m),
+            Budget(CharacterCreationMagicResonanceKinds.Stream, state.SelectedTalent.RequiresStream ? 1m : 0m, streamUsed),
             Budget(CharacterCreationMagicResonanceKinds.AdeptPower, 0m, 0m),
             Budget(CharacterCreationMagicResonanceKinds.Spell,
                 state.SelectedTalent.SpellBudget, selections.Spells.Count),
-            Budget(CharacterCreationMagicResonanceKinds.ComplexForm, 0m, 0m),
+            Budget(CharacterCreationMagicResonanceKinds.ComplexForm, state.SelectedTalent.ComplexFormBudget, selections.ComplexForms.Count),
             anchors,
             normalizedBlockers,
             RequiresExplicitConfirmation: true,
@@ -247,15 +269,21 @@ internal static class CharacterCreationMagicResonanceTestFixture
     {
         bool mundane = talentKind == CharacterCreationMagicResonanceKinds.Mundane;
         bool artificialIntelligence = talentKind == CharacterCreationMagicResonanceKinds.ArtificialIntelligence;
-        string talentName = mundane ? "Mundane" : artificialIntelligence ? "A.I." : "Magician";
+        bool technomancer = talentKind == CharacterCreationMagicResonanceKinds.Technomancer;
+        bool magician = !mundane && !artificialIntelligence && !technomancer;
+        string talentName = technomancer ? "Technomancer" : mundane ? "Mundane" : artificialIntelligence ? "A.I." : "Magician";
+        int magic = magician ? 6 : 0;
+        int resonance = technomancer ? 6 : 0;
+        int spells = magician ? 2 : 0;
+        int forms = technomancer ? 2 : 0;
         string talentXml = new XElement("talent",
             new XElement("name", talentName),
             new XElement("value", talentName),
-            new XElement("magic", mundane || artificialIntelligence ? 0 : 6),
-            new XElement("resonance", 0),
+            new XElement("magic", magic),
+            new XElement("resonance", resonance),
             new XElement("depth", artificialIntelligence ? 6 : 0),
-            new XElement("spells", mundane || artificialIntelligence ? 0 : 2),
-            new XElement("cfp", 0)).ToString(SaveOptions.DisableFormatting);
+            new XElement("spells", spells),
+            new XElement("cfp", forms)).ToString(SaveOptions.DisableFormatting);
         var talent = new CharacterCreationMagicResonanceTalentOption(
             new CharacterCreationMagicResonanceTalentIdentity(
                 "0487cf47-7ad1-4f4d-a38f-09a094e0e246",
@@ -264,17 +292,17 @@ internal static class CharacterCreationMagicResonanceTestFixture
             Rank: "A",
             Name: talentName,
             Kind: talentKind,
-            Magic: mundane || artificialIntelligence ? 0 : 6,
-            Resonance: 0,
+            Magic: magic,
+            Resonance: resonance,
             Depth: artificialIntelligence ? 6 : 0,
-            SpellBudget: mundane || artificialIntelligence ? 0 : 2,
-            ComplexFormBudget: 0,
+            SpellBudget: spells,
+            ComplexFormBudget: forms,
             AdeptPowerPointBudget: 0m,
-            RequiresTradition: !mundane && !artificialIntelligence,
-            RequiresStream: false,
+            RequiresTradition: magician,
+            RequiresStream: technomancer,
             AllowsAdeptPowers: false,
-            AllowsSpells: !mundane && !artificialIntelligence,
-            AllowsComplexForms: false,
+            AllowsSpells: magician,
+            AllowsComplexForms: technomancer,
             RequiredMetatypeNames: [],
             RequiredMetatypeCategories: [],
             ForbiddenMetatypeNames: [],
@@ -326,11 +354,14 @@ internal static class CharacterCreationMagicResonanceTestFixture
                 ["metatypes.xml#metatype:human"],
                 Digest('d'))],
             [tradition],
-            [],
+            technomancer ? [Option(StreamId, "Default", "resonance-stream", 1m, "streams.xml#tradition:default", 'a')] : [],
             [],
             [spellOne, spellTwo],
-            [],
-            ["priorities.xml", "spells.xml", "traditions.xml"],
+            technomancer ? [
+                Option(CleanerId, "Cleaner", "complex-form", 1m, "complexforms.xml#complexform:cleaner", 'b'),
+                Option(EditorId, "Editor", "complex-form", 1m, "complexforms.xml#complexform:editor", 'c')] : [],
+            technomancer ? ["complexforms.xml", "priorities.xml", "spells.xml", "streams.xml", "traditions.xml"]
+                : ["priorities.xml", "spells.xml", "traditions.xml"],
             [],
             IsAuthoritative: true,
             AuthorityDigest: string.Empty);
@@ -354,7 +385,8 @@ internal static class CharacterCreationMagicResonanceTestFixture
     {
         string root = identity.Kind switch
         {
-            CharacterCreationMagicResonanceKinds.Tradition => "tradition",
+            CharacterCreationMagicResonanceKinds.Tradition or CharacterCreationMagicResonanceKinds.Stream => "tradition",
+            CharacterCreationMagicResonanceKinds.ComplexForm => "complexform",
             CharacterCreationMagicResonanceKinds.Spell => "spell",
             _ => throw new ArgumentOutOfRangeException(nameof(identity))
         };
@@ -363,6 +395,9 @@ internal static class CharacterCreationMagicResonanceTestFixture
             new XElement("name", name),
             new XElement("source", "SR5"),
             new XElement("page", "172"));
+        string? drain = identity.Kind == CharacterCreationMagicResonanceKinds.Stream ? "{WIL} + {RES}" : null;
+        if (drain is not null)
+            source.Add(new XElement("drain", drain));
         if (identity.Kind == CharacterCreationMagicResonanceKinds.Spell)
             source.Add(new XElement("category", category));
         string sourceXml = source.ToString(SaveOptions.DisableFormatting);
@@ -380,6 +415,7 @@ internal static class CharacterCreationMagicResonanceTestFixture
             Blockers: [],
             IsEnabled: true)
         {
+            DrainExpression = drain ?? string.Empty,
             CanonicalSourceXml = sourceXml,
             CanonicalSourceXmlDigest = CharacterCreationMagicResonanceDigest.ComputeUtf8(sourceXml)
         };
