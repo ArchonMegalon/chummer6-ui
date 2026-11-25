@@ -664,6 +664,11 @@ WINDOWS_EXPORT_BLOBS = {
 }
 
 
+LIFE_METHOD_BASE = "b40a482aecc75d7206adcb0bc52bbaaf20e4f9b4"
+LIFE_METHOD_BLOBS = {
+    "Chummer.Tests/Presentation/DesktopMouseFirstJourneyRuntimeTests.cs": "17e8b10ea6ca337fc05bcfb9e7111990f9ffbac6",
+}
+
 ROAMING_REVIEW_BASE = "132db6a81a5151b7b6e78b5895de9964560426eb"
 ROAMING_REVIEW_BLOBS = {
     "Chummer.Desktop.Runtime.Tests/GrantBoundRoamingSyncLedgerTests.cs": "fd2d8358382736f4178d23ea7ed585d9050f3931",
@@ -690,15 +695,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 128
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "a240a13ccc12a87b0b2e2087ad39e254dbad2357",
-        "commit": "f3d567c734aea0b032bf03e6cfd22915bf181aa6",
+        "blob": "11aecda9e63d51c69f595de9ba6168a0218a9918",
+        "commit": "a2c7efe9d4c15172378fb39172ce495ef8b2968f",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "rawSha256": "a3583b421de5a986626500dfc5052bc92c6d129d8e3112635af616c559e1d952",
         "rawSizeBytes": 74687,
-        "semanticCanonicalSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "semanticCanonicalSha256": "a3583b421de5a986626500dfc5052bc92c6d129d8e3112635af616c559e1d952",
         "semanticCanonicalSizeBytes": 74687,
-        "tree": "08bbd88e4ab0974743813e919f7b6552469e63f3"
+        "tree": "d39dc3785b426d679ffd0e757e018ecae574fe58"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -903,6 +908,7 @@ def diff_rows(repo_root: Path, base: str, target: str) -> list[dict[str, Any]]:
                 WINDOWS_INTEGRATION_BASE: WINDOWS_INTEGRATION_BLOBS,
                 WINDOWS_EXPORT_BASE: WINDOWS_EXPORT_BLOBS,
                 ROAMING_REVIEW_BASE: ROAMING_REVIEW_BLOBS,
+                LIFE_METHOD_BASE: LIFE_METHOD_BLOBS,
             }.get(base, {})
             if (relative not in reviewed_sources
                     or commit_blob(repo_root, target, relative) != reviewed_sources[relative]):
