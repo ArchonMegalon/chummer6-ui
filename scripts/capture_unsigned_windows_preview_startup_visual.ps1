@@ -191,7 +191,7 @@ public static class ChummerUnsignedPreviewStartupCapture {
 "@
 
 $ExpectedPrePromptStartupWindowTitle = 'Chummer Desktop Classic'
-$ExpectedStartupWindowTitle = 'Claim your copy'
+$ExpectedStartupWindowTitle = 'Chummer Desktop'
 $ExpectedInstallLinkingPromptTitle = 'Claim your copy'
 $RejectedConsoleWindowClass = 'ConsoleWindowClass'
 $ExpectedAvaloniaWindowClassPattern = (
@@ -224,15 +224,12 @@ $WindowPlacementMargin = 20
 $GwOwner = [uint32]4
 $GaRoot = [uint32]2
 $GaRootOwner = [uint32]3
+# In App.axaml order: window, menu bar, toolbar, foreground, active menu border.
 $ExpectedDarkClientPalette = @(
-    [int]0x050B16,
-    [int]0x111827,
-    [int]0x162033,
-    [int]0x0F172A,
-    [int]0x020617,
-    [int]0x172554,
-    [int]0x0B1220,
-    [int]0x1C4A2D
+    [int]0x01010D, [int]0x050516, [int]0x0C0C21, [int]0xEDEDF8, [int]0x90C39A
+)
+$ExpectedLightClientPalette = @(
+    [int]0xF7F7F7, [int]0xDEE7F1, [int]0xEEF2F6, [int]0x111827, [int]0x256EFF
 )
 $MinimumExpectedPaletteFraction = 0.20
 $MinimumExpectedPaletteColors = 3
@@ -470,7 +467,8 @@ function Get-SanitizedStartupWindowSetDescription {
         ) {
             'pre_prompt_main'
         } elseif (
-            $observation.Title -ceq $ExpectedStartupWindowTitle
+            $observation.Title -ceq $ExpectedStartupWindowTitle -or
+            $observation.Title -ceq $ExpectedInstallLinkingPromptTitle
         ) {
             'guest_or_prompt'
         } else {
@@ -1355,6 +1353,20 @@ function Test-RenderedStartupBitmap {
         [Parameter(Mandatory = $true)][Drawing.Bitmap]$Bitmap,
         [Parameter(Mandatory = $true)][object]$Observation
     )
+    foreach ($themePalette in @($ExpectedDarkClientPalette, $ExpectedLightClientPalette)) {
+        if (Test-StartupBitmapPalette -Bitmap $Bitmap -Observation $Observation -Palette $themePalette) {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Test-StartupBitmapPalette {
+    param(
+        [Parameter(Mandatory = $true)][Drawing.Bitmap]$Bitmap,
+        [Parameter(Mandatory = $true)][object]$Observation,
+        [Parameter(Mandatory = $true)][int[]]$Palette
+    )
     $clientLeft = $Observation.ClientLeft - $Observation.ExtendedLeft
     $clientTop = $Observation.ClientTop - $Observation.ExtendedTop
     $clientRight = $Observation.ClientRight - $Observation.ExtendedLeft
@@ -1400,10 +1412,10 @@ function Test-RenderedStartupBitmap {
             $quantizedColors.Add($quantized) | Out-Null
             for (
                 $paletteIndex = 0;
-                $paletteIndex -lt $ExpectedDarkClientPalette.Count;
+                $paletteIndex -lt $Palette.Count;
                 $paletteIndex += 1
             ) {
-                $expected = $ExpectedDarkClientPalette[$paletteIndex]
+                $expected = $Palette[$paletteIndex]
                 $expectedRed = ($expected -shr 16) -band 0xFF
                 $expectedGreen = ($expected -shr 8) -band 0xFF
                 $expectedBlue = $expected -band 0xFF
