@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "a240a13ccc12a87b0b2e2087ad39e254dbad2357",
-        "commit": "f3d567c734aea0b032bf03e6cfd22915bf181aa6",
+        "blob": "11aecda9e63d51c69f595de9ba6168a0218a9918",
+        "commit": "a2c7efe9d4c15172378fb39172ce495ef8b2968f",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "rawSha256": "a3583b421de5a986626500dfc5052bc92c6d129d8e3112635af616c559e1d952",
         "rawSizeBytes": 74687,
-        "semanticCanonicalSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "semanticCanonicalSha256": "a3583b421de5a986626500dfc5052bc92c6d129d8e3112635af616c559e1d952",
         "semanticCanonicalSizeBytes": 74687,
-        "tree": "08bbd88e4ab0974743813e919f7b6552469e63f3"
+        "tree": "d39dc3785b426d679ffd0e757e018ecae574fe58"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -2908,6 +2908,7 @@ def publish_and_retain_windows_bundle(
     target: Path,
     *,
     consumer: Path,
+    core_content_root: Path,
     consumer_commit: str,
     consumer_config: Path,
     consumer_lock_inventory: dict[str, Any],
@@ -2965,6 +2966,8 @@ def publish_and_retain_windows_bundle(
             "true",
             f"-p:ChummerDesktopReleaseVersion={release_version}",
             f"-p:ChummerDesktopReleaseChannel={release_channel}",
+            f"-p:ChummerCoreContentSource={core_content_root}",
+            f"-p:ChummerContentPython={TRUSTED_PYTHON3}",
             "--output",
             str(publish_output),
             "-warnaserror:NU1603,NU1608",
@@ -6736,6 +6739,7 @@ def verify(args: argparse.Namespace) -> dict[str, Any]:
             retained_windows_bundle_receipt = publish_and_retain_windows_bundle(
                 retained_windows_bundle_target,
                 consumer=consumer,
+                core_content_root=core_content_root,
                 consumer_commit=head,
                 consumer_config=consumer_config,
                 consumer_lock_inventory=cloned_lock_inventory,
