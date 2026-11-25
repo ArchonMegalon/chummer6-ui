@@ -3277,6 +3277,76 @@ def require_exact_nuget_config_source(path: Path, feed: Path | None) -> None:
         raise VerificationError("same-run NuGet config package source differs")
 
 
+# This historical Core tree stores CRLF bytes despite its tracked text attribute.
+# Do not extend this exception automatically when the current Core pin changes.
+CORE_CRLF_CHECKOUT_AUTHORITY = (
+    "https://github.com/ArchonMegalon/chummer6-core.git",
+    "5cf6a882ed2cac96973160def7d1e2833e7edac5",
+)
+
+
+def require_clean_owner_checkout(
+    owner: dict[str, str], root: Path, environment: dict[str, str]
+) -> None:
+    def git(*arguments: str) -> str:
+        return run([str(TRUSTED_GIT), "--no-replace-objects", *arguments],
+                   cwd=root, environment=environment, capture=True).stdout
+
+    status = git("status", "--porcelain", "--untracked-files=all")
+    if not status:
+        return
+    message = f"owner checkout is dirty: {owner.get('directory', root.name)}"
+    relative = "Directory.Build.props"
+    if (status != f" M {relative}\n"
+            or (owner["repository"], owner["commit"]) != CORE_CRLF_CHECKOUT_AUTHORITY
+            or owner.get("directory", "chummer-core-engine") != "chummer-core-engine"
+            or git("rev-parse", "HEAD").strip() != owner["commit"]):
+        raise VerificationError(message)
+
+    # Compare the actual index to HEAD, not the working tree after Git filters.
+    # The sole porcelain row must be unstaged; no other staged change is allowed.
+    if git("diff-index", "--cached", "--raw", "HEAD", "--"):
+        raise VerificationError(message)
+    tree = git("ls-tree", "-z", "HEAD", "--", relative)
+    match = re.fullmatch(r"100644 blob ([0-9a-f]{40})\tDirectory\.Build\.props\0", tree)
+    if (match is None or git("ls-files", "--stage", "-z", "--", relative)
+            != f"100644 {match[1]} 0\t{relative}\0"):
+        raise VerificationError(message)
+
+    # Reuse the exact-content verifier's stable, regular, non-linked byte read
+    # and Git blob hashing. LF-only rewrites are real changes and must fail.
+    path = root / relative
+    before = path.lstat()
+    if not stat.S_ISREG(before.st_mode) or before.st_mode & 0o111:
+        raise VerificationError(message)
+    payload = secure_regular_file_bytes(path, label="Core checkout representation")
+    blob = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
+    if (blob != match[1] or b"\r\n" not in payload
+            or _stable_file_identity(before) != _stable_file_identity(path.lstat())):
+        raise VerificationError(message)
+
+    # At this pinned root path, the tracked root .gitattributes is the applicable
+    # attribute file. Authenticate it too; neither local overrides nor filters
+    # may supply a different working/index representation for the exception.
+    attributes = secure_regular_file_bytes(root / ".gitattributes", label="Core tracked attributes")
+    attributes_blob = hashlib.sha1(
+        b"blob " + str(len(attributes)).encode("ascii") + b"\0" + attributes
+    ).hexdigest()
+    expected_attributes = "".join(
+        f"{relative}\0{name}\0{value}\0"
+        for name, value in (("text", "set"), ("eol", "crlf"),
+                            ("filter", "unspecified"), ("ident", "unspecified"))
+    )
+    if (git("ls-tree", "-z", "HEAD", "--", ".gitattributes")
+            != f"100644 blob {attributes_blob}\t.gitattributes\0"
+            or any(git("check-attr", *cached, "-z", "text", "eol", "filter", "ident", "--", relative)
+                   != expected_attributes for cached in ((), ("--cached",)))
+            or git("status", "--porcelain", "--untracked-files=all") != status
+            or git("rev-parse", "HEAD").strip() != owner["commit"]
+            or git("diff-index", "--cached", "--raw", "HEAD", "--")):
+        raise VerificationError(message)
+
+
 def owner_fetch_source(
     owner: dict[str, str], source_cache: Path | None, environment: dict[str, str]
 ) -> str:
@@ -3299,9 +3369,9 @@ def owner_fetch_source(
                    cwd=source, environment=environment, capture=True).stdout.strip()
     if (inspect("rev-parse", "--show-toplevel") != str(source)
             or inspect("rev-parse", "HEAD") != owner["commit"]
-            or inspect("remote", "get-url", "origin") != owner["repository"]
-            or inspect("status", "--porcelain")):
+            or inspect("remote", "get-url", "origin") != owner["repository"]):
         raise VerificationError("owner source cache identity, origin or clean state differs")
+    require_clean_owner_checkout(owner, source, environment)
     return str(source)
 
 
@@ -3322,9 +3392,7 @@ def acquire_owner(owner: dict[str, str], owners_root: Path, environment: dict[st
     actual = run([str(TRUSTED_GIT), "rev-parse", "HEAD"], cwd=target, environment=environment, capture=True).stdout.strip()
     if actual != owner["commit"]:
         raise VerificationError(f"owner checkout differs: {owner['directory']}")
-    status = run([str(TRUSTED_GIT), "status", "--porcelain"], cwd=target, environment=environment, capture=True).stdout
-    if status:
-        raise VerificationError(f"owner checkout is dirty: {owner['directory']}")
+    require_clean_owner_checkout(owner, target, environment)
     return target
 
 

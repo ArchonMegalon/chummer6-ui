@@ -281,3 +281,93 @@ def test_local_owner_source_rejects_substitution_without_remote_fallback(tmp_pat
     with pytest.raises(package_plane.VerificationError):
         package_plane.acquire_owner(owner, target, environment, source_cache=cache)
     assert not (target / "owner").exists()
+
+
+def make_crlf_owner_source(tmp_path, monkeypatch):
+    cache, source, owner, environment = make_local_owner_source(tmp_path)
+    def git(*args, payload=None):
+        return subprocess.run(["git", "-C", str(source), *args], env=environment,
+                              input=payload, check=True, capture_output=True).stdout.decode().strip()
+    (source / ".gitattributes").write_bytes(b"*.props text eol=crlf\n")
+    payload = b"<Project>\r\n</Project>\r\n"
+    (source / "Directory.Build.props").write_bytes(payload)
+    git("add", ".gitattributes")
+    blob = git("hash-object", "-w", "--stdin", payload=payload)
+    git("update-index", "--add", "--cacheinfo", "100644", blob, "Directory.Build.props")
+    git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+        "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "raw CRLF tree")
+    owner = dict(owner, directory="chummer-core-engine", commit=git("rev-parse", "HEAD"))
+    renamed = cache / owner["commit"]
+    source.rename(renamed)
+    source = renamed
+    # Unit fixtures use their real Git commit; the root reproduction separately
+    # exercises the production pin without substituting this authority.
+    monkeypatch.setattr(package_plane, "CORE_CRLF_CHECKOUT_AUTHORITY",
+                        (owner["repository"], owner["commit"]))
+    assert git("status", "--porcelain") == "M Directory.Build.props"
+    return cache, source, owner, environment, git
+
+
+def test_crlf_owner_source_and_fresh_acquisition_keep_exact_blob(tmp_path, monkeypatch):
+    cache, source, owner, environment, git = make_crlf_owner_source(tmp_path, monkeypatch)
+    before = (source / "Directory.Build.props").read_bytes()
+    assert package_plane.owner_fetch_source(owner, cache, environment) == str(source)
+    target = tmp_path / "owners"
+    target.mkdir()
+    checkout = package_plane.acquire_owner(owner, target, environment, source_cache=cache)
+    assert (checkout / "Directory.Build.props").read_bytes() == before
+    assert (source / "Directory.Build.props").read_bytes() == before
+    assert subprocess.check_output(["git", "-C", str(checkout), "status", "--porcelain"],
+                                   env=environment) == b" M Directory.Build.props\n"
+    assert git("diff-index", "--cached", "--raw", "HEAD", "--") == ""
+    assert not (checkout / ".git/info/attributes").exists()
+
+
+@pytest.mark.parametrize("damage", [
+    "content", "lf", "staged", "staged_other", "staged_mode", "mode", "hidden_mode",
+    "link", "hardlink", "untracked", "other", "attributes", "local_attributes",
+    "repository", "commit", "directory",
+])
+def test_crlf_owner_exception_rejects_real_git_changes(tmp_path, monkeypatch, damage):
+    cache, source, owner, environment, git = make_crlf_owner_source(tmp_path, monkeypatch)
+    path = source / "Directory.Build.props"
+    before = path.read_bytes()
+    if damage == "content":
+        path.write_bytes(before + b"<!-- changed -->\r\n")
+    elif damage == "lf":
+        path.write_bytes(before.replace(b"\r\n", b"\n"))
+    elif damage == "staged":
+        git("add", "Directory.Build.props")
+    elif damage == "staged_other":
+        (source / "source.txt").write_text("staged alteration\n")
+        git("add", "source.txt")
+    elif damage == "staged_mode":
+        git("update-index", "--chmod=+x", "Directory.Build.props")
+    elif damage in ("mode", "hidden_mode"):
+        if damage == "hidden_mode":
+            git("config", "core.filemode", "false")
+        path.chmod(0o755)
+    elif damage in ("link", "hardlink"):
+        external = tmp_path / "same-bytes"
+        external.write_bytes(before)
+        path.unlink()
+        if damage == "link":
+            path.symlink_to(external)
+        else:
+            os.link(external, path)
+    elif damage == "untracked":
+        (source / "extra").write_text("untracked\n")
+    elif damage == "other":
+        (source / "source.txt").write_text("unstaged alteration\n")
+    elif damage == "attributes":
+        (source / ".gitattributes").write_bytes(b"*.props text eol=lf\n")
+    elif damage == "local_attributes":
+        (source / ".git/info/attributes").write_text("*.props text eol=lf\n")
+    elif damage == "repository":
+        owner = dict(owner, repository="https://github.com/example/substitute.git")
+    elif damage == "commit":
+        owner = dict(owner, commit="f" * 40)
+    else:
+        owner = dict(owner, directory="unreviewed-owner")
+    with pytest.raises(package_plane.VerificationError):
+        package_plane.require_clean_owner_checkout(owner, source, environment)
