@@ -2395,6 +2395,35 @@ public partial class DesktopDialogWindow : Window
             CreateSplitFieldRow(priorityField, karmaRatioField),
             CreateStandaloneFieldRow(houseRulesField)));
 
+        // WIN-009 gen15 T1035: this pane previously rendered only the defaults
+        // card, so the character-settings contract fields - settings profile,
+        // section select, and the active section's value fields such as
+        // treCustomDataDirectories - never appeared in the native dialog and
+        // named campaign rule amends could not be applied through the client.
+        // The factory emits the full contract field set next to the hidden
+        // legacy defaults fields; append every remaining visible field below
+        // the parity card. Construction runs under _suppressDialogUpdates, so
+        // the wired field handlers stay inert until a real user edit, and
+        // section switches flow through the standard QueueDialogFieldUpdate ->
+        // RebuildDynamicDialog -> Rebind refresh loop.
+        foreach (DesktopDialogField field in fields)
+        {
+            if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (string.Equals(field.Id, "characterPriority", StringComparison.Ordinal)
+                || string.Equals(field.Id, "characterKarmaNuyen", StringComparison.Ordinal)
+                || string.Equals(field.Id, "characterHouseRulesEnabled", StringComparison.Ordinal))
+            {
+                // Already rendered inside the parity card above.
+                continue;
+            }
+
+            shell.Children.Add(CreateFieldPane(field));
+        }
+
         return shell;
     }
 
