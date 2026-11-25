@@ -1501,6 +1501,18 @@ public static class DesktopMouseFirstJourneyRuntime
             return "BP";
         }
 
+        // WIN-009 gen16 (T1043): the Core-authoritative Life-Modules method id
+        // is "LifeModule" (CharacterCreationBuildMethods.LifeModules), which is
+        // also the exact value the new-character dialog exposes; fold the
+        // common plural/hyphenated spellings onto the canonical form instead of
+        // passing them through and failing the dialog select.
+        if (normalized.Equals("lifemodules", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("lifemodule", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("life-modules", StringComparison.OrdinalIgnoreCase))
+        {
+            return "LifeModule";
+        }
+
         return normalized.Equals("priority", StringComparison.OrdinalIgnoreCase)
             ? "Priority"
             : normalized;
