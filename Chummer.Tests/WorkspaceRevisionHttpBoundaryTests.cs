@@ -739,7 +739,7 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
         return path;
     }
 
-    private sealed class CountingRoamingSync : IDesktopWorkspaceRoamingSync
+    private sealed class CountingRoamingSync : IDesktopWorkspaceRoamingSync, IOwnerBoundDesktopWorkspaceRoamingSync
     {
         private int _outboundCount;
 
@@ -753,6 +753,21 @@ public sealed class WorkspaceRevisionHttpBoundaryTests
 
         public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
             OwnerScope owner,
+            CharacterWorkspaceId workspaceId,
+            CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            Interlocked.Increment(ref _outboundCount);
+            return Task.FromResult(new DesktopWorkspaceRoamingResult(
+                DesktopWorkspaceRoamingOutcome.Applied,
+                workspaceId));
+        }
+
+        // The owner-bound post-commit hook (successful HTTP writes) targets
+        // this shape; production GrantBoundDesktopWorkspaceRoamingSync
+        // implements both interfaces, so the fixture does too.
+        public Task<DesktopWorkspaceRoamingResult> SynchronizeOutboundAsync(
+            OwnerContextStamp originalOwner,
             CharacterWorkspaceId workspaceId,
             CancellationToken ct)
         {
