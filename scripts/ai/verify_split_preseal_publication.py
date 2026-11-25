@@ -664,6 +664,13 @@ WINDOWS_EXPORT_BLOBS = {
 }
 
 
+ROAMING_REVIEW_BASE = "132db6a81a5151b7b6e78b5895de9964560426eb"
+ROAMING_REVIEW_BLOBS = {
+    "Chummer.Desktop.Runtime.Tests/GrantBoundRoamingSyncLedgerTests.cs": "fd2d8358382736f4178d23ea7ed585d9050f3931",
+    "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj": "211e76e243c612d1e30d4f100f53241e922fb1c0",
+}
+
+
 RETIRED_SOURCE_LINKS = {
     "chummer-core-engine": ("120000", "780339eb049c48b4f26334592892e8c2e85545c7"),
     "chummer-hub-registry": ("120000", "10e92acd7d2551101980a99ae442344a429c54f9"),
@@ -683,15 +690,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 128
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "5ac74ccd30d671c9a3123eb34f46ee5c0aac6a9e",
-        "commit": "5222f8aa6117243903e080ff55e2300af724c67c",
+        "blob": "a240a13ccc12a87b0b2e2087ad39e254dbad2357",
+        "commit": "f3d567c734aea0b032bf03e6cfd22915bf181aa6",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
-        "rawSizeBytes": 74400,
-        "semanticCanonicalSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
-        "semanticCanonicalSizeBytes": 74400,
-        "tree": "4324b1b63ff6f152977fa75403c8e263324fa5ce"
+        "rawSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "rawSizeBytes": 74687,
+        "semanticCanonicalSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "semanticCanonicalSizeBytes": 74687,
+        "tree": "08bbd88e4ab0974743813e919f7b6552469e63f3"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -895,6 +902,7 @@ def diff_rows(repo_root: Path, base: str, target: str) -> list[dict[str, Any]]:
             reviewed_sources = {
                 WINDOWS_INTEGRATION_BASE: WINDOWS_INTEGRATION_BLOBS,
                 WINDOWS_EXPORT_BASE: WINDOWS_EXPORT_BLOBS,
+                ROAMING_REVIEW_BASE: ROAMING_REVIEW_BLOBS,
             }.get(base, {})
             if (relative not in reviewed_sources
                     or commit_blob(repo_root, target, relative) != reviewed_sources[relative]):
