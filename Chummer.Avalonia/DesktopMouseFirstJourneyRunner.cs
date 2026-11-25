@@ -11932,7 +11932,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
 
             string? karmaValue = null;
             System.Text.RegularExpressions.Match karmaMatch = System.Text.RegularExpressions.Regex.Match(
-                saveAsXml, "<karma>(\d+)</karma>");
+                saveAsXml, @"<karma>(\d+)</karma>");
             if (karmaMatch.Success)
             {
                 karmaValue = karmaMatch.Groups[1].Value;
