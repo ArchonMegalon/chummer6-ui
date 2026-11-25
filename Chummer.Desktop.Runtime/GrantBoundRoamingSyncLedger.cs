@@ -314,9 +314,8 @@ internal sealed class GrantBoundRoamingSyncLedgerStore
         processLock.Wait();
         try
         {
-            // Cross-process exclusivity: an exclusive-create lock file held for the
-            // duration of the read-modify-write. A failed acquisition (another process
-            // holds it) is retried briefly, then reported as not-persisted.
+            // Keep the lock pathname stable across writers. The OS releases the exclusive
+            // handle on disposal or process exit, including after an interrupted write.
             string lockPath = path + ".lock";
             string tempPath = path + $".tmp.{Guid.NewGuid():N}";
             FileStream? lockStream = null;
@@ -329,7 +328,7 @@ internal sealed class GrantBoundRoamingSyncLedgerStore
                     {
                         lockStream = new FileStream(
                             lockPath,
-                            FileMode.CreateNew,
+                            FileMode.OpenOrCreate,
                             FileAccess.ReadWrite,
                             FileShare.None);
                         break;
@@ -372,7 +371,6 @@ internal sealed class GrantBoundRoamingSyncLedgerStore
             finally
             {
                 lockStream?.Dispose();
-                try { File.Delete(lockPath); } catch (IOException) { }
                 try { File.Delete(tempPath); } catch (IOException) { }
             }
         }

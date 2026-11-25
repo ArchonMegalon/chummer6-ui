@@ -18,6 +18,8 @@
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GrantBoundRoamingSyncLedgerTests.cs"
+             Condition="'$(RunDesktopReleaseMatrixTestsOnly)' != 'true' and '$(RunBlazorShellComponentTestsOnly)' != 'true'" />
     <Compile Include="DesktopOriginWizardDialogSourceTests.cs" />
     <Compile Include="AvaloniaCreationWizardSourceTests.cs" />
     <Compile Include="..\Chummer.Tests\Presentation\WorkspaceOverviewLoaderTests.cs"
