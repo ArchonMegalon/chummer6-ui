@@ -308,6 +308,7 @@ internal sealed class CareerSkillAdvanceWindow : Window
             SelectionMode = SelectionMode.Single,
             Name = "career-skill-advance-list",
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(list);
         ScrollViewer.SetVerticalScrollBarVisibility(list, ScrollBarVisibility.Auto);
         list.SelectionChanged += OnSkillListSelectionChanged;
         foreach (Row row in rows)

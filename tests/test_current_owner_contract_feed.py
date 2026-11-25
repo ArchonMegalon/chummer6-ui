@@ -302,8 +302,8 @@ def make_crlf_owner_source(tmp_path, monkeypatch):
     source = renamed
     # Unit fixtures use their real Git commit; the root reproduction separately
     # exercises the production pin without substituting this authority.
-    monkeypatch.setattr(package_plane, "CORE_CRLF_CHECKOUT_AUTHORITY",
-                        (owner["repository"], owner["commit"]))
+    monkeypatch.setattr(package_plane, "CORE_CRLF_CHECKOUT_AUTHORITIES",
+                        {(owner["repository"], owner["commit"])})
     assert git("status", "--porcelain") == "M Directory.Build.props"
     return cache, source, owner, environment, git
 

@@ -12,8 +12,8 @@ REPO = Path(__file__).resolve().parents[1]
 RESOLVER = REPO / "Chummer.Avalonia" / "DesktopCoreContentRootResolver.cs"
 APP = REPO / "Chummer.Avalonia" / "App.axaml.cs"
 
-RUNTIME_COMMIT = "752d7a3a45ed19070a7873e59c96f9f4ebca71dd"
-RECIPE_COMMIT = "5cf6a882ed2cac96973160def7d1e2833e7edac5"
+RUNTIME_COMMIT = "bedc834ec0dd4602bb4b7d8bb7d7b81c291baa61"
+RECIPE_COMMIT = "9036fef3c726c8dffe7f99987e4b04ce0a3a1abc"
 
 
 class DesktopCoreContentRootResolverContractTests(unittest.TestCase):

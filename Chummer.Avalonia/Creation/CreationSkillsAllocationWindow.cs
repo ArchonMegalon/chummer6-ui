@@ -352,6 +352,7 @@ namespace Chummer.Avalonia.Creation
                     _selections[row.SourceSkillId] = current with { SpecializationOptionId = choice.Id };
                     Reprepare();
                 };
+                DesktopShellTheme.ApplyShellComboBoxTheme(specializations);
                 wrapper.Children.Add(specializations);
             }
             if (catalog?.CanBeNativeLanguage == true || selected?.IsNativeLanguage == true)

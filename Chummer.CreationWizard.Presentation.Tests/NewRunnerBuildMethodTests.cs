@@ -9,16 +9,16 @@ namespace Chummer.CreationWizard.Presentation.Tests;
 public sealed class NewRunnerBuildMethodTests
 {
     [TestMethod]
-    [DataRow("Priority", CharacterCreationBuildMethods.Priority)]
-    [DataRow("SumToTen", CharacterCreationBuildMethods.SumToTen)]
-    [DataRow("SumtoTen", CharacterCreationBuildMethods.SumToTen)]
-    [DataRow("Karma", CharacterCreationBuildMethods.Karma)]
-    [DataRow("LifeModule", CharacterCreationBuildMethods.LifeModules)]
-    [DataRow("sumtoten", null)]
-    [DataRow("SUMTOTEN", null)]
-    [DataRow("Sum-to-Ten", null)]
-    [DataRow("unsupported", null)]
-    public async Task Create_dispatches_only_the_canonical_core_method(string selected, string? canonical)
+    [DataRow("Priority", CharacterCreationBuildMethods.Priority, NativeSr5CreationProfiles.Priority)]
+    [DataRow("SumToTen", CharacterCreationBuildMethods.SumToTen, NativeSr5CreationProfiles.SumToTen)]
+    [DataRow("SumtoTen", CharacterCreationBuildMethods.SumToTen, NativeSr5CreationProfiles.SumToTen)]
+    [DataRow("Karma", CharacterCreationBuildMethods.Karma, NativeSr5CreationProfiles.KarmaQualityPrompts)]
+    [DataRow("LifeModule", CharacterCreationBuildMethods.LifeModules, NativeSr5CreationProfiles.LifeModules)]
+    [DataRow("sumtoten", null, null)]
+    [DataRow("SUMTOTEN", null, null)]
+    [DataRow("Sum-to-Ten", null, null)]
+    [DataRow("unsupported", null, null)]
+    public async Task Create_dispatches_only_the_canonical_core_method(string selected, string? canonical, string? nativeProfile)
     {
         CharacterOverviewState state = CharacterOverviewState.Empty with
         {
@@ -53,8 +53,7 @@ public sealed class NewRunnerBuildMethodTests
             Assert.IsNotNull(captured);
             Assert.AreEqual(canonical, captured.BuildMethod);
             Assert.AreEqual(RulesetDefaults.Sr5, captured.RulesetId);
-            Assert.IsTrue(CharacterCreationBootstrapProfiles.TryResolveCanonicalSettingsProfileId(canonical, out string profile));
-            Assert.AreEqual(profile, captured.SettingsProfileId);
+            Assert.AreEqual(nativeProfile, captured.SettingsProfileId);
             StringAssert.Contains(state.Error ?? string.Empty, "test-core-response");
         }
         Assert.IsNull(state.WorkspaceId);

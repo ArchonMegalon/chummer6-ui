@@ -37,4 +37,4 @@ public sealed record DesktopUpdateClientStatus(
     DateTimeOffset? RollbackWindowStartedAtUtc = null,
     DateTimeOffset? RollbackWindowExpiresAtUtc = null,
     string? LastManifestChannelId = null,
-    string UpdateMode = "full");
+    string UpdateMode = "full", bool HasVerifiedStagedUpdate = false);

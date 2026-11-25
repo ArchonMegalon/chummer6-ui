@@ -203,7 +203,10 @@ public sealed class ShellPresenter : IShellPresenter
             Error = null,
             LastCommandId = command.Id,
             OpenMenuId = null,
-            Notice = $"Command '{command.Id}' dispatched through shared shell contract."
+            // Controller10143: fall-through dispatches (e.g. dialog.global_settings)
+            // are handled by dialog hosts; never surface internal dispatch plumbing
+            // to the user. A neutral acknowledgement is all the UI should show.
+            Notice = null
         });
 
         return Task.CompletedTask;

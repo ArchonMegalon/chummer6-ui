@@ -4,6 +4,7 @@ import json
 import os
 import hashlib
 import select
+import shlex
 import shutil
 import subprocess
 import sys
@@ -587,7 +588,10 @@ def test_strict_verify_builds_then_runs_product_assembly_without_msbuild_forward
     ) in source
     runner = source.split('dotnet "$repo_root/Chummer.Product.UnitTests/bin/Release/net10.0/Chummer.Product.UnitTests.dll"', 1)[1].split(
         'core_projection_after=', 1)[0]
-    assert "--minimum-expected-tests 956" in runner
+    arguments = shlex.split(runner.replace("\\\n", " "))
+    assert arguments.count("--minimum-expected-tests") == 1
+    minimum = arguments[arguments.index("--minimum-expected-tests") + 1]
+    assert int(minimum) >= 956
     assert '--test-parameter "ChummerCoreContentRoot=$core_projection_root"' in runner
     assert "-m:1" not in runner and "--disable-build-servers" not in runner
 

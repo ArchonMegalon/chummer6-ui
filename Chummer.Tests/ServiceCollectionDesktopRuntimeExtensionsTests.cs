@@ -118,7 +118,7 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
                     IDesktopWorkspaceRoamingSync roamingSync = provider.GetRequiredService<IDesktopWorkspaceRoamingSync>();
 
                     Assert.AreEqual("install-account:subject-alpha", ownerContextAccessor.Current.NormalizedValue);
-                    Assert.IsInstanceOfType<UnavailableDesktopWorkspaceRoamingSync>(roamingSync);
+                    Assert.IsInstanceOfType<GrantBoundDesktopWorkspaceRoamingSync>(roamingSync);
                     Assert.AreEqual(
                         Path.Combine(desktopStateRoot, "Chummer6", "state"),
                         Environment.GetEnvironmentVariable(StatePathEnvironmentVariable));
@@ -177,6 +177,64 @@ public class ServiceCollectionDesktopRuntimeExtensionsTests
             {
                 DeleteTempDirectory(avaloniaRoot);
                 DeleteTempDirectory(blazorRoot);
+                DeleteTempDirectory(desktopStateRoot);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Claimed_linked_desktop_mode_registers_grant_bound_roaming_sync_fail_closed_without_hub()
+    {
+        lock (EnvironmentLock)
+        {
+            string root = CreateTempDirectory();
+            string desktopStateRoot = CreateTempDirectory();
+            try
+            {
+                WriteClaimedInstallState(desktopStateRoot, "avalonia", subjectId: "subject-alpha", userId: "user-alpha");
+
+                ApplyEnvironment(mode: null, baseUrl: null, apiKey: null, () =>
+                {
+                    Environment.SetEnvironmentVariable(DesktopStateRootEnvironmentVariable, desktopStateRoot);
+                    Environment.SetEnvironmentVariable(StatePathEnvironmentVariable, null);
+
+                    var services = new ServiceCollection();
+                    services.AddChummerLocalRuntimeClient(root, root, "avalonia");
+
+                    using ServiceProvider provider = services.BuildServiceProvider();
+                    IDesktopWorkspaceRoamingSync roamingSync =
+                        provider.GetRequiredService<IDesktopWorkspaceRoamingSync>();
+                    IOwnerContextAccessor ownerContextAccessor =
+                        provider.GetRequiredService<IOwnerContextAccessor>();
+
+                    // The ordinary linked route resolves the grant-bound sync with the
+                    // install-bound owner context; only unlinked modes stay on the
+                    // unavailable fallback.
+                    Assert.IsInstanceOfType<GrantBoundDesktopWorkspaceRoamingSync>(roamingSync);
+                    Assert.IsInstanceOfType<DesktopInstallOwnerContextAccessor>(ownerContextAccessor);
+                    Assert.AreEqual("install-account:subject-alpha", ownerContextAccessor.Current.NormalizedValue);
+
+                    // Without a configured Hub the grant-bound sync stays fail-closed
+                    // per call: Unavailable without a request or an exception.
+                    DesktopWorkspaceRoamingResult inbound = roamingSync
+                        .SynchronizeInboundAsync(ownerContextAccessor.Current, CancellationToken.None)
+                        .GetAwaiter()
+                        .GetResult();
+                    Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Unavailable, inbound.Outcome);
+
+                    DesktopWorkspaceRoamingResult outbound = roamingSync
+                        .SynchronizeOutboundAsync(
+                            ownerContextAccessor.Current,
+                            new CharacterWorkspaceId("ws-roaming-di"),
+                            CancellationToken.None)
+                        .GetAwaiter()
+                        .GetResult();
+                    Assert.AreEqual(DesktopWorkspaceRoamingOutcome.Unavailable, outbound.Outcome);
+                });
+            }
+            finally
+            {
+                DeleteTempDirectory(root);
                 DeleteTempDirectory(desktopStateRoot);
             }
         }
