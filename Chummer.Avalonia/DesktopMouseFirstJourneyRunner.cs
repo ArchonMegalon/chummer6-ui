@@ -670,6 +670,84 @@ internal static class DesktopMouseFirstJourneyRunner
                 return;
             }
 
+            if (DesktopMouseFirstJourneyRuntime.AmendedRunnerExportRequested)
+            {
+                RecordStep(steps, "amended runner export leg: open saved amended workspace, save, save-as native .chum5, export portable bundle");
+                DesktopUserJourneyWorkflowEvidence amendedEvidence = await ExerciseAmendedRunnerExportLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction);
+                userJourneyWorkflows.Add(amendedEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> amendedAssertion in amendedEvidence.Assertions)
+                {
+                    if (!amendedAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Amended runner export leg assertion failed: {amendedAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: amended runner export leg assertion {amendedAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                var amendedVisibleState = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: amendedVisibleState.WorkspaceId?.Value,
+                        CharacterName: amendedVisibleState.Profile?.Name,
+                        CharacterAlias: amendedVisibleState.Profile?.Alias,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: amendedVisibleState.Session?.HasSavedWorkspace ?? false,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "WIN-009 gen14 T1030 amended-runner export checkpoint: the saved karma-amended SR5 career character was opened from the durable state root, saved through the product save command, then the native .chum5 Save-As download and the portable export dialog download were driven to disk. Consult the workflow assertions and the amended-runner receipt for the export facts.",
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
             if (DesktopMouseFirstJourneyRuntime.PdfSaveRequested)
             {
                 RecordStep(steps, "native pdf save leg: real dialog save of the career sample print preview");
@@ -11768,6 +11846,133 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
         {
             MainWindowDesktopFileCoordinator.SaveExportOverride = null;
             MainWindowDesktopFileCoordinator.SavePrintOverride = null;
+        }
+    }
+
+    /// <summary>
+    /// WIN-009 gen14 T1030: amended-runner portable export checkpoint. The saved
+    /// karma-amended SR5 career character (a supported amend applied through the
+    /// real CareerRewardsWindow route, saved natively) is opened from the durable
+    /// state root via the production presenter load route, saved through the
+    /// product save command, then the native .chum5 Save-As download and the
+    /// portable export dialog download are driven to disk and verified before the
+    /// receipt is written.
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseAmendedRunnerExportLegAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction)
+    {
+        string exportDirectory = Directory.CreateTempSubdirectory("chummer-journey-amended-export").FullName;
+        string? savedSaveAsPath = null;
+        string? savedExportPath = null;
+        MainWindowDesktopFileCoordinator.SaveDownloadOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, Path.GetFileName(request.Download.FileName));
+            File.WriteAllBytes(targetPath, Convert.FromBase64String(request.Download.ContentBase64));
+            savedSaveAsPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Saved native .chum5 to {request.Download.FileName}."));
+        };
+        MainWindowDesktopFileCoordinator.SaveExportOverride = (_, request, _) =>
+        {
+            string targetPath = Path.Combine(exportDirectory, Path.GetFileName(request.Export.FileName));
+            File.WriteAllBytes(targetPath, Convert.FromBase64String(request.Export.ContentBase64));
+            savedExportPath = targetPath;
+            return Task.FromResult(new DesktopDownloadSaveResult(
+                DesktopFileOperationOutcome.Completed,
+                $"Exported workspace bundle to {request.Export.FileName}."));
+        };
+        try
+        {
+            await LoadSavedWorkspaceForRewardLegAsync(window, steps, ct);
+            RecordStep(steps, "amended runner export: saved amended workspace loaded");
+
+            // Save through the product save command so the export operates on the
+            // Windows-saved document (durable state root), matching the magician
+            // export leg discipline.
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "amended workspace save settled (ContentRevision == SavedRevision > 0)",
+                () =>
+                {
+                    CharacterOverviewState snap = window.SnapshotStateForAutomation();
+                    return snap.SavedRevision > 0 && snap.ContentRevision == snap.SavedRevision;
+                },
+                ct);
+            long savedRevisionAfterSave = window.SnapshotStateForAutomation().SavedRevision;
+            RecordStep(steps, $"amended runner export: saved revision {savedRevisionAfterSave}");
+
+            // Native .chum5 Save-As download through the real download dispatch.
+            await ClickFileMenuCommandAsync(window, "save_character_as", steps, ct, recordPointerAction);
+            await WaitForAsync(
+                steps,
+                "amended native .chum5 save-as payload materialized on disk",
+                () => savedSaveAsPath is not null && File.Exists(savedSaveAsPath),
+                ct);
+            // Portable export through the real export dialog dispatch.
+            await ClickFileMenuCommandAsync(window, "export_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.export_character", steps, ct);
+            await ClickDialogActionUntilAsync(
+                window,
+                "download",
+                steps,
+                ct,
+                recordPointerAction,
+                "amended export bundle materialized through the download override",
+                () => savedExportPath is not null && File.Exists(savedExportPath));
+            AmendedRunnerExportCheck files = AmendedRunnerExportCheck.Read(savedSaveAsPath!, savedExportPath!);
+            RecordStep(steps, $"Career export verified through XML and JSON readers: Karma={files.Karma}, spells={files.SpellCount}, sustained-duration spells={files.SustainedDurationCount}");
+
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07-amended-export-after");
+
+            DesktopMouseFirstJourneyRuntime.WriteAmendedRunnerExportReceipt(
+                workspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                savedRevision: savedRevisionAfterSave,
+                saveAsFileName: Path.GetFileName(savedSaveAsPath!),
+                saveAsBytes: new FileInfo(savedSaveAsPath!).Length,
+                exportFileName: Path.GetFileName(savedExportPath!),
+                exportBytes: new FileInfo(savedExportPath!).Length,
+                rulesetId: "sr5",
+                characterName: window.SnapshotStateForAutomation().Profile?.Name,
+                characterAlias: window.SnapshotStateForAutomation().Profile?.Alias,
+                spellCount: files.SpellCount,
+                sustainedSpellCount: files.SustainedDurationCount,
+                karmaValue: files.Karma.ToString(CultureInfo.InvariantCulture));
+            RecordStep(steps, "amended runner export receipt written");
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: "amended_runner_export_workflow",
+                ScreenshotPaths: [],
+                Assertions: new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["amended_save_as_materialized"] = savedSaveAsPath is not null && File.Exists(savedSaveAsPath!),
+                    ["amended_save_as_has_karma16"] = files.Karma == 16,
+                    ["amended_save_as_has_magician_marker"] = files.Magician,
+                    ["amended_save_as_has_adept_marker"] = files.Adept,
+                    ["amended_save_as_has_tradition_marker"] = files.Tradition == "Hermetic",
+                    ["amended_save_as_has_sustained_spells"] = files.SpellCount == 10 && files.SustainedDurationCount == 5,
+                    ["amended_export_materialized"] = savedExportPath is not null && File.Exists(savedExportPath!),
+                    ["amended_export_is_json"] = files.PortableProfileMatches,
+                    ["amended_export_has_magician_profile"] = files.PortableProfileMatches && files.Magician,
+                    ["amended_export_has_native_payload"] = files.PortablePayloadMatches,
+                    ["amended_export_has_karma16"] = files.PortableBalancesMatch && files.Karma == 16,
+                    ["amended_workspace_saved"] = savedRevisionAfterSave > 0,
+                },
+                InteractionNotes:
+                [
+                    $"Opened the saved karma-amended SR5 career character from the durable state root, saved it (revision {savedRevisionAfterSave}), saved-as native .chum5 ({new FileInfo(savedSaveAsPath!).Length} bytes) and exported the portable bundle ({new FileInfo(savedExportPath!).Length} bytes).",
+                ]);
+        }
+        finally
+        {
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride = null;
+            MainWindowDesktopFileCoordinator.SaveExportOverride = null;
         }
     }
 
