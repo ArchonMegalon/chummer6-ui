@@ -4247,6 +4247,7 @@ def _retained_bundle_inputs(tmp_path: Path) -> dict[str, object]:
     project.write_text("<Project />\n", encoding="utf-8")
     return {
         "consumer": consumer,
+        "core_content_root": tmp_path / "selected Core checkout",
         "consumer_commit": "a" * 40,
         "consumer_config": config,
         "consumer_lock_inventory": lock_inventory,
@@ -4320,6 +4321,8 @@ def test_windows_publish_closure_is_atomically_retained_with_exact_same_run_byte
     assert command[command.index("--self-contained") + 1] == "true"
     assert "-p:ChummerDesktopReleaseVersion=preview-20260722.1" in command
     assert "-p:ChummerDesktopReleaseChannel=preview" in command
+    assert f"-p:ChummerCoreContentSource={inputs['core_content_root']}" in command
+    assert f"-p:ChummerContentPython={package_plane.TRUSTED_PYTHON3}" in command
     assert receipt["atomicallyRetained"] is True
     assert receipt["authority"] is False
     assert receipt["consumerCommit"] == "a" * 40
