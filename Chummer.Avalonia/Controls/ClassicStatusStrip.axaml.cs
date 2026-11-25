@@ -31,7 +31,9 @@ public partial class ClassicStatusStrip : UserControl, IStatusStripSurface
 
         if (this.FindControl<TextBlock>("ComplianceStateText") is { } complianceStateText)
         {
-            complianceStateText.Text = state.ComplianceState;
+            complianceStateText.Text = StatusStripDisplayText.Summary(state.ComplianceState);
+            if (this.FindControl<Button>("StatusDetailsButton")?.Flyout is Flyout { Content: TextBlock details })
+                details.Text = state.ComplianceState;
         }
 
         if (this.FindControl<ProgressBar>("WorkbenchProgressBar") is { } workbenchProgressBar)
@@ -40,12 +42,24 @@ public partial class ClassicStatusStrip : UserControl, IStatusStripSurface
             workbenchProgressBar.Value = state.IsBusy ? 0d : 100d;
         }
 
+        // Gen6 F06: the default Classic surface must show the same current
+        // save feedback as the alternate StatusStripControl -- the SaveState
+        // segment appears only while a workspace is active (non-empty state).
+        if (this.FindControl<Border>("SaveStateBorder") is { } saveStateBorder
+            && this.FindControl<TextBlock>("SaveStateText") is { } saveStateText)
+        {
+            bool hasSaveState = !string.IsNullOrWhiteSpace(state.SaveState);
+            saveStateBorder.IsVisible = hasSaveState;
+            saveStateText.Text = state.SaveState;
+        }
+
         ToolTip.SetTip(
             this,
             AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(
                 state.CharacterState,
                 state.ServiceState,
                 state.TimeState,
-                state.ComplianceState));
+                state.ComplianceState,
+                state.SaveState));
     }
 }

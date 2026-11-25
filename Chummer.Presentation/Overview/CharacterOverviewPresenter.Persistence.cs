@@ -1,5 +1,8 @@
+using System.Text;
+using System.Text.Json.Nodes;
 using Chummer.Contracts.Workspaces;
 using Chummer.Application.Owners;
+using Chummer.Application.Characters;
 
 namespace Chummer.Presentation.Overview;
 
@@ -717,15 +720,44 @@ public sealed partial class CharacterOverviewPresenter
                 return;
             }
 
+            // WIN-008 gen2 input mapping: Core's print receipt HTML carries only
+            // section counts. Fetch the authoritative attribute/skill/quality
+            // sections through the same client and append real value rows to
+            // the print HTML so the PDF composer renders actual values. The
+            // enrichment never masks a print failure: if any section fetch or
+            // parse fails the original count-only receipt is delivered
+            // unchanged (recorded in the notice).
+            WorkspacePrintReceipt receipt = result.Receipt;
+            string valueNotice = string.Empty;
+            try
+            {
+                WorkspacePrintReceipt? enriched = await EnrichPrintReceiptWithValuesAsync(
+                    currentWorkspace.Value, receipt, ct);
+                if (enriched is not null)
+                {
+                    receipt = enriched;
+                    valueNotice = " (with attribute, skill and quality values)";
+                }
+                else
+                {
+                    valueNotice = " (values unavailable: count-only print body)";
+                }
+            }
+            catch (Exception enrichmentError) when (enrichmentError is InvalidOperationException
+                or System.Text.Json.JsonException or NotSupportedException)
+            {
+                valueNotice = " (values unavailable: count-only print body)";
+            }
+
             PublishOutputTransition(displayGeneration, originalState, outputCancellation, State with
             {
                 ActiveDialog = null,
                 IsBusy = false,
                 Error = null,
-                Notice = $"Print preview prepared: {result.Receipt.Title}.",
+                Notice = $"Print preview prepared: {receipt.Title}.{valueNotice}",
                 PendingDownload = null,
                 PendingExport = null,
-                PendingPrint = result.Receipt,
+                PendingPrint = receipt,
                 PendingPrintVersion = State.PendingPrintVersion + 1
             });
         }
@@ -740,6 +772,255 @@ public sealed partial class CharacterOverviewPresenter
                 PendingPrint = null
             });
         }
+    }
+
+    /// <summary>
+    /// WIN-008 gen2 input mapping: Core's print receipt HTML carries only section
+    /// counts. Fetch the authoritative attribute/skill/quality sections through the
+    /// same client and append real value cards to the print HTML so the PDF composer
+    /// renders actual values. Returns null (and never throws for data-shape issues)
+    /// when no value card could be produced, in which case the original receipt is
+    /// delivered unchanged. The receipt identity (Id, Title, RulesetId, ReceiptId)
+    /// is preserved; only the HTML payload and its length are updated.
+    /// </summary>
+    private async Task<WorkspacePrintReceipt?> EnrichPrintReceiptWithValuesAsync(
+        CharacterWorkspaceId workspaceId, WorkspacePrintReceipt receipt, CancellationToken ct)
+    {
+        byte[] htmlBytes = Convert.FromBase64String(receipt.ContentBase64);
+        string html = Encoding.UTF8.GetString(htmlBytes);
+        int bodyClose = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+        if (bodyClose < 0)
+        {
+            return null;
+        }
+
+        Task<JsonNode> attributesTask = _client.GetSectionAsync(workspaceId, "attributes", ct);
+        Task<JsonNode> skillsTask = _client.GetSectionAsync(workspaceId, "skills", ct);
+        Task<JsonNode> qualitiesTask = _client.GetSectionAsync(workspaceId, "qualities", ct);
+        await Task.WhenAll(attributesTask, skillsTask, qualitiesTask).ConfigureAwait(false);
+
+        StringBuilder cards = new();
+        AppendAttributeValueCards(cards, attributesTask.Result);
+        await AppendSkillValueCardsAsync(cards, skillsTask.Result, workspaceId, ct).ConfigureAwait(false);
+        AppendQualityValueCards(cards, qualitiesTask.Result);
+        if (cards.Length == 0)
+        {
+            return null;
+        }
+
+        string enrichedHtml = string.Concat(html[..bodyClose], cards.ToString(), html[bodyClose..]);
+        byte[] enrichedBytes = Encoding.UTF8.GetBytes(enrichedHtml);
+        return receipt with
+        {
+            ContentBase64 = Convert.ToBase64String(enrichedBytes),
+            DocumentLength = enrichedBytes.Length
+        };
+    }
+
+    private static string EncodeHtml(string value)
+        => System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
+
+    private static void AppendAttributeValueCards(StringBuilder cards, JsonNode? section)
+    {
+        if (section?["attributes"] is not JsonArray attributes || attributes.Count == 0)
+        {
+            return;
+        }
+
+        cards.Append("<div class=\"card\"><h2>Attributes</h2><dl class=\"grid\">");
+        foreach (JsonNode? item in attributes)
+        {
+            string name = (string?)item?["name"] ?? string.Empty;
+            if (name.Length == 0)
+            {
+                continue;
+            }
+
+            int baseValue = item?["baseValue"]?.GetValue<int>() ?? 0;
+            int karmaValue = item?["karmaValue"]?.GetValue<int>() ?? 0;
+            int totalValue = item?["totalValue"]?.GetValue<int>() ?? 0;
+            string detail = karmaValue > 0
+                ? $"base {baseValue} + karma {karmaValue} = total {totalValue}"
+                : $"base {baseValue}, total {totalValue}";
+            cards.Append($"<dt>{EncodeHtml(name)}</dt><dd>{EncodeHtml(detail)}</dd>");
+        }
+
+        cards.Append("</dl></div>");
+    }
+
+    /// <summary>
+    /// WIN-008 gen4 (T729): the sections API fills a skill's name with its source id
+    /// (suid) when the saved skill has no name element, so the enrichment previously
+    /// printed GUID-shaped ids as if they were display names. Active-skill labels are
+    /// now resolved through the character's exact source-data context (the same
+    /// authority career editors use): the saved name wins when it is a real label,
+    /// a genuine custom name wins next, then the catalog display name, and only a
+    /// skill that cannot be resolved at all receives an explicit "unresolved skill"
+    /// disclosure instead of an id pretending to be a name.
+    /// </summary>
+    private async Task AppendSkillValueCardsAsync(
+        StringBuilder cards, JsonNode? section, CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        if (section?["skills"] is not JsonArray skills || skills.Count == 0)
+        {
+            return;
+        }
+
+        ICharacterSourceDataContext? sourceData = await TryCreatePrintSkillSourceContextAsync(
+            skills, workspaceId, ct).ConfigureAwait(false);
+        AppendSkillValueCards(cards, skills, sourceData);
+    }
+
+    private async Task<ICharacterSourceDataContext?> TryCreatePrintSkillSourceContextAsync(
+        JsonArray skills, CharacterWorkspaceId workspaceId, CancellationToken ct)
+    {
+        bool needsCatalogResolution = false;
+        foreach (JsonNode? item in skills)
+        {
+            if (item is null || (item["isKnowledge"]?.GetValue<bool>() ?? false))
+            {
+                continue;
+            }
+
+            string savedName = (string?)item["name"] ?? string.Empty;
+            string customName = (string?)item["customName"] ?? string.Empty;
+            if (!IsDisplayableSkillLabel(savedName) && !IsDisplayableSkillLabel(customName))
+            {
+                needsCatalogResolution = true;
+                break;
+            }
+        }
+
+        if (!needsCatalogResolution || _characterSourceDataResolver is null)
+        {
+            return null;
+        }
+
+        // The context is built from the exact saved dossier bytes. Any failure here
+        // degrades to unresolved-label disclosure; it must never fail the enrichment.
+        try
+        {
+            CommandResult<WorkspaceDocumentSnapshot> read = await _client.GetWorkspaceAsync(workspaceId, ct)
+                .ConfigureAwait(false);
+            if (!read.Success || read.Value is null
+                || read.Value.Document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                return null;
+            }
+
+            return _characterSourceDataResolver.TryCreateContext(read.Value.Document.Content);
+        }
+        catch (Exception contextError) when (contextError is InvalidOperationException
+            or System.Text.Json.JsonException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A label is displayable only when it is non-blank and not a GUID-shaped id.</summary>
+    private static bool IsDisplayableSkillLabel(string value)
+        => !string.IsNullOrWhiteSpace(value)
+            && !(Guid.TryParseExact(value, "D", out Guid parsed) && parsed != Guid.Empty);
+
+    private static string ResolvePrintSkillLabel(
+        string savedName, string customName, string suid, ICharacterSourceDataContext? sourceData)
+    {
+        if (IsDisplayableSkillLabel(savedName))
+        {
+            return savedName;
+        }
+
+        if (IsDisplayableSkillLabel(customName))
+        {
+            return customName;
+        }
+
+        if (sourceData is not null
+            && Guid.TryParseExact(suid, "D", out Guid sourceId) && sourceId != Guid.Empty
+            && sourceData.TryResolveActiveSkillSource(suid, out CharacterActiveSkillSource source)
+            && !string.IsNullOrWhiteSpace(source.Name))
+        {
+            return source.Name;
+        }
+
+        return suid.Length >= 8 ? $"unresolved skill ({suid[..8]})" : "unresolved skill";
+    }
+
+    private static void AppendSkillValueCards(StringBuilder cards, JsonArray skills, ICharacterSourceDataContext? sourceData)
+    {
+        cards.Append("<div class=\"card\"><h2>Skills</h2><dl class=\"grid\">");
+        int knowledgeCount = 0;
+        foreach (JsonNode? item in skills)
+        {
+            bool isKnowledge = item?["isKnowledge"]?.GetValue<bool>() ?? false;
+            if (isKnowledge)
+            {
+                knowledgeCount++;
+                continue;
+            }
+
+            string savedName = (string?)item?["name"] ?? string.Empty;
+            string customName = (string?)item?["customName"] ?? string.Empty;
+            string suid = (string?)item?["suid"] ?? string.Empty;
+            string name = ResolvePrintSkillLabel(savedName, customName, suid, sourceData);
+
+            int baseValue = item?["baseValue"]?.GetValue<int>() ?? 0;
+            int karmaValue = item?["karmaValue"]?.GetValue<int>() ?? 0;
+            string detail = $"rating {baseValue + karmaValue} (base {baseValue}, karma {karmaValue})";
+            if (item?["specializations"] is JsonArray specializations && specializations.Count > 0)
+            {
+                List<string> names = [];
+                foreach (JsonNode? specialization in specializations)
+                {
+                    string? text = (string?)specialization;
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        names.Add(text);
+                    }
+                }
+
+                if (names.Count > 0)
+                {
+                    detail += "; specializations: " + string.Join(", ", names);
+                }
+            }
+
+            cards.Append($"<dt>{EncodeHtml(name)}</dt><dd>{EncodeHtml(detail)}</dd>");
+        }
+
+        if (knowledgeCount > 0)
+        {
+            cards.Append($"<dt>Knowledge skills</dt><dd>{knowledgeCount} (counted, not listed)</dd>");
+        }
+
+        cards.Append("</dl></div>");
+    }
+
+    private static void AppendQualityValueCards(StringBuilder cards, JsonNode? section)
+    {
+        if (section?["qualities"] is not JsonArray qualities || qualities.Count == 0)
+        {
+            return;
+        }
+
+        cards.Append("<div class=\"card\"><h2>Qualities</h2><dl class=\"grid\">");
+        foreach (JsonNode? item in qualities)
+        {
+            string name = (string?)item?["name"] ?? string.Empty;
+            if (name.Length == 0)
+            {
+                continue;
+            }
+
+            string source = (string?)item?["source"] ?? string.Empty;
+            int bp = item?["bp"]?.GetValue<int>() ?? 0;
+            string detail = string.Concat(
+                source.Length > 0 ? source : "unspecified source",
+                $" ({bp.ToString(System.Globalization.CultureInfo.InvariantCulture)} BP)");
+            cards.Append($"<dt>{EncodeHtml(name)}</dt><dd>{EncodeHtml(detail)}</dd>");
+        }
+
+        cards.Append("</dl></div>");
     }
 
     private bool PublishOutputTransition(long generation, CharacterOverviewState original, CancellationToken outputCancellation, CharacterOverviewState next)

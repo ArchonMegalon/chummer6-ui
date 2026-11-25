@@ -339,12 +339,35 @@ internal static class MainWindowDesktopFileCoordinator
             MimeTypes = ["text/html"]
         });
 
+        // WIN-008 journey seam (gen24, gen2-containment): when the
+        // mouse-first journey EXPLICITLY requests a native PDF save
+        // (CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE=1, i.e.
+        // DesktopMouseFirstJourneyRuntime.PdfSaveRequested) AND supplies a
+        // target path, point the REAL modal save dialog at the exact
+        // target directory and filename so the journey drives ONLY the
+        // Save commit (external UIA InvokePattern needs no foreground in
+        // headless sessions). The target override alone does nothing: a
+        // stray PDF_SAVE_TARGET in the environment of any ordinary (non-
+        // journey) run must NOT alter the user's real save dialog.
+        global::Avalonia.Platform.Storage.IStorageFolder? journeyStartFolder = null;
+        string? journeyPdfTarget = Environment.GetEnvironmentVariable(DesktopMouseFirstJourneyRuntime.PdfSaveTargetEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(journeyPdfTarget) && DesktopMouseFirstJourneyRuntime.PdfSaveRequested)
+        {
+            string? journeyDirectory = Path.GetDirectoryName(journeyPdfTarget);
+            if (!string.IsNullOrEmpty(journeyDirectory))
+            {
+                journeyStartFolder = await storageProvider.TryGetFolderFromPathAsync(journeyDirectory);
+            }
+            baseName = Path.GetFileNameWithoutExtension(journeyPdfTarget);
+        }
+
         IStorageFile? targetFile = await storageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = pickerTitle,
             SuggestedFileName = pdfReady ? baseName + WorkspacePrintPdfComposer.PdfFileExtension : baseName + ".html",
             FileTypeChoices = choices,
-            ShowOverwritePrompt = true
+            ShowOverwritePrompt = true,
+            SuggestedStartLocation = journeyStartFolder
         });
 
         if (targetFile is null)

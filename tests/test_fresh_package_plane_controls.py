@@ -3229,7 +3229,7 @@ def test_career_quality_adapter_and_actual_store_tests_are_bound_consumer_inputs
     assert expected <= package_plane.OWNER_CONTEXT_SOURCE_FILES
     assert expected <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     for name, cases in (("InProcessCareerQualityTests.cs", 8),
-                        ("ServiceCollectionDesktopRuntimeExtensionsTests.cs", 10)):
+                        ("ServiceCollectionDesktopRuntimeExtensionsTests.cs", 11)):
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../Chummer.Tests/{name}"] == name
         assert static_mstest_case_count(f"Chummer.Tests/{name}") == cases
     package_plane.validate_test_compile_items(REPO_ROOT)

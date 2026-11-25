@@ -69,4 +69,12 @@ public partial class WorkspaceStripControl : UserControl
 public sealed record WorkspaceStripState(
     string WorkspaceText,
     bool ShowQuickStartAction = false,
-    bool ShowOriginDossierAction = true);
+    bool ShowOriginDossierAction = true)
+{
+    /// <summary>Gen6 F07: structured active-workspace identity for the native
+    /// window title (never parsed back out of the localized WorkspaceText).</summary>
+    public string? ActiveCharacterTitle { get; init; }
+
+    /// <summary>Gen6 F07: true only while an active workspace exists.</summary>
+    public bool HasActiveWorkspace { get; init; }
+}

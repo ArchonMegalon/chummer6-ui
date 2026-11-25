@@ -129,6 +129,7 @@ public partial class MainWindow : Window
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
+        DesktopAppearance.Apply(_persistedPreferences.Theme);
         DesktopLocalizationCatalog.SetCurrentLanguageOverride(_persistedPreferences.Language);
         _installLinkingState = DesktopInstallLinkingRuntime.LoadOrCreateState(DesktopHeadId);
         InitializeComponent();
@@ -286,6 +287,11 @@ public partial class MainWindow : Window
         }
     }
 
+    internal static string BuildDesktopWindowTitle(string shellTitle, string claimTitle, DesktopInstallLinkingState state)
+        => DesktopInstallLinkingRuntime.IsClaimed(state)
+            ? DesktopInstallLinkingRuntime.BuildShellWindowTitle(shellTitle, claimTitle, state)
+            : shellTitle.Trim();
+
     internal void ApplyInstallLinkingChrome(DesktopInstallLinkingState state)
     {
         _installLinkingState = state;
@@ -295,7 +301,7 @@ public partial class MainWindow : Window
         string claimTitle = DesktopLocalizationCatalog.GetRequiredString(
             "desktop.install_link.title",
             _persistedPreferences.Language);
-        Title = DesktopInstallLinkingRuntime.BuildShellWindowTitle(shellTitle, claimTitle, state);
+        Title = BuildDesktopWindowTitle(shellTitle, claimTitle, state);
         if (_adapter is not null) CharacterCreationWizardControl.SetFinishWithAiAvailability(
             _adapter.State.CreationWizard is not null && _creationWizardBuildGhostPreferenceEnabled
             && CreationWizard_HasLinkedAiOwner(_adapter.State));

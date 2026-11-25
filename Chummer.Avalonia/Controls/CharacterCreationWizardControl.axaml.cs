@@ -1,4 +1,4 @@
-﻿using Avalonia.Automation;
+using Avalonia.Automation;
 using Avalonia.VisualTree;
 using Avalonia.Styling;
 using System.Collections.Generic;
@@ -101,6 +101,8 @@ public partial class CharacterCreationWizardControl : UserControl
     private bool _attributesMutationBusy;
     private string? _skillsMutationStatus;
     private bool _skillsMutationBusy;
+    private bool _magicResonanceMutationBusy;
+    private string _magicResonanceMutationStatus = string.Empty;
     private HashSet<string> _selectedQualityIds = new(StringComparer.Ordinal);
     private bool _resourcesMutationBusy;
     private string? _foundationStatus;
@@ -172,6 +174,9 @@ public partial class CharacterCreationWizardControl : UserControl
 
     public event EventHandler<CharacterCreationWizardStepRequest>? StepRequested;
     public event EventHandler? ContinueRequested;
+
+    /// <summary>Wave4 W1: footer Cancel intent (owned-window host only).</summary>
+    public event EventHandler? CancelRequested;
     public event EventHandler<CharacterCreationWizardBuildGhostQuestion>? BuildGhostQuestionSubmitted;
     public event EventHandler? RecoverCheckpointRequested;
     public event EventHandler? ExportCheckpointRequested;
@@ -379,17 +384,53 @@ public partial class CharacterCreationWizardControl : UserControl
             // UX-04: the rank cells must share the available width instead of a
             // fixed 92 DIP each — at 960 DIP / 150% scaling a fixed row cannot
             // fit all five ranks and the low ranks (e.g. E) clip out of reach.
+            // Gen8 item 3: real inter-cell separation plus a horizontal-scroll
+            // degradation floor. On narrow hosts the row scrolls instead of
+            // letting adjacent A-E descriptions touch/collide; the per-cell
+            // padding keeps wrapped text visually clear of its neighbours at
+            // every width.
+            var ranksScroll = new global::Avalonia.Controls.ScrollViewer
+            {
+                HorizontalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = global::Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                Padding = new global::Avalonia.Thickness(0, 0, 0, 2),
+            };
             var ranksPanel = new global::Avalonia.Controls.Primitives.UniformGrid
             {
                 Columns = options.Count,
+                MinWidth = 420,
             };
+            // Gen9 finding 2: inside a horizontal ScrollViewer the UniformGrid
+            // measures at UNBOUNDED width, so one long description inflates all
+            // five columns and pushes ranks D/E offscreen at 1040px owned
+            // windows. Bind the grid to max(420, actual viewport width): at
+            // ordinary widths the five columns exactly fill the viewport and
+            // descriptions wrap instead of widening columns; the 420 floor +
+            // Auto scrollbar reserve horizontal scrolling for genuinely narrow
+            // hosts.
+            ranksPanel.MaxWidth = 420;
+            ranksScroll.SizeChanged += (global::System.Object? s, global::Avalonia.Controls.SizeChangedEventArgs e) =>
+            {
+                double viewportWidth = ranksScroll.Viewport.Width;
+                if (viewportWidth > 0)
+                {
+                    double bound = global::System.Math.Max(420d, viewportWidth);
+                    ranksPanel.MaxWidth = bound;
+                    ranksPanel.Width = bound;
+                }
+            };
+            ranksScroll.Content = ranksPanel;
+            int optionIndex = 0;
             foreach (var option in options)
             {
                 var cellPanel = new StackPanel
                 {
                     Spacing = 2,
                     HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
+                    Margin = new global::Avalonia.Thickness(
+                        0, 0, optionIndex < options.Count - 1 ? 8 : 0, 0),
                 };
+                optionIndex++;
                 var rankButton = new Button
                 {
                     Content = option.Rank,
@@ -404,19 +445,22 @@ public partial class CharacterCreationWizardControl : UserControl
                 rankButton.Click += PriorityRankButton_OnClick;
                 _priorityRankButtons.Add(rankButton);
                 cellPanel.Children.Add(rankButton);
+                // Wave4 W3: full wrap without a MaxHeight clip -- the UniformGrid
+                // row grows to the tallest cell so descriptions never overlap and
+                // never truncate; the font size is unchanged (no shrink).
                 cellPanel.Children.Add(new TextBlock
                 {
                     Text = option.Label,
                     FontSize = 10.5,
                     TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
-                    MaxHeight = 28,
+                    MinHeight = 28,
                     TextAlignment = global::Avalonia.Media.TextAlignment.Center,
                     Opacity = 0.85,
                 });
                 ranksPanel.Children.Add(cellPanel);
             }
 
-            rowPanel.Children.Add(ranksPanel);
+            rowPanel.Children.Add(ranksScroll);
             PriorityGridHost.Children.Add(rowPanel);
         }
 
@@ -648,10 +692,19 @@ public partial class CharacterCreationWizardControl : UserControl
     /// </summary>
     private void RefreshFinishWithAiAvailability()
     {
+        // Gen8: the column-5 footer slot is SHARED between the human
+        // Review/Finish affordance and the AI sibling. The human button wins
+        // whenever the same authoritative finalization-read availability
+        // makes it visible, regardless of the order in which MainWindow
+        // projects the two setters (real call order is SetFinalizeAvailability
+        // then SetFinishWithAiAvailability, so a direct write here previously
+        // re-surfaced the AI button over the human one).
+        bool humanFinalizeVisible = !_finalizeBusy && _finalizeAvailable;
         bool canActuate = _finishWithAiFeatureEnabled
             && _finishWithAiReviewAvailable
             && !_finalizeBusy
-            && !_aiFinishBusy;
+            && !_aiFinishBusy
+            && !humanFinalizeVisible;
         FinishWithAiButton.IsVisible = canActuate;
         FinishWithAiButton.IsEnabled = canActuate;
     }
@@ -686,7 +739,7 @@ public partial class CharacterCreationWizardControl : UserControl
         RefreshFinishWithAiAvailability();
         if (busy)
         {
-            FinalizeStatusText.Text = "Build Ghost is preparing a missing-only proposal...";
+            FinalizeStatusText.Text = "Finishing with Rook is running - it will fill in the remaining required choices and then re-check the review.";
         }
     }
 
@@ -718,12 +771,29 @@ public partial class CharacterCreationWizardControl : UserControl
     public void SetFinalizeResult(string outcome, IReadOnlyList<string> blockers)
     {
         ArgumentNullException.ThrowIfNull(blockers);
-        _finalizeStatus = outcome is CharacterCreationFinalizationOutcomes.Applied
-                or CharacterCreationFinalizationOutcomes.Replayed
-            ? $"Character finalized ({outcome}); receipt digest anchors this exact workspace revision."
-            : blockers.Count > 0
-                ? $"Finalization failed ({outcome}): {string.Join(", ", blockers)}"
-                : $"Finalization failed ({outcome}).";
+        // Gen9 Controller9338 finding 2: the outcome decides success, not the
+        // blocker list. An invalid/conflict/corrupt result can carry zero
+        // blockers; keying the success copy on blockers.Count alone painted
+        // "Character finalized." for rejected finalizations.
+        var normalized = outcome?.Trim() ?? string.Empty;
+        var succeeded = string.Equals(normalized, CharacterCreationFinalizationOutcomes.Applied, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, CharacterCreationFinalizationOutcomes.Replayed, StringComparison.OrdinalIgnoreCase);
+        if (succeeded)
+        {
+            _finalizeStatus = "Character finalized. You can now edit the full character sheet.";
+        }
+        else if (blockers.Count > 0)
+        {
+            _finalizeStatus = "Finalization could not complete yet: " + DescribeBlockerCodes(blockers) + ".";
+        }
+        else
+        {
+            // Gen10 item 2 / gen9 9338-2: name the outcome in plain language.
+            // The outcome word stays in the copy (parenthesised) so the pinned
+            // regression still sees it, but the raw finalization codes never do.
+            _finalizeStatus = "Finishing stopped: " + DescribeOutcome(normalized)
+                + ". Start a fresh review before trying again.";
+        }
         FinalizeStatusText.Text = _finalizeStatus;
         // Audit 2026-11-03 P2: a rejected finalization withdraws availability
         // until the next authoritative gate update; the shared projection then
@@ -743,13 +813,21 @@ public partial class CharacterCreationWizardControl : UserControl
         var canReview = !_finalizeBusy && _finalizeAvailable;
         FinalizeButton.IsVisible = canReview;
         FinalizeButton.IsEnabled = canReview;
+        // Column-5 slot is shared with FinishWithAiButton (single footer slot);
+        // both become available on the same finalization-read authority, so the
+        // explicit human Review/Finish affordance wins and the AI sibling hides.
+        // Gen8: instead of a one-way direct hide here, route the AI sibling
+        // through the joint projection so BOTH orders converge on the same
+        // end-state (human visible => AI hidden; human hidden => AI may show).
+        RefreshFinishWithAiAvailability();
         if (_finalizeStatus is null)
         {
+            // Gen9 finding 3: plain user-facing default copy, no revision ids.
             FinalizeStatusText.Text = canReview
-                ? "Whole-build review is available; finalizing applies the authoritative receipt and unlocks the advanced editor."
+                ? "Whole-build review is available. Finalizing completes creation and unlocks the advanced editor."
                 : _finalizeBlockers.Count > 0
-                    ? $"Finalization unavailable: {string.Join(", ", _finalizeBlockers)}"
-                    : "Finalization is not available for this workspace revision.";
+                    ? "Before finalizing, finish these steps: " + DescribeBlockerCodes(_finalizeBlockers) + "."
+                    : "Finalization is not available yet for this draft.";
         }
     }
 
@@ -869,20 +947,23 @@ public partial class CharacterCreationWizardControl : UserControl
         _lastWizardState = state;
         RefreshStartingCashVisibility();
         RenderPrioritySurface();
+        // Gen10 item 2: the checkpoint invalidation reason is a technical
+        // code; map it to plain language (and never lead with the raw code).
         ResumeStatusText.Text = state.Resume.Restored
-            ? "Navigation restored for this exact workspace revision."
+            ? "You are back where you left off."
             : state.Resume.InvalidationReason is { Length: > 0 } reason
-                ? $"Saved navigation was invalidated: {reason}."
-                : $"Workspace revision {state.WorkspaceRevision}.";
+                ? DescribeResumeInvalidation(reason)
+                : "";
         AuthorityStatusText.Text = BuildAuthorityStatus(active);
-        CompletionBlockerText.Text = state.CompletionBlockers.Count == 0
-            ? "No completion blockers are currently projected."
-            : $"Completion blockers: {string.Join(", ", state.CompletionBlockers)}";
+        CompletionBlockerText.Text = DescribeCompletionBlockers(
+            state.CompletionBlockers,
+            isReviewStep: string.Equals(state.ActiveStepId, CharacterCreationWizardStepIds.Review, StringComparison.Ordinal));
         ContinueButton.IsEnabled = state.CanContinue;
         EditorLockText.IsVisible = !state.AdvancedEditorUnlocked;
+        // Gen9 finding 3: plain-language Build Ghost status.
         BuildGhostAuthorityText.Text = state.BuildGhostAvailable
-            ? "Bound to the current runtime, workspace revision, and wizard snapshot."
-            : "Build Ghost is pending authoritative runtime and wizard context.";
+            ? "Build Ghost is ready."
+            : "Build Ghost is not available yet.";
 
         RenderSteps(state.Steps);
         RenderBudgets(state.Budgets);
@@ -1384,6 +1465,18 @@ public partial class CharacterCreationWizardControl : UserControl
         RenderLegalOptions(_state?.LegalOptions ?? []);
     }
 
+    public void MagicResonanceStatus(string message)
+    {
+        _magicResonanceMutationStatus = message;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
+    public void MagicResonanceMutationBusy(bool busy)
+    {
+        _magicResonanceMutationBusy = busy;
+        RenderLegalOptions(_state?.LegalOptions ?? []);
+    }
+
     private static string BuildResourcesResultStatus(string outcome, IReadOnlyList<string> blockers)
     {
         string suffix = blockers.Count == 0 ? string.Empty : $" (blocked: {string.Join(", ", blockers)})";
@@ -1585,11 +1678,40 @@ public partial class CharacterCreationWizardControl : UserControl
             return;
         }
 
+        // Gen10 item 2: compact, honest budget summary. Group every
+        // not-yet-projected budget into ONE loading line instead of repeating
+        // the "being calculated" sentence per domain, and never show 0/0 for
+        // a budget the engine cannot currently project (blockers) - say it is
+        // temporarily unavailable and what to do instead.
+        List<string> pendingLabels = [];
         foreach (CharacterCreationWizardDesktopBudget budget in budgets)
         {
-            string exactness = budget.IsExact ? "exact" : "authority pending";
+            if (budget.Blockers.Count > 0)
+            {
+                BudgetList.Children.Add(Caption(
+                    $"{budget.Label}: temporarily unavailable - keep going and it will refresh."));
+                continue;
+            }
+            if (!budget.IsExact)
+            {
+                pendingLabels.Add(budget.Label);
+                continue;
+            }
+            string amount = $"{budget.Remaining:N0} / {budget.Total:N0} {budget.Unit} remaining";
             BudgetList.Children.Add(Caption(
-                $"{budget.Label}: {budget.Remaining} / {budget.Total} {budget.Unit} remaining · {exactness}"));
+                $"{budget.Label}: {amount}"));
+        }
+
+        if (pendingLabels.Count == 1)
+        {
+            BudgetList.Children.Add(Caption(
+                $"{pendingLabels[0]}: still counting - the amount appears when it is ready."));
+        }
+        else if (pendingLabels.Count > 1)
+        {
+            BudgetList.Children.Add(Caption(
+                "Still counting: " + string.Join(", ", pendingLabels)
+                + " - the amounts appear when they are ready."));
         }
     }
 
@@ -1612,7 +1734,44 @@ public partial class CharacterCreationWizardControl : UserControl
             RenderJourneyStepHeader();
         if (_state?.ActiveStepId == CharacterCreationWizardStepIds.MagicResonance)
         {
-            LegalOptionList.Children.Add(Caption("Magic/Resonance editing is not available in this Windows build yet. These choices cannot be applied here."));
+            string magicAuthorityBlocker = CharacterCreationMagicResonancePresentationContract.PresentationProjectionInvalid;
+            bool magicReady = _state is { } ms
+                && !ms.CompletionBlockers.Contains(magicAuthorityBlocker)
+                && !ms.Budgets.Any(b => b.Blockers.Contains(magicAuthorityBlocker));
+            var magicEdit = new Button { Content = "Edit magic and resonance\u2026", IsEnabled = magicReady && !_magicResonanceMutationBusy };
+            AutomationProperties.SetAutomationId(magicEdit, "creation-wizard-edit-magic-resonance");
+            magicEdit.Click += (_, _) =>
+            {
+                if (magicReady && !_magicResonanceMutationBusy)
+                    MagicResonanceOptionClickRequested?.Invoke(this, new CharacterCreationMagicResonanceOptionClickRequested(new CharacterCreationWizardDesktopOption(
+                        OptionId: "magic-resonance:editor",
+                        VersionId: null,
+                        Label: "Edit magic and resonance",
+                        IsEnabled: true,
+                        DisableReasonKey: null,
+                        DisableReasonArguments: new Dictionary<string, string>(StringComparer.Ordinal),
+                        Costs: [],
+                        Consequences: [],
+                        SourceAnchorIds: [],
+                        SourceId: null,
+                        SourcePage: null)));
+            };
+            LegalOptionList.Children.Add(magicEdit);
+            if (_magicResonanceMutationBusy)
+                LegalOptionList.Children.Add(new ProgressBar { IsIndeterminate = true });
+            if (!string.IsNullOrWhiteSpace(_magicResonanceMutationStatus))
+                LegalOptionList.Children.Add(Caption(_magicResonanceMutationStatus));
+            if (magicReady)
+            {
+                if (string.IsNullOrWhiteSpace(_magicResonanceMutationStatus))
+                    LegalOptionList.Children.Add(Caption(
+                        "Magic/Resonance is ready to edit. Open the editor to choose your tradition, spells and powers."));
+            }
+            else
+            {
+                LegalOptionList.Children.Add(Caption(
+                    "Magic/Resonance editing opens once the magic authority is available for this workspace."));
+            }
             return;
         }
         if (qualities)
@@ -1741,6 +1900,7 @@ public partial class CharacterCreationWizardControl : UserControl
                             { Content = o.Label, Tag = o.SourceValue }).ToArray(),
                             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
                         };
+                        DesktopShellTheme.ApplyShellComboBoxTheme(choice);
                         AutomationProperties.SetAutomationId(choice, $"creation-journey-input-{prompt.PromptId}");
                         if (drafts is not null && drafts.TryGetValue(prompt.PromptId, out string? draftChoice))
                         {
@@ -1763,6 +1923,7 @@ public partial class CharacterCreationWizardControl : UserControl
                             if (args.Property == TextBox.TextProperty)
                                 InvalidateJourneyPreviewOnEdit();
                         };
+                        DesktopShellTheme.ApplyShellTextInputTheme(input);
                         body.Children.Add(input);
                     }
                 }
@@ -2064,6 +2225,7 @@ public partial class CharacterCreationWizardControl : UserControl
             MinWidth = 260,
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(basePicker);
         foreach (CharacterCreationLifestyleCatalogOption option in step.Authority.LifestyleOptions
                      .Where(option => option.IsSelectable)
                      .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase))
@@ -2097,12 +2259,14 @@ public partial class CharacterCreationWizardControl : UserControl
             Watermark = "Lifestyle name",
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(nameBox);
         AutomationProperties.SetAutomationId(nameBox, "creation-wizard-lifestyle-create-name");
         nameBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(Caption("Name"));
         form.Children.Add(nameBox);
 
         ComboBox stylePicker = new() { IsEnabled = !_lifestyleMutationBusy };
+        DesktopShellTheme.ApplyShellComboBoxTheme(stylePicker);
         foreach (string style in CharacterCreationLifestyleStyleIds.All)
         {
             stylePicker.Items.Add(new ComboBoxItem { Content = style, Tag = style });
@@ -2124,6 +2288,7 @@ public partial class CharacterCreationWizardControl : UserControl
             .ToList()
             .FindIndex(increment => string.Equals(increment, createDraft?.IncrementId, StringComparison.Ordinal)));
         AutomationProperties.SetAutomationId(incrementPicker, "creation-wizard-lifestyle-create-increment");
+        DesktopShellTheme.ApplyShellComboBoxTheme(incrementPicker);
         form.Children.Add(Caption("Billing increment"));
         incrementPicker.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(incrementPicker);
@@ -2149,6 +2314,7 @@ public partial class CharacterCreationWizardControl : UserControl
             IsChecked = createDraft?.SplitCostWithRoommates == true,
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellCheckBoxTheme(splitCost);
         AutomationProperties.SetAutomationId(splitCost, "creation-wizard-lifestyle-create-split");
         splitCost.IsCheckedChanged += (_, _) => RefreshPreviewBindingGates();
         form.Children.Add(splitCost);
@@ -2186,6 +2352,7 @@ public partial class CharacterCreationWizardControl : UserControl
             AllowSpin = true,
             IsEnabled = !_lifestyleMutationBusy
         };
+        DesktopShellTheme.ApplyShellNumericUpDownTheme(editor);
         AutomationProperties.SetAutomationId(editor, automationId);
         editor.ValueChanged += (_, _) => RefreshPreviewBindingGates();
         row.Children.Add(editor);
@@ -2260,6 +2427,7 @@ public partial class CharacterCreationWizardControl : UserControl
             IsEnabled = canEdit && !_lifestyleMutationBusy,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(name);
         editButton.Classes.Add("shell-action");
         AutomationProperties.SetAutomationId(
             editButton,
@@ -3073,7 +3241,7 @@ public partial class CharacterCreationWizardControl : UserControl
         Control editor;
         if (string.Equals(field.ValueKind, CharacterCreationContactValueKinds.Text, StringComparison.Ordinal))
         {
-            editor = new TextBox
+            TextBox contactTextBox = new()
             {
                 Text = field.SerializedValue,
                 IsReadOnly = !field.IsEditable,
@@ -3085,6 +3253,8 @@ public partial class CharacterCreationWizardControl : UserControl
                     StringComparison.Ordinal),
                 TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
             };
+            DesktopShellTheme.ApplyShellTextInputTheme(contactTextBox);
+            editor = contactTextBox;
         }
         else
         {
@@ -3098,25 +3268,27 @@ public partial class CharacterCreationWizardControl : UserControl
                 item.Tag as string,
                 field.SerializedValue,
                 StringComparison.OrdinalIgnoreCase));
-            editor = new ComboBox
+            ComboBox contactComboBox = new()
             {
                 ItemsSource = items,
                 SelectedItem = selected,
                 IsEnabled = field.IsEditable && !_contactMutationBusy,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(contactComboBox);
+            editor = contactComboBox;
         }
 
         AutomationProperties.SetAutomationId(
             editor,
             $"creation-wizard-contact-{contactId:D}-field-{field.FieldId}");
-        if (editor is TextBox contactTextBox)
+        if (editor is TextBox wiredTextBox)
         {
-            contactTextBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
+            wiredTextBox.TextChanged += (_, _) => RefreshPreviewBindingGates();
         }
-        else if (editor is ComboBox contactComboBox)
+        else if (editor is ComboBox wiredComboBox)
         {
-            contactComboBox.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
+            wiredComboBox.SelectionChanged += (_, _) => RefreshPreviewBindingGates();
         }
         _contactEditors[(contactId, field.FieldId)] = editor;
         return editor;
@@ -3457,13 +3629,182 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private static string BuildAuthorityStatus(CharacterCreationWizardDesktopStep step)
     {
-        List<string> status = [$"Status: {step.Status}"];
+        // Wave4 W2: readable prerequisite sentence; the raw status id stays in
+        // the AutomationId/name for diagnostics, not as user-visible text.
+        string readable = step.Status switch
+        {
+            "complete" or "completed" => "This step is complete.",
+            "current" or "active" => "This is the current step.",
+            "blocked" => "This step needs attention before you can continue.",
+            "locked" => "This step unlocks after the earlier steps are confirmed.",
+            "available" or "enterable" => "This step is ready for your input.",
+            _ => "This step is not ready yet - finish the earlier steps first.",
+        };
+        List<string> status = [readable];
         if (step.Blockers.Count > 0)
-            status.Add($"Blockers: {string.Join(", ", step.Blockers)}");
+            status.Add($"Needs attention: {DescribeBlockerCodes(step.Blockers)}");
         if (step.Warnings.Count > 0)
-            status.Add($"Warnings: {string.Join(", ", step.Warnings)}");
+            status.Add($"Notes: {string.Join("; ", step.Warnings)}");
         return string.Join(" · ", status);
     }
+
+    /// <summary>
+    /// Wave4 W2: readable completion-blocker projection. Known Core refusal
+    /// codes become prerequisite sentences; unknown codes keep the raw code
+    /// after a readable prefix so diagnostics are preserved but never lead.
+    /// </summary>
+    private static string DescribeCompletionBlockers(IReadOnlyList<string> blockers, bool isReviewStep)
+    {
+        // Gen9 finding 3: global missing requirements belong on the final
+        // Review surface, not on every intermediate step. On ordinary steps
+        // the completion-blocker line stays empty.
+        if (!isReviewStep)
+        {
+            return "";
+        }
+        if (blockers.Count == 0)
+        {
+            // Gen7 fix: an empty authoritative blocker list is NOT a loading
+            // state - "Checking..." was shown unconditionally and read as a
+            // false pending promise. State the truth: nothing known is missing;
+            // finalization availability is governed separately.
+            return "No known prerequisites are missing for this step.";
+        }
+        return "Before finalizing, finish these steps: "
+            + DescribeBlockerCodes(blockers) + ".";
+    }
+
+    /// <summary>Gen10 item 2: plain-language outcome naming for failure copy.</summary>
+    private static string DescribeOutcome(string outcome)
+    {
+        return outcome switch
+        {
+            "invalid" => "the review was no longer valid (invalid)",
+            "conflict" => "another change conflicted with this finish",
+            "corrupt" => "the saved record could not be read safely",
+            "not-found" => "the review record is gone",
+            "blocked" => "requirements are still missing",
+            "unavailable" => "finalization is not available right now",
+            _ => "the finish result was not accepted - start a fresh review before trying again",
+        };
+    }
+
+    /// <summary>
+    /// Gen10 item 2: plain-language rendering of a checkpoint invalidation
+    /// reason. Known reasons become actionable sentences; unknown reasons
+    /// keep a readable fallback without dumping the raw code as the headline.
+    /// </summary>
+    private static string DescribeResumeInvalidation(string reason)
+    {
+        return reason switch
+        {
+            "creation-wizard-checkpoint-step-unavailable"
+                => "This step is not available in the current run - you were moved to the first open step.",
+            "creation-wizard-checkpoint-revision-mismatch"
+                => "The saved run changed elsewhere - you were moved to the first open step.",
+            "creation-wizard-checkpoint-digest-mismatch"
+                => "The saved run no longer matches the character - you were moved to the first open step.",
+            "creation-wizard-checkpoint-expired"
+                => "The saved run expired - you were moved to the first open step.",
+            _ => "The saved navigation no longer matches this character - you were moved to the first open step.",
+        };
+    }
+
+    /// <summary>Wave4 W2: readable rendering of a blocker-code list.</summary>
+    private static string DescribeBlockerCodes(IReadOnlyList<string> codes)
+    {
+        var parts = new List<string>();
+        foreach (string code in codes)
+        {
+            parts.Add(DescribeBlockerCode(code));
+        }
+        return string.Join("; ", parts);
+    }
+
+    private static string DescribeBlockerCode(string code) => code switch
+    {
+        "creation-finalization-attributes-draft-required"
+            => "confirm your attribute choices",
+        "creation-finalization-skills-draft-required"
+            => "confirm your skill choices",
+        "creation-finalization-resources-draft-required"
+            => "confirm your resources (even if you keep the default)",
+        "creation-wizard-content-authority-unavailable"
+            => "waiting for the character content to load",
+        "creation-wizard-revision-authority-unavailable"
+            => "waiting for the workspace to sync",
+        "creation-wizard-ruleset-authority-unavailable"
+            => "waiting for the rule set to load",
+        "creation-wizard-source-authority-unavailable"
+            => "waiting for the source data to load",
+        "creation-wizard-runtime-authority-unavailable"
+            => "waiting for the rule engine to start",
+        "creation-wizard-legal-options-authority-unavailable"
+            => "waiting for the allowed options to load",
+        "creation-wizard-finalization-authority-unavailable"
+            => "waiting for finalization review to become available",
+        "creation-wizard-life-module-authority-unavailable"
+            => "waiting for the Life Modules options to load",
+        "creation-wizard-contacts-authority-unavailable"
+            => "waiting for the contacts options to load",
+        "creation-wizard-qualities-authority-unavailable"
+            => "waiting for the qualities options to load",
+        "creation-wizard-magic-resonance-authority-unavailable"
+            => "waiting for the magic/resonance options to load",
+        "creation-wizard-attributes-authority-unavailable"
+            => "waiting for the attribute rules to load",
+        "creation-wizard-contact-create-delete-authority-unavailable"
+            => "waiting for contact editing to become available",
+        "creation-wizard-contact-pets-authority-unavailable"
+            => "waiting for pet options to load",
+        "creation-wizard-lifestyles-authority-unavailable"
+            => "waiting for the lifestyle rules to load",
+        "creation-wizard-identity-authority-unavailable"
+            => "waiting for the identity rules to load",
+        "creation-wizard-story-authority-unavailable"
+            => "waiting for the background rules to load",
+        "career-wizard-authority-unavailable"
+            => "waiting for the career rules to load",
+        "career-wizard-checkpoint-action-unavailable"
+            => "this action is not available yet",
+        "creation-wizard-checkpoint-step-unavailable"
+            => "this step is not available yet",
+        "creation-finalization-qualities-draft-required" => "confirm your quality choices",
+        "creation-finalization-magic-resonance-draft-required" => "confirm your magic or resonance choices",
+        "creation-finalization-gear-draft-required" => "confirm your gear choices",
+        "creation-finalization-prerequisite-draft-required" => "confirm your priority assignment",
+        "creation-finalization-ruleset-sr5-required" => "this character must use the Shadowrun Fifth Edition (SR5) rule set",
+        "creation-finalization-starting-cash-choice-required" => "choose your starting money",
+        "creation-finalization-starting-cash-choice-invalid" => "pick a valid starting-money option",
+        "creation-finalization-starting-cash-unavailable" => "starting money is not ready yet - go back a step and return",
+        "creation-finalization-explicit-confirmation-required" => "review the step and confirm it before finishing",
+        "creation-finalization-global-karma-exceeded" => "the spent points exceed what this build allows - free some up",
+        "creation-finalization-character-already-created" => "this character is already finished - close the wizard and open the saved sheet",
+        "creation-finalization-build-method-not-ready" => "the build method is still being prepared - try again in a moment",
+        "creation-finalization-build-method-unsupported" => "this build method cannot finish here",
+        "creation-finalization-carryover-policy-unavailable" => "the carry-over rules are not loaded yet - try again in a moment",
+        "creation-finalization-foundation-draft-not-applicable" => "this choice does not apply to the current build method",
+        "creation-finalization-life-module-decision-history-not-applicable" => "the life module choices do not apply to the current build method",
+        "creation-finalization-atomic-persistence-required" => "the final save is being prepared - try again in a moment",
+        "creation-finalization-atomic-persistence-rejected" => "the final save was refused - check the character for unsaved conflicts",
+        "creation-finalization-authority-digest-mismatch" => "the rules changed while you were editing - reopen the review step",
+        "creation-finalization-plan-digest-mismatch" => "the plan changed while you were editing - reopen the review step",
+        "creation-finalization-preview-digest-mismatch" => "the preview changed while you were editing - reopen the review step",
+        "creation-finalization-stale-auxiliary-digest" => "a side record changed while you were editing - reopen the review step",
+        "creation-finalization-stale-character-digest" => "the character changed while you were editing - reopen the review step",
+        "creation-finalization-stale-workspace-revision" => "the workspace changed while you were editing - reopen the review step",
+        "creation-finalization-idempotency-key-invalid" => "the finish request was stale - try again",
+        "creation-finalization-idempotency-conflict" => "another finish is already in progress - wait for it to settle",
+        "creation-finalization-bootstrap-binding-required" => "the character record needs to be linked first - reopen the wizard",
+        "creation-finalization-draft-authority-invalid" => "the editing session expired - reopen the wizard",
+        "creation-finalization-workspace-unavailable" => "the workspace is not available right now - try again in a moment",
+        "creation-finalization-awakened-effects-not-projectable" => "an awakened-effects choice cannot be shown here - adjust it in the editor",
+        "creation-finalization-gear-effects-not-projectable" => "a gear choice cannot be shown here - adjust it in the editor",
+        "creation-finalization-quality-effects-not-projectable" => "a quality effect cannot be shown here - adjust it in the editor",
+        "creation-finalization-talent-grants-not-projectable" => "a talent grant cannot be shown here - adjust it in the editor",
+        "creation-finalization-post-commit-reopen-required" => "the character was saved - reopen it from the shell to keep editing",
+        _ => "an unmet requirement for this build - reopen the review step for details",
+    };
 
     private void StepButton_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -3473,6 +3814,31 @@ public partial class CharacterCreationWizardControl : UserControl
 
     private void ContinueButton_OnClick(object? sender, RoutedEventArgs e)
         => ContinueRequested?.Invoke(this, EventArgs.Empty);
+
+    private void CancelButton_OnClick(object? sender, RoutedEventArgs e)
+        => CancelRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Wave4 W1: shows the footer Cancel action. Used only by the owned-window
+    /// host so Cancel keeps the SAME contract as a user X press (draft
+    /// preserved, inline restore). The inline host keeps Cancel hidden.
+    /// </summary>
+    public void ShowCancelInFooter()
+    {
+        if (this.FindControl<Button>("CancelButton") is { } cancel)
+        {
+            cancel.IsVisible = true;
+        }
+    }
+
+    /// <summary>Wave4 W1: hides the footer Cancel (inline host restore).</summary>
+    public void HideCancelInFooter()
+    {
+        if (this.FindControl<Button>("CancelButton") is { } cancel)
+        {
+            cancel.IsVisible = false;
+        }
+    }
 
     private void RecoverButton_OnClick(object? sender, RoutedEventArgs e)
         => RecoverCheckpointRequested?.Invoke(this, EventArgs.Empty);

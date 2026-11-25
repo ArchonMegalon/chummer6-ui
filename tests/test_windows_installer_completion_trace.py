@@ -203,6 +203,172 @@ def test_completion_trace_accepts_inner_reset_only_with_exact_regular_installed_
     assert result.stdout.strip() == "inner_reset_trace_and_installed_target"
 
 
+def test_completion_trace_accepts_managed_smoke_install_trace(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    install_root = r"C:\\Users\\runner\\AppData\\Local\\Temp\\chummer-win-native-tempAbC123\\chummerwinsmokeXy9"
+    lines = [
+        "# Chummer installer trace 2026-11-23T15:48:55.3679905+00:00",
+        f"start args=--smoke-install {install_root}",
+        "visual audit render scale requested=1.0 mode=installer-native-layout",
+        "payload stream canSeek=True length=58244532",
+        "extract archive entries=338",
+        "copy stream complete bytes=60500589 total=60500589",
+        "extract payload complete",
+    ]
+    trace.write_bytes("".join(line + "\r\n" for line in lines).encode("utf-16"))
+
+    result = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        install_root,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_completion_trace_accepts_timestamped_managed_smoke_trace(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    install_root = r"C:\\Users\\runner\\AppData\\Local\\Temp\\chummer-win-native-tempAbC123\\chummerwinsmokeXy9"
+    # The managed installer prefixes every event line with an ISO-8601 UTC
+    # timestamp; the contract must keep accepting that real-world shape.
+    lines = [
+        "# Chummer installer trace 2026-11-23T15:48:55.3679905+00:00",
+        f"2026-11-23T15:48:55.3707774+00:00 start args=--smoke-install {install_root}",
+        "2026-11-23T15:48:56.0000000+00:00 extract archive entries=338",
+        "2026-11-23T15:49:30.0000000+00:00 extract payload complete",
+    ]
+    trace.write_bytes("".join(line + "\r\n" for line in lines).encode("utf-16"))
+
+    result = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        install_root,
+        "--print-mode",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "managed_smoke_install_trace"
+
+
+def test_completion_trace_accepts_mixed_bare_and_timestamped_managed_trace(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    install_root = r"C:\\temp\\chummerwinsmokeMixedShape"
+    lines = [
+        "# Chummer installer trace 2026-11-23T15:48:55.3679905+00:00",
+        f"start args=--smoke-install {install_root}",
+        "2026-11-23T15:49:30.0000000+00:00 extract payload complete",
+    ]
+    trace.write_bytes("".join(line + "\r\n" for line in lines).encode("utf-16"))
+
+    result = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        install_root,
+        "--print-mode",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "managed_smoke_install_trace"
+
+
+def test_completion_trace_accepts_managed_trace_with_installed_target(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    install_root = r"C:\\temp\\chummerwinsmokeManaged"
+    lines = [
+        "# Chummer installer trace 2026-11-23T15:48:55.3679905+00:00",
+        f"start args=--smoke-install {install_root}",
+        "extract archive entries=338",
+        "install complete target=C:\\temp\\chummerwinsmokeManaged",
+    ]
+    trace.write_bytes("".join(line + "\r\n" for line in lines).encode("utf-16"))
+    installed = tmp_path / "installed" / "Chummer.Avalonia.exe"
+    installed.parent.mkdir()
+    installed.write_bytes(b"MZmanaged")
+
+    result = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        install_root,
+        "--expected-install-root-path",
+        str(installed.parent),
+        "--expected-installed-path",
+        str(installed),
+        "--print-mode",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "managed_smoke_install_trace"
+
+
+def test_completion_trace_rejects_stale_managed_trace(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    install_root = r"C:\\temp\\chummerwinsmokeCurrent"
+    stale_root = r"C:\\temp\\chummerwinsmokeStale"
+    lines = [
+        "# Chummer installer trace 2026-11-23T15:48:55.3679905+00:00",
+        f"start args=--smoke-install {stale_root}",
+        "extract payload complete",
+    ]
+    trace.write_bytes("".join(line + "\r\n" for line in lines).encode("utf-16"))
+
+    result = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        install_root,
+    )
+
+    assert result.returncode == 1
+    assert "exactly one current-run marker set" in result.stderr
+    assert stale_root not in result.stderr
+    assert install_root not in result.stderr
+
+
+def test_completion_trace_rejects_managed_trace_without_completion(
+    tmp_path: Path,
+) -> None:
+    trace = tmp_path / TRACE_NAME
+    install_root = r"C:\\temp\\chummerwinsmokeIncomplete"
+    lines = [
+        "# Chummer installer trace 2026-11-23T15:48:55.3679905+00:00",
+        f"start args=--smoke-install {install_root}",
+        "extract archive entries=338",
+    ]
+    trace.write_bytes("".join(line + "\r\n" for line in lines).encode("utf-16"))
+
+    result = run_verifier(
+        "verify",
+        "--trace-path",
+        str(trace),
+        "--expected-install-root",
+        install_root,
+    )
+
+    assert result.returncode == 1
+    assert "exactly one current-run marker set" in result.stderr
+
+
 def test_completion_trace_rejects_inner_reset_without_regular_installed_target(
     tmp_path: Path,
 ) -> None:
@@ -395,7 +561,7 @@ def assert_startup_smoke_completion_gate(source: str) -> None:
     ) in runner
     assert 'native_install_root="$(to_native_path "$INSTALL_ROOT")"' in runner
     assert (
-        'local -a installer_args=("/smoke-install=$native_install_root")'
+        'local -a installer_args=("--smoke-install" "$native_install_root")'
         in runner
     )
     assert runner.count(reset) == 1

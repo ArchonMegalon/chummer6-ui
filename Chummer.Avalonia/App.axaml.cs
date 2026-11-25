@@ -118,6 +118,7 @@ public partial class App : global::Avalonia.Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        DesktopAppearance.LoadBeforeFirstWindow();
     }
 
     public override void OnFrameworkInitializationCompleted()

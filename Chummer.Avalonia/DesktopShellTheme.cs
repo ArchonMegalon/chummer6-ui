@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 
@@ -11,9 +12,19 @@ namespace Chummer.Avalonia;
 internal static class DesktopShellTheme
 {
     public static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-        => App.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is IBrush brush
-            ? brush
-            : new SolidColorBrush(Color.Parse(fallbackHex));
+    {
+        // The 2-arg TryFindResource overload cannot resolve keys that live only inside
+        // ResourceDictionary.ThemeDictionaries (Light/Dark); pass the effective variant
+        // explicitly so variant-scoped shell brushes resolve instead of painting fallbacks.
+        if (App.Current is { } app
+            && app.TryFindResource(resourceKey, app.ActualThemeVariant, out object? resource) == true
+            && resource is IBrush brush)
+        {
+            return brush;
+        }
+
+        return new SolidColorBrush(Color.Parse(fallbackHex));
+    }
 
     public static IBrush ResolveWindowBackgroundBrush()
         => ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#01010D");
@@ -67,23 +78,23 @@ internal static class DesktopShellTheme
         => ResolveThemeBrush("ChummerShellInfoBrush", "#9EB7F8");
 
     public static Border CreateWindowSurface(Control child, double padding = 16)
-        => new()
-        {
-            Background = ResolveWindowBackgroundBrush(),
-            Padding = new Thickness(padding),
-            Child = child
-        };
+    {
+        Border panel = new() { Padding = new Thickness(padding), Child = child };
+        panel.Bind(Border.BackgroundProperty, new DynamicResourceExtension("ChummerShellWindowBackgroundBrush"));
+        return panel;
+    }
 
-    public static Border CreateUtilityPanel(Control child, double padding = 10, double cornerRadius = 8)
-        => new()
+    public static Border CreateUtilityPanel(Control child, double padding = 10, double cornerRadius = 16)
+    {
+        Border panel = new()
         {
-            Background = ResolveHardPanelBrush(),
-            BorderBrush = ResolveBorderBrush(),
-            BorderThickness = new Thickness(1),
-            CornerRadius = default,
-            Padding = new Thickness(padding),
-            Child = child
+            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(cornerRadius),
+            Padding = new Thickness(padding), Child = child
         };
+        panel.Bind(Border.BackgroundProperty, new DynamicResourceExtension("ChummerShellHardPanelBrush"));
+        panel.Bind(Border.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
+        return panel;
+    }
 
     public static void ApplyPrimaryButton(Button button)
     {
@@ -156,18 +167,18 @@ internal static class DesktopShellTheme
     public static void ApplyShellRadioButtonTheme(RadioButton radioButton)
     {
         ArgumentNullException.ThrowIfNull(radioButton);
-        radioButton.Foreground = ResolveForegroundBrush();
-        radioButton.Background = ResolveSurfaceBrush();
-        radioButton.BorderBrush = ResolveBorderBrush();
+        radioButton.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension("ChummerShellForegroundBrush"));
+        radioButton.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension("ChummerShellSurfaceBrush"));
+        radioButton.Bind(TemplatedControl.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
         radioButton.Padding = new Thickness(8, 6);
     }
 
     public static void ApplyShellCheckBoxTheme(CheckBox checkBox)
     {
         ArgumentNullException.ThrowIfNull(checkBox);
-        checkBox.Foreground = ResolveForegroundBrush();
-        checkBox.Background = ResolveSurfaceBrush();
-        checkBox.BorderBrush = ResolveBorderBrush();
+        checkBox.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension("ChummerShellForegroundBrush"));
+        checkBox.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension("ChummerShellSurfaceBrush"));
+        checkBox.Bind(TemplatedControl.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
         checkBox.Padding = new Thickness(8, 6);
     }
 
@@ -194,8 +205,8 @@ internal static class DesktopShellTheme
     public static void ApplyShellReadOnlyPanelTheme(Border panel)
     {
         ArgumentNullException.ThrowIfNull(panel);
-        panel.Background = ResolveSurfaceBrush();
-        panel.BorderBrush = ResolveBorderBrush();
+        panel.Bind(Border.BackgroundProperty, new DynamicResourceExtension("ChummerShellSurfaceBrush"));
+        panel.Bind(Border.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
     }
 
     public static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
@@ -257,7 +268,7 @@ internal static class DesktopShellTheme
         WrapPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            ItemHeight = 32,
+            ItemHeight = double.NaN,
             ItemWidth = double.NaN
         };
         AppendButtons(actionRow, actions, itemMargin ?? new Thickness(0, 0, 6, 6));
@@ -343,29 +354,29 @@ internal static class DesktopShellTheme
 
     private static void ApplyInputBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#080819");
-        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#EDEDF8");
-        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#CC1C1C3B");
+        control.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension("ChummerShellInputBackgroundBrush"));
+        control.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension("ChummerShellInputForegroundBrush"));
+        control.Bind(TemplatedControl.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
 
         if (control is TextBox textBox)
         {
-            textBox.CaretBrush = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#EDEDF8");
-            textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#40526DFF");
-            textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#EDEDF8");
+            textBox.Bind(TextBox.CaretBrushProperty, new DynamicResourceExtension("ChummerShellInputForegroundBrush"));
+            textBox.Bind(TextBox.SelectionBrushProperty, new DynamicResourceExtension("ChummerShellSelectionBrush"));
+            textBox.Bind(TextBox.SelectionForegroundBrushProperty, new DynamicResourceExtension("ChummerShellSelectionForegroundBrush"));
         }
     }
 
     private static void ApplyReadOnlyInputBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#050516");
-        control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#EDEDF8");
-        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#CC1C1C3B");
+        control.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension("ChummerShellSurfaceBrush"));
+        control.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension("ChummerShellForegroundBrush"));
+        control.Bind(TemplatedControl.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
 
         if (control is TextBox textBox)
         {
-            textBox.CaretBrush = ResolveThemeBrush("ChummerShellForegroundBrush", "#EDEDF8");
-            textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#40526DFF");
-            textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#EDEDF8");
+            textBox.Bind(TextBox.CaretBrushProperty, new DynamicResourceExtension("ChummerShellForegroundBrush"));
+            textBox.Bind(TextBox.SelectionBrushProperty, new DynamicResourceExtension("ChummerShellSelectionBrush"));
+            textBox.Bind(TextBox.SelectionForegroundBrushProperty, new DynamicResourceExtension("ChummerShellSelectionForegroundBrush"));
         }
     }
 
@@ -415,9 +426,9 @@ internal static class DesktopShellTheme
 
     private static void ApplyComboBoxBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#080819");
-        control.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#EDEDF8");
-        control.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#CC1C1C3B");
+        control.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension("ChummerShellInputBackgroundBrush"));
+        control.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension("ChummerShellInputForegroundBrush"));
+        control.Bind(TemplatedControl.BorderBrushProperty, new DynamicResourceExtension("ComboBoxBorderBrush"));
     }
 
     private static void ApplyComboBoxResourceOverrides(Control control)
@@ -451,9 +462,9 @@ internal static class DesktopShellTheme
 
     private static void ApplyListBrushes(TemplatedControl control)
     {
-        control.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#050516");
-        control.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#EDEDF8");
-        control.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#CC1C1C3B");
+        control.Bind(TemplatedControl.BackgroundProperty, new DynamicResourceExtension("ChummerShellSurfaceBrush"));
+        control.Bind(TemplatedControl.ForegroundProperty, new DynamicResourceExtension("ChummerShellForegroundBrush"));
+        control.Bind(TemplatedControl.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
     }
 
     private static void ApplySelectableResourceOverrides(Control control)
@@ -481,7 +492,41 @@ internal static class DesktopShellTheme
     }
 
     private static void SetLocalBrushResource(Control control, string resourceKey, string themeResourceKey, string fallbackHex)
-        => control.Resources[resourceKey] = ResolveThemeBrush(themeResourceKey, fallbackHex);
+    {
+        if (resourceKey == themeResourceKey) return;
+        // The mirror write raises a resources-changed wave that synchronously re-enters this
+        // observer (set_Item -> NotifyResourcesChanged -> ResourceObservable -> OnNext). During
+        // mid-attach waves the resolved brush instance can alternate between host levels, so an
+        // identity-only check re-writes forever and overflows the stack. Guard each subscription
+        // with a closure-local in-flight flag: nested waves of our own write are suppressed,
+        // external theme changes still update the mirror live.
+        bool mirrorWriteInFlight = false;
+        control.GetResourceObservable(themeResourceKey).Subscribe(new ResourceObserver(value =>
+        {
+            if (value is not IBrush brush)
+                return;
+            if (mirrorWriteInFlight)
+                return;
+            mirrorWriteInFlight = true;
+            try
+            {
+                if (!control.Resources.TryGetResource(resourceKey, null, out object? current)
+                    || !ReferenceEquals(current, brush))
+                    control.Resources[resourceKey] = brush;
+            }
+            finally
+            {
+                mirrorWriteInFlight = false;
+            }
+        }));
+    }
+
+    private sealed class ResourceObserver(Action<object?> update) : IObserver<object?>
+    {
+        public void OnNext(object? value) => update(value);
+        public void OnError(Exception error) { }
+        public void OnCompleted() { }
+    }
 
     private static void ClearTemplatedBrushes(TemplatedControl control)
     {
