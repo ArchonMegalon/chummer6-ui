@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "5ac74ccd30d671c9a3123eb34f46ee5c0aac6a9e",
-        "commit": "5222f8aa6117243903e080ff55e2300af724c67c",
+        "blob": "a240a13ccc12a87b0b2e2087ad39e254dbad2357",
+        "commit": "f3d567c734aea0b032bf03e6cfd22915bf181aa6",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
-        "rawSizeBytes": 74400,
-        "semanticCanonicalSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
-        "semanticCanonicalSizeBytes": 74400,
-        "tree": "4324b1b63ff6f152977fa75403c8e263324fa5ce"
+        "rawSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "rawSizeBytes": 74687,
+        "semanticCanonicalSha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
+        "semanticCanonicalSizeBytes": 74687,
+        "tree": "08bbd88e4ab0974743813e919f7b6552469e63f3"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -516,6 +516,9 @@ OWNER_CONTEXT_SOURCE_FILES = frozenset(
 )
 EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
     {
+        # The roaming ledger regression holds the active lease from another process.
+        "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
+        "Chummer.Desktop.Runtime.Tests/GrantBoundRoamingSyncLedgerTests.cs",
         # The Windows amended-character journey reads both exported files.
         "Chummer.Avalonia/AmendedRunnerExportCheck.cs",
         "Chummer.Desktop.Runtime/DesktopMouseFirstJourneyRuntime.cs",
