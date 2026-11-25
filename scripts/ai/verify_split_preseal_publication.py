@@ -657,6 +657,13 @@ WINDOWS_INTEGRATION_BLOBS = {
 }
 
 
+WINDOWS_EXPORT_BASE = "6e0d6fb85200ab0471a84522644b7a767f625bad"
+WINDOWS_EXPORT_BLOBS = {
+    "Chummer.Avalonia/AmendedRunnerExportCheck.cs": "deff241b52d15d8b269b88a9dc5e7d390db10d82",
+    "Chummer.Tests/Presentation/DesktopMouseFirstJourneyRuntimeTests.cs": "ddb9e318b57ce8157d09336061064aa98d91c89a",
+}
+
+
 RETIRED_SOURCE_LINKS = {
     "chummer-core-engine": ("120000", "780339eb049c48b4f26334592892e8c2e85545c7"),
     "chummer-hub-registry": ("120000", "10e92acd7d2551101980a99ae442344a429c54f9"),
@@ -676,15 +683,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 128
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "1e0f183e26e93e78c2ff3723c347ed2d290d9e37",
-        "commit": "90c821aeec02425a3bb134d9475aa0b1b08b5f35",
+        "blob": "5ac74ccd30d671c9a3123eb34f46ee5c0aac6a9e",
+        "commit": "5222f8aa6117243903e080ff55e2300af724c67c",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
-        "rawSizeBytes": 73998,
-        "semanticCanonicalSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
-        "semanticCanonicalSizeBytes": 73998,
-        "tree": "ab911b517b48e32c8676939f73b2a3f0e326c3ef"
+        "rawSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
+        "rawSizeBytes": 74400,
+        "semanticCanonicalSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
+        "semanticCanonicalSizeBytes": 74400,
+        "tree": "4324b1b63ff6f152977fa75403c8e263324fa5ce"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -885,8 +892,12 @@ def diff_rows(repo_root: Path, base: str, target: str) -> list[dict[str, Any]]:
                 raise PresealError(f"retired source link differs from exact base or remains in target: {relative}")
             content_commit = base
         elif relative not in ALLOWED_RECIPE_PATHS:
-            if (base != WINDOWS_INTEGRATION_BASE or relative not in WINDOWS_INTEGRATION_BLOBS
-                    or commit_blob(repo_root, target, relative) != WINDOWS_INTEGRATION_BLOBS[relative]):
+            reviewed_sources = {
+                WINDOWS_INTEGRATION_BASE: WINDOWS_INTEGRATION_BLOBS,
+                WINDOWS_EXPORT_BASE: WINDOWS_EXPORT_BLOBS,
+            }.get(base, {})
+            if (relative not in reviewed_sources
+                    or commit_blob(repo_root, target, relative) != reviewed_sources[relative]):
                 raise PresealError(f"preseal recipe path is not allowed: {relative}")
         payload = commit_bytes(repo_root, content_commit, relative)
         rows.append(

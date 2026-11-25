@@ -538,24 +538,24 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "1e0f183e26e93e78c2ff3723c347ed2d290d9e37",
-            "commit": "90c821aeec02425a3bb134d9475aa0b1b08b5f35",
+            "blob": "5ac74ccd30d671c9a3123eb34f46ee5c0aac6a9e",
+            "commit": "5222f8aa6117243903e080ff55e2300af724c67c",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
-            "rawSizeBytes": 73998,
-            "semanticCanonicalSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
-            "semanticCanonicalSizeBytes": 73998,
-            "tree": "ab911b517b48e32c8676939f73b2a3f0e326c3ef",
+            "rawSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
+            "rawSizeBytes": 74400,
+            "semanticCanonicalSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
+            "semanticCanonicalSizeBytes": 74400,
+            "tree": "4324b1b63ff6f152977fa75403c8e263324fa5ce",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 73998
+    assert len(package_plane.encoded_json(next_lock)) == 74400
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897"
+        "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e"
     )
     assert package_plane.load_split_preseal_verifier().NEXT_AUTHORITY_ORACLE == (
         package_plane.SEALED_NEXT_AUTHORITY_ORACLE

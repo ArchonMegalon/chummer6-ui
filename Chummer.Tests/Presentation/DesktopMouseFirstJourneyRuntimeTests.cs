@@ -11,6 +11,42 @@ namespace Chummer.Tests.Presentation;
 public sealed class DesktopMouseFirstJourneyRuntimeTests
 {
     [TestMethod]
+    public void Export_check_reopens_bytes_and_compares_the_whole_saved_character()
+    {
+        const string data = "<character><karma>16</karma><magician>true</magician><adept>true</adept><tradition>Hermetic</tradition><name>Jörg</name><spells><spell><duration>S</duration></spell></spells></character>";
+        string folder = Directory.CreateTempSubdirectory().FullName;
+        try
+        {
+            string saved = Path.Combine(folder, "runner.chum5");
+            string portable = Path.Combine(folder, "portable.json");
+            void WritePortable(string payload)
+            {
+                File.WriteAllText(portable, System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    Summary = new { Karma = 16 },
+                    Progress = new { Karma = 16 },
+                    Profile = new { Magician = true, Adept = true },
+                    NativeWorkspace = new { RulesetId = "sr5", SchemaVersion = 1, PayloadKind = "sr5/chum5-xml", Payload = payload },
+                }));
+            }
+
+            WritePortable(data);
+            File.WriteAllText(saved, "<?xml version=\"1.0\" encoding=\"utf-16\"?>" + data, new System.Text.UTF8Encoding(false));
+            Assert.ThrowsExactly<System.Xml.XmlException>(() => AmendedRunnerExportCheck.Read(saved, portable));
+            File.WriteAllText(saved, data, new System.Text.UTF8Encoding(false));
+            var good = AmendedRunnerExportCheck.Read(saved, portable);
+            Assert.IsTrue(good.PortablePayloadMatches && good.PortableBalancesMatch && good.PortableProfileMatches);
+            Assert.AreEqual(1, good.SustainedDurationCount);
+            WritePortable(data.Replace("Jörg", "Changed", StringComparison.Ordinal));
+            Assert.IsFalse(AmendedRunnerExportCheck.Read(saved, portable).PortablePayloadMatches);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [TestMethod]
     public async Task Press_discipline_never_represses_after_a_possibly_delivered_press()
     {
         // Controller9539 regression: after a press whose delivery was observed

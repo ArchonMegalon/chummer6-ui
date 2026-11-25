@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "1e0f183e26e93e78c2ff3723c347ed2d290d9e37",
-        "commit": "90c821aeec02425a3bb134d9475aa0b1b08b5f35",
+        "blob": "5ac74ccd30d671c9a3123eb34f46ee5c0aac6a9e",
+        "commit": "5222f8aa6117243903e080ff55e2300af724c67c",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
-        "rawSizeBytes": 73998,
-        "semanticCanonicalSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
-        "semanticCanonicalSizeBytes": 73998,
-        "tree": "ab911b517b48e32c8676939f73b2a3f0e326c3ef"
+        "rawSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
+        "rawSizeBytes": 74400,
+        "semanticCanonicalSha256": "a0e54b880a0f1b5b897854b63a6b545e00018b2d79ab003b53a2ad95ae783f7e",
+        "semanticCanonicalSizeBytes": 74400,
+        "tree": "4324b1b63ff6f152977fa75403c8e263324fa5ce"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -516,6 +516,10 @@ OWNER_CONTEXT_SOURCE_FILES = frozenset(
 )
 EXPECTED_CONSUMER_SOURCE_FILES = frozenset(
     {
+        # The Windows amended-character journey reads both exported files.
+        "Chummer.Avalonia/AmendedRunnerExportCheck.cs",
+        "Chummer.Desktop.Runtime/DesktopMouseFirstJourneyRuntime.cs",
+        "Chummer.Tests/Presentation/DesktopMouseFirstJourneyRuntimeTests.cs",
         # Exact SR6 recovery and desktop interaction inputs reviewed in this recipe.
         "Chummer.Avalonia/DesktopCoreContentRootResolver.cs",
         "Chummer.Presentation/Content/CoreContentRootDiscovery.cs",
