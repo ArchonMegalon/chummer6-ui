@@ -3441,6 +3441,15 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             }
         }
 
+        // The character_settings command requires an open character workspace
+        // (RequiresOpenCharacter availability gate); with no workspace the menu
+        // item renders disabled and the availability wait times out. Load the
+        // saved career workspace through the real production presenter load path
+        // first - the same loader the reward recovery legs use at this exact
+        // dispatch point.
+        await LoadSavedWorkspaceForRewardLegAsync(window, steps, ct);
+        RecordStep(steps, "settings amend: saved workspace loaded for character_settings availability");
+
         // 1. Open Tools > character_settings through the real menu dispatch.
         await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07-settings-amend-before");
         MenuItem toolsMenu = await OpenMenuAsync(
@@ -3487,7 +3496,13 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             },
             ct);
         persistedCatalogJson = window.SnapshotStateForAutomation().Preferences.CharacterSettingsCatalogJson ?? string.Empty;
-        RecordStep(steps, "settings amend: save applied, catalog persisted");
+        Chummer5CharacterSettingsCatalog amendedCatalog =
+            Chummer5CharacterSettingsProfiles.ParseCatalog(persistedCatalogJson);
+        savedProfileId = amendedCatalog.ActiveProfileId;
+        savedProfileName = amendedCatalog.Profiles
+            .FirstOrDefault(profile => string.Equals(profile.Id, savedProfileId, StringComparison.Ordinal))?.Name
+            ?? "unknown";
+        RecordStep(steps, $"settings amend: save applied, catalog persisted (profile '{savedProfileName}' {savedProfileId})");
         assertions["persisted_catalog_contains_amend_directory"] = persistedCatalogJson.Contains(amendDirectory, StringComparison.Ordinal);
         assertions["catalog_changed_by_save"] = !string.Equals(persistedCatalogJson, preSaveCatalog, StringComparison.Ordinal);
 
