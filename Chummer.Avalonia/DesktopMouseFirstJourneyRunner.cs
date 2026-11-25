@@ -271,6 +271,84 @@ internal static class DesktopMouseFirstJourneyRunner
             // verify the karma debit and the reopened-dialog cancel path,
             // save through the file menu, and write the SR6 advance receipt
             // for the fresh-process reopen leg.
+            if (DesktopMouseFirstJourneyRuntime.SettingsAmendRequested)
+            {
+                RecordStep(steps, "settings amend leg: enable named campaign amend via Tools > character_settings");
+                DesktopUserJourneyWorkflowEvidence amendEvidence = await ExerciseSettingsAmendLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction,
+                    recordTextEntryAction);
+                userJourneyWorkflows.Add(amendEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> amendAssertion in amendEvidence.Assertions)
+                {
+                    if (!amendAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"Settings amend leg assertion failed: {amendAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: settings amend leg assertion {amendAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: window.SnapshotStateForAutomation().WorkspaceId?.Value,
+                        CharacterName: "Mouse Journey Runner",
+                        CharacterAlias: null,
+                        RulesetId: "sr5",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: true,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            "WIN-009 gen15 T1035 settings-amend leg: the named campaign amend was enabled through the real Tools > character_settings dialog, the persisted catalog kept the amend directory enabled after Save & Close, and the base vs amended priority numerics were recorded for the phone-wizard contract.",
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
             if (DesktopMouseFirstJourneyRuntime.RewardHoldRequested)
             {
                 RecordStep(steps, "reward hold leg: load saved career + award karma left confirmed-unacknowledged");
@@ -3268,6 +3346,224 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     /// the reward's confirmed outcome lives only in the durable recovery
     /// record when the process ends.
     /// </summary>
+    /// <summary>
+    /// WIN-009 gen15 T1035: named campaign rule amend through the real Windows client.
+    /// Opens Tools &gt; character_settings, switches the section select to custom-data,
+    /// writes "[x] &lt;dir&gt;" through the real treCustomDataDirectories text field, saves
+    /// the profile (persisted catalog), verifies the round-trip (section away/back
+    /// re-read proves the field survived), then closes via Save &amp; Close. The receipt
+    /// carries package facts and the base-vs-amended priority numerics for the
+    /// phone-wizard before/after contract.
+    /// </summary>
+    private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSettingsAmendLegAsync(
+        MainWindow window,
+        DesktopMouseFirstJourneyContext context,
+        List<string> steps,
+        List<string> screenshotPaths,
+        CancellationToken ct,
+        Action recordPointerAction,
+        Action recordTextEntryAction)
+    {
+        string amendDirectory = (Environment.GetEnvironmentVariable(
+            DesktopMouseFirstJourneyRuntime.SettingsAmendDirectoryEnvironmentVariable) ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(amendDirectory))
+        {
+            amendDirectory = "Sum-to-Ten Improved";
+        }
+
+        const string expectedSectionId = "custom-data";
+        const string legacyFieldId = "treCustomDataDirectories";
+        string targetFieldId = Chummer5CharacterSettingsProfiles.FieldId(legacyFieldId);
+        string fieldInputName = DesktopDialogAccessibility.BuildFieldInputName(targetFieldId);
+
+        var assertions = new Dictionary<string, bool>();
+        string fieldWritten = string.Empty;
+        string fieldReread = string.Empty;
+        string persistedCatalogJson = string.Empty;
+        string savedProfileId = "unknown";
+        string savedProfileName = "unknown";
+        string numericsBaseJson = string.Empty;
+        string numericsAmendedJson = string.Empty;
+        string manifestGuid = string.Empty;
+        string manifestSha256 = string.Empty;
+        string amendXmlSha256 = string.Empty;
+
+        // Amend package facts from the installed core-content customdata dir.
+        string packageDir = Path.Combine(
+            AppContext.BaseDirectory, "core-content", "Chummer", "customdata", amendDirectory);
+        string manifestPath = Path.Combine(packageDir, "manifest.xml");
+        if (File.Exists(manifestPath))
+        {
+            byte[] manifestBytes = File.ReadAllBytes(manifestPath);
+            manifestSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(manifestBytes))
+                .ToLowerInvariant();
+            string manifestXml = System.Text.Encoding.UTF8.GetString(manifestBytes);
+            System.Text.RegularExpressions.Match guidMatch = System.Text.RegularExpressions.Regex.Match(
+                manifestXml,
+                "<guid>([0-9a-fA-F-]{36})</guid>");
+            if (guidMatch.Success)
+            {
+                manifestGuid = guidMatch.Groups[1].Value;
+            }
+        }
+
+        string amendXmlPath = Path.Combine(packageDir, "amend_priorities.xml");
+        if (File.Exists(amendXmlPath))
+        {
+            amendXmlSha256 = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(amendXmlPath)))
+                .ToLowerInvariant();
+        }
+
+        // Numerics contract: base priority table vs the amended override values.
+        string numericsTablePath = Path.Combine(
+            AppContext.BaseDirectory, "core-content", "Chummer", "data", "priorities.xml");
+        if (File.Exists(numericsTablePath))
+        {
+            XDocument baseDoc = XDocument.Load(numericsTablePath);
+            XElement? baseStt = baseDoc.Root?.Element("priortysumtotenvalues")
+                ?? baseDoc.Root?.Descendants("priortysumtotenvalues").FirstOrDefault();
+            if (baseStt is not null)
+            {
+                numericsBaseJson = System.Text.Json.JsonSerializer.Serialize(
+                    baseStt.Elements().ToDictionary(e => e.Name.LocalName, e => e.Value));
+            }
+        }
+
+        if (File.Exists(amendXmlPath))
+        {
+            XDocument amendDoc = XDocument.Load(amendXmlPath);
+            XElement? amendStt = amendDoc.Root?.Descendants("priortysumtotenvalues").FirstOrDefault();
+            if (amendStt is not null)
+            {
+                numericsAmendedJson = System.Text.Json.JsonSerializer.Serialize(
+                    amendStt.Elements().ToDictionary(e => e.Name.LocalName, e => e.Value));
+            }
+        }
+
+        // 1. Open Tools > character_settings through the real menu dispatch.
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "07-settings-amend-before");
+        MenuItem toolsMenu = await OpenMenuAsync(
+            window, "ToolsMenuButton", "tools", steps, ct, recordPointerAction);
+        await ClickOpenMenuCommandAsync(toolsMenu, "character_settings", "tools", steps, ct, recordPointerAction);
+        await WaitForDialogAsync(window, Chummer5CharacterSettingsProfiles.DialogId, steps, ct);
+        RecordStep(steps, "settings amend: character_settings dialog visible");
+
+        // 2. Switch the section select to custom-data.
+        await SetDialogSelectFieldAsync(
+            window,
+            Chummer5CharacterSettingsProfiles.SectionFieldId,
+            expectedSectionId,
+            steps,
+            ct,
+            recordPointerAction,
+            () => { },
+            () => { });
+        await WaitForAsync(
+            steps,
+            "custom-data section field treCustomDataDirectories available",
+            () => FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), fieldInputName) is not null,
+            ct);
+        RecordStep(steps, "settings amend: custom-data section active");
+
+        // 3. Write the amend directory line through the real text field.
+        fieldWritten = "[x] " + amendDirectory;
+        await SetDialogTextFieldAsync(window, targetFieldId, fieldWritten, steps, ct);
+        recordTextEntryAction();
+        RecordStep(steps, $"settings amend: field written '{fieldWritten}'");
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "08-settings-amend-field-written");
+
+        // 4. Save (keeps dialog open; persists catalog).
+        string preSaveCatalog = window.SnapshotStateForAutomation().Preferences.CharacterSettingsCatalogJson ?? string.Empty;
+        await ClickDialogActionAsync(window, Chummer5CharacterSettingsProfiles.SaveActionId, steps, ct, recordPointerAction);
+        await WaitForAsync(
+            steps,
+            "settings catalog persisted after save",
+            () =>
+            {
+                string catalog = window.SnapshotStateForAutomation().Preferences.CharacterSettingsCatalogJson ?? string.Empty;
+                return !string.IsNullOrWhiteSpace(catalog)
+                    && catalog.Contains(amendDirectory, StringComparison.Ordinal);
+            },
+            ct);
+        persistedCatalogJson = window.SnapshotStateForAutomation().Preferences.CharacterSettingsCatalogJson ?? string.Empty;
+        RecordStep(steps, "settings amend: save applied, catalog persisted");
+        assertions["persisted_catalog_contains_amend_directory"] = persistedCatalogJson.Contains(amendDirectory, StringComparison.Ordinal);
+        assertions["catalog_changed_by_save"] = !string.Equals(persistedCatalogJson, preSaveCatalog, StringComparison.Ordinal);
+
+        // 5. Round-trip: switch to build section and back, then read the field.
+        await SetDialogSelectFieldAsync(
+            window,
+            Chummer5CharacterSettingsProfiles.SectionFieldId,
+            "build",
+            steps,
+            ct,
+            recordPointerAction,
+            () => { },
+            () => { });
+        await SetDialogSelectFieldAsync(
+            window,
+            Chummer5CharacterSettingsProfiles.SectionFieldId,
+            expectedSectionId,
+            steps,
+            ct,
+            recordPointerAction,
+            () => { },
+            () => { });
+        await WaitForAsync(
+            steps,
+            "custom-data field available for round-trip read",
+            () => FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), fieldInputName) is not null,
+            ct);
+        TextBox rereadBox = FindVisibleDescendant<TextBox>(ResolveDialogRoot(window), fieldInputName)
+            ?? throw new InvalidOperationException("settings amend: field missing on round-trip read");
+        fieldReread = await Dispatcher.UIThread.InvokeAsync(() => rereadBox.Text ?? string.Empty);
+        RecordStep(steps, $"settings amend: field re-read '{fieldReread}'");
+        assertions["roundtrip_field_contains_amend_directory"] = fieldReread.Contains(amendDirectory, StringComparison.Ordinal);
+
+        // 6. Save & Close through the dialog footer.
+        await ClickDialogActionAsync(window, Chummer5CharacterSettingsProfiles.SaveAndCloseActionId, steps, ct, recordPointerAction);
+        await WaitForAsync(
+            steps,
+            "character_settings dialog closed",
+            () =>
+            {
+                DesktopDialogWindow? dlg = ResolveVisibleDialogWindow();
+                return dlg is null
+                    || !string.Equals(dlg.BoundDialogId, Chummer5CharacterSettingsProfiles.DialogId, StringComparison.Ordinal);
+            },
+            ct);
+        RecordStep(steps, "settings amend: dialog closed via save_and_close");
+        await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "09-settings-amend-after");
+
+        // Persisted catalog must survive the close.
+        string postCloseCatalog = window.SnapshotStateForAutomation().Preferences.CharacterSettingsCatalogJson ?? string.Empty;
+        assertions["post_close_catalog_contains_amend_directory"] = postCloseCatalog.Contains(amendDirectory, StringComparison.Ordinal);
+
+        DesktopMouseFirstJourneyRuntime.WriteSettingsAmendReceipt(
+            amendDirectory,
+            manifestGuid,
+            manifestSha256,
+            amendXmlSha256,
+            fieldWritten,
+            fieldReread,
+            persistedCatalogJson,
+            savedProfileId,
+            savedProfileName,
+            numericsBaseJson,
+            numericsAmendedJson,
+            assertions.Values.All(value => value));
+
+        return new DesktopUserJourneyWorkflowEvidence(
+            Id: "settings_amend_workflow",
+            ScreenshotPaths: [],
+            Assertions: assertions,
+            InteractionNotes:
+            [
+                $"WIN-009 gen15 T1035 settings-amend checkpoint: Tools > character_settings > custom-data received '[x] {amendDirectory}' through the real text field; Save persisted the catalog; the away/back round-trip re-read proved the field survived; Save & Close left the catalog intact. Base numerics {numericsBaseJson} -> amended {numericsAmendedJson} (package guid {manifestGuid}).",
+            ]);
+    }
+
     private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseRewardHoldLegAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,

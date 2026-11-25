@@ -48,6 +48,27 @@ public static class DesktopMouseFirstJourneyRuntime
     // checksum and expected values on the controller intake.
     public const string AmendedRunnerExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT";
     public const string AmendedRunnerExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT_RECEIPT";
+
+    /// <summary>
+    /// WIN-009 gen15 T1035: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND=1, the journey runner
+    /// executes the settings-amend leg: open Tools > character_settings, switch to
+    /// the custom-data section, write "[x] <directory>" through the real
+    /// treCustomDataDirectories text field, Save, section away/back round-trip
+    /// re-read, Save & Close, and verify the persisted catalog survives the close.
+    /// Writes the durable receipt via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_RECEIPT.
+    /// </summary>
+    public const string SettingsAmendEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND";
+    public const string SettingsAmendReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_RECEIPT";
+    public const string SettingsAmendDirectoryEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_DIRECTORY";
+    /// <summary>
+    /// WIN-009 gen15 T1035: true when the settings-amend leg must run.
+    /// </summary>
+    public static bool SettingsAmendRequested => string.Equals(
+        Environment.GetEnvironmentVariable(SettingsAmendEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
     public const string WizardCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL";
     public const string KeyboardMatrixEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_KEYBOARD_MATRIX";
 
@@ -799,6 +820,62 @@ public static class DesktopMouseFirstJourneyRuntime
             throw;
         }
     }
+    /// <summary>
+    /// WIN-009 gen15 T1035: writes the settings-amend leg durable facts: the amend
+    /// package directory name + manifest guid, base and amended priority-table
+    /// numerics (letter values), the field value written through the dialog, the
+    /// re-read field value after the section round-trip, and the persisted catalog
+    /// JSON. No-op when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_RECEIPT.
+    /// </summary>
+    public static void WriteSettingsAmendReceipt(
+        string? amendDirectory,
+        string? manifestGuid,
+        string? manifestSha256,
+        string? amendXmlSha256,
+        string? fieldWritten,
+        string? fieldReread,
+        string? persistedCatalogJson,
+        string? savedProfileId,
+        string? savedProfileName,
+        string numericsBaseJson,
+        string numericsAmendedJson,
+        bool catalogRoundTripOk)
+    {
+        string? path = Environment.GetEnvironmentVariable(SettingsAmendReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var receipt = new
+        {
+            amendDirectory,
+            manifestGuid,
+            manifestSha256,
+            amendXmlSha256,
+            fieldWritten,
+            fieldReread,
+            persistedCatalogJson,
+            savedProfileId,
+            savedProfileName,
+            numericsBaseJson,
+            numericsAmendedJson,
+            catalogRoundTripOk,
+            writtenAtUtc = DateTime.UtcNow.ToString("o"),
+        };
+        string json = System.Text.Json.JsonSerializer.Serialize(
+            receipt,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
 
     public static void WriteFailureArtifacts(
         DesktopMouseFirstJourneyContext context,
