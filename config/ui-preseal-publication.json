@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "132db6a81a5151b7b6e78b5895de9964560426eb",
-  "baseTree": "cb214fa5d432947d99104de6309a363e2b1e61e0",
+  "baseCommit": "d442dde29cfa8b19019acd6c887ca53a0b933665",
+  "baseTree": "f785187b61126897c61b308ffd964f74a4d00d82",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,62 +44,13 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "341e083e350976f9dc65fb264dbb4b62dc5af2ad",
-      "path": "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
-      "sha256": "709efd8ca32262dadf37553d621b283d9fd34e1997fad7e8c4c5a934865f8fb3",
-      "sizeBytes": 1960,
-      "status": "M"
-    },
-    {
-      "blob": "fd2d8358382736f4178d23ea7ed585d9050f3931",
-      "path": "Chummer.Desktop.Runtime.Tests/GrantBoundRoamingSyncLedgerTests.cs",
-      "sha256": "7a494510a0e4c4ab627a04c33b49cb3bfa5c19af26844806237250fd2dad1b39",
-      "sizeBytes": 2900,
-      "status": "A"
-    },
-    {
-      "blob": "211e76e243c612d1e30d4f100f53241e922fb1c0",
-      "path": "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj",
-      "sha256": "01e344f806835c90ec8dca947dbfba0639761b5229da3168e0f6c793fc9f39bb",
-      "sizeBytes": 6681,
-      "status": "M"
-    },
-    {
-      "blob": "df87c9e91490a61739045de9441b96560632697a",
-      "path": "Chummer.Desktop.Runtime/GrantBoundRoamingSyncLedger.cs",
-      "sha256": "8d6510bba3c8ab1a5d8de1866d33441e0068f0662cade598e6f8d8aa24637e2d",
-      "sizeBytes": 15409,
-      "status": "M"
-    },
-    {
-      "blob": "a240a13ccc12a87b0b2e2087ad39e254dbad2357",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "deebfa61ea2f68251414827fca19426684e324b56389c92fe75581c4de0898a1",
-      "sizeBytes": 74687,
-      "status": "M"
-    },
-    {
-      "blob": "778dfa9713ad39de36d998e5db3f5ded6ab54779",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "26b340087a969104bc89358c076f39c1dd5f5930cfa76c25b874e8b6aa96acaf",
-      "sizeBytes": 304041,
-      "status": "M"
-    },
-    {
-      "blob": "e39f19018fdc8baa5975e9b78027024d5d8fadd5",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "56faed6f47d13842ca4ec789bb1d4595e63b05a61f3090a09f901bae4c5145f6",
-      "sizeBytes": 83682,
-      "status": "M"
-    },
-    {
-      "blob": "a6053641eff9037744391342f0eabb954febba39",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "d4568464b931b10da6f1067b9931957ec2f587c333c4fefae4d7c71859fa49cc",
-      "sizeBytes": 206955,
+      "blob": "bd734f32d139b2d42c8a62a8bcff657cf5b48ec4",
+      "path": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+      "sha256": "b3d92374910655f10c84c72af336060630b690ffdd67919bc5ec43d38fdc2be3",
+      "sizeBytes": 214183,
       "status": "M"
     }
   ],
-  "recipeTree": "2a056a880526c5c8ecb368e2d20ceaa6b32eeb41",
+  "recipeTree": "aa8db3728b3b2debb5a2c96c7da3e65c32df4c46",
   "releaseClaim": false
 }
