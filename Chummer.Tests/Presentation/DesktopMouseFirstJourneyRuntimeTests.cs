@@ -344,6 +344,25 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
         Assert.AreEqual("sr4-bp", plan.ScenarioId);
     }
 
+    [TestMethod]
+    public void ReadPlan_normalizes_life_modules_aliases_to_canonical_method()
+    {
+        // WIN-009 gen16 (T1043): the new-character dialog exposes the
+        // Core-authoritative "LifeModule" id; plural/hyphenated journey
+        // spellings must fold onto it so the dialog select resolves, and
+        // the derived scenario id uses the canonical singular form.
+        using EnvironmentOverride scope = new EnvironmentOverride()
+            .Set(DesktopMouseFirstJourneyRuntime.RulesetIdEnvironmentVariable, "sr5")
+            .Set(DesktopMouseFirstJourneyRuntime.BuildMethodEnvironmentVariable, "LifeModules")
+            .Set(DesktopMouseFirstJourneyRuntime.MetatypeEnvironmentVariable, "Human");
+
+        DesktopMouseFirstJourneyPlan plan = DesktopMouseFirstJourneyRuntime.ReadPlan();
+
+        Assert.AreEqual("LifeModule", plan.BuildMethod);
+        Assert.AreEqual("Human", plan.Metatype);
+        Assert.AreEqual("sr5-lifemodule-human", plan.ScenarioId);
+    }
+
     private sealed class EnvironmentOverride : IDisposable
     {
         private readonly Dictionary<string, string?> _originalValues = new(StringComparer.Ordinal);

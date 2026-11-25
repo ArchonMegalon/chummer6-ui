@@ -1938,22 +1938,30 @@ internal static class DesktopMouseFirstJourneyRunner
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-priority-graph-evidence");
             }
             if (!string.IsNullOrWhiteSpace(plan.Metatype)
-                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
+                && string.Equals(plan.BuildMethod, CharacterCreationBuildMethods.LifeModules, StringComparison.OrdinalIgnoreCase))
             {
                 // Metatype/nationality option cards live on the foundation step,
                 // which the Core marks life-modules-only for Priority builds.
                 // plan.Metatype is non-empty only for Life-Modules plans.
                 // (WIN-009 Priority plans carry plan.Metatype as the requested
                 // heritage metatype, already selected at the heritage step.)
+                // Foundation cards carry Core-authoritative OptionIds (metatype
+                // module ids), not the requested display value, so resolve the
+                // real card id from the automation projection by OptionId or
+                // Label match before clicking (WIN-009 gen16 T1043).
+                string metatypeOptionId = await ResolveWizardFoundationOptionIdAsync(
+                    window,
+                    plan.Metatype,
+                    steps,
+                    journeyTimeout.Token);
                 await SelectWizardOptionAsync(
                     window,
                     wizard,
-                    plan.Metatype,
+                    metatypeOptionId,
                     steps,
                     journeyTimeout.Token,
                     recordPointerAction,
-                    requirePresent: false);
+                    requirePresent: true);
             }
 
             // The foundation (Life-Modules) flow only applies when the journey
@@ -1962,8 +1970,7 @@ internal static class DesktopMouseFirstJourneyRunner
             // plan.Metatype as the requested heritage metatype, already applied
             // at the heritage step - the foundation flow keys on the method.)
             if (!string.IsNullOrWhiteSpace(plan.Metatype)
-                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
+                && string.Equals(plan.BuildMethod, CharacterCreationBuildMethods.LifeModules, StringComparison.OrdinalIgnoreCase))
             {
             string nationalityOptionId =
                 await WaitForWizardNationalityOptionAsync(window, steps, journeyTimeout.Token);
@@ -16717,28 +16724,73 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         RecordStep(steps, $"click wizard option {optionId}; delivered={clickObserved}");
     }
 
-    private static async Task<string> WaitForWizardNationalityOptionAsync(
+    private static async Task<string> ResolveWizardFoundationOptionIdAsync(
         MainWindow window,
+        string requestedValue,
         List<string> steps,
         CancellationToken ct)
     {
+        // Foundation option cards carry Core-authoritative OptionIds (metatype
+        // module ids); the requested journey value is a display label such as
+        // "Human". Resolve the real card id from the automation projection by
+        // OptionId or Label match (WIN-009 gen16 T1043).
         string? found = null;
         await WaitForAsync(
             steps,
-            "nationality (setting:) option card rendered on the foundation step",
+            $"foundation option card matching '{requestedValue}' rendered and enabled",
             () =>
             {
                 CharacterCreationWizardControl? current = FindWizardControl(window);
                 if (current is null)
                     return false;
                 found = current.StateForAutomation()?.LegalOptions
-                    .Select(option => option.OptionId)
-                    .FirstOrDefault(optionId => optionId.StartsWith("setting:", StringComparison.OrdinalIgnoreCase));
+                    .Where(option => option.IsEnabled)
+                    .FirstOrDefault(option =>
+                        string.Equals(option.OptionId, requestedValue, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(option.Label, requestedValue, StringComparison.OrdinalIgnoreCase))
+                    ?.OptionId;
                 return found is not null;
             },
             ct);
         return found
-            ?? throw new TimeoutException("no nationality (setting:) option card rendered on the foundation step.");
+            ?? throw new TimeoutException($"no enabled foundation option card matched '{requestedValue}'.");
+    }
+
+    private static async Task<string> WaitForWizardNationalityOptionAsync(
+        MainWindow window,
+        List<string> steps,
+        CancellationToken ct)
+    {
+        // Nationality option cards ride the life-modules step's LegalOptions
+        // channel with Core-authoritative OptionIds (life-module setting ids);
+        // the historical "setting:" prefix never exists on real Core cards
+        // (WIN-009 gen16 T1043), so resolve the first enabled card once the
+        // wizard reaches the life-modules step.
+        string? found = null;
+        await WaitForAsync(
+            steps,
+            "nationality option card rendered on the life-modules step",
+            () =>
+            {
+                CharacterCreationWizardControl? current = FindWizardControl(window);
+                if (current is null)
+                    return false;
+                CharacterCreationWizardDesktopState? state = current.StateForAutomation();
+                if (state is null
+                    || !string.Equals(
+                        state.ActiveStepId,
+                        CharacterCreationWizardStepIds.LifeModules,
+                        StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                found = state.LegalOptions.FirstOrDefault(option => option.IsEnabled)?.OptionId;
+                return found is not null;
+            },
+            ct);
+        return found
+            ?? throw new TimeoutException("no enabled nationality option card rendered on the life-modules step.");
     }
 
     private static async Task WaitForWizardFoundationConfirmableAsync(
