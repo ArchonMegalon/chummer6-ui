@@ -39,6 +39,15 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string PdfSaveTraceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TRACE";
     public const string MagicianExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT";
     public const string MagicianExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT_RECEIPT";
+    // WIN-009 gen14 T1030: amended-runner portable export leg. When set, the journey
+    // opens the saved amended workspace named by
+    // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_WORKSPACE (the T1029 karma-amended
+    // career character), saves it through the product save command, then drives the
+    // native .chum5 Save-As download and the portable export dialog download to
+    // disk. Used to deliver the amended Windows runner transfer for Android with
+    // checksum and expected values on the controller intake.
+    public const string AmendedRunnerExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT";
+    public const string AmendedRunnerExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT_RECEIPT";
     public const string WizardCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL";
     public const string KeyboardMatrixEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_KEYBOARD_MATRIX";
 
@@ -463,6 +472,20 @@ public static class DesktopMouseFirstJourneyRuntime
         StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// WIN-009 gen14 T1030: when set, the mouse-first journey runs the
+    /// amended-runner export leg: opens the saved amended workspace from
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_WORKSPACE (already carrying a
+    /// supported amend applied through the real Windows client), saves it via the
+    /// product save command, then drives the native .chum5 Save-As and the
+    /// portable export dialog download to disk, writing a durable receipt with
+    /// the saved revision, file sizes, spell counts and the amended karma value.
+    /// </summary>
+    public static bool AmendedRunnerExportRequested => string.Equals(
+        Environment.GetEnvironmentVariable(AmendedRunnerExportEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// WIN-008 item 1: writes the native PDF save leg's durable facts so the
     /// harness can run an INDEPENDENT extraction (render + text) on the
     /// produced PDF. No-op when no receipt path is configured via
@@ -545,6 +568,60 @@ public static class DesktopMouseFirstJourneyRuntime
             tradition,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
+    /// <summary>
+    /// WIN-009 gen14 T1030: writes the amended-runner export leg's durable facts
+    /// (workspace id, saved revision, artifact paths/sizes, spell counts and the
+    /// amended karma carried by the export). No-op when no receipt path is
+    /// configured via CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT_RECEIPT.
+    /// </summary>
+    public static void WriteAmendedRunnerExportReceipt(
+        string? workspaceId,
+        long savedRevision,
+        string saveAsFileName,
+        long saveAsBytes,
+        string exportFileName,
+        long exportBytes,
+        string rulesetId,
+        string? characterName,
+        string? characterAlias,
+        int spellCount,
+        int sustainedSpellCount,
+        string? karmaValue)
+    {
+        string? path = Environment.GetEnvironmentVariable(AmendedRunnerExportReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var receipt = new
+        {
+            workspaceId,
+            savedRevision,
+            saveAsFileName,
+            saveAsBytes,
+            exportFileName,
+            exportBytes,
+            rulesetId,
+            characterName,
+            characterAlias,
+            spellCount,
+            sustainedSpellCount,
+            karmaValue,
+            writtenAtUtc = DateTime.UtcNow.ToString("o"),
+        };
+        string json = System.Text.Json.JsonSerializer.Serialize(
+            receipt,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
         if (!string.IsNullOrEmpty(directory))
         {
