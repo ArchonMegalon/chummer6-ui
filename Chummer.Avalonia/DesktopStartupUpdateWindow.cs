@@ -132,6 +132,9 @@ internal sealed class DesktopStartupUpdateWindow : Window
 
             if (string.Equals(result.Reason, "already_current", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(result.Reason, "installed_ahead_of_manifest", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(result.Reason, "channel_mismatch", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(result.Reason, "installed_version_incomparable", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(result.Reason, "manifest_channel_unknown", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(result.Reason, "seeded_from_manifest", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(result.Reason, "manifest_not_configured", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(result.Reason, "update_mode_off", StringComparison.OrdinalIgnoreCase)
@@ -215,6 +218,8 @@ internal sealed class DesktopStartupUpdateWindow : Window
             "notify_only" => "A newer build is available. Open Devices & Access when you want to update.",
             "macos_manual_install_required" => "A macOS update is ready. Open Update Status to install it manually; this copy will stay usable.",
             "manifest_load_failed" => "Chummer could not reach the update list. This copy will keep running.",
+            "installed_version_incomparable" => "The available update version could not be compared with this build; no update was staged and this copy keeps running.",
+            "manifest_channel_unknown" => "The update channel could not be proven for this copy; no update was staged and this copy keeps running.",
             "update_schedule_failed" => "The update could not be prepared. This copy will keep running.",
             "rollout_blocked" => "The newest build is paused. This copy will keep running.",
             _ => "This copy will keep running."

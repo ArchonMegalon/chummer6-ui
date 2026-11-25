@@ -33,6 +33,9 @@ public sealed class CareerAttributeAdvanceWindow : Window
         CanResize = true;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
+        // Gen6 T796: shared desktop design tokens (owned wizard window pattern).
+        FontFamily = new global::Avalonia.Media.FontFamily("Segoe UI,Verdana,Arial");
+        FontSize = 13;
 
         CharacterCareerAttributeAdvanceQuote? selected = ResolveSelectedQuote(editor, requestedAttributeName);
         CareerAttributeAdvanceRequest? pendingRequest = selected is null ? null : BuildRequest(editor, selected);

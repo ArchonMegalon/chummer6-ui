@@ -5,15 +5,35 @@
              RequestedThemeVariant="Dark">
   <Application.Resources>
     <ResourceDictionary>
+      <!-- Gen6 desktop design tokens (T793): density, spacing, typography, shape.
+           Theme-invariant scalars; colors live in the ThemeDictionaries below. -->
+      <FontFamily x:Key="ChummerShellFontFamily">Segoe UI,Verdana,Arial</FontFamily>
+      <x:Double x:Key="ChummerShellFontSizeBody">13</x:Double>
+      <x:Double x:Key="ChummerShellFontSizeSmall">12</x:Double>
+      <x:Double x:Key="ChummerShellFontSizeCaption">11</x:Double>
+      <x:Double x:Key="ChummerShellFontSizeTitle">16</x:Double>
+      <x:Double x:Key="ChummerShellControlHeight">30</x:Double>
+      <x:Double x:Key="ChummerShellControlHeightCompact">26</x:Double>
+      <x:Double x:Key="ChummerShellTitlebarHeight">32</x:Double>
+      <x:Double x:Key="ChummerShellMenuBarHeight">26</x:Double>
+      <x:Double x:Key="ChummerShellStatusBarHeight">24</x:Double>
+      <x:Double x:Key="ChummerShellToolbarHeight">32</x:Double>
+      <Thickness x:Key="ChummerShellSpacingTight">4</Thickness>
+      <Thickness x:Key="ChummerShellSpacing">8</Thickness>
+      <Thickness x:Key="ChummerShellSpacingWide">12</Thickness>
+      <Thickness x:Key="ChummerShellSpacingSection">16</Thickness>
+      <CornerRadius x:Key="ChummerShellCornerSmall">6</CornerRadius>
+      <CornerRadius x:Key="ChummerShellCornerMedium">8</CornerRadius>
+      <Thickness x:Key="ChummerShellFocusRingThickness">2</Thickness>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#E3EAF3" />
-          <SolidColorBrush x:Key="ChummerShellHardBackdropBrush" Color="#E3EAF3" />
-          <SolidColorBrush x:Key="ChummerShellHardPanelBrush" Color="#FBFCFE" />
+          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#F7F7F7" />
+          <SolidColorBrush x:Key="ChummerShellHardBackdropBrush" Color="#F7F7F7" />
+          <SolidColorBrush x:Key="ChummerShellHardPanelBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#334155" />
           <SolidColorBrush x:Key="ChummerShellTextMutedBrush" Color="#475569" />
-          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#E7EDF5" />
+          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#F5F8FC" />
           <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#DEE8F6" />
           <SolidColorBrush x:Key="ChummerShellMenuBarBrush" Color="#DEE7F1" />
@@ -22,24 +42,25 @@
           <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#F7F9FC" />
           <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#EEF3F8" />
           <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#8E9CAE" />
-          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#B5C0CF" />
-          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#A5B2C3" />
-          <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#FBFCFE" />
-          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F2F5FA" />
+          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#E0E0E0" />
+          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#E0E0E0" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F7F7F7" />
           <SolidColorBrush x:Key="ChummerShellSelectionToolbarBrush" Color="#EEF2F6" />
+          <SolidColorBrush x:Key="ChummerShellToolbarBackgroundBrush" Color="#EEF2F6" />
           <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#F1F5F9" />
           <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#CBD5E1" />
           <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#26526DFF" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#656BD7" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#256EFF" />
           <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#E9EEF5" />
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F2F5FA" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#111111" />
-          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#656BD7" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#2C5FB8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellProgressTrackBrush" Color="#D8E1EC" />
-          <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#656BD7" />
+          <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#256EFF" />
           <SolidColorBrush x:Key="ChummerShellMediaOverlayForegroundBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellMediaBackdropBrush" Color="#020617" />
           <SolidColorBrush x:Key="TextControlBackground" Color="#FFFFFF" />
@@ -114,15 +135,15 @@
           <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#111827" />
           <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#FFFFFF" />
           <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#475569" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#656BD7" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#2C5FB8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#545BC9" />
           <SolidColorBrush x:Key="ChummerShellQuietButtonBrush" Color="#24526DFF" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#3D57C4" />
           <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#B45309" />
-          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#E41D47" />
-          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#656BD7" />
-          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#007B60" />
+          <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#BE123C" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#256EFF" />
+          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#15A34A" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#01010D" />
@@ -145,16 +166,17 @@
           <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#050516" />
           <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#000008" />
           <SolidColorBrush x:Key="ChummerShellSelectionToolbarBrush" Color="#0C0C21" />
+          <SolidColorBrush x:Key="ChummerShellToolbarBackgroundBrush" Color="#0C0C21" />
           <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#050516" />
           <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#080819" />
           <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#CC1C1C3B" />
           <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#40526DFF" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#9EA2FD" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#90C39A" />
           <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#050516" />
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#01010D" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#080819" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ChummerShellProgressTrackBrush" Color="#0C0C21" />
           <SolidColorBrush x:Key="ChummerShellProgressValueBrush" Color="#9EA2FD" />
@@ -202,20 +224,20 @@
           <SolidColorBrush x:Key="ComboBoxItemBackground" Color="#050516" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="#0C0C21" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="#080819" />
-          <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ComboBoxItemBackgroundDisabled" Color="#080819" />
           <SolidColorBrush x:Key="ComboBoxItemForeground" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundPressed" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ComboBoxItemForegroundDisabled" Color="#A3EDEDF8" />
           <SolidColorBrush x:Key="ListBoxItemBackground" Color="#050516" />
           <SolidColorBrush x:Key="ListBoxItemBackgroundPointerOver" Color="#0C0C21" />
-          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ListBoxItemBackgroundSelected" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ListBoxItemBackgroundDisabled" Color="#080819" />
           <SolidColorBrush x:Key="ListBoxItemForeground" Color="#EDEDF8" />
           <SolidColorBrush x:Key="ListBoxItemForegroundPointerOver" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="ListBoxItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ListBoxItemForegroundDisabled" Color="#A3EDEDF8" />
           <SolidColorBrush x:Key="TreeViewBackground" Color="#050516" />
           <SolidColorBrush x:Key="TreeViewForeground" Color="#EDEDF8" />
@@ -227,12 +249,12 @@
           <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#CC1C1C3B" />
           <SolidColorBrush x:Key="MenuItemBackground" Color="#050516" />
           <SolidColorBrush x:Key="MenuItemBackgroundPointerOver" Color="#0C0C21" />
-          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#40526DFF" />
+          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#1D4ED8" />
           <SolidColorBrush x:Key="MenuItemForeground" Color="#EDEDF8" />
           <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#EDEDF8" />
-          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#EDEDF8" />
+          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#F8FAFC" />
           <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#A3EDEDF8" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#40526DFF" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonHoverBrush" Color="#73526DFF" />
           <SolidColorBrush x:Key="ChummerShellQuietButtonBrush" Color="#24526DFF" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#EDEDF8" />
@@ -394,6 +416,21 @@
     </Style>
     <Style Selector="Button.shell-action.quiet">
       <Setter Property="Background" Value="{DynamicResource ChummerShellQuietButtonBrush}" />
+    </Style>
+    <!-- Gen8 item 3: disabled actions (wizard step pills, blocked buttons) must stay
+         readable - Fluent's default disabled gray was too low-contrast on the shell
+         surface. Keep muted but legible: real foreground + visible border. -->
+    <Style Selector="Button:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Opacity" Value="0.72" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    </Style>
+    <Style Selector="Button TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="Button:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="Button.tool-icon">
       <Setter Property="Padding" Value="6,2" />
@@ -1414,5 +1451,6 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellProgressValueBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
+    <StyleInclude Source="avares://Chummer.Avalonia/Themes/EssentialControls.axaml" />
   </Application.Styles>
 </Application>

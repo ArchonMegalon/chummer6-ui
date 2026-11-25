@@ -91,7 +91,7 @@ def assert_startup_visual_window_contract(source: str) -> None:
         "DwmGetWindowAttribute(",
         "public static extern int DwmFlush()",
         "$ExpectedPrePromptStartupWindowTitle = 'Chummer Desktop Classic'",
-        "$ExpectedStartupWindowTitle = 'Claim your copy'",
+        "$ExpectedStartupWindowTitle = 'Chummer Desktop'",
         "$ExpectedInstallLinkingPromptTitle = 'Claim your copy'",
         "$RejectedConsoleWindowClass = 'ConsoleWindowClass'",
         "$ExpectedAvaloniaWindowClassPattern = (",
@@ -813,12 +813,12 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
     assert themes["Light"].keys() == themes["Dark"].keys()
     for theme_name, expected in {
         "Light": {
-            "ChummerShellWindowBackgroundBrush": "#E3EAF3",
-            "ChummerShellHardPanelBrush": "#FBFCFE",
+            "ChummerShellWindowBackgroundBrush": "#F7F7F7",
+            "ChummerShellHardPanelBrush": "#FFFFFF",
             "ChummerShellForegroundBrush": "#111827",
             "ChummerShellInputBackgroundBrush": "#FFFFFF",
             "ChummerShellInputForegroundBrush": "#111111",
-            "ChummerShellSelectionBrush": "#656BD7",
+            "ChummerShellSelectionBrush": "#2C5FB8",
             "ChummerShellSelectionForegroundBrush": "#FFFFFF",
             "ChummerShellMediaBackdropBrush": "#020617",
         },
@@ -828,13 +828,29 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
             "ChummerShellForegroundBrush": "#EDEDF8",
             "ChummerShellInputBackgroundBrush": "#080819",
             "ChummerShellInputForegroundBrush": "#EDEDF8",
-            "ChummerShellSelectionBrush": "#40526DFF",
+            "ChummerShellSelectionBrush": "#1D4ED8",
             "ChummerShellSelectionForegroundBrush": "#EDEDF8",
             "ChummerShellMediaBackdropBrush": "#000008",
         },
     }.items():
         for name, color in expected.items():
             assert themes[theme_name][name] == color
+    capture = STARTUP.read_text(encoding="utf-8")
+    palette_roles = (
+        "ChummerShellWindowBackgroundBrush", "ChummerShellMenuBarBrush",
+        "ChummerShellToolbarBackgroundBrush", "ChummerShellForegroundBrush",
+        "ChummerShellActiveMenuBorderBrush",
+    )
+    for theme in ("Dark", "Light"):
+        brushes = themes[theme]
+        palette = re.search(rf"\$Expected{theme}ClientPalette = @\(([^)]*)\)", capture)
+        assert palette is not None
+        assert re.findall(r"0x([0-9A-F]{6})\b", palette[1]) == [
+            brushes[role].removeprefix("#") for role in palette_roles
+        ]
+    assert "foreach ($themePalette in @($ExpectedDarkClientPalette, $ExpectedLightClientPalette))" in capture
+    assert "-Palette $themePalette" in capture
+    assert "$expected = $Palette[$paletteIndex]" in capture
     assert 'Title="Chummer Desktop Classic"' in window
     assert (
         "await DesktopInstallLinkingWindow.ShowIfNeededAsync("
@@ -854,9 +870,12 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
         show_prompt,
     )
     assert show_prompt < apply_guest_chrome
+    assert '["desktop.shell.window_title"] = "Chummer Desktop"' in localization
+    assert "Title = BuildDesktopWindowTitle(shellTitle, claimTitle, state);" in main_window_code
     assert (
-        "Title = DesktopInstallLinkingRuntime.BuildShellWindowTitle("
-        "shellTitle, claimTitle, state);"
+        "=> DesktopInstallLinkingRuntime.IsClaimed(state)\n"
+        "            ? DesktopInstallLinkingRuntime.BuildShellWindowTitle(shellTitle, claimTitle, state)\n"
+        "            : shellTitle.Trim();"
     ) in main_window_code
     assert (
         "if (!IsClaimed(state))\n"
@@ -1031,7 +1050,7 @@ def test_startup_visual_contract_matches_exact_avalonia_client_surface() -> None
             "$ExpectedPrePromptStartupWindowTitle = 'Unexpected main'",
         ),
         (
-            "$ExpectedStartupWindowTitle = 'Claim your copy'",
+            "$ExpectedStartupWindowTitle = 'Chummer Desktop'",
             "$ExpectedStartupWindowTitle = 'Unexpected final main'",
         ),
         (

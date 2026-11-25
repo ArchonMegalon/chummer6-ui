@@ -22,6 +22,9 @@ public sealed record DesktopWorkspaceRoamingResult(
     public bool Success => Outcome is DesktopWorkspaceRoamingOutcome.Applied
         or DesktopWorkspaceRoamingOutcome.AlreadyCurrent;
 
+    /// <summary>Presentation-facing recovery hint; never a raw server error or payload.</summary>
+    public string? SourceRecoveryMessage { get; init; }
+
     public static DesktopWorkspaceRoamingResult AlreadyCurrent(CharacterWorkspaceId? workspaceId = null)
         => new(DesktopWorkspaceRoamingOutcome.AlreadyCurrent, workspaceId);
 }

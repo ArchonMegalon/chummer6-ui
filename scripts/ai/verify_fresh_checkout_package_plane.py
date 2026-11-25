@@ -48,15 +48,15 @@ SEALED_NEXT_AUTHORITY_RECEIPT_CONTRACT = (
 )
 SEALED_NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "c9a9ddad17c0c0282f7e73677134c50c99109fef",
-        "commit": "51a0f6565484814c50bf115a889720f5aab91936",
+        "blob": "1e0f183e26e93e78c2ff3723c347ed2d290d9e37",
+        "commit": "90c821aeec02425a3bb134d9475aa0b1b08b5f35",
         "path": "config/package-plane.lock.json",
         "fixturePath": SEALED_NEXT_AUTHORITY_ORACLE_PATH,
-        "rawSha256": "5e0529144ed9bb4a25f042542fe710c23b3ce6289e6293af98d4a7ac7c7f5c8d",
+        "rawSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
         "rawSizeBytes": 73998,
-        "semanticCanonicalSha256": "5e0529144ed9bb4a25f042542fe710c23b3ce6289e6293af98d4a7ac7c7f5c8d",
+        "semanticCanonicalSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
         "semanticCanonicalSizeBytes": 73998,
-        "tree": "64121db0613a23e67615eb1d86680025e69217bd"
+        "tree": "ab911b517b48e32c8676939f73b2a3f0e326c3ef"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -103,7 +103,7 @@ MAX_SDK_ARCHIVE_BYTES = 512 * 1024 * 1024
 EXPECTED_OWNERS = {
     "chummer-core-engine": (
         "https://github.com/ArchonMegalon/chummer6-core.git",
-        "5cf6a882ed2cac96973160def7d1e2833e7edac5",
+        "9036fef3c726c8dffe7f99987e4b04ce0a3a1abc",
     ),
     "chummer-ui-kit": (
         "https://github.com/ArchonMegalon/chummer6-ui-kit.git",
@@ -173,58 +173,58 @@ EXPECTED_HUB_CANONICAL_FEED = {'inventoryContract': 'chummer-hub.external-packag
                'sha256': '002dbe7ccf56cc306d9fecd048d6c3025481547b0bf082b94ceac5bc6d563f30',
                'sizeBytes': 1862480,
                'version': '0.1.1-packageplane.20260927.1'}]}
-CORE_RUNTIME_SOURCE_COMMIT = "752d7a3a45ed19070a7873e59c96f9f4ebca71dd"
-CORE_RUNTIME_RECIPE_COMMIT = "5cf6a882ed2cac96973160def7d1e2833e7edac5"
-CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1"
-CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = '289bbe39c9f8d92085f9c9fedbd2abb024af426d687f894d408d70b10bc0d762'
-CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 17555707
+CORE_RUNTIME_SOURCE_COMMIT = "bedc834ec0dd4602bb4b7d8bb7d7b81c291baa61"
+CORE_RUNTIME_RECIPE_COMMIT = "9036fef3c726c8dffe7f99987e4b04ce0a3a1abc"
+CORE_RUNTIME_PACKAGE_VERSION = "0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4"
+CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 = 'e8b3a95a66b84d31ea7494188624aa0f9f04269e7fe76630c8ea59c9e8943036'
+CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES = 17555741
 EXPECTED_CORE_RUNTIME_FEED_METADATA = {
     "inventoryContract": "chummer-core.runtime-package-inventory/v1",
     "inventoryFileName": "chummer-core-runtime-packages.inventory.json",
-    "inventorySha256": "a9b3a84247f23545e13f951ac54a5e98ff9dc2538981fb6fe324d81b5df923d1",
+    "inventorySha256": "fa6b6434c23fb21b1017e86337cb06fa0aae691b36e0287d568449070d08b07a",
     "lockContract": "chummer-core.runtime-package-plane-lock/v1",
     "lockFileName": "runtime-package-plane.lock.json",
-    "lockSha256": "e08ae8edc004d5b8d061a08121e73ee03415b5d466c4b04db27c86cced90cd4d",
+    "lockSha256": "b9e9cb69d0a2797ced7f0fc122665fa94dfee4326000ec0aeee8765634144f6c",
     "packageRecipeCommit": CORE_RUNTIME_RECIPE_COMMIT,
     "packageVersion": CORE_RUNTIME_PACKAGE_VERSION,
     "receiptContract": "chummer-core.no-siblings-package-plane/v3",
     "receiptFileName": "no-siblings.v3.receipt.json",
-    "receiptSha256": "5d3b5db3fb87e42683d6aeb88bf0cbd3d2fff003e0ccbc2afaf6a9f461d667ea",
+    "receiptSha256": "9857d3b4126352b3c71394692a7376ad3bb700eb4d9d92013327b498c4724ac0",
     "repository": "https://github.com/ArchonMegalon/chummer6-core.git",
     "runtimeSourceCommit": CORE_RUNTIME_SOURCE_COMMIT,
 }
 EXPECTED_CORE_RUNTIME_PACKAGES = {'Chummer.Engine.Contracts': ('Chummer.Contracts/Chummer.Contracts.csproj',
-                              'Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                              '0dcb559f62019058942ebb29d1ddcb9603601ba883c41a9482284cbda1c2cded',
-                              3677593),
+                              'Chummer.Engine.Contracts.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                              '4e792f984e78082c4283ebf9507ee0b384c8e2c3828a3af4bcdc38b8f3a8b6f7',
+                              3677721),
  'Chummer.Application': ('Chummer.Application/Chummer.Application.csproj',
-                         'Chummer.Application.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                         'c4d1e41f0eac6288b9045f9eaf0fe1f8d51e96316025b2e749f5408645624478',
-                         2867113),
+                         'Chummer.Application.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                         '778416b1c33aec22fff10c2e7c6929f6481078b3ec75cff95b67a43cc5410cc7',
+                         2867103),
  'Chummer.Rulesets.Hosting': ('Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj',
-                              'Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                              'a06375e6d8c181b362f433f1a7a46760bf67545ef7dc475b34bc5212407f5a08',
-                              14404),
+                              'Chummer.Rulesets.Hosting.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                              '04ebe46dc6c0c6a25cda6fe15a00415a5ce0d1bbacdf832784d8ee7867a3e981',
+                              14393),
  'Chummer.Rulesets.Sr5': ('Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj',
-                          'Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                          '66f5f07e50b239e7e636847a9c623e3961425351c1064329396119b2c2a7a501',
-                          31977),
+                          'Chummer.Rulesets.Sr5.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                          '8e7ccb44b4aab313a7ce0bfd7afd3314ed000972715a9a6c77206d1ffa6bec7f',
+                          31963),
  'Chummer.Rulesets.Sr6': ('Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj',
-                          'Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                          '834771158647d6f9aeb82066cbd6a4547d1746b895998ae946e5f3da4a8a0e92',
-                          130367),
+                          'Chummer.Rulesets.Sr6.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                          '7e5f0c7f94708066d915e0ea4bac780d1f7445180841e7843457779e73439243',
+                          130365),
  'Chummer.Infrastructure': ('Chummer.Infrastructure/Chummer.Infrastructure.csproj',
-                            'Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                            '85e85191443d47d345344b87f31fb1a559023c2f04a7c03a9d7e56a62a342796',
-                            3860762),
+                            'Chummer.Infrastructure.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                            'f92de8279deee40fee0e7edc33e9479825a418b9aa3ff965fe98b7162b74ad95',
+                            3860761),
  'Chummer.Rulesets.Sr4': ('Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj',
-                          'Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                          '586042becffdd8dddc20a6ef372c447be6220d6095c40d14d5abe16658ab678a',
-                          34074),
+                          'Chummer.Rulesets.Sr4.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                          '0cf455395437e4d87340c5072b8d7d133ce9a41c463e6cf2440106888b8fc6f9',
+                          34061),
  'Chummer.Engine.GmCharacterEdits': ('Chummer.GmCharacterEdits/Chummer.GmCharacterEdits.csproj',
-                                     'Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1.nupkg',
-                                     '3a23babcda9af53d9fb5d025e73dd36d3e1d58a199cdb5f063ca274ab215d70f',
-                                     6900632)}
+                                     'Chummer.Engine.GmCharacterEdits.0.0.0-packageplane.candidate.v20261125.10780.shbedc834ec0dd4.nupkg',
+                                     '81cb0cfc4a89106a2e3abbe69c86d60cbbe98a441a925a5b68fa286601a0fc74',
+                                     6900589)}
 EXPECTED_CURRENT_OWNER_CONTRACT_FEED_SHA256 = (
     "4c8e2fef141cbd1faf696a1d304bd4216bdd83f9273a82153858fe82518a7d2e"
 )
@@ -3277,12 +3277,12 @@ def require_exact_nuget_config_source(path: Path, feed: Path | None) -> None:
         raise VerificationError("same-run NuGet config package source differs")
 
 
-# This historical Core tree stores CRLF bytes despite its tracked text attribute.
+# These reviewed Core trees store CRLF bytes despite their tracked text attribute.
 # Do not extend this exception automatically when the current Core pin changes.
-CORE_CRLF_CHECKOUT_AUTHORITY = (
-    "https://github.com/ArchonMegalon/chummer6-core.git",
-    "5cf6a882ed2cac96973160def7d1e2833e7edac5",
-)
+CORE_CRLF_CHECKOUT_AUTHORITIES = frozenset({
+    ("https://github.com/ArchonMegalon/chummer6-core.git", "5cf6a882ed2cac96973160def7d1e2833e7edac5"),
+    ("https://github.com/ArchonMegalon/chummer6-core.git", "9036fef3c726c8dffe7f99987e4b04ce0a3a1abc"),
+})
 
 
 def require_clean_owner_checkout(
@@ -3298,7 +3298,7 @@ def require_clean_owner_checkout(
     message = f"owner checkout is dirty: {owner.get('directory', root.name)}"
     relative = "Directory.Build.props"
     if (status != f" M {relative}\n"
-            or (owner["repository"], owner["commit"]) != CORE_CRLF_CHECKOUT_AUTHORITY
+            or (owner["repository"], owner["commit"]) not in CORE_CRLF_CHECKOUT_AUTHORITIES
             or owner.get("directory", "chummer-core-engine") != "chummer-core-engine"
             or git("rev-parse", "HEAD").strip() != owner["commit"]):
         raise VerificationError(message)

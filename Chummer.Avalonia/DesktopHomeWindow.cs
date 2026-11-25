@@ -1599,15 +1599,7 @@ internal sealed class DesktopHomeWindow : Window
         };
 
     private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-    {
-        if (App.Current?.TryFindResource(resourceKey, out object? resource) == true
-            && resource is IBrush brush)
-        {
-            return brush;
-        }
-
-        return new SolidColorBrush(Color.Parse(fallbackHex));
-    }
+        => DesktopShellTheme.ResolveThemeBrush(resourceKey, fallbackHex);
 
     private static Color ResolveThemeColor(string resourceKey, string fallbackHex)
     {

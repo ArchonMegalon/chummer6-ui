@@ -27,6 +27,20 @@ public sealed record DesktopInstallClaimResult(
     string Message,
     DesktopInstallLinkingState State);
 
+/// <summary>
+/// Outcome of a signed "is this install already linked?" check against the Hub.
+/// Recovered: the Hub reported the installation linked and the grant was adopted.
+/// AlreadyLinked: the local state was already claimed before the check.
+/// NotLinked: the Hub answered authoritatively that this installation is not
+/// linked - the caller should offer the fallback claim-code portal.
+/// </summary>
+public sealed record DesktopInstallRecoveryResult(
+    bool Recovered,
+    bool AlreadyLinked,
+    string Message,
+    DesktopInstallLinkingState State,
+    bool NotLinked);
+
 public sealed record DesktopStartupAccountLaunchRequest(
     string? Ticket,
     string? Kind,
@@ -71,6 +85,7 @@ public enum DesktopRemoteCallbackRecoveryProjection
     Linked
 }
 
+
 public sealed record DesktopInstallLinkingState(
     string InstallationId,
     string HeadId,
@@ -114,8 +129,16 @@ internal readonly record struct DesktopInstallOwnerAuthorityStamp(
     string AuthorityInstanceId,
     long TransitionRevision);
 
-public static class DesktopInstallLinkingRuntime
+public static partial class DesktopInstallLinkingRuntime
 {
+    // Controller9403 point 3: deterministic test seam. When a test sets this
+    // hook, the runtime invokes it synchronously AFTER a successful durable
+    // adoption save (TrySaveState succeeded, claimedState revision bumped) and
+    // BEFORE the result is returned - exactly the window between the save and
+    // the window's stale-repaint fence read, where a newer retained operation
+    // can land in production. Tests must clear it in a finally.
+    public static Action<DesktopInstallLinkingState>? TestPostAdoptionSaveHook;
+
     private sealed record RemoteCallbackPollRequest(
         string InstallationId,
         string HeadId,
@@ -732,6 +755,296 @@ public static class DesktopInstallLinkingRuntime
         string claimCode,
         CancellationToken cancellationToken)
         => await RedeemClaimCodeAsync(headId, claimCode, LoadOrCreateState(headId), cancellationToken).ConfigureAwait(false);
+
+    private const string InstallStatusProofContext = "chummer.install-link.install-status.v1";
+
+    /// <summary>
+    /// Asks the Hub, with a signed installation proof, whether this install has
+    /// already been linked (for example the user completed approval in the
+    /// browser but the desktop callback never arrived). When the Hub reports the
+    /// installation Active, the returned grant is adopted locally so the app
+    /// becomes linked without a new approval. When it reports not linked, the
+    /// caller can direct the user to the account page that shows the fallback
+    /// claim code.
+    /// </summary>
+    public static async Task<DesktopInstallRecoveryResult> RecoverLinkedInstallAsync(
+        string headId,
+        CancellationToken cancellationToken)
+    {
+        DesktopInstallLinkingState state = LoadOrCreateState(headId);
+        if (IsClaimed(state))
+        {
+            return new DesktopInstallRecoveryResult(
+                true,
+                true,
+                "This copy is already linked to your Hub account.",
+                state,
+                NotLinked: false);
+        }
+
+        DesktopInstallLinkingState currentState = RefreshRuntimeMetadata(state, DateTimeOffset.UtcNow);
+        if (!TryExportRemoteCallbackPublicKey(currentState.PublicKey, out string? publicKey)
+            || string.IsNullOrWhiteSpace(currentState.PrivateKey))
+        {
+            return new DesktopInstallRecoveryResult(
+                false,
+                false,
+                "This installation cannot prove its identity to the Hub. Start a fresh link from the app.",
+                currentState,
+                NotLinked: false);
+        }
+
+        long issuedAtUnixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        string nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+        byte[] payload = Encoding.UTF8.GetBytes(string.Join(
+            '\n',
+            InstallStatusProofContext,
+            currentState.InstallationId,
+            currentState.HeadId,
+            currentState.ApplicationVersion,
+            currentState.ChannelId,
+            currentState.Platform,
+            currentState.Arch,
+            issuedAtUnixSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            nonce));
+        string signature;
+        try
+        {
+            using RSA rsa = RSA.Create();
+            rsa.ImportFromPem(currentState.PrivateKey);
+            if (rsa.KeySize is < 2048 or > 4096)
+            {
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "This installation cannot prove its identity to the Hub. Start a fresh link from the app.",
+                    currentState,
+                    NotLinked: false);
+            }
+
+            signature = Convert.ToBase64String(
+                rsa.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
+        }
+        catch (Exception ex) when (ex is CryptographicException or ArgumentException or FormatException)
+        {
+            return new DesktopInstallRecoveryResult(
+                false,
+                false,
+                "This installation cannot prove its identity to the Hub. Start a fresh link from the app.",
+                currentState,
+                NotLinked: false);
+        }
+
+        RemoteCallbackPollRequest request = new(
+            InstallationId: currentState.InstallationId,
+            HeadId: currentState.HeadId,
+            ApplicationVersion: currentState.ApplicationVersion,
+            ChannelId: currentState.ChannelId,
+            Platform: currentState.Platform,
+            Arch: currentState.Arch,
+            PublicKey: publicKey!,
+            IssuedAtUnixSeconds: issuedAtUnixSeconds,
+            Nonce: nonce,
+            Signature: signature,
+            HostLabel: null,
+            OperationId: RemoteCallbackOperationId(nonce));
+
+        DateTimeOffset attemptAtUtc = DateTimeOffset.UtcNow;
+        try
+        {
+            using HttpClient client = CreateApiHttpClient(TimeSpan.FromSeconds(20));
+            using StringContent content = new(
+                JsonSerializer.Serialize(request, JsonOptions),
+                Encoding.UTF8,
+                MediaTypeNames.Application.Json);
+            using HttpResponseMessage response = await client.PostAsync(
+                "api/v1/install-linking/installations/status",
+                content,
+                cancellationToken).ConfigureAwait(false);
+            string responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                string error = BuildErrorMessage(response, responseText);
+                return new DesktopInstallRecoveryResult(false, false, error, currentState, NotLinked: false);
+            }
+
+            InstallStatusResponse? status =
+                JsonSerializer.Deserialize<InstallStatusResponse>(responseText, JsonOptions);
+            if (status is null)
+            {
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "The Hub returned an unreadable installation status.",
+                    currentState,
+                    NotLinked: false);
+            }
+
+            if (!status.Linked)
+            {
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "The Hub has no linked installation for this copy yet. Open chummer.run/account to get the fallback claim code.",
+                    currentState,
+                    NotLinked: true);
+            }
+            if (status.Grant is null || status.Installation is null)
+            {
+                // linked:true with a missing installation/grant payload is an
+                // invalid response, not a "not linked" answer (audit
+                // 2026-11-20: Controller9308 defect 1). Fail closed and keep
+                // the prior state untouched.
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "The Hub returned an inconsistent installation status. Try again.",
+                    currentState,
+                    NotLinked: false);
+            }
+
+            // Controller9308 defect 1: adopt only after the same redemption-time
+            // validation policy the browser-callback and claim-code paths use -
+            // installation identity, mutual grant/installation/account
+            // consistency, grant usability, and grant time validity. Rejections
+            // preserve the approval state and any valid owner binding.
+            string[] recoveryProblems = ValidateRecoveryStatus(status.Installation, status.Grant, currentState, publicKey!, DateTimeOffset.UtcNow);
+            if (recoveryProblems.Length > 0)
+            {
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "The Hub's link for this copy could not be verified (" + string.Join("; ", recoveryProblems) + "). Open chummer.run/account to get a fallback claim code and try redeeming it instead.",
+                    currentState,
+                    NotLinked: false);
+            }
+
+            // Adopt the grant the Hub returned for this installation.
+            DateTimeOffset adoptedAtUtc = DateTimeOffset.UtcNow;
+            DesktopInstallLinkingState claimedState = currentState with
+            {
+                Status = ClaimedStatus,
+                ClaimedAtUtc = currentState.ClaimedAtUtc ?? adoptedAtUtc,
+                ClaimTicketId = currentState.ClaimTicketId,
+                LastClaimAttemptUtc = adoptedAtUtc,
+                LastClaimCode = null,
+                LastClaimError = null,
+                LastClaimMessage = "This copy was already linked on chummer.run. Chummer restored the link.",
+                BrowserApprovalRequest = null,
+                BrowserApprovalReturnState = null,
+                BrowserApprovalUncertain = false,
+                BrowserApprovalTerminal = false,
+                UpdatedAtUtc = adoptedAtUtc,
+                GrantId = status.Grant.GrantId,
+                GrantToken = status.Grant.AccessToken,
+                GrantIssuedAtUtc = status.Grant.IssuedAtUtc,
+                GrantExpiresAtUtc = status.Grant.ExpiresAtUtc,
+                UserId = status.Installation.UserId,
+                SubjectId = status.Installation.SubjectId,
+                LinkedEmail = ResolveLinkedEmail(
+                    status.Installation.UserId,
+                    status.Installation.SubjectId,
+                    currentState.LinkedEmail)
+            };
+            if (!TrySaveState(claimedState, out claimedState))
+            {
+                return new DesktopInstallRecoveryResult(
+                    false,
+                    false,
+                    "The Hub confirmed the link but this installation could not save it. Try again.",
+                    claimedState,
+                    NotLinked: false);
+            }
+
+            TestPostAdoptionSaveHook?.Invoke(claimedState);
+
+            return new DesktopInstallRecoveryResult(
+                true,
+                false,
+                claimedState.LastClaimMessage ?? "This copy is linked.",
+                claimedState,
+                NotLinked: false);
+        }
+        catch (Exception ex)
+        {
+            return new DesktopInstallRecoveryResult(
+                false,
+                false,
+                "Install link recovery failed: " + ex.Message,
+                currentState,
+                NotLinked: false);
+        }
+    }
+
+    // Controller9308 defect 1: shared validation for the recovery path so the
+    // browser-callback, claim-code, and already-linked adoption paths cannot
+    // drift apart. Returns an empty array when the response is adoptable.
+    private static string[] ValidateRecoveryStatus(
+        ClaimedInstallationDto installation,
+        InstallationGrantDto grant,
+        DesktopInstallLinkingState currentState,
+        string exportedPublicKey,
+        DateTimeOffset now)
+    {
+        List<string> problems = new();
+        string publicKey = exportedPublicKey ?? string.Empty;
+
+        // Installation identity must match this copy exactly. The public key is
+        // compared against the EXPORTED wire form (same normalization the
+        // redemption path uses), not the raw stored PEM.
+        if (!string.Equals(installation.InstallationId, currentState.InstallationId, StringComparison.Ordinal)
+            || !string.Equals(installation.PublicKey, publicKey, StringComparison.Ordinal)
+            || !(installation.HeadId is null
+                || string.Equals(installation.HeadId, currentState.HeadId, StringComparison.Ordinal))
+            || !string.Equals(installation.Version, currentState.ApplicationVersion, StringComparison.Ordinal)
+            || !string.Equals(installation.Channel, currentState.ChannelId, StringComparison.Ordinal)
+            || !(installation.Platform is null
+                || string.Equals(installation.Platform, currentState.Platform, StringComparison.Ordinal))
+            || !(installation.Arch is null
+                || string.Equals(installation.Arch, currentState.Arch, StringComparison.Ordinal)))
+        {
+            problems.Add("the returned installation does not match this copy");
+        }
+
+        // Mutual consistency: installation, grant, and account identities.
+        if (!string.Equals(installation.GrantId, grant.GrantId, StringComparison.Ordinal)
+            || !string.Equals(grant.InstallationId, installation.InstallationId, StringComparison.Ordinal)
+            || !string.Equals(grant.UserId, installation.UserId, StringComparison.Ordinal)
+            || !string.Equals(grant.SubjectId, installation.SubjectId, StringComparison.Ordinal))
+        {
+            problems.Add("the returned grant and installation disagree");
+        }
+
+        // Grant usability: real credential, usable status, real account ids.
+        if (string.IsNullOrWhiteSpace(grant.AccessToken)
+            || string.IsNullOrWhiteSpace(grant.GrantId)
+            || string.IsNullOrWhiteSpace(installation.UserId)
+            || string.IsNullOrWhiteSpace(installation.SubjectId)
+            || !string.Equals(grant.Status, "active", StringComparison.OrdinalIgnoreCase))
+        {
+            problems.Add("the returned grant is not usable");
+        }
+
+        // Grant time validity: shared redemption-time helper.
+        if (!IsGrantTimeValid(grant.IssuedAtUtc, grant.ExpiresAtUtc, now))
+        {
+            problems.Add("the returned grant is not currently valid");
+        }
+
+        // An already-linked copy must never be re-bound to a different owner.
+        if (!string.IsNullOrWhiteSpace(currentState.UserId)
+            && !string.Equals(currentState.UserId, installation.UserId, StringComparison.Ordinal))
+        {
+            problems.Add("the returned link belongs to a different account");
+        }
+
+        return problems.ToArray();
+    }
+
+    private sealed record InstallStatusResponse(
+        bool Linked,
+        ClaimedInstallationDto? Installation,
+        InstallationGrantDto? Grant);
 
     public static void MarkPromptDismissed(string headId)
     {

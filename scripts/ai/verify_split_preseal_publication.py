@@ -605,6 +605,58 @@ ALLOWED_RECIPE_PATHS = frozenset(
 )
 # Retirement authority is separate from recipe A/M membership: only these
 # original link objects may be deleted, never replaced or silently normalized.
+# Friday's Windows integration includes previously unlisted application and verification
+# files. Authenticate their exact Git blobs only on the integration's original base.
+WINDOWS_INTEGRATION_BASE = "aad1e82e58d49f7df7c2ce53be0d4c48b7e61d07"
+WINDOWS_INTEGRATION_BLOBS = {
+    "Chummer.Avalonia/Controls/ClassicStatusStrip.axaml": "0fd4347eeba3e084467cc1186ac4e244b0155af2",
+    "Chummer.Avalonia/Controls/ClassicStatusStrip.axaml.cs": "f8fd8b690af1e65317ea29e00fbb6834946a5c29",
+    "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs": "f20838159e49c67a82e220790a532ea3f6306b74",
+    "Chummer.Avalonia/Controls/OwnedWizardChrome.axaml": "63855fdc401e304c04c75e5c3d33b12a1b36c5fd",
+    "Chummer.Avalonia/Controls/OwnedWizardChrome.axaml.cs": "2beb1aff7449249462da548f7826308c26ff22bd",
+    "Chummer.Avalonia/Controls/OwnedWizardWindow.axaml": "3636247dffa0335ede42dc8fe42bc310a1416637",
+    "Chummer.Avalonia/Controls/OwnedWizardWindow.axaml.cs": "1e0e3346c78636a8a4b35a2d63b346620751e40b",
+    "Chummer.Avalonia/Controls/StatusStripControl.axaml": "aa4ecf417d67aaa042f7c21189597315acf43378",
+    "Chummer.Avalonia/Controls/StatusStripControl.axaml.cs": "7cd430a71b160989f7153baa31a450b973826fb9",
+    "Chummer.Avalonia/Controls/StatusStripDisplayText.cs": "f5ef4fd14696e651b276c0f9d9cb0fc0e48d867d",
+    "Chummer.Avalonia/Controls/WorkspaceStripControl.axaml.cs": "e7328da8ce042aec4db8db8fddc8577de29f8f4c",
+    "Chummer.Avalonia/Creation/CreationMagicResonanceWindow.cs": "61f305530784b3f88be8ce2a65437b2f43c258b6",
+    "Chummer.Avalonia/Creation/OwnedCreationWizardGate.cs": "8dc3145776cf1a8168774fe2199549bd0d19ef3b",
+    "Chummer.Avalonia/DesktopAppearance.cs": "d67e9592702e258d8102b694ee2b9c006c88be08",
+    "Chummer.Avalonia/DesktopStartupUpdateWindow.cs": "cd92f8d0ac8ffd1491d76fcd3f13e897286f09c3",
+    "Chummer.Avalonia/DesktopUpdateWindow.cs": "796368e35979c82b2f9c135d7e242853942786ba",
+    "Chummer.Avalonia/MainWindow.PreferenceState.cs": "bf85f77304c83ae45370d3630ba4af762bf4ab30",
+    "Chummer.Avalonia/MainWindow.StateRefresh.cs": "9ec135e68c2df3a31ba4a2f10577d1147f8d3575",
+    "Chummer.Avalonia/Themes/EssentialControls.axaml": "fd22b0359122c2bab225daa5bb52c7e6e5a3befa",
+    "Chummer.CreationWizard.Presentation.Tests/CharacterCreationMagicResonanceInteractionPresenterTests.cs": "7c84633f377f82aa1b91ad08fe2fd22ce881d252",
+    "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.WorkspaceOriginAuthority.cs": "8d5238b87046c0ffc58c5c6a7342435f5126befa",
+    "Chummer.Desktop.Runtime/DesktopUpdateClientStatus.cs": "d3c61546bb36d4a9665d01623970c837df4f6304",
+    "Chummer.Desktop.Runtime/DesktopUpdateRuntime.cs": "f8c4314282e6af6fec80074b23f71101e165798c",
+    "Chummer.Desktop.Runtime/DesktopWorkspaceOriginBridge.cs": "04a1428a9a54a99a15b39338cc8de0f52b1a3ebb",
+    "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceContinuationExporter.cs": "677834e9986b2f1bf25ca685d5795268c6a08dec",
+    "Chummer.Desktop.Runtime/GrantBoundDesktopWorkspaceRoamingSync.RetainedSource.cs": "0726e3828a3f4d1a5bbab10ad7cb4378af1858fc",
+    "Chummer.Presentation/Overview/CharacterCreationMagicResonanceInteractionPresenter.cs": "90e114e499a0acc5209c4e24cc5285b29c2780ee",
+    "Chummer.Presentation/WorkspaceSyncFeedback.cs": "f865c70a820ef4d2d0327b6c93ca95788da4f6a5",
+    "Chummer.Tests/DesktopUpdateRuntimeTests.cs": "db85779fe6e86e90edea69328161859be623b95a",
+    "Chummer.Tests/GrantBoundRoamingSignedInRoundTripTests.cs": "aee794b4c2f3e4c015592252c261899e2bd394d6",
+    "Chummer.Tests/Presentation/CreationMagicResonanceWindowTests.cs": "72ceb4f95a48531b45618b261d5f7d0a8383d2ca",
+    "Chummer.Tests/Presentation/DesktopAppearanceTests.cs": "62ed14bb846a8d1908b851d7316e13d8e1301fcc",
+    "Chummer.Tests/Presentation/DesktopClaimPresentationTests.cs": "77428b6b63d1a3fc191a6d7bd3c4cb0b9bfe7395",
+    "Chummer.Tests/Presentation/DesktopDialogEscapeTests.cs": "761b0eb247953b85f0bef164a3e06f54be671930",
+    "Chummer.Tests/Presentation/DesktopMouseFirstJourneyRuntimeTests.cs": "aefb8008e9d491c04f6ad66315fd4a4c8ab28ca9",
+    "Chummer.Tests/Presentation/DesktopStatusStripTests.cs": "08af7fd18e20f9dcdb33a918e2e3c2a049f7c5af",
+    "Chummer.Tests/Presentation/DriverContainmentProbeTests.cs": "e333f02fc5c02e3b42726dfaaf7ce65004319848",
+    "docs/WINDOWS_ESSENTIAL_ADAPTATION.md": "1858d605a3a1d9e62d8b58a520bc3757edf3e6d2",
+    "docs/WINDOWS_UI_REDESIGN.md": "e65fd078a383b57fb86af958463b79436aeeb647",
+    "scripts/capture_unsigned_windows_preview_startup_visual.ps1": "460f46cc09674bd2475501a22148c29d07165b5f",
+    "scripts/live_windows_preview_native_smoke.py": "7bad37a36711e4d975562ac016fc1712561aaf47",
+    "scripts/run-desktop-startup-smoke.sh": "e42a4be320a13e20e6c5f588ac4e5accd88626ad",
+    "scripts/verify-windows-installer-completion-trace.py": "4c65698912064a5aa92765de6adb62e7d324aeb2",
+    "tests/test_windows_bootstrap_download_smoke_contract.py": "bb60311587f0e4d14322f7d1c1e1f971bc5a1631",
+    "tests/test_windows_installer_completion_trace.py": "ef7c19732a7b648d4f1f6a9c536317a41c2ac6e6",
+}
+
+
 RETIRED_SOURCE_LINKS = {
     "chummer-core-engine": ("120000", "780339eb049c48b4f26334592892e8c2e85545c7"),
     "chummer-hub-registry": ("120000", "10e92acd7d2551101980a99ae442344a429c54f9"),
@@ -624,15 +676,15 @@ TRUSTED_GIT = Path("/usr/bin/git")
 MAX_UNSEALED_RECOVERY_DEPTH = 128
 NEXT_AUTHORITY_ORACLE = {
     "canonicalLock": {
-        "blob": "c9a9ddad17c0c0282f7e73677134c50c99109fef",
-        "commit": "51a0f6565484814c50bf115a889720f5aab91936",
+        "blob": "1e0f183e26e93e78c2ff3723c347ed2d290d9e37",
+        "commit": "90c821aeec02425a3bb134d9475aa0b1b08b5f35",
         "path": "config/package-plane.lock.json",
         "fixturePath": ORACLE_FIXTURE_PATH,
-        "rawSha256": "5e0529144ed9bb4a25f042542fe710c23b3ce6289e6293af98d4a7ac7c7f5c8d",
+        "rawSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
         "rawSizeBytes": 73998,
-        "semanticCanonicalSha256": "5e0529144ed9bb4a25f042542fe710c23b3ce6289e6293af98d4a7ac7c7f5c8d",
+        "semanticCanonicalSha256": "2a8bd048f6948ed696c2e4c673931b63fe151b35920527946328f617530f6897",
         "semanticCanonicalSizeBytes": 73998,
-        "tree": "64121db0613a23e67615eb1d86680025e69217bd"
+        "tree": "ab911b517b48e32c8676939f73b2a3f0e326c3ef"
     },
     "producerLock": {
         "absentAtCommit": True,
@@ -833,7 +885,9 @@ def diff_rows(repo_root: Path, base: str, target: str) -> list[dict[str, Any]]:
                 raise PresealError(f"retired source link differs from exact base or remains in target: {relative}")
             content_commit = base
         elif relative not in ALLOWED_RECIPE_PATHS:
-            raise PresealError(f"preseal recipe path is not allowed: {relative}")
+            if (base != WINDOWS_INTEGRATION_BASE or relative not in WINDOWS_INTEGRATION_BLOBS
+                    or commit_blob(repo_root, target, relative) != WINDOWS_INTEGRATION_BLOBS[relative]):
+                raise PresealError(f"preseal recipe path is not allowed: {relative}")
         payload = commit_bytes(repo_root, content_commit, relative)
         rows.append(
             {

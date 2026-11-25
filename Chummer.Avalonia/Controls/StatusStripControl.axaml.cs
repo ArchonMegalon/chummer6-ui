@@ -22,7 +22,8 @@ public partial class StatusStripControl : UserControl, IStatusStripSurface
             serviceState: state.ServiceState,
             timeState: state.TimeState,
             complianceState: state.ComplianceState,
-            isBusy: state.IsBusy);
+            isBusy: state.IsBusy,
+            saveState: state.SaveState);
     }
 
     public void SetValues(
@@ -30,12 +31,18 @@ public partial class StatusStripControl : UserControl, IStatusStripSurface
         string serviceState,
         string timeState,
         string complianceState,
-        bool isBusy = false)
+        bool isBusy = false,
+        string saveState = "")
     {
         CharacterStateText.Text = characterState;
         ServiceStateText.Text = serviceState;
         TimeStateText.Text = timeState;
-        ComplianceStateText.Text = complianceState;
+        ComplianceStateText.Text = StatusStripDisplayText.Summary(complianceState);
+        if (this.FindControl<Button>("StatusDetailsButton")?.Flyout is Flyout { Content: TextBlock details })
+            details.Text = complianceState;
+        SaveStateText.Text = saveState;
+        SaveStateText.IsVisible = !string.IsNullOrEmpty(saveState);
+        SaveStateSeparator.IsVisible = !string.IsNullOrEmpty(saveState);
         WorkbenchProgressBar.IsVisible = true;
         WorkbenchProgressBar.IsIndeterminate = isBusy;
         WorkbenchProgressBar.Value = isBusy ? 0d : 100d;
@@ -77,4 +84,7 @@ public sealed record StatusStripState(
     string ComplianceState)
 {
     public bool IsBusy { get; init; }
+
+    /// <summary>Dedicated save-state segment (gen6 T794). Empty hides the segment.</summary>
+    public string SaveState { get; init; } = string.Empty;
 }

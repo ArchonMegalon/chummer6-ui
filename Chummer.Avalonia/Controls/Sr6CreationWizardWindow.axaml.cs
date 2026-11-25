@@ -253,6 +253,7 @@ public partial class Sr6CreationWizardWindow : Window
             {
                 MinWidth = 120,
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(box);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(box, $"sr6-priority-{categoryId}");
             foreach (string rank in PriorityRanks)
             {
@@ -323,6 +324,7 @@ public partial class Sr6CreationWizardWindow : Window
                 Increment = 1,
                 MinWidth = 100,
             };
+            DesktopShellTheme.ApplyShellNumericUpDownTheme(input);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(input, $"sr6-pointbuy-{pool.Id}");
             input.ValueChanged += (_, _) =>
             {
@@ -401,6 +403,318 @@ public partial class Sr6CreationWizardWindow : Window
     private Sr6CreationFinalizationReview? _finalizationReview;
     private CheckBox? _lossAcknowledgement;
     private bool _finalizeBusy;
+
+    // Talent-matching domain for the current talent (null = domain not applicable).
+    // Catalog options for the talent domain from the state the Core authority
+    // published (null = domain options not published for this draft).
+    private IEnumerable<(string Id, string Label)> DomainOptions(string domain)
+    {
+        Sr6CreationFoundationState foundation = _state!.Foundation;
+        switch (domain)
+        {
+            case "spells":
+                foreach (Sr6CreationSpellOption o in foundation.SpellOptions ?? [])
+                {
+                    yield return (o.Id, $"{o.SourceName} ({o.Kind})");
+                }
+                break;
+            case "complex-forms":
+                foreach (Sr6CreationComplexFormOption o in foundation.ComplexFormOptions ?? [])
+                {
+                    yield return (o.Id, o.SourceName);
+                }
+                break;
+            case "adept-powers":
+                foreach (Sr6CreationAdeptPowerOption o in foundation.AdeptPowerOptions ?? [])
+                {
+                    yield return (o.Id, o.SourceName);
+                }
+                break;
+        }
+    }
+
+    private static string? TalentDomainFor(string? talentId) => TalentDomainsFor(talentId).FirstOrDefault();
+
+    // Every talent domain the talent can exercise: mystic-adept carries BOTH
+    // spells and adept powers; other talents map to their single domain as
+    // before. Order is stable (spells first) so confirm-step rendering is
+    // deterministic for tests and users.
+    private static IReadOnlyList<string> TalentDomainsFor(string? talentId) => talentId switch
+    {
+        "technomancer" => ["complex-forms"],
+        "adept" => ["adept-powers"],
+        "mystic-adept" => ["spells", "adept-powers"],
+        "magician" or "aspected-magician" => ["spells"],
+        _ => [],
+    };
+
+    // Catalog ids currently saved in the foundation selection for a talent domain.
+    private IReadOnlyList<string> SavedTalentDomainIds(string domain)
+    {
+        var saved = _state?.Foundation.Selection?.Selection;
+        if (saved is null)
+        {
+            return [];
+        }
+        return domain switch
+        {
+            "spells" => saved.Spells?.CatalogIds ?? [],
+            "complex-forms" => saved.ComplexForms?.Choices.Select(c => c.CatalogId).ToList() ?? [],
+            "adept-powers" => saved.AdeptPowers?.Choices.Select(c => c.CatalogId).ToList() ?? [],
+            "tradition" => saved.Tradition is { } t ? [t.TraditionId] : [],
+            _ => [],
+        };
+    }
+
+    // Replace the saved talent-domain ids and invalidate the held preview. The
+    // next EnsurePreviewHeld rebuilds the whole selection (current domain ids
+    // are seeded from the saved selection) and Core validates it through the
+    // ordinary Prepare seam.
+    private void StoreTalentDomainIds(string domain, IReadOnlyList<string> ids)
+    {
+        // Guard the edit handler against a stale owner/workspace: the context check
+        // closes the window and refuses the write when the character moved on.
+        if (!RequireCurrentContext())
+        {
+            return;
+        }
+        var saved = _state?.Foundation.Selection?.Selection;
+        if (saved is null)
+        {
+            return;
+        }
+        Sr6CreationFoundationSelection updated = domain switch
+        {
+            "spells" => saved with { Spells = new Sr6CreationSpellSelection(ids) },
+            "complex-forms" => saved with { ComplexForms = new Sr6CreationComplexFormSelection(
+                ids.Select(id => new Sr6CreationComplexFormChoice(id)).ToList()) },
+            // Rating preservation: an unchanged catalog id keeps its saved choice
+            // (including a previously raised rating); only newly picked ids enter at
+            // rating 1. The preview rejects ratings beyond the option maximum
+            // through Core. Ratings for dropped ids are discarded with the pick.
+            "adept-powers" => saved with { AdeptPowers = new Sr6CreationAdeptPowerSelection(
+                ids.Select(id => saved.AdeptPowers?.Choices.FirstOrDefault(c => c.CatalogId == id)
+                    ?? new Sr6CreationAdeptPowerChoice(id, 1)).ToList()) },
+            "tradition" => ids.Count == 1 ? saved with { Tradition = new Sr6CreationTraditionSelection(ids[0]) } : saved,
+            _ => saved,
+        };
+        if (ReferenceEquals(updated, saved))
+        {
+            return;
+        }
+        _state = _state! with { Foundation = _state.Foundation with { Selection = _state.Foundation.Selection with { Selection = updated } } };
+        _preparedPreview = null;
+        _confirmedPreviewDigest = null;
+        UpdateFooterForDirtySelection();
+    }
+
+    private void StoreAdeptPowerRating(string catalogId, int rating)
+    {
+        if (!RequireCurrentContext() || _state?.Foundation.Selection is not { } decision) return;
+        var option = _state.Foundation.AdeptPowerOptions?.SingleOrDefault(p => p.Id == catalogId);
+        if (option is null || rating < 1 || rating > option.MaximumRating) return;
+        var choices = decision.Selection.AdeptPowers?.Choices;
+        if (choices is null || !choices.Any(p => p.CatalogId == catalogId)) return;
+        var updated = decision.Selection with
+        {
+            AdeptPowers = new Sr6CreationAdeptPowerSelection(choices.Select(p =>
+                p.CatalogId == catalogId ? p with { Rating = rating } : p).ToArray())
+        };
+        _state = _state with { Foundation = _state.Foundation with { Selection = decision with { Selection = updated } } };
+        _preparedPreview = null;
+        _confirmedPreviewDigest = null;
+        UpdateFooterForDirtySelection();
+    }
+
+    private void RenderTalentDomainEditor(StackPanel panel)
+    {
+        IReadOnlyList<string> domains = TalentDomainsFor(CurrentTalentId);
+        if (domains.Count == 0)
+        {
+            return; // mundane talents have no talent domain
+        }
+        if (CurrentTalentId is "mystic-adept" or "adept"
+            && _state?.Foundation.TalentOptions is { MaximumSelectedPowerPoints: > 0 } talentOptions)
+        {
+            var allocation = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            var label = new TextBlock();
+            var decrease = new Button { Content = "−" };
+            var increase = new Button { Content = "+" };
+            AutomationProperties.SetAutomationId(increase, "sr6-power-points-increase");
+            AutomationProperties.SetAutomationId(decrease, "sr6-power-points-decrease");
+            AutomationProperties.SetAutomationId(label, "sr6-power-points-value");
+            void RefreshAllocation()
+            {
+                int value = _state?.Foundation.Selection?.Selection.TalentAllocation?.SelectedPowerPoints ?? 0;
+                label.Text = $"Power points reserved: {value}";
+                decrease.IsEnabled = value > 0;
+                increase.IsEnabled = value < talentOptions.MaximumSelectedPowerPoints;
+            }
+            void ChangeAllocation(int delta)
+            {
+                if (!RequireCurrentContext() || _state?.Foundation.Selection is not { } decision) return;
+                int value = decision.Selection.TalentAllocation?.SelectedPowerPoints ?? 0;
+                int next = value + delta;
+                if (next < 0 || next > talentOptions.MaximumSelectedPowerPoints) return;
+                var updated = decision.Selection with { TalentAllocation = new Sr6CreationTalentSelection(next) };
+                _state = _state with { Foundation = _state.Foundation with { Selection = decision with { Selection = updated } } };
+                _preparedPreview = null;
+                _confirmedPreviewDigest = null;
+                UpdateFooterForDirtySelection();
+                RefreshAllocation();
+            }
+            decrease.Click += (_, _) => ChangeAllocation(-1);
+            increase.Click += (_, _) => ChangeAllocation(1);
+            RefreshAllocation();
+            allocation.Children.Add(label);
+            allocation.Children.Add(decrease);
+            allocation.Children.Add(increase);
+            panel.Children.Add(allocation);
+        }
+        bool multiDomain = domains.Count > 1;
+        foreach (string domain in domains)
+        {
+            if (multiDomain)
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Text = domain == "spells" ? "Spell options"
+                        : domain == "tradition" ? "Tradition"
+                        : "Adept power options",
+                });
+            }
+            else
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Classes = { "shell-caption" },
+                    TextWrapping = TextWrapping.Wrap,
+                    Text = "Talent domain: choose the known formulas for the draft. Free slots apply first; extra picks cost character points on the confirm preview.",
+                });
+            }
+            IReadOnlyList<string> savedIds = SavedTalentDomainIds(domain);
+            int rendered = 0;
+            foreach ((string optionIdSeed, string optionLabel) in DomainOptions(domain))
+            {
+                var row = new CheckBox
+                {
+                    Content = optionLabel,
+                    Tag = domain,
+                    IsChecked = savedIds.Contains(optionIdSeed),
+                };
+                global::Avalonia.Automation.AutomationProperties.SetAutomationId(row, $"sr6-talent-domain-{optionIdSeed}");
+                string optionId = optionIdSeed;
+                string rowDomain = domain;
+                row.IsCheckedChanged += (_, _) =>
+                {
+                    var current = SavedTalentDomainIds(rowDomain).ToList();
+                    bool has = current.Contains(optionId);
+                    if (row.IsChecked == true && !has)
+                    {
+                        current.Add(optionId);
+                    }
+                    else if (row.IsChecked != true && has)
+                    {
+                        current.Remove(optionId);
+                    }
+                    else
+                    {
+                        return; // no change
+                    }
+                    StoreTalentDomainIds(rowDomain, current);
+                };
+                if (domain == "adept-powers"
+                    && _state?.Foundation.AdeptPowerOptions?.SingleOrDefault(p => p.Id == optionIdSeed) is { } powerOption)
+                {
+                    var ratingRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                    var ratingLabel = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+                    var lower = new Button { Content = "−" };
+                    var higher = new Button { Content = "+" };
+                    AutomationProperties.SetAutomationId(lower, "sr6-power-rating-decrease-" + optionIdSeed);
+                    AutomationProperties.SetAutomationId(higher, "sr6-power-rating-increase-" + optionIdSeed);
+                    AutomationProperties.SetAutomationId(ratingLabel, "sr6-power-rating-value-" + optionIdSeed);
+                    int CurrentRating() => _state?.Foundation.Selection?.Selection.AdeptPowers?.Choices
+                        .FirstOrDefault(p => p.CatalogId == optionIdSeed)?.Rating ?? 1;
+                    void RefreshRating()
+                    {
+                        int rating = CurrentRating();
+                        ratingLabel.Text = $"Rating {rating} / {powerOption.MaximumRating}";
+                        lower.IsEnabled = row.IsChecked == true && rating > 1;
+                        higher.IsEnabled = row.IsChecked == true && rating < powerOption.MaximumRating;
+                    }
+                    lower.Click += (_, _) => { StoreAdeptPowerRating(optionIdSeed, CurrentRating() - 1); RefreshRating(); };
+                    higher.Click += (_, _) => { StoreAdeptPowerRating(optionIdSeed, CurrentRating() + 1); RefreshRating(); };
+                    row.IsCheckedChanged += (_, _) => RefreshRating();
+                    RefreshRating();
+                    ratingRow.Children.Add(row);
+                    ratingRow.Children.Add(lower);
+                    ratingRow.Children.Add(ratingLabel);
+                    ratingRow.Children.Add(higher);
+                    panel.Children.Add(ratingRow);
+                }
+                else
+                {
+                    panel.Children.Add(row);
+                }
+                rendered++;
+            }
+            if (rendered == 0)
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Classes = { "shell-caption" },
+                    TextWrapping = TextWrapping.Wrap,
+                    Text = "The rules authority has not published catalog options for this talent domain yet; the draft keeps its saved selections.",
+                });
+            }
+        }
+    }
+
+    // T888 magical-tradition domain: the confirm step renders the tradition
+    // catalog the Core authority publishes (foundation.TraditionOptions, gated
+    // to magician/mystic-adept/aspected-magician) as single-select radio rows.
+    // Choosing a tradition edits the saved foundation selection and invalidates
+    // the held preview exactly like the talent-domain picks, so the ordinary
+    // Prepare seam validates the tradition through Core before any confirm.
+    private void RenderTraditionEditor(StackPanel panel)
+    {
+        Sr6CreationFoundationState foundation = _state!.Foundation;
+        if ((foundation.TraditionOptions ?? []).Count == 0)
+        {
+            return; // mundane talents and drafts without published options keep the zero-selection shape
+        }
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Tradition",
+        });
+        string savedId = SavedTalentDomainIds("tradition").FirstOrDefault() ?? "";
+        foreach (Sr6CreationTraditionOption option in foundation.TraditionOptions ?? [])
+        {
+            var row = new RadioButton
+            {
+                Content = option.Name,
+                GroupName = "sr6-tradition",
+                IsChecked = string.Equals(option.Id, savedId, StringComparison.Ordinal),
+            };
+            global::Avalonia.Automation.AutomationProperties.SetAutomationId(row, $"sr6-tradition-{option.Id}");
+            string optionId = option.Id;
+            row.IsCheckedChanged += (_, _) =>
+            {
+                if (row.IsChecked != true)
+                {
+                    return; // deselection of a radio group is not a store path
+    
+                }
+                var current = SavedTalentDomainIds("tradition").ToList();
+                if (current.Count == 1 && current[0] == optionId)
+                {
+                    return; // no change
+                }
+                StoreTalentDomainIds("tradition", [optionId]);
+            };
+            panel.Children.Add(row);
+        }
+    }
 
     private void RenderFinalizeStep()
     {
@@ -519,6 +833,7 @@ public partial class Sr6CreationWizardWindow : Window
             // automation id set after construction
             MaxHeight = 160,
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(metatypeList);
         metatypeList.SelectionChanged += (_, _) =>
         {
             CurrentMetatypeId = metatypeList.SelectedItem as string;
@@ -536,6 +851,7 @@ public partial class Sr6CreationWizardWindow : Window
             // automation id set after construction
             MaxHeight = 160,
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(talentList);
         talentList.SelectionChanged += (_, _) =>
         {
             CurrentTalentId = talentList.SelectedItem as string;
@@ -594,6 +910,7 @@ public partial class Sr6CreationWizardWindow : Window
                 Increment = 1,
                 MinWidth = 80,
             };
+            DesktopShellTheme.ApplyShellNumericUpDownTheme(pointsInput);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(pointsInput, $"sr6-attribute-{option.AttributeId}-points");
             var adjustmentInput = new NumericUpDown
             {
@@ -604,6 +921,7 @@ public partial class Sr6CreationWizardWindow : Window
                 IsEnabled = option.AllowsAdjustmentPoints,
                 MinWidth = 80,
             };
+            DesktopShellTheme.ApplyShellNumericUpDownTheme(adjustmentInput);
             global::Avalonia.Automation.AutomationProperties.SetAutomationId(adjustmentInput, $"sr6-attribute-{option.AttributeId}-adjustment");
             pointsInput.ValueChanged += (_, _) =>
             {
@@ -674,6 +992,15 @@ public partial class Sr6CreationWizardWindow : Window
         global::Avalonia.Automation.AutomationProperties.SetAutomationId(confirmDigest, "sr6-confirm-digest");
         panel.Children.Add(confirmDigest);
 
+        // T877 SR6 increment: the talent-matching domain (spells for magician/
+        // mystic-adept/aspected-magician, complex forms for technomancer, adept
+        // powers for adept/mystic-adept) gets real catalog inputs here instead of
+        // silently committing the zero-spend shape. Choices edit the saved
+        // foundation selection and invalidate the held preview; the ordinary
+        // Prepare seam (Core Sr6CreationSpellRules / complex-form / power rules)
+        // validates limits, slots and blockers exactly as before.
+        RenderTalentDomainEditor(panel);
+        RenderTraditionEditor(panel);
         var confirmCheck = new CheckBox
         {
             Content = "I confirm this preview should be applied to the character draft.",
@@ -714,6 +1041,12 @@ public partial class Sr6CreationWizardWindow : Window
         FooterStatusText.Text = _preparedPreview is null
             ? "Selections changed - the wizard will request a fresh preview from the rules authority before you can confirm."
             : "Preview held for the current selection.";
+        // Any selection mutation voids the held acknowledgement digest; the Finish
+        // gate binds to the same invariant so a stale ack can never stay enabled.
+        if (_confirmedPreviewDigest is null)
+        {
+            FinishButton.IsEnabled = false;
+        }
     }
 
     private void ShowBlockers(IReadOnlyList<string> blockers, string outcome)
