@@ -46,6 +46,12 @@ public partial class DesktopDialogWindow : Window
     private readonly StackPanel _dialogActionsPanel;
     private IReadOnlyList<DesktopDialogField> _boundDialogFields = Array.Empty<DesktopDialogField>();
     private string _boundDialogMessage = string.Empty;
+    // Refusal feedback (r197): a refused create_character action keeps the dialog open and
+    // publishes (ActiveDialog = same dialog, Error/Notice). The static banner text is
+    // suppressed for these dialog ids, so the refusal is captured after the action and
+    // replayed on rebinds until the user retries or a different dialog binds.
+    private string? _pendingDialogRefusalBanner;
+    private string? _pendingDialogRefusalDialogId;
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
     private bool _originWizardAdvancedStoryControlsExpanded;
@@ -166,6 +172,7 @@ public partial class DesktopDialogWindow : Window
         _dialogMessageText.Text = visibleMessage;
         _dialogTitleText.IsVisible = false;
         _dialogMessageText.IsVisible = false;
+        ApplyPendingRefusalBanner(dialog.Id);
         string trustReceiptText = DesktopTrustReceiptText.BuildDialogReceipt(dialog);
         _dialogTrustReceiptPanel.Content = DesktopTrustPanelFactory.CreateDialogPanel(dialog, trustReceiptText);
         _dialogTrustReceiptPanel.IsVisible = false;
@@ -948,6 +955,63 @@ public partial class DesktopDialogWindow : Window
         string Value,
         string DisplayText,
         bool IsSelected);
+
+    private void ClearPendingDialogRefusal()
+    {
+        _pendingDialogRefusalBanner = null;
+        _pendingDialogRefusalDialogId = null;
+    }
+
+    /// <summary>
+    /// Replays a captured create_character refusal inside the dialog banner. The
+    /// refusal stays keyed to the dialog id it was refused for and clears when a
+    /// different dialog binds or a new create attempt starts.
+    /// </summary>
+    private void ApplyPendingRefusalBanner(string? dialogId)
+    {
+        if (!string.Equals(_pendingDialogRefusalDialogId, dialogId, StringComparison.Ordinal))
+        {
+            ClearPendingDialogRefusal();
+            return;
+        }
+
+        string refusal = _pendingDialogRefusalBanner ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(refusal))
+        {
+            return;
+        }
+
+        _dialogMessageText.Text = refusal;
+        _dialogMessageText.IsVisible = true;
+    }
+
+    private void CaptureDialogRefusalAfterAction(string dialogId, string? refusalActionId)
+    {
+        if (!string.Equals(refusalActionId, "create_character", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        CharacterOverviewState? state = _adapter?.State;
+        if (state is null)
+        {
+            return;
+        }
+
+        string? refusal = state.Error ?? state.Notice;
+        if (string.IsNullOrWhiteSpace(refusal)
+            || !string.Equals(state.ActiveDialog?.Id, dialogId, StringComparison.Ordinal))
+        {
+            // Nothing was refused for this dialog (the action was accepted and the
+            // dialog closed, or a different dialog is now active) - an older refusal
+            // from a previous attempt clears.
+            ClearPendingDialogRefusal();
+            return;
+        }
+
+        _pendingDialogRefusalBanner = refusal;
+        _pendingDialogRefusalDialogId = dialogId;
+    }
 
     private static bool SuppressDialogBanner(string? dialogId)
     {
@@ -3711,7 +3775,8 @@ public partial class DesktopDialogWindow : Window
 
             await ExecuteSafeAsync(
                 () => _adapter.ExecuteDialogActionAsync(actionId, CancellationToken.None),
-                $"execute action '{actionId}'");
+                $"execute action '{actionId}'",
+                refusalActionId: actionId);
         };
         return button;
     }
@@ -3904,9 +3969,13 @@ public partial class DesktopDialogWindow : Window
                 if (_adapter is null)
                     return;
 
+                string operationName = string.Equals(action.Id, "create_character", StringComparison.Ordinal)
+                    ? "create the character"
+                    : action.Id;
                 await ExecuteSafeAsync(
                     () => _adapter.ExecuteDialogActionAsync(action.Id, CancellationToken.None),
-                    $"execute action '{action.Id}'");
+                    operationName,
+                    refusalActionId: action.Id);
             };
             _dialogActionsPanel.Children.Add(button);
         }
@@ -5199,11 +5268,23 @@ public partial class DesktopDialogWindow : Window
             || string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task ExecuteSafeAsync(Func<Task> action, string operationName)
+    private async Task ExecuteSafeAsync(
+        Func<Task> action,
+        string operationName,
+        string? refusalActionId = null)
     {
         try
         {
+            if (string.Equals(refusalActionId, "create_character", StringComparison.Ordinal))
+            {
+                // Only a retry of Create wipes the previous refusal banner;
+                // field edits must keep it (it explains why Create is inert).
+                ClearPendingDialogRefusal();
+            }
+
             await action();
+            CaptureDialogRefusalAfterAction(BoundDialogId, refusalActionId);
+            ApplyPendingRefusalBanner(BoundDialogId);
         }
         catch (OperationCanceledException)
         {
