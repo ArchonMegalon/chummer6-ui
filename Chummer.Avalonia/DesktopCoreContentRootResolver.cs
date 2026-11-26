@@ -12,8 +12,8 @@ namespace Chummer.Avalonia;
 public static class DesktopCoreContentRootResolver
 {
     public const string BundleDirectoryName = CoreContentRootDiscovery.BundleDirectoryName;
-    public const string RuntimeSourceCommit = "bedc834ec0dd4602bb4b7d8bb7d7b81c291baa61";
-    public const string PackageRecipeCommit = "9036fef3c726c8dffe7f99987e4b04ce0a3a1abc";
+    public const string RuntimeSourceCommit = "5ff17bbc636ec160e26a46ef4a89eef73da37a3a";
+    public const string PackageRecipeCommit = "7867149e07344446a362616591de13f3d7bcab89";
 
     public static bool TryResolve(
         string repoRoot,
