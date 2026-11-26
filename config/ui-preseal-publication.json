@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "abc19f06efb9eb408f683fe5b643b1ed5ac5d005",
-  "baseTree": "84b9af20732c73d5655e12abe5f98308ef77d3a3",
+  "baseCommit": "3ac266e7966b9ba7e21312c169938a5b93e1c5b6",
+  "baseTree": "7840e89d7da707220fa3c8f68cdf456e56cabe4d",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -44,48 +44,20 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "e958535deeb7a736f7030ef27395b301184841f9",
-      "path": "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs",
-      "sha256": "3025bd7735aad5136222bb2e7a9ca139ac14e74dee02775e7bb064a5442b3d57",
-      "sizeBytes": 957825,
+      "blob": "565124f9a207e081dc55b7023420fdd39f136836",
+      "path": "Chummer.Avalonia/Controls/CharacterCreationWizardControl.axaml.cs",
+      "sha256": "1658aed34694a2c149f171a28f7c6899ad8329bf0d4d34d216be09ff25c82c04",
+      "sizeBytes": 186733,
       "status": "M"
     },
     {
-      "blob": "0523ed4c1738fd854357ae64cf8bc951fd8e1cbd",
+      "blob": "c8223b82f041c97de1a4e1c41648855ca7718209",
       "path": "Chummer.Tests/Presentation/CharacterCreationAiFinishGateAvaloniaTests.cs",
-      "sha256": "20ba667e3d5ede40bb78e75a41848909283d7282e13547c047b772a0b9e4918f",
-      "sizeBytes": 42378,
-      "status": "M"
-    },
-    {
-      "blob": "3b2e7d054b7df04bb8302987ad1ea3af1ddb430a",
-      "path": "config/ui-next-authority-oracle-v10.json",
-      "sha256": "7c64cd6fddd22e5c4ebe2377e4521c912f14d6d219aab3b27b50aadecf120d6e",
-      "sizeBytes": 74687,
-      "status": "M"
-    },
-    {
-      "blob": "e46710410c79373203067c78b403df5c537ba6a6",
-      "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "6fec5d7bb5c790fd2b55ca8e7ca8d79fce4a351697bb5a4973aade2764d6174b",
-      "sizeBytes": 304245,
-      "status": "M"
-    },
-    {
-      "blob": "c513ee25f1283dee7303e8bb44c66548b2d53ca1",
-      "path": "scripts/ai/verify_split_preseal_publication.py",
-      "sha256": "fc23ffdca1c8a139c36274803f13ef455606ac8e9dd06194fc851d9eeb7324b4",
-      "sizeBytes": 83940,
-      "status": "M"
-    },
-    {
-      "blob": "745227f4c0898e9960ccf8202f9768a02b6ad0f1",
-      "path": "tests/test_fresh_package_plane_controls.py",
-      "sha256": "1da3fe0c41ba1fcac0dc263b08c558f32d31b85f4be5aa209a054bd834556788",
-      "sizeBytes": 207686,
+      "sha256": "7ea95b74bc14f642a112364171c056712bfa0f70931268f8d338ed67fe5987a8",
+      "sizeBytes": 42797,
       "status": "M"
     }
   ],
-  "recipeTree": "a186aa1b17232e1c2004a245f66c38ef7351c5f9",
+  "recipeTree": "221b1e53c3e110dacc5bfd3d0efc5030ea632d43",
   "releaseClaim": false
 }
