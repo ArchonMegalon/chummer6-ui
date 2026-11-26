@@ -3295,6 +3295,8 @@ def require_exact_nuget_config_source(path: Path, feed: Path | None) -> None:
 CORE_CRLF_CHECKOUT_AUTHORITIES = frozenset({
     ("https://github.com/ArchonMegalon/chummer6-core.git", "5cf6a882ed2cac96973160def7d1e2833e7edac5"),
     ("https://github.com/ArchonMegalon/chummer6-core.git", "9036fef3c726c8dffe7f99987e4b04ce0a3a1abc"),
+    ("https://github.com/ArchonMegalon/chummer6-core.git", "5ff17bbc636ec160e26a46ef4a89eef73da37a3a"),
+    ("https://github.com/ArchonMegalon/chummer6-core.git", "7867149e07344446a362616591de13f3d7bcab89"),
 })
 
 
