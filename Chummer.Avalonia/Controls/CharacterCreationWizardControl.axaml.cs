@@ -3635,6 +3635,9 @@ public partial class CharacterCreationWizardControl : UserControl
         {
             "complete" or "completed" => "This step is complete.",
             "current" or "active" => "This is the current step.",
+            CharacterCreationWizardStepStatuses.InProgress when step.StepId == CharacterCreationWizardStepIds.Foundation
+                => "Choose a metatype, then select Next to choose a nationality.",
+            CharacterCreationWizardStepStatuses.InProgress => "This step is in progress.",
             "blocked" => "This step needs attention before you can continue.",
             "locked" => "This step unlocks after the earlier steps are confirmed.",
             "available" or "enterable" => "This step is ready for your input.",
