@@ -1,3 +1,35 @@
+## Controller work order — 26 November 2026: complete drafts and native wizard work
+
+Continue **friday-windows-session-01**, using its existing Friday provider, credentials and working state. The controller is issuing **WIN-009 generation 19** and **WIN-010 generation 2** in Teable. Read those live assignments before starting. This order supersedes older task ordering and base instructions below; historical findings and unfinished product work remain recorded.
+
+The integrated product baseline is `72769c8b051b7a399ad2e7cc1a6baea332489f82`. Fetch the exact assigned base and make focused successor branches. Preserve PR #609 (`windows/009-dwarf-journey-drive`, last checked head `f31ed3171843696b808cef0ae6a9c281133df2b8`) and its qualification state; it is not the base for unrelated new product changes. Do not submit its entire accumulated branch as a new feature PR.
+
+### WIN-009 generation 19 — complete draft files and ordinary SR5 Creation
+
+**First deliverable: a native, complete unfinished-draft file workflow.** Implement the native Open and Save Character As picker/review paths over the existing owner-bound continuation service and codec. Label the complete draft format distinctly from legacy `.chum5` export. Show the runner being saved or opened, preserve the complete continuation and frozen rules/amend context, and require the existing Core preview and explicit confirmation for adoption. Do not implement another serializer or reconstruct a draft from only character XML.
+
+The controller has verified the production continuation APIs in three fresh processes using a Sum-to-Ten draft: all ten points, original revisions and the full auxiliary-state digest survived. That establishes an API result, not the missing native picker/dialog route. Your acceptance is an installed-app Save As → close → fresh-process Open of that complete draft, with the actual allocations and continuation retained. Cancel, a changed runner/account and a stale review must leave the existing workspace unchanged. Add focused behavioral coverage for the new UI boundary; reuse unchanged codec evidence.
+
+**Second deliverable: fix the next real manual Life Modules obstacle.** Use a genuinely unfinished character with AI Finish off. Exercise the rendered Foundation controls and current Core option IDs: select metatype → ordinary Next → nationality → explicit confirmation → Formative Years → save and fresh-process reopen. Distinguish an obsolete probe selector from a missing or disabled product control. Fix the responsible UI/presenter path and a focused regression, rather than bypassing the route with direct store writes or AI-filled drafts. Submit a small PR as soon as the first actual defect and its native route are verified.
+
+**Retained native and sync acceptance:** keep the original `state_d3`, `T1030`, `state_st7` and prior receipts. Work on copies. Recheck amended Career legacy Save As, ordinary file reopen and orderly post-save process exit with the controller's next verified candidate. The controller owns the Core XML encoding correction and its package adoption; do not duplicate those edits. A private gen40x candidate is in preparation, not yet a native-accepted or public release. Use the exact asset identity supplied through Teable when it is ready, and do not wait for it to implement the independent picker and wizard changes.
+
+For the Windows → Android → Windows amended-character journey, supply the complete Windows-origin continuation, rules environment, ordered amend identities and expected numeric wizard result. Preserve the original failing fixture. If its recorded rows lack their authoritative owner, report that exact gap and produce a separate, explicitly identified synthetic mage fixture with a named amend and before/after spell-preview value. A file import alone is not account sync, and a recreated fixture is not evidence for the original one. The controller owns the Android and return-sync leg; coordinate the shared inputs directly.
+
+### WIN-010 generation 2 — supported native SR6 wizard completion
+
+Work independently of Android and the pending package build. Start a fresh SR6 runner through the edition picker and a supported method. Identify the first required missing input or unreachable manual stage, then implement it using its edition-specific Core preview/confirm operation. Prioritize a usable native editor and persisted choices over another broad status report. If the Core operation is missing, propose a separate scoped Core PR to the controller rather than embedding rules in Avalonia.
+
+Deliver each bounded fix in a separate reviewable PR. The affected native acceptance must show the wizard in its own window/modal, actual entered values and budgets, Cancel preserving the earlier saved state, and save → process exit → fresh-process reopen retaining those values and SR6 identity. Continue the supported route toward Career after each fix. For Career advancement, preserve Core-owned natural-limit, modifier, cost and confirmation checks; never substitute SR5 behavior or use the augmented ceiling for natural advancement. Keep unsupported domains visibly unavailable and distinguish them from completed supported steps.
+
+### Reporting and ownership
+
+Read the current Teable generation before dispatching work and after each milestone; send the existing session's heartbeat at least every 15 minutes while active. Report the exact source, installed artifact, first concrete blocker, focused test results and next action. A missing local native route is work to do, not a reason to mark the entire task complete. If a route fails, retain its diagnostic evidence and continue an independent assigned item.
+
+The controller owns integration, shared package changes, Android, signing and public download activation. Friday owns these Windows UI fixes and native verification on its existing host. No new Windows session, provider/authentication change, blind replay of uncertain writes or user relay is needed. Keep tokens, account data and private character/evidence files out of Git. Package/preseal checks, API harnesses and native acceptance remain separate claims. Run the affected checks; do not expand this work into another general release framework.
+
+---
+
 ## Controller work order 8055 — integrate Blackout, finish ordinary SR6 rewards
 
 Continue the same **WIN-006 generation 12**, **friday-windows-session-01**, with the existing provider, authentication and local work. This order supersedes 8023's task ordering. Root owns review, integration and publication; no user relay or routine approval is needed.
