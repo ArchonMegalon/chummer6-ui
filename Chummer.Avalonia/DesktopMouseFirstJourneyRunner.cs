@@ -1860,58 +1860,12 @@ internal static class DesktopMouseFirstJourneyRunner
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-priority-graph-evidence");
             }
             if (!string.IsNullOrWhiteSpace(plan.Metatype)
-                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
+                && string.Equals(plan.BuildMethod, Chummer.Contracts.Characters.CharacterCreationBuildMethods.LifeModules,
+                    StringComparison.OrdinalIgnoreCase))
             {
-                // Metatype/nationality option cards live on the foundation step,
-                // which the Core marks life-modules-only for Priority builds.
-                // plan.Metatype is non-empty only for Life-Modules plans.
-                // (WIN-009 Priority plans carry plan.Metatype as the requested
-                // heritage metatype, already selected at the heritage step.)
-                await SelectWizardOptionAsync(
-                    window,
-                    wizard,
-                    plan.Metatype,
-                    steps,
-                    journeyTimeout.Token,
-                    recordPointerAction,
-                    requirePresent: false);
+                await CompleteLifeModuleFoundationAsync(wizard, plan.Metatype, steps, journeyTimeout.Token, recordPointerAction);
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-foundation-selected");
             }
-
-            // The foundation (Life-Modules) flow only applies when the journey
-            // plan drives a Life-Modules build; Priority builds route through
-            // the prerequisite draft instead. (WIN-009 Priority plans may carry
-            // plan.Metatype as the requested heritage metatype, already applied
-            // at the heritage step - the foundation flow keys on the method.)
-            if (!string.IsNullOrWhiteSpace(plan.Metatype)
-                && !string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(plan.BuildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
-            {
-            string nationalityOptionId =
-                await WaitForWizardNationalityOptionAsync(window, steps, journeyTimeout.Token);
-            await SelectWizardOptionAsync(
-                window,
-                wizard,
-                nationalityOptionId,
-                steps,
-                journeyTimeout.Token,
-                recordPointerAction,
-                requirePresent: true);
-            await WaitForWizardFoundationConfirmableAsync(wizard, steps, journeyTimeout.Token);
-            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02b-foundation-preview");
-            await ClickWizardButtonUntilEffectAsync(
-                wizard,
-                "creation-wizard-foundation-confirm",
-                "foundation selection applied and wizard left the foundation step",
-                () => !string.Equals(
-                    wizard.StateForAutomation()?.Steps.FirstOrDefault(step => step.IsSelected)?.StepId,
-                    "foundation",
-                    StringComparison.Ordinal),
-                steps,
-                journeyTimeout.Token,
-                recordPointerAction);
-            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-foundation-selected");
-            } // end !attributesEntered (life-modules foundation flow)
 
             // AI-finish leg (Build Ghost finishing flow). Env-gated so the
             // canonical sr5-priority scenario is untouched; when enabled the
@@ -16333,87 +16287,88 @@ global::Avalonia.VisualTree.TransformedBounds? tb = global::Avalonia.VisualTree.
         throw new TimeoutException($"creation wizard never reached the '{targetStepId}' step.");
     }
 
-    private static async Task SelectWizardOptionAsync(
-        MainWindow window,
-        CharacterCreationWizardControl wizard,
-        string optionId,
-        List<string> steps,
-        CancellationToken ct,
-        Action recordPointerAction,
-        bool requirePresent)
+    internal static async Task CompleteLifeModuleFoundationAsync(
+        CharacterCreationWizardControl wizard, string metatype, List<string> steps,
+        CancellationToken ct, Action recordPointerAction)
     {
-        Button? card = null;
-        await WaitForAsync(
-            steps,
-            $"option card {optionId} rendered and enabled",
-            () =>
+        const string next = "creation-wizard-continue";
+        const string confirm = "creation-wizard-foundation-confirm";
+        string moduleStep = CharacterCreationWizardStepIds.LifeModules;
+        string foundation = CharacterCreationWizardStepIds.Foundation;
+        var initial = wizard.StateForAutomation() ?? throw new InvalidOperationException("The wizard has no current workspace.");
+        string workspace = initial.WorkspaceId;
+        long revision = initial.WorkspaceRevision;
+
+        CharacterCreationWizardDesktopState? Current()
+        {
+            var state = wizard.StateForAutomation();
+            if (state is not null && state.WorkspaceId != workspace)
+                throw new InvalidOperationException("Workspace changed during the Life Modules journey.");
+            return state;
+        }
+
+        async Task PressAsync(string label, Func<Button?> resolve)
+        {
+            await WaitForAsync(steps, $"clickable {label}", () =>
             {
-                CharacterCreationWizardControl? current = FindWizardControl(window);
-                card = current is null
-                    ? null
-                    : FindWizardAutomationButton(current, $"creation-wizard-option-{optionId}");
-                return card is { IsEffectivelyEnabled: true };
-            },
-            ct);
-        card = FindWizardAutomationButton(wizard, $"creation-wizard-option-{optionId}");
-        if (card is null)
-        {
-            if (requirePresent)
-                throw new InvalidOperationException($"required option card '{optionId}' was not found.");
-            RecordStep(steps, $"option card {optionId} not present; skipped");
-            return;
-        }
-
-        bool clickObserved = false;
-        void OnClick(object? sender, RoutedEventArgs args) => clickObserved = true;
-        card.Click += OnClick;
-        try
-        {
-            await RoutePointerClickAsync(card);
-        }
-        finally
-        {
-            card.Click -= OnClick;
-        }
-
-        recordPointerAction();
-        RecordStep(steps, $"click wizard option {optionId}; delivered={clickObserved}");
-    }
-
-    private static async Task<string> WaitForWizardNationalityOptionAsync(
-        MainWindow window,
-        List<string> steps,
-        CancellationToken ct)
-    {
-        string? found = null;
-        await WaitForAsync(
-            steps,
-            "nationality (setting:) option card rendered on the foundation step",
-            () =>
-            {
-                CharacterCreationWizardControl? current = FindWizardControl(window);
-                if (current is null)
+                Button? target = resolve();
+                if (target is not { IsVisible: true, IsEffectivelyEnabled: true } || target.GetVisualRoot() is null)
                     return false;
-                found = current.StateForAutomation()?.LegalOptions
-                    .Select(option => option.OptionId)
-                    .FirstOrDefault(optionId => optionId.StartsWith("setting:", StringComparison.OrdinalIgnoreCase));
-                return found is not null;
-            },
-            ct);
-        return found
-            ?? throw new TimeoutException("no nationality (setting:) option card rendered on the foundation step.");
-    }
+                target.BringIntoView();
+                var (root, point) = ResolveClickRoot(target);
+                return root is InputElement input && input.InputHitTest(point) is Control hit
+                    && (ReferenceEquals(hit, target) || target.IsVisualAncestorOf(hit));
+            }, ct);
+            string result = await RoutePointerClickResolvedAsync(wizard, waitForClick: false, liveTarget: resolve);
+            RecordStep(steps, $"press {label}; {result}");
+            if (ParsePointerDeliveryResult(result).Kind != PointerDeliveryKind.Delivered)
+                throw new InvalidOperationException($"The {label} click was not confirmed.");
+            recordPointerAction();
+        }
 
-    private static async Task WaitForWizardFoundationConfirmableAsync(
-        CharacterCreationWizardControl wizard,
-        List<string> steps,
-        CancellationToken ct)
-    {
-        await WaitForAsync(
-            steps,
-            "foundation preview confirmable (metatype + nationality selected)",
-            () => wizard.FoundationPreviewConfirmable,
-            ct);
+        Task ClickOnceAsync(string id) => PressAsync(id, () => FindWizardAutomationButton(wizard, id));
+
+        async Task ChooseAsync(string step, string? requested)
+        {
+            CharacterCreationWizardDesktopOption? selected = null;
+            Button? Resolve()
+            {
+                var state = Current();
+                if (state?.ActiveStepId != step || state.WorkspaceRevision != revision)
+                    return null;
+                return wizard.GetVisualDescendants().OfType<Button>().FirstOrDefault(button =>
+                    button is { IsVisible: true, IsEffectivelyEnabled: true, Tag: CharacterCreationWizardDesktopOption option }
+                    && option.IsEnabled && (selected is null || selected.OptionId == option.OptionId && selected.VersionId == option.VersionId)
+                    && (requested is null || string.Equals(option.OptionId, requested, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(option.Label, requested, StringComparison.OrdinalIgnoreCase))
+                    && state.LegalOptions.Any(legal => legal.IsEnabled && legal.OptionId == option.OptionId
+                        && legal.VersionId == option.VersionId));
+            }
+            await WaitForAsync(steps, $"enabled choice on {step}", () =>
+            {
+                selected = Resolve()?.Tag as CharacterCreationWizardDesktopOption;
+                return selected is not null;
+            }, ct);
+            await PressAsync($"{step} option {selected!.OptionId} version {selected.VersionId}", Resolve);
+        }
+
+        if (initial.ActiveStepId != foundation)
+            await ClickOnceAsync("creation-wizard-step-" + foundation);
+        await ChooseAsync(foundation, metatype);
+        await ClickOnceAsync(next);
+        await ChooseAsync(moduleStep, null);
+        await WaitForAsync(steps, "foundation preview on the original revision", () =>
+            Current() is { } state && state.ActiveStepId == moduleStep && state.WorkspaceRevision == revision
+                && wizard.FoundationPreviewConfirmable, ct);
+        await ClickOnceAsync(confirm);
+        await WaitForAsync(steps, "Core advanced the saved foundation revision",
+            () => Current() is { } state && state.WorkspaceRevision > revision, ct);
+        if (Current()?.ActiveStepId != moduleStep)
+            await ClickOnceAsync("creation-wizard-step-" + moduleStep);
+        await WaitForAsync(steps, "Formative Years visible after the nationality confirmation", () =>
+            Current() is { JourneyStep.CurrentStageOrder: 2 } state && state.ActiveStepId == moduleStep
+                && state.WorkspaceRevision > revision, ct);
+        RecordStep(steps, $"Life Modules reached stage 2; workspace revision {revision} -> {Current()!.WorkspaceRevision}");
     }
 
     // Manual deep-stage leg (gen-8 item 4). Drives the real attribute and skill
