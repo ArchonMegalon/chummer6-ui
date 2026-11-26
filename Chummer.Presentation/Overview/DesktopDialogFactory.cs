@@ -3204,7 +3204,8 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
             VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy,
             HideMasterIndex = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHideMasterIndex", fallback.HideMasterIndex),
             AnalyticsOptIn = ParseGlobalAnalyticsOptIn(dialog, fallback),
-            DisableAiFeatures = DesktopDialogFieldValueParser.ParseBool(dialog, "globalDisableAiFeatures", fallback.DisableAiFeatures)
+            DisableAiFeatures = DesktopDialogFieldValueParser.ParseBool(dialog, "globalDisableAiFeatures", fallback.DisableAiFeatures),
+            ShowOnlineCampaignRunSurfaces = DesktopDialogFieldValueParser.ParseBool(dialog, "globalShowOnlineCampaignRunSurfaces", fallback.ShowOnlineCampaignRunSurfaces)
         });
     }
 
@@ -4623,6 +4624,13 @@ public sealed partial class DesktopDialogFactory : IDesktopDialogFactory
                 "globalDisableAiFeatures",
                 "Hide helper buttons",
                 preferences.DisableAiFeatures ? "true" : "false",
+                "false",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField(
+                "globalShowOnlineCampaignRunSurfaces",
+                "Show Black Ledger and online campaign-run search surfaces (experimental)",
+                preferences.ShowOnlineCampaignRunSurfaces ? "true" : "false",
                 "false",
                 InputType: "checkbox",
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Right)

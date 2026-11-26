@@ -49,6 +49,11 @@ internal sealed class DesktopGhostwireWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
+        if (!DesktopPreferenceRuntime.LoadOrCreateState(headId).ShowOnlineCampaignRunSurfaces)
+        {
+            return;
+        }
+
         DesktopGhostwireWindow dialog = await CreateAsync().ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;

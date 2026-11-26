@@ -115,6 +115,23 @@ public static class OverviewCommandPolicy
         "/account/local-co-processor"
     ];
 
+    private static readonly HashSet<string> OnlineCampaignRunHorizonIds = new(StringComparer.Ordinal)
+    {
+        "black_ledger",
+        "runsite",
+        "run_control",
+        "table_pulse",
+        "ghostwire",
+        "anarchy"
+    };
+
+    private static readonly string[] OnlineCampaignRunRoutePrefixes =
+    [
+        "/ledger",
+        "/account/ledger",
+        "/account/runsites"
+    ];
+
     private static readonly HashSet<string> CoreCommandIds = new(StringComparer.Ordinal)
     {
         "save_character",
@@ -224,6 +241,22 @@ public static class OverviewCommandPolicy
 
     public static bool IsBlockedByAiFeaturePreferenceForRoute(string relativeHref, DesktopPreferenceState preferences)
         => preferences.DisableAiFeatures && IsAiFeatureRoute(relativeHref);
+
+    public static bool IsOnlineCampaignRunHorizon(string horizonId)
+        => OnlineCampaignRunHorizonIds.Contains(horizonId);
+
+    public static bool IsHiddenByOnlineCampaignRunPreferenceForHorizon(string horizonId, DesktopPreferenceState preferences)
+        => !preferences.ShowOnlineCampaignRunSurfaces && IsOnlineCampaignRunHorizon(horizonId);
+
+    public static bool IsOnlineCampaignRunRoute(string relativeHref)
+        => OnlineCampaignRunRoutePrefixes.Any(prefix =>
+            relativeHref.Equals(prefix, StringComparison.Ordinal)
+            || relativeHref.StartsWith(prefix + "/", StringComparison.Ordinal)
+            || relativeHref.StartsWith(prefix + "#", StringComparison.Ordinal)
+            || relativeHref.StartsWith(prefix + "?", StringComparison.Ordinal));
+
+    public static bool IsHiddenByOnlineCampaignRunPreferenceForRoute(string relativeHref, DesktopPreferenceState preferences)
+        => !preferences.ShowOnlineCampaignRunSurfaces && IsOnlineCampaignRunRoute(relativeHref);
 
     public static bool IsKnownSharedCommand(string commandId)
     {

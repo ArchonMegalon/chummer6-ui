@@ -320,7 +320,8 @@ internal sealed class DesktopHorizonsWindow : Window
     }
 
     private bool ShouldShowWorkbenchEntry(DesktopHorizonWorkbenchEntry entry)
-        => !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(entry.Id, _preferences);
+        => !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(entry.Id, _preferences)
+            && !OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon(entry.Id, _preferences);
 
     private Control CreateNativeLaunchCard(DesktopHorizonWorkbenchEntry entry, Func<Task> openNative)
     {
