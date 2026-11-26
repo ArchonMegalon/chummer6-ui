@@ -184,7 +184,11 @@ public sealed class CharacterCreationAiFinishGateAvaloniaTests
             try
             {
                 session = HeadlessUnitTestSession.StartNew(typeof(AiFinishGateHeadlessAppBootstrap));
-                session.Dispatch(action, CancellationToken.None).GetAwaiter().GetResult();
+                session.Dispatch<bool>(async () =>
+                {
+                    await action();
+                    return true;
+                }, CancellationToken.None).GetAwaiter().GetResult();
             }
             finally
             {
@@ -819,4 +823,76 @@ public sealed class CharacterCreationWizardFinalizeAvailabilityAvaloniaTests
             host.Close();
         });
     }
+}
+
+[TestClass]
+public sealed class LifeModuleFoundationJourneyTests
+{
+    [TestMethod]
+    public void Journey_advances_to_nationality_and_confirms_once_before_reporting_stage_two()
+        => ExerciseJourney(advanceRevision: true);
+
+    [TestMethod]
+    public void Stage_two_on_the_original_revision_does_not_accept_or_send_confirmation_again()
+        => ExerciseJourney(advanceRevision: false);
+
+    private static void ExerciseJourney(bool advanceRevision)
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(async () =>
+        {
+            const string workspace = "life-module-journey";
+            const string foundation = CharacterCreationWizardStepIds.Foundation;
+            const string modules = CharacterCreationWizardStepIds.LifeModules;
+            var wizard = new CharacterCreationWizardControl();
+            var window = new Window { Content = wizard, Width = 1100, Height = 850 };
+            var actions = new List<string>();
+            List<string> steps = [];
+            var metatype = new CharacterCreationWizardDesktopOption("metatype-id", null, "Human",
+                true, null, new Dictionary<string, string>(), [], [], [], null, null);
+            var blocked = metatype with { OptionId = "nationality-id", VersionId = "blocked", Label = "Blocked", IsEnabled = false };
+            var legal = blocked with { VersionId = "enabled-version", Label = "Nationality", IsEnabled = true };
+            void Bind(string step, long revision, bool advanced = false)
+            {
+                var choices = step == foundation ? new[] { metatype } : advanced ? [] : new[] { blocked, legal };
+                var ghost = new CharacterCreationWizardBuildGhostContext("v1", workspace, revision, "snapshot", step,
+                    "sr5", "runtime", CharacterCreationBuildMethods.LifeModules, [], choices, [], []);
+                CharacterCreationWizardDesktopStep Row(string id) =>
+                    new(id, id, "available", true, id != step, false, id == step, [], [], [], []);
+                wizard.SetState(new(workspace, revision, "snapshot", step, [Row(foundation), Row(modules)],
+                    [], choices, [], [], step == foundation, false, false, false, new(false, null), ghost,
+                    JourneyStep: advanced ? new(2, "formative-years", "Formative Years", false, false) : null));
+            }
+
+            wizard.ContinueRequested += (_, _) => { actions.Add("Next"); Bind(modules, 3); };
+            wizard.FoundationOptionClickRequested += (_, request) =>
+            {
+                actions.Add(request.Option.VersionId ?? request.Option.OptionId);
+                if (request.Option != legal) return;
+                CharacterCreationBudgetState budget = new("life-modules", "Karma", 20m, 0m, 20m, true, [], "karma");
+                var prepared = new CharacterCreationFoundationPreparedPreview("snapshot", null!, "Human", null!,
+                    null, null, [], new Dictionary<string, string>(), budget, new("life-modules", 0m, "karma"),
+                    budget, [], [], true, true, true, false, "preview");
+                wizard.SetFoundationPrepareResult(new("success", null, prepared, []));
+            };
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(12));
+            wizard.FoundationConfirmRequested += (_, request) =>
+            {
+                actions.Add(request.PreviewDigest);
+                Bind(modules, advanceRevision ? 4 : 3, advanced: true);
+                if (!advanceRevision) timeout.CancelAfter(TimeSpan.FromMilliseconds(600));
+            };
+            try
+            {
+                Bind(foundation, 3);
+                window.Show();
+                try
+                {
+                    await DesktopMouseFirstJourneyRunner.CompleteLifeModuleFoundationAsync(wizard, "Human", steps, timeout.Token, () => { });
+                    Assert.IsTrue(advanceRevision, "Stage 2 was accepted on the original revision.");
+                }
+                catch (OperationCanceledException) when (!advanceRevision && timeout.IsCancellationRequested) { }
+                CollectionAssert.AreEqual(new[] { "metatype-id", "Next", "enabled-version", "preview" }, actions);
+                Assert.AreEqual(advanceRevision, steps.Any(s => s.Contains("workspace revision 3 -> 4", StringComparison.Ordinal)));
+            }
+            finally { window.Close(); }
+        });
 }
