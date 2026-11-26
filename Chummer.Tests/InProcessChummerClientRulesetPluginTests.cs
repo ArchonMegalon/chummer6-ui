@@ -1879,6 +1879,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
         }
 
         public Func<string>? SnapshotDocumentFactory { get; set; }
+        public Func<WorkspaceDocumentAuxiliaryState>? SnapshotAuxiliaryFactory { get; init; }
+        public Func<OwnerScope, CharacterWorkspaceId, CommandResult<WorkspaceDownloadReceipt>>? OwnerDownload { get; init; }
 
         public CommandResult<WorkspaceDocumentSnapshot> GetWorkspace(OwnerScope owner, CharacterWorkspaceId id)
         {
@@ -1892,11 +1894,10 @@ public sealed class InProcessChummerClientRulesetPluginTests
                 true,
                 new WorkspaceDocumentSnapshot(
                     id,
-                    new WorkspaceDocument(new WorkspacePayloadEnvelope(
-                        "sr5",
-                        SchemaVersion: 1,
-                        PayloadKind: "output-guard",
-                        Payload: SnapshotDocumentFactory())),
+                    new WorkspaceDocument(new WorkspaceDocumentState("sr5", 1, "output-guard", SnapshotDocumentFactory())
+                    {
+                        AuxiliaryState = SnapshotAuxiliaryFactory?.Invoke() ?? WorkspaceDocumentAuxiliaryState.Empty
+                    }),
                     DateTimeOffset.UtcNow,
                     ContentRevision: 7,
                     SavedRevision: 7),
@@ -1930,7 +1931,8 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public CommandResult<WorkspaceDownloadReceipt> Download(CharacterWorkspaceId id) => throw new NotSupportedException();
 
-        public CommandResult<WorkspaceDownloadReceipt> Download(OwnerScope owner, CharacterWorkspaceId id) => Download(id);
+        public CommandResult<WorkspaceDownloadReceipt> Download(OwnerScope owner, CharacterWorkspaceId id)
+            => OwnerDownload?.Invoke(owner, id) ?? Download(id);
 
         public CommandResult<WorkspaceExportReceipt> ExportResult { get; init; } = new(false, null, "Export not configured.");
 
@@ -2238,6 +2240,58 @@ public sealed class InProcessChummerClientRulesetPluginTests
         Assert.IsTrue(result.Success, $"equal documents must print; error: {result.Error}");
         Assert.AreEqual(2, service.GetWorkspaceCallCount);
         Assert.AreEqual(1, service.PrintCallCount);
+    }
+
+    [TestMethod]
+    [DataRow(true, false)]
+    [DataRow(true, true)]
+    [DataRow(false, true)]
+    public async Task Download_checks_saved_foundation_values_across_snapshot_reads(bool rehydrate, bool changeDuringDownload)
+    {
+        CharacterWorkspaceId id = new("foundation-output");
+        OwnerScope owner = new("owner-a");
+        const string xml = "<character name=\"runner\" />";
+        Dictionary<string, string> choices = new() { ["attributes"] = "B" };
+        WorkspaceDocumentAuxiliaryState auxiliary = new(new CharacterCreationFoundationDraftLedger(
+            "foundation", id, 1, 7, "base-xml", "source", "human", new("sum-to-ten", null),
+            [], [], choices, ["foundation"], "compiled", false, "draft"));
+        WorkspaceDownloadReceipt receipt = new(id, WorkspaceDocumentFormat.NativeXml,
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(xml)), "runner.chum5", Encoding.UTF8.GetByteCount(xml), "sr5");
+        int downloads = 0;
+        NoOpWorkspaceService service = new()
+        {
+            SnapshotDocumentFactory = () => xml,
+            SnapshotAuxiliaryFactory = () => rehydrate
+                ? System.Text.Json.JsonSerializer.Deserialize<WorkspaceDocumentAuxiliaryState>(
+                    System.Text.Json.JsonSerializer.Serialize(auxiliary))!
+                : auxiliary,
+            OwnerDownload = (requestedOwner, requestedId) =>
+            {
+                Assert.AreEqual(owner, requestedOwner);
+                Assert.AreEqual(id, requestedId);
+                downloads++;
+                if (changeDuringDownload) choices["attributes"] = "A";
+                return new(true, receipt, null);
+            }
+        };
+        InProcessChummerClient client = new(service, CreateRuntimeShellCatalogResolver(),
+            ownerContextAccessor: new StubOwnerContextAccessor(owner));
+        CommandResult<WorkspaceDownloadReceipt> result = await client.DownloadAsync(
+            client.CaptureOwnerContext(), id, expectedContentRevision: 7, CancellationToken.None);
+
+        Assert.AreEqual(2, service.GetWorkspaceCallCount);
+        Assert.AreEqual(1, downloads);
+        if (changeDuringDownload)
+        {
+            Assert.IsFalse(result.Success);
+            Assert.AreEqual(WorkspaceOperationOutcome.Conflict, result.Outcome);
+            Assert.IsNull(result.Value);
+        }
+        else
+        {
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.AreSame(receipt, result.Value);
+        }
     }
 
     [TestMethod]
