@@ -112,8 +112,8 @@ public sealed class CharacterOverviewViewModelAdapter : IDisposable
     public Task ImportAsync(byte[] documentBytes, CancellationToken ct)
     {
         return _presenter.ImportAsync(
-            WorkspaceImportDocument.FromUtf8Bytes(
-                documentBytes,
+            new WorkspaceImportDocument(
+                DesktopCharacterFileReader.Decode(documentBytes),
                 string.Empty,
                 WorkspaceDocumentFormat.NativeXml),
             ct);

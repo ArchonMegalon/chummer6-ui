@@ -538,24 +538,24 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "71a6c70622f5f7b382e42adc1cfd44fe099232db",
-            "commit": "1a2a152d7895245ff646ebe92a96fbc05c609e64",
+            "blob": "60ee2198a8b48ebe28727a285f5fe3d1ff3800e2",
+            "commit": "c36b9c13695e306561be191a7705114f53a59d4b",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "e7bd5a37c852aa6ec34f9f232571030c7a6a1e45bc38257fc9ba896e82f162c1",
-            "rawSizeBytes": 74687,
-            "semanticCanonicalSha256": "e7bd5a37c852aa6ec34f9f232571030c7a6a1e45bc38257fc9ba896e82f162c1",
-            "semanticCanonicalSizeBytes": 74687,
-            "tree": "9269ed8913ab955dedc44c6513bbab1efc231c29",
+            "rawSha256": "27b1b7d4419a1bbfa902eecd79dc71a3eebc637fed0bc112065e94aabf81b6b8",
+            "rawSizeBytes": 75088,
+            "semanticCanonicalSha256": "27b1b7d4419a1bbfa902eecd79dc71a3eebc637fed0bc112065e94aabf81b6b8",
+            "semanticCanonicalSizeBytes": 75088,
+            "tree": "c1dcbda869fe44f0fb683206735318965ae222f0",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 74687
+    assert len(package_plane.encoded_json(next_lock)) == 75088
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "e7bd5a37c852aa6ec34f9f232571030c7a6a1e45bc38257fc9ba896e82f162c1"
+        "27b1b7d4419a1bbfa902eecd79dc71a3eebc637fed0bc112065e94aabf81b6b8"
     )
     assert package_plane.load_split_preseal_verifier().NEXT_AUTHORITY_ORACLE == (
         package_plane.SEALED_NEXT_AUTHORITY_ORACLE
@@ -2431,7 +2431,7 @@ def test_linked_character_preview_and_owner_tests_are_exact_consumer_members() -
         "Chummer.Desktop.Runtime.Tests/GrantBoundRoamingSyncLedgerTests.cs",
     }
     assert desktop_export_and_roaming <= oracle_members
-    assert len(oracle_members) == 194
+    assert len(oracle_members) == 197
     assert "config/ui-owner-package-plane.lock.json" not in oracle_members
     assert package_plane.EXPECTED_CONSUMER_SOURCE_FILES == oracle_members | {"config/ui-owner-package-plane.lock.json"}
     for source in sources:

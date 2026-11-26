@@ -218,6 +218,39 @@ public class CharacterOverviewViewModelAdapterTests
     }
 
     [TestMethod]
+    [DataRow("utf-8", "utf-16", false)]
+    [DataRow("utf-8", "utf-8", true)]
+    [DataRow("utf-16", "utf-16", true)]
+    [DataRow("utf-16BE", "utf-16", true)]
+    [DataRow("utf-16", "utf-16", false)]
+    [DataRow("utf-32", "utf-32", true)]
+    [DataRow("iso-8859-1", "iso-8859-1", false)]
+    public async Task ImportAsync_preserves_saved_character_text(string transport, string declaration, bool preamble)
+    {
+        Encoding encoding = Encoding.GetEncoding(transport);
+        string xml = $"<?xml version='1.0' encoding='{declaration}'?>\r\n<character><name>Grüße</name></character>";
+        byte[] bytes = preamble ? [.. encoding.GetPreamble(), .. encoding.GetBytes(xml)] : encoding.GetBytes(xml);
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+
+        await adapter.ImportAsync(bytes, CancellationToken.None);
+
+        Assert.AreEqual(xml, presenter.ImportedContent);
+        Assert.AreEqual(string.Empty, presenter.ImportedRulesetId);
+    }
+
+    [TestMethod]
+    public async Task ImportAsync_rejects_invalid_encoded_character_before_import()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+
+        await Assert.ThrowsExactlyAsync<DecoderFallbackException>(async () =>
+            await adapter.ImportAsync([0xff, 0xfe, 0x3c], CancellationToken.None));
+        Assert.IsNull(presenter.ImportedContent);
+    }
+
+    [TestMethod]
     public void Updated_event_is_raised_when_presenter_state_changes()
     {
         var presenter = new FakeCharacterOverviewPresenter();
