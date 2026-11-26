@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="using:Chummer.Avalonia.Controls"
+        x:Class="Chummer.Avalonia.Controls.OwnedWizardWindow"
+        Width="1040" Height="720"
+        MinWidth="760" MinHeight="520"
+        CanResize="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="{DynamicResource ChummerShellFontFamily}"
+        FontSize="{DynamicResource ChummerShellFontSizeBody}"
+        TransparencyLevelHint="None"
+        Background="{DynamicResource ChummerShellHardPanelBrush}">
+  <!-- Gen6 F04 + wave4 W1: Auto,*,Auto rows keep the chrome header and the
+       wizard footer fixed; ONLY the wizard page body scrolls (the hosted
+       CharacterCreationWizardControl owns its internal page scroller). -->
+  <Grid RowDefinitions="Auto,*,Auto">
+    <shell:OwnedWizardChrome x:Name="WizardChrome" Grid.Row="0" />
+    <ContentPresenter x:Name="WizardContentHost" Grid.Row="1"
+                      Margin="{DynamicResource ChummerShellSpacing}" />
+    <Border Grid.Row="2"
+            Background="{DynamicResource ChummerShellToolbarBackgroundBrush}"
+            BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="{DynamicResource ChummerShellSpacing}">
+      <!-- Wave4 W1: hint strip only. Back/Next/Finish live in the hosted
+           wizard control's own fixed footer; Cancel is the wizard control's
+           footer Cancel (shown only when owned-hosted). -->
+      <TextBlock x:Name="FooterHintText"
+                 Classes="shell-caption"
+                 VerticalAlignment="Center"
+                 TextWrapping="Wrap"
+                 TextTrimming="CharacterEllipsis"
+                 AutomationProperties.AutomationId="owned-wizard-footer-hint" />
+    </Border>
+  </Grid>
+</Window>

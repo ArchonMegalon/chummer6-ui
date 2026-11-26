@@ -2,15 +2,17 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Chummer.Application.Characters;
 using Chummer.Application.Owners;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Owners;
 using Chummer.Contracts.Workspaces;
+using Chummer.Infrastructure.Workspaces;
 
 namespace Chummer.Desktop.Runtime;
 
-public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync, IOwnerBoundDesktopWorkspaceRoamingSync
+public sealed partial class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync, IOwnerBoundDesktopWorkspaceRoamingSync, Chummer.Presentation.IWorkspaceSyncFeedbackSource
 {
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
@@ -33,7 +35,9 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         Func<DesktopInstallLinkingState>? stateLoader = null,
         IOwnerContextLeaseAccessor? ownerContext = null,
         Func<string>? ledgerDirectoryLoader = null,
-        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken, Task<WorkspaceContinuationExport?>>? continuationExporter = null)
+        Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken, Task<WorkspaceContinuationExport?>>? continuationExporter = null,
+        ICharacterSourceDataResolver? sources = null,
+        ICharacterFileQueries? queries = null)
     {
         _desktopHeadId = desktopHeadId;
         _workspaceStore = workspaceStore;
@@ -49,6 +53,10 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
             ledgerDirectoryLoader?.Invoke()
                 ?? Path.Combine(DesktopStateRootResolver.Resolve("Chummer6", "Chummer6"), "roaming-sync", _desktopHeadId),
             _desktopHeadId);
+        _sourceStore = workspaceStore as FileWorkspaceStore;
+        _sourceQueries = queries;
+        if (_sourceStore is not null && sources is not null && queries is not null)
+            _sourceBridge = new(_sourceStore, _ownerContext, sources, queries);
     }
 
     public async Task<DesktopWorkspaceRoamingResult> SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
@@ -60,10 +68,13 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
             return new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
         }
 
+        var recovered = await RecoverPendingSourceConnectionsAsync(context, ct).ConfigureAwait(false);
+        if (recovered.Unavailable) return ReportSource(context, new(DesktopWorkspaceRoamingOutcome.Unavailable)
+            { SourceRecoveryMessage = PendingMessage });
         RemoteSnapshotListResult remoteList = await TryListRemoteSnapshotsAsync(context, ct).ConfigureAwait(false);
         if (!remoteList.Result.Success)
         {
-            return remoteList.Result;
+            return Aggregate([.. recovered.Results, remoteList.Result], null);
         }
 
         RoamingWorkspaceSnapshotDto[] remoteSnapshots = remoteList.Snapshots;
@@ -74,21 +85,29 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
                 RemoteRevision: item.RemoteRevision,
                 ServerToken: item.ServerToken))
             .ToList();
-        Dictionary<string, RoamingWorkspaceSnapshotDto> remoteById = remoteSnapshots
+        results.AddRange(recovered.Results);
+        var remoteGroups = remoteSnapshots
             .Where(static item => !string.IsNullOrWhiteSpace(item.WorkspaceId))
             .GroupBy(static item => item.WorkspaceId, StringComparer.Ordinal)
-            .ToDictionary(
-                static group => group.Key,
-                static group => group
-                    .OrderByDescending(static item => item.RemoteRevision ?? long.MinValue)
-                    .ThenByDescending(static item => item.UpdatedAtUtc)
-                    .First(),
-                StringComparer.Ordinal);
+            .ToArray();
+        var ambiguousIds = remoteGroups.Where(group => group.Skip(1).Any())
+            .Select(group => group.Key).ToHashSet(StringComparer.Ordinal);
+        results.AddRange(ambiguousIds.Select(id => SourceConflict(new CharacterWorkspaceId(id))));
+        Dictionary<string, RoamingWorkspaceSnapshotDto> remoteById = remoteGroups
+            .Where(group => !ambiguousIds.Contains(group.Key))
+            .ToDictionary(group => group.Key, group => group.Single(), StringComparer.Ordinal);
         HashSet<string> rejectedFutureSnapshots = new(StringComparer.Ordinal);
 
         foreach (RoamingWorkspaceSnapshotDto remote in remoteById.Values)
         {
             ct.ThrowIfCancellationRequested();
+            if (recovered.Workspaces.Contains(remote.WorkspaceId)) continue;
+            if (remote.RuleEnvironment is not null)
+            {
+                NotifySource(context, "Checking runner and original rules…");
+                results.Add(ReportSource(context, await SynchronizeSourceInboundAsync(remote, context, ct).ConfigureAwait(false)));
+                continue;
+            }
             if (!TryWithOwnerLease(context.Stamp, ct,
                     admittedOwner => ApplyInboundSnapshot(admittedOwner, remote),
                     out DesktopWorkspaceRoamingResult applied))
@@ -103,39 +122,41 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
             }
         }
 
-        if (!TryWithOwnerLease(context.Stamp, ct,
-                admittedOwner => _workspaceStore.List(admittedOwner).ToArray(),
-                out WorkspaceStoreEntry[] localEntries))
+        CharacterWorkspaceId[] localEntries;
+        try { localEntries = ListLocalWorkspaceIds(context, ct); }
+        catch (Exception error) when (SourceFailure(error))
         {
             return new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
         }
 
-        foreach (WorkspaceStoreEntry local in localEntries)
+        foreach (CharacterWorkspaceId localId in localEntries)
         {
             ct.ThrowIfCancellationRequested();
+            if (ambiguousIds.Contains(localId.Value) || recovered.Workspaces.Contains(localId.Value)) continue;
             // An unresolved uncertain outbound write must never be blindly replayed: the
             // authoritative list above either reconciled it (ApplyInboundSnapshot) or the
             // workspace is absent from the Hub, which proves the write never landed.
-            bool uncertain = _ledger.HasUncertainOutbound(owner, local.Id);
-            if (uncertain && !remoteById.ContainsKey(local.Id.Value))
+            bool uncertain = _ledger.HasUncertainOutbound(owner, localId);
+            if (uncertain && !remoteById.ContainsKey(localId.Value))
             {
-                _ledger.ClearUncertainOutbound(owner, local.Id);
+                _ledger.ClearUncertainOutbound(owner, localId);
                 uncertain = false;
             }
 
             // A workspace with a pending divergent remote snapshot is under explicit
             // reconciliation: neither side is pushed automatically, so the retained
             // conflict cannot be silently collapsed by a same-call outbound push.
-            bool pendingConflict = _ledger.TryGet(owner, local.Id)?.PendingRemote is not null;
+            bool pendingConflict = _ledger.TryGet(owner, localId)?.PendingRemote is not null;
             bool shouldPush = false;
             if (!uncertain && !pendingConflict)
             {
-                shouldPush = !remoteById.TryGetValue(local.Id.Value, out RoamingWorkspaceSnapshotDto? remote)
-                             || rejectedFutureSnapshots.Contains(local.Id.Value);
+                shouldPush = !remoteById.TryGetValue(localId.Value, out RoamingWorkspaceSnapshotDto? remote)
+                             || rejectedFutureSnapshots.Contains(localId.Value);
+                if (remote?.RuleEnvironment is not null) continue; // source lane uses a saved base, never clock order
                 if (!shouldPush && remote is not null)
                 {
                     if (!TryWithOwnerLease(context.Stamp, ct,
-                            admittedOwner => _workspaceStore.Get(admittedOwner, local.Id),
+                            admittedOwner => _workspaceStore.Get(admittedOwner, localId),
                             out WorkspaceStoreReadResult currentRead))
                     {
                         return new DesktopWorkspaceRoamingResult(DesktopWorkspaceRoamingOutcome.Unavailable);
@@ -147,7 +168,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
                     if (!shouldPush
                         && currentRead.Success
                         && currentRead.Value is WorkspaceStoredDocument diverged
-                        && _ledger.TryGet(owner, local.Id)?.AcknowledgedBase is { } acknowledgedBase
+                        && _ledger.TryGet(owner, localId)?.AcknowledgedBase is { } acknowledgedBase
                         && diverged.ContentRevision != acknowledgedBase.LocalContentRevision
                         && string.Equals(
                             GrantBoundRoamingSyncLedgerStore.Sha256Hex(remote.Payload),
@@ -164,7 +185,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
 
             if (shouldPush)
             {
-                results.Add(await SynchronizeOutboundCoreAsync(local.Id, context, ct).ConfigureAwait(false));
+                results.Add(await SynchronizeOutboundCoreAsync(localId, context, ct).ConfigureAwait(false));
             }
         }
 
@@ -207,6 +228,22 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         CapturedOwnerContext context,
         CancellationToken ct)
     {
+        if (_sourceStore is not null)
+        {
+            try
+            {
+                // Pending originals take precedence even if the local document is
+                // missing, changed edition or currently cannot be readmitted.
+                var saved = _sourceStore.ReadRoamingConnection(_ownerContext, context.Stamp, workspaceId);
+                var current = ReadSourceWorkspace(context, workspaceId, ct);
+                if (saved is not null || current.Value is { } snapshot
+                    && WorkspaceRoamingSourceRequirement.RequiresRetainedSource(snapshot.Document))
+                    return await SynchronizeSourceOutboundAsync(workspaceId, context, ct).ConfigureAwait(false);
+                if (!current.Success) return ReportSource(context, SourceUnavailable(workspaceId));
+            }
+            catch (Exception error) when (SourceFailure(error))
+            { return ReportSource(context, SourceUnavailable(workspaceId, PendingMessage)); }
+        }
         // Materialize credentials and the complete payload under the same original authority.
         // The state loader is deliberately not called here: it takes the same state-file lock.
         OwnerScope? capturedOwner = null;
@@ -241,6 +278,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
                 freshWorkspaceContinuationDigest = null;
             }
         }
+        bool requiresRetainedSource = false;
         if (!TryWithOwnerLease<RoamingWorkspaceSnapshotUpsertRequest?>(context.Stamp, ct, admittedOwner =>
             {
                 capturedOwner = admittedOwner;
@@ -257,6 +295,12 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
                 }
 
                 WorkspaceDocument document = stored.Document;
+                if (WorkspaceRoamingSourceRequirement.RequiresRetainedSource(document))
+                {
+                    requiresRetainedSource = true;
+                    return null;
+                }
+
                 GrantBoundRoamingSyncLedgerState? remoteLedger =
                     _ledger.TryGet(admittedOwner, workspaceId);
                 return new RoamingWorkspaceSnapshotUpsertRequest(
@@ -295,7 +339,10 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         {
             return new DesktopWorkspaceRoamingResult(
                 DesktopWorkspaceRoamingOutcome.Unavailable,
-                workspaceId);
+                workspaceId)
+            {
+                SourceRecoveryMessage = requiresRetainedSource ? WorkspaceRoamingSourceRequirement.RecoveryMessage : null
+            };
         }
 
         // The intent must survive durably BEFORE anything is sent: a lost response after
@@ -1140,6 +1187,7 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
         DateTimeOffset UpdatedAtUtc,
         long? RemoteRevision = null,
         string? ServerToken = null,
+        WorkspaceRuleEnvironmentTransfer? RuleEnvironment = null,
         RoamingWorkspaceSummaryDto? Summary = null,
         JsonElement? WorkspaceSnapshot = null,
         string? WorkspaceSnapshotDigest = null,
@@ -1149,6 +1197,24 @@ public sealed class GrantBoundDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoa
     private sealed record RemoteSnapshotListResult(
         DesktopWorkspaceRoamingResult Result,
         RoamingWorkspaceSnapshotDto[] Snapshots);
+
+    /// <summary>
+    /// Classifies retained-source pointer documents on the roaming lane. The
+    /// complete character remains in the existing private closure; the pointer
+    /// document deliberately carries an empty payload, so an attempt to
+    /// materialize the full character payload from it must fail closed with a
+    /// recovery hint instead of exporting a hollow snapshot.
+    /// </summary>
+    private static class WorkspaceRoamingSourceRequirement
+    {
+        /// <summary>True when the document is the retained-source pointer lane (deliberately empty payload).</summary>
+        internal static bool RequiresRetainedSource(WorkspaceDocument document)
+            => document.State is null || string.IsNullOrEmpty(document.State.Payload);
+
+        /// <summary>Presentation-facing recovery hint; never a raw server error or payload.</summary>
+        internal const string RecoveryMessage =
+            "This runner lives in its original rules installation. Open it there to continue syncing, or save a new copy on this device first.";
+    }
 
 /// <summary>
 /// Hermetic owner-context accessor used when the sync is constructed with a

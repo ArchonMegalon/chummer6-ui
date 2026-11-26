@@ -9,6 +9,7 @@ using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -18,6 +19,7 @@ using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Avalonia;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Chummer.Rulesets.Hosting;
 using Chummer.Rulesets.Sr5;
@@ -75,9 +77,574 @@ public sealed class AvaloniaHeadlessSmokeTests
     }
 
     [TestMethod]
+    public void Avalonia_headless_shell_resize_smoke()
+    {
+        WithHeadlessUi(() =>
+        {
+            // Ordinary desktop/laptop window sizes: the shell must keep its
+            // three-region composition and a positive content area at each size.
+            double[][] sizes =
+            {
+                new[] { 1280d, 880d },
+                new[] { 1366d, 768d },
+                new[] { 1920d, 1080d },
+                new[] { 960d, 560d },
+            };
+
+            using HeadlessMainWindowHarness harness = new();
+            harness.WaitForReady();
+
+            foreach (double[] size in sizes)
+            {
+                harness.Window.Width = size[0];
+                harness.Window.Height = size[1];
+                harness.Pump();
+
+                Assert.IsTrue(harness.Window.Bounds.Width >= 960d - 0.5d,
+                    $"window width {harness.Window.Bounds.Width} below MinWidth at requested {size[0]}");
+                Assert.IsTrue(harness.Window.Bounds.Height >= 560d - 0.5d,
+                    $"window height {harness.Window.Bounds.Height} below MinHeight at requested {size[1]}");
+
+                Grid? contentRegion = harness.Window.GetVisualDescendants()
+                    .OfType<Grid>()
+                    .FirstOrDefault(grid => grid.Name == "ContentRegion");
+                Assert.IsNotNull(contentRegion, "ContentRegion must exist at every size.");
+                Assert.IsTrue(contentRegion.Bounds.Width > 200d,
+                    $"content region too narrow ({contentRegion.Bounds.Width}) at {size[0]}x{size[1]}");
+                Assert.IsTrue(contentRegion.Bounds.Height > 200d,
+                    $"content region too short ({contentRegion.Bounds.Height}) at {size[0]}x{size[1]}");
+
+                // The menu bar must remain visible and laid out at every size.
+                MenuItem? fileMenu = harness.Window.GetVisualDescendants()
+                    .OfType<MenuItem>()
+                    .FirstOrDefault(menuItem => menuItem.Name == "FileMenuButton");
+                Assert.IsNotNull(fileMenu, "File menu must exist at every size.");
+                Assert.IsTrue(fileMenu.IsVisible, $"file menu hidden at {size[0]}x{size[1]}");
+                Assert.IsTrue(fileMenu.Bounds.Width > 10d,
+                    $"file menu clipped at {size[0]}x{size[1]}");
+            }
+        });
+    }
+    [TestMethod]
+    public void Avalonia_headless_shell_keyboard_focus_smoke()
+    {
+        WithHeadlessUi(() =>
+        {
+            using HeadlessMainWindowHarness harness = new();
+            harness.WaitForReady();
+
+            // Keyboard navigation must be able to move focus into the shell
+            // (headless Tab key event through the window's input pipeline).
+            harness.Window.Focus();
+            harness.Pump();
+            harness.Window.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.None);
+            harness.Pump();
+
+            IInputElement? focused = harness.Window.FocusManager?.GetFocusedElement();
+            Assert.IsNotNull(focused, "tab navigation must produce a focused element.");
+            Assert.IsInstanceOfType(focused, typeof(Control), "focused element must be a control.");
+
+            Control focusedControl = (Control)focused;
+            Assert.IsTrue(
+                harness.Window.GetVisualDescendants().Contains(focusedControl)
+                    || ReferenceEquals(focusedControl, harness.Window),
+                "focus must stay inside the main window subtree.");
+
+            // Visible focus indication: the gen6 theme defines a focus ring brush
+            // consumed by Button:focus styling.
+            bool focusBrushFound = harness.Window.GetVisualDescendants()
+                .OfType<Button>()
+                .Any(button => button.BorderBrush is not null);
+            Assert.IsTrue(
+                focusBrushFound || global::Avalonia.Application.Current!.TryGetResource(
+                    "ChummerShellFocusRingBrush", null, out object? _),
+                "ChummerShellFocusRingBrush token must exist for visible keyboard focus.");
+        });
+    }
+
+    [TestMethod]
     public void Avalonia_headless_platform_bootstrap_reference()
     {
         WithHeadlessUi(() => Assert.IsNotNull(global::Avalonia.Application.Current));
+    }
+
+    [TestMethod]
+    public void Wizard_cancel_in_owned_mode_parks_instead_of_reexposing_inline_wizard()
+    {
+        WithHeadlessUi(() =>
+        {
+            // Gen8: Cancel in the default owned mode must NOT re-expose the
+            // active inline wizard inside MainWindow. The shell parks on the
+            // safe surface with the draft still bound; Resume re-opens the
+            // owned window for the SAME workspace identity.
+            var previous = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", null);
+            try
+            {
+                FakeCharacterOverviewPresenter presenter = new();
+                var adapter = new CharacterOverviewViewModelAdapter(presenter);
+                RecordingShellPresenter shell = new(CreateShellState());
+                MainWindow window = new(
+                    presenter, shell, new DefaultCommandAvailabilityEvaluator(),
+                    new ShellSurfaceResolver(new RulesetShellCatalogResolverService(new RulesetPluginRegistry([new Sr5RulesetPlugin()])), new DefaultCommandAvailabilityEvaluator()),
+                    new StubCoachSidecarClient(), adapter);
+                window.Show();
+                Dispatcher.UIThread.RunJobs();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                Dispatcher.UIThread.RunJobs();
+                try
+                {
+                    global::Chummer.Contracts.Characters.CharacterCreationWizardSnapshot snapshot =
+                        Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+                    presenter.Publish(CharacterOverviewState.Empty with
+                    {
+                        WorkspaceId = new CharacterWorkspaceId("workspace-creation"),
+                        CreationWizard = snapshot
+                    });
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    // Owned route is the default: the wizard control must have
+                    // been re-parented OUT of the inline host into the owned window.
+                    var wizard = window.FindControl<global::Chummer.Avalonia.Controls.CharacterCreationWizardControl>("CharacterCreationWizardControl");
+                    Assert.IsNotNull(wizard, "wizard control must exist");
+                    Assert.IsNull(wizard.Parent as Grid, "owned route must have detached the wizard from the inline host grid");
+                    var park = window.FindControl<Border>("CreationWizardParkPanel");
+                    Assert.IsNotNull(park);
+                    Assert.IsFalse(park.IsVisible, "park surface must start hidden");
+                    // Drive the footer-Cancel path directly (same handler the
+                    // owned window's Cancel wiring invokes).
+                    typeof(global::Chummer.Avalonia.MainWindow)
+                        .GetMethod("ParkCreationWizardAfterCancel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                        .Invoke(window, null);
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsFalse(wizard.IsVisible, "active inline wizard must be hidden while parked");
+                    Assert.IsTrue(park.IsVisible, "park surface must be visible after cancel");
+                    var parkTitle = window.GetVisualDescendants().OfType<TextBlock>()
+                        .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-park-title");
+                    Assert.IsNotNull(parkTitle);
+                    Assert.IsTrue((parkTitle.Text ?? string.Empty).Contains("paused", StringComparison.Ordinal),
+                        "park copy must present a paused state, not a discard");
+                    // Resume re-opens the owned window for the same draft.
+                    var resume = window.GetVisualDescendants().OfType<Button>()
+                        .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-resume");
+                    Assert.IsNotNull(resume);
+                    resume.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsFalse(park.IsVisible, "park surface must hide on resume");
+                    var ownedField = typeof(global::Chummer.Avalonia.MainWindow)
+                        .GetField("_creationWizardOwnedWindow", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    bool ownedWindowOpen = ownedField?.GetValue(window) is global::Chummer.Avalonia.Controls.OwnedWizardWindow { IsVisible: true };
+                    Assert.IsTrue(ownedWindowOpen, "resume must re-open the owned wizard window");
+                }
+                finally
+                {
+                    window.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", previous);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_park_survives_same_draft_refresh_without_reopening_wizard()
+    {
+        WithHeadlessUi(() =>
+        {
+            // Gen9 finding 1: a same-owner state refresh of the SAME draft
+            // while parked must NOT resurrect the wizard (inline or owned).
+            // Resume is the only route back to the wizard surface.
+            var previous = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", null);
+            try
+            {
+                FakeCharacterOverviewPresenter presenter = new();
+                var adapter = new CharacterOverviewViewModelAdapter(presenter);
+                RecordingShellPresenter shell = new(CreateShellState());
+                MainWindow window = new(
+                    presenter, shell, new DefaultCommandAvailabilityEvaluator(),
+                    new ShellSurfaceResolver(new RulesetShellCatalogResolverService(new RulesetPluginRegistry([new Sr5RulesetPlugin()])), new DefaultCommandAvailabilityEvaluator()),
+                    new StubCoachSidecarClient(), adapter);
+                window.Show();
+                Dispatcher.UIThread.RunJobs();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                Dispatcher.UIThread.RunJobs();
+                try
+                {
+                    global::Chummer.Contracts.Characters.CharacterCreationWizardSnapshot snapshot =
+                        Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+                    presenter.Publish(CharacterOverviewState.Empty with
+                    {
+                        WorkspaceId = new CharacterWorkspaceId("workspace-creation"),
+                        CreationWizard = snapshot
+                    });
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    var wizard = window.FindControl<global::Chummer.Avalonia.Controls.CharacterCreationWizardControl>("CharacterCreationWizardControl");
+                    Assert.IsNotNull(wizard, "wizard control must exist");
+                    var park = window.FindControl<Border>("CreationWizardParkPanel");
+                    Assert.IsNotNull(park);
+                    typeof(global::Chummer.Avalonia.MainWindow)
+                        .GetMethod("ParkCreationWizardAfterCancel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                        .Invoke(window, null);
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsTrue(park.IsVisible, "park surface must be visible before the refresh");
+                    Assert.IsFalse(wizard.IsVisible, "wizard hidden while parked");
+                    // Now the SAME owner publishes a content revision of the SAME
+                    // workspace while parked (new save arriving). The park must
+                    // survive: wizard stays hidden, owned window stays closed,
+                    // park surface stays visible.
+                    var refreshed = snapshot with { WorkspaceRevision = snapshot.WorkspaceRevision + 1 };
+                    presenter.Publish(CharacterOverviewState.Empty with
+                    {
+                        WorkspaceId = new CharacterWorkspaceId("workspace-creation"),
+                        CreationWizard = refreshed
+                    });
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsTrue(park.IsVisible, "park surface must SURVIVE a same-draft content refresh");
+                    Assert.IsFalse(wizard.IsVisible, "refresh must not resurrect the inline wizard while parked");
+                    var ownedField = typeof(global::Chummer.Avalonia.MainWindow)
+                        .GetField("_creationWizardOwnedWindow", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    Assert.IsNull(ownedField?.GetValue(window), "refresh must not reopen the owned wizard window while parked");
+                    // Resume still works after the refresh: the refreshed snapshot
+                    // is the bound draft, so Resume re-opens the owned window.
+                    var resume = window.GetVisualDescendants().OfType<Button>()
+                        .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-resume");
+                    resume.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsFalse(park.IsVisible, "park surface must hide on resume after refresh");
+                    bool ownedWindowOpen = ownedField?.GetValue(window) is global::Chummer.Avalonia.Controls.OwnedWizardWindow { IsVisible: true };
+                    Assert.IsTrue(ownedWindowOpen, "resume after refresh must re-open the owned wizard window");
+                }
+                finally
+                {
+                    window.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", previous);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_park_clears_when_a_different_draft_identity_arrives()
+    {
+        WithHeadlessUi(() =>
+        {
+            // Gen9 finding 1 (complement): a DIFFERENT workspace identity while
+            // parked must clear the park -- a new draft is not the parked draft.
+            var previous = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", null);
+            try
+            {
+                FakeCharacterOverviewPresenter presenter = new();
+                var adapter = new CharacterOverviewViewModelAdapter(presenter);
+                RecordingShellPresenter shell = new(CreateShellState());
+                MainWindow window = new(
+                    presenter, shell, new DefaultCommandAvailabilityEvaluator(),
+                    new ShellSurfaceResolver(new RulesetShellCatalogResolverService(new RulesetPluginRegistry([new Sr5RulesetPlugin()])), new DefaultCommandAvailabilityEvaluator()),
+                    new StubCoachSidecarClient(), adapter);
+                window.Show();
+                Dispatcher.UIThread.RunJobs();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                Dispatcher.UIThread.RunJobs();
+                try
+                {
+                    global::Chummer.Contracts.Characters.CharacterCreationWizardSnapshot snapshot =
+                        Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+                    presenter.Publish(CharacterOverviewState.Empty with
+                    {
+                        WorkspaceId = new CharacterWorkspaceId("workspace-creation"),
+                        CreationWizard = snapshot
+                    });
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    var park = window.FindControl<Border>("CreationWizardParkPanel");
+                    Assert.IsNotNull(park);
+                    typeof(global::Chummer.Avalonia.MainWindow)
+                        .GetMethod("ParkCreationWizardAfterCancel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                        .Invoke(window, null);
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsTrue(park.IsVisible, "park surface must be visible before the identity change");
+                    // A DIFFERENT workspace arrives (new draft). The parked draft
+                    // is gone; the park must clear and the new draft routes to
+                    // the owned window normally.
+                    var other = snapshot with { WorkspaceId = "workspace-creation-2" };
+                    presenter.Publish(CharacterOverviewState.Empty with
+                    {
+                        WorkspaceId = new CharacterWorkspaceId("workspace-creation-2"),
+                        CreationWizard = other
+                    });
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsFalse(park.IsVisible, "a different draft identity must clear the park");
+                    var ownedField = typeof(global::Chummer.Avalonia.MainWindow)
+                        .GetField("_creationWizardOwnedWindow", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    bool ownedWindowOpen = ownedField?.GetValue(window) is global::Chummer.Avalonia.Controls.OwnedWizardWindow { IsVisible: true };
+                    Assert.IsTrue(ownedWindowOpen, "the new draft must route to the owned window normally");
+                }
+                finally
+                {
+                    window.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", previous);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_cancel_with_inline_optout_keeps_proven_inline_restore()
+    {
+        WithHeadlessUi(() =>
+        {
+            // Gen8: the inline opt-out (CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW=0)
+            // keeps the gen7 contract -- Cancel returns the wizard to the inline
+            // host with the draft preserved.
+            var previous = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", "0");
+            try
+            {
+                FakeCharacterOverviewPresenter presenter = new();
+                var adapter = new CharacterOverviewViewModelAdapter(presenter);
+                RecordingShellPresenter shell = new(CreateShellState());
+                MainWindow window = new(
+                    presenter, shell, new DefaultCommandAvailabilityEvaluator(),
+                    new ShellSurfaceResolver(new RulesetShellCatalogResolverService(new RulesetPluginRegistry([new Sr5RulesetPlugin()])), new DefaultCommandAvailabilityEvaluator()),
+                    new StubCoachSidecarClient(), adapter);
+                window.Show();
+                Dispatcher.UIThread.RunJobs();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                Dispatcher.UIThread.RunJobs();
+                try
+                {
+                    global::Chummer.Contracts.Characters.CharacterCreationWizardSnapshot snapshot =
+                        Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+                    presenter.Publish(CharacterOverviewState.Empty with
+                    {
+                        WorkspaceId = new CharacterWorkspaceId("workspace-creation"),
+                        CreationWizard = snapshot
+                    });
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    var wizard = window.FindControl<global::Chummer.Avalonia.Controls.CharacterCreationWizardControl>("CharacterCreationWizardControl");
+                    Assert.IsNotNull(wizard);
+                    var inlineHost = window.FindControl<Grid>("InlineWizardHost");
+                    Assert.IsNotNull(inlineHost);
+                    Assert.IsTrue(inlineHost.Children.Contains(wizard), "opt-out keeps the wizard inline");
+                    Assert.IsTrue(wizard.IsVisible, "inline wizard visible in opt-out mode");
+                    typeof(global::Chummer.Avalonia.MainWindow)
+                        .GetMethod("ParkCreationWizardAfterCancel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                        .Invoke(window, null);
+                    Dispatcher.UIThread.RunJobs();
+                    AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.IsTrue(inlineHost.Children.Contains(wizard), "opt-out restore keeps the wizard in the inline host");
+                    Assert.IsTrue(wizard.IsVisible, "opt-out restore keeps the inline wizard visible");
+                    var park = window.FindControl<Border>("CreationWizardParkPanel");
+                    Assert.IsNotNull(park);
+                    Assert.IsFalse(park.IsVisible, "opt-out never parks");
+                }
+                finally
+                {
+                    window.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_OWNED_WIZARD_PREVIEW", previous);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_footer_buttons_render_in_distinct_columns_after_gen7_column_fix()
+    {
+        WithHeadlessUi(() =>
+        {
+            Chummer.Avalonia.Controls.CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            try
+            {
+                // Gen7: the footer grid now defines six columns (Auto,*,Auto,Auto,Auto,Auto);
+                // FinalizeButton (column 5) previously referenced a column beyond the
+                // definition. Verify every footer button resolves a valid in-bounds
+                // column and that no two simultaneously-visible buttons share a column.
+                Button finalize = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finalize");
+                Button back = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-back");
+                Button next = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-continue");
+
+                Grid footer = finalize.GetVisualAncestors().OfType<Grid>().First();
+                Assert.AreEqual(6, footer.ColumnDefinitions.Count,
+                    "footer grid must define six columns after the gen7 fix");
+
+                int finalizeColumn = Grid.GetColumn(finalize);
+                int backColumn = Grid.GetColumn(back);
+                int nextColumn = Grid.GetColumn(next);
+                Assert.AreEqual(5, finalizeColumn, "Finalize stays in column 5");
+                Assert.AreEqual(3, backColumn);
+                Assert.AreEqual(4, nextColumn);
+                Assert.IsTrue(finalizeColumn < footer.ColumnDefinitions.Count,
+                    "Finalize column must be within the defined column set");
+
+                // Visibility mutual exclusion on the shared column-5 slot.
+                Button finishWithAi = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finish-with-ai");
+                control.SetFinishWithAiFeatureEnabled(true);
+                control.SetFinishWithAiAvailability(true);
+                control.SetFinalizeAvailability(true, Array.Empty<string>());
+                Assert.IsTrue(finalize.IsVisible, "finalize must be visible when authoritative review is available");
+                Assert.IsFalse(finishWithAi.IsVisible,
+                    "shared column-5 slot must never render both finalize buttons at once");
+            }
+            finally
+            {
+                host.Close();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_footer_finish_ai_mutual_exclusion_holds_for_real_mainwindow_setter_order()
+    {
+        WithHeadlessUi(() =>
+        {
+            Chummer.Avalonia.Controls.CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            try
+            {
+                // Gen8 regression: the REAL MainWindow call order is
+                // SetFinalizeAvailability -> SetFinishWithAiAvailability
+                // (MainWindow.CreationWizard.cs bind path and the
+                // ApplyInstallLinkingChrome re-projection). The gen7 fix only
+                // hid the AI sibling inside RefreshFinalizeButton, so the later
+                // AI setter wrote IsVisible directly and BOTH buttons rendered
+                // in the shared column-5 slot.
+                Button finalize = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finalize");
+                Button finishWithAi = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finish-with-ai");
+                control.SetFinishWithAiFeatureEnabled(true);
+                control.SetFinishWithAiAvailability(true);
+                control.SetFinalizeAvailability(true, Array.Empty<string>());
+                // Real order: finalize LAST must not resurrect the AI sibling.
+                control.SetFinishWithAiAvailability(true);
+                Assert.IsTrue(finalize.IsVisible, "human finalize visible");
+                Assert.IsFalse(finishWithAi.IsVisible,
+                    "AI sibling must not resurface over a visible human finalize (real setter order)");
+                // Reverse order must converge on the same end-state.
+                control.SetFinalizeAvailability(false, new[] { "review not complete" });
+                control.SetFinishWithAiAvailability(true);
+                Assert.IsFalse(finalize.IsVisible, "finalize hidden when authority denies");
+                Assert.IsTrue(finishWithAi.IsVisible,
+                    "AI sibling may show once the human finalize is unavailable");
+                // Busy transitions: mutation busy hides BOTH (finalize busy first).
+                control.SetFinalizeAvailability(true, Array.Empty<string>());
+                control.SetFinalizeMutationBusy(true);
+                Assert.IsFalse(finishWithAi.IsVisible, "AI hidden while finalize busy");
+                Assert.IsFalse(finalize.IsVisible, "finalize hidden while busy");
+                control.SetFinalizeMutationBusy(false);
+                Assert.IsTrue(finalize.IsVisible, "finalize restored after busy clears");
+                Assert.IsFalse(finishWithAi.IsVisible, "AI stays hidden once human finalize returns");
+            }
+            finally
+            {
+                host.Close();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_footer_finish_ai_mutual_exclusion_holds_for_reverse_setter_order()
+    {
+        WithHeadlessUi(() =>
+        {
+            Chummer.Avalonia.Controls.CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            try
+            {
+                Button finalize = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finalize");
+                Button finishWithAi = control.GetVisualDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetAutomationId(b) == "creation-wizard-finish-with-ai");
+                control.SetFinishWithAiFeatureEnabled(true);
+                // Reverse order: AI first, then finalize.
+                control.SetFinishWithAiAvailability(true);
+                Assert.IsTrue(finishWithAi.IsVisible, "AI visible with no human finalize authority");
+                control.SetFinalizeAvailability(true, Array.Empty<string>());
+                Assert.IsTrue(finalize.IsVisible, "human finalize visible");
+                Assert.IsFalse(finishWithAi.IsVisible, "AI hides when human finalize becomes available");
+                // Feature gate closed: AI must stay dark regardless of availability.
+                control.SetFinishWithAiFeatureEnabled(false);
+                control.SetFinishWithAiAvailability(true);
+                control.SetFinalizeAvailability(false, new[] { "review not complete" });
+                Assert.IsFalse(finishWithAi.IsVisible, "closed feature gate keeps AI dark");
+            }
+            finally
+            {
+                host.Close();
+            }
+        });
+    }
+
+    [TestMethod]
+    public void Wizard_completion_blockers_empty_result_reports_truth_not_pending_check()
+    {
+        WithHeadlessUi(() =>
+        {
+            Chummer.Avalonia.Controls.CharacterCreationWizardControl control = new();
+            Window host = new() { Content = control };
+            host.Show();
+            try
+            {
+                var snapshot = Chummer.CreationWizard.Presentation.Tests.CharacterCreationWizardDesktopSessionTests.CreateSnapshot();
+                var session = new Chummer.Presentation.Overview.CharacterCreationWizardDesktopSession();
+                var state = session.Bind(snapshot);
+                control.SetState(state);
+                TextBlock completion = control.FindControl<TextBlock>("CompletionBlockerText")
+                    ?? throw new InvalidOperationException("CompletionBlockerText not found.");
+                Assert.IsFalse(
+                    (completion.Text ?? string.Empty).StartsWith("Checking", StringComparison.Ordinal),
+                    "an empty authoritative blocker list must not read as a pending check");
+            }
+            finally
+            {
+                host.Close();
+            }
+        });
     }
 
     [TestMethod]

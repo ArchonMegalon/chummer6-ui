@@ -25,6 +25,7 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "ShouldShowWorkbenchEntry");
         StringAssert.Contains(source, ".Where(ShouldShowWorkbenchEntry)");
         StringAssert.Contains(source, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(entry.Id, _preferences)");
+        StringAssert.Contains(source, "OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon(entry.Id, _preferences)");
         StringAssert.Contains(source, "DesktopKarmaForgeWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopAliceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.SupportsNativeWorkbench(entry.Id)");
@@ -49,6 +50,7 @@ public sealed class DesktopHorizonsWindowTests
 
         string launcherSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonWorkbenchLauncher.cs"));
         StringAssert.Contains(launcherSource, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(");
+        StringAssert.Contains(launcherSource, "OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon(");
         StringAssert.Contains(launcherSource, "DesktopPreferenceRuntime.LoadOrCreateState(headId)");
 
         string homeSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"));

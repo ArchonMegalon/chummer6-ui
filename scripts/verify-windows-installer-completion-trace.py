@@ -12,6 +12,46 @@ TRACE_FILE_NAME = "chummer-desktop-installer-progress.log"
 TRACE_HEADER = "# Chummer installer trace"
 EXTRACTION_MARKER = "Extracting application files"
 COMPLETION_MARKER = "Install complete"
+MANAGED_HEADER_PREFIX = "# Chummer installer trace "
+MANAGED_START_ARGS_PREFIX = "start args=--smoke-install "
+MANAGED_SMOKE_COMPLETION_MARKER = "extract payload complete"
+MANAGED_FULL_COMPLETION_PREFIX = "install complete target="
+
+import re
+
+# The managed writer prefixes every event line with an ISO-8601 UTC timestamp
+# followed by a single space (for example
+# '2026-11-23T15:48:55.3707774+00:00 start args=--smoke-install ...').  The
+# verification contract must therefore strip an optional timestamp prefix
+# before matching marker lines.  Bare (unprefixed) lines remain valid.
+_TIMESTAMP_PREFIX_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})? "
+)
+
+
+def strip_managed_timestamp_prefix(line: str) -> str:
+    """Return the line with an optional ISO-8601 UTC timestamp prefix removed."""
+    return _TIMESTAMP_PREFIX_RE.sub("", line, count=1)
+
+
+def managed_marker_line(line: str, marker: str) -> bool:
+    """True when the line carries the marker after stripping an optional timestamp prefix."""
+    return strip_managed_timestamp_prefix(line) == marker
+
+
+def managed_marker_starts(line: str, prefix: str) -> bool:
+    """True when the line starts with the prefix after stripping an optional timestamp prefix."""
+    return strip_managed_timestamp_prefix(line).startswith(prefix)
+
+
+def managed_position(lines: list[str], line: str) -> int:
+    """First index of a line whose stripped form equals the given marker line."""
+    for index, candidate in enumerate(lines):
+        if strip_managed_timestamp_prefix(candidate) == line:
+            return index
+    raise ValueError(line)
+
+
 MAX_TRACE_BYTES = 1024 * 1024
 
 
@@ -88,6 +128,76 @@ def verify_regular_installed_path(path: Path, install_root: Path) -> None:
             )
 
 
+def verify_managed_trace(
+    path: Path,
+    expected_install_root: str,
+    expected_installed_path: Path | None,
+    expected_install_root_path: Path | None,
+    lines: list[str],
+) -> str:
+    """Managed bootstrap installer trace contract.
+
+    The managed writer prefixes every line with a UTC timestamp; the reset
+    header carries its timestamp on the same line after a single space.  The
+    smoke path ends with 'extract payload complete'; full installs end with
+    'install complete target='.
+    """
+    header_lines = [line for line in lines if managed_marker_starts(line, MANAGED_HEADER_PREFIX)]
+    if len(header_lines) != 1:
+        raise TraceContractError(
+            "installer trace does not contain exactly one current-run marker set"
+        )
+    start_args = [
+        line for line in lines if managed_marker_starts(line, MANAGED_START_ARGS_PREFIX)
+    ]
+    if len(start_args) != 1:
+        raise TraceContractError(
+            "installer trace does not contain exactly one current-run marker set"
+        )
+    def normalize_root(raw_root: str) -> str:
+        return raw_root.replace("/", "\\").rstrip("\\")
+
+    expected_start_args = (
+        "start args=--smoke-install " + normalize_root(expected_install_root)
+    )
+    stripped_start_args = strip_managed_timestamp_prefix(start_args[0])
+    traced_root = stripped_start_args[len("start args=--smoke-install "):]
+    if normalize_root(traced_root) != normalize_root(expected_install_root):
+        raise TraceContractError(
+            "installer trace does not contain exactly one current-run marker set"
+        )
+    smoke_completion = [
+        line for line in lines if managed_marker_line(line, MANAGED_SMOKE_COMPLETION_MARKER)
+    ]
+    full_completion = [
+        line for line in lines if managed_marker_starts(line, MANAGED_FULL_COMPLETION_PREFIX)
+    ]
+    if len(smoke_completion) + len(full_completion) != 1:
+        raise TraceContractError(
+            "installer trace does not contain exactly one current-run marker set"
+        )
+    completion_line = (
+        smoke_completion[0]
+        if smoke_completion
+        else full_completion[0]
+    )
+    header_position = lines.index(header_lines[0])
+    start_position = lines.index(start_args[0])
+    completion_position = lines.index(completion_line)
+    positions = [header_position, start_position, completion_position]
+    if positions != sorted(positions):
+        raise TraceContractError(
+            "installer trace current-run markers are out of order"
+        )
+    if expected_installed_path is not None or expected_install_root_path is not None:
+        if expected_installed_path is None or expected_install_root_path is None:
+            raise TraceContractError(
+                "installer managed trace requires both the exact install root path and launch target"
+            )
+        verify_regular_installed_path(expected_installed_path, expected_install_root_path)
+    return "managed_smoke_install_trace"
+
+
 def verify_trace(
     path: Path,
     expected_install_root: str,
@@ -122,6 +232,23 @@ def verify_trace(
         raise TraceContractError("installer trace exceeds the fixed size bound")
 
     lines = decode_trace(raw).splitlines()
+    if not any(managed_marker_starts(line, MANAGED_START_ARGS_PREFIX) for line in lines) and not any(
+        managed_marker_line(line, TRACE_HEADER)
+        or managed_marker_line(line, EXTRACTION_MARKER)
+        or managed_marker_line(line, COMPLETION_MARKER)
+        for line in lines
+    ):
+        raise TraceContractError(
+            "installer trace does not contain exactly one current-run marker set"
+        )
+    if any(managed_marker_starts(line, MANAGED_START_ARGS_PREFIX) for line in lines):
+        return verify_managed_trace(
+            path,
+            expected_install_root,
+            expected_installed_path,
+            expected_install_root_path,
+            lines,
+        )
     expected_target = f"Smoke install target: {expected_install_root}"
     core_lines = (
         TRACE_HEADER,

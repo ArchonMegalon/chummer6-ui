@@ -31,10 +31,20 @@ public sealed class SessionServiceTests
 
         SessionApiResult<SessionSyncReceipt> result = service.SyncCharacterLedger(OwnerScope.LocalSingleUser, "char-7", batch);
 
-        Assert.IsFalse(result.IsImplemented);
-        Assert.IsNotNull(result.NotImplemented);
-        Assert.AreEqual(SessionApiOperations.SyncCharacterLedger, result.NotImplemented.Operation);
-        Assert.AreEqual("char-7", result.NotImplemented.CharacterId);
+        // Core10388 plane (752d7a3a45ed) closes the sync boundary via unavailability when no
+        // DurableSessionPlayService is registered: the operation is implemented and returns a
+        // closed failure receipt (no payload, nothing written) instead of a NotImplemented
+        // receipt. Assert the plane contract so the closed-mode guarantee stays pinned.
+        Assert.IsTrue(result.IsImplemented);
+        Assert.IsNull(result.Payload);
+        Assert.IsNotNull(result.Failure);
+        Assert.AreEqual("unavailable", result.Failure.Kind);
+        Assert.AreEqual("durable-session-store-unregistered", result.Failure.Code);
+        Assert.AreEqual("session-play", result.Failure.Recovery.Operation);
+        Assert.AreEqual(SessionOperationFailureClasses.Interrupted, result.Failure.Recovery.FailureClass);
+        Assert.AreEqual(SessionOperationRetryClasses.Resume, result.Failure.Recovery.RetryClass);
+        Assert.IsFalse(result.Failure.Recovery.FallbackAllowed);
+        Assert.IsTrue(result.Failure.Recovery.CanContinue);
     }
 
     [TestMethod]

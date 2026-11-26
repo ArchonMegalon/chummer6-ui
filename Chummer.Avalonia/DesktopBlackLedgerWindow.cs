@@ -73,6 +73,11 @@ internal sealed class DesktopBlackLedgerWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
+        if (!DesktopPreferenceRuntime.LoadOrCreateState(headId).ShowOnlineCampaignRunSurfaces)
+        {
+            return;
+        }
+
         DesktopBlackLedgerWindow dialog = await CreateAsync().ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;

@@ -21,7 +21,8 @@ public sealed record DesktopPreferenceState(
     bool HideMasterIndex = false,
     bool AnalyticsOptIn = true,
     bool DisableAiFeatures = false,
-    string CharacterSettingsCatalogJson = "")
+    string CharacterSettingsCatalogJson = "",
+    bool ShowOnlineCampaignRunSurfaces = false)
 {
     public static DesktopPreferenceState Default { get; } = new(
         UiScalePercent: 100,
@@ -44,5 +45,6 @@ public sealed record DesktopPreferenceState(
         HideMasterIndex: false,
         AnalyticsOptIn: true,
         DisableAiFeatures: false,
-        CharacterSettingsCatalogJson: string.Empty);
+        CharacterSettingsCatalogJson: string.Empty,
+        ShowOnlineCampaignRunSurfaces: false);
 }

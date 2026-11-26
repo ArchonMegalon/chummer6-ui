@@ -6,6 +6,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -78,6 +79,7 @@ public partial class DesktopDialogWindow : Window
         _dialogActionsPanel = this.FindControl<StackPanel>("DialogActionsPanel")!;
         Closing += OnClosing;
         Opened += OnOpened;
+        KeyDown += OnDialogWindowKeyDown;
     }
 
     public DesktopDialogWindow(CharacterOverviewViewModelAdapter adapter)
@@ -1136,15 +1138,19 @@ public partial class DesktopDialogWindow : Window
 
         card.Children.Add(actionsPanel);
 
-        return new Border
+        Border workbenchCard = new()
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = DesktopShellTheme.ResolveBorderBrush(),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#020617"),
             CornerRadius = new CornerRadius(0),
             Padding = new Thickness(10),
             Child = card
         };
+        // Bind (not one-shot assign) so the card paints the ThemeDictionaries brush for the
+        // active variant and follows live theme changes; a one-shot resolver call cannot see
+        // variant-scoped keys nor update after RequestedThemeVariant flips mid-session.
+        workbenchCard.Bind(Border.BackgroundProperty, new DynamicResourceExtension("ChummerShellSurfaceAltBrush"));
+        workbenchCard.Bind(Border.BorderBrushProperty, new DynamicResourceExtension("ChummerShellBorderBrush"));
+        return workbenchCard;
     }
 
     private static Button CreateHorizonRouteButton(string label, Action onClick)
@@ -1163,7 +1169,7 @@ public partial class DesktopDialogWindow : Window
     {
         Grid row = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("156,*,156,*"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*"),
             ColumnSpacing = 8
         };
 
@@ -1224,7 +1230,7 @@ public partial class DesktopDialogWindow : Window
     {
         Grid row = new()
         {
-            ColumnDefinitions = new ColumnDefinitions(right is null ? "156,*" : "156,*,156,*"),
+            ColumnDefinitions = new ColumnDefinitions(right is null ? "Auto,*" : "Auto,*,Auto,*"),
             ColumnSpacing = 8,
             RowDefinitions = new RowDefinitions("Auto")
         };
@@ -1251,6 +1257,8 @@ public partial class DesktopDialogWindow : Window
                 Text = field.Label,
                 Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
                 FontWeight = FontWeight.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 340,
                 VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
             };
         }
@@ -1261,6 +1269,8 @@ public partial class DesktopDialogWindow : Window
                 Text = field.Label,
                 Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
                 FontWeight = FontWeight.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 340,
                 VerticalAlignment = field.IsMultiline ? global::Avalonia.Layout.VerticalAlignment.Top : global::Avalonia.Layout.VerticalAlignment.Center
             };
         }
@@ -1284,7 +1294,7 @@ public partial class DesktopDialogWindow : Window
         Grid row = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
-            ColumnDefinitions = new ColumnDefinitions("156,*,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"),
             ColumnSpacing = 8
         };
 
@@ -1398,12 +1408,12 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel shell = new()
         {
-            Spacing = 10
+            Spacing = 12
         };
 
         Grid settingRow = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("146,*,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("150,*,Auto"),
             ColumnSpacing = 10
         };
         TextBlock settingLabel = new()
@@ -1445,7 +1455,7 @@ public partial class DesktopDialogWindow : Window
 
         Grid rulesetRow = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("146,*"),
+            ColumnDefinitions = new ColumnDefinitions("150,*"),
             ColumnSpacing = 10
         };
         TextBlock rulesetLabel = new()
@@ -1457,17 +1467,23 @@ public partial class DesktopDialogWindow : Window
         };
         rulesetRow.Children.Add(rulesetLabel);
 
-        ComboBox rulesetCombo = BuildSelectComboBox(rulesetField, minWidth: 180);
+        ComboBox rulesetCombo = BuildSelectComboBox(rulesetField, minWidth: 220);
         rulesetCombo.Name = DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId");
         Grid.SetColumn(rulesetCombo, 1);
         rulesetRow.Children.Add(rulesetCombo);
 
-        shell.Children.Add(CreateLegacyFieldGroup(
-            "New Runner",
-            CreateLegacyGroupLead("Choose the ruleset, build method, and runner name before the character opens."),
-            settingRow,
-            rulesetRow,
-            CreateSplitFieldRow(nameField, aliasField)));
+        StackPanel settingsGroup = new()
+        {
+            Spacing = 10,
+            Children =
+            {
+                CreateLegacyGroupLead("Choose the ruleset, build method, and runner name before the character opens."),
+                settingRow,
+                rulesetRow,
+                CreateSplitFieldRow(nameField, aliasField)
+            }
+        };
+        shell.Children.Add(CreateLegacyFieldGroup("New Runner", settingsGroup));
         shell.Children.Add(optionsPanel);
 
         return shell;
@@ -2379,6 +2395,35 @@ public partial class DesktopDialogWindow : Window
             CreateSplitFieldRow(priorityField, karmaRatioField),
             CreateStandaloneFieldRow(houseRulesField)));
 
+        // WIN-009 gen15 T1035: this pane previously rendered only the defaults
+        // card, so the character-settings contract fields - settings profile,
+        // section select, and the active section's value fields such as
+        // treCustomDataDirectories - never appeared in the native dialog and
+        // named campaign rule amends could not be applied through the client.
+        // The factory emits the full contract field set next to the hidden
+        // legacy defaults fields; append every remaining visible field below
+        // the parity card. Construction runs under _suppressDialogUpdates, so
+        // the wired field handlers stay inert until a real user edit, and
+        // section switches flow through the standard QueueDialogFieldUpdate ->
+        // RebuildDynamicDialog -> Rebind refresh loop.
+        foreach (DesktopDialogField field in fields)
+        {
+            if (string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (string.Equals(field.Id, "characterPriority", StringComparison.Ordinal)
+                || string.Equals(field.Id, "characterKarmaNuyen", StringComparison.Ordinal)
+                || string.Equals(field.Id, "characterHouseRulesEnabled", StringComparison.Ordinal))
+            {
+                // Already rendered inside the parity card above.
+                continue;
+            }
+
+            shell.Children.Add(CreateFieldPane(field));
+        }
+
         return shell;
     }
 
@@ -3095,9 +3140,44 @@ public partial class DesktopDialogWindow : Window
 
     private Control CreateFieldControl(DesktopDialogField field)
     {
+        if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
+        {
+            CheckBox checkBox = new()
+            {
+                Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
+                Content = field.Label,
+                IsChecked = ParseCheckbox(field.Value),
+                IsEnabled = !field.IsReadOnly
+            };
+            DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
+            if (!field.IsReadOnly)
+            {
+                checkBox.IsCheckedChanged += (_, _) =>
+                {
+                    if (_suppressDialogUpdates)
+                    {
+                        return;
+                    }
+
+                    string nextValue = checkBox.IsChecked == true ? "true" : "false";
+                    if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    QueueDialogFieldUpdate(field.Id, nextValue);
+                };
+            }
+
+            ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
+            return checkBox;
+        }
+
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
         {
-            DesktopDialogFieldOption[] options = (field.Options ?? [])
+            DesktopDialogFieldOption[] options = (field.Id == "globalTheme"
+            ? DesktopAppearance.Options(field.Value).Select(option => new DesktopDialogFieldOption(option.Value, option.Label)).ToArray()
+            : field.Options ?? [])
                 .DistinctBy(option => option.Value, StringComparer.Ordinal)
                 .ToArray();
             ComboBox comboBox = new()
@@ -3874,7 +3954,9 @@ public partial class DesktopDialogWindow : Window
 
     private ComboBox BuildSelectComboBox(DesktopDialogField field, double minWidth)
     {
-        DesktopDialogFieldOption[] options = (field.Options ?? [])
+        DesktopDialogFieldOption[] options = (field.Id == "globalTheme"
+            ? DesktopAppearance.Options(field.Value).Select(option => new DesktopDialogFieldOption(option.Value, option.Label)).ToArray()
+            : field.Options ?? [])
             .DistinctBy(option => option.Value, StringComparer.Ordinal)
             .ToArray();
         ComboBox comboBox = new()
@@ -3983,7 +4065,9 @@ public partial class DesktopDialogWindow : Window
 
     private ListBox BuildSelectListBox(DesktopDialogField field)
     {
-        DesktopDialogFieldOption[] options = (field.Options ?? [])
+        DesktopDialogFieldOption[] options = (field.Id == "globalTheme"
+            ? DesktopAppearance.Options(field.Value).Select(option => new DesktopDialogFieldOption(option.Value, option.Label)).ToArray()
+            : field.Options ?? [])
             .DistinctBy(option => option.Value, StringComparer.Ordinal)
             .ToArray();
         ListBox listBox = new()
@@ -4171,9 +4255,9 @@ public partial class DesktopDialogWindow : Window
     {
         (double width, double height, double minWidth, double minHeight) size = dialogId switch
         {
-            "dialog.new_character" => (820d, 250d, 680d, 220d),
+            "dialog.new_character" => (820d, 340d, 680d, 300d),
             "dialog.new_character.priority_workflow" => (980d, 720d, 820d, 560d),
-            "dialog.new_character.karma_workflow" => (820d, 250d, 680d, 220d),
+            "dialog.new_character.karma_workflow" => (820d, 340d, 680d, 300d),
             "dialog.master_index" => (980d, 640d, 760d, 440d),
             "dialog.character_roster" => (900d, 620d, 700d, 420d),
             "dialog.global_settings" => (920d, 600d, 700d, 420d),
@@ -4191,6 +4275,7 @@ public partial class DesktopDialogWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
+        CaptureInitiatingOwnerFocus();
         Dispatcher.UIThread.Post(() =>
         {
             Activate();
@@ -4866,8 +4951,241 @@ public partial class DesktopDialogWindow : Window
         return true;
     }
 
+    private Control? _initiatingOwnerFocus;
+    private bool _focusRestoreScheduled;
+
+    /// <summary>Whether the owner window held a focused control when this
+    /// dialog opened. False means the shell had no keyboard focus at all
+    /// (menu-command flows on a fresh process), so the honest restore is
+    /// owner-window activation, not a control-target restore.</summary>
+    internal bool HadInitiatingOwnerFocus => _initiatingOwnerFocus is not null;
+    private static readonly object s_focusRestoreGate = new();
+    private static readonly string[] s_focusRestoreRing = new string[8];
+    private static int s_focusRestoreRingIndex;
+
+    internal static string[] LastFocusRestoreSnapshot()
+    {
+        lock (s_focusRestoreGate)
+        {
+            return (string[])s_focusRestoreRing.Clone();
+        }
+    }
+
+    private static void RecordFocusRestore(string entry)
+    {
+        lock (s_focusRestoreGate)
+        {
+            s_focusRestoreRing[s_focusRestoreRingIndex] = entry;
+            s_focusRestoreRingIndex = (s_focusRestoreRingIndex + 1) % s_focusRestoreRing.Length;
+        }
+    }
+
+    private static string DescribeFocusTarget(Control? control)
+    {
+        if (control is null)
+        {
+            return "<null>";
+        }
+
+        string label = string.IsNullOrEmpty(control.Name)
+            ? global::Avalonia.Automation.AutomationProperties.GetAutomationId(control) ?? string.Empty
+            : control.Name;
+        return control.GetType().Name + ":" + label;
+    }
+
+    /// <summary>
+    /// WIN-009 gen11: capture what held keyboard focus in the owner window
+    /// immediately before the dialog steals activation, so the close path
+    /// can hand focus back (the same affordance family the SR6 career
+    /// advance modal received in gen13b).
+    /// </summary>
+    private void CaptureInitiatingOwnerFocus()
+    {
+        try
+        {
+            _initiatingOwnerFocus = (Owner as Window)?.FocusManager?.GetFocusedElement() as Control;
+            RecordFocusRestore("capture " + DescribeFocusTarget(_initiatingOwnerFocus));
+        }
+        catch (Exception captureFault)
+        {
+            _initiatingOwnerFocus = null;
+            RecordFocusRestore("capture fault " + captureFault.GetType().Name);
+        }
+    }
+
+    /// <summary>
+    /// Nearest still-attached, still-visible control in the initiating
+    /// visual chain. A menu-initiated dialog captures the menu command
+    /// item, whose popup TopLevel detaches when the menu closes; the walk
+    /// crosses that boundary via PopupRoot.PlacementTarget so the shell
+    /// element that opened the popup (the menu button) becomes the
+    /// restore target instead of failing on a detached control.
+    /// </summary>
+    private Control? ResolveRestorableFocusTarget(Control? captured)
+    {
+        Visual? current = captured;
+        while (current is not null)
+        {
+            if (current is Control candidate
+                && candidate.GetVisualRoot() is not null
+                && candidate.IsEffectivelyVisible)
+            {
+                return candidate;
+            }
+
+            // PopupRoot (the popup's visual root) does not carry the
+            // placement target; the Popup control - its logical parent - does.
+            if (current.Parent is global::Avalonia.Controls.Primitives.Popup popup
+                && popup.PlacementTarget is Control placementTarget
+                && !ReferenceEquals(placementTarget, current))
+            {
+                current = placementTarget;
+                continue;
+            }
+
+            // Visual.Parent is StyledElement?; non-visual parents end the walk.
+            current = current.Parent as Visual;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Bounded owner-focus restore after the dialog closes. Runs at most
+    /// once per close (Escape path and OnClosing both funnel here) and
+    /// records every observable state change in the diagnostics ring so a
+    /// failed restore is evidence, not a silent gap.
+    /// </summary>
+    internal void RestoreInitiatingOwnerFocusAfterClose()
+    {
+        if (_focusRestoreScheduled)
+        {
+            return;
+        }
+
+        _focusRestoreScheduled = true;
+        Window? ownerWindow = Owner as Window;
+        if (ownerWindow is null)
+        {
+            RecordFocusRestore("restore skipped: no owner window");
+            return;
+        }
+
+        if (_initiatingOwnerFocus is null)
+        {
+            // No control held focus in the owner when this dialog opened
+            // (menu-command flows on a fresh shell): the honest keyboard
+            // restore is owner-window activation, not a control target.
+            RecordFocusRestore("restore mode: owner activation (no initiating control)");
+            _ = Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                try
+                {
+                    ownerWindow.Activate();
+                    RecordFocusRestore("restore activation ownerActive=" + ownerWindow.IsActive);
+                }
+                catch (Exception activationFault)
+                {
+                    RecordFocusRestore("restore activation fault " + activationFault.GetType().Name);
+                }
+            });
+            return;
+        }
+
+        _ = Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            DateTimeOffset deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(3);
+            int attempt = 0;
+            string lastRecorded = string.Empty;
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                Control? target = ResolveRestorableFocusTarget(_initiatingOwnerFocus);
+                if (target is not null && ownerWindow.IsVisible)
+                {
+                    attempt++;
+                    try
+                    {
+                        target.Focus();
+                        bool focused = ReferenceEquals(ownerWindow.FocusManager?.GetFocusedElement(), target);
+                        string entry = "restore attempt" + attempt + " target=" + DescribeFocusTarget(target) + " focused=" + focused;
+                        if (!string.Equals(entry, lastRecorded, StringComparison.Ordinal))
+                        {
+                            RecordFocusRestore(entry);
+                            lastRecorded = entry;
+                        }
+                        if (focused)
+                        {
+                            return;
+                        }
+                    }
+                    catch (Exception restoreFault)
+                    {
+                        RecordFocusRestore("restore attempt" + attempt + " fault " + restoreFault.GetType().Name);
+                    }
+                }
+                else
+                {
+                    string entry = "restore probe: target=" + DescribeFocusTarget(target) + " ownerVisible=" + ownerWindow.IsVisible;
+                    if (!string.Equals(entry, lastRecorded, StringComparison.Ordinal))
+                    {
+                        RecordFocusRestore(entry);
+                        lastRecorded = entry;
+                    }
+                }
+
+                await Task.Delay(120);
+            }
+
+            RecordFocusRestore("restore exhausted: final target=" + DescribeFocusTarget(ResolveRestorableFocusTarget(_initiatingOwnerFocus)));
+        });
+    }
+
+
+    /// <summary>
+    /// WIN-009 gen11 keyboard matrix (Controller9923): governed Escape
+    /// affordance. Escape closes a dialog ONLY through the same
+    /// ExecuteDialogActionAsync route the visible cancel/close button uses,
+    /// and ONLY when that affordance is actually rendered. Dialogs without
+    /// a cancel affordance (master index, roster, dice roller) keep Escape
+    /// unhandled - the shell action set stays the single source of truth,
+    /// and window close cleanup (OnClosing) remains the governed path.
+    /// </summary>
+    private void OnDialogWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape)
+            return;
+
+        if (_adapter is null)
+            return;
+
+        e.Handled = TryExecuteEscapeAction(_dialogActionsPanel.Children.OfType<Button>(), actionId =>
+        {
+            RestoreInitiatingOwnerFocusAfterClose();
+            _ = ExecuteSafeAsync(
+                () => _adapter.ExecuteDialogActionAsync(actionId, CancellationToken.None),
+                $"execute action '{actionId}' (Escape affordance)");
+        });
+    }
+
+    internal static bool TryExecuteEscapeAction(IEnumerable<Button> actions, Action<string> execute)
+    {
+        // Effective state includes disabled/hidden ancestors: Escape cannot
+        // bypass the visible button's interaction boundary.
+        Button? affordance = actions.FirstOrDefault(button => button.IsEffectivelyVisible
+                && button.IsEffectivelyEnabled && string.Equals(button.Tag as string, "cancel", StringComparison.Ordinal))
+            ?? actions.FirstOrDefault(button => button.IsEffectivelyVisible
+                && button.IsEffectivelyEnabled && string.Equals(button.Tag as string, "close", StringComparison.Ordinal));
+        if (affordance is null)
+            return false;
+
+        execute((string)affordance.Tag!);
+        return true;
+    }
+
     private void OnClosing(object? sender, WindowClosingEventArgs e)
     {
+        RestoreInitiatingOwnerFocusAfterClose();
+
         if (_suppressCloseNotification)
             return;
 
@@ -5008,15 +5326,7 @@ public partial class DesktopDialogWindow : Window
     }
 
     private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-    {
-        if (App.Current?.TryFindResource(resourceKey, out object? resource) == true
-            && resource is IBrush brush)
-        {
-            return brush;
-        }
-
-        return new SolidColorBrush(Color.Parse(fallbackHex));
-    }
+        => DesktopShellTheme.ResolveThemeBrush(resourceKey, fallbackHex);
 }
 
 internal static class DesktopDialogWindowExtensions

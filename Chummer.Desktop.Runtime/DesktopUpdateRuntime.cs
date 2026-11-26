@@ -72,24 +72,38 @@ public static class DesktopUpdateRuntime
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(state.LastManifestVersion))
+        if (string.IsNullOrWhiteSpace(state.LastManifestVersion) ||
+            string.IsNullOrWhiteSpace(state.InstalledVersion))
         {
             return false;
         }
 
-        string installedVersion = string.IsNullOrWhiteSpace(state.InstalledVersion)
-            ? DesktopReleaseMetadata.Load(headId).Version
-            : state.InstalledVersion;
-        if (string.IsNullOrWhiteSpace(installedVersion)
-            || string.Equals(installedVersion, state.LastManifestVersion, StringComparison.OrdinalIgnoreCase))
+        if (!TryCompareReleaseVersions(state.InstalledVersion, state.LastManifestVersion, out int comparison))
         {
+            // Incomparable or opaque versions never qualify for the startup prompt:
+            // automatic downgrade on unknown versions is forbidden (Controller10152).
             return false;
         }
 
-        return !string.Equals(
-            state.LastStartupPromptedManifestVersion,
-            state.LastManifestVersion,
-            StringComparison.OrdinalIgnoreCase);
+        if (comparison >= 0)
+        {
+            // Installed is same or newer than the last observed manifest.
+            return false;
+        }
+
+        if (!TryIsChannelEligible(state.ChannelId, state.LastManifestChannelId))
+        {
+            // Cross-channel manifests never qualify for the startup prompt.
+            return false;
+        }
+
+        if (!string.Equals(state.LastStartupPromptedManifestVersion, state.LastManifestVersion, StringComparison.OrdinalIgnoreCase))
+        {
+            // A manifest the user has not yet been prompted for qualifies for the startup prompt.
+            return true;
+        }
+
+        return false;
     }
 
     public static void MarkStartupUpdatePromptShown(string headId)
@@ -145,28 +159,60 @@ public static class DesktopUpdateRuntime
         }
         else if (!string.IsNullOrWhiteSpace(state?.PendingUpdateVersion))
         {
-            status = "update_staged";
-            recommendedAction = configuration.AutoApply
-                ? "Update is staged. Chummer is installing it in place and should relaunch on the new build."
-                : "Update is staged for this install. Finish the update before continuing.";
+            if (!string.IsNullOrWhiteSpace(pendingInstallerPath))
+            {
+                status = "update_staged";
+                recommendedAction = configuration.AutoApply
+                    ? "Update is staged. Chummer is installing it in place and should relaunch on the new build."
+                    : "Update is staged for this install. Finish the update before continuing.";
+            }
+            else
+            {
+                // PendingUpdateVersion without an on-disk installer is not a verified stage:
+                // never offer restart/apply for an unverified staged update (Controller10152).
+                status = "attention_required";
+                recommendedAction = "The staged update no longer has its installer file. Check for updates again to restore the staged update.";
+            }
         }
         else if (state?.LastCheckedAt is null)
         {
             status = "never_checked";
             recommendedAction = "Open Chummer once with update checks enabled so this copy can read current release information.";
         }
-        else if (!string.IsNullOrWhiteSpace(state.LastManifestVersion)
-            && !string.Equals(installedVersion, state.LastManifestVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            status = "update_available";
-            recommendedAction = configuration.AutoApply
-                ? "Restart to let the desktop head apply the next staged update."
-                : "Open Downloads or Account to review the next promoted installer.";
-        }
         else if (RequiresReleaseAttention(state))
         {
             status = "attention_required";
             recommendedAction = BuildReleaseAttentionAction(state);
+        }
+        else if (!string.IsNullOrWhiteSpace(state.LastManifestVersion))
+        {
+            bool sameChannel = TryIsChannelEligible(channelId, state.LastManifestChannelId);
+            if (!sameChannel)
+            {
+                // Cross-channel manifests never read as a same-channel update (Controller10152).
+                status = "current";
+                recommendedAction = "Continue into the home cockpit or your most recent workspace.";
+            }
+            else if (!TryCompareReleaseVersions(installedVersion, state.LastManifestVersion, out int availableComparison))
+            {
+                // Incomparable or opaque versions never claim an update is available:
+                // automatic downgrade on unknown versions is forbidden (Controller10152).
+                status = "current";
+                recommendedAction = "Continue into the home cockpit or your most recent workspace.";
+            }
+            else if (availableComparison < 0)
+            {
+                status = "update_available";
+                recommendedAction = configuration.AutoApply
+                    ? "Restart to let the desktop head apply the next staged update."
+                    : "Open Downloads or Account to review the next promoted installer.";
+            }
+            else
+            {
+                // Installed is same or newer than the last observed manifest.
+                status = "current";
+                recommendedAction = "Continue into the home cockpit or your most recent workspace.";
+            }
         }
         else
         {
@@ -211,7 +257,8 @@ public static class DesktopUpdateRuntime
                 RollbackWindowStartedAtUtc: state?.RollbackWindowStartedAtUtc,
                 RollbackWindowExpiresAtUtc: state?.RollbackWindowExpiresAtUtc,
                 LastManifestChannelId: state?.LastManifestChannelId,
-                UpdateMode: configuration.Mode);
+                UpdateMode: configuration.Mode,
+                HasVerifiedStagedUpdate: !string.IsNullOrWhiteSpace(pendingInstallerPath));
     }
 
     public static bool TryOpenPendingInstaller(string headId)
@@ -697,6 +744,78 @@ public static class DesktopUpdateRuntime
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
                 progress?.Report(new DesktopUpdateProgressUpdate("current", "Chummer is already current"));
                 return DesktopUpdateStartupResult.Continue(releaseComparison == 0 ? "already_current" : "installed_ahead_of_manifest");
+            }
+
+            if (string.IsNullOrWhiteSpace(manifest.ChannelId))
+            {
+                // A manifest without a channel cannot prove channel eligibility (Controller10152).
+                updatedState = updatedState with
+                {
+                    LastError = null,
+                    LastFailureReason = null,
+                    LastFailureAtUtc = null,
+                    RetryAttempt = 0,
+                    NextRetryAtUtc = null
+                };
+                DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("current", "Update channel could not be proven"));
+                return DesktopUpdateStartupResult.Continue(
+                    "manifest_channel_unknown",
+                    "The update channel could not be proven for this copy; no update was staged.");
+            }
+
+            if (!string.Equals(state.ChannelId, manifest.ChannelId, StringComparison.OrdinalIgnoreCase)
+                && !IsUnprovenChannelId(state.ChannelId))
+            {
+                // Cross-channel manifests never stage updates for this copy (Controller10152);
+                // an unproven copy (empty or 'local' release metadata) adopts the manifest channel.
+                updatedState = updatedState with
+                {
+                    LastError = null,
+                    LastFailureReason = null,
+                    LastFailureAtUtc = null,
+                    RetryAttempt = 0,
+                    NextRetryAtUtc = null
+                };
+                DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("current", "Chummer is on a different update channel"));
+                return DesktopUpdateStartupResult.Continue("channel_mismatch", "This copy is on a different update channel; no update was staged.");
+            }
+
+            if (!TryCompareReleaseVersions(installedVersion, manifest.Version, out int eligibilityComparison))
+            {
+                // Incomparable or opaque versions never stage automatically:
+                // automatic downgrade on unknown versions is forbidden (Controller10152).
+                updatedState = updatedState with
+                {
+                    LastError = null,
+                    LastFailureReason = null,
+                    LastFailureAtUtc = null,
+                    RetryAttempt = 0,
+                    NextRetryAtUtc = null
+                };
+                DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("current", "Update eligibility could not be proven"));
+                return DesktopUpdateStartupResult.Continue(
+                    "installed_version_incomparable",
+                    "The available update version could not be compared with this build; no update was staged.");
+            }
+
+            if (eligibilityComparison >= 0)
+            {
+                // Installed is same or newer than the manifest: never stage a downgrade.
+                updatedState = updatedState with
+                {
+                    LastError = null,
+                    LastFailureReason = null,
+                    LastFailureAtUtc = null,
+                    RetryAttempt = 0,
+                    NextRetryAtUtc = null
+                };
+                DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
+                progress?.Report(new DesktopUpdateProgressUpdate("current", "Chummer is already current"));
+                return DesktopUpdateStartupResult.Continue(
+                    eligibilityComparison == 0 ? "already_current" : "installed_ahead_of_manifest");
             }
 
             if (!configuration.AutoApply)
@@ -1279,6 +1398,38 @@ public static class DesktopUpdateRuntime
             return false;
         }
 
+        // Dated preview candidates use a different identity scheme from run- stamps.
+        // Never order opaque commit suffixes lexically: only the validated date,
+        // or an explicitly numeric generation on the same date, establishes order.
+        const string datedPattern = @"^(?<base>[0-9]+\.[0-9]+\.[0-9]+)-(?<channel>[a-z]+)\.(?<date>[0-9]{8})\.(?<suffix>[a-z0-9]+)$";
+        Match installedDated = Regex.Match(installed, datedPattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        Match manifestDated = Regex.Match(manifest, datedPattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (installedDated.Success && manifestDated.Success
+            && string.Equals(installedDated.Groups["channel"].Value, manifestDated.Groups["channel"].Value, StringComparison.OrdinalIgnoreCase)
+            && DateTime.TryParseExact(installedDated.Groups["date"].Value, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime installedDate)
+            && DateTime.TryParseExact(manifestDated.Groups["date"].Value, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime manifestDate)
+            && Version.TryParse(installedDated.Groups["base"].Value, out Version? installedBase)
+            && Version.TryParse(manifestDated.Groups["base"].Value, out Version? manifestBase))
+        {
+            comparison = installedBase.CompareTo(manifestBase);
+            if (comparison != 0)
+                return true;
+            comparison = installedDate.CompareTo(manifestDate);
+            if (comparison != 0)
+                return true;
+            string installedSuffix = installedDated.Groups["suffix"].Value;
+            string manifestSuffix = manifestDated.Groups["suffix"].Value;
+            if (installedSuffix.StartsWith("gen", StringComparison.OrdinalIgnoreCase)
+                && manifestSuffix.StartsWith("gen", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(installedSuffix.AsSpan(3), out int installedGeneration)
+                && int.TryParse(manifestSuffix.AsSpan(3), out int manifestGeneration))
+            {
+                comparison = installedGeneration.CompareTo(manifestGeneration);
+                return true;
+            }
+            return false;
+        }
+
         Match installedRunVersion = RunVersionPattern.Match(installed);
         Match manifestRunVersion = RunVersionPattern.Match(manifest);
         if (installedRunVersion.Success && manifestRunVersion.Success)
@@ -1286,6 +1437,18 @@ public static class DesktopUpdateRuntime
             string installedStamp = installedRunVersion.Groups["date"].Value + installedRunVersion.Groups["time"].Value;
             string manifestStamp = manifestRunVersion.Groups["date"].Value + manifestRunVersion.Groups["time"].Value;
             comparison = string.CompareOrdinal(installedStamp, manifestStamp);
+            return true;
+        }
+
+        // Plain semantic versions are fully orderable; build metadata (+...) is
+        // ignored per semver ordering rules. Only mixed or opaque schemes stay
+        // incomparable so unknown versions never auto-stage (Controller10152).
+        string installedCore = installed.Split('+')[0].Trim();
+        string manifestCore = manifest.Split('+')[0].Trim();
+        if (Version.TryParse(installedCore, out Version? installedPlain)
+            && Version.TryParse(manifestCore, out Version? manifestPlain))
+        {
+            comparison = installedPlain.CompareTo(manifestPlain);
             return true;
         }
 
@@ -1862,6 +2025,32 @@ public static class DesktopUpdateRuntime
         return string.IsNullOrWhiteSpace(detail)
             ? null
             : detail.EndsWith('.') ? detail : $"{detail}.";
+    }
+
+    private static bool TryIsChannelEligible(string? installedChannel, string? manifestChannel)
+    {
+        // Same channel always eligible. An unproven copy (empty or "local" release
+        // metadata) adopts the manifest channel - the same rule the update run
+        // path applies before staging, so the status surface and the startup
+        // prompt agree with what CheckAndScheduleStartupUpdateAsync decided
+        // (Controller10152).
+        if (string.IsNullOrWhiteSpace(manifestChannel))
+        {
+            return false;
+        }
+
+        if (string.Equals(installedChannel, manifestChannel, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return IsUnprovenChannelId(installedChannel);
+    }
+
+    private static bool IsUnprovenChannelId(string? channelId)
+    {
+        return string.IsNullOrWhiteSpace(channelId)
+            || string.Equals(channelId, "local", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolveInstalledChannelId(DesktopUpdateState state, DesktopReleaseMetadata releaseMetadata)

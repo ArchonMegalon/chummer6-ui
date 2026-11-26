@@ -1,0 +1,57 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Verified reference: https://essential-typeui-01b26b54.vercel.app/components
+       Native adaptation: 8px controls, 16px cards, 4px spacing grid. -->
+  <Style Selector="Button.shell-action">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="16,8" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.shell-action.primary">
+    <Setter Property="Background" Value="#256EFF" />
+    <Setter Property="BorderBrush" Value="#256EFF" />
+    <Setter Property="Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.shell-action.primary:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="#5288FF" />
+    <Setter Property="BorderBrush" Value="#5288FF" />
+    <Setter Property="TextElement.Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.shell-action.primary:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="#1A5CE6" />
+    <Setter Property="BorderBrush" Value="#1A5CE6" />
+    <Setter Property="TextElement.Foreground" Value="White" />
+  </Style>
+  <Style Selector="Button.shell-action:disabled"><Setter Property="Opacity" Value="0.5" /></Style>
+  <Style Selector="Button.shell-action:focus-visible">
+    <Setter Property="BorderBrush" Value="#5288FF" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+  <Style Selector="TextBox.shell-input">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="12,8" />
+    <Setter Property="FontSize" Value="14" />
+  </Style>
+  <Style Selector="TextBox.shell-input:focus"><Setter Property="BorderBrush" Value="#256EFF" /></Style>
+  <Style Selector="TextBox.shell-input:error"><Setter Property="BorderBrush" Value="#BE123C" /></Style>
+  <Style Selector="ComboBox.shell-combo">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="12,6" />
+  </Style>
+  <Style Selector="Border.shell-card">
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="16" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+    <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+  </Style>
+  <Style Selector="Border.shell-dialog-header"><Setter Property="Padding" Value="24,20" /></Style>
+  <Style Selector="TextBlock.shell-section-title">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+</Styles>

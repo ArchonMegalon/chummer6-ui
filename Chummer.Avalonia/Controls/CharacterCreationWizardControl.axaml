@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.CharacterCreationWizardControl"
              x:Name="WizardRoot"
@@ -44,14 +44,12 @@
       <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="10">
         <StackPanel Spacing="4">
           <TextBlock x:Name="ActiveStepTitle" Classes="shell-section-title" />
-          <TextBlock x:Name="AuthorityStatusText" Classes="shell-caption" TextWrapping="Wrap" MaxHeight="44" TextTrimming="CharacterEllipsis" />
+          <TextBlock x:Name="AuthorityStatusText" Classes="shell-caption" TextWrapping="Wrap" />
         </StackPanel>
         <TextBlock x:Name="StepContentHeading"
                    Grid.Row="1"
                    Classes="shell-section-title"
-                   TextWrapping="Wrap"
-                   MaxHeight="40"
-                   TextTrimming="CharacterEllipsis" />
+                   TextWrapping="Wrap" />
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" MinHeight="140">
           <StackPanel Spacing="8">
             <StackPanel x:Name="PriorityPanel" Spacing="8" IsVisible="False">
@@ -107,9 +105,7 @@
                    Grid.Row="4"
                    Classes="shell-caption"
                    TextWrapping="Wrap"
-                   MaxHeight="64"
                    VerticalAlignment="Top"
-                   TextTrimming="CharacterEllipsis"
                    AutomationProperties.AutomationId="creation-wizard-finalize-status" />
       </Grid>
     </Border>
@@ -157,46 +153,46 @@
 
     <Border Grid.Row="2" Grid.ColumnSpan="3"
             Classes="shell-card subtle" Padding="10,6" Margin="0,4,0,2">
-      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <Button Content="Recover navigation"
-                  Classes="shell-action quiet"
-                  Click="RecoverButton_OnClick"
-                  AutomationProperties.AutomationId="creation-wizard-recover" />
-          <Button Content="Export checkpoint"
-                  Classes="shell-action quiet"
-                  Click="ExportButton_OnClick"
-                  AutomationProperties.AutomationId="creation-wizard-export" />
-        </StackPanel>
+      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+        <!-- Gen10 item 2: developer recovery/export buttons removed from the
+             ordinary footer; the events stay wired for secondary surfaces. -->
         <TextBlock x:Name="EditorLockText"
                    Grid.Column="1"
                    Classes="shell-caption"
                    VerticalAlignment="Center"
-                   Text="Advanced editor unlocks after authoritative finalization."
+                   Text="The full sheet editor unlocks after you finish."
                    TextWrapping="Wrap" />
-        <Button x:Name="BackButton"
+        <Button x:Name="CancelButton"
                 Grid.Column="2"
+                Classes="shell-action quiet"
+                Content="Cancel"
+                Click="CancelButton_OnClick"
+                IsVisible="False"
+                AutomationProperties.AutomationId="creation-wizard-cancel" />
+        <Button x:Name="BackButton"
+                Grid.Column="3"
                 Classes="shell-action"
                 Content="&lt; Back"
                 Click="BackButton_OnClick"
                 IsEnabled="False"
                 AutomationProperties.AutomationId="creation-wizard-back" />
         <Button x:Name="ContinueButton"
-                Grid.Column="3"
+                Grid.Column="4"
                 Classes="shell-action"
                 Content="Next &gt;"
                 Click="ContinueButton_OnClick"
                 AutomationProperties.AutomationId="creation-wizard-continue" />
         <Button x:Name="FinishWithAiButton"
+                Grid.Column="5"
                 Classes="shell-action quiet"
                 Content="Finish with AI"
                 Click="FinishWithAiButton_OnClick"
                 IsVisible="False"
                 AutomationProperties.AutomationId="creation-wizard-finish-with-ai" />
         <Button x:Name="FinalizeButton"
-                Grid.Column="4"
+                Grid.Column="5"
                 Classes="shell-action"
-                Content="Finish"
+                Content="Review &amp; finish"
                 Click="FinalizeButton_OnClick"
                 IsVisible="False"
                 AutomationProperties.AutomationId="creation-wizard-finalize" />

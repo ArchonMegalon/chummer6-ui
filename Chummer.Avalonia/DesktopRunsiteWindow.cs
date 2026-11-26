@@ -54,6 +54,11 @@ internal sealed class DesktopRunsiteWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
+        if (!DesktopPreferenceRuntime.LoadOrCreateState(headId).ShowOnlineCampaignRunSurfaces)
+        {
+            return;
+        }
+
         DesktopRunsiteWindow dialog = await CreateAsync().ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;

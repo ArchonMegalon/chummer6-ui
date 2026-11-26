@@ -6,6 +6,14 @@
                 Orientation="Horizontal"
                 Spacing="6"
                 VerticalAlignment="Center">
+      <TextBlock x:Name="SaveStateText"
+                 Classes="shell-caption"
+                 Text="Saved"
+                 IsVisible="False"
+                 VerticalAlignment="Center"
+                 TextWrapping="NoWrap"
+                 TextTrimming="CharacterEllipsis" />
+      <TextBlock x:Name="SaveStateSeparator" Classes="shell-caption" Text="|" VerticalAlignment="Center" IsVisible="False" />
       <TextBlock x:Name="CharacterStateText"
                  Classes="shell-caption"
                  Text="No character open"
@@ -43,6 +51,16 @@
                 Spacing="4"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center">
+      <Button x:Name="StatusDetailsButton" Content="Details"
+              AutomationProperties.AutomationId="StatusDetailsButton"
+              AutomationProperties.Name="Show workspace status details"
+              Padding="6,1" MinHeight="22" FontSize="11">
+        <Button.Flyout>
+          <Flyout>
+            <TextBlock x:Name="StatusDetailsText" MaxWidth="440" TextWrapping="Wrap" />
+          </Flyout>
+        </Button.Flyout>
+      </Button>
       <ProgressBar x:Name="WorkbenchProgressBar"
                    Width="56"
                    Height="8"

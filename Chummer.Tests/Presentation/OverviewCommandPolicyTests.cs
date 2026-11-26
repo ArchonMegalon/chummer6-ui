@@ -142,6 +142,53 @@ public class OverviewCommandPolicyTests
     }
 
     [TestMethod]
+    public void Online_campaign_run_surfaces_hidden_by_default_and_visible_when_enabled()
+    {
+        DesktopPreferenceState hidden = DesktopPreferenceState.Default;
+
+        foreach (string horizonId in new[]
+                 {
+                     "black_ledger",
+                     "runsite",
+                     "run_control",
+                     "table_pulse",
+                     "ghostwire",
+                     "anarchy"
+                 })
+        {
+            Assert.IsTrue(OverviewCommandPolicy.IsOnlineCampaignRunHorizon(horizonId));
+            Assert.IsTrue(OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon(horizonId, hidden));
+            Assert.IsFalse(OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon(
+                horizonId,
+                DesktopPreferenceState.Default with { ShowOnlineCampaignRunSurfaces = true }));
+        }
+
+        Assert.IsFalse(OverviewCommandPolicy.IsOnlineCampaignRunHorizon("karma_forge"));
+        Assert.IsFalse(OverviewCommandPolicy.IsOnlineCampaignRunHorizon("alice"));
+        Assert.IsFalse(OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon("karma_forge", hidden));
+        Assert.IsFalse(OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon("alice", hidden));
+        Assert.IsFalse(OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForHorizon(
+            "quicksilver",
+            DesktopPreferenceState.Default with { ShowOnlineCampaignRunSurfaces = true }));
+    }
+
+    [TestMethod]
+    public void Online_campaign_run_route_policy_hides_portal_ledger_and_runsite_routes()
+    {
+        DesktopPreferenceState hidden = DesktopPreferenceState.Default;
+
+        Assert.IsTrue(OverviewCommandPolicy.IsOnlineCampaignRunRoute("/ledger"));
+        Assert.IsTrue(OverviewCommandPolicy.IsOnlineCampaignRunRoute("/account/ledger/map#ledger-map"));
+        Assert.IsTrue(OverviewCommandPolicy.IsOnlineCampaignRunRoute("/account/runsites"));
+        Assert.IsTrue(OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForRoute("/account/runsites", hidden));
+        Assert.IsFalse(OverviewCommandPolicy.IsHiddenByOnlineCampaignRunPreferenceForRoute(
+            "/account/runsites",
+            DesktopPreferenceState.Default with { ShowOnlineCampaignRunSurfaces = true }));
+        Assert.IsFalse(OverviewCommandPolicy.IsOnlineCampaignRunRoute("/rules"));
+        Assert.IsFalse(OverviewCommandPolicy.IsOnlineCampaignRunRoute("/account/quicksilver"));
+    }
+
+    [TestMethod]
     public void Guided_route_policy_hides_alice_and_local_coprocessor_routes()
     {
         DesktopPreferenceState quiet = DesktopPreferenceState.Default with { DisableAiFeatures = true };

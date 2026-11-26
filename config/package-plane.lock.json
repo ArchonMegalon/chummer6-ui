@@ -59,7 +59,7 @@
     "producerSha256": "d53c2eb391082c8d0513ad0d4ce3bed2b07c373dcffc8505b4a670dc83849933",
     "receiptContract": "chummer-hub.no-siblings-package-plane/v2",
     "receiptFileName": "HUB_NO_SIBLINGS_PACKAGE_PLANE.generated.json",
-    "receiptSha256": "311e39ca08ecbabd6d5048a5e341c58c8b3cad5308a446c1252b4cfaec359b67"
+    "receiptSha256": "24dce845a84941621eafd26269cfdcd1af619a36df7b499849c8a5642814950c"
   },
   "consumer": {
     "buildProjects": [

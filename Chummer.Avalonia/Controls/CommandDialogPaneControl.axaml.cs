@@ -380,7 +380,7 @@ public partial class CommandDialogPaneControl : UserControl
     {
         Grid row = new()
         {
-            ColumnDefinitions = new ColumnDefinitions(right is null ? "156,*" : "156,*,156,*"),
+            ColumnDefinitions = new ColumnDefinitions(right is null ? "Auto,*" : "Auto,*,Auto,*"),
             ColumnSpacing = 8
         };
 
@@ -402,6 +402,8 @@ public partial class CommandDialogPaneControl : UserControl
             Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
             Text = field.Label,
             FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 340,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
@@ -965,10 +967,49 @@ public partial class CommandDialogPaneControl : UserControl
 
     private Control CreateFieldControl(DialogFieldDisplayItem field)
     {
+        if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
+        {
+            // Controller10127: boolean settings render as native themed checkboxes,
+            // never raw true/false text fields. Mirrors CreateFieldPane.
+            CheckBox checkBox = new()
+            {
+                Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
+                Content = field.Label,
+                IsChecked = ParseCheckbox(field.Value),
+                IsEnabled = !field.IsReadOnly
+            };
+            DesktopShellTheme.ApplyShellCheckBoxTheme(checkBox);
+            if (!field.IsReadOnly)
+            {
+                checkBox.IsCheckedChanged += (_, _) =>
+                {
+                    if (_suppressDialogUpdates)
+                    {
+                        return;
+                    }
+
+                    string nextValue = checkBox.IsChecked == true ? "true" : "false";
+                    if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    DialogFieldValueChanged?.Invoke(
+                        this,
+                        new DialogFieldValueChangedEventArgs(field.Id, nextValue));
+                };
+            }
+
+            ApplyAccessibility(checkBox, field.AccessibleName, field.ToolTip, field.HelpText);
+            return checkBox;
+        }
+
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal)
             && string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
         {
-            DialogFieldOptionDisplayItem[] options = (field.Options ?? [])
+            DialogFieldOptionDisplayItem[] options = (field.Id == "globalTheme"
+                ? DesktopAppearance.Options(field.Value).Select(option => new DialogFieldOptionDisplayItem(option.Value, option.Label)).ToArray()
+                : field.Options ?? [])
                 .DistinctBy(option => option.Value, StringComparer.Ordinal)
                 .ToArray();
             ListBox listBox = new()
@@ -1012,7 +1053,9 @@ public partial class CommandDialogPaneControl : UserControl
 
         if (string.Equals(field.InputType, "select", StringComparison.Ordinal))
         {
-            DialogFieldOptionDisplayItem[] options = (field.Options ?? [])
+            DialogFieldOptionDisplayItem[] options = (field.Id == "globalTheme"
+                ? DesktopAppearance.Options(field.Value).Select(option => new DialogFieldOptionDisplayItem(option.Value, option.Label)).ToArray()
+                : field.Options ?? [])
                 .DistinctBy(option => option.Value, StringComparer.Ordinal)
                 .ToArray();
             ComboBox comboBox = new()
@@ -1432,15 +1475,7 @@ public partial class CommandDialogPaneControl : UserControl
     }
 
     private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-    {
-        if (global::Avalonia.Application.Current?.TryFindResource(resourceKey, out object? resource) == true
-            && resource is IBrush brush)
-        {
-            return brush;
-        }
-
-        return new SolidColorBrush(Color.Parse(fallbackHex));
-    }
+        => DesktopShellTheme.ResolveThemeBrush(resourceKey, fallbackHex);
 }
 
 public sealed record CommandPaletteItem(string Id, string Label, string Group, bool Enabled)

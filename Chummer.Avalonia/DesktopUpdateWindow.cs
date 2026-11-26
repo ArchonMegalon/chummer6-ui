@@ -182,7 +182,9 @@ internal sealed class DesktopUpdateWindow : Window
         return _updateStatus.Status switch
         {
             "disabled" => S("desktop.update.intro.disabled"),
-            "update_staged" => "The next build is already staged for this install. Chummer should finish the in-place update and relaunch on the newer build.",
+            "update_staged" => _updateStatus.HasVerifiedStagedUpdate
+                ? "The next build is already staged for this install. Chummer should finish the in-place update and relaunch on the newer build."
+                : "An update was staged for this install, but its installer file is missing. Check for updates again to restore it.",
             "update_available" => S("desktop.update.intro.available"),
             "attention_required" => S("desktop.update.intro.attention"),
             "never_checked" => S("desktop.update.intro.never_checked"),
@@ -217,7 +219,9 @@ internal sealed class DesktopUpdateWindow : Window
 
         if (string.Equals(_updateStatus.Status, "update_staged", StringComparison.Ordinal))
         {
-            lines.Add("The next build is already staged for this copy.");
+            lines.Add(_updateStatus.HasVerifiedStagedUpdate
+                ? "The next build is already staged for this copy."
+                : "An update was staged for this copy, but its installer file is missing.");
         }
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
@@ -249,9 +253,13 @@ internal sealed class DesktopUpdateWindow : Window
                 _updateStatus.PendingUpdateVersion,
                 string.IsNullOrWhiteSpace(_updateStatus.PendingUpdateChannelId) ? _updateStatus.ChannelId : _updateStatus.PendingUpdateChannelId));
 
-            if (_updateStatus.AutoApply)
+            if (_updateStatus.AutoApply && _updateStatus.HasVerifiedStagedUpdate)
             {
                 lines.Add("Full auto-update is on. Chummer should install the staged build and reopen on the newer version.");
+            }
+            else if (_updateStatus.AutoApply)
+            {
+                lines.Add("Full auto-update is on, but the staged installer file is missing. Check for updates again to restore the staged update.");
             }
             else if (string.Equals(_updateStatus.UpdateMode, "notify", StringComparison.OrdinalIgnoreCase))
             {
@@ -519,7 +527,9 @@ internal sealed class DesktopUpdateWindow : Window
         {
             "update_staged" => (
                 "Update staged",
-                "A newer build is already staged for this copy. Chummer should install it and reopen on the next step.",
+                _updateStatus.HasVerifiedStagedUpdate
+                    ? "A newer build is already staged for this copy. Chummer should install it and reopen on the next step."
+                    : "An update was staged for this copy, but its installer file is missing. Check for updates again to restore it.",
                 AccentSurfaceBrush),
             "update_available" => (
                 "Update available",

@@ -136,26 +136,26 @@ def test_parity_materializer_keeps_unclassified_and_routing_tests_out_of_functio
 def test_current_core_public_release_pins_bind_content_and_consumer_defaults() -> None:
     # Active recipe pins are checked independently of the retained previous seal.
     # This does not claim that the pending next two-lock transaction is sealed.
-    recipe = "80584effc7c4275b6abf2ee1b68fd50f7ccf8906"
-    runtime = "903be22902d51769a8742cb2778dbf4bf3385ac8"
-    version = "0.0.0-packageplane.candidate.v20261114.1.sh903be22902d51"
+    recipe = "5cf6a882ed2cac96973160def7d1e2833e7edac5"
+    runtime = "752d7a3a45ed19070a7873e59c96f9f4ebca71dd"
+    version = "0.0.0-packageplane.candidate.v20261124.10388.sh752d7a3a45ed1"
     assert package_plane.CORE_RUNTIME_RECIPE_COMMIT == recipe
     assert package_plane.CORE_RUNTIME_SOURCE_COMMIT == runtime
     assert package_plane.CORE_RUNTIME_PACKAGE_VERSION == version
     assert package_plane.EXPECTED_OWNERS["chummer-core-engine"] == (
         "https://github.com/ArchonMegalon/chummer6-core.git", recipe
     )
-    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 8591387
+    assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SIZE_BYTES == 17555707
     assert package_plane.CORE_RUNTIME_PUBLIC_BUNDLE_SHA256 == (
-        "e69bb285206c2ba246318baa778d8eaf043fc33ba7cc8222a66997ac4a1dae98"
+        "289bbe39c9f8d92085f9c9fedbd2abb024af426d687f894d408d70b10bc0d762"
     )
     metadata = package_plane.EXPECTED_CORE_RUNTIME_FEED_METADATA
     assert metadata["runtimeSourceCommit"] == runtime
     assert metadata["packageRecipeCommit"] == recipe
     assert metadata["packageVersion"] == version
-    assert metadata["inventorySha256"] == "ed04ce06ac5e8d0a44ef181f88930809cf663e5efd7f132f79d56ddcb3451fea"
-    assert metadata["lockSha256"] == "10f88a0dbcf3fd3e58cc690022a4c6e9448c6c6844e52985e1163c51ebebd73b"
-    assert metadata["receiptSha256"] == "514d0390fe205ba6365a3826743b4d5e4a517a0cd2df228c40b7476ded5c9339"
+    assert metadata["inventorySha256"] == "a9b3a84247f23545e13f951ac54a5e98ff9dc2538981fb6fe324d81b5df923d1"
+    assert metadata["lockSha256"] == "e08ae8edc004d5b8d061a08121e73ee03415b5d466c4b04db27c86cced90cd4d"
+    assert metadata["receiptSha256"] == "5d3b5db3fb87e42683d6aeb88bf0cbd3d2fff003e0ccbc2afaf6a9f461d667ea"
     assert len(package_plane.EXPECTED_CORE_RUNTIME_PACKAGES) == 8
     for package_id, (_, file_name, digest, size) in package_plane.EXPECTED_CORE_RUNTIME_PACKAGES.items():
         assert file_name == f"{package_id}.{version}.nupkg"
@@ -259,8 +259,8 @@ def test_public_core_bundle_uses_exact_anonymous_recipe_and_digest(
     assert target.read_bytes() == b"abc"
     assert calls == [(
         "https://github.com/ArchonMegalon/chummer6-core/releases/download/"
-        "core-runtime-package-plane-80584effc7c4275b6abf2ee1b68fd50f7ccf8906/"
-        "chummer-core-runtime-package-plane-80584effc7c4275b6abf2ee1b68fd50f7ccf8906.zip",
+        "core-runtime-package-plane-5cf6a882ed2cac96973160def7d1e2833e7edac5/"
+        "chummer-core-runtime-package-plane-5cf6a882ed2cac96973160def7d1e2833e7edac5.zip",
         [("User-agent", "chummer6-ui-fresh-package-plane/2")], 30,
     )]
 
@@ -525,10 +525,10 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     assert next_lock["contractVersion"] == 10
     assert "uiOwnerFeed" not in next_lock
     assert next_lock["coreRuntimeFeed"]["packageRecipeCommit"] == (
-        "80584effc7c4275b6abf2ee1b68fd50f7ccf8906"
+        "5cf6a882ed2cac96973160def7d1e2833e7edac5"
     )
     assert next_lock["coreRuntimeFeed"]["runtimeSourceCommit"] == (
-        "903be22902d51769a8742cb2778dbf4bf3385ac8"
+        "752d7a3a45ed19070a7873e59c96f9f4ebca71dd"
     )
     assert next_lock["canonicalOwnerFeed"]["producerCommit"] == (
         "c77395de9f733427ef952c851f4a95b063cb5573"
@@ -538,24 +538,24 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "88f85f91f3ba8eb5ec61af9632f3fb9fb68b4990",
-            "commit": "13b9304ccbf5ec3483b01353f591b904fb433f7a",
+            "blob": "c9a9ddad17c0c0282f7e73677134c50c99109fef",
+            "commit": "51a0f6565484814c50bf115a889720f5aab91936",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77",
-            "rawSizeBytes": 73930,
-            "semanticCanonicalSha256": "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77",
-            "semanticCanonicalSizeBytes": 73930,
-            "tree": "baacf8c57ac29523055a50d95e35b6b10cf58a71",
+            "rawSha256": "5e0529144ed9bb4a25f042542fe710c23b3ce6289e6293af98d4a7ac7c7f5c8d",
+            "rawSizeBytes": 73998,
+            "semanticCanonicalSha256": "5e0529144ed9bb4a25f042542fe710c23b3ce6289e6293af98d4a7ac7c7f5c8d",
+            "semanticCanonicalSizeBytes": 73998,
+            "tree": "64121db0613a23e67615eb1d86680025e69217bd",
         },
         "producerLock": {
             "absentAtCommit": True,
             "path": "config/ui-owner-package-plane.lock.json",
         },
     }
-    assert len(package_plane.encoded_json(next_lock)) == 73930
+    assert len(package_plane.encoded_json(next_lock)) == 73998
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "0352472f4dcbae1c3bb1cd5a4a9b11e06bcee9183464036d60174f5e45914c77"
+        "5e0529144ed9bb4a25f042542fe710c23b3ce6289e6293af98d4a7ac7c7f5c8d"
     )
     assert package_plane.load_split_preseal_verifier().NEXT_AUTHORITY_ORACLE == (
         package_plane.SEALED_NEXT_AUTHORITY_ORACLE
@@ -610,6 +610,7 @@ def test_sealed_next_transition_rejects_oracle_payload_or_metadata_substitution(
 
 @pytest.mark.parametrize("digest", [
     "629ce2d0775461118179eb53aa1510cdf21e57ec0a60978b8eea7af162bbdcc7",
+    "b814b82a835094d88312cbc1b10018117a20a7f84c8efdef45791387184fb812",
     "0" * 64,
 ])
 def test_sealed_next_transition_rejects_stale_or_changed_package_plane_shell(
@@ -617,9 +618,8 @@ def test_sealed_next_transition_rejects_stale_or_changed_package_plane_shell(
 ) -> None:
     relative = "scripts/ai/with-package-plane.sh"
     actual_digest = package_plane.source_digest
-    assert actual_digest(REPO_ROOT / relative) == (
-        "b814b82a835094d88312cbc1b10018117a20a7f84c8efdef45791387184fb812"
-    )
+    oracle = package_plane.fixed_next_authority_oracle_lock(REPO_ROOT)
+    assert actual_digest(REPO_ROOT / relative) == oracle["consumer"]["sourceFiles"][relative]
     monkeypatch.setattr(package_plane, "source_digest", lambda path:
         digest if path == REPO_ROOT / relative else actual_digest(path))
     previous = json.loads(LOCK.read_text(encoding="utf-8"))
@@ -2745,10 +2745,10 @@ def test_canonical_and_ui_package_planes_are_exact_atomic_and_disjoint() -> None
         "c77395de9f733427ef952c851f4a95b063cb5573"
     )
     assert core["packageRecipeCommit"] == (
-        "80584effc7c4275b6abf2ee1b68fd50f7ccf8906"
+        "5cf6a882ed2cac96973160def7d1e2833e7edac5"
     )
     assert core["runtimeSourceCommit"] == (
-        "903be22902d51769a8742cb2778dbf4bf3385ac8"
+        "752d7a3a45ed19070a7873e59c96f9f4ebca71dd"
     )
     assert "3b72367cc13e76d3d50db9eeec3224785037fb5e" not in SCRIPT.read_text(
         encoding="utf-8"
@@ -3229,7 +3229,7 @@ def test_career_quality_adapter_and_actual_store_tests_are_bound_consumer_inputs
     assert expected <= package_plane.OWNER_CONTEXT_SOURCE_FILES
     assert expected <= package_plane.EXPECTED_CONSUMER_SOURCE_FILES
     for name, cases in (("InProcessCareerQualityTests.cs", 8),
-                        ("ServiceCollectionDesktopRuntimeExtensionsTests.cs", 10)):
+                        ("ServiceCollectionDesktopRuntimeExtensionsTests.cs", 11)):
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../Chummer.Tests/{name}"] == name
         assert static_mstest_case_count(f"Chummer.Tests/{name}") == cases
     package_plane.validate_test_compile_items(REPO_ROOT)

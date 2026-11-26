@@ -22,7 +22,7 @@ def test_windows_startup_smoke_supports_bootstrap_payload_download_mode() -> Non
     assert 'configured_payload_mode="download"' in text
     assert 'windows_binary_env_prefix=(env "TEMP=$windows_binary_temp_root" "TMP=$windows_binary_temp_root")' in text
     assert 'windows_host_temp_root="$(mktemp -d "${TMPDIR:-/tmp}/chummer-wine-temp.XXXXXX")"' in text
-    assert 'local -a installer_args=("/smoke-install=$native_install_root")' in text
+    assert 'local -a installer_args=("--smoke-install" "$native_install_root")' in text
     assert 'CHUMMER_WINDOWS_BINARY_TEMP_ROOT="$windows_native_temp_root" \\' in text
     assert 'local installer_trace_root="${WINDOWS_WINE_HOST_TEMP_ROOT:-$wine_temp_dir}"' in text
     assert 'resolved_wine_temp_dir="$(resolve_wine_temp_dir || true)"' in text
@@ -322,6 +322,22 @@ def test_windows_startup_smoke_owns_and_stops_an_isolated_wine_prefix_by_default
     assert 'payload["bootstrapPayloadSha256"] = payload_sha256' in text
     assert 'payload["bootstrapPayloadSizeBytes"] = int(payload_size_bytes)' in text
     assert 'payload["bootstrapPayloadFileName"] = payload_file_name' in text
+    assert "chummer-win-native-temp.XXXXXX" in text
+    assert 'WINDOWS_NATIVE_HOST_TEMP_ROOT="$native_host_temp_posix_root"' in text
+    assert (
+        'INSTALL_ROOT="$(mktemp -d "$native_host_temp_posix_root/chummerwinsmokeXXXXXX")"'
+        in text
+    )
+    assert 'installer_completion_trace_candidates+=("$installer_completion_trace_path")' in text
+    assert (
+        '"$windows_native_temp_root/chummer-desktop-installer-progress.log"'
+        in text
+    )
+    assert (
+        'cp "$installer_completion_verify_path" "$installer_completion_trace_path"'
+        in text
+    )
+    assert 'rm -rf "$WINDOWS_NATIVE_HOST_TEMP_ROOT"' in text
 
 
 def test_windows_bootstrap_smoke_install_uses_value_option_delimiter() -> None:
@@ -331,6 +347,14 @@ def test_windows_bootstrap_smoke_install_uses_value_option_delimiter() -> None:
     assert '${GetOptions} "$CommandLine" "--smoke-install" $SmokeInstallPath' not in text
     assert '${GetOptions} "$CommandLine" "--smoke-install=" $SmokeInstallPath' not in text
     assert 'Push "Smoke install target: $SmokeInstallPath"' in text
+
+    verifier = (REPO_ROOT / "scripts" / "verify-windows-installer-completion-trace.py").read_text(
+        encoding="utf-8"
+    )
+    assert verifier.count('"managed_smoke_install_trace"') == 1
+    assert 'MANAGED_START_ARGS_PREFIX = "start args=--smoke-install "' in verifier
+    assert 'MANAGED_SMOKE_COMPLETION_MARKER = "extract payload complete"' in verifier
+    assert verifier.count("verify_managed_trace") >= 2
 
 
 def test_startup_smoke_avoids_bash4_case_conversion_expansions() -> None:

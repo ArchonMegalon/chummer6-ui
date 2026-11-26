@@ -12,10 +12,30 @@ if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; the
   fi
 fi
 SCRIPT_DIR="$REPO_ROOT/scripts"
-PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
-if [[ ! -x "$PYTHON_BIN" ]]; then
-  PYTHON_BIN="$(command -v python3)"
-fi
+PYTHON_BIN="${CHUMMER_PYTHON_BIN:-}"
+
+resolve_verified_python_bin() {
+  if [[ -n "$PYTHON_BIN" ]]; then
+    if "$PYTHON_BIN" -c 'import json, sys' >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "CHUMMER_PYTHON_BIN=$PYTHON_BIN is not a working Python interpreter" >&2
+    return 1
+  fi
+  local candidate
+  for candidate in /usr/bin/python3 python3 python; do
+    if [[ -n "$(command -v "$candidate" 2>/dev/null || true)" ]]; then
+      if "$candidate" -c 'import json, sys' >/dev/null 2>&1; then
+        PYTHON_BIN="$(command -v "$candidate")"
+        return 0
+      fi
+    fi
+  done
+  echo "No working Python interpreter found (refusing Windows Store python3 stub)" >&2
+  return 1
+}
+
+resolve_verified_python_bin || exit 1
 
 ARTIFACT_PATH="$(
   "$PYTHON_BIN" - "${1:?artifact path is required}" <<'PY'
@@ -51,6 +71,7 @@ WINDOWS_PAYLOAD_HTTP_ROOT=""
 WINDOWS_PAYLOAD_HTTP_LOG=""
 WINDOWS_PAYLOAD_HTTP_PID=""
 WINDOWS_WINE_HOST_TEMP_ROOT=""
+WINDOWS_NATIVE_HOST_TEMP_ROOT=""
 WINDOWS_WINE_PREFIX_ROOT=""
 WINDOWS_WINE_PREFIX_OWNED=0
 WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE="${CHUMMER_WINDOWS_STARTUP_SMOKE_PAYLOAD_MODE:-auto}"
@@ -104,6 +125,10 @@ cleanup() {
 
   if [[ -n "$BUNDLE_EXTRACT_ROOT" && -d "$BUNDLE_EXTRACT_ROOT" ]]; then
     rm -rf "$BUNDLE_EXTRACT_ROOT"
+  fi
+
+  if [[ -n "$WINDOWS_NATIVE_HOST_TEMP_ROOT" && -d "$WINDOWS_NATIVE_HOST_TEMP_ROOT" ]]; then
+    rm -rf "$WINDOWS_NATIVE_HOST_TEMP_ROOT"
   fi
 
   if [[ -n "$RUNTIME_HOME" && -d "$RUNTIME_HOME" ]]; then
@@ -559,7 +584,7 @@ emit_incompatible_host_receipt() {
   local machine
   machine="$(host_machine)"
 
-  python3 - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" "$VERSION_HINT" "$CHANNEL_HINT" "$HOST_CLASS" "$platform" "$arch" "$reason" "$machine" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" "$VERSION_HINT" "$CHANNEL_HINT" "$HOST_CLASS" "$platform" "$arch" "$reason" "$machine" <<'PY'
 import datetime as dt
 import json
 import pathlib
@@ -627,7 +652,7 @@ PY
 }
 
 receipt_status() {
-  python3 - "$RECEIPT_PATH" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" <<'PY'
 import json
 import pathlib
 import sys
@@ -1221,7 +1246,29 @@ run_windows_smoke() {
   local wine_temp_dir=""
   local windows_host_temp_root=""
   local windows_native_temp_root=""
-  if command -v winepath >/dev/null 2>&1 \
+  local native_host_temp_posix_root=""
+  local windows_native_lane=0
+  if command -v cygpath >/dev/null 2>&1 \
+    && ! { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; }; then
+    # Native Git Bash/MSYS lane: the managed bootstrap installer derives its
+    # trace path from the child's TEMP/TMP (Path.GetTempPath()).  Create a
+    # per-run native temp root and redirect TEMP/TMP via
+    # CHUMMER_WINDOWS_BINARY_TEMP_ROOT so the installer trace, extraction temp
+    # files, and install root stay invocation-bound for this run.
+    windows_native_lane=1
+    native_host_temp_posix_root="$(mktemp -d "${TMPDIR:-/tmp}/chummer-win-native-temp.XXXXXX" 2>/dev/null || true)"
+    if [[ -n "$native_host_temp_posix_root" ]]; then
+      windows_native_temp_root="$(to_native_path "$native_host_temp_posix_root")"
+    fi
+    if [[ -n "$native_host_temp_posix_root" && -n "$windows_native_temp_root" ]]; then
+      WINDOWS_NATIVE_HOST_TEMP_ROOT="$native_host_temp_posix_root"
+      INSTALL_ROOT="$(mktemp -d "$native_host_temp_posix_root/chummerwinsmokeXXXXXX")"
+    fi
+    if [[ -z "$windows_native_temp_root" || -z "$INSTALL_ROOT" ]]; then
+      echo "Windows startup smoke could not create the native per-run temp root." >&2
+      return 1
+    fi
+  elif command -v winepath >/dev/null 2>&1 \
     && { command -v wine >/dev/null 2>&1 || command -v wine64 >/dev/null 2>&1 || [[ -x /usr/lib/wine/wine64 ]]; }; then
     windows_host_temp_root="$(mktemp -d "${TMPDIR:-/tmp}/chummer-wine-temp.XXXXXX")"
     windows_native_temp_root="$(to_native_path "$windows_host_temp_root")"
@@ -1351,19 +1398,51 @@ run_windows_smoke() {
     run_windows_binary "$ARTIFACT_PATH" "${installer_args[@]}" >>"$LOG_PATH" 2>&1
   fi
   local install_ready_deadline=$((SECONDS + install_ready_timeout_seconds))
+  local -a installer_completion_trace_candidates=()
   if [[ -n "$installer_completion_trace_path" ]]; then
+    installer_completion_trace_candidates+=("$installer_completion_trace_path")
+  fi
+  if [[ "$windows_native_lane" == "1" && -n "$windows_native_temp_root" ]]; then
+    # The managed bootstrap installer derives its trace from the redirected
+    # child TEMP/TMP; the NSIS bootstrap derives its own temp root beneath the
+    # same redirected TEMP.  Watch both shapes and deliver the verified proof
+    # onto the invocation-bound path when one is configured.
+    installer_completion_trace_candidates+=(
+      "$windows_native_temp_root/chummer-desktop-installer-progress.log"
+      "$windows_native_temp_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
+    )
+  fi
+  if [[ -n "$installer_completion_trace_path" || "$windows_native_lane" == "1" ]]; then
     echo "Waiting up to ${install_ready_timeout_seconds}s for the current Windows smoke installer completion proof." >>"$LOG_PATH"
     local installer_completion_stable_observations=0
     local required_installer_completion_stable_observations=2
     local observed_installer_completion_proof_mode=""
     while (( installer_completion_stable_observations < required_installer_completion_stable_observations )); do
       local current_installer_completion_proof_mode=""
-      if current_installer_completion_proof_mode="$("$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
-        --trace-path "$installer_completion_trace_path" \
-        --expected-install-root "$native_install_root" \
-        --expected-install-root-path "$INSTALL_ROOT" \
-        --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" \
-        --print-mode 2>/dev/null)"; then
+      local installer_completion_verify_path=""
+      local installer_completion_candidate=""
+      for installer_completion_candidate in "${installer_completion_trace_candidates[@]}"; do
+        if [[ -f "$installer_completion_candidate" ]] \
+          && current_installer_completion_proof_mode="$("$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
+            --trace-path "$installer_completion_candidate" \
+            --expected-install-root "$native_install_root" \
+            --expected-install-root-path "$INSTALL_ROOT" \
+            --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" \
+            --print-mode 2>/dev/null)"; then
+          installer_completion_verify_path="$installer_completion_candidate"
+          break
+        fi
+      done
+      if [[ -n "$installer_completion_verify_path" ]]; then
+        if [[ -n "$installer_completion_trace_path" \
+          && "$installer_completion_verify_path" != "$installer_completion_trace_path" ]]; then
+          local installer_trace_parent_dir="${installer_completion_trace_path%\\*}"
+          if [[ -n "$installer_trace_parent_dir" \
+            && "$installer_trace_parent_dir" != "$installer_completion_trace_path" ]]; then
+            mkdir -p "$installer_trace_parent_dir" 2>/dev/null || true
+          fi
+          cp "$installer_completion_verify_path" "$installer_completion_trace_path"
+        fi
         if [[ -z "$observed_installer_completion_proof_mode" \
           || "$current_installer_completion_proof_mode" == "$observed_installer_completion_proof_mode" ]]; then
           observed_installer_completion_proof_mode="$current_installer_completion_proof_mode"
@@ -1380,12 +1459,17 @@ run_windows_smoke() {
         break
       fi
       if (( SECONDS >= install_ready_deadline )); then
-        "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
-          --trace-path "$installer_completion_trace_path" \
-          --expected-install-root "$native_install_root" \
-          --expected-install-root-path "$INSTALL_ROOT" \
-          --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" 2>&1 |
-          tee -a "$LOG_PATH" >&2 || true
+        local installer_completion_diag_candidate=""
+        for installer_completion_diag_candidate in "${installer_completion_trace_candidates[@]}"; do
+          if [[ -f "$installer_completion_diag_candidate" ]]; then
+            "$PYTHON_BIN" "$SCRIPT_DIR/verify-windows-installer-completion-trace.py" verify \
+              --trace-path "$installer_completion_diag_candidate" \
+              --expected-install-root "$native_install_root" \
+              --expected-install-root-path "$INSTALL_ROOT" \
+              --expected-installed-path "$INSTALL_ROOT/$LAUNCH_TARGET" 2>&1 |
+              tee -a "$LOG_PATH" >&2 || true
+          fi
+        done
         echo "Windows smoke installer did not produce a current-run completion proof before timeout." |
           tee -a "$LOG_PATH" >&2
         return 1
@@ -1401,7 +1485,7 @@ run_windows_smoke() {
   if command -v winepath >/dev/null 2>&1; then
     resolved_wine_temp_dir="$(resolve_wine_temp_dir || true)"
   fi
-  if [[ -n "$installer_trace_root" || -n "$resolved_wine_temp_dir" ]]; then
+  if [[ -n "$installer_trace_root" || -n "$resolved_wine_temp_dir" || -n "$windows_native_temp_root" ]]; then
     local installer_trace_capture_path="$OUTPUT_DIR/windows-installer-progress-$APP_KEY-$RID.log"
     local -a installer_trace_candidates=(
       "$installer_trace_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
@@ -1411,6 +1495,12 @@ run_windows_smoke() {
       installer_trace_candidates+=(
         "$resolved_wine_temp_dir/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
         "$resolved_wine_temp_dir/chummer-desktop-installer-progress.log"
+      )
+    fi
+    if [[ -n "$windows_native_temp_root" ]]; then
+      installer_trace_candidates+=(
+        "$windows_native_temp_root/Chummer6/installer-temp/chummer-desktop-installer-progress.log"
+        "$windows_native_temp_root/chummer-desktop-installer-progress.log"
       )
     fi
     local installer_trace_source=""
@@ -1449,7 +1539,7 @@ run_windows_smoke() {
 
     local basename_match
     basename_match="$(
-      python3 - "$INSTALL_ROOT" "$requested_relative_path" <<'PY'
+      "$PYTHON_BIN" - "$INSTALL_ROOT" "$requested_relative_path" <<'PY'
 import os
 import sys
 
@@ -1655,7 +1745,7 @@ write_linux_deb_install_verification() {
   local wrapper_exists_after_purge="${15}"
   local desktop_exists_after_purge="${16}"
 
-  python3 - "$INSTALL_VERIFICATION_PATH" "$DPKG_LOG_PATH" "$package_name" "$package_arch" "$INSTALL_ROOT" "$DPKG_ADMIN_DIR" \
+  "$PYTHON_BIN" - "$INSTALL_VERIFICATION_PATH" "$DPKG_LOG_PATH" "$package_name" "$package_arch" "$INSTALL_ROOT" "$DPKG_ADMIN_DIR" \
     "$installed_launch_path" "$wrapper_path" "$desktop_entry_path" \
     "$installed_launch_capture_path" "$wrapper_capture_path" "$desktop_entry_capture_path" \
     "$status_after_install" "$status_after_purge" \
@@ -1744,7 +1834,7 @@ attach_install_verification_to_receipt() {
   local wrapper_capture_path="$3"
   local desktop_entry_capture_path="$4"
 
-  python3 - "$RECEIPT_PATH" "$INSTALL_VERIFICATION_PATH" "$dpkg_log_path" "$installed_launch_capture_path" "$wrapper_capture_path" "$desktop_entry_capture_path" "$ARTIFACT_PATH" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$INSTALL_VERIFICATION_PATH" "$dpkg_log_path" "$installed_launch_capture_path" "$wrapper_capture_path" "$desktop_entry_capture_path" "$ARTIFACT_PATH" <<'PY'
 import json
 import pathlib
 import sys
@@ -1942,7 +2032,7 @@ emit_release_regression_packet() {
   local artifact_sha
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
 
-  python3 - "$PACKET_PATH" "$RECEIPT_PATH" "$LOG_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" "$VERSION_HINT" "$CHANNEL_HINT" "$HOST_CLASS" "$exit_code" <<'PY'
+  "$PYTHON_BIN" - "$PACKET_PATH" "$RECEIPT_PATH" "$LOG_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" "$VERSION_HINT" "$CHANNEL_HINT" "$HOST_CLASS" "$exit_code" <<'PY'
 import datetime as dt
 import hashlib
 import json
@@ -2085,7 +2175,7 @@ PY
 }
 
 emit_release_regression_packet_tail() {
-  python3 - "$PACKET_PATH" <<'PY'
+  "$PYTHON_BIN" - "$PACKET_PATH" <<'PY'
 import json
 import pathlib
 import sys
@@ -2113,7 +2203,7 @@ PY
 
 set_receipt_status() {
   local status_value="$1"
-  python3 - "$RECEIPT_PATH" "$status_value" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$status_value" <<'PY'
 import json
 import pathlib
 import re
@@ -2209,7 +2299,7 @@ PY
 }
 
 receipt_has_ready_checkpoint() {
-  python3 - "$RECEIPT_PATH" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" <<'PY'
 import json
 import pathlib
 import sys
@@ -2231,7 +2321,7 @@ attach_release_artifact_metadata_to_receipt() {
   local artifact_sha
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
 
-  python3 - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" <<'PY'
+  "$PYTHON_BIN" - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" <<'PY'
 import json
 import pathlib
 import sys

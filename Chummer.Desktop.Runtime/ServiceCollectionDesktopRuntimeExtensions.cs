@@ -60,8 +60,30 @@ public static class ServiceCollectionDesktopRuntimeExtensions
             return services;
         }
 
-        // Re-enable after common-base conflict preservation and the Hub contract are qualified.
-        services.TryAddSingleton<IDesktopWorkspaceRoamingSync, UnavailableDesktopWorkspaceRoamingSync>();
+        // Claimed linked route (ordinary local Windows DI): the roaming sync runs
+        // under the install-bound owner lease with the real workspace store and the
+        // Core-plane continuation exporter. Fail-closed on unlinked modes: without a
+        // claimed grant or API base address the sync reports Unavailable per call.
+        // Issuer trust stays OFF (source-only origin authority; Root proof pending).
+        if (!string.IsNullOrWhiteSpace(desktopHeadId))
+        {
+            services.TryAddSingleton<GrantBoundDesktopWorkspaceContinuationExporter>();
+            services.TryAddSingleton<IDesktopWorkspaceRoamingSync>(provider => new GrantBoundDesktopWorkspaceRoamingSync(
+                desktopHeadId,
+                provider.GetRequiredService<IWorkspaceStore>(),
+                provider.GetRequiredService<IWorkspaceService>(),
+                stateLoader: null,
+                ownerContext: (IOwnerContextLeaseAccessor)provider.GetRequiredService<IOwnerContextAccessor>(),
+                continuationExporter: (stamp, id, ct) => provider
+                    .GetRequiredService<GrantBoundDesktopWorkspaceContinuationExporter>()
+                    .ExportAsync(stamp, id, ct),
+                sources: provider.GetRequiredService<ICharacterSourceDataResolver>(),
+                queries: provider.GetRequiredService<ICharacterFileQueries>()));
+        }
+        else
+        {
+            services.TryAddSingleton<IDesktopWorkspaceRoamingSync, UnavailableDesktopWorkspaceRoamingSync>();
+        }
 
         services.TryAddSingleton<WorkspaceContinuationExportService>();
         services.TryAddSingleton<ICharacterCareerQualityAuthorityResolver, OwnerManagedCareerQualityAuthorityResolver>();

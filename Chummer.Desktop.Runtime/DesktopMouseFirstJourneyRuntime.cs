@@ -37,6 +37,67 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string PdfSaveReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_RECEIPT";
     public const string PdfSaveTargetEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TARGET";
     public const string PdfSaveTraceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE_TRACE";
+    public const string MagicianExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT";
+    public const string MagicianExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT_RECEIPT";
+    // WIN-009 gen14 T1030: amended-runner portable export leg. When set, the journey
+    // opens the saved amended workspace named by
+    // CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_WORKSPACE (the T1029 karma-amended
+    // career character), saves it through the product save command, then drives the
+    // native .chum5 Save-As download and the portable export dialog download to
+    // disk. Used to deliver the amended Windows runner transfer for Android with
+    // checksum and expected values on the controller intake.
+    public const string AmendedRunnerExportEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT";
+    public const string AmendedRunnerExportReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT_RECEIPT";
+
+    /// <summary>
+    /// WIN-009 gen15 T1035: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND=1, the journey runner
+    /// executes the settings-amend leg: open Tools > character_settings, switch to
+    /// the custom-data section, write "[x] <directory>" through the real
+    /// treCustomDataDirectories text field, Save, section away/back round-trip
+    /// re-read, Save & Close, and verify the persisted catalog survives the close.
+    /// Writes the durable receipt via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_RECEIPT.
+    /// </summary>
+    public const string SettingsAmendEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND";
+    public const string SettingsAmendReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_RECEIPT";
+    public const string SettingsAmendDirectoryEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_DIRECTORY";
+    /// <summary>
+    /// WIN-009 gen15 T1035: true when the settings-amend leg must run.
+    /// </summary>
+    public static bool SettingsAmendRequested => string.Equals(
+        Environment.GetEnvironmentVariable(SettingsAmendEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+    public const string WizardCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL";
+    public const string KeyboardMatrixEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_KEYBOARD_MATRIX";
+
+    /// <summary>
+    /// WIN-009 gen17: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR5_MAGIC_EDIT=1, the journey runner
+    /// executes the SR5 magic-resonance editor leg: drive the priority creation
+    /// wizard to the magician talent, open the real CreationMagicResonanceWindow
+    /// from the wizard magic step, choose a tradition, tick spells, confirm, then
+    /// finalize and save. Verifies the gen17 editor fixes (seed-before-render and
+    /// the confirm pre-read boundary) against native bytes.
+    /// </summary>
+    public const string Sr5MagicEditEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR5_MAGIC_EDIT";
+
+    /// <summary>
+    /// WIN-009 gen17: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_MAGIC_EDIT=1, the journey runner
+    /// executes the SR6 mystic-adept editor leg: create an SR6 draft, drive the
+    /// Sr6CreationWizardWindow with the mystic-adept foundation, verify the confirm
+    /// step renders BOTH talent domains (spells + adept powers), pick a spell and a
+    /// power, confirm, finalize, and save. Verifies the gen17 dual-domain editor fix
+    /// against native bytes.
+    /// </summary>
+    public const string Sr6MagicEditEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_MAGIC_EDIT";
+    // WIN-009 gen18 (Controller9637): the magic-editor legs export their picked
+    // spell/power ids to this sidecar after a successful save; the fresh-process
+    // reopen-verify leg reads it and verifies the retained document carries the
+    // same selections (spells by source id, powers by source id + rating).
+    public const string MagicReopenSidecarEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGIC_REOPEN_SIDECAR";
     // T545/7867: two-process career reward recovery leg. Phase A awards karma
     // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
     // (process exits = process restart). Phase B is a fresh process that must
@@ -45,6 +106,7 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string RewardHoldEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_HOLD";
     public const string RewardAckEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_ACK";
     public const string RewardRecoveryReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_REWARD_RECOVERY_RECEIPT";
+    public const string CareerAwardReceiptEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CAREER_AWARD_RECEIPT";
 
     public static bool RewardHoldRequested => string.Equals(
         Environment.GetEnvironmentVariable(RewardHoldEnvironmentVariable) ?? string.Empty,
@@ -84,6 +146,46 @@ public static class DesktopMouseFirstJourneyRuntime
             operationId,
             acknowledged,
             recoveredFromDurableRecord,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
+    /// <summary>
+    /// Gen5 (WIN-009): writes the genuine-mode career award's durable facts so
+    /// a fresh-process reopen leg can assert the awarded karma persisted on
+    /// the CREATED workspace (not the print/export sample) and that the
+    /// persisted alias matches. No-op when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CAREER_AWARD_RECEIPT.
+    /// </summary>
+    public static void WriteCareerAwardReceipt(
+        decimal karmaBefore,
+        decimal karmaAfter,
+        bool karmaIncreased,
+        string? workspaceId,
+        string? characterName,
+        string? characterAlias)
+    {
+        string? path = Environment.GetEnvironmentVariable(CareerAwardReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            workspaceId,
+            karmaBefore,
+            karmaAfter,
+            karmaIncreased,
+            characterName,
+            characterAlias,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
@@ -210,7 +312,13 @@ public static class DesktopMouseFirstJourneyRuntime
         string? priorityTalent = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityTalentEnvironmentVariable));
         string? priorityTalentChoice = NormalizeNullable(Environment.GetEnvironmentVariable(PriorityTalentChoiceEnvironmentVariable));
 
-        if (!string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+        // WIN-009 gen2 (T748): Sum-to-Ten shares the Priority prerequisite
+        // draft machinery (the same authority, grid and confirmation flow), so
+        // the journey plan must retain the heritage/talent facts for SumToTen
+        // as well - only genuinely table-less methods drop them.
+        bool prerequisiteTableMethod = string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase);
+        if (!prerequisiteTableMethod)
         {
             priorityHeritage = null;
             priorityTalent = null;
@@ -246,6 +354,22 @@ public static class DesktopMouseFirstJourneyRuntime
         StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// WIN-009 gen17: true when the SR5 magic-resonance editor leg is requested.
+    /// </summary>
+    public static bool Sr5MagicEditRequested => string.Equals(
+        Environment.GetEnvironmentVariable(Sr5MagicEditEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-009 gen17: true when the SR6 mystic-adept editor leg is requested.
+    /// </summary>
+    public static bool Sr6MagicEditRequested => string.Equals(
+        Environment.GetEnvironmentVariable(Sr6MagicEditEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// WIN-008 item 1: when this process is launched with
     /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PDF_SAVE=1, the journey runner
     /// executes a dedicated native PDF save leg: the REAL production save
@@ -260,11 +384,55 @@ public static class DesktopMouseFirstJourneyRuntime
         StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// WIN-009 gen7: when this process is launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_WIZARD_CANCEL=1, the journey runner
+    /// executes a dedicated creation-wizard cancel leg: open the new-character
+    /// dialog, create an SR5 draft, wait for the creation wizard footer, click
+    /// the footer Cancel button (the real user route), and verify the draft is
+    /// abandoned (no workspace published) and the inline host restored cleanly.
+    /// </summary>
+    public static bool WizardCancelRequested => string.Equals(
+        Environment.GetEnvironmentVariable(WizardCancelEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-009 gen11: when launched with
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_KEYBOARD_MATRIX=1, the journey runner
+    /// executes the Core-free keyboard matrix leg: open the real
+    /// dialog.new_character dialog via the file menu, walk focus with delivered
+    /// Tab/Shift+Tab keystrokes, close through the governed dialog Escape
+    /// affordance (which invokes the same dialog action route the visible cancel
+    /// button uses), observe bounded focus return, prove the workspace identity
+    /// and content revision did not mutate, and record per-window render-scaling
+    /// DPI facts for the owned-window matrix.
+    /// </summary>
+    public static bool KeyboardMatrixRequested => string.Equals(
+        Environment.GetEnvironmentVariable(KeyboardMatrixEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Gen-9 item 2: writes the SR6 row-to-confirm leg's durable facts so a
     /// fresh-process reopen leg can assert the advanced attribute rank and
     /// debited karma survived persistence. No-op when no receipt path is
     /// configured via CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_ADVANCE_RECEIPT.
     /// </summary>
+    /// <summary>
+    /// Gen9 (WIN-009 finding 6): one SR6 advance operation's own facts,
+    /// so a multi-advance journey writes COHERENT per-operation records
+    /// instead of splicing the first operation's karma with the final
+    /// operation's target rating.
+    /// </summary>
+    public sealed record Sr6AdvanceOperationReceipt(
+        int OperationIndex,
+        string AttributeId,
+        int RankBefore,
+        int RankAfter,
+        int QuotedKarmaCost,
+        int KarmaBefore,
+        int KarmaAfter);
+
     public static void WriteSr6AdvanceReceipt(
         decimal karmaBefore,
         decimal karmaAfter,
@@ -275,7 +443,9 @@ public static class DesktopMouseFirstJourneyRuntime
         int? quotedTargetNaturalRating = null,
         string? naturalRatingAfter = null,
         decimal? nuyenAfter = null,
-        int? savedRevision = null)
+        int? savedRevision = null,
+        System.Collections.Generic.IReadOnlyList<Sr6AdvanceOperationReceipt>? operations = null,
+        int? finalTargetNaturalRating = null)
     {
         string? path = Environment.GetEnvironmentVariable(Sr6AdvanceReceiptEnvironmentVariable);
         if (string.IsNullOrWhiteSpace(path))
@@ -295,6 +465,8 @@ public static class DesktopMouseFirstJourneyRuntime
             naturalRatingAfter,
             nuyenAfter,
             savedRevision,
+            operations,
+            finalTargetNaturalRating,
             timestamp = DateTimeOffset.UtcNow
         }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
         string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
@@ -305,6 +477,34 @@ public static class DesktopMouseFirstJourneyRuntime
 
         File.WriteAllText(path, json);
     }
+
+    /// <summary>
+    /// Controller9543 fictional-magician export checkpoint: when set, the
+    /// mouse-first journey runs a dedicated leg that imports the bundled
+    /// SR5 Career magician sample (Soma-Career.chum5) through the
+    /// production import coordinator, saves it through the product save
+    /// command, and drives the native .chum5 Save-As download and the
+    /// portable export dialog download to disk, writing a durable receipt
+    /// with the saved revision, file sizes, and sustained-spell counts.
+    /// </summary>
+    public static bool MagicianExportRequested => string.Equals(
+        Environment.GetEnvironmentVariable(MagicianExportEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-009 gen14 T1030: when set, the mouse-first journey runs the
+    /// amended-runner export leg: opens the saved amended workspace from
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SAVED_WORKSPACE (already carrying a
+    /// supported amend applied through the real Windows client), saves it via the
+    /// product save command, then drives the native .chum5 Save-As and the
+    /// portable export dialog download to disk, writing a durable receipt with
+    /// the saved revision, file sizes, spell counts and the amended karma value.
+    /// </summary>
+    public static bool AmendedRunnerExportRequested => string.Equals(
+        Environment.GetEnvironmentVariable(AmendedRunnerExportEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// WIN-008 item 1: writes the native PDF save leg's durable facts so the
@@ -347,6 +547,111 @@ public static class DesktopMouseFirstJourneyRuntime
         File.WriteAllText(path, json);
     }
 
+    /// <summary>
+    /// Controller9543: writes the magician-export leg durable facts (the
+    /// imported bundled SR5 Career magician sample, its saved revision,
+    /// the native .chum5 Save-As download and portable export payloads)
+    /// so the harness can independently verify the exported files. No-op
+    /// when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGICIAN_EXPORT_RECEIPT.
+    /// </summary>
+    public static void WriteMagicianExportReceipt(
+        string? workspaceId,
+        long? savedRevision,
+        string? saveAsFileName,
+        long? saveAsBytes,
+        string? exportFileName,
+        long? exportBytes,
+        string? rulesetId,
+        string? sourceSample,
+        int sustainedSpellCount,
+        int totalSpellCount,
+        string? tradition)
+    {
+        string? path = Environment.GetEnvironmentVariable(MagicianExportReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            workspaceId,
+            savedRevision,
+            saveAsFileName,
+            saveAsBytes,
+            exportFileName,
+            exportBytes,
+            rulesetId,
+            sourceSample,
+            sustainedSpellCount,
+            totalSpellCount,
+            tradition,
+            timestamp = DateTimeOffset.UtcNow
+        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
+    /// <summary>
+    /// WIN-009 gen14 T1030: writes the amended-runner export leg's durable facts
+    /// (workspace id, saved revision, artifact paths/sizes, spell counts and the
+    /// amended karma carried by the export). No-op when no receipt path is
+    /// configured via CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_AMENDED_RUNNER_EXPORT_RECEIPT.
+    /// </summary>
+    public static void WriteAmendedRunnerExportReceipt(
+        string? workspaceId,
+        long savedRevision,
+        string saveAsFileName,
+        long saveAsBytes,
+        string exportFileName,
+        long exportBytes,
+        string rulesetId,
+        string? characterName,
+        string? characterAlias,
+        int spellCount,
+        int sustainedSpellCount,
+        string? karmaValue)
+    {
+        string? path = Environment.GetEnvironmentVariable(AmendedRunnerExportReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var receipt = new
+        {
+            workspaceId,
+            savedRevision,
+            saveAsFileName,
+            saveAsBytes,
+            exportFileName,
+            exportBytes,
+            rulesetId,
+            characterName,
+            characterAlias,
+            spellCount,
+            sustainedSpellCount,
+            karmaValue,
+            writtenAtUtc = DateTime.UtcNow.ToString("o"),
+        };
+        string json = System.Text.Json.JsonSerializer.Serialize(
+            receipt,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
 
     public static void WriteSuccessReceipt(
         DesktopMouseFirstJourneyContext context,
@@ -366,11 +671,12 @@ public static class DesktopMouseFirstJourneyRuntime
             return;
         }
 
-        // WIN-003 (Windows head): the user-journey trace producer was built for
-        // Linux CI and rejects non-Linux platforms in ValidateUserJourneyRunBindings.
-        // The pass receipt must not be gated on that binding — the trace JSON is a
-        // CI artifact, the receipt is the run's verification record. Write the
-        // receipt first; the trace binding continues below for Linux runs.
+        // The user-journey trace producer was built for Linux CI and rejects
+        // non-Linux platforms in ValidateUserJourneyRunBindings. Non-trace runs
+        // and Windows trace-mode runs publish the pass receipt directly; Linux
+        // trace runs validate every binding BEFORE any receipt byte reaches
+        // disk, so a rejected run leaves neither a pass receipt nor a staged
+        // trace behind (controller10558).
         DateTimeOffset receiptCompletedAtUtc = DateTimeOffset.UtcNow;
         DesktopMouseFirstJourneyReceipt passReceipt = new(
             Status: "pass",
@@ -419,10 +725,9 @@ public static class DesktopMouseFirstJourneyRuntime
             ActiveDialogId: evidence.ActiveDialogId,
             VerificationNotes: evidence.VerificationNotes,
             Error: null);
-        WriteJson(context.ReceiptPath, passReceipt);
-
         if (!userJourneyTraceRequested)
         {
+            WriteJson(context.ReceiptPath, passReceipt);
             return;
         }
 
@@ -430,19 +735,20 @@ public static class DesktopMouseFirstJourneyRuntime
         {
             // Windows trace-mode runs keep the receipt; only the Linux CI trace
             // JSON (tester/fixer shard bindings) is unavailable off Linux.
+            WriteJson(context.ReceiptPath, passReceipt);
             return;
         }
 
-        string? userJourneyTraceOutputPath = null;
-        IReadOnlyList<DesktopUserJourneyTraceWorkflow>? boundUserJourneyWorkflows = null;
-        if (userJourneyTraceRequested)
-        {
-            userJourneyTraceOutputPath = ValidateUserJourneyTraceTargetPath(context);
-            ValidateUserJourneyRunBindings(context, evidence);
-            boundUserJourneyWorkflows = ValidateAndBindUserJourneyWorkflows(
-                context,
-                evidence.UserJourneyWorkflows!);
-        }
+        // Linux trace runs validate every trace binding BEFORE any receipt byte
+        // reaches disk, so a rejected run leaves neither a pass receipt nor a
+        // staged trace behind (controller10558).
+        string? userJourneyTraceOutputPath = ValidateUserJourneyTraceTargetPath(context);
+        ValidateUserJourneyRunBindings(context, evidence);
+        IReadOnlyList<DesktopUserJourneyTraceWorkflow>? boundUserJourneyWorkflows = ValidateAndBindUserJourneyWorkflows(
+            context,
+            evidence.UserJourneyWorkflows!);
+
+        WriteJson(context.ReceiptPath, passReceipt);
 
         DateTimeOffset completedAtUtc = DateTimeOffset.UtcNow;
         DesktopMouseFirstJourneyReceipt receipt = new(
@@ -514,6 +820,62 @@ public static class DesktopMouseFirstJourneyRuntime
             throw;
         }
     }
+    /// <summary>
+    /// WIN-009 gen15 T1035: writes the settings-amend leg durable facts: the amend
+    /// package directory name + manifest guid, base and amended priority-table
+    /// numerics (letter values), the field value written through the dialog, the
+    /// re-read field value after the section round-trip, and the persisted catalog
+    /// JSON. No-op when no receipt path is configured via
+    /// CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SETTINGS_AMEND_RECEIPT.
+    /// </summary>
+    public static void WriteSettingsAmendReceipt(
+        string? amendDirectory,
+        string? manifestGuid,
+        string? manifestSha256,
+        string? amendXmlSha256,
+        string? fieldWritten,
+        string? fieldReread,
+        string? persistedCatalogJson,
+        string? savedProfileId,
+        string? savedProfileName,
+        string numericsBaseJson,
+        string numericsAmendedJson,
+        bool catalogRoundTripOk)
+    {
+        string? path = Environment.GetEnvironmentVariable(SettingsAmendReceiptEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var receipt = new
+        {
+            amendDirectory,
+            manifestGuid,
+            manifestSha256,
+            amendXmlSha256,
+            fieldWritten,
+            fieldReread,
+            persistedCatalogJson,
+            savedProfileId,
+            savedProfileName,
+            numericsBaseJson,
+            numericsAmendedJson,
+            catalogRoundTripOk,
+            writtenAtUtc = DateTime.UtcNow.ToString("o"),
+        };
+        string json = System.Text.Json.JsonSerializer.Serialize(
+            receipt,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(path));
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        File.WriteAllText(path, json);
+    }
+
 
     public static void WriteFailureArtifacts(
         DesktopMouseFirstJourneyContext context,
@@ -1214,6 +1576,18 @@ public static class DesktopMouseFirstJourneyRuntime
         if (normalized.Equals("bp", StringComparison.OrdinalIgnoreCase))
         {
             return "BP";
+        }
+
+        // WIN-009 gen16 (T1043): the Core-authoritative Life-Modules method id
+        // is "LifeModule" (CharacterCreationBuildMethods.LifeModules), which is
+        // also the exact value the new-character dialog exposes; fold the
+        // common plural/hyphenated spellings onto the canonical form instead of
+        // passing them through and failing the dialog select.
+        if (normalized.Equals("lifemodules", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("lifemodule", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("life-modules", StringComparison.OrdinalIgnoreCase))
+        {
+            return "LifeModule";
         }
 
         return normalized.Equals("priority", StringComparison.OrdinalIgnoreCase)
