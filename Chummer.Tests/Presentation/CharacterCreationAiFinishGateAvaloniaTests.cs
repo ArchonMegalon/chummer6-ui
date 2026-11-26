@@ -856,7 +856,8 @@ public sealed class LifeModuleFoundationJourneyTests
                 var ghost = new CharacterCreationWizardBuildGhostContext("v1", workspace, revision, "snapshot", step,
                     "sr5", "runtime", CharacterCreationBuildMethods.LifeModules, [], choices, [], []);
                 CharacterCreationWizardDesktopStep Row(string id) =>
-                    new(id, id, "available", true, id != step, false, id == step, [], [], [], []);
+                    new(id, id, id == step ? CharacterCreationWizardStepStatuses.InProgress : CharacterCreationWizardStepStatuses.Available,
+                        true, id != step, false, id == step, [], [], [], []);
                 wizard.SetState(new(workspace, revision, "snapshot", step, [Row(foundation), Row(modules)],
                     [], choices, [], [], step == foundation, false, false, false, new(false, null), ghost,
                     JourneyStep: advanced ? new(2, "formative-years", "Formative Years", false, false) : null));
@@ -883,6 +884,8 @@ public sealed class LifeModuleFoundationJourneyTests
             try
             {
                 Bind(foundation, 3);
+                Assert.AreEqual("Choose a metatype, then select Next to choose a nationality.",
+                    wizard.FindControl<TextBlock>("AuthorityStatusText")!.Text);
                 window.Show();
                 try
                 {
@@ -890,6 +893,7 @@ public sealed class LifeModuleFoundationJourneyTests
                     Assert.IsTrue(advanceRevision, "Stage 2 was accepted on the original revision.");
                 }
                 catch (OperationCanceledException) when (!advanceRevision && timeout.IsCancellationRequested) { }
+                Assert.AreEqual("This step is in progress.", wizard.FindControl<TextBlock>("AuthorityStatusText")!.Text);
                 CollectionAssert.AreEqual(new[] { "metatype-id", "Next", "enabled-version", "preview" }, actions);
                 Assert.AreEqual(advanceRevision, steps.Any(s => s.Contains("workspace revision 3 -> 4", StringComparison.Ordinal)));
             }
