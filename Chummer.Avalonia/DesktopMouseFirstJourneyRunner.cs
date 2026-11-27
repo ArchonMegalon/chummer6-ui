@@ -7455,22 +7455,41 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 // genuine press is swallowed. A real user maximizes the
                 // window; normalize to the design size before pressing so
                 // the press point is genuinely reachable.
-                string windowDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
+                // The platform resize is asynchronous: layout constraints
+                // move immediately (vpRect grew 60 -> 396 wide) but the
+                // actual window surface and ClientSize lag (tl stayed
+                // 644x461), so rows arranged below the stale surface
+                // bottom (rootPos Y=561 > 461) are clipped and their
+                // hit-tests return null. Poll-pump until the platform
+                // surface actually settles at the design size; if the OS
+                // never settles (e.g. work-area clamp) the diagnostics
+                // record it and the unchanged fail-closed delivery and
+                // outcome gates still decide the leg.
+                string windowDiagnostics = "tl=unsettled;";
+                for (int settleAttempt = 0; settleAttempt < 30; settleAttempt++)
                 {
-                    global::Avalonia.Controls.TopLevel? resizeTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                    if (resizeTopLevel is global::Avalonia.Controls.Window resizeWindow
-                        && (resizeWindow.ClientSize.Width < 980 || resizeWindow.ClientSize.Height < 680))
+                    windowDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        resizeWindow.Width = 980;
-                        resizeWindow.Height = 680;
-                        ForceHeadlessLayoutPump(resizeWindow);
+                        global::Avalonia.Controls.TopLevel? resizeTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
+                        if (resizeTopLevel is global::Avalonia.Controls.Window resizeWindow
+                            && (resizeWindow.ClientSize.Width < 980 || resizeWindow.ClientSize.Height < 680))
+                        {
+                            resizeWindow.Width = 980;
+                            resizeWindow.Height = 680;
+                            ForceHeadlessLayoutPump(resizeWindow);
+                        }
+                        global::Avalonia.Controls.TopLevel? settledTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
+                        return "tl=" + (settledTopLevel is null
+                            ? "none"
+                            : settledTopLevel.ClientSize.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                                + "x" + settledTopLevel.ClientSize.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)) + ";";
+                    });
+                    if (windowDiagnostics.Contains("tl=980x680"))
+                    {
+                        break;
                     }
-                    global::Avalonia.Controls.TopLevel? settledTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                    return "tl=" + (settledTopLevel is null
-                        ? "none"
-                        : settledTopLevel.ClientSize.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
-                            + "x" + settledTopLevel.ClientSize.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)) + ";";
-                });
+                    await Task.Delay(80);
+                }
                 RecordStep(steps, "sr6 wizard: reserve window normalization; " + windowDiagnostics);
                 string readinessDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                 {
@@ -9025,22 +9044,41 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 // genuine press is swallowed. A real user maximizes the
                 // window; normalize to the design size before pressing so
                 // the press point is genuinely reachable.
-                string windowDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
+                // The platform resize is asynchronous: layout constraints
+                // move immediately (vpRect grew 60 -> 396 wide) but the
+                // actual window surface and ClientSize lag (tl stayed
+                // 644x461), so rows arranged below the stale surface
+                // bottom (rootPos Y=561 > 461) are clipped and their
+                // hit-tests return null. Poll-pump until the platform
+                // surface actually settles at the design size; if the OS
+                // never settles (e.g. work-area clamp) the diagnostics
+                // record it and the unchanged fail-closed delivery and
+                // outcome gates still decide the leg.
+                string windowDiagnostics = "tl=unsettled;";
+                for (int settleAttempt = 0; settleAttempt < 30; settleAttempt++)
                 {
-                    global::Avalonia.Controls.TopLevel? resizeTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                    if (resizeTopLevel is global::Avalonia.Controls.Window resizeWindow
-                        && (resizeWindow.ClientSize.Width < 980 || resizeWindow.ClientSize.Height < 680))
+                    windowDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                     {
-                        resizeWindow.Width = 980;
-                        resizeWindow.Height = 680;
-                        ForceHeadlessLayoutPump(resizeWindow);
+                        global::Avalonia.Controls.TopLevel? resizeTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
+                        if (resizeTopLevel is global::Avalonia.Controls.Window resizeWindow
+                            && (resizeWindow.ClientSize.Width < 980 || resizeWindow.ClientSize.Height < 680))
+                        {
+                            resizeWindow.Width = 980;
+                            resizeWindow.Height = 680;
+                            ForceHeadlessLayoutPump(resizeWindow);
+                        }
+                        global::Avalonia.Controls.TopLevel? settledTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
+                        return "tl=" + (settledTopLevel is null
+                            ? "none"
+                            : settledTopLevel.ClientSize.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                                + "x" + settledTopLevel.ClientSize.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)) + ";";
+                    });
+                    if (windowDiagnostics.Contains("tl=980x680"))
+                    {
+                        break;
                     }
-                    global::Avalonia.Controls.TopLevel? settledTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                    return "tl=" + (settledTopLevel is null
-                        ? "none"
-                        : settledTopLevel.ClientSize.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
-                            + "x" + settledTopLevel.ClientSize.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)) + ";";
-                });
+                    await Task.Delay(80);
+                }
                 RecordStep(steps, "sr6 wizard: reserve window normalization; " + windowDiagnostics);
                 string readinessDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                 {
