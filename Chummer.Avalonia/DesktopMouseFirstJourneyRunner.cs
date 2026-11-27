@@ -7462,8 +7462,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         string ancestorChain = await Dispatcher.UIThread.InvokeAsync(() => DescribeVisualAncestorChainForDiagnostics(increase));
                         RecordStep(steps, "sr6 skill leg: reserve target ancestor chain: " + ancestorChain);
                     }
-                    bool scrollDown = probeAttempt % 2 == 0;
-                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
+                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => CenterScrollViewerOnControlForProbe(increase));
+                    if (nudgeDiag.Contains("center=ok", StringComparison.Ordinal) is false)
+                    {
+                        bool scrollDown = probeAttempt % 2 == 0;
+                        nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
+                    }
                     await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(increase));
                     readinessDiagnostics = probeDiag + nudgeDiag + " ";
                     RecordStep(steps, "sr6 skill leg: reserve power point probe miss " + (probeAttempt + 1) + ": " + probeDiag + nudgeDiag);
@@ -7526,8 +7530,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     Button? increase = Active().GetVisualDescendants().OfType<Button>().FirstOrDefault(b =>
                         AutomationProperties.GetAutomationId(b) == "sr6-power-rating-increase-" + pickedPowerId);
                     if (increase is null || !increase.IsEnabled) return "unavailable";
+                    string centerDiag = CenterScrollViewerOnControlForProbe(increase);
                     increase.BringIntoView();
-                    return await RoutePointerClickAsync(increase);
+                    return "center=" + (centerDiag.Contains("center=ok", StringComparison.Ordinal) ? "ok" : "miss") + ";"
+                        + await RoutePointerClickAsync(increase);
                 });
                 RecordStep(steps, "sr6 skill leg: increase power rating; " + routing);
                 if (routing.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
@@ -9022,8 +9028,12 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                         string ancestorChain = await Dispatcher.UIThread.InvokeAsync(() => DescribeVisualAncestorChainForDiagnostics(increase));
                         RecordStep(steps, "sr6 magic leg: reserve target ancestor chain: " + ancestorChain);
                     }
-                    bool scrollDown = probeAttempt % 2 == 0;
-                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
+                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => CenterScrollViewerOnControlForProbe(increase));
+                    if (nudgeDiag.Contains("center=ok", StringComparison.Ordinal) is false)
+                    {
+                        bool scrollDown = probeAttempt % 2 == 0;
+                        nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
+                    }
                     await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(increase));
                     readinessDiagnostics = probeDiag + nudgeDiag + " ";
                     RecordStep(steps, "sr6 magic leg: reserve power point probe miss " + (probeAttempt + 1) + ": " + probeDiag + nudgeDiag);
@@ -9086,8 +9096,10 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     Button? increase = Active().GetVisualDescendants().OfType<Button>().FirstOrDefault(b =>
                         AutomationProperties.GetAutomationId(b) == "sr6-power-rating-increase-" + pickedPowerId);
                     if (increase is null || !increase.IsEnabled) return "unavailable";
+                    string centerDiag = CenterScrollViewerOnControlForProbe(increase);
                     increase.BringIntoView();
-                    return await RoutePointerClickAsync(increase);
+                    return "center=" + (centerDiag.Contains("center=ok", StringComparison.Ordinal) ? "ok" : "miss") + ";"
+                        + await RoutePointerClickAsync(increase);
                 });
                 RecordStep(steps, "sr6 magic leg: increase power rating; " + routing);
                 if (routing.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
@@ -14496,6 +14508,54 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             cursor = cursor.GetVisualParent();
         }
         return "nudge=no-scrollviewer;";
+    }
+
+    // WIN-010 T1080: deterministic centering for probe-gated presses on the
+    // SR6 confirm step. The step content is ~20,000+ px tall inside a 149 px
+    // headless viewport, BringIntoView is a no-op on this host, and the
+    // +/-36 px nudge oscillates around the fold line without ever pushing
+    // the target inside the clip (t1080 phase A receipt: rootPos Y tracked
+    // offset 1:1 and stayed at/below the fold on every attempt). Compute the
+    // control's live root-space Y from the transform chain and set the owning
+    // ScrollViewer offset so the control center sits at the presenter's
+    // vertical midpoint; the +/-36 px nudge remains the fallback for hosts
+    // that cannot be resolved.
+    private static string CenterScrollViewerOnControlForProbe(Control control)
+    {
+        global::Avalonia.Controls.TopLevel? topLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(control);
+        if (topLevel is null)
+        {
+            return "center=no-toplevel;";
+        }
+        global::Avalonia.Visual? cursor = control;
+        while (cursor is not null && cursor is not global::Avalonia.Controls.TopLevel)
+        {
+            if (cursor is global::Avalonia.Controls.ScrollViewer scrollViewer)
+            {
+                global::Avalonia.Point? controlCenterInRoot = control.TranslatePoint(
+                    new global::Avalonia.Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d), topLevel);
+                global::Avalonia.Point? viewerCenterInRoot = scrollViewer.TranslatePoint(
+                    new global::Avalonia.Point(scrollViewer.Bounds.Width / 2d, scrollViewer.Bounds.Height / 2d), topLevel);
+                if (controlCenterInRoot is not { } controlCenter || viewerCenterInRoot is not { } viewerCenter)
+                {
+                    return "center=no-transform;";
+                }
+                // Root-space delta == content-space delta on this host: the
+                // t1080 phase A receipt proved rootPos Y tracks offset 1:1.
+                double deltaY = controlCenter.Y - viewerCenter.Y;
+                double maxOffset = Math.Max(0d, scrollViewer.Extent.Height - scrollViewer.Viewport.Height);
+                global::Avalonia.Vector oldOffset = scrollViewer.Offset;
+                double newY = Math.Clamp(oldOffset.Y + deltaY, 0d, maxOffset);
+                scrollViewer.Offset = new global::Avalonia.Vector(oldOffset.X, newY);
+                return "center=ok;deltaY=" + deltaY.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";fromY=" + oldOffset.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";toY=" + scrollViewer.Offset.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";maxOffset=" + maxOffset.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";ctrlRootY=" + controlCenter.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture) + ";";
+            }
+            cursor = cursor.GetVisualParent();
+        }
+        return "center=no-scrollviewer;";
     }
 
     // T957b: receipt evidence - the pressed target's ancestor chain with
