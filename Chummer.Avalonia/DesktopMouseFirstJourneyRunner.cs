@@ -7445,52 +7445,6 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 // Button.ClickEvent delivery verification, and the
                 // reserved-count outcome gate below remains fail-closed: an
                 // undelivered or ineffective press still fails this leg.
-                // T1080 (WIN-010 native evidence): the headless host opens
-                // the wizard below its 980x680 design size (run-A receipt:
-                // tlSize=644x461). The fixed 230,*,280 wizard columns then
-                // starve the confirm ScrollViewer to ~60px wide; the
-                // allocation row overflows the presenter clip (rootPos
-                // X=471 vs vpRect X[267,327], maxX=0 - no scroll recovers
-                // it), InputHitTest there returns the presenter, and every
-                // genuine press is swallowed. A real user maximizes the
-                // window; normalize to the design size before pressing so
-                // the press point is genuinely reachable.
-                // The platform resize is asynchronous: layout constraints
-                // move immediately (vpRect grew 60 -> 396 wide) but the
-                // actual window surface and ClientSize lag (tl stayed
-                // 644x461), so rows arranged below the stale surface
-                // bottom (rootPos Y=561 > 461) are clipped and their
-                // hit-tests return null. Poll-pump until the platform
-                // surface actually settles at the design size; if the OS
-                // never settles (e.g. work-area clamp) the diagnostics
-                // record it and the unchanged fail-closed delivery and
-                // outcome gates still decide the leg.
-                string windowDiagnostics = "tl=unsettled;";
-                for (int settleAttempt = 0; settleAttempt < 30; settleAttempt++)
-                {
-                    windowDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        global::Avalonia.Controls.TopLevel? resizeTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                        if (resizeTopLevel is global::Avalonia.Controls.Window resizeWindow
-                            && (resizeWindow.ClientSize.Width < 980 || resizeWindow.ClientSize.Height < 680))
-                        {
-                            resizeWindow.Width = 980;
-                            resizeWindow.Height = 680;
-                            ForceHeadlessLayoutPump(resizeWindow);
-                        }
-                        global::Avalonia.Controls.TopLevel? settledTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                        return "tl=" + (settledTopLevel is null
-                            ? "none"
-                            : settledTopLevel.ClientSize.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
-                                + "x" + settledTopLevel.ClientSize.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)) + ";";
-                    });
-                    if (windowDiagnostics.Contains("tl=980x680"))
-                    {
-                        break;
-                    }
-                    await Task.Delay(80);
-                }
-                RecordStep(steps, "sr6 wizard: reserve window normalization; " + windowDiagnostics);
                 string readinessDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     (bool diagHit, string diagProbe) = ProbeViewportHitTestForButton(increase);
@@ -9034,52 +8988,6 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 // Button.ClickEvent delivery verification, and the
                 // reserved-count outcome gate below remains fail-closed: an
                 // undelivered or ineffective press still fails this leg.
-                // T1080 (WIN-010 native evidence): the headless host opens
-                // the wizard below its 980x680 design size (run-A receipt:
-                // tlSize=644x461). The fixed 230,*,280 wizard columns then
-                // starve the confirm ScrollViewer to ~60px wide; the
-                // allocation row overflows the presenter clip (rootPos
-                // X=471 vs vpRect X[267,327], maxX=0 - no scroll recovers
-                // it), InputHitTest there returns the presenter, and every
-                // genuine press is swallowed. A real user maximizes the
-                // window; normalize to the design size before pressing so
-                // the press point is genuinely reachable.
-                // The platform resize is asynchronous: layout constraints
-                // move immediately (vpRect grew 60 -> 396 wide) but the
-                // actual window surface and ClientSize lag (tl stayed
-                // 644x461), so rows arranged below the stale surface
-                // bottom (rootPos Y=561 > 461) are clipped and their
-                // hit-tests return null. Poll-pump until the platform
-                // surface actually settles at the design size; if the OS
-                // never settles (e.g. work-area clamp) the diagnostics
-                // record it and the unchanged fail-closed delivery and
-                // outcome gates still decide the leg.
-                string windowDiagnostics = "tl=unsettled;";
-                for (int settleAttempt = 0; settleAttempt < 30; settleAttempt++)
-                {
-                    windowDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        global::Avalonia.Controls.TopLevel? resizeTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                        if (resizeTopLevel is global::Avalonia.Controls.Window resizeWindow
-                            && (resizeWindow.ClientSize.Width < 980 || resizeWindow.ClientSize.Height < 680))
-                        {
-                            resizeWindow.Width = 980;
-                            resizeWindow.Height = 680;
-                            ForceHeadlessLayoutPump(resizeWindow);
-                        }
-                        global::Avalonia.Controls.TopLevel? settledTopLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(increase);
-                        return "tl=" + (settledTopLevel is null
-                            ? "none"
-                            : settledTopLevel.ClientSize.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
-                                + "x" + settledTopLevel.ClientSize.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)) + ";";
-                    });
-                    if (windowDiagnostics.Contains("tl=980x680"))
-                    {
-                        break;
-                    }
-                    await Task.Delay(80);
-                }
-                RecordStep(steps, "sr6 wizard: reserve window normalization; " + windowDiagnostics);
                 string readinessDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     (bool diagHit, string diagProbe) = ProbeViewportHitTestForButton(increase);
