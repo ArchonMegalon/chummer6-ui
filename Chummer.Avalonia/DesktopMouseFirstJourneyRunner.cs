@@ -14594,15 +14594,27 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 }
                 // Root-space delta == content-space delta on this host: the
                 // t1080 phase A receipt proved rootPos Y tracks offset 1:1.
+                // Clamp BOTH axes: scroll anchoring (active while Offset.Y is
+                // large - always true on the 20,000+ px confirm step) rewrote
+                // Offset.X negative when the skills editor section was
+                // inserted on the pass-2 re-prepare, pushing the content
+                // horizontally out of the clip (receipt 3: vpRect X[267,327]
+                // vs rootPos X=471). A real user cannot scroll to a negative
+                // offset either; normalize to the valid scroll range first.
                 double deltaY = controlCenter.Y - viewerCenter.Y;
-                double maxOffset = Math.Max(0d, scrollViewer.Extent.Height - scrollViewer.Viewport.Height);
+                double maxYOffset = Math.Max(0d, scrollViewer.Extent.Height - scrollViewer.Viewport.Height);
+                double maxXOffset = Math.Max(0d, scrollViewer.Extent.Width - scrollViewer.Viewport.Width);
                 global::Avalonia.Vector oldOffset = scrollViewer.Offset;
-                double newY = Math.Clamp(oldOffset.Y + deltaY, 0d, maxOffset);
-                scrollViewer.Offset = new global::Avalonia.Vector(oldOffset.X, newY);
+                double newY = Math.Clamp(oldOffset.Y + deltaY, 0d, maxYOffset);
+                double newX = Math.Clamp(oldOffset.X, 0d, maxXOffset);
+                scrollViewer.Offset = new global::Avalonia.Vector(newX, newY);
                 return "center=ok;deltaY=" + deltaY.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";fromX=" + oldOffset.X.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";toX=" + scrollViewer.Offset.X.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";maxX=" + maxXOffset.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
                     + ";fromY=" + oldOffset.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
                     + ";toY=" + scrollViewer.Offset.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
-                    + ";maxOffset=" + maxOffset.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";maxY=" + maxYOffset.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
                     + ";ctrlRootY=" + controlCenter.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture) + ";";
             }
             cursor = cursor.GetVisualParent();
