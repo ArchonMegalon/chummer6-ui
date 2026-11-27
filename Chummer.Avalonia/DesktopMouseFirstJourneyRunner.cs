@@ -9592,7 +9592,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             {
                 return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: duplicate newskills containers");
             }
-            foreach (XElement skill in root.Elements("newskills").Elements("skill"))
+            foreach (XElement skill in root.Elements("newskills").Elements("skills").Elements("skill"))
             {
                 string? id = skill.Elements("suid").FirstOrDefault(e => !e.HasElements && !e.HasAttributes)?.Value.Trim();
                 if (string.IsNullOrEmpty(id) || !id.StartsWith("sr6.skill.", StringComparison.Ordinal))
