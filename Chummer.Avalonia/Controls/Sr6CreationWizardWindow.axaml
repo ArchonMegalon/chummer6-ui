@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Chummer.Avalonia.Controls.Sr6CreationWizardWindow"
         Title="Character Creation Wizard - Shadowrun Sixth Edition"
@@ -31,7 +31,16 @@
       </Grid>
     </Border>
 
-    <Grid Grid.Row="1" ColumnDefinitions="230,*,280" ColumnSpacing="10" Margin="12,2,12,2">
+    <Grid Grid.Row="1" ColumnSpacing="10" Margin="12,2,12,2">
+      <!-- T1080: the middle column carries a MinWidth so narrow hosts
+           (desktop work-area clamp, e.g. 644 DIP at 175% DPI) clip the
+           side panes instead of starving the confirm content to an
+           unusable ~60px viewport. -->
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="230" />
+        <ColumnDefinition Width="*" MinWidth="380" />
+        <ColumnDefinition Width="280" />
+      </Grid.ColumnDefinitions>
       <!-- Left step navigation pane -->
       <Border Grid.Column="0" Classes="shell-card subtle" Padding="12">
         <Grid RowDefinitions="Auto,*" RowSpacing="10">

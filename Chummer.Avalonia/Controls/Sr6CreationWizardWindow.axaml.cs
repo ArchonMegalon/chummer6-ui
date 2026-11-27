@@ -508,6 +508,31 @@ public partial class Sr6CreationWizardWindow : Window
         UpdateFooterForDirtySelection();
     }
 
+    // WIN-010 skill domain: store an allocation row for one skill. A zero rating
+    // drops the row (the honest zero-spend shape Core's freeze accepts); a positive
+    // rating adds or updates it. Rows stay keyed by SkillId; the option catalog
+    // bounds each rating at the Core published maximum and the prepare seam enforces
+    // budget, max-at-cap and aspect gating before confirmation.
+    private void StoreSkillRating(string skillId, int rating)
+    {
+        if (!RequireCurrentContext() || _state?.Foundation.Selection is not { } decision) return;
+        var saved = decision.Selection.Skills;
+        var rows = (saved?.Allocations ?? []).Where(r => r.SkillId != skillId).ToArray();
+        if (rating > 0)
+        {
+            rows = rows.Append(new Sr6CreationSkillSpend(skillId, rating, saved?.Allocations
+                .FirstOrDefault(r => r.SkillId == skillId)?.Specializations ?? [])).ToArray();
+        }
+        var updated = decision.Selection with
+        {
+            Skills = new Sr6CreationSkillSelection(rows, saved?.AspectedSkillId)
+        };
+        _state = _state with { Foundation = _state.Foundation with { Selection = decision with { Selection = updated } } };
+        _preparedPreview = null;
+        _confirmedPreviewDigest = null;
+        UpdateFooterForDirtySelection();
+    }
+
     private void StoreAdeptPowerRating(string catalogId, int rating)
     {
         if (!RequireCurrentContext() || _state?.Foundation.Selection is not { } decision) return;
@@ -712,6 +737,84 @@ public partial class Sr6CreationWizardWindow : Window
                 }
                 StoreTalentDomainIds("tradition", [optionId]);
             };
+            panel.Children.Add(row);
+        }
+    }
+
+    // WIN-010 skill domain editor: the confirm step renders the Core-published
+    // skill catalog (foundation.SkillOptions, gated per talent by the rules
+    // authority) with a bounded rating input per row, seeded from the saved
+    // allocation. Editing a rating rewrites the saved skill allocation and
+    // invalidates the held preview exactly like the talent-domain picks, so the
+    // ordinary Prepare seam (Core Sr6CreationSkillRules) validates ratings,
+    // maximum-at-cap counts, aspect gating and the point budget before any
+    // confirmation. Specializations are contract free-text and stay unwritten
+    // here; unsupported-aspect rows surface the Core blocker on prepare.
+    private void RenderSkillAllocationEditor(StackPanel panel)
+    {
+        Sr6CreationFoundationState foundation = _state!.Foundation;
+        if ((foundation.SkillOptions ?? []).Count == 0)
+        {
+            return; // no published catalog: the saved (or zero) allocation stays
+        }
+        panel.Children.Add(new TextBlock
+        {
+            Text = "Skill allocation",
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Classes = { "shell-caption" },
+            TextWrapping = TextWrapping.Wrap,
+            Text = "Assign skill points within the published maximum per skill. At most one skill may sit at its maximum; the preview rejects over-budget allocations before anything is confirmed.",
+        });
+        var savedSkills = foundation.Selection?.Selection.Skills;
+        foreach (Sr6CreationSkillOption option in foundation.SkillOptions ?? [])
+        {
+            var row = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
+            var line = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            line.Children.Add(new TextBlock
+            {
+                Text = option.SkillId,
+                VerticalAlignment = VerticalAlignment.Center,
+                MinWidth = 140,
+            });
+            var input = new NumericUpDown
+            {
+                Minimum = 0,
+                Maximum = option.Maximum,
+                Increment = 1,
+                MinWidth = 80,
+                Value = savedSkills?.Allocations.FirstOrDefault(r => r.SkillId == option.SkillId)?.Rating ?? 0,
+            };
+            DesktopShellTheme.ApplyShellNumericUpDownTheme(input);
+            AutomationProperties.SetAutomationId(input, $"sr6-skill-{option.SkillId}-rating");
+            string skillId = option.SkillId;
+            input.ValueChanged += (_, _) =>
+            {
+                int value = (int)(input.Value ?? 0);
+                if (value < 0 || value > option.Maximum) return;
+                // Compare against the LIVE draft, not the render-time snapshot:
+                // a raise-then-lower edit must store the lowered value too, or the
+                // draft silently keeps a rating the UI no longer shows.
+                int draftRating = _state?.Foundation.Selection?.Selection.Skills?.Allocations
+                    .FirstOrDefault(r => r.SkillId == skillId)?.Rating ?? 0;
+                if (value == draftRating)
+                {
+                    return; // spinner echo of the current draft value, not a user edit
+                }
+                StoreSkillRating(skillId, value);
+            };
+            line.Children.Add(input);
+            if (!option.Available && option.UnavailableReason is { } reason)
+            {
+                line.Children.Add(new TextBlock
+                {
+                    Classes = { "shell-caption" },
+                    Text = reason,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+            }
+            row.Children.Add(line);
             panel.Children.Add(row);
         }
     }
@@ -1001,6 +1104,7 @@ public partial class Sr6CreationWizardWindow : Window
         // validates limits, slots and blockers exactly as before.
         RenderTalentDomainEditor(panel);
         RenderTraditionEditor(panel);
+        RenderSkillAllocationEditor(panel);
         var confirmCheck = new CheckBox
         {
             Content = "I confirm this preview should be applied to the character draft.",
