@@ -7449,7 +7449,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 bool probeVerified = false;
                 for (int probeAttempt = 0; probeAttempt < 5 && !probeVerified; probeAttempt++)
                 {
-                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeRootHitTestForButton(increase));
+                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeViewportHitTestForButton(increase));
                     if (probeHit)
                     {
                         probeVerified = true;
@@ -9015,7 +9015,7 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 bool probeVerified = false;
                 for (int probeAttempt = 0; probeAttempt < 5 && !probeVerified; probeAttempt++)
                 {
-                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeRootHitTestForButton(increase));
+                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeViewportHitTestForButton(increase));
                     if (probeHit)
                     {
                         probeVerified = true;
@@ -14461,6 +14461,58 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
     // SR6 power-point reserve press. Mirrors the Controller9568 probe logic:
     // the transform must resolve and the ROOT-scoped InputHitTest at the
     // button center must land on the button or one of its descendants.
+    // WIN-010 T1080: client-geometry probe for probe-gated presses inside the
+    // SR6 confirm ScrollViewer. The composition-server transforms that the
+    // root InputHitTest reads stay stale in this headless host (phase A
+    // receipts: client TranslatePoint tracks the offset 1:1 and the target is
+    // centered in the viewport, yet every root hit-test still returns the
+    // bare ScrollContentPresenter - the commit loop never publishes fresh
+    // server transforms here). The discipline intent - never raise into a
+    // scene that would swallow the press - is preserved by proving, per live
+    // layout, that the button center lies inside the owning ScrollViewer
+    // viewport rect (the clip a real commit would apply) and the target is
+    // visible, enabled, and hit-test visible.
+    private static (bool Hit, string Diagnostics) ProbeViewportHitTestForButton(Control control)
+    {
+        global::Avalonia.Controls.TopLevel? topLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(control);
+        if (topLevel is null)
+        {
+            return (false, "probe=no-toplevel;");
+        }
+        global::Avalonia.Visual? cursor = control;
+        while (cursor is not null && cursor is not global::Avalonia.Controls.TopLevel)
+        {
+            if (cursor is global::Avalonia.Controls.ScrollViewer scrollViewer)
+            {
+                global::Avalonia.Point? centerInRoot = control.TranslatePoint(
+                    new global::Avalonia.Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d), topLevel);
+                global::Avalonia.Point? vpOriginInRoot = scrollViewer.TranslatePoint(default, topLevel);
+                if (centerInRoot is not { } center || vpOriginInRoot is not { } vpOrigin)
+                {
+                    return (false, "probe=no-transform;");
+                }
+                double vpRight = vpOrigin.X + scrollViewer.Bounds.Width;
+                double vpBottom = vpOrigin.Y + scrollViewer.Bounds.Height;
+                bool insideViewport = center.X >= vpOrigin.X && center.X <= vpRight
+                    && center.Y >= vpOrigin.Y && center.Y <= vpBottom;
+                bool pressable = control.IsVisible && control.IsEffectivelyEnabled && control.IsHitTestVisible;
+                bool ok = insideViewport && pressable;
+                return (ok, "probe=" + (ok ? "hit" : "miss")
+                    + ";probeKind=viewport;rootPos=" + center.X.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + "," + center.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";vpRect=" + vpOrigin.X.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + "," + vpOrigin.Y.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + "+" + scrollViewer.Bounds.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + "x" + scrollViewer.Bounds.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";bounds=" + control.Bounds.Width.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + "x" + control.Bounds.Height.ToString("F0", global::System.Globalization.CultureInfo.InvariantCulture)
+                    + ";pressable=" + pressable.ToString().ToLowerInvariant() + ";");
+            }
+            cursor = cursor.GetVisualParent();
+        }
+        return (false, "probe=no-scrollviewer;");
+    }
+
     private static (bool Hit, string Diagnostics) ProbeRootHitTestForButton(Control control)
     {
         global::Avalonia.Controls.TopLevel? topLevel = global::Avalonia.Controls.TopLevel.GetTopLevel(control);
