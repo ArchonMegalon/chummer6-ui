@@ -1350,15 +1350,35 @@ internal static class DesktopMouseFirstJourneyRunner
                 bool savedReceiptIsSr6MagicEditor = saved.RootElement.TryGetProperty("scenarioId", out System.Text.Json.JsonElement savedScenarioElement)
                     && savedScenarioElement.ValueKind == System.Text.Json.JsonValueKind.String
                     && (savedScenarioElement.GetString() ?? string.Empty).Contains("magic-editor", StringComparison.Ordinal);
+                // WIN-010 T1080: the SR6 skill-editor scenario (like the magic
+                // editor) drives the changed creation wizard to finalize and
+                // save, but runs no advance legs - demanding an SR6 advance
+                // receipt here is the same category error T888 fixed for the
+                // magic editor. The skill-reopen sidecar verification below is
+                // the reopen contract for that scenario; the advance-receipt
+                // demand stays scoped to advance journeys (the T673 pattern).
+                // The discriminator reads the saved receipt itself: the skill
+                // legs write a verification note whose prefix no other scenario
+                // produces ("SR6 skill-editor save/cancel route completed in
+                // this process"), so a crafted scenarioId cannot fake it.
+                bool savedReceiptIsSr6SkillEditor = saved.RootElement.TryGetProperty("verificationNotes", out System.Text.Json.JsonElement savedNotesElement)
+                    && savedNotesElement.ValueKind == System.Text.Json.JsonValueKind.Array
+                    && savedNotesElement.EnumerateArray().Any(noteElement =>
+                        noteElement.ValueKind == System.Text.Json.JsonValueKind.String
+                        && (noteElement.GetString() ?? string.Empty).StartsWith("SR6 skill-editor ", StringComparison.Ordinal));
                 if (savedReceiptIsSr6 && savedReceiptIsSr6MagicEditor)
                 {
                     RecordStep(steps, "sr6 advance receipt verification skipped: the saved receipt is the SR6 magic-editor scenario (no advance legs; the magic sidecar verification covers the changed-editor reopen contract)");
+                }
+                if (savedReceiptIsSr6 && savedReceiptIsSr6SkillEditor)
+                {
+                    RecordStep(steps, "sr6 advance receipt verification skipped: the saved receipt is the SR6 skill-editor scenario (no advance legs; the skill sidecar verification covers the changed-editor reopen contract)");
                 }
                 if (!savedReceiptIsSr6)
                 {
                     RecordStep(steps, "sr6 reopen verification skipped: the saved receipt is not an sr6-family journey (rulesetId='" + savedRulesetId + "')");
                 }
-                if (savedReceiptIsSr6 && !savedReceiptIsSr6MagicEditor)
+                if (savedReceiptIsSr6 && !savedReceiptIsSr6MagicEditor && !savedReceiptIsSr6SkillEditor)
                 {
                 // The SR6 advance receipt is REQUIRED here: a missing or
                 // unreadable receipt in the reopen-verify leg of a verified
