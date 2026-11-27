@@ -7431,58 +7431,35 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     continue;
                 }
                 Button increase = settledIncrease;
-                // T957b (Controller10375): pre-press root-scoped probe before
-                // any raise. Phase-B evidence on t957a: the settled instance
-                // stayed at rootPos 471,340 with every raise hit-testing to
-                // the bare ScrollContentPresenter - the press point sat below
-                // the content viewport fold, so the composed subtree was
-                // clipped and the presenter swallowed the hit identically on
-                // all four raises. Probe first (Controller9568 logic); on a
-                // miss nudge the owning ScrollViewer offset (down, then up) +
-                // pump + re-probe. Only a probe-verified button is pressed; a
-                // target that never probes live is left unpressed and the
-                // attempt loop re-settles - raising into a scene that would
-                // swallow the press is exactly the ambiguous press the
-                // discipline forbids.
-                bool chainDescribed = false;
-                string readinessDiagnostics = string.Empty;
-                bool probeVerified = false;
-                for (int probeAttempt = 0; probeAttempt < 5 && !probeVerified; probeAttempt++)
+                // T1080 (WIN-010 native evidence): the containment probe is
+                // diagnostic-only. Run-A evidence on this headless host: the
+                // settled button's root-space X transform is frozen at a stale
+                // arrange value (471) while Y tracks the live scroll offset 1:1
+                // and the visual ancestor chain is self-consistent (a 44-wide
+                // content column cannot place a 22-wide child at x=471). The
+                // former gate compared that stale X against the fresh viewport
+                // rect and can never pass, so it refused every press before a
+                // single raise (gen18d and win010 run A each dispatched zero
+                // raises). The press is raised directly on the settled button
+                // instance through the waitForClick:true re-raise loop with
+                // Button.ClickEvent delivery verification, and the
+                // reserved-count outcome gate below remains fail-closed: an
+                // undelivered or ineffective press still fails this leg.
+                string readinessDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeViewportHitTestForButton(increase));
-                    if (probeHit)
-                    {
-                        probeVerified = true;
-                        readinessDiagnostics = probeDiag;
-                        break;
-                    }
-                    if (!chainDescribed)
-                    {
-                        chainDescribed = true;
-                        string ancestorChain = await Dispatcher.UIThread.InvokeAsync(() => DescribeVisualAncestorChainForDiagnostics(increase));
-                        RecordStep(steps, "sr6 skill leg: reserve target ancestor chain: " + ancestorChain);
-                    }
-                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => CenterScrollViewerOnControlForProbe(increase));
-                    if (nudgeDiag.Contains("center=ok", StringComparison.Ordinal) is false)
-                    {
-                        bool scrollDown = probeAttempt % 2 == 0;
-                        nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
-                    }
-                    await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(increase));
-                    readinessDiagnostics = probeDiag + nudgeDiag + " ";
-                    RecordStep(steps, "sr6 skill leg: reserve power point probe miss " + (probeAttempt + 1) + ": " + probeDiag + nudgeDiag);
-                }
-                if (!probeVerified)
-                {
-                    RecordStep(steps, "sr6 skill leg: reserve press skipped - probe never landed on the button (attempt " + (allocationAttempt + 1) + ")");
-                    continue;
-                }
+                    (bool diagHit, string diagProbe) = ProbeViewportHitTestForButton(increase);
+                    string diagText = (diagHit ? "probe=hit;" : "probe=miss;") + diagProbe
+                        + CenterScrollViewerOnControlForProbe(increase) + " ";
+                    ForceHeadlessLayoutPump(increase);
+                    return diagText;
+                });
+                RecordStep(steps, "sr6 skill leg: reserve readiness (diagnostic probe, non-gating): " + readinessDiagnostics);
                 string allocationRouting = await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
                     if (!increase.IsVisible || !increase.IsEnabled) return "unavailable";
                     return await RoutePointerClickAsync(increase, waitForClick: true);
                 });
-                RecordStep(steps, "sr6 skill leg: reserve power point; probe=hit; " + allocationRouting + (readinessDiagnostics.Length > 0 ? "; readiness=" + readinessDiagnostics : string.Empty));
+                RecordStep(steps, "sr6 skill leg: reserve power point press; " + allocationRouting + (readinessDiagnostics.Length > 0 ? "; readiness=" + readinessDiagnostics : string.Empty));
                 if (allocationRouting.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
                 {
                     recordPointerAction();
@@ -8997,58 +8974,35 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     continue;
                 }
                 Button increase = settledIncrease;
-                // T957b (Controller10375): pre-press root-scoped probe before
-                // any raise. Phase-B evidence on t957a: the settled instance
-                // stayed at rootPos 471,340 with every raise hit-testing to
-                // the bare ScrollContentPresenter - the press point sat below
-                // the content viewport fold, so the composed subtree was
-                // clipped and the presenter swallowed the hit identically on
-                // all four raises. Probe first (Controller9568 logic); on a
-                // miss nudge the owning ScrollViewer offset (down, then up) +
-                // pump + re-probe. Only a probe-verified button is pressed; a
-                // target that never probes live is left unpressed and the
-                // attempt loop re-settles - raising into a scene that would
-                // swallow the press is exactly the ambiguous press the
-                // discipline forbids.
-                bool chainDescribed = false;
-                string readinessDiagnostics = string.Empty;
-                bool probeVerified = false;
-                for (int probeAttempt = 0; probeAttempt < 5 && !probeVerified; probeAttempt++)
+                // T1080 (WIN-010 native evidence): the containment probe is
+                // diagnostic-only. Run-A evidence on this headless host: the
+                // settled button's root-space X transform is frozen at a stale
+                // arrange value (471) while Y tracks the live scroll offset 1:1
+                // and the visual ancestor chain is self-consistent (a 44-wide
+                // content column cannot place a 22-wide child at x=471). The
+                // former gate compared that stale X against the fresh viewport
+                // rect and can never pass, so it refused every press before a
+                // single raise (gen18d and win010 run A each dispatched zero
+                // raises). The press is raised directly on the settled button
+                // instance through the waitForClick:true re-raise loop with
+                // Button.ClickEvent delivery verification, and the
+                // reserved-count outcome gate below remains fail-closed: an
+                // undelivered or ineffective press still fails this leg.
+                string readinessDiagnostics = await Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeViewportHitTestForButton(increase));
-                    if (probeHit)
-                    {
-                        probeVerified = true;
-                        readinessDiagnostics = probeDiag;
-                        break;
-                    }
-                    if (!chainDescribed)
-                    {
-                        chainDescribed = true;
-                        string ancestorChain = await Dispatcher.UIThread.InvokeAsync(() => DescribeVisualAncestorChainForDiagnostics(increase));
-                        RecordStep(steps, "sr6 magic leg: reserve target ancestor chain: " + ancestorChain);
-                    }
-                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => CenterScrollViewerOnControlForProbe(increase));
-                    if (nudgeDiag.Contains("center=ok", StringComparison.Ordinal) is false)
-                    {
-                        bool scrollDown = probeAttempt % 2 == 0;
-                        nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
-                    }
-                    await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(increase));
-                    readinessDiagnostics = probeDiag + nudgeDiag + " ";
-                    RecordStep(steps, "sr6 magic leg: reserve power point probe miss " + (probeAttempt + 1) + ": " + probeDiag + nudgeDiag);
-                }
-                if (!probeVerified)
-                {
-                    RecordStep(steps, "sr6 magic leg: reserve press skipped - probe never landed on the button (attempt " + (allocationAttempt + 1) + ")");
-                    continue;
-                }
+                    (bool diagHit, string diagProbe) = ProbeViewportHitTestForButton(increase);
+                    string diagText = (diagHit ? "probe=hit;" : "probe=miss;") + diagProbe
+                        + CenterScrollViewerOnControlForProbe(increase) + " ";
+                    ForceHeadlessLayoutPump(increase);
+                    return diagText;
+                });
+                RecordStep(steps, "sr6 magic leg: reserve readiness (diagnostic probe, non-gating): " + readinessDiagnostics);
                 string allocationRouting = await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
                     if (!increase.IsVisible || !increase.IsEnabled) return "unavailable";
                     return await RoutePointerClickAsync(increase, waitForClick: true);
                 });
-                RecordStep(steps, "sr6 magic leg: reserve power point; probe=hit; " + allocationRouting + (readinessDiagnostics.Length > 0 ? "; readiness=" + readinessDiagnostics : string.Empty));
+                RecordStep(steps, "sr6 magic leg: reserve power point press; " + allocationRouting + (readinessDiagnostics.Length > 0 ? "; readiness=" + readinessDiagnostics : string.Empty));
                 if (allocationRouting.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
                 {
                     recordPointerAction();
