@@ -592,6 +592,88 @@ internal static class DesktopMouseFirstJourneyRunner
                 return;
             }
 
+            if (DesktopMouseFirstJourneyRuntime.Sr6SkillEditRequested)
+            {
+                RecordStep(steps, "skill editor leg: rating edit -> save/cancel route");
+                DesktopUserJourneyWorkflowEvidence skillEvidence = await ExerciseSr6SkillEditorLegAsync(
+                    window,
+                    context,
+                    steps,
+                    screenshotPaths,
+                    journeyTimeout.Token,
+                    recordPointerAction,
+                    plan.CharacterName,
+                    plan.CharacterAlias);
+                userJourneyWorkflows.Add(skillEvidence);
+                DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
+                foreach (KeyValuePair<string, bool> skillAssertion in skillEvidence.Assertions)
+                {
+                    if (!skillAssertion.Value)
+                    {
+                        DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
+                            context,
+                            new InvalidOperationException($"skill editor leg assertion failed: {skillAssertion.Key}"),
+                            steps,
+                            screenshotPaths: screenshotPaths,
+                            pointerActionCount: getPointerActionCount(),
+                            textEntryActionCount: getTextEntryActionCount(),
+                            directTextMutationCount: getDirectTextMutationCount(),
+                            usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                            usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                            scenarioId: plan.ScenarioId,
+                            buildMethod: plan.BuildMethod,
+                            metatypeCategory: plan.MetatypeCategory,
+                            priorityHeritage: plan.PriorityHeritage,
+                            metatype: plan.Metatype,
+                            priorityTalent: plan.PriorityTalent,
+                            priorityTalentChoice: plan.PriorityTalentChoice,
+                            authenticationPortalOpened: authenticationPortalState.Opened,
+                            authenticationPortalUri: authenticationPortalState.Uri,
+                            observedInputEvents: observedInputEvents);
+                        Console.Error.WriteLine($"Desktop mouse-first journey failed: skill editor leg assertion {skillAssertion.Key}.");
+                        Environment.Exit(1);
+                        return;
+                    }
+                }
+
+                CharacterOverviewState skillReceiptSnapshot = window.SnapshotStateForAutomation();
+                DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
+                    context,
+                    new DesktopMouseFirstJourneyEvidence(
+                        Steps: steps,
+                        ScreenshotPaths: screenshotPaths,
+                        PointerActionCount: getPointerActionCount(),
+                        TextEntryActionCount: getTextEntryActionCount(),
+                        DirectTextMutationCount: getDirectTextMutationCount(),
+                        UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
+                        UsedComboSelectionFallback: getUsedComboSelectionFallback(),
+                        ObservedInputEvents: observedInputEvents,
+                        ScenarioId: plan.ScenarioId,
+                        WorkspaceId: skillReceiptSnapshot.WorkspaceId?.Value,
+                        CharacterName: skillReceiptSnapshot.Profile?.Name,
+                        CharacterAlias: skillReceiptSnapshot.Profile?.Alias,
+                        RulesetId: "sr6",
+                        BuildMethod: null,
+                        MetatypeCategory: null,
+                        PriorityHeritage: null,
+                        Metatype: null,
+                        PriorityTalent: null,
+                        PriorityTalentChoice: null,
+                        HasSavedWorkspace: !DesktopMouseFirstJourneyRuntime.Sr6SkillEditWantsCancel,
+                        AuthenticationPortalOpened: false,
+                        AuthenticationPortalUri: null,
+                        ActiveDialogId: null,
+                        VerificationNotes:
+                        [
+                            DesktopMouseFirstJourneyRuntime.Sr6SkillEditWantsCancel
+                                ? "SR6 skill-editor cancel route completed in this process: the wizard was closed mid-edit and the workspace was verified unchanged. Fresh-process reopen is a separate scenario and is not claimed by this receipt."
+                                : "SR6 skill-editor save route completed in this process: the skill rating edit, confirm step, finalization and save converged. Consult workflow assertions and steps for the observed rating. Fresh-process reopen is a separate scenario and is not claimed by this receipt."
+                        ],
+                        UserJourneyWorkflows: userJourneyWorkflows));
+                Environment.ExitCode = 0;
+                return;
+            }
+
             if (DesktopMouseFirstJourneyRuntime.MagicianExportRequested)
             {
                 RecordStep(steps, "magician export leg: import bundled SR5 Career magician, save, save-as native .chum5, export portable bundle");
@@ -1154,6 +1236,56 @@ internal static class DesktopMouseFirstJourneyRunner
                         RecordStep(steps, "reopen magic tradition verified: " + reopenedMagic.TraditionId);
                     }
                     }
+                }
+                // WIN-010 T1077: skill-editor legs export their driven rating to
+                // the skill-reopen sidecar after a successful save; the
+                // fresh-process reopen leg verifies the retained document
+                // carries the same rating, document-backed.
+                string skillReopenSidecar = Environment.GetEnvironmentVariable(
+                    DesktopMouseFirstJourneyRuntime.SkillReopenSidecarEnvironmentVariable) ?? string.Empty;
+                if (skillReopenSidecar.Length > 0)
+                {
+                    if (!File.Exists(skillReopenSidecar))
+                    {
+                        throw new InvalidOperationException(
+                            "reopen skill-selection check: the skill-reopen sidecar does not exist: " + skillReopenSidecar);
+                    }
+                    SkillSelectionExpectations skillExpectations = ParseSkillReopenSidecar(skillReopenSidecar);
+                    SkillSelectionEvidence reopenedSkills = await ReadWorkspaceSkillSelectionEvidenceAsync(
+                        window,
+                        restoredWorkspaceId.Value,
+                        journeyTimeout.Token);
+                    if (!string.Equals(reopenedSkills.WorkspaceId, restoredWorkspaceId.Value, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            "reopen skill-selection check failed against the retained document: " + reopenedSkills.Diagnostics);
+                    }
+                    foreach ((string skillId, int skillRating) in skillExpectations.Skills)
+                    {
+                        List<int> retainedRatings = reopenedSkills.Skills
+                            .Where(sr => string.Equals(sr.SkillId, skillId, StringComparison.OrdinalIgnoreCase))
+                            .Select(sr => sr.Rating)
+                            .ToList();
+                        if (retainedRatings.Count == 0)
+                        {
+                            throw new InvalidOperationException(
+                                "reopen skill-selection check: retained document is missing skill suid '" + skillId + "'");
+                        }
+                        if (retainedRatings.Count > 1)
+                        {
+                            throw new InvalidOperationException(
+                                "reopen skill-selection check: retained document carries "
+                                + retainedRatings.Count + " skill entries for '" + skillId + "'");
+                        }
+                        if (retainedRatings[0] != skillRating)
+                        {
+                            throw new InvalidOperationException(
+                                "reopen skill-selection check: skill '" + skillId + "' retained rating "
+                                + retainedRatings[0] + " but the saved selection was rating " + skillRating);
+                        }
+                    }
+                    RecordStep(steps, "reopen skill ratings verified: "
+                        + string.Join("; ", reopenedSkills.Skills.Select(sr => sr.SkillId + "=r" + sr.Rating)));
                 }
                 // WIN-009 gen2 (T748): Sum-to-Ten plans run the same
                 // exact-character reopen verification - the draft binding is
@@ -6560,6 +6692,1124 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
             string note,
             string screenshotName);
 
+        private delegate Task<DesktopUserJourneyWorkflowEvidence> SkillFailAsyncDelegate(
+            Dictionary<string, bool> assertions,
+            string note,
+            string screenshotName);
+
+        /// <summary>
+        /// WIN-010 T1077: the SR6 skill-editor acceptance leg. Drives the
+        /// Sr6CreationWizardWindow to the confirm step, rates one published
+        /// skill through the wizard's own bounded rating input, then either
+        /// saves (confirm -> finalize -> save) or cancels (window close with
+        /// the workspace revision pinned unchanged). The saved workspace
+        /// feeds the fresh-process reopen verification through the skill
+        /// sidecar, mirroring the magic selection handoff.
+        /// </summary>
+        private static async Task<DesktopUserJourneyWorkflowEvidence> ExerciseSr6SkillEditorLegAsync(
+            MainWindow window,
+            DesktopMouseFirstJourneyContext context,
+            List<string> steps,
+            List<string> screenshotPaths,
+            CancellationToken ct,
+            Action recordPointerAction,
+            string characterName,
+            string characterAlias)
+        {
+            string legId = "sr6_skill_editor";
+
+            async Task<DesktopUserJourneyWorkflowEvidence> FailAsync(
+                Dictionary<string, bool> assertions,
+                string note,
+                string screenshotName)
+            {
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, screenshotName);
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: legId,
+                    ScreenshotPaths: [],
+                    Assertions: assertions,
+                    InteractionNotes: [note]);
+            }
+
+            return await RunSr6SkillEditorRouteAsync(
+                window, context, steps, screenshotPaths, ct, recordPointerAction,
+                characterName, characterAlias, legId, FailAsync);
+        }
+
+        private static async Task<DesktopUserJourneyWorkflowEvidence> RunSr6SkillEditorRouteAsync(
+            MainWindow window,
+            DesktopMouseFirstJourneyContext context,
+            List<string> steps,
+            List<string> screenshotPaths,
+            CancellationToken ct,
+            Action recordPointerAction,
+            string characterName,
+            string characterAlias,
+            string legId,
+            SkillFailAsyncDelegate fail)
+        {
+            Dictionary<string, bool> assertions = new(StringComparer.Ordinal);
+            // WIN-010 T1077: the skill-editor route mirrors the proven SR6
+            // magic-editor walk (Controller9637 discipline): the draft is created
+            // through the real new-character dialog, the priority ranks are
+            // assigned through the proven combo drive, and the mystic-adept
+            // foundation commits the pass-1 zero-spend decision that seeds the
+            // published catalogs so the pass-2 confirm step renders the skill
+            // allocation editor alongside the domain editors. The leg drives the
+            // bounded rating input through its ValueChanged path (the same
+            // production handler a spinner press raises; the set-observe
+            // discipline matches the proven priority-combo drive), re-prepares
+            // so the fresh preview carries the edit, and either finalizes and
+            // saves (writing the skill-reopen sidecar) or - cancel mode - closes
+            // the wizard mid-edit with the workspace revisions pinned unchanged.
+            // T888/Controller9775: pointer-delivery pick helpers for the
+            // mystic-adept dual-domain confirm step. Every press uses the proven
+            // RoutePointerClickAsync discipline and verifies the observed effect
+            // on the same control; an unobserved change is a failed pick.
+            async Task<string> PickFirstDomainCheckboxAsync(
+                List<string> steps,
+                Action recordPointerAction,
+                string domainLabel,
+                IReadOnlyList<string> excludeIds)
+            {
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    List<CheckBox> candidates = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<CheckBox>()
+                        .Where(c => AutomationProperties.GetAutomationId(c) is { Length: > 0 } domainId
+                            && domainId.StartsWith("sr6-talent-domain-", StringComparison.Ordinal)
+                            && string.Equals(c.Tag as string, domainLabel, StringComparison.Ordinal))
+                        .ToList());
+                    foreach (CheckBox candidate in candidates)
+                    {
+                        bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
+                            candidate.IsVisible && candidate.IsEnabled && candidate.IsChecked != true);
+                        if (!targetable)
+                            continue;
+                        string cid = await Dispatcher.UIThread.InvokeAsync(
+                            () => AutomationProperties.GetAutomationId(candidate) ?? string.Empty);
+                        string optionId = cid.StartsWith("sr6-talent-domain-", StringComparison.Ordinal)
+                            ? cid["sr6-talent-domain-".Length..]
+                            : string.Empty;
+                        if (optionId.Length == 0 || excludeIds.Contains(optionId, StringComparer.Ordinal))
+                        {
+                            continue; // not a pickable candidate for this pass
+                        }
+                        // T957 (Controller10375): scroll the row into view first -
+                        // a bounds-clipped checkbox still reports IsVisible=true,
+                        // and the press recompute would send the pointer outside
+                        // the rendered window (same defect as the SR5 spell ticks).
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            candidate.BringIntoView();
+                            ForceHeadlessLayoutPump(candidate);
+                        });
+                        string tickDiagnostics = await RoutePointerClickAsync(candidate, waitForClick: true);
+                        bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => candidate.IsChecked == true);
+                        RecordStep(steps, "sr6 skill leg: " + domainLabel + " pick; checked=" + nowChecked + "; " + tickDiagnostics);
+                        if (nowChecked)
+                        {
+                            recordPointerAction();
+                            return optionId;
+                        }
+                    }
+                }
+                return string.Empty;
+            }
+
+            async Task<string> PickFirstTraditionRadioAsync(
+                List<string> steps,
+                Action recordPointerAction)
+            {
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    List<RadioButton> candidates = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<RadioButton>()
+                        .Where(r => AutomationProperties.GetAutomationId(r) is { Length: > 0 } radioId
+                            && radioId.StartsWith("sr6-tradition-", StringComparison.Ordinal))
+                        .ToList());
+                    foreach (RadioButton candidate in candidates)
+                    {
+                        bool targetable = await Dispatcher.UIThread.InvokeAsync(() =>
+                            candidate.IsVisible && candidate.IsEnabled && candidate.IsChecked != true);
+                        if (!targetable)
+                            continue;
+                        string rid = await Dispatcher.UIThread.InvokeAsync(
+                            () => AutomationProperties.GetAutomationId(candidate) ?? string.Empty);
+                        string optionId = rid.StartsWith("sr6-tradition-", StringComparison.Ordinal)
+                            ? rid["sr6-tradition-".Length..]
+                            : string.Empty;
+                        if (optionId.Length == 0)
+                            continue;
+                        // T957 (Controller10375): scroll the row into view first -
+                        // same bounds-clip press gap as the SR5 spell ticks.
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            candidate.BringIntoView();
+                            ForceHeadlessLayoutPump(candidate);
+                        });
+                        string tickDiagnostics = await RoutePointerClickAsync(candidate, waitForClick: true);
+                        bool nowChecked = await Dispatcher.UIThread.InvokeAsync(() => candidate.IsChecked == true);
+                        RecordStep(steps, "sr6 skill leg: tradition pick; checked=" + nowChecked + "; " + tickDiagnostics);
+                        if (nowChecked)
+                        {
+                            recordPointerAction();
+                            return optionId;
+                        }
+                    }
+                }
+                return string.Empty;
+            }
+            // WIN-009 gen18: SR6 route rewritten per Controller9637: the method
+            // step's priority ranks are assigned through the proven drive's combo
+            // discipline before any footer press, the foundation lists are driven
+            // by rank-compatible ids, the wizard is re-acquired via Active() after
+            // every transition, checkboxes are pressed via pointer delivery, and
+            // both mystic-adept domains are asserted explicitly.
+            await ClickFileMenuCommandAsync(window, "new_character", steps, ct, recordPointerAction);
+            await WaitForDialogAsync(window, "dialog.new_character", steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterName", characterName, steps, ct);
+            await SetDialogTextFieldAsync(window, "newCharacterAlias", characterAlias, steps, ct);
+            await SetDialogSelectFieldAsync(
+                window,
+                "newCharacterRulesetId",
+                "sr6",
+                steps,
+                ct,
+                recordPointerAction,
+                () => { },
+                () => { });
+            await SetDialogSelectFieldAsync(
+                window,
+                "newCharacterBuildMethod",
+                "Priority",
+                steps,
+                ct,
+                recordPointerAction,
+                () => { },
+                () => { });
+            await ClickDialogActionUntilAsync(
+                window,
+                "create_character",
+                steps,
+                ct,
+                recordPointerAction,
+                "sr6 magic-leg draft workspace published after create_character",
+                () => window.SnapshotStateForAutomation().WorkspaceId is not null,
+                maxAttempts: 3,
+                settleTimeout: WorkspacePublishedWaitTimeout);
+
+            Sr6CreationWizardWindow Active() =>
+                FindVisibleSr6WizardWindow()
+                ?? throw new InvalidOperationException("sr6 skill leg: the SR6 creation wizard window is not visible.");
+            bool wizardOpened = await WaitForConditionWithinAsync(
+                () => FindVisibleSr6WizardWindow() is not null,
+                ct,
+                TimeSpan.FromSeconds(15));
+            if (!wizardOpened || FindVisibleSr6WizardWindow() is not { })
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_wizard_opened"] = false },
+                    "Failed: the Sr6CreationWizardWindow did not open after the SR6 draft was created.",
+                    "06s-sr6-wizard-missing");
+            }
+            assertions["sr6_skill_wizard_opened"] = true;
+            RecordStep(steps, "sr6 skill leg: SR6 wizard opened (modeless)");
+
+            // Step 1 (method): assign A-E across the five priority categories via
+            // the proven drive's combo discipline - wait for each combo on the LIVE
+            // window, assign by value, record one pointer action per assignment.
+            string[] categories = ["heritage", "talent", "attributes", "skills", "resources"];
+            string[] ranks = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < categories.Length; i++)
+            {
+                string comboId = "sr6-priority-" + categories[i];
+                bool comboFound = false;
+                for (int attempt = 0; attempt < 3 && !comboFound; attempt++)
+                {
+                    comboFound = await WaitForConditionWithinAsync(
+                        () => Active().GetVisualDescendants().OfType<ComboBox>().Any(b => string.Equals(
+                            AutomationProperties.GetAutomationId(b), comboId, StringComparison.Ordinal)),
+                        ct,
+                        TimeSpan.FromSeconds(20));
+                    if (comboFound)
+                        break;
+                    RecordStep(steps, "sr6 skill leg: priority combo " + comboId + " wait miss attempt " + (attempt + 1));
+                }
+                var box = Active().GetVisualDescendants().OfType<ComboBox>()
+                    .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), comboId, StringComparison.Ordinal))
+                    ?? throw new InvalidOperationException("sr6 skill leg: priority combo " + comboId + " not found after wait");
+                bool assigned = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    box.SelectedItem = ranks[i];
+                    return string.Equals(box.SelectedItem as string, ranks[i], StringComparison.Ordinal);
+                });
+                if (!assigned)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_priority_ranks_assigned"] = false },
+                        "Failed: priority rank assignment did not stick for " + comboId + ".",
+                        "06s-sr6-rank-not-stuck");
+                }
+                recordPointerAction();
+                RecordStep(steps, "sr6 skill leg: priority " + categories[i] + " assigned rank " + ranks[i]);
+            }
+            assertions["sr6_priority_ranks_assigned"] = true;
+            RecordStep(steps, "sr6 skill leg: priority ranks assigned (A-E)");
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+
+            // Step 2 (foundation): select rank-compatible options by id, never by
+            // index. Mystic-adept is rank B; heritage stays dwarf (rank B category
+            // slot) only if rank-compatible; otherwise the first compatible option.
+            bool foundationReady = false;
+            for (int attempt = 0; attempt < 3 && !foundationReady; attempt++)
+            {
+                foundationReady = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<ListBox>().Count() >= 2,
+                    ct,
+                    TimeSpan.FromSeconds(20));
+                if (foundationReady)
+                    break;
+                RecordStep(steps, "sr6 skill leg: foundation list wait miss attempt " + (attempt + 1));
+            }
+            var lists = Active().GetVisualDescendants().OfType<ListBox>().ToList();
+            if (lists.Count < 2)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_mystic_adept_selected"] = false },
+                    "Failed: the foundation ListBoxes never rendered.",
+                    "06s-sr6-foundation-lists-missing");
+            }
+            // Heritage rank A admits dwarf (the proven rank-compatible pick in
+            // DriveSr6CreationWizardToFinalizationAsync); human is not rank-A
+            // compatible (sr6-creation-foundation-metatype-unavailable).
+            const string MetatypeIdForHeritageRankA = "dwarf";
+            string metatypeId = lists[0].Items.OfType<string>()
+                .FirstOrDefault(item => string.Equals(item, MetatypeIdForHeritageRankA, StringComparison.Ordinal))
+                ?? throw new InvalidOperationException("sr6 skill leg: no dwarf metatype candidate in the foundation list: " + string.Join(", ", lists[0].Items.OfType<string>()));
+            // WIN-009 gen18b (T888): mystic-adept is the real dual-domain SR6
+            // talent (spells AND adept powers; magician's power domain renders an
+            // honest empty note). The leg drives mystic-adept so the confirm step
+            // renders both domains plus the tradition editor added this wave; the
+            // sidecar gains a tradition expectation and the fresh-process reopen
+            // verifies spell + rated power + tradition against the saved document.
+            string talentId = lists[1].Items.OfType<string>()
+                .FirstOrDefault(item => item.Contains("mystic-adept", StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidOperationException("sr6 skill leg: no mystic-adept candidate in the talent list: " + string.Join(", ", lists[1].Items.OfType<string>()));
+            bool foundationStuck = await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                lists[0].SelectedItem = metatypeId;
+                lists[1].SelectedItem = talentId;
+                return string.Equals(lists[0].SelectedItem as string, metatypeId, StringComparison.Ordinal)
+                    && string.Equals(lists[1].SelectedItem as string, talentId, StringComparison.Ordinal);
+            });
+            recordPointerAction();
+            if (!foundationStuck)
+            {
+                return await fail(
+                new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_mystic_adept_selected"] = false },
+                    "Failed: the mystic-adept foundation selection did not stick.",
+                    "06s-sr6-mystic-adept-not-selected");
+            }
+            assertions["sr6_mystic_adept_selected"] = true;
+            RecordStep(steps, "sr6 skill leg: foundation metatype '" + metatypeId + "' + talent '" + talentId + "' selected by id (mystic-adept route; pass-1 zero-spend confirm seeds the domain catalogs)");
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+
+            // Step 3 (attributes): the attribute step publishes after the foundation
+            // commit; press next when the footer genuinely enables, else wait
+            // honestly - the confirm step renders when the wizard reaches it.
+            bool confirmReady = false;
+            for (int confirmAttempt = 0; confirmAttempt < 6 && !confirmReady; confirmAttempt++)
+            {
+                bool nextEnabled = await Dispatcher.UIThread.InvokeAsync(() =>
+                    Active().GetVisualDescendants().OfType<Button>()
+                        .Any(b => string.Equals(
+                            AutomationProperties.GetAutomationId(b),
+                            "sr6-wizard-next",
+                            StringComparison.Ordinal)
+                            && b.IsEffectivelyEnabled));
+                if (nextEnabled)
+                {
+                    await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+                }
+                confirmReady = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)),
+                    ct,
+                    TimeSpan.FromSeconds(20));
+                if (confirmReady)
+                    break;
+                string confirmDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    bool noPreview = Active().GetVisualDescendants().OfType<TextBlock>().Any(b => string.Equals(
+                        AutomationProperties.GetAutomationId(b), "sr6-confirm-no-preview", StringComparison.Ordinal));
+                    string? authority = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text;
+                    string? footer = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text;
+                    string? stepTitle = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-step-title", StringComparison.Ordinal))?.Text;
+                    bool wizardVisible = Active().IsVisible;
+                    int wizardCount = VisibleSr6WizardWindows().Count(w => w.IsVisible);
+                    return "noPreview=" + noPreview.ToString()
+                        + "; stepTitle=" + (stepTitle ?? "?")
+                        + "; authority=" + (authority ?? "?")
+                        + "; footer=" + (footer ?? "?")
+                        + "; wizardVisible=" + wizardVisible.ToString()
+                        + "; wizardCount=" + wizardCount.ToString();
+                });
+                RecordStep(steps, "sr6 skill leg: confirm wait miss attempt " + (confirmAttempt + 1) + ": " + confirmDiag);
+            }
+            if (!confirmReady)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal)
+                    {
+                        ["sr6_confirm_step_rendered"] = false,
+                    },
+                    "Failed: the SR6 confirm step never rendered after the method+foundation walk.",
+                    "06s-sr6-confirm-missing");
+            }
+            assertions["sr6_confirm_step_rendered"] = true;
+            RecordStep(steps, "sr6 skill leg: confirm step rendered");
+            // WIN-009 gen18 (T888): two-pass confirm. Core populates the
+            // talent-domain catalog options only after a committed foundation
+            // decision (Sr6CreationFoundationRules.Load reads the last decision
+            // preview); a fresh flow renders the honest no-options note. So the
+            // pass-1 confirm commits the zero-spend shape, the post-commit
+            // RefreshedState carries the catalog, and pass-2 re-enters the
+            // confirm step seeded.
+            int pass1Rows = await Dispatcher.UIThread.InvokeAsync(() =>
+                Active().GetVisualDescendants().OfType<CheckBox>().Count(c =>
+                    AutomationProperties.GetAutomationId(c) is { Length: > 0 } pass1Id
+                    && pass1Id.StartsWith("sr6-talent-domain-", StringComparison.Ordinal)));
+            assertions["sr6_pass1_no_options_note"] = pass1Rows == 0;
+            RecordStep(steps, "sr6 skill leg: pass-1 domain rows=" + pass1Rows + " (zero is the honest no-catalog shape on a fresh flow)");
+            if (pass1Rows != 0)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass1_no_options_note"] = false },
+                    "Failed: pass-1 rendered domain rows on a fresh flow (catalog should be decision-gated).",
+                    "06s-sr6-pass1-rows-unexpected");
+            }
+
+            // Pass-1 confirm tick through pointer delivery.
+            bool pass1Ticked = false;
+            for (int p1Tick = 0; p1Tick < 3 && !pass1Ticked; p1Tick++)
+            {
+                CheckBox? p1Check = await Dispatcher.UIThread.InvokeAsync(() =>
+                    Active().GetVisualDescendants().OfType<CheckBox>()
+                    .FirstOrDefault(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)))
+                    ?? throw new InvalidOperationException("sr6 skill leg: pass-1 confirm checkbox not found on the live wizard");
+                string p1Diag = await RoutePointerClickAsync(p1Check, waitForClick: true);
+                pass1Ticked = await Dispatcher.UIThread.InvokeAsync(() => p1Check.IsChecked == true);
+                RecordStep(steps, "sr6 skill leg: pass-1 confirm tick attempt " + (p1Tick + 1) + ": checked=" + pass1Ticked + "; " + p1Diag);
+            }
+            if (!pass1Ticked)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass1_confirm_ticked"] = false },
+                    "Failed: the pass-1 confirm checkbox did not tick via pointer delivery.",
+                    "06s-sr6-pass1-confirm-not-ticked");
+            }
+            assertions["sr6_pass1_confirm_ticked"] = true;
+            recordPointerAction();
+            RecordStep(steps, "sr6 skill leg: pass-1 preview confirmed via pointer");
+
+            // The dispatch happens on the finish press (FinishButton_Click); a
+            // finish click can drop while the confirm review settles, so press
+            // with bounded re-drive until the wizard jumps to finalize.
+            bool pass1Dispatched = false;
+            for (int p1Finish = 0; p1Finish < 4 && !pass1Dispatched; p1Finish++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-finish", steps, ct, recordPointerAction);
+                pass1Dispatched = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == "Finalize"),
+                    ct,
+                    TimeSpan.FromSeconds(15));
+            }
+
+            // The pass-1 confirm dispatch jumps the wizard to the finalize step
+            // and the post-commit refresh repopulates _state (catalog now exists).
+            bool pass1FinalizeRendered = await WaitForConditionWithinAsync(
+                () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == "Finalize"),
+                ct,
+                TimeSpan.FromSeconds(15));
+            assertions["sr6_pass1_finalize_rendered"] = pass1FinalizeRendered;
+            RecordStep(steps, "sr6 skill leg: pass-1 finalize jump rendered=" + pass1FinalizeRendered);
+            if (!pass1FinalizeRendered)
+            {
+                string p1BlockDiag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    string? stepTitle = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => (b.Text ?? string.Empty) == "Finalize" || (b.Text ?? string.Empty) == "Review & Confirm" || (b.Text ?? string.Empty) == "Attributes")?.Text;
+                    string? authority = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text;
+                    string? footer = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text;
+                    bool finishEnabled = Active().GetVisualDescendants().OfType<Button>()
+                        .Any(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-finish", StringComparison.Ordinal) && b.IsEffectivelyEnabled);
+                    return "stepTitle=" + (stepTitle ?? "?")
+                        + "; authority=" + (authority ?? "?")
+                        + "; footer=" + (footer ?? "?")
+                        + "; finishEnabled=" + finishEnabled.ToString();
+                });
+                RecordStep(steps, "sr6 skill leg: pass-1 dispatch diagnostics: " + p1BlockDiag);
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass1_finalize_rendered"] = false },
+                    "Failed: the pass-1 confirm dispatch did not jump the wizard to the finalize step.",
+                    "06s-sr6-pass1-finalize-missing");
+            }
+
+            // Back-nav x2: finalize -> confirm -> attributes (back is a plain
+            // index decrement + re-render).
+            for (int backPress = 0; backPress < 2; backPress++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-back", steps, ct, recordPointerAction);
+                string expectedTitle = backPress == 0 ? "Review & Confirm" : "Attributes";
+                bool backLanded = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == expectedTitle),
+                    ct,
+                    TimeSpan.FromSeconds(10));
+                if (!backLanded)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass2_backnav"] = false },
+                        "Failed: back-nav did not land on '" + expectedTitle + "'.",
+                        "06s-sr6-pass2-backnav-missing");
+                }
+                RecordStep(steps, "sr6 skill leg: back-nav landed '" + expectedTitle + "'");
+            }
+            assertions["sr6_pass2_backnav"] = true;
+            RecordStep(steps, "sr6 skill leg: back-nav landed attributes; Next re-prepares");
+
+            // Next from attributes: EnsurePreviewHeld rebuilds the selection from
+            // the refreshed state (catalog seeded) and Core validates it through
+            // the ordinary Prepare seam.
+            await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+            RecordStep(steps, "sr6 skill leg: pass-2 re-prepare Next delivered");
+
+            // Pass-2 confirm-wait loop (same shape as pass-1; on arrival the
+            // confirm step must render the seeded domain rows).
+            bool pass2ConfirmReady = false;
+            for (int p2ConfirmAttempt = 0; p2ConfirmAttempt < 6 && !pass2ConfirmReady; p2ConfirmAttempt++)
+            {
+                bool p2NextEnabled = await Dispatcher.UIThread.InvokeAsync(() =>
+                    Active().GetVisualDescendants().OfType<Button>()
+                        .Any(b => string.Equals(
+                            AutomationProperties.GetAutomationId(b),
+                            "sr6-wizard-next",
+                            StringComparison.Ordinal)
+                            && b.IsEffectivelyEnabled));
+                if (p2NextEnabled)
+                {
+                    await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+                }
+                pass2ConfirmReady = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)),
+                    ct,
+                    TimeSpan.FromSeconds(20));
+                if (pass2ConfirmReady)
+                    break;
+                string p2Diag = await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    string? stepTitle = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => (b.Text ?? string.Empty) == "Finalize" || (b.Text ?? string.Empty) == "Review & Confirm" || (b.Text ?? string.Empty) == "Attributes")?.Text;
+                    string? authority = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-authority-status", StringComparison.Ordinal))?.Text;
+                    string? footer = Active().GetVisualDescendants().OfType<TextBlock>()
+                        .FirstOrDefault(b => string.Equals(AutomationProperties.GetAutomationId(b), "sr6-wizard-footer-status", StringComparison.Ordinal))?.Text;
+                    return "stepTitle=" + (stepTitle ?? "?")
+                        + "; authority=" + (authority ?? "?")
+                        + "; footer=" + (footer ?? "?");
+                });
+                RecordStep(steps, "sr6 skill leg: pass-2 confirm wait miss attempt " + (p2ConfirmAttempt + 1) + ": " + p2Diag);
+            }
+            if (!pass2ConfirmReady)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_pass2_confirm_step_rendered"] = false },
+                    "Failed: the pass-2 confirm step never rendered after back-nav + re-prepare.",
+                    "06s-sr6-pass2-confirm-missing");
+            }
+            assertions["sr6_pass2_confirm_step_rendered"] = true;
+            RecordStep(steps, "sr6 skill leg: pass-2 confirm step rendered");
+            // WIN-010 T1077: the skill allocation editor renders on the pass-2
+            // confirm step next to the domain editors (the pass-1 dispatch seeded
+            // the published catalog). Drive one bounded row up by 2 through the
+            // rating input's ValueChanged path - the same production handler a
+            // spinner press raises, and the same set-observe discipline the
+            // proven priority-combo drive uses (assign, then verify stuck).
+            List<(string SkillId, NumericUpDown Input)> skillRows = await Dispatcher.UIThread.InvokeAsync(() =>
+                Active().GetVisualDescendants().OfType<NumericUpDown>()
+                    .Select(c =>
+                    {
+                        string rowId = AutomationProperties.GetAutomationId(c) ?? string.Empty;
+                        string rowSkillId = rowId.StartsWith("sr6-skill-", StringComparison.Ordinal)
+                            && rowId.EndsWith("-rating", StringComparison.Ordinal)
+                            ? rowId.Substring("sr6-skill-".Length, rowId.Length - "sr6-skill-".Length - "-rating".Length)
+                            : string.Empty;
+                        return (SkillId: rowSkillId, Input: c);
+                    })
+                    .Where(row => row.SkillId.Length > 0)
+                    .ToList());
+            // Prefer the canonical always-available catalog skill; any other
+            // bounded row is an honest fallback.
+            skillRows = skillRows
+                .OrderByDescending(row => string.Equals(row.SkillId, "Athletics", StringComparison.Ordinal))
+                .ToList();
+            string drivenSkillId = string.Empty;
+            decimal seededRating = 0m;
+            decimal drivenRating = 0m;
+            decimal driveTargetMaximum = 0m;
+            NumericUpDown driveInput = null!;
+            bool driveTargetFound = false;
+            foreach ((string SkillId, NumericUpDown Input) candidateRow in skillRows)
+            {
+                NumericUpDown candidateInput = candidateRow.Input;
+                bool candidateUsable = await Dispatcher.UIThread.InvokeAsync(() =>
+                    candidateInput.IsVisible && candidateInput.IsEnabled && (candidateInput.Maximum) >= 2m);
+                if (!candidateUsable)
+                {
+                    continue;
+                }
+                driveInput = candidateInput;
+                drivenSkillId = candidateRow.SkillId;
+                driveTargetMaximum = await Dispatcher.UIThread.InvokeAsync(() => candidateInput.Maximum);
+                seededRating = await Dispatcher.UIThread.InvokeAsync(() => candidateInput.Value ?? 0m);
+                driveTargetFound = true;
+                break;
+            }
+            if (!driveTargetFound)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_row_found"] = false },
+                    "Failed: no bounded skill rating row rendered on the pass-2 confirm step (catalog publish or editor gating broke).",
+                    "06s-sr6-skill-rows-missing");
+            }
+            drivenRating = seededRating + 2m;
+            if (drivenRating > driveTargetMaximum)
+            {
+                drivenRating = driveTargetMaximum;
+            }
+            if (drivenRating <= seededRating)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_rating_driven"] = false },
+                    "Failed: the bounded rating input has no headroom above its seeded value (seeded="
+                        + seededRating + ", maximum=" + driveTargetMaximum + ").",
+                    "06s-sr6-skill-headroom-missing");
+            }
+            bool ratingStuck = await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                driveInput.Value = drivenRating;
+                return driveInput.Value == drivenRating;
+            });
+            if (!ratingStuck)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_rating_driven"] = false },
+                    "Failed: the rating edit did not stick on the bounded input for '" + drivenSkillId + "'.",
+                    "06s-sr6-rating-not-stuck");
+            }
+            assertions["sr6_skill_rating_driven"] = true;
+            recordPointerAction();
+            RecordStep(steps, "sr6 skill leg: rating for '" + drivenSkillId + "' driven " + seededRating + " -> " + drivenRating
+                + " through the bounded input's ValueChanged path (preview invalidated by StoreSkillRating)");
+
+            if (DesktopMouseFirstJourneyRuntime.Sr6SkillEditWantsCancel)
+            {
+                // Cancel route: pin the workspace revisions, close the wizard
+                // mid-edit, and assert the workspace was left untouched. No save
+                // convergence wait - nothing was saved - and no sidecar write.
+                CharacterOverviewState beforeCancel = await Dispatcher.UIThread.InvokeAsync(
+                    () => window.SnapshotStateForAutomation());
+                await Dispatcher.UIThread.InvokeAsync(() => Active().Close());
+                bool wizardClosed = await WaitForConditionWithinAsync(
+                    () => FindVisibleSr6WizardWindow() is null,
+                    ct,
+                    TimeSpan.FromSeconds(15));
+                if (!wizardClosed)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_cancel_wizard_closed"] = false },
+                        "Failed: the wizard did not close after the cancel-route close.",
+                        "06s-sr6-cancel-close-missing");
+                }
+                assertions["sr6_skill_cancel_wizard_closed"] = true;
+                CharacterOverviewState afterCancel = await Dispatcher.UIThread.InvokeAsync(
+                    () => window.SnapshotStateForAutomation());
+                bool revisionsUnchanged = afterCancel.ContentRevision == beforeCancel.ContentRevision
+                    && afterCancel.SavedRevision == beforeCancel.SavedRevision;
+                RecordStep(steps, "sr6 skill leg: cancel route closed the wizard mid-edit; revisions before="
+                    + beforeCancel.ContentRevision + "/" + beforeCancel.SavedRevision
+                    + " after=" + afterCancel.ContentRevision + "/" + afterCancel.SavedRevision);
+                if (!revisionsUnchanged)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_cancel_revisions_unchanged"] = false },
+                        "Failed: the workspace revisions moved while the wizard was open with only the mid-edit draft change.",
+                        "06s-sr6-cancel-revisions-moved");
+                }
+                assertions["sr6_skill_cancel_revisions_unchanged"] = true;
+                recordPointerAction();
+                return new DesktopUserJourneyWorkflowEvidence(
+                    Id: legId,
+                    ScreenshotPaths: [],
+                    Assertions: assertions,
+                    InteractionNotes:
+                    [
+                        "SR6 skill-editor cancel route: the wizard walk reached the pass-2 confirm step, the bounded rating input for '"
+                            + drivenSkillId + "' was driven from " + seededRating + " to " + drivenRating
+                            + " through the rating input's ValueChanged path, and the wizard was closed mid-edit; the workspace "
+                            + "ContentRevision/SavedRevision pair stayed pinned unchanged and no sidecar was written.",
+                    ]);
+            }
+
+            // WIN-009 gen18b (T888): the mystic-adept talent renders BOTH talent
+            // domains (spells AND adept powers) plus the tradition editor. Pick one
+            // spell, one power, and one tradition through pointer delivery; each
+            // pick invalidates the held preview (StoreTalentDomainIds), so the leg
+            // re-prepares afterwards instead of dispatching a dead digest. Picks
+            // compose within one rendering: StoreTalentDomainIds rewrites only its
+            // own domain slice of the saved selection.
+            bool allocationReserved = false;
+            for (int allocationAttempt = 0; allocationAttempt < 4; allocationAttempt++)
+            {
+                // T957 (Controller10375): the pass-2 confirm re-render can leave
+                // the first-found increase button with stale geometry - the
+                // root-scoped hit-test at its bounds lands on the bare scroll
+                // presenter (probe=miss identically on every attempt), so the
+                // one-dispatch probe route fail-closed forever. Settle the
+                // instance across spaced re-finds first (identity + visual
+                // root proves no rebuild is in flight), then BringIntoView +
+                // layout pump, then press through the waitForClick re-raise
+                // loop (gen10k-proven readiness). Outcome honesty is unchanged:
+                // delivered=True in the routing plus the reserved-count
+                // TextBlock verification below are still required.
+                Button? settledIncrease = null;
+                for (int settleTry = 0; settleTry < 6 && settledIncrease is null; settleTry++)
+                {
+                    Button? first = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<Button>()
+                            .LastOrDefault(b => AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase"));
+                    if (first is null)
+                    {
+                        await Task.Delay(200, ct);
+                        continue;
+                    }
+                    await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(first));
+                    await Task.Delay(300, ct);
+                    Button? second = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<Button>()
+                            .LastOrDefault(b => AutomationProperties.GetAutomationId(b) == "sr6-power-points-increase"));
+                    if (second is not null && ReferenceEquals(first, second) && second.GetVisualRoot() is not null)
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            second.BringIntoView();
+                            ForceHeadlessLayoutPump(second);
+                        });
+                        settledIncrease = second;
+                    }
+                    else
+                    {
+                        await Task.Delay(150, ct);
+                    }
+                }
+                if (settledIncrease is null)
+                {
+                    RecordStep(steps, "sr6 skill leg: reserve power point; settle=unstable-instance (attempt " + (allocationAttempt + 1) + ")");
+                    continue;
+                }
+                Button increase = settledIncrease;
+                // T957b (Controller10375): pre-press root-scoped probe before
+                // any raise. Phase-B evidence on t957a: the settled instance
+                // stayed at rootPos 471,340 with every raise hit-testing to
+                // the bare ScrollContentPresenter - the press point sat below
+                // the content viewport fold, so the composed subtree was
+                // clipped and the presenter swallowed the hit identically on
+                // all four raises. Probe first (Controller9568 logic); on a
+                // miss nudge the owning ScrollViewer offset (down, then up) +
+                // pump + re-probe. Only a probe-verified button is pressed; a
+                // target that never probes live is left unpressed and the
+                // attempt loop re-settles - raising into a scene that would
+                // swallow the press is exactly the ambiguous press the
+                // discipline forbids.
+                bool chainDescribed = false;
+                string readinessDiagnostics = string.Empty;
+                bool probeVerified = false;
+                for (int probeAttempt = 0; probeAttempt < 5 && !probeVerified; probeAttempt++)
+                {
+                    (bool probeHit, string probeDiag) = await Dispatcher.UIThread.InvokeAsync(() => ProbeRootHitTestForButton(increase));
+                    if (probeHit)
+                    {
+                        probeVerified = true;
+                        readinessDiagnostics = probeDiag;
+                        break;
+                    }
+                    if (!chainDescribed)
+                    {
+                        chainDescribed = true;
+                        string ancestorChain = await Dispatcher.UIThread.InvokeAsync(() => DescribeVisualAncestorChainForDiagnostics(increase));
+                        RecordStep(steps, "sr6 skill leg: reserve target ancestor chain: " + ancestorChain);
+                    }
+                    bool scrollDown = probeAttempt % 2 == 0;
+                    string nudgeDiag = await Dispatcher.UIThread.InvokeAsync(() => NudgeScrollViewerOffsetForControl(increase, scrollDown));
+                    await Dispatcher.UIThread.InvokeAsync(() => ForceHeadlessLayoutPump(increase));
+                    readinessDiagnostics = probeDiag + nudgeDiag + " ";
+                    RecordStep(steps, "sr6 skill leg: reserve power point probe miss " + (probeAttempt + 1) + ": " + probeDiag + nudgeDiag);
+                }
+                if (!probeVerified)
+                {
+                    RecordStep(steps, "sr6 skill leg: reserve press skipped - probe never landed on the button (attempt " + (allocationAttempt + 1) + ")");
+                    continue;
+                }
+                string allocationRouting = await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    if (!increase.IsVisible || !increase.IsEnabled) return "unavailable";
+                    return await RoutePointerClickAsync(increase, waitForClick: true);
+                });
+                RecordStep(steps, "sr6 skill leg: reserve power point; probe=hit; " + allocationRouting + (readinessDiagnostics.Length > 0 ? "; readiness=" + readinessDiagnostics : string.Empty));
+                if (allocationRouting.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
+                {
+                    recordPointerAction();
+                    allocationReserved = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<TextBlock>().Any(t =>
+                            AutomationProperties.GetAutomationId(t) == "sr6-power-points-value"
+                            && t.Text == "Power points reserved: 1"));
+                    break;
+                }
+                if (!allocationRouting.Contains("reason=target-not-live-at-press", StringComparison.Ordinal)) break;
+                await Task.Delay(750);
+            }
+            assertions["sr6_power_point_reserved"] = allocationReserved;
+            if (!allocationReserved)
+                return await fail(new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_power_point_reserved"] = false },
+                    "The mystic-adept power-point split was not observed after a delivered press.",
+                    "06s-sr6-power-point-missing");
+            string pickedSpellId = await PickFirstDomainCheckboxAsync(
+                steps, recordPointerAction, "spells", excludeIds: []);
+            assertions["sr6_spell_picked"] = pickedSpellId.Length > 0;
+            RecordStep(steps, "sr6 skill leg: spell picked='" + pickedSpellId + "'");
+            if (pickedSpellId.Length == 0)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_spell_picked"] = false },
+                    "Failed: the spell pick did not land via pointer delivery.",
+                    "06s-sr6-spell-pick-missing");
+            }
+            string pickedPowerId = await PickFirstDomainCheckboxAsync(
+                steps, recordPointerAction, "adept-powers", excludeIds: [pickedSpellId]);
+            assertions["sr6_power_picked"] = pickedPowerId.Length > 0;
+            RecordStep(steps, "sr6 skill leg: adept power picked='" + pickedPowerId + "'");
+            if (pickedPowerId.Length == 0)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_power_picked"] = false },
+                    "Failed: the adept power pick did not land via pointer delivery.",
+                    "06s-sr6-power-pick-missing");
+            }
+            bool powerRatingEdited = false;
+            for (int ratingAttempt = 0; ratingAttempt < 4; ratingAttempt++)
+            {
+                string routing = await Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    Button? increase = Active().GetVisualDescendants().OfType<Button>().FirstOrDefault(b =>
+                        AutomationProperties.GetAutomationId(b) == "sr6-power-rating-increase-" + pickedPowerId);
+                    if (increase is null || !increase.IsEnabled) return "unavailable";
+                    increase.BringIntoView();
+                    return await RoutePointerClickAsync(increase);
+                });
+                RecordStep(steps, "sr6 skill leg: increase power rating; " + routing);
+                if (routing.Contains("delivered=True", StringComparison.OrdinalIgnoreCase))
+                {
+                    recordPointerAction();
+                    powerRatingEdited = await Dispatcher.UIThread.InvokeAsync(() =>
+                        Active().GetVisualDescendants().OfType<TextBlock>().Any(t =>
+                            AutomationProperties.GetAutomationId(t) == "sr6-power-rating-value-" + pickedPowerId
+                            && (t.Text ?? string.Empty).StartsWith("Rating 2 / ", StringComparison.Ordinal)));
+                    break;
+                }
+                if (!routing.Contains("reason=target-not-live-at-press", StringComparison.Ordinal)) break;
+                await Task.Delay(750);
+            }
+            assertions["sr6_power_rating_edited"] = powerRatingEdited;
+            if (!powerRatingEdited)
+                return await fail(new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_power_rating_edited"] = false },
+                    "The rated power did not visibly change to rating two after a delivered press.",
+                    "06s-sr6-power-rating-missing");
+            string pickedTraditionId = await PickFirstTraditionRadioAsync(steps, recordPointerAction);
+            assertions["sr6_tradition_picked"] = pickedTraditionId.Length > 0;
+            RecordStep(steps, "sr6 skill leg: tradition picked='" + pickedTraditionId + "'");
+            if (pickedTraditionId.Length == 0)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_tradition_picked"] = false },
+                    "Failed: the tradition pick did not land via pointer delivery.",
+                    "06s-sr6-tradition-pick-missing");
+            }
+            // The pick invalidated the held preview (StoreTalentDomainIds nulls
+            // _preparedPreview and the confirm digest). Dispatching the dead
+            // digest would silently no-op in FinishButton_Click, so drive the
+            // product-native recovery: back to attributes, then Next re-prepares
+            // (EnsurePreviewHeld rebuilds the selection including the pick).
+            for (int backPress = 0; backPress < 2; backPress++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-back", steps, ct, recordPointerAction);
+                string expectedTitle = backPress == 0 ? "Review & Confirm" : "Attributes";
+                bool backLanded = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<TextBlock>().Any(b => (b.Text ?? string.Empty) == expectedTitle),
+                    ct,
+                    TimeSpan.FromSeconds(10));
+                if (!backLanded)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_repick_backnav"] = false },
+                        "Failed: post-pick back-nav did not land on '" + expectedTitle + "'.",
+                        "06s-sr6-repick-backnav-missing");
+                }
+                RecordStep(steps, "sr6 skill leg: post-pick back-nav landed '" + expectedTitle + "'");
+            }
+            assertions["sr6_repick_backnav"] = true;
+
+            // Next from attributes re-prepares; the confirm step re-renders with
+            // a fresh preview (the pick included) and a fresh confirm checkbox.
+            bool pass2Reprepare = false;
+            for (int reprep = 0; reprep < 4 && !pass2Reprepare; reprep++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-next", steps, ct, recordPointerAction);
+                pass2Reprepare = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)),
+                    ct,
+                    TimeSpan.FromSeconds(10));
+                if (!pass2Reprepare)
+                    RecordStep(steps, "sr6 skill leg: re-prepare attempt " + (reprep + 1) + " did not render confirm; re-clicking");
+            }
+            if (!pass2Reprepare)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_repick_reprepare"] = false },
+                    "Failed: the post-pick re-prepare never re-rendered the confirm step.",
+                    "06s-sr6-reprepare-missing");
+            }
+            assertions["sr6_repick_reprepare"] = true;
+            RecordStep(steps, "sr6 skill leg: re-prepare Next delivered; confirm step re-rendered with the pick included");
+            // WIN-010 T1077: the re-prepared confirm step re-renders the skill
+            // editor seeded from the live draft - the driven rating must survive
+            // the re-render (the echo guard reads the live draft, so the store
+            // landed), which is the draft semantics the reopen check re-verifies
+            // against the retained sidecar.
+            NumericUpDown? drivenRowAfterReprepare = await Dispatcher.UIThread.InvokeAsync(() =>
+                Active().GetVisualDescendants().OfType<NumericUpDown>()
+                    .FirstOrDefault(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-skill-" + drivenSkillId + "-rating",
+                        StringComparison.Ordinal)));
+            if (drivenRowAfterReprepare is null)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_rating_survived_reprepare"] = false },
+                    "Failed: the driven skill row '" + drivenSkillId + "' vanished on the re-prepared confirm step.",
+                    "06s-sr6-skill-row-missing-after-reprepare");
+            }
+            decimal repreparedRating = await Dispatcher.UIThread.InvokeAsync(() => drivenRowAfterReprepare.Value ?? 0m);
+            if (repreparedRating != drivenRating)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_rating_survived_reprepare"] = false },
+                    "Failed: the driven rating for '" + drivenSkillId + "' did not survive the re-prepare (draft store lost; re-rendered="
+                        + repreparedRating + ", driven=" + drivenRating + ").",
+                    "06s-sr6-rating-lost-on-reprepare");
+            }
+            assertions["sr6_skill_rating_survived_reprepare"] = true;
+            RecordStep(steps, "sr6 skill leg: driven rating " + drivenRating + " for '" + drivenSkillId + "' survived the re-prepare re-render");
+
+            // Tick the confirm checkbox through pointer delivery (Controller9637).
+            bool confirmTicked = false;
+            for (int tickAttempt = 0; tickAttempt < 3 && !confirmTicked; tickAttempt++)
+            {
+                CheckBox? check = await Dispatcher.UIThread.InvokeAsync(() =>
+                    Active().GetVisualDescendants().OfType<CheckBox>()
+                    .FirstOrDefault(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-confirm-checkbox",
+                        StringComparison.Ordinal)))
+                    ?? throw new InvalidOperationException("sr6 skill leg: confirm checkbox not found on the live wizard");
+                string tickDiagnostics = await RoutePointerClickAsync(check, waitForClick: true);
+                confirmTicked = await Dispatcher.UIThread.InvokeAsync(() => check.IsChecked == true);
+                RecordStep(steps, "sr6 skill leg: confirm tick attempt " + (tickAttempt + 1) + ": checked=" + confirmTicked + "; " + tickDiagnostics);
+            }
+            if (!confirmTicked)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_confirm_ticked"] = false },
+                    "Failed: the confirm checkbox did not tick via pointer delivery.",
+                    "06s-sr6-confirm-not-ticked");
+            }
+            assertions["sr6_confirm_ticked"] = true;
+            recordPointerAction();
+            RecordStep(steps, "sr6 skill leg: preview confirmed via pointer");
+
+            // The confirm dispatch jumps the wizard to the finalize step; the
+            // FinishButton can drop a click while the finalize review is absent -
+            // click -> wait for the loss-ack to render -> re-click if needed
+            // (the proven drive's exact shape).
+            bool finalizeRendered = false;
+            for (int renderAttempt = 0; renderAttempt < 4 && !finalizeRendered; renderAttempt++)
+            {
+                if (renderAttempt > 0)
+                    RecordStep(steps, "sr6 skill leg: finish click did not render finalize (attempt " + renderAttempt + "); re-clicking");
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-finish", steps, ct, recordPointerAction);
+                finalizeRendered = await WaitForConditionWithinAsync(
+                    () => Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-finalize-accept-loss",
+                        StringComparison.Ordinal)),
+                    ct,
+                    TimeSpan.FromSeconds(10));
+            }
+            RecordStep(steps, "sr6 skill leg: finalize step rendered=" + finalizeRendered);
+
+            bool lossAckNeeded = await Dispatcher.UIThread.InvokeAsync(() =>
+                Active().GetVisualDescendants().OfType<CheckBox>().Any(c => string.Equals(
+                    AutomationProperties.GetAutomationId(c),
+                    "sr6-finalize-accept-loss",
+                    StringComparison.Ordinal)));
+            if (lossAckNeeded)
+            {
+                CheckBox ack = Active().GetVisualDescendants().OfType<CheckBox>()
+                    .First(c => string.Equals(
+                        AutomationProperties.GetAutomationId(c),
+                        "sr6-finalize-accept-loss",
+                        StringComparison.Ordinal));
+                string ackDiagnostics = string.Empty;
+                bool ackTicked = false;
+                for (int ackAttempt = 0; ackAttempt < 3 && !ackTicked; ackAttempt++)
+                {
+                    ackDiagnostics = await RoutePointerClickAsync(ack, waitForClick: true);
+                    ackTicked = await Dispatcher.UIThread.InvokeAsync(() => ack.IsChecked == true);
+                    RecordStep(steps, "sr6 skill leg: loss-ack pointer attempt " + (ackAttempt + 1) + ": checked=" + ackTicked + "; " + ackDiagnostics);
+                }
+                if (!ackTicked)
+                {
+                    return await fail(
+                        new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_loss_ack_ticked"] = false },
+                        "Failed: the loss-ack did not tick via pointer delivery.",
+                        "06s-sr6-loss-ack-missing");
+                }
+                assertions["sr6_loss_ack_ticked"] = true;
+                recordPointerAction();
+                RecordStep(steps, "sr6 skill leg: unspent-balance loss acknowledged");
+            }
+
+            // Final finish with bounded re-drive (republish can replace the wizard
+            // between the ack and the finish - re-tick the CURRENT window's ack).
+            bool finishLanded = false;
+            for (int finishAttempt = 0; finishAttempt < 3 && !finishLanded; finishAttempt++)
+            {
+                await ClickSr6WizardFooterAsync(Active, "sr6-wizard-finish", steps, ct, recordPointerAction);
+                finishLanded = await WaitForConditionWithinAsync(
+                    () => FindVisibleSr6WizardWindow() is null,
+                    ct,
+                    TimeSpan.FromSeconds(15));
+                if (finishLanded)
+                    break;
+                RecordStep(steps, "sr6 skill leg: finish attempt " + (finishAttempt + 1) + " did not close the wizard; re-driving");
+            }
+            if (!finishLanded)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_finalized"] = false },
+                    "Failed: the wizard never closed after the final finish press.",
+                    "06s-sr6-finalize-missing");
+            }
+            assertions["sr6_skill_finalized"] = true;
+            RecordStep(steps, "sr6 skill leg: wizard finalized and closed");
+
+            // Save through the real file-menu route; assert the convergence
+            // honestly (never an unconditional pass).
+            await ClickFileMenuCommandAsync(window, "save_character", steps, ct, recordPointerAction);
+            bool saved = await WaitForConditionWithinAsync(
+                () => window.SnapshotStateForAutomation().ContentRevision == window.SnapshotStateForAutomation().SavedRevision,
+                ct,
+                TimeSpan.FromSeconds(12));
+            assertions["sr6_skill_saved"] = saved;
+            RecordStep(steps, "sr6 skill leg: workspace saved=" + saved + " through the file-menu route");
+            if (!saved)
+            {
+                return await fail(
+                    new Dictionary<string, bool>(StringComparer.Ordinal) { ["sr6_skill_saved"] = false },
+                    "Failed: the workspace save did not converge.",
+                    "06s-sr6-save-not-converged");
+            }
+            // WIN-009 gen18 (Controller9637): export the picked spell/power ids to
+            // the magic-reopen sidecar so the fresh-process reopen leg can verify
+            // the retained document carries the same selections. SR6 domain picks
+            // enter at rating 1.
+            string magicSidecarPath = Environment.GetEnvironmentVariable(
+                DesktopMouseFirstJourneyRuntime.MagicReopenSidecarEnvironmentVariable) ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(magicSidecarPath)
+                && (pickedSpellId.Length > 0 || pickedPowerId.Length > 0 || pickedTraditionId.Length > 0))
+            {
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase };
+                string sidecarJson = System.Text.Json.JsonSerializer.Serialize(
+                    new MagicReopenSidecarPayload
+                    {
+                        Spells = pickedSpellId.Length > 0 ? [pickedSpellId] : [],
+                        Powers = pickedPowerId.Length > 0 ? [new MagicReopenPowerPayload { Id = pickedPowerId, Rating = 2 }] : [],
+                        Tradition = pickedTraditionId.Length > 0 ? pickedTraditionId : string.Empty,
+                    }, jsonOptions);
+                string sidecarDir = Path.GetDirectoryName(magicSidecarPath) ?? string.Empty;
+                if (!string.IsNullOrEmpty(sidecarDir))
+                    Directory.CreateDirectory(sidecarDir);
+                File.WriteAllText(magicSidecarPath, sidecarJson);
+                RecordStep(steps, "sr6 skill leg: magic-reopen sidecar written with spell '"
+                    + pickedPowerId + "' rating 2 + tradition '" + pickedTraditionId + "'");
+            }
+
+            // WIN-010 T1077: export the driven skill rating to the skill-reopen
+            // sidecar so the fresh-process reopen leg can verify the retained
+            // document carries the same rating. The sidecar id uses the document
+            // suid shape (sr6.skill.<catalog id>) the projector writes.
+            string skillSidecarPath = Environment.GetEnvironmentVariable(
+                DesktopMouseFirstJourneyRuntime.SkillReopenSidecarEnvironmentVariable) ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(skillSidecarPath))
+            {
+                string skillSidecarDir = Path.GetDirectoryName(skillSidecarPath) ?? string.Empty;
+                if (!string.IsNullOrEmpty(skillSidecarDir))
+                    Directory.CreateDirectory(skillSidecarDir);
+                string sidecarSkillId = "sr6.skill." + drivenSkillId;
+                WriteSkillReopenSidecar(
+                    skillSidecarPath,
+                    new SkillReopenSidecarPayload([(sidecarSkillId, (int)drivenRating)]));
+                RecordStep(steps, "sr6 skill leg: skill-reopen sidecar written for '" + sidecarSkillId + "' rating " + (int)drivenRating);
+            }
+
+            return new DesktopUserJourneyWorkflowEvidence(
+                Id: legId,
+                ScreenshotPaths: [],
+                Assertions: assertions,
+                InteractionNotes:
+                [
+                        "SR6 skill-editor leg (mystic-adept route): the skill allocation editor rendered on the pass-2 confirm step, the bounded rating input for '"
+                            + drivenSkillId + "' was driven from " + seededRating + " to " + drivenRating
+                            + " through the rating input's ValueChanged path (preview invalidated, edit survived the re-prepare re-render), the mystic-adept domain picks and tradition pick satisfied the freeze rules, the fresh preview confirmed, finalize rendered, the loss ack ticked, the wizard closed and the workspace saved; the skill-reopen sidecar carries sr6.skill."
+                            + drivenSkillId + " rating " + (int)drivenRating + ".",
+                ]);
+        }
+
         private static async Task<DesktopUserJourneyWorkflowEvidence> RunSr5MagicEditorRouteAsync(
             MainWindow window,
             DesktopMouseFirstJourneyContext context,
@@ -8278,6 +9528,130 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                 + "]; tradition=" + (traditionId.Length == 0 ? "<none>" : traditionId), traditionId);
         }
 
+        internal static async Task<SkillSelectionEvidence> ReadWorkspaceSkillEvidenceAsync(
+            string expectedWorkspaceId,
+            Func<CharacterWorkspaceId?> activeWorkspace,
+            Func<OwnerContextStamp> captureOwner,
+            Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+                Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+            CancellationToken ct)
+        {
+            // Same harness-timing retry discipline as the magic evidence:
+            // owner-authority transition races are re-tried by RE-CAPTURING the
+            // owner stamp and the active workspace binding.
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    return await ReadWorkspaceSkillEvidenceOnceAsync(
+                        expectedWorkspaceId, activeWorkspace, captureOwner, readWorkspace, ct);
+                }
+                catch (InvalidOperationException ex) when (
+                    attempt < 5
+                    && (ex.Message.Contains("Owner authority changed before dispatch", StringComparison.Ordinal)
+                        || ex.Message.Contains("The acquired owner authority does not match the requested operation", StringComparison.Ordinal)))
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(400 * attempt), ct);
+                }
+            }
+        }
+
+        private static async Task<SkillSelectionEvidence> ReadWorkspaceSkillEvidenceOnceAsync(
+            string expectedWorkspaceId,
+            Func<CharacterWorkspaceId?> activeWorkspace,
+            Func<OwnerContextStamp> captureOwner,
+            Func<OwnerContextStamp, CharacterWorkspaceId, CancellationToken,
+                Task<CommandResult<WorkspaceDocumentSnapshot>>> readWorkspace,
+            CancellationToken ct)
+        {
+            List<(string Id, int Rating)> skillRatings = new();
+            ct.ThrowIfCancellationRequested();
+            if (string.IsNullOrWhiteSpace(expectedWorkspaceId))
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: workspace identity is missing");
+            }
+            CharacterWorkspaceId? workspaceId = activeWorkspace();
+            if (workspaceId is null)
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: no active workspace in overview snapshot");
+            }
+            if (!string.Equals(workspaceId.Value.Value, expectedWorkspaceId, StringComparison.Ordinal))
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: workspace binding mismatch: overview reports " + workspaceId.Value.Value
+                    + ", expected " + expectedWorkspaceId);
+            }
+            OwnerContextStamp owner = captureOwner();
+            if (!owner.IsValid)
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: pre-await owner context is not valid");
+            }
+            CommandResult<WorkspaceDocumentSnapshot> read = await readWorkspace(owner, workspaceId.Value, ct);
+            ct.ThrowIfCancellationRequested();
+            CharacterWorkspaceId? postAwaitWorkspace = activeWorkspace();
+            if (!string.Equals(postAwaitWorkspace?.Value, workspaceId.Value.Value, StringComparison.Ordinal))
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: workspace transitioned across the read await: pre=" + workspaceId.Value.Value
+                    + " post=" + (postAwaitWorkspace?.Value ?? "null"));
+            }
+            OwnerContextStamp postAwaitOwner = captureOwner();
+            if (postAwaitOwner != owner)
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: owner authority transitioned across the read await (revision "
+                    + owner.TransitionRevision + " -> " + postAwaitOwner.TransitionRevision + ")");
+            }
+            if (!read.Success || read.Outcome != WorkspaceOperationOutcome.Success
+                || read.Value?.Document is not { } document
+                || document.Format != WorkspaceDocumentFormat.NativeXml)
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: workspace read failed or document is not NativeXml");
+            }
+            if (!string.Equals(read.Value.Id.Value, expectedWorkspaceId, StringComparison.Ordinal))
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: workspace response does not match the expected workspace");
+            }
+            XElement? root;
+            try
+            {
+                root = XDocument.Parse(document.State.Payload, LoadOptions.PreserveWhitespace).Root;
+            }
+            catch (System.Xml.XmlException parseFailure)
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: workspace payload is not parseable XML: " + parseFailure.Message);
+            }
+            if (root is not { Name.LocalName: "character" })
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: workspace payload root is not <character>");
+            }
+            if (root.Elements("newskills").Count() > 1)
+            {
+                return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: duplicate newskills containers");
+            }
+            foreach (XElement skill in root.Elements("newskills").Elements("skill"))
+            {
+                string? id = skill.Elements("suid").FirstOrDefault(e => !e.HasElements && !e.HasAttributes)?.Value.Trim();
+                if (string.IsNullOrEmpty(id) || !id.StartsWith("sr6.skill.", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                // Controller9775 discipline: ratings fail closed. A skill row
+                // without a non-negative integer <base> is corrupt data, not a
+                // rating 0 - fabricating a default would let a corrupt document
+                // pass the reopen check.
+                if (skill.Elements("base").ToArray() is not [var baseElement]
+                    || baseElement.HasElements || baseElement.HasAttributes
+                    || !int.TryParse(baseElement.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedRating)
+                    || parsedRating < 0)
+                {
+                    return new SkillSelectionEvidence(string.Empty, Array.Empty<(string SkillId, int Rating)>(), "skill-selection read: skill '" + id + "' carries no non-negative integer <base>; failing closed");
+                }
+                skillRatings.Add((id, parsedRating));
+            }
+            return new SkillSelectionEvidence(
+                expectedWorkspaceId,
+                skillRatings,
+                "skill-selection read: skills=[" + string.Join("; ", skillRatings.Select(sr => sr.Id + "=r" + sr.Rating)) + "]");
+        }
+
         /// <summary>
         /// WIN-009 gen18: parses the magic-reopen sidecar written by the
         /// first-process magic-editor legs. Format: {"spells":[id,...],
@@ -8403,6 +9777,106 @@ await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-final
                     "magic-reopen sidecar carries no expectations: " + path);
             }
             return new MagicSelectionExpectations(spells, powers, traditionId);
+        }
+        internal sealed record SkillSelectionExpectations(IReadOnlyList<(string SkillId, int Rating)> Skills)
+        {
+        }
+
+        /// <summary>
+        /// WIN-010 T1077: MainWindow-bound skill evidence read for the
+        /// fresh-process reopen leg - same owner-bound discipline as the
+        /// magic-selection reader.
+        /// </summary>
+        internal static async Task<SkillSelectionEvidence> ReadWorkspaceSkillSelectionEvidenceAsync(
+            MainWindow window,
+            string expectedWorkspaceId,
+            CancellationToken ct)
+        {
+            IChummerClient client = App.Services?.GetRequiredService<IChummerClient>()
+                ?? throw new InvalidOperationException(
+                    "skill-selection evidence failed: the app service provider is unavailable.");
+            IOwnerBoundWorkspaceMutationClient boundClient = client as IOwnerBoundWorkspaceMutationClient
+                ?? throw new InvalidOperationException(
+                    "skill-selection evidence failed: the workspace client is not owner-bound.");
+            return await ReadWorkspaceSkillEvidenceAsync(
+                expectedWorkspaceId,
+                () => window.SnapshotStateForAutomation().WorkspaceId,
+                boundClient.CaptureOwnerContext,
+                boundClient.GetWorkspaceAsync,
+                ct);
+        }
+
+
+        internal sealed record SkillSelectionEvidence(
+            string WorkspaceId,
+            IReadOnlyList<(string SkillId, int Rating)> Skills,
+            string Diagnostics);
+
+        internal sealed record SkillReopenSidecarPayload(IReadOnlyList<(string SkillId, int Rating)> Skills);
+
+        internal static void WriteSkillReopenSidecar(string path, SkillReopenSidecarPayload payload)
+        {
+            // Controller9848 shape: one immutable serialization, no re-read for
+            // validation. The reopen leg re-reads with the same single-read rule.
+            string json = System.Text.Json.JsonSerializer.Serialize(
+                new
+                {
+                    skills = payload.Skills.Select(s => new { id = s.SkillId, rating = s.Rating }).ToArray(),
+                },
+                new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    WriteIndented = true,
+                });
+            File.WriteAllText(path, json);
+        }
+
+        internal static SkillSelectionExpectations ParseSkillReopenSidecar(string path)
+        {
+            // One single immutable read (Controller9848): duplicate-property scan
+            // and JsonDocument.Parse consume the exact same BOM-adjusted bytes.
+            byte[] utf8 = File.ReadAllBytes(path);
+            int bom = utf8.Length >= 3 && utf8[0] == 0xEF && utf8[1] == 0xBB && utf8[2] == 0xBF ? 3 : 0;
+            ReadOnlySpan<byte> utf8Json = utf8.AsSpan(bom);
+            EnsureNoDuplicateJsonProperties(utf8Json, path);
+            using JsonDocument doc = JsonDocument.Parse(utf8Json.ToArray());
+            JsonElement rootElement = doc.RootElement;
+            List<(string, int)> skills = new();
+            if (rootElement.TryGetProperty("skills", out JsonElement skillsElement)
+                && skillsElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (JsonElement item in skillsElement.EnumerateArray())
+                {
+                    string? id = item.TryGetProperty("id", out JsonElement idElement) ? idElement.GetString() : null;
+                    if (id is null || string.IsNullOrWhiteSpace(id))
+                    {
+                        throw new InvalidOperationException(
+                            "skill-reopen sidecar carries an entry without an id: " + path);
+                    }
+                    if (!item.TryGetProperty("rating", out JsonElement ratingElement)
+                        || ratingElement.ValueKind != JsonValueKind.Number
+                        || !ratingElement.TryGetInt32(out int rating)
+                        || rating < 1)
+                    {
+                        throw new InvalidOperationException(
+                            "skill-reopen sidecar carries an entry for '" + id.Trim()
+                            + "' without a positive integer rating: " + path);
+                    }
+                    skills.Add((id.Trim(), rating));
+                }
+                // Controller9775: ambiguous duplicate ids are a malformed handoff.
+                if (skills.GroupBy(pr => pr.Item1, StringComparer.OrdinalIgnoreCase).Any(g => g.Count() > 1))
+                {
+                    throw new InvalidOperationException(
+                        "skill-reopen sidecar carries duplicate skill ids: " + path);
+                }
+            }
+            if (skills.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "skill-reopen sidecar carries no expectations: " + path);
+            }
+            return new SkillSelectionExpectations(skills);
         }
 
         private static IReadOnlyList<CreationMagicResonanceWindow> VisibleCreationMagicResonanceWindows()
