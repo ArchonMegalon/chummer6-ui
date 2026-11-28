@@ -4,8 +4,8 @@
     "config/ui-owner-package-plane.lock.json"
   ],
   "authority": false,
-  "baseCommit": "72b1bdcf9df4c95c59ceaae406cbd15d73f5a2fd",
-  "baseTree": "3cce956826c52021a91aa14082f458ab98a0af2b",
+  "baseCommit": "d7d0bcb848d1838cfde2d6ae014f770cb4def3a2",
+  "baseTree": "7c950e5beb5c2c8706b4988a212d5da9e6da61c5",
   "canonicalSealedLocks": [
     {
       "blob": "4ab03ee90ec90a7ed5b8b541521fc79b694677d2",
@@ -25,15 +25,15 @@
   "markerPath": "config/ui-preseal-publication.json",
   "nextAuthorityOracle": {
     "canonicalLock": {
-      "blob": "111b9f9dbb93845b758a6d3dd5234c09eacf03fc",
-      "commit": "25f38f262bcf8fa19f878e9784377bb371bf88b8",
+      "blob": "2d5759088b3e5e9176d606319c163d8d3b9e0d5b",
+      "commit": "84f388f09010c3e122d7254de9d0c9dfb45cc30a",
       "fixturePath": "config/ui-next-authority-oracle-v10.json",
       "path": "config/package-plane.lock.json",
-      "rawSha256": "6eb1a9aa1a0ec4b1f3ca6c2362dbad5977beb926f54da20d5f6d314e42e5e3b6",
+      "rawSha256": "56efbfc2aa68a718be46a33a98b7fbfa7cd047298a10bca0262af7164333a701",
       "rawSizeBytes": 75088,
-      "semanticCanonicalSha256": "6eb1a9aa1a0ec4b1f3ca6c2362dbad5977beb926f54da20d5f6d314e42e5e3b6",
+      "semanticCanonicalSha256": "56efbfc2aa68a718be46a33a98b7fbfa7cd047298a10bca0262af7164333a701",
       "semanticCanonicalSizeBytes": 75088,
-      "tree": "6345260065ba88091b5237652a3143912c8a2355"
+      "tree": "8b7ef0c40f440ee03dd9a5dd8981f46f1c75abf4"
     },
     "producerLock": {
       "absentAtCommit": true,
@@ -44,13 +44,69 @@
   "publicationAuthorized": false,
   "recipeChanges": [
     {
-      "blob": "0b210a3797938223f8a93058958cbf6e0d5f1203",
+      "blob": "5b1ac09044ea7e5c5857171ea3aef8b0987f17af",
+      "path": "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml",
+      "sha256": "3fb7d996cf9b87919a8f50c8da24a78f8d21af6df8f6e8ecf187790086b8553c",
+      "sizeBytes": 4960,
+      "status": "M"
+    },
+    {
+      "blob": "526d6d8b7227a73d8c755678036232d3c92d15d8",
+      "path": "Chummer.Avalonia/Controls/Sr6CreationWizardWindow.axaml.cs",
+      "sha256": "163e6e57dc24147aba0b44196297c5f02bf4e3b36ff94eb4aea5ecce6890d365",
+      "sizeBytes": 65734,
+      "status": "M"
+    },
+    {
+      "blob": "ccb1c7ad664380d00a9999eb563e9120736c6898",
+      "path": "Chummer.Avalonia/DesktopMouseFirstJourneyRunner.cs",
+      "sha256": "8b5d64c86479a5abfe9bfeb7df08bbab482b69199798aab7d25afda8e5f75679",
+      "sizeBytes": 1055860,
+      "status": "M"
+    },
+    {
+      "blob": "c3c36d4827e4ba8748871ffefd03f8f4586eaea4",
+      "path": "Chummer.Desktop.Runtime/DesktopMouseFirstJourneyRuntime.cs",
+      "sha256": "9fb85691ff2b3368cb402ed1bff769bd2859ae19cb018dfe6119c08cc331b4b8",
+      "sizeBytes": 80089,
+      "status": "M"
+    },
+    {
+      "blob": "9821db16dc393f300d1d89220f688ee56f5304fa",
+      "path": "Chummer.Tests/Presentation/Sr6CreationWizardWindowTests.cs",
+      "sha256": "6eecf9b80660dae2d62d8d4ff08ea39d9483322a48faf0fe3d6ad59c9cd30a3c",
+      "sizeBytes": 63643,
+      "status": "M"
+    },
+    {
+      "blob": "2d5759088b3e5e9176d606319c163d8d3b9e0d5b",
+      "path": "config/ui-next-authority-oracle-v10.json",
+      "sha256": "56efbfc2aa68a718be46a33a98b7fbfa7cd047298a10bca0262af7164333a701",
+      "sizeBytes": 75088,
+      "status": "M"
+    },
+    {
+      "blob": "9045a1164da638ee2096404915dadd5e08b9d3e4",
       "path": "scripts/ai/verify_fresh_checkout_package_plane.py",
-      "sha256": "bfbbcf635b260ab811b863beb864931a851d5a8d2db2e202652a03672be4ef1e",
+      "sha256": "977bf774fbbe96c72f2b5e4b52b07b88128ea9cb3304069823691353d32974e1",
       "sizeBytes": 304656,
+      "status": "M"
+    },
+    {
+      "blob": "007b10664c0fc9d872ee7c66dabe76512e3bb432",
+      "path": "scripts/ai/verify_split_preseal_publication.py",
+      "sha256": "853f108e5eb43fd366b5f5440d231664197e8b58562c550604dae05f7e73fcd8",
+      "sizeBytes": 84143,
+      "status": "M"
+    },
+    {
+      "blob": "ea7e6fa959aeefa02823d31d71c5a889a5f11d6f",
+      "path": "tests/test_fresh_package_plane_controls.py",
+      "sha256": "b3624b7037562fbcd199377cbb93d14e3709d4d7284fbb36f1010d1e8aea6b68",
+      "sizeBytes": 207686,
       "status": "M"
     }
   ],
-  "recipeTree": "decec41cbb5d186978f56fb652013062609353b3",
+  "recipeTree": "d92d37895df89bbc437289b8c786ba7b794cc46e",
   "releaseClaim": false
 }
