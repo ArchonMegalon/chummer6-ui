@@ -538,15 +538,15 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     )
     assert package_plane.SEALED_NEXT_AUTHORITY_ORACLE == {
         "canonicalLock": {
-            "blob": "111b9f9dbb93845b758a6d3dd5234c09eacf03fc",
-            "commit": "25f38f262bcf8fa19f878e9784377bb371bf88b8",
+            "blob": "2d5759088b3e5e9176d606319c163d8d3b9e0d5b",
+            "commit": "84f388f09010c3e122d7254de9d0c9dfb45cc30a",
             "fixturePath": "config/ui-next-authority-oracle-v10.json",
             "path": "config/package-plane.lock.json",
-            "rawSha256": "6eb1a9aa1a0ec4b1f3ca6c2362dbad5977beb926f54da20d5f6d314e42e5e3b6",
+            "rawSha256": "56efbfc2aa68a718be46a33a98b7fbfa7cd047298a10bca0262af7164333a701",
             "rawSizeBytes": 75088,
-            "semanticCanonicalSha256": "6eb1a9aa1a0ec4b1f3ca6c2362dbad5977beb926f54da20d5f6d314e42e5e3b6",
+            "semanticCanonicalSha256": "56efbfc2aa68a718be46a33a98b7fbfa7cd047298a10bca0262af7164333a701",
             "semanticCanonicalSizeBytes": 75088,
-            "tree": "6345260065ba88091b5237652a3143912c8a2355",
+            "tree": "8b7ef0c40f440ee03dd9a5dd8981f46f1c75abf4",
         },
         "producerLock": {
             "absentAtCommit": True,
@@ -555,7 +555,7 @@ def test_sealed_next_transition_derives_exact_unsealed_upstream_without_mutation
     }
     assert len(package_plane.encoded_json(next_lock)) == 75088
     assert hashlib.sha256(package_plane.encoded_json(next_lock)).hexdigest() == (
-        "6eb1a9aa1a0ec4b1f3ca6c2362dbad5977beb926f54da20d5f6d314e42e5e3b6"
+        "56efbfc2aa68a718be46a33a98b7fbfa7cd047298a10bca0262af7164333a701"
     )
     assert package_plane.load_split_preseal_verifier().NEXT_AUTHORITY_ORACLE == (
         package_plane.SEALED_NEXT_AUTHORITY_ORACLE
@@ -3288,7 +3288,7 @@ def test_new_owner_test_links_and_minimums_bind_actual_mstest_cases() -> None:
 
 def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependencies() -> None:
     expected = (
-        ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 82),
+        ("InProcessChummerClientRulesetPluginTests", "Chummer.Tests/InProcessChummerClientRulesetPluginTests.cs", 85),
         ("ShellBootstrapDataProviderTests", "Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", 27),
         ("ShellPresenterTests", "Chummer.Tests/Presentation/ShellPresenterTests.cs", 80),
         ("WorkspaceSessionActivationServiceTests", "Chummer.Tests/Presentation/WorkspaceSessionActivationServiceTests.cs", 5),
@@ -3305,7 +3305,7 @@ def test_existing_owner_regressions_have_exact_links_counts_and_no_new_dependenc
         assert package_plane.EXPECTED_TEST_COMPILE_ITEMS[f"../{relative}"] == relative.removeprefix("Chummer.Tests/")
         assert relative in package_plane.OWNER_CONTEXT_SOURCE_FILES
         assert static_mstest_case_count(relative) == minimum
-    assert sum(minimum for _, _, minimum in expected) == 224
+    assert sum(minimum for _, _, minimum in expected) == 227
     assert package_plane.FULL_PRODUCT_TEST_MINIMUM_TESTS == 467 + 19 + 26 + 20 + 222 + 2 + 65 + 4 + 2 + 8 + 10 + 102 + 9
     for relative, namespace in (
         ("Chummer.Tests/Presentation/ShellBootstrapDataProviderTests.cs", "Chummer.Rulesets.Hosting.Presentation"),

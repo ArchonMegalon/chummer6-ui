@@ -619,6 +619,300 @@ public sealed class Sr6CreationWizardWindowTests
             StringAssert.Contains(scope.Window.FindControl<TextBlock>("AuthorityStatusText")!.Text!, "workspace-unavailable");
         });
 
+    [TestMethod]
+    public void Skill_editor_renders_published_catalog_and_stores_ratings()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "mundane", [])
+            {
+                Skills = new Sr6CreationSkillSelection([new("Athletics", 2, [])]),
+            };
+            presenter.SavedState = foundation with
+            {
+                SkillOptions = Sr6CreationSkillIds.Ordered.Take(4).Select(id =>
+                    new Sr6CreationSkillOption(id, 6, true, null)).ToArray(),
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            // The confirm step renders the published skill catalog with a bounded
+            // rating input per row, seeded from the saved allocation.
+            var ratings = window.GetVisualDescendants().OfType<NumericUpDown>().Where(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c)?
+                    .StartsWith("sr6-skill-", StringComparison.Ordinal) == true).ToArray();
+            Assert.HasCount(4, ratings, "every published skill option renders a bounded rating input");
+            var athletics = ratings.First(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-skill-Athletics-rating");
+            Assert.AreEqual(2m, athletics.Value, "the saved allocation seeds the rating input");
+            var astral = ratings.First(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-skill-Astral-rating");
+            Assert.AreEqual(0m, astral.Value, "no saved rating stays zero");
+            // Editing a rating lands in the in-window draft and survives a re-render.
+            astral.Value = 3;
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+            var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+            var draft = (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            Assert.AreEqual(3, draft.Skills!.Allocations.Single(r => r.SkillId == "Astral").Rating,
+                "the rating edit lands in the draft");
+            Assert.AreEqual(2, draft.Skills!.Allocations.Single(r => r.SkillId == "Athletics").Rating,
+                "other rows persist untouched");
+            Click(window, "BackButton");
+            Click(window, "NextButton");
+            var astralAfter = window.GetVisualDescendants().OfType<NumericUpDown>().First(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-skill-Astral-rating");
+            Assert.AreEqual(3m, astralAfter.Value, "the edited rating survives the re-render");
+            // Bounce regression: raising Astral then lowering it back to its
+            // original zero must clear the draft row - the echo guard reads the
+            // live draft, so the lowered store cannot be swallowed as an echo.
+            astralAfter.Value = 0;
+            // Re-read the window state: the bounce store replaces _state with a
+            // new record, so the earlier foundationObj alias would read stale.
+            var stateAfterBounce = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+            var foundationAfterBounce = stateAfterBounce.GetType().GetProperty("Foundation")!.GetValue(stateAfterBounce)!;
+            var selStateAfter = foundationAfterBounce.GetType().GetProperty("Selection")!.GetValue(foundationAfterBounce)!;
+            var draftAfterBounce = (Sr6CreationFoundationSelection)selStateAfter.GetType()
+                .GetProperty("Selection")!.GetValue(selStateAfter)!;
+            Assert.IsFalse(draftAfterBounce.Skills!.Allocations.Any(r => r.SkillId == "Astral"),
+                "the bounce edit clears the raised draft row instead of leaking a stale rating");
+        });
+
+    [TestMethod]
+    public void Skill_rating_edit_voids_the_held_acknowledgement()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "mundane", [])
+            {
+                Skills = new Sr6CreationSkillSelection([new("Athletics", 2, [])]),
+            };
+            presenter.SavedState = foundation with
+            {
+                SkillOptions = Sr6CreationSkillIds.Ordered.Take(4).Select(id =>
+                    new Sr6CreationSkillOption(id, 6, true, null)).ToArray(),
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            var confirmCheck = window.GetVisualDescendants().OfType<CheckBox>().Single();
+            confirmCheck.IsChecked = true;
+            Assert.IsTrue(window.FindControl<Button>("FinishButton")!.IsEnabled);
+            // A rating change rewrites the draft and must void the held ack.
+            var athletics = window.GetVisualDescendants().OfType<NumericUpDown>().First(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-skill-Athletics-rating");
+            athletics.Value = 4;
+            Assert.IsFalse(window.FindControl<Button>("FinishButton")!.IsEnabled,
+                "a skill edit voids the earlier acknowledgement (finish needs a fresh ack)");
+        });
+
+    [TestMethod]
+    public void Skill_editor_blocks_add_and_raise_for_unavailable_skills()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "mundane", [])
+            {
+                Skills = new Sr6CreationSkillSelection([new("Athletics", 2, [])]),
+            };
+            // Catalog shape: two available options plus one unavailable option
+            // carrying the Core reason. The draft already holds a legacy row for
+            // the unavailable skill (an allocation that predates the gate), so
+            // the row must stay clearable to zero but never raisable, and the
+            // unavailable skill with NO row must never gain one.
+            presenter.SavedState = foundation with
+            {
+                SkillOptions = new Sr6CreationSkillOption[]
+                {
+                    new("Athletics", 6, true, null),
+                    new("Astral", 6, true, null),
+                    new("Conjuring", 6, false, "aspect-not-supported"),
+                },
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            // Cancellation baseline: whatever the navigation steps dispatched is
+            // already counted; the skill edits below must add ZERO dispatches.
+            int preparesBeforeEdits = presenter.Prepares;
+
+            Sr6CreationFoundationSelection ReadDraft()
+            {
+                var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+                var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+                var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+                return (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            }
+
+            var conjuring = window.GetVisualDescendants().OfType<NumericUpDown>().First(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-skill-Conjuring-rating");
+            Assert.IsFalse(conjuring.IsEnabled, "an unavailable skill with no draft row cannot be added");
+            Assert.AreEqual(0m, conjuring.Maximum, "an unavailable skill with no draft row has a zero ceiling: the spinner range is [0,0]");
+            var reasonVisible = window.GetVisualDescendants().OfType<TextBlock>().Any(tb => tb.Text == "aspect-not-supported");
+            Assert.IsTrue(reasonVisible, "the Core availability reason stays visible on the row");
+
+            // Programmatically forcing a value through the input (the route a
+            // stray spinner event or binding glitch would take) must not add or
+            // raise the unavailable skill: the handler refuses positive values
+            // and snaps the input back to the draft rating.
+            conjuring.Value = 4;
+            Assert.AreEqual(0m, conjuring.Value, "the refused add snaps the input back to the draft rating");
+            Assert.IsFalse(ReadDraft().Skills!.Allocations.Any(r => r.SkillId == "Conjuring"),
+                "the unavailable skill never gains a draft row through the editor");
+
+            // The legacy row for the unavailable skill: the input is enabled only
+            // to clear it, its ceiling is the existing rating, and the raise is
+            // refused while the clear lands in the real draft.
+            var athletics = window.GetVisualDescendants().OfType<NumericUpDown>().First(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-skill-Athletics-rating");
+            Assert.AreEqual(2m, athletics.Value);
+            Assert.IsTrue(athletics.IsEnabled, "the available skill row stays editable");
+            // Sanity: the available skill still edits normally (positive store).
+            athletics.Value = 3;
+            Assert.AreEqual(3, ReadDraft().Skills!.Allocations.Single(r => r.SkillId == "Athletics").Rating,
+                "the available skill still accepts a raise through the editor");
+
+            // A legacy row on an unavailable skill cannot be raised: the ceiling
+            // clamps the input, and a forced store is refused with a snap-back.
+            // The draft keeps exactly the legacy rating until the user clears it.
+            // (Conjuring has no legacy row here; the raise-refusal above plus the
+            // disabled add already pin both unavailable directions.)
+
+            // Cancellation semantics: an unconfirmed edit never reaches the saved
+            // workspace. The draft edits above dispatch nothing to the presenter
+            // (the wizard persists only through the explicit confirm seam), so the
+            // prepared state is exactly what navigation produced - unchanged.
+            Assert.AreEqual(preparesBeforeEdits, presenter.Prepares,
+                "skill draft edits dispatch nothing: unconfirmed edits never reach the presenter/workspace");
+        });
+
+    [TestMethod]
+    public void Skill_editor_clears_legacy_unavailable_row_but_never_raises_it()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "mundane", [])
+            {
+                Skills = new Sr6CreationSkillSelection([new("Athletics", 2, []), new("Conjuring", 3, [])]),
+            };
+            // Legacy shape: the unavailable skill already sits at rating 3 in the
+            // saved draft. The editor must cap its input at 3 (no raise), keep it
+            // enabled (clear path), and refuse any positive store above 3.
+            presenter.SavedState = foundation with
+            {
+                SkillOptions = new Sr6CreationSkillOption[]
+                {
+                    new("Athletics", 6, true, null),
+                    new("Conjuring", 6, false, "aspect-not-supported"),
+                },
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            const System.Reflection.BindingFlags Priv = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+
+            Sr6CreationFoundationSelection ReadDraft()
+            {
+                var stateObj = typeof(Sr6CreationWizardWindow).GetField("_state", Priv)!.GetValue(window)!;
+                var foundationObj = stateObj.GetType().GetProperty("Foundation")!.GetValue(stateObj)!;
+                var selStateObj = foundationObj.GetType().GetProperty("Selection")!.GetValue(foundationObj)!;
+                return (Sr6CreationFoundationSelection)selStateObj.GetType().GetProperty("Selection")!.GetValue(selStateObj)!;
+            }
+
+            var conjuring = window.GetVisualDescendants().OfType<NumericUpDown>().First(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c) == "sr6-skill-Conjuring-rating");
+            Assert.AreEqual(3m, conjuring.Value, "the legacy rating seeds the input");
+            Assert.IsTrue(conjuring.IsEnabled, "the legacy row stays clearable");
+            Assert.AreEqual(3m, conjuring.Maximum, "the ceiling is the legacy rating: no raise");
+
+            // A positive store beyond the legacy rating is refused and snapped back.
+            conjuring.Value = 5;
+            Assert.AreEqual(3m, conjuring.Value, "the refused raise snaps the input back to the legacy rating");
+            Assert.AreEqual(3, ReadDraft().Skills!.Allocations.Single(r => r.SkillId == "Conjuring").Rating,
+                "the unavailable skill keeps exactly the legacy rating");
+
+            // Clearing to zero is the permitted direction and lands in the draft.
+            conjuring.Value = 0;
+            Assert.IsFalse(ReadDraft().Skills!.Allocations.Any(r => r.SkillId == "Conjuring"),
+                "clearing the legacy row drops it from the draft (the permitted direction)");
+        });
+
+    [TestMethod]
+    public void Skill_editor_absent_without_published_catalog()
+        => CharacterCreationAiFinishGateAvaloniaTests.WithHeadlessUi(() =>
+        {
+            var presenter = new RecordingSr6WizardPresenter();
+            var foundation = presenter.Load(CharacterOverviewState.Empty).State!.Foundation;
+            var selection = new Sr6CreationFoundationSelection("Human", "mundane", [])
+            {
+                Skills = new Sr6CreationSkillSelection([new("Athletics", 2, [])]),
+            };
+            presenter.SavedState = foundation with
+            {
+                Selection = new(foundation.Binding, selection, new(24, 32, 50000, 6, "E"), 0, 0, [], "saved-preview"),
+            };
+            using var scope = new WizardScope(presenter);
+            var window = scope.Window;
+            var ranks = window.GetVisualDescendants().OfType<ComboBox>().ToArray();
+            string[] choices = ["A", "B", "C", "D", "E"];
+            for (int i = 0; i < ranks.Length; i++) ranks[i].SelectedItem = choices[i];
+            Click(window, "NextButton");
+            var lists = window.GetVisualDescendants().OfType<ListBox>().ToArray();
+            lists[0].SelectedItem = "Human";
+            lists[1].SelectedItem = "mundane";
+            Click(window, "NextButton");
+            Click(window, "NextButton");
+            // Without a published catalog the confirm step stays as before: no
+            // skill rows, no crash, and the confirm checkbox remains the single one.
+            Assert.IsEmpty(window.GetVisualDescendants().OfType<NumericUpDown>().Where(c =>
+                global::Avalonia.Automation.AutomationProperties.GetAutomationId(c)?
+                    .StartsWith("sr6-skill-", StringComparison.Ordinal) == true).ToArray(),
+                "no catalog -> no skill rating inputs");
+            Assert.HasCount(1, window.GetVisualDescendants().OfType<CheckBox>().ToArray());
+        });
+
     private static void Click(Sr6CreationWizardWindow window, string name)
         => window.FindControl<Button>(name)!.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
