@@ -77,6 +77,9 @@ public static class DesktopMouseFirstJourneyRuntime
     // reopen-verify leg reads it and verifies the retained document carries the
     // same selections (spells by source id, powers by source id + rating).
     public const string MagicReopenSidecarEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_MAGIC_REOPEN_SIDECAR";
+    public const string SkillReopenSidecarEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SKILL_REOPEN_SIDECAR";
+    public const string Sr6SkillEditEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_SKILL_EDIT";
+    public const string Sr6SkillEditCancelEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SR6_SKILL_EDIT_CANCEL";
     // T545/7867: two-process career reward recovery leg. Phase A awards karma
     // through the real reward route and leaves it CONFIRMED-UNACKNOWLEDGED
     // (process exits = process restart). Phase B is a fresh process that must
@@ -345,6 +348,22 @@ public static class DesktopMouseFirstJourneyRuntime
     /// </summary>
     public static bool Sr6MagicEditRequested => string.Equals(
         Environment.GetEnvironmentVariable(Sr6MagicEditEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-010: true when the SR6 skill editor leg is requested (edit_save or cancel mode).
+    /// </summary>
+    public static bool Sr6SkillEditRequested => string.Equals(
+        Environment.GetEnvironmentVariable(Sr6SkillEditEnvironmentVariable) ?? string.Empty,
+        "1",
+        StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// WIN-010: true when the skill leg should CANCEL the wizard instead of saving.
+    /// </summary>
+    public static bool Sr6SkillEditWantsCancel => string.Equals(
+        Environment.GetEnvironmentVariable(Sr6SkillEditCancelEnvironmentVariable) ?? string.Empty,
         "1",
         StringComparison.OrdinalIgnoreCase);
 
